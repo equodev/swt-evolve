@@ -77,7 +77,7 @@ class DNDListener extends TypedListener {
                 {
                     DropTargetEvent event = new DropTargetEvent((DNDEvent) e);
                     ((DropTargetListener) eventListener).dragEnter(event);
-                    DropTargetEffect dropEffect = ((DropTarget) dndWidget).getDropTargetEffect();
+                    DropTargetEffect dropEffect = ((SWTDropTarget) dndWidget).getDropTargetEffect();
                     if (dropEffect != null) {
                         dropEffect.dragEnter(event);
                     }
@@ -88,7 +88,7 @@ class DNDListener extends TypedListener {
                 {
                     DropTargetEvent event = new DropTargetEvent((DNDEvent) e);
                     ((DropTargetListener) eventListener).dragLeave(event);
-                    DropTargetEffect dropEffect = ((DropTarget) dndWidget).getDropTargetEffect();
+                    DropTargetEffect dropEffect = ((SWTDropTarget) dndWidget).getDropTargetEffect();
                     if (dropEffect != null) {
                         dropEffect.dragLeave(event);
                     }
@@ -99,7 +99,7 @@ class DNDListener extends TypedListener {
                 {
                     DropTargetEvent event = new DropTargetEvent((DNDEvent) e);
                     ((DropTargetListener) eventListener).dragOver(event);
-                    DropTargetEffect dropEffect = ((DropTarget) dndWidget).getDropTargetEffect();
+                    DropTargetEffect dropEffect = ((SWTDropTarget) dndWidget).getDropTargetEffect();
                     if (dropEffect != null) {
                         dropEffect.dragOver(event);
                     }
@@ -110,7 +110,7 @@ class DNDListener extends TypedListener {
                 {
                     DropTargetEvent event = new DropTargetEvent((DNDEvent) e);
                     ((DropTargetListener) eventListener).drop(event);
-                    DropTargetEffect dropEffect = ((DropTarget) dndWidget).getDropTargetEffect();
+                    DropTargetEffect dropEffect = ((SWTDropTarget) dndWidget).getDropTargetEffect();
                     if (dropEffect != null) {
                         dropEffect.drop(event);
                     }
@@ -121,7 +121,7 @@ class DNDListener extends TypedListener {
                 {
                     DropTargetEvent event = new DropTargetEvent((DNDEvent) e);
                     ((DropTargetListener) eventListener).dropAccept(event);
-                    DropTargetEffect dropEffect = ((DropTarget) dndWidget).getDropTargetEffect();
+                    DropTargetEffect dropEffect = ((SWTDropTarget) dndWidget).getDropTargetEffect();
                     if (dropEffect != null) {
                         dropEffect.dropAccept(event);
                     }
@@ -132,7 +132,7 @@ class DNDListener extends TypedListener {
                 {
                     DropTargetEvent event = new DropTargetEvent((DNDEvent) e);
                     ((DropTargetListener) eventListener).dragOperationChanged(event);
-                    DropTargetEffect dropEffect = ((DropTarget) dndWidget).getDropTargetEffect();
+                    DropTargetEffect dropEffect = ((SWTDropTarget) dndWidget).getDropTargetEffect();
                     if (dropEffect != null) {
                         dropEffect.dragOperationChanged(event);
                     }

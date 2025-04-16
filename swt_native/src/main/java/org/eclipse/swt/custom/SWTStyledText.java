@@ -928,7 +928,7 @@ public class SWTStyledText extends SWTCanvas implements IStyledText {
                     return;
                 setCaretLocations(Arrays.stream(caretOffsets).mapToObj(this::getPointAtOffset).toArray(Point[]::new), direction);
             };
-            BidiUtil.addLanguageListener(Control.getInstance(this), runnable);
+            BidiUtil.addLanguageListener(StyledText.getInstance(this), runnable);
         }
         setCaret(defaultCaret);
         calculateScrollBars();
@@ -6088,7 +6088,7 @@ public class SWTStyledText extends SWTCanvas implements IStyledText {
             carets = null;
         }
         if (isBidiCaret()) {
-            BidiUtil.removeLanguageListener(Control.getInstance(this));
+            BidiUtil.removeLanguageListener(StyledText.getInstance(this));
         }
         selectionBackground = null;
         selectionForeground = null;

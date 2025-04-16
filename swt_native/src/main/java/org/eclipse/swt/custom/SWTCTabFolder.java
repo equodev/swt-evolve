@@ -4073,7 +4073,7 @@ public class SWTCTabFolder extends SWTComposite implements ICTabFolder {
 
                 @Override
                 public void widgetSelected(SelectionEvent e) {
-                    SWTMenuItem menuItem = (SWTMenuItem) (e.widget.delegate);
+                    SWTMenuItem menuItem = (SWTMenuItem) e.widget.delegate;
                     int index = indexOf((SWTCTabItem) menuItem.getData(id));
                     SWTCTabFolder.this.setSelection(index, true);
                 }

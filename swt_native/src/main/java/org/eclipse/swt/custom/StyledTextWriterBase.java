@@ -47,7 +47,7 @@ abstract class StyledTextWriterBase extends TextWriter {
      */
     public StyledTextWriterBase(StyledText styledText, int start, int length) {
         super(start, length);
-        this.styledText = (SWTStyledText)styledText.delegate;
+        this.styledText = (SWTStyledText) styledText.delegate;
     }
 
     /**

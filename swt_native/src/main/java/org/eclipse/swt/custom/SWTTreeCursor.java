@@ -585,7 +585,7 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
                     int index = findIndex(((SWTTreeItem[]) (tree.getItems())), item);
                     int height = tree.getItemHeight();
                     rect.height -= itemRect.y;
-                    SWTTreeItem last = getLastVisibleItem((SWTTreeItem[])tree.getItems());
+                    SWTTreeItem last = (SWTTreeItem) (getLastVisibleItem((SWTTreeItem[]) tree.getItems()));
                     int page = Math.max(1, rect.height / height);
                     int end = findIndex(((SWTTreeItem[]) (tree.getItems())), last);
                     if (end <= index + page) {

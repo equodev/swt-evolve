@@ -158,9 +158,11 @@ public class SWTCCombo extends SWTComposite implements ICCombo {
                 return;
             }
             if (event.widget instanceof Control) {
-                SWTShell shell = ((SWTShell) (((SWTControl) event.widget.delegate).getShell()));
-                if (shell == ((SWTShell) (SWTCCombo.this.getShell()))) {
-                    handleFocus(SWT.FocusOut);
+                if (event.widget.delegate instanceof SWTControl control) {
+                    SWTShell shell = (SWTShell) (control.getShell());
+                    if (shell == ((SWTShell) (SWTCCombo.this.getShell()))) {
+                        handleFocus(SWT.FocusOut);
+                    }
                 }
             }
         };

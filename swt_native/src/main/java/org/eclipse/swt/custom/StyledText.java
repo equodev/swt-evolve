@@ -3642,7 +3642,7 @@ public class StyledText extends Canvas {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static void updateAndRefreshCarets(StyledText styledText, Consumer<Caret> caretUpdater) {
-        SWTStyledText.updateAndRefreshCarets((SWTStyledText) styledText.delegate, (caret) -> caretUpdater.accept(Caret.getInstance(caret)));
+        SWTStyledText.updateAndRefreshCarets((SWTStyledText) styledText.delegate, caret -> caretUpdater.accept(Caret.getInstance(caret)));
     }
 
     protected StyledText(IStyledText delegate) {

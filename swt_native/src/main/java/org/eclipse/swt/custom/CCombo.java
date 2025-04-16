@@ -1031,7 +1031,7 @@ public class CCombo extends Composite {
      * @param childUpdater the callback which works with the child widgets
      */
     public static void updateAndRefreshChildren(CCombo combo, Consumer<Widget> childUpdater) {
-        SWTCCombo.updateAndRefreshChildren((SWTCCombo) combo.delegate, (widget) -> childUpdater.accept(Widget.getInstance(widget)));
+        SWTCCombo.updateAndRefreshChildren((SWTCCombo) combo.delegate, widget -> childUpdater.accept(Widget.getInstance(widget)));
     }
 
     protected CCombo(ICCombo delegate) {
