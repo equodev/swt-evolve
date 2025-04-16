@@ -349,7 +349,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public void setSelection(TabItem[] items) {
-        ((ITabFolder) this.delegate).setSelection(fromArray(items));
+        ((ITabFolder) this.delegate).setSelection(fromArray(items, ITabItem.class));
     }
 
     protected TabFolder(ITabFolder delegate) {

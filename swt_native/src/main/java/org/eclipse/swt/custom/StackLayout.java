@@ -97,7 +97,7 @@ public class StackLayout extends Layout {
     protected Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache) {
         int maxWidth = 0;
         int maxHeight = 0;
-        for (SWTControl element : ((SWTControl[]) (composite.getChildren()))) {
+        for (IControl element : composite.getChildren()) {
             Point size = element.computeSize(wHint, hHint, flushCache);
             maxWidth = Math.max(size.x, maxWidth);
             maxHeight = Math.max(size.y, maxHeight);

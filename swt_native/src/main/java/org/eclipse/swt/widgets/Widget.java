@@ -545,20 +545,20 @@ public class Widget {
     }
 
     @SuppressWarnings("unchecked")
-    protected static <T extends Widget, I extends IWidget> I[] fromArray(T[] items) {
+    protected static <T extends Widget, I extends IWidget> I[] fromArray(T[] items, Class<I> clazz) {
         if (items.length == 0)
-            return (I[]) java.lang.reflect.Array.newInstance(IWidget.class, 0);
+            return (I[]) java.lang.reflect.Array.newInstance(clazz, 0);
         Class<I> targetClazz = null;
         for (T item : items) outer: {
             for (Class<?> i : item.getClass().getInterfaces()) {
-                if (IWidget.class.isAssignableFrom(i)) {
+                if (clazz.isAssignableFrom(i)) {
                     targetClazz = (Class<I>) i;
                     break outer;
                 }
             }
         }
         if (targetClazz == null)
-            return (I[]) java.lang.reflect.Array.newInstance(IWidget.class, 0);
+            return (I[]) java.lang.reflect.Array.newInstance(clazz, 0);
         I[] target = (I[]) java.lang.reflect.Array.newInstance(targetClazz, items.length);
         for (int i = 0; i < target.length; ++i) target[i] = (I) items[i].delegate;
         return target;

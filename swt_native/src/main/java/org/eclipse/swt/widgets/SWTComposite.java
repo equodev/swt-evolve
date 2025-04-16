@@ -253,8 +253,7 @@ public class SWTComposite extends SWTScrollable implements IComposite {
      * @since 3.1
      */
     @Deprecated
-    public void changed(IControl[] changed_) {
-        SWTControl[] changed = (SWTControl[]) changed_;
+    public void changed(IControl[] changed) {
         layout(changed, SWT.DEFER);
     }
 
@@ -305,7 +304,7 @@ public class SWTComposite extends SWTScrollable implements IComposite {
 
     @Override
     SWTWidget[] computeTabList() {
-        SWTWidget[] result = (SWTWidget[]) (super.computeTabList());
+        SWTWidget[] result = super.computeTabList();
         if (result.length == 0)
             return result;
         SWTControl[] list = (SWTControl[]) (tabList != null ? _getTabList() : _getChildren());
@@ -1256,8 +1255,7 @@ public class SWTComposite extends SWTScrollable implements IComposite {
      *
      * @since 3.1
      */
-    public void layout(IControl[] changed_) {
-        SWTControl[] changed = (SWTControl[]) changed_;
+    public void layout(IControl[] changed) {
         checkWidget();
         if (changed == null)
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1322,8 +1320,7 @@ public class SWTComposite extends SWTScrollable implements IComposite {
      *
      * @since 3.6
      */
-    public void layout(IControl[] changed_, int flags) {
-        SWTControl[] changed = (SWTControl[]) changed_;
+    public void layout(IControl[] changed, int flags) {
         checkWidget();
         if (changed != null) {
             for (int i = 0; i < changed.length; i++) {

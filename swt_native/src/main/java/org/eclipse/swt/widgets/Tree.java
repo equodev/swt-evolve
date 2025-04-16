@@ -1039,7 +1039,7 @@ public class Tree extends Composite {
      * @see Tree#deselectAll()
      */
     public void setSelection(TreeItem[] items) {
-        ((ITree) this.delegate).setSelection(fromArray(items));
+        ((ITree) this.delegate).setSelection(fromArray(items, ITreeItem.class));
     }
 
     /**

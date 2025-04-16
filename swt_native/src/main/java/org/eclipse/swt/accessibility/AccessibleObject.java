@@ -1241,7 +1241,7 @@ class AccessibleObject {
                     /* Determine position and count for radio buttons. */
                     SWTControl control = accessible.control;
                     if (control instanceof SWTButton && ((control.getStyle() & SWT.RADIO) != 0)) {
-                        SWTControl[] children = (SWTControl[]) (control.getParent().getChildren());
+                        IControl[] children = control.getParent().getChildren();
                         posinset = 1;
                         setsize = 1;
                         for (int i = 0; i < children.length; i++) {

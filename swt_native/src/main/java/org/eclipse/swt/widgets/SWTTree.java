@@ -1969,7 +1969,7 @@ public class SWTTree extends SWTComposite implements ITree {
      */
     public ITreeItem[] getItems() {
         checkWidget();
-        return ((SWTTreeItem[]) (getItems(0)));
+        return getItems(0);
     }
 
     SWTTreeItem[] getItems(long parent) {
@@ -3787,10 +3787,10 @@ public class SWTTree extends SWTComposite implements ITree {
     @Override
     void setFontDescription(long font) {
         super.setFontDescription(font);
-        SWTTreeColumn[] columns = (SWTTreeColumn[]) (getColumns());
+        ITreeColumn[] columns = getColumns();
         for (int i = 0; i < columns.length; i++) {
             if (columns[i] != null) {
-                columns[i].setFontDescription(font);
+                ((SWTTreeColumn)columns[i]).setFontDescription(font);
             }
         }
     }
@@ -4066,8 +4066,7 @@ public class SWTTree extends SWTComposite implements ITree {
      *
      * @see Tree#deselectAll()
      */
-    public void setSelection(ITreeItem[] items_) {
-        SWTTreeItem[] items = (SWTTreeItem[]) items_;
+    public void setSelection(ITreeItem[] items) {
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -4263,7 +4262,7 @@ public class SWTTree extends SWTComposite implements ITree {
      */
     public void showSelection() {
         checkWidget();
-        SWTTreeItem[] items = (SWTTreeItem[]) (getSelection());
+        ITreeItem[] items = getSelection();
         if (items.length != 0 && items[0] != null)
             showItem(items[0]);
     }

@@ -29,7 +29,7 @@ class CTabFolderLayout extends Layout {
     @Override
     protected Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache) {
         SWTCTabFolder folder = (SWTCTabFolder) ((SWTCTabFolder) composite);
-        SWTCTabItem[] items = (SWTCTabItem[]) (folder.getItems());
+        ICTabItem[] items = folder.getItems();
         CTabFolderRenderer renderer = folder.getRenderer();
         // preferred width of tab area to show all tabs
         int tabW = 0;
@@ -90,7 +90,8 @@ class CTabFolderLayout extends Layout {
         int controlW = 0;
         int controlH = 0;
         // preferred size of controls in tab items
-        for (SWTCTabItem item : items) {
+        for (ICTabItem item_ : items) {
+        	SWTCTabItem item = (SWTCTabItem) item_;
             SWTControl control = (SWTControl) (item.control);
             if (control != null && !control.isDisposed()) {
                 Point size = control.computeSize(wHint, hHint, flushCache);

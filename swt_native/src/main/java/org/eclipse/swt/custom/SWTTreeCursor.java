@@ -277,7 +277,7 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
         addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
     }
 
-    int countSubTreePages(SWTTreeItem root) {
+    int countSubTreePages(ITreeItem root) {
         int pages = 1;
         if (root == null)
             return 0;
@@ -285,19 +285,19 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
             return 1;
         if (!root.getExpanded())
             return 1;
-        for (SWTTreeItem item : ((SWTTreeItem[]) (root.getItems()))) {
+        for (ITreeItem item : root.getItems()) {
             pages += countSubTreePages(item);
         }
         return pages;
     }
 
-    int findIndex(SWTTreeItem[] items, SWTTreeItem treeItem) {
+    int findIndex(ITreeItem[] items, SWTTreeItem treeItem) {
         if (items == null || treeItem == null)
             return -1;
         Rectangle rect = treeItem.getBounds();
         int index = 0;
         for (int i = 0; i < items.length; i++) {
-            SWTTreeItem previousItem = (SWTTreeItem) (null);
+            ITreeItem previousItem = null;
             SWTTreeItem currentItem = (SWTTreeItem) (items[i]);
             if (i > 0)
                 previousItem = items[i - 1];
@@ -305,10 +305,10 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
             if (rect.y == rect1.y)
                 return index;
             if (rect.y < rect1.y) {
-                return index - 1 + findIndex(((SWTTreeItem[]) (previousItem.getItems())), treeItem);
+                return index - 1 + findIndex(previousItem.getItems(), treeItem);
             }
             if (rect.y > rect1.y && i == items.length - 1) {
-                return index + findIndex(((SWTTreeItem[]) (currentItem.getItems())), treeItem);
+                return index + findIndex(currentItem.getItems(), treeItem);
             }
             if (rect.y >= rect1.y + (1 + currentItem.getItemCount()) * tree.getItemHeight() && currentItem.getExpanded()) {
                 index += countSubTreePages(currentItem);
@@ -319,7 +319,7 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
         return -1;
     }
 
-    SWTTreeItem findItem(SWTTreeItem[] items, Point pt) {
+    SWTTreeItem findItem(ITreeItem[] items, Point pt) {
         int start = 0, end = items.length - 1;
         int index = end / 2;
         while (end - start > 1) {
@@ -338,7 +338,7 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
             if (endBounds.y + endBounds.height < pt.y) {
                 if (!items[end].getExpanded())
                     return null;
-                return findItem(((SWTTreeItem[]) (items[end].getItems())), pt);
+                return findItem(items[end].getItems(), pt);
             }
             int[] columnOrder = tree.getColumnOrder();
             Rectangle bounds = null;
@@ -350,11 +350,11 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
             } else {
                 bounds = items[end].getBounds();
             }
-            return bounds.contains(pt) ? items[end] : null;
+            return bounds.contains(pt) ? (SWTTreeItem)items[end] : null;
         }
         Rectangle startBounds = items[start].getBounds();
         if (startBounds.y + startBounds.height < pt.y) {
-            return findItem(((SWTTreeItem[]) (items[start].getItems())), pt);
+            return findItem(items[start].getItems(), pt);
         }
         int[] columnOrder = tree.getColumnOrder();
         Rectangle bounds = null;
@@ -366,7 +366,7 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
         } else {
             bounds = items[start].getBounds();
         }
-        return bounds.contains(pt) ? items[start] : null;
+        return bounds.contains(pt) ? (SWTTreeItem)items[start] : null;
     }
 
     /**
@@ -412,12 +412,12 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
         return foreground;
     }
 
-    SWTTreeItem getLastVisibleItem(SWTTreeItem[] items) {
+    SWTTreeItem getLastVisibleItem(ITreeItem[] items) {
         if (items == null)
             return null;
         SWTTreeItem last = (SWTTreeItem) (items[items.length - 1]);
         if (last.getExpanded() && last.getItemCount() > 0) {
-            return getLastVisibleItem(((SWTTreeItem[]) (last.getItems())));
+            return getLastVisibleItem(last.getItems());
         }
         return last;
     }
@@ -457,7 +457,7 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
                 return null;
             item = ((SWTTreeItem) (tree.getItem(index - 1)));
             if (item.getExpanded() && item.getItemCount() > 0) {
-                return getLastVisibleItem(((SWTTreeItem[]) (item.getItems())));
+                return getLastVisibleItem(item.getItems());
             }
             return item;
         }
@@ -468,7 +468,7 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
             return parentItem;
         item = ((SWTTreeItem) (parentItem.getItem(index - 1)));
         if (item.getExpanded() && item.getItemCount() > 0) {
-            return getLastVisibleItem(((SWTTreeItem[]) (item.getItems())));
+            return getLastVisibleItem(item.getItems());
         }
         return item;
     }
@@ -553,7 +553,7 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
                 break;
             case SWT.END:
                 {
-                    SWTTreeItem[] items = (SWTTreeItem[]) (tree.getItems());
+                    ITreeItem[] items = tree.getItems();
                     setRowColumn(getLastVisibleItem(items), column, true);
                     break;
                 }
@@ -562,7 +562,7 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
                     Rectangle rect = tree.getClientArea();
                     Rectangle itemRect = ((SWTTreeItem) (tree.getTopItem())).getBounds();
                     SWTTreeItem item = (SWTTreeItem) (row);
-                    int index = findIndex(((SWTTreeItem[]) (tree.getItems())), item);
+                    int index = findIndex(tree.getItems(), item);
                     int itemHeight = tree.getItemHeight();
                     rect.height -= itemRect.y;
                     int page = Math.max(1, rect.height / itemHeight);
@@ -582,12 +582,12 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
                     Rectangle rect = tree.getClientArea();
                     Rectangle itemRect = ((SWTTreeItem) (tree.getTopItem())).getBounds();
                     SWTTreeItem item = (SWTTreeItem) (row);
-                    int index = findIndex(((SWTTreeItem[]) (tree.getItems())), item);
+                    int index = findIndex(tree.getItems(), item);
                     int height = tree.getItemHeight();
                     rect.height -= itemRect.y;
-                    SWTTreeItem last = (SWTTreeItem) (getLastVisibleItem((SWTTreeItem[]) tree.getItems()));
+                    SWTTreeItem last = getLastVisibleItem(tree.getItems());
                     int page = Math.max(1, rect.height / height);
-                    int end = findIndex(((SWTTreeItem[]) (tree.getItems())), last);
+                    int end = findIndex(tree.getItems(), last);
                     if (end <= index + page) {
                         setRowColumn(last, column, true);
                         break;
@@ -941,7 +941,7 @@ public class SWTTreeCursor extends SWTCanvas implements ITreeCursor {
             int start = tree.indexOf(currentItem);
             int viewportItemCount = tree.getClientArea().height / tree.getItemHeight();
             int end = Math.min(start + viewportItemCount, tree.getItemCount() - 1);
-            SWTTreeItem[] allItems = (SWTTreeItem[]) (tree.getItems());
+            ITreeItem[] allItems = tree.getItems();
             SWTTreeItem[] items = new SWTTreeItem[end - start + 1];
             System.arraycopy(allItems, start, items, 0, end - start + 1);
             item = findItem(items, pt);

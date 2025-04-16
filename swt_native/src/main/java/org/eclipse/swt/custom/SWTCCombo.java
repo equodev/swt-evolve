@@ -739,7 +739,7 @@ public class SWTCCombo extends SWTComposite implements ICCombo {
  * or null if none.
  */
     String getAssociatedLabel() {
-        SWTControl[] siblings = (SWTControl[]) (getParent().getChildren());
+        IControl[] siblings = getParent().getChildren();
         for (int i = 0; i < siblings.length; i++) {
             if (siblings[i] == this) {
                 if (i > 0) {

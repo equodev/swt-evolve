@@ -976,7 +976,7 @@ public class SWTToolItem extends SWTItem implements IToolItem {
     }
 
     boolean isTabGroup() {
-        SWTToolItem[] tabList = (SWTToolItem[]) (parent._getTabItemList());
+        SWTToolItem[] tabList = parent._getTabItemList();
         if (tabList != null) {
             for (int i = 0; i < tabList.length; i++) {
                 if (tabList[i] == this)
@@ -1084,12 +1084,12 @@ public class SWTToolItem extends SWTItem implements IToolItem {
 
     void selectRadio() {
         int index = 0;
-        SWTToolItem[] items = (SWTToolItem[]) (parent.getItems());
+        IToolItem[] items = parent.getItems();
         while (index < items.length && items[index] != this) index++;
         int i = index - 1;
-        while (i >= 0 && items[i].setRadioSelection(false)) --i;
+        while (i >= 0 && ((SWTToolItem)items[i]).setRadioSelection(false)) --i;
         int j = index + 1;
-        while (j < items.length && items[j].setRadioSelection(false)) j++;
+        while (j < items.length && ((SWTToolItem)items[j]).setRadioSelection(false)) j++;
         setSelection(true);
     }
 

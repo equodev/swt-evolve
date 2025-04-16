@@ -7232,7 +7232,7 @@ public class SWTStyledText extends SWTCanvas implements IStyledText {
  * or null if none.
  */
     String getAssociatedLabel() {
-        SWTControl[] siblings = (SWTControl[]) (getParent().getChildren());
+        IControl[] siblings = getParent().getChildren();
         for (int i = 0; i < siblings.length; i++) {
             if (siblings[i] == SWTStyledText.this) {
                 if (i > 0) {

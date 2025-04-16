@@ -265,8 +265,9 @@ public class BusyIndicator {
         if (display.isDisposed()) {
             return;
         }
-        SWTShell[] shells = (SWTShell[]) (display.getShells());
-        for (SWTShell shell : shells) {
+        IShell[] shells = display.getShells();
+        for (IShell shell_ : shells) {
+        	SWTShell shell = (SWTShell) shell_;
             Integer id = (Integer) shell.getData(BUSYID_NAME);
             if (Objects.equals(id, busyId)) {
                 setCursorAndId(shell, null, null);
@@ -277,8 +278,9 @@ public class BusyIndicator {
     private static Integer setBusyCursor(SWTDisplay display) {
         Integer busyId = nextBusyId.getAndIncrement();
         Cursor cursor = display.getSystemCursor(SWT.CURSOR_WAIT);
-        SWTShell[] shells = (SWTShell[]) (display.getShells());
-        for (SWTShell shell : shells) {
+        IShell[] shells = display.getShells();
+        for (IShell shell_ : shells) {
+        	SWTShell shell = (SWTShell) shell_;
             Integer id = (Integer) shell.getData(BUSYID_NAME);
             if (id == null) {
                 setCursorAndId(shell, cursor, busyId);

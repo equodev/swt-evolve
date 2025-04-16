@@ -29,7 +29,7 @@ class SashFormLayout extends Layout {
     @Override
     protected Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache) {
         SWTSashForm sashForm = (SWTSashForm) ((SWTSashForm) composite);
-        SWTControl[] cArray = (SWTControl[]) (sashForm.getControls(true));
+        IControl[] cArray = sashForm.getControls(true);
         int width = 0;
         int height = 0;
         if (cArray.length == 0) {
@@ -102,13 +102,13 @@ class SashFormLayout extends Layout {
         Rectangle area = sashForm.getClientArea();
         if (area.width <= 1 || area.height <= 1)
             return;
-        SWTControl[] newControls = (SWTControl[]) (sashForm.getControls(true));
+        IControl[] newControls = sashForm.getControls(true);
         if (sashForm.controls.length == 0 && newControls.length == 0)
             return;
         sashForm.controls = newControls;
-        SWTControl[] controls = (SWTControl[]) (sashForm.controls);
+        IControl[] controls = sashForm.controls;
         if (sashForm.maxControl != null && !sashForm.maxControl.isDisposed()) {
-            for (SWTControl control : controls) {
+            for (IControl control : controls) {
                 if (control != sashForm.maxControl) {
                     control.setBounds(-200, -200, 0, 0);
                 } else {

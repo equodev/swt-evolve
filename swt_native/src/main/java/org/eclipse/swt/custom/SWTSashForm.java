@@ -53,7 +53,7 @@ public class SWTSashForm extends SWTComposite implements ISashForm {
 
     Color foreground = null;
 
-    SWTControl[] controls = new SWTControl[0];
+    IControl[] controls = new IControl[0];
 
     SWTControl maxControl = null;
 
@@ -192,7 +192,7 @@ public class SWTSashForm extends SWTComposite implements ISashForm {
      */
     public int[] getWeights() {
         checkWidget();
-        SWTControl[] cArray = (SWTControl[]) (getControls(false));
+        IControl[] cArray = getControls(false);
         int[] ratios = new int[cArray.length];
         for (int i = 0; i < cArray.length; i++) {
             Object data = cArray[i].getLayoutData();
@@ -207,14 +207,14 @@ public class SWTSashForm extends SWTComposite implements ISashForm {
 
     SWTControl[] getControls(boolean onlyVisible) {
         SWTControl[] result = new SWTControl[0];
-        for (SWTControl element : ((SWTControl[]) (getChildren()))) {
+        for (IControl element : getChildren()) {
             if (element instanceof SWTSash)
                 continue;
             if (onlyVisible && !element.getVisible())
                 continue;
             SWTControl[] newResult = new SWTControl[result.length + 1];
             System.arraycopy(result, 0, newResult, 0, result.length);
-            newResult[result.length] = element;
+            newResult[result.length] = (SWTControl)element;
             result = newResult;
         }
         return result;
@@ -472,7 +472,7 @@ public class SWTSashForm extends SWTComposite implements ISashForm {
      */
     public void setWeights(int... weights) {
         checkWidget();
-        SWTControl[] cArray = (SWTControl[]) (getControls(false));
+        IControl[] cArray = getControls(false);
         if (weights == null || weights.length != cArray.length) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }

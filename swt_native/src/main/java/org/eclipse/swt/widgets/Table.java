@@ -1280,7 +1280,7 @@ public class Table extends Composite {
      * @see Table#setSelection(int[])
      */
     public void setSelection(TableItem[] items) {
-        ((ITable) this.delegate).setSelection(fromArray(items));
+        ((ITable) this.delegate).setSelection(fromArray(items, ITableItem.class));
     }
 
     /**

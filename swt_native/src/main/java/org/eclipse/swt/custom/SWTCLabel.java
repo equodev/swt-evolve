@@ -457,7 +457,7 @@ public class SWTCLabel extends SWTCanvas implements ICLabel {
             return;
         SWTComposite control = (SWTComposite) (this.getParent());
         while (control != null) {
-            SWTControl[] children = (SWTControl[]) (control.getChildren());
+            IControl[] children = control.getChildren();
             int index = 0;
             while (index < children.length) {
                 if (children[index] == this)

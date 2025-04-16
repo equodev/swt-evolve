@@ -117,7 +117,7 @@ public class Composite extends Scrollable {
      */
     @Deprecated
     public void changed(Control[] changed) {
-        ((IComposite) this.delegate).changed(fromArray(changed));
+        ((IComposite) this.delegate).changed(fromArray(changed, IControl.class));
     }
 
     /**
@@ -425,7 +425,7 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public void layout(Control[] changed) {
-        ((IComposite) this.delegate).layout(fromArray(changed));
+        ((IComposite) this.delegate).layout(fromArray(changed, IControl.class));
     }
 
     /**
@@ -487,7 +487,7 @@ public class Composite extends Scrollable {
      * @since 3.6
      */
     public void layout(Control[] changed, int flags) {
-        ((IComposite) this.delegate).layout(fromArray(changed), flags);
+        ((IComposite) this.delegate).layout(fromArray(changed, IControl.class), flags);
     }
 
     /**
@@ -573,7 +573,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void setTabList(Control[] tabList) {
-        ((IComposite) this.delegate).setTabList(fromArray(tabList));
+        ((IComposite) this.delegate).setTabList(fromArray(tabList, IControl.class));
     }
 
     @Override

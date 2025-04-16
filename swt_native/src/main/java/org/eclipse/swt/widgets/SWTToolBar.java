@@ -204,10 +204,10 @@ public class SWTToolBar extends SWTComposite implements IToolBar {
 
     @Override
     SWTWidget computeTabGroup() {
-        SWTToolItem[] items = (SWTToolItem[]) (_getItems());
+        IToolItem[] items = _getItems();
         if (tabItemList == null) {
             int i = 0;
-            while (i < items.length && items[i].control == null) i++;
+            while (i < items.length && ((SWTToolItem)items[i]).control == null) i++;
             if (i == items.length)
                 return super.computeTabGroup();
         }
@@ -297,7 +297,7 @@ public class SWTToolBar extends SWTComposite implements IToolBar {
         checkWidget();
         if (!(0 <= index && index < getItemCount()))
             error(SWT.ERROR_INVALID_RANGE);
-        return ((SWTToolItem[]) (getItems()))[index];
+        return (SWTToolItem)getItems()[index];
     }
 
     /**
@@ -493,12 +493,11 @@ public class SWTToolBar extends SWTComposite implements IToolBar {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public int indexOf(IToolItem item_) {
-        SWTToolItem item = (SWTToolItem) item_;
+    public int indexOf(IToolItem item) {
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        SWTToolItem[] items = (SWTToolItem[]) (getItems());
+        IToolItem[] items = getItems();
         for (int i = 0; i < items.length; i++) {
             if (item == items[i])
                 return i;
@@ -549,9 +548,9 @@ public class SWTToolBar extends SWTComposite implements IToolBar {
 
     @Override
     boolean mnemonicHit(char key) {
-        SWTToolItem[] items = (SWTToolItem[]) (getItems());
+        IToolItem[] items = getItems();
         for (int i = 0; i < items.length; i++) {
-            long labelHandle = items[i].labelHandle;
+            long labelHandle = ((SWTToolItem)items[i]).labelHandle;
             if (labelHandle != 0 && mnemonicHit(labelHandle, key))
                 return true;
         }
@@ -560,9 +559,9 @@ public class SWTToolBar extends SWTComposite implements IToolBar {
 
     @Override
     boolean mnemonicMatch(char key) {
-        SWTToolItem[] items = (SWTToolItem[]) (getItems());
+        IToolItem[] items = getItems();
         for (int i = 0; i < items.length; i++) {
-            long labelHandle = items[i].labelHandle;
+            long labelHandle = ((SWTToolItem)items[i]).labelHandle;
             if (labelHandle != 0 && mnemonicMatch(labelHandle, key))
                 return true;
         }
@@ -570,7 +569,7 @@ public class SWTToolBar extends SWTComposite implements IToolBar {
     }
 
     void relayout() {
-        SWTToolItem[] items = (SWTToolItem[]) (getItems());
+        IToolItem[] items = getItems();
         boolean hasText = false, hasImage = false;
         for (int i = 0; i < items.length; i++) {
             SWTToolItem item = (SWTToolItem) (items[i]);
@@ -602,7 +601,7 @@ public class SWTToolBar extends SWTComposite implements IToolBar {
 
     @Override
     void releaseChildren(boolean destroy) {
-        SWTToolItem[] items = (SWTToolItem[]) (getItems());
+        IToolItem[] items = getItems();
         for (int i = 0; i < items.length; i++) {
             SWTToolItem item = (SWTToolItem) (items[i]);
             if (item != null && !item.isDisposed()) {
@@ -623,7 +622,7 @@ public class SWTToolBar extends SWTComposite implements IToolBar {
     @Override
     void removeControl(SWTControl control) {
         super.removeControl(control);
-        SWTToolItem[] items = (SWTToolItem[]) (getItems());
+        IToolItem[] items = getItems();
         for (int i = 0; i < items.length; i++) {
             SWTToolItem item = (SWTToolItem) (items[i]);
             if (item.control == control)
@@ -633,7 +632,7 @@ public class SWTToolBar extends SWTComposite implements IToolBar {
 
     @Override
     void reskinChildren(int flags) {
-        SWTToolItem[] items = (SWTToolItem[]) (_getItems());
+        IToolItem[] items = _getItems();
         if (items != null) {
             for (int i = 0; i < items.length; i++) {
                 SWTToolItem item = (SWTToolItem) (items[i]);
@@ -704,9 +703,9 @@ public class SWTToolBar extends SWTComposite implements IToolBar {
     @Override
     void setFontDescription(long font) {
         super.setFontDescription(font);
-        SWTToolItem[] items = (SWTToolItem[]) (getItems());
+        IToolItem[] items = getItems();
         for (int i = 0; i < items.length; i++) {
-            items[i].setFontDescription(font);
+            ((SWTToolItem)items[i]).setFontDescription(font);
         }
         relayout();
     }
@@ -714,18 +713,18 @@ public class SWTToolBar extends SWTComposite implements IToolBar {
     @Override
     void setForegroundGdkRGBA(GdkRGBA rgba) {
         super.setForegroundGdkRGBA(rgba);
-        SWTToolItem[] items = (SWTToolItem[]) (getItems());
+        IToolItem[] items = getItems();
         for (int i = 0; i < items.length; i++) {
-            items[i].updateStyle();
+            ((SWTToolItem)items[i]).updateStyle();
         }
     }
 
     @Override
     void setOrientation(boolean create) {
         super.setOrientation(create);
-        SWTToolItem[] items = (SWTToolItem[]) (_getItems());
+        IToolItem[] items = _getItems();
         for (int i = 0; i < items.length; i++) {
-            items[i].setOrientation(create);
+            ((SWTToolItem)items[i]).setOrientation(create);
         }
     }
 
@@ -753,10 +752,10 @@ public class SWTToolBar extends SWTComposite implements IToolBar {
     public void setToolTipText(String string) {
         checkWidget();
         super.setToolTipText(string);
-        SWTToolItem[] items = (SWTToolItem[]) (getItems());
+        IToolItem[] items = getItems();
         for (int i = 0; i < items.length; i++) {
-            String newString = string != null ? null : items[i].toolTipText;
-            setToolTipText(items[i].handle, newString);
+            String newString = string != null ? null : ((SWTToolItem)items[i]).toolTipText;
+            setToolTipText(((SWTToolItem)items[i]).handle, newString);
         }
     }
 }

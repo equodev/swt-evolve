@@ -458,7 +458,7 @@ public class SWTCanvas extends SWTComposite implements ICanvas {
         Cairo.cairo_region_destroy(copyRegion);
         Cairo.cairo_region_destroy(invalidateRegion);
         if (all) {
-            SWTControl[] children = (SWTControl[]) (_getChildren());
+            IControl[] children = _getChildren();
             for (int i = 0; i < children.length; i++) {
                 SWTControl child = (SWTControl) (children[i]);
                 Rectangle rect = child.getBoundsInPixels();

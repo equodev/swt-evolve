@@ -4095,8 +4095,7 @@ public class SWTTable extends SWTComposite implements ITable {
      * @see Table#select(int[])
      * @see Table#setSelection(int[])
      */
-    public void setSelection(ITableItem[] items_) {
-        SWTTableItem[] items = (SWTTableItem[]) items_;
+    public void setSelection(ITableItem[] items) {
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);

@@ -854,7 +854,7 @@ public class SWTButton extends SWTControl implements IButton {
         //	int j = index + 1;
         //	while (j < children.length && children [j].setRadioSelection (false)) j++;
         //	setSelection (true);
-        SWTControl[] children = (SWTControl[]) (parent._getChildren());
+        IControl[] children = parent._getChildren();
         for (int i = 0; i < children.length; i++) {
             SWTControl child = (SWTControl) (children[i]);
             if (this != child)

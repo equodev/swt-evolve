@@ -4055,7 +4055,7 @@ public class SWTCTabFolder extends SWTComposite implements ICTabFolder {
         if (showMenu == null || showMenu.isDisposed()) {
             showMenu = new SWTMenu(((SWTShell) (getShell())), getStyle() & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT));
         } else {
-            for (SWTMenuItem item : ((SWTMenuItem[]) (showMenu.getItems()))) {
+            for (IMenuItem item : showMenu.getItems()) {
                 item.dispose();
             }
         }
