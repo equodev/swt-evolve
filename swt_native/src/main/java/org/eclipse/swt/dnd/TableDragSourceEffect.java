@@ -46,7 +46,7 @@ public class TableDragSourceEffect extends DragSourceEffect {
      *
      * @param table the <code>Table</code> that the user clicks on to initiate the drag
      */
-    public TableDragSourceEffect(SWTTable table) {
+    public TableDragSourceEffect(Table table) {
         super(table);
     }
 
@@ -85,7 +85,7 @@ public class TableDragSourceEffect extends DragSourceEffect {
     Image getDragSourceImage(DragSourceEvent event) {
         if (dragSourceImage != null)
             dragSourceImage.dispose();
-        dragSourceImage = TreeTableCommon.getDragSourceImage(control);
+        dragSourceImage = TreeTableCommon.getDragSourceImage((SWTControl) control.delegate);
         return dragSourceImage;
     }
 }

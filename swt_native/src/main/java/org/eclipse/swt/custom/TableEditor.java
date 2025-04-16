@@ -78,9 +78,9 @@ import org.eclipse.swt.widgets.*;
  */
 public class TableEditor extends ControlEditor {
 
-    SWTTable table;
+    Table table;
 
-    SWTTableItem item;
+    TableItem item;
 
     int column = -1;
 
@@ -95,7 +95,7 @@ public class TableEditor extends ControlEditor {
      *
      * @param table the Table Control above which this editor will be displayed
      */
-    public TableEditor(SWTTable table) {
+    public TableEditor(Table table) {
         super(table);
         this.table = table;
         columnListener = new ControlListener() {
@@ -166,7 +166,7 @@ public class TableEditor extends ControlEditor {
     public void dispose() {
         if (table != null && !table.isDisposed()) {
             if (this.column > -1 && this.column < table.getColumnCount()) {
-                SWTTableColumn tableColumn = (SWTTableColumn) (table.getColumn(this.column));
+                TableColumn tableColumn = table.getColumn(this.column);
                 tableColumn.removeControlListener(columnListener);
             }
         }
@@ -192,7 +192,7 @@ public class TableEditor extends ControlEditor {
      *
      * @return the TableItem for the row of the cell being tracked by this editor
      */
-    public ITableItem getItem() {
+    public TableItem getItem() {
         return item;
     }
 
@@ -205,7 +205,7 @@ public class TableEditor extends ControlEditor {
 	 * laying out one more time in a timerExec().
 	 */
         if (table != null) {
-            SWTDisplay display = (SWTDisplay) (table.getDisplay());
+            Display display = table.getDisplay();
             display.timerExec(-1, timer);
             display.timerExec(TIMEOUT, timer);
         }
@@ -226,14 +226,14 @@ public class TableEditor extends ControlEditor {
             return;
         }
         if (this.column > -1 && this.column < columnCount) {
-            SWTTableColumn tableColumn = (SWTTableColumn) (table.getColumn(this.column));
+            TableColumn tableColumn = table.getColumn(this.column);
             tableColumn.removeControlListener(columnListener);
             this.column = -1;
         }
         if (column < 0 || column >= table.getColumnCount())
             return;
         this.column = column;
-        SWTTableColumn tableColumn = (SWTTableColumn) (table.getColumn(this.column));
+        TableColumn tableColumn = table.getColumn(this.column);
         tableColumn.addControlListener(columnListener);
         resize();
     }
@@ -243,15 +243,13 @@ public class TableEditor extends ControlEditor {
      *
      * @param item the item to be edited
      */
-    public void setItem(ITableItem item_) {
-        SWTTableItem item = (SWTTableItem) item_;
+    public void setItem(TableItem item) {
         this.item = item;
         resize();
     }
 
     @Override
-    public void setEditor(IControl editor_) {
-        SWTControl editor = (SWTControl) editor_;
+    public void setEditor(Control editor) {
         super.setEditor(editor);
         resize();
     }
@@ -266,9 +264,7 @@ public class TableEditor extends ControlEditor {
      * @param item the TableItem for the row of the cell being tracked by this editor
      * @param column the zero based index of the column of the cell being tracked by this editor
      */
-    public void setEditor(IControl editor_, ITableItem item_, int column) {
-        SWTTableItem item = (SWTTableItem) item_;
-        SWTControl editor = (SWTControl) editor_;
+    public void setEditor(Control editor, TableItem item, int column) {
         setItem(item);
         setColumn(column);
         setEditor(editor);

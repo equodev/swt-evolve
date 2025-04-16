@@ -2260,8 +2260,8 @@ class WebKit extends WebBrowser {
             nonBlockingEvaluate--;
         }
         SWTBrowser browser = (SWTBrowser) (null);
-        if (newEvent.browser != null && newEvent.browser.webBrowser instanceof WebKit) {
-            browser = newEvent.browser;
+        if (newEvent.browser != null && ((SWTBrowser)newEvent.browser.delegate).webBrowser instanceof WebKit) {
+            browser = (SWTBrowser) newEvent.browser.delegate;
         }
         if (browser != null && !browser.isDisposed()) {
             return ((WebKit) browser.webBrowser).webView;

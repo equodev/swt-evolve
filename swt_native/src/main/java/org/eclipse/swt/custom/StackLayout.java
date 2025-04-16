@@ -91,7 +91,7 @@ public class StackLayout extends Layout {
      * topControl the Control that is displayed at the top of the stack.
      * All other controls that are children of the parent composite will not be visible.
      */
-    public SWTControl topControl;
+    public Control topControl;
 
     @Override
     protected Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache) {
@@ -123,7 +123,7 @@ public class StackLayout extends Layout {
         rect.y += marginHeight;
         rect.width -= 2 * marginWidth;
         rect.height -= 2 * marginHeight;
-        for (SWTControl element : ((SWTControl[]) (composite.getChildren()))) {
+        for (Control element : (Composite.getInstance(composite).getChildren())) {
             element.setBounds(rect);
             element.setVisible(element == topControl);
         }

@@ -67,6 +67,33 @@ import org.eclipse.swt.internal.gtk4.*;
 public class Text extends Scrollable {
 
     /**
+     * The maximum number of characters that can be entered
+     * into a text widget.
+     * <p>
+     * Note that this value is platform dependent, based upon
+     * the native widget implementation.
+     * </p>
+     */
+    public final static int LIMIT;
+
+    /**
+     * The delimiter used by multi-line text widgets.  When text
+     * is queried and from the widget, it will be delimited using
+     * this delimiter.
+     */
+    public final static String DELIMITER;
+
+    /*
+     * These values can be different on different platforms.
+     * Therefore they are not initialized in the declaration
+     * to stop the compiler from inlining.
+     */
+    static {
+        LIMIT = 0x7FFFFFFF;
+        DELIMITER = "\n";
+    }
+
+    /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.
      * <p>

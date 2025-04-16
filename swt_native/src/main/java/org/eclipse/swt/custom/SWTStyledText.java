@@ -908,7 +908,7 @@ public class SWTStyledText extends SWTCanvas implements IStyledText {
         alignment = style & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         if (alignment == 0)
             alignment = SWT.LEFT;
-        clipboard = new Clipboard(display);
+        clipboard = new Clipboard(Display.getInstance(display));
         installDefaultContent();
         renderer = new StyledTextRenderer(((SWTDisplay) (getDisplay())), this);
         renderer.setContent(content);

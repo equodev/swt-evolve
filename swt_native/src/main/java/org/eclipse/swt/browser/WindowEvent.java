@@ -142,7 +142,7 @@ public class WindowEvent extends TypedEvent {
     /**
      * <code>Browser</code> provided by the application.
      */
-    public SWTBrowser browser;
+    public Browser browser;
 
     /**
      * Requested location for the <code>Shell</code> hosting the <code>Browser</code>.

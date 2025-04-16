@@ -42,7 +42,7 @@ public class ListDragSourceEffect extends DragSourceEffect {
 
     Image dragSourceImage = null;
 
-    private SWTList dragList;
+    private List dragList;
 
     /**
      * Creates a new <code>ListDragSourceEffect</code> to handle drag effect
@@ -50,7 +50,7 @@ public class ListDragSourceEffect extends DragSourceEffect {
      *
      * @param list the <code>List</code> that the user clicks on to initiate the drag
      */
-    public ListDragSourceEffect(SWTList list) {
+    public ListDragSourceEffect(List list) {
         super(list);
         dragList = list;
     }
@@ -102,7 +102,7 @@ public class ListDragSourceEffect extends DragSourceEffect {
             return null;
         int count = Math.min(10, OS.g_list_length(list));
         long originalList = list;
-        SWTDisplay display = (SWTDisplay) (dragList.getDisplay());
+        Display display = dragList.getDisplay();
         if (count == 1) {
             long path = OS.g_list_nth_data(list, 0);
             long icon = GTK.gtk_tree_view_create_row_drag_icon(handle, path);

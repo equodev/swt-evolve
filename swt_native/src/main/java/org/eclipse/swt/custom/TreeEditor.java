@@ -76,9 +76,9 @@ import org.eclipse.swt.widgets.*;
  */
 public class TreeEditor extends ControlEditor {
 
-    SWTTree tree;
+    Tree tree;
 
-    SWTTreeItem item;
+    TreeItem item;
 
     int column = 0;
 
@@ -95,7 +95,7 @@ public class TreeEditor extends ControlEditor {
      *
      * @param tree the Tree Control above which this editor will be displayed
      */
-    public TreeEditor(SWTTree tree) {
+    public TreeEditor(Tree tree) {
         super(tree);
         this.tree = tree;
         columnListener = new ControlListener() {
@@ -198,7 +198,7 @@ public class TreeEditor extends ControlEditor {
     public void dispose() {
         if (tree != null && !tree.isDisposed()) {
             if (this.column > -1 && this.column < tree.getColumnCount()) {
-                SWTTreeColumn treeColumn = (SWTTreeColumn) (tree.getColumn(this.column));
+                TreeColumn treeColumn = tree.getColumn(this.column);
                 treeColumn.removeControlListener(columnListener);
             }
             if (treeListener != null)
@@ -229,7 +229,7 @@ public class TreeEditor extends ControlEditor {
      *
      * @return the TreeItem for the row of the cell being tracked by this editor
      */
-    public ITreeItem getItem() {
+    public TreeItem getItem() {
         return item;
     }
 
@@ -242,7 +242,7 @@ public class TreeEditor extends ControlEditor {
 	 * laying out one more time in a timerExec().
 	 */
         if (tree != null) {
-            SWTDisplay display = (SWTDisplay) (tree.getDisplay());
+            Display display = tree.getDisplay();
             display.timerExec(-1, timer);
             display.timerExec(TIMEOUT, timer);
         }
@@ -265,14 +265,14 @@ public class TreeEditor extends ControlEditor {
             return;
         }
         if (this.column > -1 && this.column < columnCount) {
-            SWTTreeColumn treeColumn = (SWTTreeColumn) (tree.getColumn(this.column));
+            TreeColumn treeColumn = tree.getColumn(this.column);
             treeColumn.removeControlListener(columnListener);
             this.column = -1;
         }
         if (column < 0 || column >= tree.getColumnCount())
             return;
         this.column = column;
-        SWTTreeColumn treeColumn = (SWTTreeColumn) (tree.getColumn(this.column));
+        TreeColumn treeColumn = tree.getColumn(this.column);
         treeColumn.addControlListener(columnListener);
         resize();
     }
@@ -282,8 +282,7 @@ public class TreeEditor extends ControlEditor {
      *
      * @param item the item to be edited
      */
-    public void setItem(ITreeItem item_) {
-        SWTTreeItem item = (SWTTreeItem) item_;
+    public void setItem(TreeItem item) {
         this.item = item;
         resize();
     }
@@ -300,17 +299,14 @@ public class TreeEditor extends ControlEditor {
      *
      * @since 3.1
      */
-    public void setEditor(IControl editor_, ITreeItem item_, int column) {
-        SWTTreeItem item = (SWTTreeItem) item_;
-        SWTControl editor = (SWTControl) editor_;
+    public void setEditor(Control editor, TreeItem item, int column) {
         setItem(item);
         setColumn(column);
         setEditor(editor);
     }
 
     @Override
-    public void setEditor(IControl editor_) {
-        SWTControl editor = (SWTControl) editor_;
+    public void setEditor(Control editor) {
         super.setEditor(editor);
         resize();
     }
@@ -324,9 +320,7 @@ public class TreeEditor extends ControlEditor {
      * @param editor the Control that is displayed above the cell being edited
      * @param item the TreeItem for the row of the cell being tracked by this editor
      */
-    public void setEditor(IControl editor_, ITreeItem item_) {
-        SWTTreeItem item = (SWTTreeItem) item_;
-        SWTControl editor = (SWTControl) editor_;
+    public void setEditor(Control editor, TreeItem item) {
         setItem(item);
         setEditor(editor);
     }

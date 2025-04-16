@@ -107,9 +107,9 @@ public class ControlEditor {
      */
     public int minimumHeight = 0;
 
-    SWTComposite parent;
+    Composite parent;
 
-    SWTControl editor;
+    Control editor;
 
     private boolean hadFocus;
 
@@ -124,17 +124,17 @@ public class ControlEditor {
      *
      * @param parent the Composite above which this editor will be displayed
      */
-    public ControlEditor(SWTComposite parent) {
+    public ControlEditor(Composite parent) {
         this.parent = parent;
         controlListener = e -> layout();
         for (int event : EVENTS) {
             parent.addListener(event, controlListener);
         }
         scrollbarListener = this::scroll;
-        SWTScrollBar hBar = ((SWTScrollBar) (parent.getHorizontalBar()));
+        ScrollBar hBar = parent.getHorizontalBar();
         if (hBar != null)
             hBar.addListener(SWT.Selection, scrollbarListener);
-        SWTScrollBar vBar = ((SWTScrollBar) (parent.getVerticalBar()));
+        ScrollBar vBar = parent.getVerticalBar();
         if (vBar != null)
             vBar.addListener(SWT.Selection, scrollbarListener);
     }
@@ -180,10 +180,10 @@ public class ControlEditor {
             for (int event : EVENTS) {
                 parent.removeListener(event, controlListener);
             }
-            SWTScrollBar hBar = (SWTScrollBar) (parent.getHorizontalBar());
+            ScrollBar hBar = parent.getHorizontalBar();
             if (hBar != null)
                 hBar.removeListener(SWT.Selection, scrollbarListener);
-            SWTScrollBar vBar = (SWTScrollBar) (parent.getVerticalBar());
+            ScrollBar vBar = parent.getVerticalBar();
             if (vBar != null)
                 vBar.removeListener(SWT.Selection, scrollbarListener);
         }
@@ -199,7 +199,7 @@ public class ControlEditor {
      *
      * @return the Control that is displayed above the composite being edited
      */
-    public IControl getEditor() {
+    public Control getEditor() {
         return editor;
     }
 
@@ -241,8 +241,7 @@ public class ControlEditor {
      *
      * @param editor the Control that is displayed above the composite being edited
      */
-    public void setEditor(IControl editor_) {
-        SWTControl editor = (SWTControl) editor_;
+    public void setEditor(Control editor) {
         if (editor == null) {
             // this is the case where the caller is setting the editor to be blank
             // set all the values accordingly

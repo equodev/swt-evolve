@@ -68,18 +68,18 @@ public class Clipboard {
      * @see Clipboard#dispose
      * @see Clipboard#checkSubclass
      */
-    public Clipboard(SWTDisplay display) {
+    public Clipboard(Display display) {
         checkSubclass();
         if (display == null) {
-            display = SWTDisplay.getCurrent();
+            display = Display.getCurrent();
             if (display == null) {
-                display = SWTDisplay.getDefault();
+                display = Display.getDefault();
             }
         }
         if (display.getThread() != Thread.currentThread()) {
             DND.error(SWT.ERROR_THREAD_INVALID_ACCESS);
         }
-        this.display = display;
+        this.display = (SWTDisplay) display.delegate;
     }
 
     /**

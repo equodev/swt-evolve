@@ -227,11 +227,11 @@ public class SWTDragSource extends SWTWidget implements IDragSource {
             if (effect instanceof DragSourceEffect) {
                 dragEffect = (DragSourceEffect) effect;
             } else if (control instanceof SWTTree) {
-                dragEffect = new TreeDragSourceEffect((SWTTree) control);
+                dragEffect = new TreeDragSourceEffect(Tree.getInstance((SWTTree) control));
             } else if (control instanceof SWTTable) {
-                dragEffect = new TableDragSourceEffect((SWTTable) control);
+                dragEffect = new TableDragSourceEffect(Table.getInstance((SWTTable) control));
             } else if (control instanceof SWTList) {
-                dragEffect = new ListDragSourceEffect((SWTList) control);
+                dragEffect = new ListDragSourceEffect(List.getInstance((SWTList) control));
             }
             this.addListener(SWT.Dispose, e -> onDispose());
         }
