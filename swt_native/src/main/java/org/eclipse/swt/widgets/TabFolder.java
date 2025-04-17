@@ -215,7 +215,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public TabItem[] getItems() {
-        return TabItem.ofArray(((ITabFolder) this.delegate).getItems(), TabItem.class, TabItem::new);
+        return TabItem.ofArray(((ITabFolder) this.delegate).getItems(), TabItem.class);
     }
 
     /**
@@ -235,7 +235,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public TabItem[] getSelection() {
-        return TabItem.ofArray(((ITabFolder) this.delegate).getSelection(), TabItem.class, TabItem::new);
+        return TabItem.ofArray(((ITabFolder) this.delegate).getSelection(), TabItem.class);
     }
 
     /**

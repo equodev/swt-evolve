@@ -303,7 +303,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public MenuItem[] getItems() {
-        return MenuItem.ofArray(((IMenu) this.delegate).getItems(), MenuItem.class, MenuItem::new);
+        return MenuItem.ofArray(((IMenu) this.delegate).getItems(), MenuItem.class);
     }
 
     /**

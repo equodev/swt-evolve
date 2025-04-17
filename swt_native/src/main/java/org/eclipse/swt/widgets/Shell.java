@@ -609,7 +609,7 @@ public class Shell extends Decorations {
      * </ul>
      */
     public Shell[] getShells() {
-        return Shell.ofArray(((IShell) this.delegate).getShells(), Shell.class, Shell::new);
+        return Shell.ofArray(((IShell) this.delegate).getShells(), Shell.class);
     }
 
     /**

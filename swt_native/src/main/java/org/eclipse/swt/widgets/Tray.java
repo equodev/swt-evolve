@@ -95,7 +95,7 @@ public class Tray extends Widget {
      * </ul>
      */
     public TrayItem[] getItems() {
-        return TrayItem.ofArray(((ITray) this.delegate).getItems(), TrayItem.class, TrayItem::new);
+        return TrayItem.ofArray(((ITray) this.delegate).getItems(), TrayItem.class);
     }
 
     protected Tray(ITray delegate) {

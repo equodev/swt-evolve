@@ -327,7 +327,7 @@ public class CCombo extends Composite {
 
     @Override
     public Control[] getChildren() {
-        return Control.ofArray(((ICCombo) this.delegate).getChildren(), Control.class, Control::new);
+        return Control.ofArray(((ICCombo) this.delegate).getChildren(), Control.class);
     }
 
     /**

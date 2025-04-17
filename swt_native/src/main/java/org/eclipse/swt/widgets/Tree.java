@@ -373,7 +373,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public TreeColumn[] getColumns() {
-        return TreeColumn.ofArray(((ITree) this.delegate).getColumns(), TreeColumn.class, TreeColumn::new);
+        return TreeColumn.ofArray(((ITree) this.delegate).getColumns(), TreeColumn.class);
     }
 
     /**
@@ -559,7 +559,7 @@ public class Tree extends Composite {
      * </ul>
      */
     public TreeItem[] getItems() {
-        return TreeItem.ofArray(((ITree) this.delegate).getItems(), TreeItem.class, TreeItem::new);
+        return TreeItem.ofArray(((ITree) this.delegate).getItems(), TreeItem.class);
     }
 
     /**
@@ -619,7 +619,7 @@ public class Tree extends Composite {
      * </ul>
      */
     public TreeItem[] getSelection() {
-        return TreeItem.ofArray(((ITree) this.delegate).getSelection(), TreeItem.class, TreeItem::new);
+        return TreeItem.ofArray(((ITree) this.delegate).getSelection(), TreeItem.class);
     }
 
     /**

@@ -140,7 +140,7 @@ public class CoolBar extends Composite {
      * </ul>
      */
     public CoolItem[] getItems() {
-        return CoolItem.ofArray(((ICoolBar) this.delegate).getItems(), CoolItem.class, CoolItem::new);
+        return CoolItem.ofArray(((ICoolBar) this.delegate).getItems(), CoolItem.class);
     }
 
     /**

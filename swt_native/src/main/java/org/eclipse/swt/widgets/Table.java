@@ -422,7 +422,7 @@ public class Table extends Composite {
      * @see SWT#Move
      */
     public TableColumn[] getColumns() {
-        return TableColumn.ofArray(((ITable) this.delegate).getColumns(), TableColumn.class, TableColumn::new);
+        return TableColumn.ofArray(((ITable) this.delegate).getColumns(), TableColumn.class);
     }
 
     /**
@@ -598,7 +598,7 @@ public class Table extends Composite {
      * </ul>
      */
     public TableItem[] getItems() {
-        return TableItem.ofArray(((ITable) this.delegate).getItems(), TableItem.class, TableItem::new);
+        return TableItem.ofArray(((ITable) this.delegate).getItems(), TableItem.class);
     }
 
     /**
@@ -640,7 +640,7 @@ public class Table extends Composite {
      * </ul>
      */
     public TableItem[] getSelection() {
-        return TableItem.ofArray(((ITable) this.delegate).getSelection(), TableItem.class, TableItem::new);
+        return TableItem.ofArray(((ITable) this.delegate).getSelection(), TableItem.class);
     }
 
     /**

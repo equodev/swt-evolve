@@ -108,7 +108,7 @@ public class TaskBar extends Widget {
      * </ul>
      */
     public TaskItem[] getItems() {
-        return TaskItem.ofArray(((ITaskBar) this.delegate).getItems(), TaskItem.class, TaskItem::new);
+        return TaskItem.ofArray(((ITaskBar) this.delegate).getItems(), TaskItem.class);
     }
 
     protected TaskBar(ITaskBar delegate) {

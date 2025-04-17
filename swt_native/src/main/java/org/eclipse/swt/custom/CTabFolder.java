@@ -276,7 +276,7 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public CTabItem[] getItems() {
-        return CTabItem.ofArray(((ICTabFolder) this.delegate).getItems(), CTabItem.class, CTabItem::new);
+        return CTabItem.ofArray(((ICTabFolder) this.delegate).getItems(), CTabItem.class);
     }
 
     /**

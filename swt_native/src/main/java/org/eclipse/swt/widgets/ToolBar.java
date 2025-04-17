@@ -160,7 +160,7 @@ public class ToolBar extends Composite {
      * </ul>
      */
     public ToolItem[] getItems() {
-        return ToolItem.ofArray(((IToolBar) this.delegate).getItems(), ToolItem.class, ToolItem::new);
+        return ToolItem.ofArray(((IToolBar) this.delegate).getItems(), ToolItem.class);
     }
 
     /**

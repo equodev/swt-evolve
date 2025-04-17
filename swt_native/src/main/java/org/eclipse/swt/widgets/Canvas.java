@@ -190,7 +190,7 @@ public class Canvas extends Composite {
      * </ul>
      */
     public void setCaret(Caret caret) {
-        ((ICanvas) this.delegate).setCaret((ICaret) caret.delegate);
+        ((ICanvas) this.delegate).setCaret((ICaret) (caret != null ? caret.delegate : null));
     }
 
     @Override

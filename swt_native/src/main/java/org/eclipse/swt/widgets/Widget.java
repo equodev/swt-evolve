@@ -15,6 +15,7 @@
  */
 package org.eclipse.swt.widgets;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
@@ -537,10 +538,10 @@ public class Widget {
 
     public IWidget delegate;
 
-    protected static <T extends Widget, I extends IWidget> T[] ofArray(I[] items, Class<T> clazz, java.util.function.Function<I, T> factory) {
-        @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")
+    protected static <T extends Widget, I extends IWidget> T[] ofArray(I[] items, Class<T> clazz) {
         T[] target = (T[]) java.lang.reflect.Array.newInstance(clazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = factory.apply(items[i]);
+        for (int i = 0; i < target.length; ++i) target[i] = (T)INSTANCES.get(items[i]);
         return target;
     }
 

@@ -195,7 +195,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public Control[] getChildren() {
-        return Control.ofArray(((IComposite) this.delegate).getChildren(), Control.class, Control::new);
+        return Control.ofArray(((IComposite) this.delegate).getChildren(), Control.class);
     }
 
     /**
@@ -246,7 +246,7 @@ public class Composite extends Scrollable {
      * @see #setTabList
      */
     public Control[] getTabList() {
-        return Control.ofArray(((IComposite) this.delegate).getTabList(), Control.class, Control::new);
+        return Control.ofArray(((IComposite) this.delegate).getTabList(), Control.class);
     }
 
     /**

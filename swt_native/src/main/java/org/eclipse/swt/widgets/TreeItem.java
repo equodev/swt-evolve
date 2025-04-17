@@ -486,7 +486,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public TreeItem[] getItems() {
-        return TreeItem.ofArray(((ITreeItem) this.delegate).getItems(), TreeItem.class, TreeItem::new);
+        return TreeItem.ofArray(((ITreeItem) this.delegate).getItems(), TreeItem.class);
     }
 
     /**

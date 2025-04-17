@@ -159,7 +159,7 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public ExpandItem[] getItems() {
-        return ExpandItem.ofArray(((IExpandBar) this.delegate).getItems(), ExpandItem.class, ExpandItem::new);
+        return ExpandItem.ofArray(((IExpandBar) this.delegate).getItems(), ExpandItem.class);
     }
 
     /**

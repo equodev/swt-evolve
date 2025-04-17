@@ -786,7 +786,7 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public Shell[] getShells() {
-        return Shell.ofArray(((IDisplay) this.delegate).getShells(), Shell.class, Shell::new);
+        return Shell.ofArray(((IDisplay) this.delegate).getShells(), Shell.class);
     }
 
     /**
