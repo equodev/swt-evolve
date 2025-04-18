@@ -1799,7 +1799,7 @@ public abstract class SWTWidget implements IWidget {
     }
 
     void sendEvent(Event event) {
-        SWTDisplay display = (SWTDisplay) (event.display != Display.getInstance(null) ? event.display.delegate : null);
+        SWTDisplay display = (SWTDisplay) (event.display != null ? event.display.delegate : null);
         if (!display.filterEvent(event)) {
             if (eventTable != null)
                 display.sendEvent(eventTable, event);

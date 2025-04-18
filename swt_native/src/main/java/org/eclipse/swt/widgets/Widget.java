@@ -549,18 +549,7 @@ public class Widget {
     protected static <T extends Widget, I extends IWidget> I[] fromArray(T[] items, Class<I> clazz) {
         if (items.length == 0)
             return (I[]) java.lang.reflect.Array.newInstance(clazz, 0);
-        Class<I> targetClazz = null;
-        for (T item : items) outer: {
-            for (Class<?> i : item.getClass().getInterfaces()) {
-                if (clazz.isAssignableFrom(i)) {
-                    targetClazz = (Class<I>) i;
-                    break outer;
-                }
-            }
-        }
-        if (targetClazz == null)
-            return (I[]) java.lang.reflect.Array.newInstance(clazz, 0);
-        I[] target = (I[]) java.lang.reflect.Array.newInstance(targetClazz, items.length);
+        I[] target = (I[]) java.lang.reflect.Array.newInstance(clazz, items.length);
         for (int i = 0; i < target.length; ++i) target[i] = (I) items[i].delegate;
         return target;
     }

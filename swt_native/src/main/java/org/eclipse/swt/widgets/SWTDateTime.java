@@ -552,7 +552,7 @@ public class SWTDateTime extends SWTComposite implements IDateTime {
         if (bg != null)
             popupCalendar.setBackground(bg);
         mouseEventListener = event -> {
-            if ((SWTControl) (event.widget != Widget.getInstance(null) ? event.widget.delegate : null) instanceof SWTControl) {
+            if ((SWTControl) (event.widget != null ? event.widget.delegate : null) instanceof SWTControl) {
                 SWTControl c = (SWTControl) ((SWTControl) (SWTControl) (event.widget != null ? event.widget.delegate : null));
                 if (c != down && ((SWTShell) (c.getShell())) != popupShell)
                     dropDownCalendar(false);

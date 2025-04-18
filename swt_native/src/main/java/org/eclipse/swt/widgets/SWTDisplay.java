@@ -5211,9 +5211,9 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
             System.arraycopy(eventQueue, 1, eventQueue, 0, --length);
             eventQueue[length] = null;
             /* Run the event */
-            SWTWidget widget = (SWTWidget) (event.widget != Widget.getInstance(null) ? event.widget.delegate : null);
+            SWTWidget widget = (SWTWidget) (event.widget != null ? event.widget.delegate : null);
             if (widget != null && !widget.isDisposed()) {
-                SWTWidget item = (SWTWidget) (event.item != Widget.getInstance(null) ? event.item.delegate : null);
+                SWTWidget item = (SWTWidget) (event.item != null ? event.item.delegate : null);
                 if (item == null || !item.isDisposed()) {
                     run = true;
                     widget.sendEvent(event);
