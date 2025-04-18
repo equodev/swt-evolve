@@ -1099,7 +1099,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Point map(Control from, Control to, Point point) {
-        return ((IDisplay) this.delegate).map((IControl) from.delegate, (IControl) to.delegate, point);
+        return ((IDisplay) this.delegate).map((IControl) (from != null ? from.delegate : null), (IControl) (to != null ? to.delegate : null), point);
     }
 
     /**
