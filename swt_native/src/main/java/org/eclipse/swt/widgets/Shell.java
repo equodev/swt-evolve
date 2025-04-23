@@ -337,7 +337,7 @@ public class Shell extends Decorations {
      * @see SWT#SHEET
      */
     public Shell(Shell parent, int style) {
-        this(new SWTShell((SWTShell) parent.delegate, style));
+        this(new SWTShell((SWTShell) (parent != null ? parent.delegate : null), style));
     }
 
     /**

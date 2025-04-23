@@ -2127,7 +2127,7 @@ public class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setMenu(Menu menu) {
-        ((IControl) this.delegate).setMenu((IMenu) menu.delegate);
+        ((IControl) this.delegate).setMenu((IMenu) (menu != null ? menu.delegate : null));
     }
 
     /**

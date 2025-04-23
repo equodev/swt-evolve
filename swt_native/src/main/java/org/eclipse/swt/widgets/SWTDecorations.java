@@ -605,6 +605,7 @@ public class SWTDecorations extends SWTCanvas implements IDecorations {
      * </ul>
      */
     public void setDefaultButton(IButton button_) {
+        if (!(button_ instanceof SWTButton)) return;
         SWTButton button = (SWTButton) button_;
         checkWidget();
         long buttonHandle = 0;
