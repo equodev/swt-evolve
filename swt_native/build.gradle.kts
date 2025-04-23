@@ -67,6 +67,12 @@ val swtSources by configurations.creating {
 dependencies {
     swtImplementation("$swtBundle:$swtVersion")
     swtSources("$swtBundle:$swtVersion:sources")
+    implementation("dev.equo:com.equo.comm.ws.provider:3.1.0.202405302201") {
+        exclude(group = "dev.equo", module = "com.equo.comm.common")
+    }
+
+    implementation("com.google.auto.value:auto-value-annotations:1.10.4")
+    annotationProcessor("com.google.auto.value:auto-value:1.10.4")
 }
 
 val extractNatives by tasks.registering {

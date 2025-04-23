@@ -1,0 +1,2 @@
+all:
+	flutter build linux
