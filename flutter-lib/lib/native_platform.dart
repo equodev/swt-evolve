@@ -10,18 +10,18 @@ int? getWidgetId(List<String> args) {
   return null;
 }
 
+String? getWidgetName(List<String> args) {
+    if (args.length >= 2) {
+        return args[2];
+    }
+    return null;
+}
+
 String? getTheme(List<String> args) {
 //  if (args.length >= 2) {
 //    return args[2];
 //  }
 //  return null;
-}
-
-void preRunApp(int? widgetId) async {
-  //await windowManager.ensureInitialized();
-
-  //listener = ShellListener();
-  //windowManager.addListener(listener!);
 }
 
 void close() {

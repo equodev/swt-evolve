@@ -38,7 +38,7 @@ import org.eclipse.swt.graphics.*;
  */
 public class SWTCoolItem extends SWTItem implements ICoolItem {
 
-    SWTControl control;
+    IControl control;
 
     SWTCoolBar parent;
 
@@ -54,7 +54,7 @@ public class SWTCoolItem extends SWTItem implements ICoolItem {
 
     static final int MINIMUM_WIDTH = (2 * MARGIN_WIDTH) + GRABBER_WIDTH;
 
-    //platform dependent values
+    //platform dependent values2
     private int CHEVRON_HORIZONTAL_TRIM = -1;
 
     private int CHEVRON_VERTICAL_TRIM = -1;
@@ -497,13 +497,12 @@ public class SWTCoolItem extends SWTItem implements ICoolItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setControl(IControl control_) {
-        SWTControl control = (SWTControl) control_;
+    public void setControl(IControl control) {
         checkWidget();
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if (control.parent != parent)
+            if (control.getParent() != parent)
                 error(SWT.ERROR_INVALID_PARENT);
         }
         this.control = control;

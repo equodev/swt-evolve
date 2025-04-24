@@ -377,8 +377,8 @@ public class SWTTabFolder extends SWTComposite implements ITabFolder {
     }
 
     @Override
-    SWTControl[] _getChildren() {
-        SWTControl[] directChildren = (SWTControl[]) (super._getChildren());
+    IControl[] _getChildren() {
+        IControl[] directChildren = super._getChildren();
         int directCount = directChildren.length;
         int itemCount = items == null ? 0 : items.length;
         SWTControl[] children = new SWTControl[itemCount + directCount];
@@ -415,11 +415,11 @@ public class SWTTabFolder extends SWTComposite implements ITabFolder {
         if (childrenCount == itemCount + directCount) {
             return children;
         } else {
-            SWTControl[] newChildren;
+            IControl[] newChildren;
             if (childrenCount == itemCount) {
                 newChildren = children;
             } else {
-                newChildren = new SWTControl[childrenCount + directCount];
+                newChildren = new IControl[childrenCount + directCount];
                 System.arraycopy(children, 0, newChildren, 0, childrenCount);
             }
             System.arraycopy(directChildren, 0, newChildren, childrenCount, directCount);
@@ -657,10 +657,10 @@ public class SWTTabFolder extends SWTComposite implements ITabFolder {
 
     @Override
     Point minimumSize(int wHint, int hHint, boolean flushCache) {
-        SWTControl[] children = (SWTControl[]) (_getChildren());
+        IControl[] children = _getChildren();
         int width = 0, height = 0;
         for (int i = 0; i < children.length; i++) {
-            SWTControl child = (SWTControl) (children[i]);
+            IControl child = children[i];
             int index = 0;
             int count = getItemCount();
             while (index < count) {

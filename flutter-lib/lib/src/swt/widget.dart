@@ -51,6 +51,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends WidgetValue>
     print('On Widget Change, payload: $payload');
 
     _setValue(payload);
+    print("Widget new state: ${state}");
   }
 
   void _setValue(V value) {

@@ -354,7 +354,7 @@ public class SWTTabItem extends SWTItem implements ITabItem {
                 newControl.setVisible(true);
             }
             if ((oldControl != null) && (oldControl != newControl)) {
-                SWTControl.gtk_widget_reparent(oldControl, parent.parentingHandle());
+//                SWTControl.gtk_widget_reparent(oldControl, parent.parentingHandle());
                 if (newControl != null) {
                     oldControl.setVisible(false);
                 }

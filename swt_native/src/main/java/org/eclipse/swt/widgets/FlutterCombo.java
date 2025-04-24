@@ -1,29 +1,15 @@
-/**
- * ****************************************************************************
- *  Copyright (c) 2000, 2020 IBM Corporation and others.
- *
- *  This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License 2.0
- *  which accompanies this distribution, and is available at
- *  https://www.eclipse.org/legal/epl-2.0/
- *
- *  SPDX-License-Identifier: EPL-2.0
- *
- *  Contributors:
- *      IBM Corporation - initial API and implementation
- *      Lars Vogel <Lars.Vogel@vogella.com> - Bug 483540
- * *****************************************************************************
- */
 package org.eclipse.swt.widgets;
 
-import org.eclipse.swt.*;
-import org.eclipse.swt.events.*;
-import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
+import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.SegmentEvent;
+import org.eclipse.swt.events.SegmentListener;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.events.VerifyListener;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.values.ComboValue;
 
 /**
  * Instances of this class are controls that allow the user
@@ -64,7 +50,24 @@ import java.util.WeakHashMap;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Combo extends Composite {
+public class FlutterCombo extends FlutterComposite implements ICombo {
+
+    int lastEventTime, visibleCount = 10;
+
+    /**
+     * the operating system limit for the number of characters
+     * that the text field in an instance of this class can hold
+     */
+    public final static int LIMIT;
+
+    /*
+	* These values can be different on different platforms.
+	* Therefore they are not initialized in the declaration
+	* to stop the compiler from inlining.
+	*/
+    static {
+        LIMIT = 0xFFFF;
+    }
 
     /**
      * Constructs a new instance of this class given its parent
@@ -96,8 +99,8 @@ public class Combo extends Composite {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public Combo(Composite parent, int style) {
-        this(new FlutterCombo((SWTComposite) parent.delegate, style));
+    public FlutterCombo(IComposite parent, int style) {
+        super(parent, checkStyle(style));
     }
 
     /**
@@ -119,7 +122,6 @@ public class Combo extends Composite {
      * @see #add(String,int)
      */
     public void add(String string) {
-        ((ICombo) this.delegate).add(string);
     }
 
     /**
@@ -149,7 +151,6 @@ public class Combo extends Composite {
      * @see #add(String)
      */
     public void add(String string, int index) {
-        ((ICombo) this.delegate).add(string, index);
     }
 
     /**
@@ -172,7 +173,11 @@ public class Combo extends Composite {
      * @see #removeModifyListener
      */
     public void addModifyListener(ModifyListener listener) {
-        ((ICombo) this.delegate).addModifyListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.Modify, typedListener);
     }
 
     /**
@@ -210,7 +215,7 @@ public class Combo extends Composite {
      * @since 3.103
      */
     public void addSegmentListener(SegmentListener listener) {
-        ((ICombo) this.delegate).addSegmentListener(listener);
+        checkWidget();
     }
 
     /**
@@ -238,7 +243,12 @@ public class Combo extends Composite {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ICombo) this.delegate).addSelectionListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.Selection, typedListener);
+        addListener(SWT.DefaultSelection, typedListener);
     }
 
     /**
@@ -263,7 +273,39 @@ public class Combo extends Composite {
      * @since 3.1
      */
     public void addVerifyListener(VerifyListener listener) {
-        ((ICombo) this.delegate).addVerifyListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.Verify, typedListener);
+    }
+
+    static int checkStyle(int style) {
+        /*
+	* Feature in Windows.  It is not possible to create
+	* a combo box that has a border using Windows style
+	* bits.  All combo boxes draw their own border and
+	* do not use the standard Windows border styles.
+	* Therefore, no matter what style bits are specified,
+	* clear the BORDER bits so that the SWT style will
+	* match the Windows widget.
+	*
+	* The Windows behavior is currently implemented on
+	* all platforms.
+	*/
+        style &= ~SWT.BORDER;
+        /*
+	* Even though it is legal to create this widget
+	* with scroll bars, they serve no useful purpose
+	* because they do not automatically scroll the
+	* widget's client area.  The fix is to clear
+	* the SWT style.
+	*/
+        style &= ~(SWT.H_SCROLL | SWT.V_SCROLL);
+        style = checkBits(style, SWT.DROP_DOWN, SWT.SIMPLE, 0, 0, 0, 0);
+        if ((style & SWT.SIMPLE) != 0)
+            return style & ~SWT.READ_ONLY;
+        return style;
     }
 
     /**
@@ -284,7 +326,6 @@ public class Combo extends Composite {
      * @see #deselectAll
      */
     public void clearSelection() {
-        ((ICombo) this.delegate).clearSelection();
     }
 
     /**
@@ -301,7 +342,6 @@ public class Combo extends Composite {
      * @since 2.1
      */
     public void copy() {
-        ((ICombo) this.delegate).copy();
     }
 
     /**
@@ -319,7 +359,46 @@ public class Combo extends Composite {
      * @since 2.1
      */
     public void cut() {
-        ((ICombo) this.delegate).cut();
+    }
+
+    @Override
+    protected void hookEvents() {
+        super.hookEvents();
+        String ev = FlutterSwt.getEvent(this);
+        FlutterSwt.CLIENT.getComm().on(ev + "/Modify/Modify", p -> {
+            System.out.println(ev + "/Modify/Modify event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.Modify);
+            });
+        });
+        FlutterSwt.CLIENT.getComm().on(ev + "/Segment/Segments", p -> {
+            System.out.println(ev + "/Segment/Segments event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.Segments);
+            });
+        });
+        FlutterSwt.CLIENT.getComm().on(ev + "/Selection/Selection", p -> {
+            System.out.println(ev + "/Selection/Selection event");
+            display.asyncExec(() -> {
+                builder().setText(p);
+                sendEvent(SWT.Selection);
+            });
+        });
+        FlutterSwt.CLIENT.getComm().on(ev + "/Selection/DefaultSelection", p -> {
+            System.out.println(ev + "/Selection/DefaultSelection event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection);
+            });
+        });
+        FlutterSwt.CLIENT.getComm().on(ev + "/Verify/Verify", p -> {
+            System.out.println(ev + "/Verify/Verify event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.Verify);
+            });
+        });
+    }
+
+    void hookEvents(long[] handles) {
     }
 
     /**
@@ -335,7 +414,6 @@ public class Combo extends Composite {
      * </ul>
      */
     public void deselect(int index) {
-        ((ICombo) this.delegate).deselect(index);
     }
 
     /**
@@ -353,7 +431,6 @@ public class Combo extends Composite {
      * @see #clearSelection
      */
     public void deselectAll() {
-        ((ICombo) this.delegate).deselectAll();
     }
 
     /**
@@ -370,7 +447,7 @@ public class Combo extends Composite {
      * @since 3.8
      */
     public Point getCaretLocation() {
-        return ((ICombo) this.delegate).getCaretLocation();
+        return null;
     }
 
     /**
@@ -389,7 +466,7 @@ public class Combo extends Composite {
      * @since 3.8
      */
     public int getCaretPosition() {
-        return ((ICombo) this.delegate).getCaretPosition();
+        return -1;
     }
 
     /**
@@ -409,7 +486,8 @@ public class Combo extends Composite {
      * </ul>
      */
     public String getItem(int index) {
-        return ((ICombo) this.delegate).getItem(index);
+        // Not Generated
+        return getItems()[0];
     }
 
     /**
@@ -423,7 +501,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public int getItemCount() {
-        return ((ICombo) this.delegate).getItemCount();
+        return -1;
     }
 
     /**
@@ -438,7 +516,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public int getItemHeight() {
-        return ((ICombo) this.delegate).getItemHeight();
+        return -1;
     }
 
     /**
@@ -458,7 +536,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public String[] getItems() {
-        return ((ICombo) this.delegate).getItems();
+        return builder().getItems().orElse(new String[] {});
     }
 
     /**
@@ -481,7 +559,7 @@ public class Combo extends Composite {
      * @since 3.4
      */
     public boolean getListVisible() {
-        return ((ICombo) this.delegate).getListVisible();
+        return builder().getListVisible().orElse(false);
     }
 
     /**
@@ -498,7 +576,7 @@ public class Combo extends Composite {
      */
     @Override
     public int getOrientation() {
-        return ((ICombo) this.delegate).getOrientation();
+        return builder().getOrientation().orElse(0);
     }
 
     /**
@@ -521,7 +599,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public Point getSelection() {
-        return ((ICombo) this.delegate).getSelection();
+        return null;
     }
 
     /**
@@ -536,7 +614,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public int getSelectionIndex() {
-        return ((ICombo) this.delegate).getSelectionIndex();
+        return builder().getSelectionIndex().orElse(0);
     }
 
     /**
@@ -552,7 +630,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public String getText() {
-        return ((ICombo) this.delegate).getText();
+        return builder().getText().orElse(null);
     }
 
     /**
@@ -566,7 +644,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public int getTextHeight() {
-        return ((ICombo) this.delegate).getTextHeight();
+        return -1;
     }
 
     /**
@@ -585,7 +663,7 @@ public class Combo extends Composite {
      * @see #LIMIT
      */
     public int getTextLimit() {
-        return ((ICombo) this.delegate).getTextLimit();
+        return builder().getTextLimit().orElse(0);
     }
 
     /**
@@ -606,7 +684,7 @@ public class Combo extends Composite {
      * @since 3.0
      */
     public int getVisibleItemCount() {
-        return ((ICombo) this.delegate).getVisibleItemCount();
+        return builder().getVisibleItemCount().orElse(0);
     }
 
     /**
@@ -627,7 +705,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public int indexOf(String string) {
-        return ((ICombo) this.delegate).indexOf(string);
+        return -1;
     }
 
     /**
@@ -650,7 +728,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public int indexOf(String string, int start) {
-        return ((ICombo) this.delegate).indexOf(string, start);
+        return -1;
     }
 
     /**
@@ -668,7 +746,6 @@ public class Combo extends Composite {
      * @since 2.1
      */
     public void paste() {
-        ((ICombo) this.delegate).paste();
     }
 
     /**
@@ -686,7 +763,6 @@ public class Combo extends Composite {
      * </ul>
      */
     public void remove(int index) {
-        ((ICombo) this.delegate).remove(index);
     }
 
     /**
@@ -706,7 +782,6 @@ public class Combo extends Composite {
      * </ul>
      */
     public void remove(int start, int end) {
-        ((ICombo) this.delegate).remove(start, end);
     }
 
     /**
@@ -726,7 +801,6 @@ public class Combo extends Composite {
      * </ul>
      */
     public void remove(String string) {
-        ((ICombo) this.delegate).remove(string);
     }
 
     /**
@@ -738,7 +812,6 @@ public class Combo extends Composite {
      * </ul>
      */
     public void removeAll() {
-        ((ICombo) this.delegate).removeAll();
     }
 
     /**
@@ -759,7 +832,12 @@ public class Combo extends Composite {
      * @see #addModifyListener
      */
     public void removeModifyListener(ModifyListener listener) {
-        ((ICombo) this.delegate).removeModifyListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Modify, listener);
     }
 
     /**
@@ -783,7 +861,7 @@ public class Combo extends Composite {
      * @since 3.103
      */
     public void removeSegmentListener(SegmentListener listener) {
-        ((ICombo) this.delegate).removeSegmentListener(listener);
+        checkWidget();
     }
 
     /**
@@ -804,7 +882,13 @@ public class Combo extends Composite {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ICombo) this.delegate).removeSelectionListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Selection, listener);
+        eventTable.unhook(SWT.DefaultSelection, listener);
     }
 
     /**
@@ -827,7 +911,12 @@ public class Combo extends Composite {
      * @since 3.1
      */
     public void removeVerifyListener(VerifyListener listener) {
-        ((ICombo) this.delegate).removeVerifyListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Verify, listener);
     }
 
     /**
@@ -843,7 +932,9 @@ public class Combo extends Composite {
      * </ul>
      */
     public void select(int index) {
-        ((ICombo) this.delegate).select(index);
+        builder().getItems().ifPresent(selected -> setText(selected[index]));
+        builder().setSelectionIndex(index);
+        FlutterSwt.dirty(this);
     }
 
     /**
@@ -863,7 +954,6 @@ public class Combo extends Composite {
      * </ul>
      */
     public void setItem(int index, String string) {
-        ((ICombo) this.delegate).setItem(index, string);
     }
 
     /**
@@ -881,7 +971,8 @@ public class Combo extends Composite {
      * </ul>
      */
     public void setItems(String... items) {
-        ((ICombo) this.delegate).setItems(items);
+        builder().setItems(items);
+        FlutterSwt.dirty(this);
     }
 
     /**
@@ -903,7 +994,8 @@ public class Combo extends Composite {
      * @since 3.4
      */
     public void setListVisible(boolean visible) {
-        ((ICombo) this.delegate).setListVisible(visible);
+        builder().setListVisible(visible);
+        FlutterSwt.dirty(this);
     }
 
     /**
@@ -921,7 +1013,8 @@ public class Combo extends Composite {
      */
     @Override
     public void setOrientation(int orientation) {
-        ((ICombo) this.delegate).setOrientation(orientation);
+        builder().setOrientation(orientation);
+        FlutterSwt.dirty(this);
     }
 
     /**
@@ -941,7 +1034,6 @@ public class Combo extends Composite {
      * </ul>
      */
     public void setSelection(Point selection) {
-        ((ICombo) this.delegate).setSelection(selection);
     }
 
     /**
@@ -973,7 +1065,8 @@ public class Combo extends Composite {
      * </ul>
      */
     public void setText(String string) {
-        ((ICombo) this.delegate).setText(string);
+        builder().setText(string);
+        FlutterSwt.dirty(this);
     }
 
     /**
@@ -997,7 +1090,8 @@ public class Combo extends Composite {
      * @see #LIMIT
      */
     public void setTextLimit(int limit) {
-        ((ICombo) this.delegate).setTextLimit(limit);
+        builder().setTextLimit(limit);
+        FlutterSwt.dirty(this);
     }
 
     /**
@@ -1018,23 +1112,13 @@ public class Combo extends Composite {
      * @since 3.0
      */
     public void setVisibleItemCount(int count) {
-        ((ICombo) this.delegate).setVisibleItemCount(count);
+        builder().setVisibleItemCount(count);
+        FlutterSwt.dirty(this);
     }
 
-    protected Combo(ICombo delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
-    }
-
-    public static Combo getInstance(ICombo delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Combo ref = (Combo) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Combo(delegate);
-        }
-        return ref;
+    public ComboValue.Builder builder() {
+        if (builder == null)
+            builder = ComboValue.builder().setId(handle).setStyle(style);
+        return (ComboValue.Builder) builder;
     }
 }

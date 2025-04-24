@@ -9,6 +9,7 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
     extends ControlImpl<T, V> {
   @override
   Widget build(BuildContext context) {
+    print("Building button!!!!! Text: ${state.text}");
     var bits = SWT.ARROW | SWT.TOGGLE | SWT.CHECK | SWT.RADIO | SWT.PUSH;
     var enabled = state.enabled ?? true;
     return switch (state.style & bits) {

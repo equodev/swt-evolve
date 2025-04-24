@@ -206,7 +206,7 @@ public class SWTComposite extends SWTScrollable implements IComposite {
             OS.g_list_free(list);
             if (i == count)
                 return children;
-            SWTControl[] newChildren = new SWTControl[i];
+            IControl[] newChildren = new IControl[i];
             System.arraycopy(children, 0, newChildren, 0, i);
             return newChildren;
         }
@@ -467,12 +467,12 @@ public class SWTComposite extends SWTScrollable implements IComposite {
         if (fixClipHandle == 0 || fixClipMap.isEmpty()) {
             return;
         } else {
-            SWTControl[] children = (SWTControl[]) (_getChildren());
-            for (SWTControl child : children) {
+            IControl[] children = _getChildren();
+            for (IControl child : children) {
                 if (fixClipMap.containsKey(child)) {
                     long[] childHandles = fixClipMap.get(child);
                     for (long widget : childHandles) {
-                        child.adjustChildClipping(widget);
+                        ((SWTControl)child).adjustChildClipping(widget);
                     }
                 }
             }
@@ -1327,44 +1327,46 @@ public class SWTComposite extends SWTScrollable implements IComposite {
         checkWidget();
         if (changed != null) {
             for (int i = 0; i < changed.length; i++) {
-                SWTControl control = (SWTControl) (changed[i]);
+                IControl control = changed[i];
                 if (control == null)
                     error(SWT.ERROR_INVALID_ARGUMENT);
                 if (control.isDisposed())
                     error(SWT.ERROR_INVALID_ARGUMENT);
                 boolean ancestor = false;
-                SWTComposite composite = control.parent;
+                IComposite composite = control.getParent();
                 while (composite != null) {
                     ancestor = composite == this;
                     if (ancestor)
                         break;
-                    composite = composite.parent;
+                    composite = composite.getParent();
                 }
                 if (!ancestor)
                     error(SWT.ERROR_INVALID_PARENT);
             }
             int updateCount = 0;
-            SWTComposite[] update = new SWTComposite[16];
+            IComposite[] update = new IComposite[16];
             for (int i = 0; i < changed.length; i++) {
-                SWTControl child = (SWTControl) (changed[i]);
-                SWTComposite composite = child.parent;
-                // Update layout when the list of children has changed.
-                // See bug 497812.
-                child.markLayout(false, false);
-                while (child != this) {
-                    if (composite.layout != null) {
-                        composite.state |= LAYOUT_NEEDED;
-                        if (!composite.layout.flushCache(child)) {
-                            composite.state |= LAYOUT_CHANGED;
+                IControl iChild = (IControl) (changed[i]);
+                IComposite iComposite = iChild.getParent();
+                if (iChild instanceof SWTControl child && iComposite instanceof SWTComposite composite) {
+                    // Update layout when the list of children has changed.
+                    // See bug 497812.
+                    child.markLayout(false, false);
+                    while (child != this) {
+                        if (composite.layout != null) {
+                            composite.state |= LAYOUT_NEEDED;
+                            if (!composite.layout.flushCache(child)) {
+                                composite.state |= LAYOUT_CHANGED;
+                            }
                         }
+                        if (updateCount == update.length) {
+                            IComposite[] newUpdate = new IComposite[update.length + 16];
+                            System.arraycopy(update, 0, newUpdate, 0, update.length);
+                            update = newUpdate;
+                        }
+                        iChild = update[updateCount++] = composite;
+                        composite = child.parent;
                     }
-                    if (updateCount == update.length) {
-                        SWTComposite[] newUpdate = new SWTComposite[update.length + 16];
-                        System.arraycopy(update, 0, newUpdate, 0, update.length);
-                        update = newUpdate;
-                    }
-                    child = update[updateCount++] = composite;
-                    composite = child.parent;
                 }
             }
             if (!display.externalEventLoop && (flags & SWT.DEFER) != 0) {
@@ -1372,7 +1374,9 @@ public class SWTComposite extends SWTScrollable implements IComposite {
                 display.addLayoutDeferred(this);
             }
             for (int i = updateCount - 1; i >= 0; i--) {
-                update[i].updateLayout(false);
+                if (update[i] instanceof SWTComposite composite) {
+                    composite.updateLayout(false);
+                }
             }
         } else {
             if (layout == null && (flags & SWT.ALL) == 0)
@@ -1588,12 +1592,13 @@ public class SWTComposite extends SWTScrollable implements IComposite {
     @Override
     void redrawChildren() {
         super.redrawChildren();
-        SWTControl[] children = (SWTControl[]) (_getChildren());
+        IControl[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
-            SWTControl child = (SWTControl) (children[i]);
-            if ((child.state & PARENT_BACKGROUND) != 0) {
-                child.redrawWidget(0, 0, 0, 0, true, false, true);
-                child.redrawChildren();
+            if (children[i] instanceof SWTControl child) {
+                if ((child.state & PARENT_BACKGROUND) != 0) {
+                    child.redrawWidget(0, 0, 0, 0, true, false, true);
+                    child.redrawChildren();
+                }
             }
         }
     }
@@ -1682,9 +1687,11 @@ public class SWTComposite extends SWTScrollable implements IComposite {
     public void setBackgroundMode(int mode) {
         checkWidget();
         backgroundMode = mode;
-        SWTControl[] children = (SWTControl[]) (_getChildren());
+        IControl[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
-            children[i].updateBackgroundMode();
+            if (children[i] instanceof SWTControl child) {
+                child.updateBackgroundMode();
+            }
         }
     }
 
@@ -1933,9 +1940,11 @@ public class SWTComposite extends SWTScrollable implements IComposite {
     @Override
     void updateBackgroundMode() {
         super.updateBackgroundMode();
-        SWTControl[] children = (SWTControl[]) (_getChildren());
+        IControl[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
-            children[i].updateBackgroundMode();
+            if (children[i] instanceof SWTControl child) {
+                child.updateBackgroundMode();
+            }
         }
     }
 

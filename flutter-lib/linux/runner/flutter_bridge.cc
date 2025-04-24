@@ -8,19 +8,22 @@
 #include "flutter/generated_plugin_registrant.h"
 
 JNIEXPORT jlong JNICALL
-Java_org_eclipse_swt_widgets_FlutterButton_InitializeFlutterWindow(
-    JNIEnv *env, jclass cls, void *parent, jint port, jlong widget_id) {
-  return (jlong)InitializeFlutterWindow(parent, port, widget_id);
+Java_org_eclipse_swt_widgets_FlutterSwt_InitializeFlutterWindow(
+    JNIEnv *env, jclass cls, void *parent, jint port, jlong widget_id, jstring widget_name) {
+  const char* widget_name_cstr = env->GetStringUTFChars(widget_name, NULL);
+  jlong result = (jlong)InitializeFlutterWindow(parent, port, widget_id, widget_name_cstr);
+  env->ReleaseStringUTFChars(widget_name, widget_name_cstr);
+  return result;
 }
 
 JNIEXPORT void JNICALL
-Java_org_eclipse_swt_widgets_FlutterButton_Main_CloseFlutterWindow(JNIEnv *env,
+Java_org_eclipse_swt_widgets_FlutterSwt_Main_CloseFlutterWindow(JNIEnv *env,
                                                                    jclass cls) {
   CloseFlutterWindow();
 }
 
 JNIEXPORT jboolean JNICALL
-Java_org_eclipse_swt_widgets_FlutterButton_IsFlutterWindowVisible(JNIEnv *env,
+Java_org_eclipse_swt_widgets_FlutterSwt_IsFlutterWindowVisible(JNIEnv *env,
                                                                   jclass cls) {
   return static_cast<jboolean>(IsFlutterWindowVisible());
 }
@@ -46,7 +49,7 @@ void on_parent_size_allocate(GtkWidget *widget, GtkAllocation *allocation, gpoin
 }
 
 
-uintptr_t InitializeFlutterWindow(void *parentWnd, jint port, jlong widget_id) {
+uintptr_t InitializeFlutterWindow(void *parentWnd, jint port, jlong widget_id, const char *widget_name) {
   /*
    * NOTE(elias): SWT initializes GTK using gtk_init_check() and that doesn't
    * create a default instance of GApplication or GtkApplication. So just create
@@ -79,10 +82,11 @@ uintptr_t InitializeFlutterWindow(void *parentWnd, jint port, jlong widget_id) {
     char widget_id_c[256];
     sprintf(widget_id_c, "%ld", widget_id);
 
-    char *args[3];
+    char *args[4];
     args[0] = port_c;
     args[1] = widget_id_c;
-    args[2] = 0;
+    args[2] = (char *)widget_name;
+    args[3] = 0;
 
     fl_dart_project_set_dart_entrypoint_arguments(project, args);
     //context.project = project;

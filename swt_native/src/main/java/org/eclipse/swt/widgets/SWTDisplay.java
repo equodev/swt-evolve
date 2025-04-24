@@ -4659,7 +4659,7 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
      * @see #wake
      */
     public boolean readAndDispatch() {
-        FlutterButton.handleDirty();
+        FlutterSwt.handleDirty();
         checkDevice();
         runSkin();
         runDeferredLayouts();

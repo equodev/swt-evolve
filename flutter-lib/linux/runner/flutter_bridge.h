@@ -14,13 +14,13 @@
 extern "C" {
 #endif
 
-JNIEXPORT jlong JNICALL Java_org_eclipse_swt_widgets_FlutterButton_InitializeFlutterWindow(JNIEnv* env, jclass cls, void* parent, jint port, jlong widget_id);
+JNIEXPORT jlong JNICALL Java_org_eclipse_swt_widgets_FlutterSwt_InitializeFlutterWindow(JNIEnv* env, jclass cls, void* parent, jint port, jlong widget_id, jstring widget_name);
 
 // Optional: Other functions following the same pattern
-JNIEXPORT void JNICALL Java_org_eclipse_swt_widgets_FlutterButton_Main_CloseFlutterWindow(JNIEnv* env, jclass cls);
-JNIEXPORT jboolean JNICALL Java_org_eclipse_swt_widgets_FlutterButton_IsFlutterWindowVisible(JNIEnv* env, jclass cls);
+JNIEXPORT void JNICALL Java_org_eclipse_swt_widgets_FlutterSwt_Main_CloseFlutterWindow(JNIEnv* env, jclass cls);
+JNIEXPORT jboolean JNICALL Java_org_eclipse_swt_widgets_FlutterSwt_IsFlutterWindowVisible(JNIEnv* env, jclass cls);
 
-FLUTTER_LIBRARY_API uintptr_t InitializeFlutterWindow(void* parentWnd, jint port, jlong widget_id);
+FLUTTER_LIBRARY_API uintptr_t InitializeFlutterWindow(void* parentWnd, jint port, jlong widget_id, const char *widget_name);
 FLUTTER_LIBRARY_API void CloseFlutterWindow();
 FLUTTER_LIBRARY_API bool IsFlutterWindowVisible();
 
