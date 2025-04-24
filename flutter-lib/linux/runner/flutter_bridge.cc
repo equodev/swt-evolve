@@ -122,12 +122,17 @@ uintptr_t InitializeFlutterWindow(void *parentWnd, jint port, jlong widget_id) {
   g_signal_connect(parent_widget, "size-allocate", 
                    G_CALLBACK(on_parent_size_allocate), view_widget);
 
-  gtk_container_add(GTK_CONTAINER(parent_widget), view_widget);
+  GtkWidget *fl_container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  gtk_widget_set_hexpand(view_widget, TRUE);
+  gtk_widget_set_vexpand(view_widget, TRUE);
+  gtk_container_add(GTK_CONTAINER(fl_container), view_widget);
+
+  gtk_container_add(GTK_CONTAINER(parent_widget), fl_container);
+  //gtk_fixed_put(GTK_FIXED(parent_widget), view_widget, 0, 0);
 
   GtkAllocation parent_allocation;
   gtk_widget_get_allocation(parent_widget, &parent_allocation);
 
-  // gtk_fixed_put(GTK_FIXED(parent_widget), view_widget, 0, 0);
   //gtk_widget_set_size_request(view_widget, parent_allocation.width,
   //                            parent_allocation.height);
 
@@ -135,9 +140,10 @@ uintptr_t InitializeFlutterWindow(void *parentWnd, jint port, jlong widget_id) {
   // g_signal_connect(parent_widget, "size-allocate",
   // G_CALLBACK(on_parent_size_allocate), view_widget);
 
-  // gtk_widget_show_all(parent_widget);
+  gtk_widget_show_all(fl_container);
 
-  gtk_widget_show(view_widget);
+  //gtk_widget_show(view_widget);
+
 
   FlEngine *engine = fl_view_get_engine(view);
   if (!engine) {
