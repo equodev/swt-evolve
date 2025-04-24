@@ -459,7 +459,7 @@ public class Control extends Widget implements Drawable {
 
     @Override
     public boolean isAutoScalable() {
-        return ((IControl) this.delegate).isAutoScalable();
+        return ((Drawable) this.delegate).isAutoScalable();
     }
 
     /**
@@ -1737,7 +1737,7 @@ public class Control extends Widget implements Drawable {
      */
     @Override
     public long internal_new_GC(GCData data) {
-        return ((IControl) this.delegate).internal_new_GC(data);
+        return ((Drawable) this.delegate).internal_new_GC(data);
     }
 
     /**
@@ -1757,7 +1757,7 @@ public class Control extends Widget implements Drawable {
      */
     @Override
     public void internal_dispose_GC(long hDC, GCData data) {
-        ((IControl) this.delegate).internal_dispose_GC(hDC, data);
+        ((Drawable) this.delegate).internal_dispose_GC(hDC, data);
     }
 
     /**

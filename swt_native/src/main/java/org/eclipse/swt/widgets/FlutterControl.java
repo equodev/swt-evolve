@@ -1,18 +1,104 @@
 package org.eclipse.swt.widgets;
 
-import java.lang.reflect.*;
-import java.util.*;
-import org.eclipse.swt.*;
-import org.eclipse.swt.accessibility.*;
-import org.eclipse.swt.events.*;
-import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.cairo.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
+import org.eclipse.swt.accessibility.Accessible;
+import org.eclipse.swt.events.ControlListener;
+import org.eclipse.swt.events.DragDetectListener;
+import org.eclipse.swt.events.FocusListener;
+import org.eclipse.swt.events.GestureListener;
+import org.eclipse.swt.events.HelpListener;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.KeyListener;
+import org.eclipse.swt.events.MenuDetectListener;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
+import org.eclipse.swt.events.MouseMoveListener;
+import org.eclipse.swt.events.MouseTrackListener;
+import org.eclipse.swt.events.MouseWheelListener;
+import org.eclipse.swt.events.PaintListener;
+import org.eclipse.swt.events.TouchListener;
+import org.eclipse.swt.events.TraverseListener;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Cursor;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Region;
+import org.eclipse.swt.values.ControlValue;
 
-public interface IControl extends IWidget {
+/**
+ * Control is the abstract superclass of all windowed user interface classes.
+ * <dl>
+ * <dt><b>Styles:</b>
+ * <dd>BORDER</dd>
+ * <dd>LEFT_TO_RIGHT, RIGHT_TO_LEFT, FLIP_TEXT_DIRECTION</dd>
+ * <dt><b>Events:</b>
+ * <dd>DragDetect, FocusIn, FocusOut, Help, KeyDown, KeyUp, MenuDetect, MouseDoubleClick, MouseDown, MouseEnter,
+ *     MouseExit, MouseHover, MouseUp, MouseMove, MouseWheel, MouseHorizontalWheel, MouseVerticalWheel, Move,
+ *     Paint, Resize, Traverse</dd>
+ * </dl>
+ * <p>
+ * Only one of LEFT_TO_RIGHT or RIGHT_TO_LEFT may be specified.
+ * </p><p>
+ * IMPORTANT: This class is intended to be subclassed <em>only</em>
+ * within the SWT implementation.
+ * </p>
+ *
+ * @see <a href="http://www.eclipse.org/swt/snippets/#control">Control snippets</a>
+ * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
+ * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @noextend This class is not intended to be subclassed by clients.
+ */
+public abstract class FlutterControl extends FlutterWidget implements IControl {
+
+    IComposite parent;
+    
+    private Color backgroundColor;
+    protected SWTComposite parentComposite;
+
+    IMenu menu;
+
+    FlutterControl() {
+    }
+
+    /**
+     * Constructs a new instance of this class given its parent
+     * and a style value describing its behavior and appearance.
+     * <p>
+     * The style value is either one of the style constants defined in
+     * class <code>SWT</code> which is applicable to instances of this
+     * class, or must be built by <em>bitwise OR</em>'ing together
+     * (that is, using the <code>int</code> "|" operator) two or more
+     * of those <code>SWT</code> style constants. The class description
+     * lists the style constants that are applicable to the class.
+     * Style bits are also inherited from superclasses.
+     * </p>
+     *
+     * @param parent a composite control which will be the parent of the new instance (cannot be null)
+     * @param style the style of control to construct
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the parent</li>
+     *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
+     * </ul>
+     *
+     * @see SWT#BORDER
+     * @see SWT#LEFT_TO_RIGHT
+     * @see SWT#RIGHT_TO_LEFT
+     * @see Widget#checkSubclass
+     * @see Widget#getStyle
+     */
+    public FlutterControl(IComposite parent, int style) {
+        super(parent, style);
+        this.parent = parent;
+        createWidget(0);
+    }
 
     /**
      * Returns the orientation of the receiver, which will be one of the
@@ -27,7 +113,10 @@ public interface IControl extends IWidget {
      *
      * @since 3.7
      */
-    int getOrientation();
+    public int getOrientation() {
+        checkWidget();
+        return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+    }
 
     /**
      * Returns the text direction of the receiver, which will be one of the
@@ -42,7 +131,141 @@ public interface IControl extends IWidget {
      *
      * @since 3.102
      */
-    int getTextDirection();
+    public int getTextDirection() {
+        return builder().getTextDirection().orElse(0);
+    }
+
+    @Override
+    protected void hookEvents() {
+        super.hookEvents();
+        String ev = FlutterButton.getEvent(this);
+        FlutterButton.CLIENT.getComm().on(ev + "/Control/Resize", p -> {
+            System.out.println(ev + "/Control/Resize event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.Resize);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/Control/Move", p -> {
+            System.out.println(ev + "/Control/Move event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.Move);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/DragDetect/DragDetect", p -> {
+            System.out.println(ev + "/DragDetect/DragDetect event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.DragDetect);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/Focus/FocusIn", p -> {
+            System.out.println(ev + "/Focus/FocusIn event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.FocusIn);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/Focus/FocusOut", p -> {
+            System.out.println(ev + "/Focus/FocusOut event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.FocusOut);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/Gesture/Gesture", p -> {
+            System.out.println(ev + "/Gesture/Gesture event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.Gesture);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/Help/Help", p -> {
+            System.out.println(ev + "/Help/Help event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.Help);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/Key/KeyUp", p -> {
+            System.out.println(ev + "/Key/KeyUp event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.KeyUp);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/Key/KeyDown", p -> {
+            System.out.println(ev + "/Key/KeyDown event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.KeyDown);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/MenuDetect/MenuDetect", p -> {
+            System.out.println(ev + "/MenuDetect/MenuDetect event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.MenuDetect);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/Mouse/MouseDown", p -> {
+            System.out.println(ev + "/Mouse/MouseDown event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.MouseDown);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/Mouse/MouseUp", p -> {
+            System.out.println(ev + "/Mouse/MouseUp event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.MouseUp);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/Mouse/MouseDoubleClick", p -> {
+            System.out.println(ev + "/Mouse/MouseDoubleClick event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.MouseDoubleClick);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/MouseMove/MouseMove", p -> {
+            System.out.println(ev + "/MouseMove/MouseMove event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.MouseMove);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/MouseTrack/MouseEnter", p -> {
+            System.out.println(ev + "/MouseTrack/MouseEnter event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.MouseEnter);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/MouseTrack/MouseExit", p -> {
+            System.out.println(ev + "/MouseTrack/MouseExit event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.MouseExit);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/MouseTrack/MouseHover", p -> {
+            System.out.println(ev + "/MouseTrack/MouseHover event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.MouseHover);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/MouseWheel/MouseWheel", p -> {
+            System.out.println(ev + "/MouseWheel/MouseWheel event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.MouseWheel);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/Paint/Paint", p -> {
+            System.out.println(ev + "/Paint/Paint event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.Paint);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/Touch/Touch", p -> {
+            System.out.println(ev + "/Touch/Touch event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.Touch);
+            });
+        });
+        FlutterButton.CLIENT.getComm().on(ev + "/Traverse/Traverse", p -> {
+            System.out.println(ev + "/Traverse/Traverse event");
+            display.asyncExec(() -> {
+                sendEvent(SWT.Traverse);
+            });
+        });
+    }
 
     /**
      * Prints the receiver and all children.
@@ -61,7 +284,9 @@ public interface IControl extends IWidget {
      *
      * @since 3.4
      */
-    boolean print(GC gc);
+    public boolean print(GC gc) {
+        return false;
+    }
 
     /**
      * Returns the preferred size (in points) of the receiver.
@@ -90,7 +315,9 @@ public interface IControl extends IWidget {
      * @see #pack(boolean)
      * @see "computeTrim, getClientArea for controls that implement them"
      */
-    Point computeSize(int wHint, int hHint);
+    public Point computeSize(int wHint, int hHint) {
+        return new Point(200, 50);
+    }
 
     /**
      * Returns the preferred size (in points) of the receiver.
@@ -126,7 +353,10 @@ public interface IControl extends IWidget {
      * @see #pack(boolean)
      * @see "computeTrim, getClientArea for controls that implement them"
      */
-    Point computeSize(int wHint, int hHint, boolean changed);
+    public Point computeSize(int wHint, int hHint, boolean changed) {
+        // Not Generated
+        return new Point(200, 50);
+    }
 
     /**
      * Returns the accessible object for the receiver.
@@ -148,7 +378,11 @@ public interface IControl extends IWidget {
      *
      * @since 2.0
      */
-    Accessible getAccessible();
+    public Accessible getAccessible() {
+        // Not Generated
+//        return new Accessible();
+    	return null;
+    }
 
     /**
      * Returns a rectangle describing the receiver's size and location in points
@@ -163,7 +397,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Rectangle getBounds();
+    public Rectangle getBounds() {
+        return builder().getBounds().orElse(null);
+    }
 
     /**
      * Sets the receiver's size and location in points to the rectangular
@@ -188,7 +424,14 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setBounds(Rectangle rect);
+    public void setBounds(Rectangle rect) {
+        // Not Generated
+        builder().setBounds(rect);
+        if (this.parent instanceof FlutterWidget flutterParent) {
+        	FlutterButton.dirty(flutterParent);
+        }
+    	parentComposite.setBounds(rect);
+    }
 
     /**
      * Sets the receiver's size and location in points to the rectangular
@@ -218,7 +461,10 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setBounds(int x, int y, int width, int height);
+    public void setBounds(int x, int y, int width, int height) {
+        // Not Generated
+        setBounds(new Rectangle(x, y, width, height));
+    }
 
     /**
      * Returns a point describing the receiver's location relative
@@ -233,7 +479,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point getLocation();
+    public Point getLocation() {
+        return null;
+    }
 
     /**
      * Sets the receiver's location to the point specified by
@@ -249,7 +497,8 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setLocation(Point location);
+    public void setLocation(Point location) {
+    }
 
     /**
      * Sets the receiver's location to the point specified by
@@ -266,7 +515,8 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setLocation(int x, int y);
+    public void setLocation(int x, int y) {
+    }
 
     /**
      * Returns a point describing the receiver's size in points. The
@@ -281,7 +531,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point getSize();
+    public Point getSize() {
+        return null;
+    }
 
     /**
      * Sets the receiver's size to the point specified by the argument.
@@ -306,7 +558,8 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSize(Point size);
+    public void setSize(Point size) {
+    }
 
     /**
      * Sets the shape of the control to the region specified
@@ -325,7 +578,8 @@ public interface IControl extends IWidget {
      *
      * @since 3.4
      */
-    void setRegion(Region region);
+    public void setRegion(Region region) {
+    }
 
     /**
      * Sets the receiver's size to the point specified by the arguments.
@@ -348,7 +602,8 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSize(int width, int height);
+    public void setSize(int width, int height) {
+    }
 
     /**
      * Moves the receiver above the specified control in the
@@ -370,7 +625,15 @@ public interface IControl extends IWidget {
      * @see Control#moveBelow
      * @see Composite#getChildren
      */
-    void moveAbove(IControl control);
+    public void moveAbove(IControl control) {
+    	if (parent instanceof FlutterControl flutterParent) {
+	        int aboveIdx = flutterParent.children.indexOf(control);
+	        if (aboveIdx != -1) {
+	        	flutterParent.children.remove(this);
+	        	flutterParent.children.add(aboveIdx, this);
+	        }
+    	}
+    }
 
     /**
      * Moves the receiver below the specified control in the
@@ -392,7 +655,15 @@ public interface IControl extends IWidget {
      * @see Control#moveAbove
      * @see Composite#getChildren
      */
-    void moveBelow(IControl control);
+    public void moveBelow(IControl control) {
+		if (parent instanceof FlutterControl flutterParent) {
+			int aboveIdx = flutterParent.children.indexOf(control);
+			if (aboveIdx != -1) {
+				flutterParent.children.remove(this);
+				flutterParent.children.add(aboveIdx + 1, this);
+			}
+		}
+    }
 
     /**
      * Causes the receiver to be resized to its preferred size.
@@ -406,7 +677,8 @@ public interface IControl extends IWidget {
      *
      * @see #computeSize(int, int, boolean)
      */
-    void pack();
+    public void pack() {
+    }
 
     /**
      * Causes the receiver to be resized to its preferred size.
@@ -429,7 +701,8 @@ public interface IControl extends IWidget {
      *
      * @see #computeSize(int, int, boolean)
      */
-    void pack(boolean changed);
+    public void pack(boolean changed) {
+    }
 
     /**
      * Sets the layout data associated with the receiver to the argument.
@@ -441,7 +714,10 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setLayoutData(Object layoutData);
+    public void setLayoutData(Object layoutData) {
+        builder().setLayoutData(layoutData);
+        FlutterButton.dirty(this);
+    }
 
     /**
      * Returns a point which is the result of converting the
@@ -463,7 +739,9 @@ public interface IControl extends IWidget {
      *
      * @since 2.1
      */
-    Point toControl(int x, int y);
+    public Point toControl(int x, int y) {
+        return null;
+    }
 
     /**
      * Returns a point which is the result of converting the
@@ -485,7 +763,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point toControl(Point point);
+    public Point toControl(Point point) {
+        return null;
+    }
 
     /**
      * Returns a point which is the result of converting the
@@ -507,7 +787,9 @@ public interface IControl extends IWidget {
      *
      * @since 2.1
      */
-    Point toDisplay(int x, int y);
+    public Point toDisplay(int x, int y) {
+        return null;
+    }
 
     /**
      * Returns a point which is the result of converting the
@@ -529,7 +811,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point toDisplay(Point point);
+    public Point toDisplay(Point point) {
+        return null;
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -550,7 +834,14 @@ public interface IControl extends IWidget {
      * @see ControlListener
      * @see #removeControlListener
      */
-    void addControlListener(ControlListener listener);
+    public void addControlListener(ControlListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.Resize, typedListener);
+        addListener(SWT.Move, typedListener);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -573,7 +864,13 @@ public interface IControl extends IWidget {
      *
      * @since 3.3
      */
-    void addDragDetectListener(DragDetectListener listener);
+    public void addDragDetectListener(DragDetectListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.DragDetect, typedListener);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -594,7 +891,14 @@ public interface IControl extends IWidget {
      * @see FocusListener
      * @see #removeFocusListener
      */
-    void addFocusListener(FocusListener listener);
+    public void addFocusListener(FocusListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.FocusIn, typedListener);
+        addListener(SWT.FocusOut, typedListener);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -628,7 +932,13 @@ public interface IControl extends IWidget {
      *
      * @since 3.7
      */
-    void addGestureListener(GestureListener listener);
+    public void addGestureListener(GestureListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.Gesture, typedListener);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -649,7 +959,13 @@ public interface IControl extends IWidget {
      * @see HelpListener
      * @see #removeHelpListener
      */
-    void addHelpListener(HelpListener listener);
+    public void addHelpListener(HelpListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.Help, typedListener);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -681,7 +997,14 @@ public interface IControl extends IWidget {
      * @see KeyListener
      * @see #removeKeyListener
      */
-    void addKeyListener(KeyListener listener);
+    public void addKeyListener(KeyListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.KeyUp, typedListener);
+        addListener(SWT.KeyDown, typedListener);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -704,7 +1027,13 @@ public interface IControl extends IWidget {
      *
      * @since 3.3
      */
-    void addMenuDetectListener(MenuDetectListener listener);
+    public void addMenuDetectListener(MenuDetectListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.MenuDetect, typedListener);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -725,7 +1054,15 @@ public interface IControl extends IWidget {
      * @see MouseListener
      * @see #removeMouseListener
      */
-    void addMouseListener(MouseListener listener);
+    public void addMouseListener(MouseListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.MouseDown, typedListener);
+        addListener(SWT.MouseUp, typedListener);
+        addListener(SWT.MouseDoubleClick, typedListener);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -746,7 +1083,13 @@ public interface IControl extends IWidget {
      * @see MouseMoveListener
      * @see #removeMouseMoveListener
      */
-    void addMouseMoveListener(MouseMoveListener listener);
+    public void addMouseMoveListener(MouseMoveListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.MouseMove, typedListener);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -767,7 +1110,15 @@ public interface IControl extends IWidget {
      * @see MouseTrackListener
      * @see #removeMouseTrackListener
      */
-    void addMouseTrackListener(MouseTrackListener listener);
+    public void addMouseTrackListener(MouseTrackListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.MouseEnter, typedListener);
+        addListener(SWT.MouseExit, typedListener);
+        addListener(SWT.MouseHover, typedListener);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -790,7 +1141,13 @@ public interface IControl extends IWidget {
      *
      * @since 3.3
      */
-    void addMouseWheelListener(MouseWheelListener listener);
+    public void addMouseWheelListener(MouseWheelListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.MouseWheel, typedListener);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -811,7 +1168,13 @@ public interface IControl extends IWidget {
      * @see PaintListener
      * @see #removePaintListener
      */
-    void addPaintListener(PaintListener listener);
+    public void addPaintListener(PaintListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.Paint, typedListener);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -844,7 +1207,13 @@ public interface IControl extends IWidget {
      *
      * @since 3.7
      */
-    void addTouchListener(TouchListener listener);
+    public void addTouchListener(TouchListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.Touch, typedListener);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -865,7 +1234,13 @@ public interface IControl extends IWidget {
      * @see TraverseListener
      * @see #removeTraverseListener
      */
-    void addTraverseListener(TraverseListener listener);
+    public void addTraverseListener(TraverseListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        TypedListener typedListener = new TypedListener(listener);
+        addListener(SWT.Traverse, typedListener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -884,7 +1259,15 @@ public interface IControl extends IWidget {
      * @see ControlListener
      * @see #addControlListener
      */
-    void removeControlListener(ControlListener listener);
+    public void removeControlListener(ControlListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Move, listener);
+        eventTable.unhook(SWT.Resize, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -905,7 +1288,14 @@ public interface IControl extends IWidget {
      *
      * @since 3.3
      */
-    void removeDragDetectListener(DragDetectListener listener);
+    public void removeDragDetectListener(DragDetectListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.DragDetect, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -924,7 +1314,15 @@ public interface IControl extends IWidget {
      * @see FocusListener
      * @see #addFocusListener
      */
-    void removeFocusListener(FocusListener listener);
+    public void removeFocusListener(FocusListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.FocusIn, listener);
+        eventTable.unhook(SWT.FocusOut, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -945,7 +1343,14 @@ public interface IControl extends IWidget {
      *
      * @since 3.7
      */
-    void removeGestureListener(GestureListener listener);
+    public void removeGestureListener(GestureListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Gesture, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -964,7 +1369,14 @@ public interface IControl extends IWidget {
      * @see HelpListener
      * @see #addHelpListener
      */
-    void removeHelpListener(HelpListener listener);
+    public void removeHelpListener(HelpListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Help, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -983,7 +1395,15 @@ public interface IControl extends IWidget {
      * @see KeyListener
      * @see #addKeyListener
      */
-    void removeKeyListener(KeyListener listener);
+    public void removeKeyListener(KeyListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.KeyUp, listener);
+        eventTable.unhook(SWT.KeyDown, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -1005,7 +1425,14 @@ public interface IControl extends IWidget {
      *
      * @since 3.3
      */
-    void removeMenuDetectListener(MenuDetectListener listener);
+    public void removeMenuDetectListener(MenuDetectListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.MenuDetect, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -1024,7 +1451,16 @@ public interface IControl extends IWidget {
      * @see MouseListener
      * @see #addMouseListener
      */
-    void removeMouseListener(MouseListener listener);
+    public void removeMouseListener(MouseListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.MouseDown, listener);
+        eventTable.unhook(SWT.MouseUp, listener);
+        eventTable.unhook(SWT.MouseDoubleClick, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -1043,7 +1479,14 @@ public interface IControl extends IWidget {
      * @see MouseMoveListener
      * @see #addMouseMoveListener
      */
-    void removeMouseMoveListener(MouseMoveListener listener);
+    public void removeMouseMoveListener(MouseMoveListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.MouseMove, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -1062,7 +1505,16 @@ public interface IControl extends IWidget {
      * @see MouseTrackListener
      * @see #addMouseTrackListener
      */
-    void removeMouseTrackListener(MouseTrackListener listener);
+    public void removeMouseTrackListener(MouseTrackListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.MouseEnter, listener);
+        eventTable.unhook(SWT.MouseExit, listener);
+        eventTable.unhook(SWT.MouseHover, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -1083,7 +1535,14 @@ public interface IControl extends IWidget {
      *
      * @since 3.3
      */
-    void removeMouseWheelListener(MouseWheelListener listener);
+    public void removeMouseWheelListener(MouseWheelListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.MouseWheel, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -1102,7 +1561,14 @@ public interface IControl extends IWidget {
      * @see PaintListener
      * @see #addPaintListener
      */
-    void removePaintListener(PaintListener listener);
+    public void removePaintListener(PaintListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Paint, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -1123,7 +1589,14 @@ public interface IControl extends IWidget {
      *
      * @since 3.7
      */
-    void removeTouchListener(TouchListener listener);
+    public void removeTouchListener(TouchListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Touch, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -1142,7 +1615,14 @@ public interface IControl extends IWidget {
      * @see TraverseListener
      * @see #addTraverseListener
      */
-    void removeTraverseListener(TraverseListener listener);
+    public void removeTraverseListener(TraverseListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Traverse, listener);
+    }
 
     /**
      * Detects a drag and drop gesture.  This method is used
@@ -1180,7 +1660,9 @@ public interface IControl extends IWidget {
      *
      * @since 3.3
      */
-    boolean dragDetect(Event event);
+    public boolean dragDetect(Event event) {
+        return false;
+    }
 
     /**
      * Detects a drag and drop gesture.  This method is used
@@ -1218,7 +1700,9 @@ public interface IControl extends IWidget {
      *
      * @since 3.3
      */
-    boolean dragDetect(MouseEvent event);
+    public boolean dragDetect(MouseEvent event) {
+        return false;
+    }
 
     /**
      * Forces the receiver to have the <em>keyboard focus</em>, causing
@@ -1233,7 +1717,9 @@ public interface IControl extends IWidget {
      *
      * @see #setFocus
      */
-    boolean forceFocus();
+    public boolean forceFocus() {
+        return false;
+    }
 
     /**
      * Returns the receiver's background color.
@@ -1249,7 +1735,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Color getBackground();
+    public Color getBackground() {
+        return parent.getBackground();
+    }
 
     /**
      * Returns the receiver's background image.
@@ -1263,7 +1751,9 @@ public interface IControl extends IWidget {
      *
      * @since 3.2
      */
-    Image getBackgroundImage();
+    public Image getBackgroundImage() {
+        return null;
+    }
 
     /**
      * Returns the receiver's border width in points.
@@ -1275,7 +1765,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int getBorderWidth();
+    public int getBorderWidth() {
+        return -1;
+    }
 
     /**
      * Returns the receiver's cursor, or null if it has not been set.
@@ -1293,7 +1785,9 @@ public interface IControl extends IWidget {
      *
      * @since 3.3
      */
-    Cursor getCursor();
+    public Cursor getCursor() {
+        return null;
+    }
 
     /**
      * Returns <code>true</code> if the receiver is detecting
@@ -1308,7 +1802,9 @@ public interface IControl extends IWidget {
      *
      * @since 3.3
      */
-    boolean getDragDetect();
+    public boolean getDragDetect() {
+        return builder().getDragDetect().orElse(false);
+    }
 
     /**
      * Returns <code>true</code> if the receiver is enabled, and
@@ -1325,7 +1821,9 @@ public interface IControl extends IWidget {
      *
      * @see #isEnabled
      */
-    boolean getEnabled();
+    public boolean getEnabled() {
+        return builder().getEnabled().orElse(false);
+    }
 
     /**
      * Returns the font that the receiver will use to paint textual information.
@@ -1337,7 +1835,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Font getFont();
+    public Font getFont() {
+        return parent.getFont();
+    }
 
     /**
      * Returns the foreground color that the receiver will use to draw.
@@ -1349,7 +1849,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Color getForeground();
+    public Color getForeground() {
+        return parent.getForeground();
+    }
 
     /**
      * Returns layout data which is associated with the receiver.
@@ -1361,7 +1863,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Object getLayoutData();
+    public Object getLayoutData() {
+        return builder().getLayoutData().orElse(null);
+    }
 
     /**
      * Returns the receiver's pop up menu if it has one, or null
@@ -1378,7 +1882,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IMenu getMenu();
+    public IMenu getMenu() {
+        return menu;
+    }
 
     /**
      * Returns the receiver's monitor.
@@ -1392,7 +1898,9 @@ public interface IControl extends IWidget {
      *
      * @since 3.0
      */
-    IMonitor getMonitor();
+    public IMonitor getMonitor() {
+        return null;
+    }
 
     /**
      * Returns the receiver's parent, which must be a <code>Composite</code>
@@ -1406,7 +1914,10 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IComposite getParent();
+    public IComposite getParent() {
+        checkWidget();
+        return parent;
+    }
 
     /**
      * Returns the region that defines the shape of the control,
@@ -1421,7 +1932,9 @@ public interface IControl extends IWidget {
      *
      * @since 3.4
      */
-    Region getRegion();
+    public Region getRegion() {
+        return null;
+    }
 
     /**
      * Returns the receiver's shell. For all controls other than
@@ -1438,7 +1951,14 @@ public interface IControl extends IWidget {
      *
      * @see #getParent
      */
-    IShell getShell();
+    public IShell getShell() {
+        checkWidget();
+        return _getShell();
+    }
+
+    IShell _getShell() {
+        return parent.getShell();
+    }
 
     /**
      * Returns the receiver's tool tip text, or null if it has
@@ -1451,7 +1971,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    String getToolTipText();
+    public String getToolTipText() {
+        return builder().getToolTipText().orElse(null);
+    }
 
     /**
      * Returns <code>true</code> if this control is set to send touch events, or
@@ -1473,7 +1995,9 @@ public interface IControl extends IWidget {
      *
      * @since 3.7
      */
-    boolean getTouchEnabled();
+    public boolean getTouchEnabled() {
+        return builder().getTouchEnabled().orElse(false);
+    }
 
     /**
      * Returns <code>true</code> if the receiver is visible, and
@@ -1492,7 +2016,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    boolean getVisible();
+    public boolean getVisible() {
+        return builder().getVisible().orElse(false);
+    }
 
     /**
      * Returns <code>true</code> if the underlying operating
@@ -1505,7 +2031,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    boolean isReparentable();
+    public boolean isReparentable() {
+        return false;
+    }
 
     /**
      * Returns <code>true</code> if the receiver is enabled and all
@@ -1523,7 +2051,9 @@ public interface IControl extends IWidget {
      *
      * @see #getEnabled
      */
-    boolean isEnabled();
+    public boolean isEnabled() {
+        return false;
+    }
 
     /**
      * Returns <code>true</code> if the receiver has the user-interface
@@ -1536,7 +2066,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    boolean isFocusControl();
+    public boolean isFocusControl() {
+        return false;
+    }
 
     /**
      * Returns <code>true</code> if the receiver is visible and all
@@ -1552,7 +2084,9 @@ public interface IControl extends IWidget {
      *
      * @see #getVisible
      */
-    boolean isVisible();
+    public boolean isVisible() {
+        return false;
+    }
 
     /**
      * Requests that this control and all of its ancestors be repositioned by
@@ -1569,7 +2103,8 @@ public interface IControl extends IWidget {
      *
      * @since 3.105
      */
-    void requestLayout();
+    public void requestLayout() {
+    }
 
     /**
      * Causes the entire bounds of the receiver to be marked
@@ -1597,7 +2132,8 @@ public interface IControl extends IWidget {
      * @see SWT#NO_MERGE_PAINTS
      * @see SWT#DOUBLE_BUFFERED
      */
-    void redraw();
+    public void redraw() {
+    }
 
     /**
      * Causes the rectangular area of the receiver specified by
@@ -1636,7 +2172,13 @@ public interface IControl extends IWidget {
      * @see SWT#NO_MERGE_PAINTS
      * @see SWT#DOUBLE_BUFFERED
      */
-    void redraw(int x, int y, int width, int height, boolean all);
+    public void redraw(int x, int y, int width, int height, boolean all) {
+    }
+
+    @Override
+    void releaseParent() {
+//        parent.removeControl(this);
+    }
 
     /**
      * Sets the receiver's background color to the color specified
@@ -1655,7 +2197,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setBackground(Color color);
+    public void setBackground(Color color) {
+    	backgroundColor = color;
+    }
 
     /**
      * Sets the receiver's background image to the image specified
@@ -1679,7 +2223,8 @@ public interface IControl extends IWidget {
      *
      * @since 3.2
      */
-    void setBackgroundImage(Image image);
+    public void setBackgroundImage(Image image) {
+    }
 
     /**
      * If the argument is <code>true</code>, causes the receiver to have
@@ -1694,7 +2239,16 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setCapture(boolean capture);
+    public void setCapture(boolean capture) {
+        /* FIXME !!!!! */
+        /*
+	if (capture) {
+		OS.gtk_widget_grab_focus (handle);
+	} else {
+		OS.gtk_widget_grab_default (handle);
+	}
+	*/
+    }
 
     /**
      * Sets the receiver's cursor to the cursor specified by the
@@ -1715,7 +2269,8 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setCursor(Cursor cursor);
+    public void setCursor(Cursor cursor) {
+    }
 
     /**
      * Sets the receiver's drag detect state. If the argument is
@@ -1731,7 +2286,10 @@ public interface IControl extends IWidget {
      *
      * @since 3.3
      */
-    void setDragDetect(boolean dragDetect);
+    public void setDragDetect(boolean dragDetect) {
+        builder().setDragDetect(dragDetect);
+        FlutterButton.dirty(this);
+    }
 
     /**
      * Enables the receiver if the argument is <code>true</code>,
@@ -1746,7 +2304,10 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setEnabled(boolean enabled);
+    public void setEnabled(boolean enabled) {
+        builder().setEnabled(enabled);
+        FlutterButton.dirty(this);
+    }
 
     /**
      * Causes the receiver to have the <em>keyboard focus</em>,
@@ -1762,7 +2323,9 @@ public interface IControl extends IWidget {
      *
      * @see #forceFocus
      */
-    boolean setFocus();
+    public boolean setFocus() {
+        return false;
+    }
 
     /**
      * Sets the font that the receiver will use to paint textual information
@@ -1779,7 +2342,8 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setFont(Font font);
+    public void setFont(Font font) {
+    }
 
     /**
      * Sets the receiver's foreground color to the color specified
@@ -1798,8 +2362,12 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setForeground(Color color);
+    public void setForeground(Color color) {
+    }
 
+    //private void setPanGesture () {
+    ///* TODO: Panning gesture requires a GtkOrientation object. Need to discuss what orientation should be default. */
+    //}
     /**
      * Sets the receiver's pop up menu to the argument.
      * All controls may optionally have a pop up
@@ -1825,7 +2393,10 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setMenu(IMenu menu);
+    public void setMenu(IMenu menu) {
+        this.menu = menu;
+        FlutterButton.dirty(this);
+    }
 
     /**
      * Sets the orientation of the receiver, which must be one
@@ -1840,7 +2411,12 @@ public interface IControl extends IWidget {
      *
      * @since 3.7
      */
-    void setOrientation(int orientation);
+    public void setOrientation(int orientation) {
+        checkWidget();
+        if ((orientation & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT)) == 0) return;
+        style &= ~(SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+        style |= orientation & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+    }
 
     /**
      *  Changes the parent of the widget to be the one provided.
@@ -1858,7 +2434,13 @@ public interface IControl extends IWidget {
      *     <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * 	</ul>
      */
-    boolean setParent(IComposite parent);
+    public boolean setParent(IComposite parent) {
+        return false;
+    }
+
+    boolean setRadioSelection(boolean value) {
+        return false;
+    }
 
     /**
      * If the argument is <code>false</code>, causes subsequent drawing
@@ -1883,7 +2465,23 @@ public interface IControl extends IWidget {
      * @see #redraw(int, int, int, int, boolean)
      * @see #update()
      */
-    void setRedraw(boolean redraw);
+    public void setRedraw(boolean redraw) {
+    }
+
+    void sort(int[] items) {
+        int length = items.length;
+        for (int gap = length / 2; gap > 0; gap /= 2) {
+            for (int i = gap; i < length; i++) {
+                for (int j = i - gap; j >= 0; j -= gap) {
+                    if (items[j] <= items[j + gap]) {
+                        int swap = items[j];
+                        items[j] = items[j + gap];
+                        items[j + gap] = swap;
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * Sets the base text direction (a.k.a. "paragraph direction") of the receiver,
@@ -1912,7 +2510,10 @@ public interface IControl extends IWidget {
      *
      * @since 3.102
      */
-    void setTextDirection(int textDirection);
+    public void setTextDirection(int textDirection) {
+        builder().setTextDirection(textDirection);
+        FlutterButton.dirty(this);
+    }
 
     /**
      * Sets the receiver's tool tip text to the argument, which
@@ -1939,7 +2540,10 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setToolTipText(String string);
+    public void setToolTipText(String string) {
+        builder().setToolTipText(string);
+        FlutterButton.dirty(this);
+    }
 
     /**
      * Sets whether this control should send touch events (by default controls do not).
@@ -1958,7 +2562,10 @@ public interface IControl extends IWidget {
      *
      * @since 3.7
      */
-    void setTouchEnabled(boolean enabled);
+    public void setTouchEnabled(boolean enabled) {
+        builder().setTouchEnabled(enabled);
+        FlutterButton.dirty(this);
+    }
 
     /**
      * Marks the receiver as visible if the argument is <code>true</code>,
@@ -1976,7 +2583,10 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setVisible(boolean visible);
+    public void setVisible(boolean visible) {
+        builder().setVisible(visible);
+        FlutterButton.dirty(this);
+    }
 
     /**
      * Based on the argument, perform one of the expected platform
@@ -1994,7 +2604,9 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    boolean traverse(int traversal);
+    public boolean traverse(int traversal) {
+        return false;
+    }
 
     /**
      * Performs a platform traversal action corresponding to a <code>KeyDown</code> event.
@@ -2028,7 +2640,9 @@ public interface IControl extends IWidget {
      *
      * @since 3.6
      */
-    boolean traverse(int traversal, Event event);
+    public boolean traverse(int traversal, Event event) {
+        return false;
+    }
 
     /**
      * Performs a platform traversal action corresponding to a <code>KeyDown</code> event.
@@ -2062,7 +2676,9 @@ public interface IControl extends IWidget {
      *
      * @since 3.6
      */
-    boolean traverse(int traversal, KeyEvent event);
+    public boolean traverse(int traversal, KeyEvent event) {
+        return false;
+    }
 
     /**
      * Forces all outstanding paint requests for the widget
@@ -2086,5 +2702,13 @@ public interface IControl extends IWidget {
      * @see PaintListener
      * @see SWT#Paint
      */
-    void update();
+    public void update() {
+    }
+
+    public ControlValue.Builder builder() {
+        if (builder == null)
+            builder = ControlValue.builder().setId(handle).setStyle(style);
+        return (ControlValue.Builder) builder;
+    }
+
 }

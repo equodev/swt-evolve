@@ -74,7 +74,7 @@ public class SWTComposite extends SWTScrollable implements IComposite {
 
     Layout layout;
 
-    SWTControl[] tabList;
+    IControl[] tabList;
 
     int layoutCount, backgroundMode;
 
@@ -172,7 +172,7 @@ public class SWTComposite extends SWTScrollable implements IComposite {
         return style;
     }
 
-    SWTControl[] _getChildren() {
+    IControl[] _getChildren() {
         long parentHandle = parentingHandle();
         if (GTK.GTK4) {
             ArrayList<SWTControl> childrenList = new ArrayList<>();
@@ -188,16 +188,16 @@ public class SWTComposite extends SWTScrollable implements IComposite {
             if (list == 0)
                 return new SWTControl[0];
             int count = OS.g_list_length(list);
-            SWTControl[] children = new SWTControl[count];
+            IControl[] children = new IControl[count];
             int i = 0;
             long temp = list;
             while (temp != 0) {
                 long handle = OS.g_list_data(temp);
                 if (handle != 0) {
-                    SWTWidget widget = (SWTWidget) (display.getWidget(handle));
+                    IWidget widget = (IWidget) (display.getWidget(handle));
                     if (widget != null && widget != this) {
-                        if (widget instanceof SWTControl) {
-                            children[i++] = (SWTControl) widget;
+                        if (widget instanceof IControl) {
+                            children[i++] = (IControl) widget;
                         }
                     }
                 }
@@ -212,7 +212,7 @@ public class SWTComposite extends SWTScrollable implements IComposite {
         }
     }
 
-    SWTControl[] _getTabList() {
+    IControl[] _getTabList() {
         if (tabList == null)
             return tabList;
         int count = 0;
@@ -222,7 +222,7 @@ public class SWTComposite extends SWTScrollable implements IComposite {
         }
         if (count == tabList.length)
             return tabList;
-        SWTControl[] newList = new SWTControl[count];
+        IControl[] newList = new IControl[count];
         int index = 0;
         for (int i = 0; i < tabList.length; i++) {
             if (!tabList[i].isDisposed()) {
@@ -307,15 +307,16 @@ public class SWTComposite extends SWTScrollable implements IComposite {
         SWTWidget[] result = super.computeTabList();
         if (result.length == 0)
             return result;
-        SWTControl[] list = (SWTControl[]) (tabList != null ? _getTabList() : _getChildren());
+        IControl[] list = tabList != null ? _getTabList() : _getChildren();
         for (int i = 0; i < list.length; i++) {
-            SWTControl child = (SWTControl) (list[i]);
-            SWTWidget[] childList = (SWTWidget[]) (child.computeTabList());
-            if (childList.length != 0) {
-                SWTWidget[] newResult = new SWTWidget[result.length + childList.length];
-                System.arraycopy(result, 0, newResult, 0, result.length);
-                System.arraycopy(childList, 0, newResult, result.length, childList.length);
-                result = newResult;
+            if (list[i] instanceof SWTControl child) {
+                SWTWidget[] childList = (SWTWidget[]) (child.computeTabList());
+                if (childList.length != 0) {
+                    SWTWidget[] newResult = new SWTWidget[result.length + childList.length];
+                    System.arraycopy(result, 0, newResult, 0, result.length);
+                    System.arraycopy(childList, 0, newResult, result.length, childList.length);
+                    result = newResult;
+                }
             }
         }
         return result;
@@ -664,8 +665,10 @@ public class SWTComposite extends SWTScrollable implements IComposite {
     void fixParentGdkResource() {
         // Changes to this method should be verified via
         // org.eclipse.swt.tests.gtk/*/Bug510803_TabFolder_TreeEditor_Regression.java (part two)
-        for (SWTControl child : _getChildren()) {
-            child.fixParentGdkResource();
+        for (IControl child : _getChildren()) {
+            if (child instanceof SWTControl control) {
+                control.fixParentGdkResource();
+            }
         }
     }
 
@@ -698,10 +701,10 @@ public class SWTComposite extends SWTScrollable implements IComposite {
         }
         if (count == 0)
             return;
-        SWTControl[] newList = (SWTControl[]) (null);
+        IControl[] newList = null;
         int length = tabList.length - count;
         if (length != 0) {
-            newList = new SWTControl[length];
+            newList = new IControl[length];
             int index = 0;
             for (int i = 0; i < tabList.length; i++) {
                 if (tabList[i] != control) {
@@ -1605,14 +1608,16 @@ public class SWTComposite extends SWTScrollable implements IComposite {
     @Override
     void releaseChildren(boolean destroy) {
         try (ExceptionStash exceptions = new ExceptionStash()) {
-            for (SWTControl child : _getChildren()) {
+            for (IControl child : _getChildren()) {
                 if (child == null || child.isDisposed())
                     continue;
-                try {
-                    child.release(false);
-                } catch (Error | RuntimeException ex) {
-                    exceptions.stash(ex);
-                }
+                if (child instanceof SWTControl control) {
+					try {
+						control.release(false);
+					} catch (Error | RuntimeException ex) {
+						exceptions.stash(ex);
+					}
+				}
             }
             super.releaseChildren(destroy);
         }
@@ -1717,11 +1722,12 @@ public class SWTComposite extends SWTScrollable implements IComposite {
     @Override
     public boolean setFocus() {
         checkWidget();
-        SWTControl[] children = (SWTControl[]) (_getChildren());
+        IControl[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
-            SWTControl child = (SWTControl) (children[i]);
-            if (child.getVisible() && child.setFocus())
-                return true;
+            if (children[i] instanceof SWTControl child) {
+                if (child.getVisible() && child.setFocus())
+                    return true;
+            }
         }
         return super.setFocus();
     }
@@ -1814,15 +1820,16 @@ public class SWTComposite extends SWTScrollable implements IComposite {
             takeFocus = true;
         if (takeFocus && setTabItemFocus(next))
             return true;
-        SWTControl[] children = (SWTControl[]) (_getChildren());
+        IControl[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
-            SWTControl child = (SWTControl) (children[i]);
-            /*
-		 * It is unlikely but possible that a child is disposed at this point, for more
-		 * details refer bug 381668.
-		 */
-            if (!child.isDisposed() && child.isTabItem() && child.setTabItemFocus(next))
-                return true;
+            if (children[i] instanceof SWTControl child) {
+	            /*
+			 * It is unlikely but possible that a child is disposed at this point, for more
+			 * details refer bug 381668.
+			 */
+                if (!child.isDisposed() && child.isTabItem() && child.setTabItemFocus(next))
+                    return true;
+            }
         }
         return false;
     }
@@ -1894,11 +1901,12 @@ public class SWTComposite extends SWTScrollable implements IComposite {
         if (super.translateMnemonic(event, control))
             return true;
         if (control != null) {
-            SWTControl[] children = (SWTControl[]) (_getChildren());
+            IControl[] children = _getChildren();
             for (int i = 0; i < children.length; i++) {
-                SWTControl child = (SWTControl) (children[i]);
-                if (child.translateMnemonic(event, control))
-                    return true;
+                if (children[i] instanceof SWTControl child) {
+                    if (child.translateMnemonic(event, control))
+                        return true;
+                }
             }
         }
         return false;

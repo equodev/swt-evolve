@@ -40,6 +40,12 @@ static void on_parent_size_allocate(GtkWidget* widget, GtkAllocation* allocation
 }
 #endif
 
+void on_parent_size_allocate(GtkWidget *widget, GtkAllocation *allocation, gpointer data) {
+  GtkWidget *child = GTK_WIDGET(data);
+  gtk_widget_set_size_request(child, allocation->width, allocation->height);
+}
+
+
 uintptr_t InitializeFlutterWindow(void *parentWnd, jint port, jlong widget_id) {
   /*
    * NOTE(elias): SWT initializes GTK using gtk_init_check() and that doesn't
@@ -112,14 +118,18 @@ uintptr_t InitializeFlutterWindow(void *parentWnd, jint port, jlong widget_id) {
   g_print("Result view: %p\n", view);
   GtkWidget *view_widget = GTK_WIDGET(view);
 
-  // gtk_container_add(GTK_CONTAINER(parent_widget), view_widget);
+  // Connect the signal
+  g_signal_connect(parent_widget, "size-allocate", 
+                   G_CALLBACK(on_parent_size_allocate), view_widget);
+
+  gtk_container_add(GTK_CONTAINER(parent_widget), view_widget);
 
   GtkAllocation parent_allocation;
   gtk_widget_get_allocation(parent_widget, &parent_allocation);
 
   // gtk_fixed_put(GTK_FIXED(parent_widget), view_widget, 0, 0);
-  gtk_widget_set_size_request(view_widget, parent_allocation.width,
-                              parent_allocation.height);
+  //gtk_widget_set_size_request(view_widget, parent_allocation.width,
+  //                            parent_allocation.height);
 
   // Connect size-allocate signal to parent
   // g_signal_connect(parent_widget, "size-allocate",
@@ -144,6 +154,10 @@ uintptr_t InitializeFlutterWindow(void *parentWnd, jint port, jlong widget_id) {
   GtkAllocation allocation_flutter;
   gtk_widget_get_allocation(view_widget, &allocation_flutter);
   g_print("Parent widget type: %s\n", G_OBJECT_TYPE_NAME(parent_widget));
+  g_print("Parent widget handle: %p\n", parent_widget);
+  g_print("Parent widget allocation: x=%d, y=%d, width=%d, height=%d\n",
+      parent_allocation.x, parent_allocation.y, parent_allocation.width,
+      parent_allocation.height);
   g_print("Flutter view widget type: %s\n", G_OBJECT_TYPE_NAME(view_widget));
   g_print("View widget is visible: %d\n", gtk_widget_get_visible(view_widget));
   g_print("View widget is mapped: %d\n", gtk_widget_get_mapped(view_widget));
@@ -153,10 +167,6 @@ uintptr_t InitializeFlutterWindow(void *parentWnd, jint port, jlong widget_id) {
   g_print("View widget requests: min_width=%d, min_height=%d, nat_width=%d, "
           "nat_height=%d\n",
           min.width, min.height, nat.width, nat.height);
-  g_print("Parent widget allocation: x=%d, y=%d, width=%d, height=%d\n",
-          parent_allocation.x, parent_allocation.y, parent_allocation.width,
-          parent_allocation.height);
-  g_print("Parent widget handle: %p\n", view);
 
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
 

@@ -11,9 +11,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-public class FlutterButton extends SWTControl implements IButton {
+public class FlutterButton extends FlutterControl implements IButton {
 
-	private static FlutterClient CLIENT = null;
+	public static FlutterClient CLIENT = null;
 	private static CompletableFuture<Boolean> clientReady = new CompletableFuture<>();
 	static {
 		System.load(
@@ -32,14 +32,14 @@ public class FlutterButton extends SWTControl implements IButton {
 
 	public static native void CloseFlutterWindow();
 
-	public static String getEvent(SWTWidget w, String... events) {
+	public static String getEvent(FlutterWidget w, String... events) {
 		String ev = w.getClass().getSimpleName().substring("Flutter".length()) + "/" + w.hashCode();
 		if (events.length > 0)
 			ev += "/" + String.join("/", events);
 		return ev;
 	}
 
-	static WidgetValue build(FlutterButton widget) {
+	static WidgetValue build(FlutterWidget widget) {
 		WidgetValue.Builder builder = widget.builder();
 //		checkAndBuildMenu(widget);
 
@@ -50,12 +50,12 @@ public class FlutterButton extends SWTControl implements IButton {
 		return builder.build();
 	}
 
-	private static Set<FlutterButton> DIRTY = new HashSet<>();
+	private static Set<FlutterWidget> DIRTY = new HashSet<>();
 	private static Serializer SERIALIZER = new Serializer();
 
 	public static void handleDirty() {
 		ICommService comm = CLIENT.getComm();
-		for (FlutterButton widget : DIRTY) {
+		for (FlutterWidget widget : DIRTY) {
 			clientReady.thenRun(() -> {
 				String event = getEvent(widget);
 				System.out.println("will send: " + event);
@@ -72,7 +72,7 @@ public class FlutterButton extends SWTControl implements IButton {
 		DIRTY.clear();
 	}
 
-	public static void dirty(FlutterButton control) {
+	public static void dirty(FlutterWidget control) {
 		if (control == null)
 			return;
 		synchronized (DIRTY) {
@@ -85,11 +85,13 @@ public class FlutterButton extends SWTControl implements IButton {
 	@Override
 	void createHandle(int index) {
 		state |= HANDLE;
-		handle = InitializeFlutterWindow(parent.getHandle(), CLIENT.getPort(), this.hashCode());
+		parentComposite = new SWTComposite((SWTComposite)parent, SWT.NONE);
+		handle = parentComposite.handle;
+		InitializeFlutterWindow(handle, CLIENT.getPort(), this.hashCode());
 		dirty(this);
 	}
 
-	public FlutterButton(SWTComposite parent, int style) {
+	public FlutterButton(IComposite parent, int style) {
 		super(parent, style);
 	}
 
@@ -207,146 +209,8 @@ public class FlutterButton extends SWTControl implements IButton {
 
 	@Override
 	protected void hookEvents() {
+		super.hookEvents();
 		String ev = getEvent(this);
-
-		/* Begin Widget Events */
-		CLIENT.getComm().on(ev + "/Dispose/Dispose", p -> {
-			System.out.println(ev + "/Dispose/Dispose event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.Dispose);
-			});
-		});
-		/* End Widget Events */
-
-		/* Begin Control Events */
-		CLIENT.getComm().on(ev + "/Control/Resize", p -> {
-			System.out.println(ev + "/Control/Resize event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.Resize);
-			});
-		});
-		CLIENT.getComm().on(ev + "/Control/Move", p -> {
-			System.out.println(ev + "/Control/Move event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.Move);
-			});
-		});
-		CLIENT.getComm().on(ev + "/DragDetect/DragDetect", p -> {
-			System.out.println(ev + "/DragDetect/DragDetect event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.DragDetect);
-			});
-		});
-		CLIENT.getComm().on(ev + "/Focus/FocusIn", p -> {
-			System.out.println(ev + "/Focus/FocusIn event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.FocusIn);
-			});
-		});
-		CLIENT.getComm().on(ev + "/Focus/FocusOut", p -> {
-			System.out.println(ev + "/Focus/FocusOut event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.FocusOut);
-			});
-		});
-		CLIENT.getComm().on(ev + "/Gesture/Gesture", p -> {
-			System.out.println(ev + "/Gesture/Gesture event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.Gesture);
-			});
-		});
-		CLIENT.getComm().on(ev + "/Help/Help", p -> {
-			System.out.println(ev + "/Help/Help event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.Help);
-			});
-		});
-		CLIENT.getComm().on(ev + "/Key/KeyUp", p -> {
-			System.out.println(ev + "/Key/KeyUp event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.KeyUp);
-			});
-		});
-		CLIENT.getComm().on(ev + "/Key/KeyDown", p -> {
-			System.out.println(ev + "/Key/KeyDown event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.KeyDown);
-			});
-		});
-		CLIENT.getComm().on(ev + "/MenuDetect/MenuDetect", p -> {
-			System.out.println(ev + "/MenuDetect/MenuDetect event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.MenuDetect);
-			});
-		});
-		CLIENT.getComm().on(ev + "/Mouse/MouseDown", p -> {
-			System.out.println(ev + "/Mouse/MouseDown event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.MouseDown);
-			});
-		});
-		CLIENT.getComm().on(ev + "/Mouse/MouseUp", p -> {
-			System.out.println(ev + "/Mouse/MouseUp event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.MouseUp);
-			});
-		});
-		CLIENT.getComm().on(ev + "/Mouse/MouseDoubleClick", p -> {
-			System.out.println(ev + "/Mouse/MouseDoubleClick event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.MouseDoubleClick);
-			});
-		});
-		CLIENT.getComm().on(ev + "/MouseMove/MouseMove", p -> {
-			System.out.println(ev + "/MouseMove/MouseMove event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.MouseMove);
-			});
-		});
-		CLIENT.getComm().on(ev + "/MouseTrack/MouseEnter", p -> {
-			System.out.println(ev + "/MouseTrack/MouseEnter event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.MouseEnter);
-			});
-		});
-		CLIENT.getComm().on(ev + "/MouseTrack/MouseExit", p -> {
-			System.out.println(ev + "/MouseTrack/MouseExit event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.MouseExit);
-			});
-		});
-		CLIENT.getComm().on(ev + "/MouseTrack/MouseHover", p -> {
-			System.out.println(ev + "/MouseTrack/MouseHover event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.MouseHover);
-			});
-		});
-		CLIENT.getComm().on(ev + "/MouseWheel/MouseWheel", p -> {
-			System.out.println(ev + "/MouseWheel/MouseWheel event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.MouseWheel);
-			});
-		});
-		CLIENT.getComm().on(ev + "/Paint/Paint", p -> {
-			System.out.println(ev + "/Paint/Paint event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.Paint);
-			});
-		});
-		CLIENT.getComm().on(ev + "/Touch/Touch", p -> {
-			System.out.println(ev + "/Touch/Touch event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.Touch);
-			});
-		});
-		CLIENT.getComm().on(ev + "/Traverse/Traverse", p -> {
-			System.out.println(ev + "/Traverse/Traverse event");
-			display.asyncExec(() -> {
-				sendEvent(SWT.Traverse);
-			});
-		});
-		/* End Control Events */
-
 		CLIENT.getComm().on(ev + "/Selection/Selection", p -> {
 			System.out.println(ev + "/Selection/Selection event");
 			builder().setSelection(!getSelection());

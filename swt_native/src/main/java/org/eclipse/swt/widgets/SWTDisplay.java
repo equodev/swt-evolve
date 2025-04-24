@@ -127,7 +127,7 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
 
     long[] gdkEvents;
 
-    SWTWidget[] gdkEventWidgets;
+    IWidget[] gdkEventWidgets;
 
     int[] dispatchEvents;
 
@@ -198,9 +198,9 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
 
     long lastHandle;
 
-    SWTWidget lastWidget;
+    IWidget lastWidget;
 
-    SWTWidget[] widgetTable;
+    IWidget[] widgetTable;
 
     final static int GROW_SIZE = 1024;
 
@@ -772,7 +772,7 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
             System.arraycopy(gdkEventWidgets, 0, newWidgets, 0, gdkEventCount);
             gdkEventWidgets = newWidgets;
         }
-        SWTWidget widget = (SWTWidget) (null);
+        IWidget widget = null;
         long handle = GTK3.gtk_get_event_widget(event);
         if (handle != 0) {
             do {
@@ -930,14 +930,14 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
         skinList[skinCount++] = widget;
     }
 
-    void addWidget(long handle, SWTWidget widget) {
+    void addWidget(long handle, IWidget widget) {
         if (handle == 0)
             return;
         // Last element in the indexTable is -1, so if freeSlot == -1 we have no place anymore
         if (freeSlot == LAST_TABLE_INDEX) {
             int length = (freeSlot = indexTable.length) + GROW_SIZE;
             int[] newIndexTable = new int[length];
-            SWTWidget[] newWidgetTable = new SWTWidget[length];
+            IWidget[] newWidgetTable = new IWidget[length];
             System.arraycopy(indexTable, 0, newIndexTable, 0, freeSlot);
             System.arraycopy(widgetTable, 0, newWidgetTable, 0, freeSlot);
             for (int i = freeSlot; i < length - 1; i++) {
@@ -2052,7 +2052,7 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
         if (handle == 0)
             return null;
         do {
-            SWTWidget widget = (SWTWidget) (getWidget(handle));
+            IWidget widget = getWidget(handle);
             if (widget != null && widget instanceof SWTControl) {
                 SWTControl control = (SWTControl) ((SWTControl) widget);
                 if (control.isEnabled())
@@ -2875,7 +2875,7 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
         int index = 0;
         SWTShell[] result = new SWTShell[16];
         for (int i = 0; i < widgetTable.length; i++) {
-            SWTWidget widget = (SWTWidget) (widgetTable[i]);
+            IWidget widget = widgetTable[i];
             if (!(widget instanceof SWTShell)) {
                 continue;
             }
@@ -3577,7 +3577,7 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
         return false;
     }
 
-    SWTWidget getWidget(long handle) {
+    IWidget getWidget(long handle) {
         if (handle == 0)
             return null;
         if (lastWidget != null && lastHandle == handle)
@@ -3933,7 +3933,7 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
 
     void initializeWidgetTable() {
         indexTable = new int[GROW_SIZE];
-        widgetTable = new SWTWidget[GROW_SIZE];
+        widgetTable = new IWidget[GROW_SIZE];
         for (int i = 0; i < GROW_SIZE - 1; i++) indexTable[i] = i + 1;
         indexTable[GROW_SIZE - 1] = -1;
     }
@@ -5128,11 +5128,11 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
         }
     }
 
-    SWTWidget removeWidget(long handle) {
+    IWidget removeWidget(long handle) {
         if (handle == 0)
             return null;
         lastWidget = null;
-        SWTWidget widget = (SWTWidget) (null);
+        IWidget widget = null;
         int index;
         long data = OS.g_object_get_qdata(handle, SWT_OBJECT_INDEX) - 1;
         if (data < 0 || data > Integer.MAX_VALUE) {
@@ -5478,7 +5478,7 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
         if (key.equals(ADD_WIDGET_KEY)) {
             Object[] data = (Object[]) value;
             long handle = ((LONG) data[0]).value;
-            SWTWidget widget = (SWTWidget) ((SWTWidget) data[1]);
+            IWidget widget = (IWidget) data[1];
             if (widget != null) {
                 addWidget(handle, widget);
             } else {
@@ -6331,22 +6331,23 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
             widget.gtk_size_allocate(handle, 0);
     }
 
-    long notifyProc(long object, long param_spec, long user_data) {
-        SWTWidget widget = (SWTWidget) (getWidget(object));
-        if (widget == null) {
-            widget = getWidget(user_data);
-            if (widget == null) {
-                return 0;
-            } else {
-                /*
-			 * There is a corner case where the connected handle is actually
-			 * a GdkSurface.
-			 */
-                return widget.notifyProc(object, param_spec, SWTWidget.NOTIFY_STATE);
-            }
-        }
-        return widget.notifyProc(object, param_spec, user_data);
-    }
+	long notifyProc(long object, long param_spec, long user_data) {
+		IWidget w = getWidget(object);
+		if (w == null) {
+			w = getWidget(user_data);
+			if (w == null) {
+				return 0;
+			} else if (w instanceof SWTWidget widget) {
+				/*
+				 * There is a corner case where the connected handle is actually a GdkSurface.
+				 */
+				return widget.notifyProc(object, param_spec, SWTWidget.NOTIFY_STATE);
+			}
+		} else if (w instanceof SWTWidget widget) {
+			return widget.notifyProc(object, param_spec, user_data);
+		}
+		return -1;
+	}
 
     boolean changeValue(long handle, int scroll, double value, long user_data) {
         SWTWidget widget = (SWTWidget) (getWidget(handle));
@@ -6356,39 +6357,54 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
     }
 
     long windowProc(long handle, long user_data) {
-        SWTWidget widget = (SWTWidget) (getWidget(handle));
-        if (widget == null)
-            return 0;
-        return widget.windowProc(handle, user_data);
+        IWidget iWidget = getWidget(handle);
+        if (iWidget instanceof SWTWidget widget) {
+	        if (widget == null)
+	            return 0;
+	        return widget.windowProc(handle, user_data);
+        }
+        return 0;
     }
 
     long windowProc(long handle, long arg0, long user_data) {
-        SWTWidget widget = (SWTWidget) (getWidget(handle));
-        if (widget == null)
-            return 0;
-        return widget.windowProc(handle, arg0, user_data);
+        IWidget iWidget = getWidget(handle);
+        if (iWidget instanceof SWTWidget widget) {
+	        if (widget == null)
+	            return 0;
+	        return widget.windowProc(handle, arg0, user_data);
+        }
+        return 0;
     }
 
     long windowProc(long handle, long arg0, long arg1, long user_data) {
-        SWTWidget widget = (SWTWidget) (getWidget(handle));
-        if (widget == null)
-            return 0;
-        return widget.windowProc(handle, arg0, arg1, user_data);
+        IWidget iWidget = getWidget(handle);
+        if (iWidget instanceof SWTWidget widget) {
+	        if (widget == null)
+	            return 0;
+	        return widget.windowProc(handle, arg0, arg1, user_data);
+        }
+        return 0;
     }
 
     long windowProc(long handle, long arg0, long arg1, long arg2, long user_data) {
-        SWTWidget widget = (SWTWidget) (getWidget(handle));
-        if (widget == null)
-            return 0;
-        return widget.windowProc(handle, arg0, arg1, arg2, user_data);
+        IWidget iWidget = getWidget(handle);
+        if (iWidget instanceof SWTWidget widget) {
+	        if (widget == null)
+	            return 0;
+	        return widget.windowProc(handle, arg0, arg1, arg2, user_data);
+        }
+        return 0;
     }
 
-    long windowProc(long handle, long arg0, long arg1, long arg2, long arg3, long user_data) {
-        SWTWidget widget = (SWTWidget) (getWidget(handle));
-        if (widget == null)
-            return 0;
-        return widget.windowProc(handle, arg0, arg1, arg2, arg3, user_data);
-    }
+	long windowProc(long handle, long arg0, long arg1, long arg2, long arg3, long user_data) {
+		IWidget iWidget = getWidget(handle);
+		if (iWidget instanceof SWTWidget widget) {
+			if (widget == null)
+				return 0;
+			return widget.windowProc(handle, arg0, arg1, arg2, arg3, user_data);
+		}
+		return 0;
+	}
 
     long windowTimerProc(long handle) {
         SWTWidget widget = (SWTWidget) (getWidget(handle));

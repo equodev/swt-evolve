@@ -1494,11 +1494,13 @@ public abstract class SWTControl extends SWTWidget implements Drawable, IControl
             OS.g_list_free(list);
         }
         if (handle != 0) {
-            SWTWidget widget = (SWTWidget) (display.getWidget(handle));
-            if (widget != null && widget != this) {
-                if (widget instanceof SWTControl) {
-                    SWTControl sibling = (SWTControl) ((SWTControl) widget);
-                    sibling.addRelation(this);
+            IWidget iWidget = display.getWidget(handle);
+            if (iWidget instanceof SWTWidget widget) {
+                if (widget != null && widget != this) {
+                    if (widget instanceof SWTControl) {
+                        SWTControl sibling = (SWTControl) ((SWTControl) widget);
+                        sibling.addRelation(this);
+                    }
                 }
             }
         }
@@ -4825,9 +4827,9 @@ public abstract class SWTControl extends SWTWidget implements Drawable, IControl
 
     @Override
     void release(boolean destroy) {
-        SWTControl next = (SWTControl) (null), previous = (SWTControl) (null);
+        IControl next = null, previous = null;
         if (destroy && parent != null) {
-            SWTControl[] children = (SWTControl[]) (parent._getChildren());
+            IControl[] children = parent._getChildren();
             int index = 0;
             while (index < children.length) {
                 if (children[index] == this)
@@ -4839,14 +4841,18 @@ public abstract class SWTControl extends SWTWidget implements Drawable, IControl
             }
             if (index + 1 < children.length) {
                 next = children[index + 1];
-                next.removeRelation();
+                if (next instanceof SWTControl control) {
+                    control.removeRelation();
+                }
             }
             removeRelation();
         }
         super.release(destroy);
         if (destroy) {
             if (previous != null && next != null)
-                previous.addRelation(next);
+                if (previous instanceof SWTControl controlPrev && next instanceof SWTControl control) {
+                    controlPrev.addRelation(control);
+                }
         }
     }
 
@@ -5788,10 +5794,13 @@ public abstract class SWTControl extends SWTWidget implements Drawable, IControl
         SWTDisplay display = (SWTDisplay) (SWTDisplay.findDisplay(Thread.currentThread()));
         if (display == null || display.isDisposed())
             return null;
-        SWTWidget widget = (SWTWidget) (display.findWidget(handle));
-        if (widget == null)
-            return null;
-        return (SWTControl) widget;
+        IWidget iWidget = display.findWidget(handle);
+        if (iWidget instanceof SWTControl widget) {
+	        if (widget == null)
+	            return null;
+	        return widget;
+        }
+        return null;
     }
 
     static void rotateProc(long gesture, double angle, double angle_delta, long user_data) {
@@ -5850,7 +5859,9 @@ public abstract class SWTControl extends SWTWidget implements Drawable, IControl
             GTK3.gtk_get_current_event_state(state);
             GTK.gtk_gesture_get_point(gesture, sequence, x, y);
             SWTControl control = (SWTControl) (getControl(user_data));
-            control.sendGestureEvent(state[0], SWT.GESTURE_BEGIN, (int) x[0], (int) y[0], 0);
+            if (control != null) {
+                control.sendGestureEvent(state[0], SWT.GESTURE_BEGIN, (int) x[0], (int) y[0], 0);
+            }
         }
     }
 
@@ -6281,7 +6292,7 @@ public abstract class SWTControl extends SWTWidget implements Drawable, IControl
 
     void setZOrder(SWTControl sibling, boolean above, boolean fixRelations, boolean fixChildren) {
         int index = 0, siblingIndex = 0, oldNextIndex = -1;
-        SWTControl[] children = (SWTControl[]) (null);
+        IControl[] children = null;
         if (fixRelations) {
             /* determine the receiver's and sibling's indexes in the parent */
             children = parent._getChildren();
@@ -6301,14 +6312,18 @@ public abstract class SWTControl extends SWTWidget implements Drawable, IControl
             removeRelation();
             if (index + 1 < children.length) {
                 oldNextIndex = index + 1;
-                children[oldNextIndex].removeRelation();
+                if (children[oldNextIndex] instanceof SWTControl control) {
+                    control.removeRelation();
+                }
             }
             if (sibling != null) {
                 if (above) {
                     sibling.removeRelation();
                 } else {
                     if (siblingIndex + 1 < children.length) {
-                        children[siblingIndex + 1].removeRelation();
+                        if (children[siblingIndex + 1] instanceof SWTControl control) {
+                            control.removeRelation();
+                        }
                     }
                 }
             }
@@ -6381,17 +6396,24 @@ public abstract class SWTControl extends SWTWidget implements Drawable, IControl
             /* add new "Labelled by" relations as needed */
             children = parent._getChildren();
             if (0 < index) {
-                children[index - 1].addRelation(this);
+                if (children[index - 1] instanceof SWTControl control) {
+                    control.addRelation(this);
+                }
             }
             if (index + 1 < children.length) {
-                addRelation(children[index + 1]);
+                if (children[index + 1] instanceof SWTControl control) {
+                    addRelation(control);
+                }
             }
             if (oldNextIndex != -1) {
                 if (oldNextIndex <= index)
                     oldNextIndex--;
                 /* the last two conditions below ensure that duplicate relations are not hooked */
                 if (0 < oldNextIndex && oldNextIndex != index && oldNextIndex != index + 1) {
-                    children[oldNextIndex - 1].addRelation(children[oldNextIndex]);
+                    if (children[oldNextIndex - 1] instanceof SWTControl control_prev
+                            && children[oldNextIndex] instanceof SWTControl control) {
+                        control_prev.addRelation(control);
+                    }
                 }
             }
         }
