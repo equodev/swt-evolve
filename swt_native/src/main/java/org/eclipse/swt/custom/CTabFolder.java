@@ -89,7 +89,7 @@ public class CTabFolder extends Composite {
      * @see #getStyle()
      */
     public CTabFolder(Composite parent, int style) {
-        this(new SWTCTabFolder((SWTComposite) parent.delegate, style));
+        this(new FlutterCTabFolder((SWTComposite) parent.delegate, style));
     }
 
     /**

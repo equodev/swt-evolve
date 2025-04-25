@@ -47,7 +47,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends CTabFolderValue>
   }
 
   Widget tabBody(CTabItemValue e) {
-    if (e.children != null) {
+    if (e.children != null && e.children!.isNotEmpty) {
       return mapWidgetFromValue(e.children!.first);
     }
     return Container();

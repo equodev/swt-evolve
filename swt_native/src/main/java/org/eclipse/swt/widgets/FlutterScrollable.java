@@ -176,7 +176,7 @@ public abstract class FlutterScrollable extends FlutterControl implements IScrol
 
     public ScrollableValue.Builder builder() {
         if (builder == null)
-            builder = ScrollableValue.builder().setId(handle).setStyle(style);
+            builder = ScrollableValue.builder().setId(hashCode()).setStyle(style);
         return (ScrollableValue.Builder) builder;
     }
 }

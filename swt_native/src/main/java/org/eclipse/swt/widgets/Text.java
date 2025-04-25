@@ -132,7 +132,8 @@ public class Text extends Scrollable {
      * @see Widget#getStyle
      */
     public Text(Composite parent, int style) {
-        this(new SWTText((SWTComposite) parent.delegate, style));
+        this(parent.delegate instanceof SWTComposite ? new SWTText((SWTComposite) parent.delegate, style)
+                : new SWTText(((FlutterComposite) parent.delegate).childComposite, style));
     }
 
     /**

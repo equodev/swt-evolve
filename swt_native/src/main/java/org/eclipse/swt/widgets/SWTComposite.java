@@ -1465,7 +1465,7 @@ public class SWTComposite extends SWTScrollable implements IComposite {
     }
 
     Point minimumSize(int wHint, int hHint, boolean changed) {
-        SWTControl[] children = (SWTControl[]) (_getChildren());
+        IControl[] children = _getChildren();
         /*
 	 * Since getClientArea can be overridden by subclasses, we cannot
 	 * call getClientAreaInPixels directly.

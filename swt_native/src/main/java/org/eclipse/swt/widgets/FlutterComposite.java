@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.internal.ExceptionStash;
 import org.eclipse.swt.values.CompositeValue;
 
@@ -86,6 +87,20 @@ public class FlutterComposite extends FlutterScrollable implements IComposite {
         style &= ~SWT.NO_BACKGROUND;
         style &= ~SWT.TRANSPARENT;
         return style;
+    }
+
+    @Override
+    public Point computeSize(int wHint, int hHint) {
+        return computeSize(wHint, hHint, true);
+    }
+
+    @Override
+    public Point computeSize(int wHint, int hHint, boolean changed) {
+        Point thisSize = parentComposite.computeSize(wHint, hHint, changed);
+        Point childSize = childComposite.computeSize(wHint, hHint, changed);
+        thisSize.x += childSize.x;
+        thisSize.y += childSize.y;
+        return thisSize;
     }
 
     IControl[] _getChildren() {
@@ -609,7 +624,7 @@ public class FlutterComposite extends FlutterScrollable implements IComposite {
 
     public CompositeValue.Builder builder() {
         if (builder == null)
-            builder = CompositeValue.builder().setId(handle).setStyle(style);
+            builder = CompositeValue.builder().setId(hashCode()).setStyle(style);
         return (CompositeValue.Builder) builder;
     }
 }

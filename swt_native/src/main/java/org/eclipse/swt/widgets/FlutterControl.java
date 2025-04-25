@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.accessibility.Accessible;
+import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.DragDetectListener;
 import org.eclipse.swt.events.FocusListener;
@@ -65,13 +66,16 @@ public abstract class FlutterControl extends FlutterWidget implements IControl {
 
     IMenu menu;
 
-    protected SWTComposite parentComposite;
+    public SWTComposite parentComposite;
+    public SWTComposite childComposite;
 
     @Override
     void createHandle(int index) {
         state |= HANDLE;
         parentComposite = new SWTComposite((SWTComposite) parent, SWT.NONE);
         handle = parentComposite.handle;
+        childComposite = new SWTComposite(parentComposite, SWT.NONE);
+        childComposite.setLayout(new StackLayout());
         String widget = FlutterSwt.getWidgetName(this);
         FlutterSwt.InitializeFlutterWindow(handle, FlutterSwt.CLIENT.getPort(), this.hashCode(), widget);
         FlutterSwt.dirty(this);
@@ -481,6 +485,8 @@ public abstract class FlutterControl extends FlutterWidget implements IControl {
             FlutterSwt.dirty(flutterParent);
         }
         parentComposite.setBounds(rect);
+        rect.y += 38;
+        childComposite.setBounds(rect);
     }
 
     /**
@@ -590,7 +596,7 @@ public abstract class FlutterControl extends FlutterWidget implements IControl {
      *                         </ul>
      */
     public Point getSize() {
-        return null;
+        return parentComposite.getSize();
     }
 
     /**
@@ -3130,7 +3136,7 @@ public abstract class FlutterControl extends FlutterWidget implements IControl {
 
     public ControlValue.Builder builder() {
         if (builder == null)
-            builder = ControlValue.builder().setId(handle).setStyle(style);
+            builder = ControlValue.builder().setId(hashCode()).setStyle(style);
         return (ControlValue.Builder) builder;
     }
 

@@ -1,24 +1,21 @@
-/**
- * ****************************************************************************
- *  Copyright (c) 2000, 2012 IBM Corporation and others.
- *
- *  This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License 2.0
- *  which accompanies this distribution, and is available at
- *  https://www.eclipse.org/legal/epl-2.0/
- *
- *  SPDX-License-Identifier: EPL-2.0
- *
- *  Contributors:
- *      IBM Corporation - initial API and implementation
- * *****************************************************************************
- */
 package org.eclipse.swt.custom;
 
-import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.widgets.*;
-import java.util.WeakHashMap;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.values.CTabItemValue;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.FlutterItem;
+import org.eclipse.swt.widgets.FlutterSwt;
+import org.eclipse.swt.widgets.IControl;
+import org.eclipse.swt.widgets.SWTComposite;
+import org.eclipse.swt.widgets.SWTControl;
+import org.eclipse.swt.widgets.Widget;
+
+import java.util.ArrayList;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -38,7 +35,9 @@ import java.util.WeakHashMap;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CTabItem extends Item {
+public class FlutterCTabItem extends FlutterItem implements ICTabItem {
+
+    FlutterCTabFolder parent;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -68,9 +67,8 @@ public class CTabItem extends Item {
      * @see SWT
      * @see Widget#getStyle()
      */
-    public CTabItem(CTabFolder parent, int style) {
-        this(parent.delegate instanceof SWTCTabFolder ? new SWTCTabItem((SWTCTabFolder) parent.delegate, style)
-                : new FlutterCTabItem((FlutterCTabFolder) parent.delegate, style));
+    public FlutterCTabItem(FlutterCTabFolder parent, int style) {
+        this(parent, style, parent.getItemCount());
     }
 
     /**
@@ -103,14 +101,11 @@ public class CTabItem extends Item {
      * @see SWT
      * @see Widget#getStyle()
      */
-    public CTabItem(CTabFolder parent, int style, int index) {
-        this(parent.delegate instanceof SWTCTabFolder ? new SWTCTabItem((SWTCTabFolder) parent.delegate, style, index)
-                : new FlutterCTabItem((FlutterCTabFolder) parent.delegate, style, index));
-    }
-
-    @Override
-    public void dispose() {
-        ((ICTabItem) this.delegate).dispose();
+    public FlutterCTabItem(FlutterCTabFolder parent, int style, int index) {
+        super(parent, style);
+        this.parent = parent;
+//        showClose = (style & SWT.CLOSE) != 0;
+//        parent.createItem(this, index);
     }
 
     /**
@@ -125,7 +120,11 @@ public class CTabItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        return ((ICTabItem) this.delegate).getBounds();
+        return null;
+        /*
+	 * This call is intentionally commented out, to allow this getter method to be
+	 * called from a thread which is different from one that created the widget.
+	 */
     }
 
     /**
@@ -138,8 +137,8 @@ public class CTabItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public Control getControl() {
-        return Control.getInstance(((ICTabItem) this.delegate).getControl());
+    public IControl getControl() {
+        return control;
     }
 
     /**
@@ -156,7 +155,7 @@ public class CTabItem extends Item {
      */
     @Deprecated
     public Image getDisabledImage() {
-        return ((ICTabItem) this.delegate).getDisabledImage();
+        return null;
     }
 
     /**
@@ -171,7 +170,7 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public Color getForeground() {
-        return ((ICTabItem) this.delegate).getForeground();
+        return null;
     }
 
     /**
@@ -186,7 +185,7 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public Color getSelectionForeground() {
-        return ((ICTabItem) this.delegate).getSelectionForeground();
+        return null;
     }
 
     /**
@@ -202,7 +201,7 @@ public class CTabItem extends Item {
      *  @since 3.0
      */
     public Font getFont() {
-        return ((ICTabItem) this.delegate).getFont();
+        return null;
     }
 
     /**
@@ -215,8 +214,13 @@ public class CTabItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public CTabFolder getParent() {
-        return CTabFolder.getInstance(((ICTabItem) this.delegate).getParent());
+    public ICTabFolder getParent() {
+        /*
+	 * This call is intentionally commented out, to allow this getter method to be
+	 * called from a thread which is different from one that created the widget.
+	 */
+        //checkWidget();
+        return parent;
     }
 
     /**
@@ -234,7 +238,7 @@ public class CTabItem extends Item {
      * @since 3.4
      */
     public boolean getShowClose() {
-        return ((ICTabItem) this.delegate).getShowClose();
+        return builder().getShowClose().orElse(false);
     }
 
     /**
@@ -249,7 +253,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public String getToolTipText() {
-        return ((ICTabItem) this.delegate).getToolTipText();
+        return builder().getToolTipText().orElse(null);
     }
 
     /**
@@ -265,9 +269,10 @@ public class CTabItem extends Item {
      * @since 3.0
      */
     public boolean isShowing() {
-        return ((ICTabItem) this.delegate).isShowing();
+        return false;
     }
 
+    private IControl control;
     /**
      * Sets the control that is used to fill the client area of
      * the tab folder when the user selects the tab item.
@@ -283,8 +288,35 @@ public class CTabItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setControl(Control control) {
-        ((ICTabItem) this.delegate).setControl((IControl) control.delegate);
+    public void setControl(IControl control) {
+        // Not Generated
+        checkWidget();
+        if (control != null) {
+            if (control.isDisposed())
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            if (control.getParent() != parent.childComposite)
+                SWT.error(SWT.ERROR_INVALID_PARENT);
+        }
+        if (this.control != null && !this.control.isDisposed()) {
+            this.control.setVisible(false);
+        }
+        this.control = control;
+        if (this.control != null) {
+            int index = parent.indexOf(this);
+            if (index == parent.getSelectionIndex()) {
+                this.control.setBounds(parent.getClientArea());
+                this.control.setVisible(true);
+            } else {
+                int selectedIndex = parent.getSelectionIndex();
+                IControl selectedControl = null;
+                if (selectedIndex != -1) {
+//                    selectedControl = ((FlutterCTabItem) (parent.getItem(selectedIndex))).control;
+                }
+                if (this.control != selectedControl) {
+                    this.control.setVisible(false);
+                }
+            }
+        }
     }
 
     /**
@@ -302,7 +334,6 @@ public class CTabItem extends Item {
      */
     @Deprecated
     public void setDisabledImage(Image image) {
-        ((ICTabItem) this.delegate).setDisabledImage(image);
     }
 
     /**
@@ -323,7 +354,6 @@ public class CTabItem extends Item {
      * @since 3.0
      */
     public void setFont(Font font) {
-        ((ICTabItem) this.delegate).setFont(font);
     }
 
     /**
@@ -343,7 +373,6 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public void setForeground(Color color) {
-        ((ICTabItem) this.delegate).setForeground(color);
     }
 
     /**
@@ -363,12 +392,10 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public void setSelectionForeground(Color color) {
-        ((ICTabItem) this.delegate).setSelectionForeground(color);
     }
 
     @Override
     public void setImage(Image image) {
-        ((ICTabItem) this.delegate).setImage(image);
     }
 
     /**
@@ -386,7 +413,8 @@ public class CTabItem extends Item {
      * @since 3.4
      */
     public void setShowClose(boolean close) {
-        ((ICTabItem) this.delegate).setShowClose(close);
+        builder().setShowClose(close);
+        FlutterSwt.dirty(this);
     }
 
     /**
@@ -402,7 +430,8 @@ public class CTabItem extends Item {
      */
     @Override
     public void setText(String string) {
-        ((ICTabItem) this.delegate).setText(string);
+        // Not Generated
+        super.setText(string);
     }
 
     /**
@@ -426,23 +455,13 @@ public class CTabItem extends Item {
      * </ul>
      */
     public void setToolTipText(String string) {
-        ((ICTabItem) this.delegate).setToolTipText(string);
+        builder().setToolTipText(string);
+        FlutterSwt.dirty(this);
     }
 
-    protected CTabItem(ICTabItem delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
-    }
-
-    public static CTabItem getInstance(ICTabItem delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        CTabItem ref = (CTabItem) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new CTabItem(delegate);
-        }
-        return ref;
+    public CTabItemValue.Builder builder() {
+        if (builder == null)
+            builder = CTabItemValue.builder().setId(hashCode()).setStyle(style);
+        return (CTabItemValue.Builder) builder;
     }
 }

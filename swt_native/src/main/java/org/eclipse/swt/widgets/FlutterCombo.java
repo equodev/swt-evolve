@@ -1118,7 +1118,7 @@ public class FlutterCombo extends FlutterComposite implements ICombo {
 
     public ComboValue.Builder builder() {
         if (builder == null)
-            builder = ComboValue.builder().setId(handle).setStyle(style);
+            builder = ComboValue.builder().setId(hashCode()).setStyle(style);
         return (ComboValue.Builder) builder;
     }
 }

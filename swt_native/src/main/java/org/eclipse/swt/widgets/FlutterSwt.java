@@ -4,10 +4,13 @@ import com.equo.comm.api.ICommService;
 import org.eclipse.swt.values.WidgetValue;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class FlutterSwt {
 
+    public static Serializer SERIALIZER = new Serializer();
     public static FlutterClient CLIENT = null;
     static {
         System.load(
@@ -35,15 +38,14 @@ public class FlutterSwt {
         WidgetValue.Builder builder = widget.builder();
 //      checkAndBuildMenu(widget);
 
-//      if (widget != null) {
-//          List<WidgetValue> childrenValues = widget.children.stream().map(this::build).collect(Collectors.toList());
-//          builder.setChildren(childrenValues);
-//      }
+      if (widget != null && widget.children != null) {
+          List<WidgetValue> childrenValues = widget.children.stream().map(FlutterSwt::build).collect(Collectors.toList());
+          builder.setChildren(childrenValues);
+      }
         return builder.build();
     }
 
     private static Set<FlutterWidget> DIRTY = new HashSet<>();
-    private static Serializer SERIALIZER = new Serializer();
 
     public static void handleDirty() {
         ICommService comm = CLIENT.getComm();
