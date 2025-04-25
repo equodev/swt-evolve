@@ -6,8 +6,10 @@ import java.util.*;
 public interface ItemValue extends WidgetValue {
 
     Optional<String> getText();
+    Optional<String> getImage();
 
     static Builder builder() {
+
         return new AutoValue_ItemValueA.Builder().setSwt("Item");
     }
 
@@ -16,6 +18,8 @@ public interface ItemValue extends WidgetValue {
         Builder setText(String string);
 
         Optional<String> getText();
+        Optional<String> getImage();
+        Builder setImage(String string);
     }
 }
 

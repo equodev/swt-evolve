@@ -13,7 +13,8 @@ ItemValue _$ItemValueFromJson(Map<String, dynamic> json) => ItemValue()
       ?.map((e) => WidgetValue.fromJson(e as Map<String, dynamic>))
       .toList()
   ..style = (json['style'] as num).toInt()
-  ..text = json['text'] as String?;
+  ..text = json['text'] as String?
+  ..image = json['image'] as String?;
 
 Map<String, dynamic> _$ItemValueToJson(ItemValue instance) {
   final val = <String, dynamic>{
@@ -30,5 +31,6 @@ Map<String, dynamic> _$ItemValueToJson(ItemValue instance) {
   writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
   val['style'] = instance.style;
   writeNotNull('text', instance.text);
+  writeNotNull('image', instance.image);
   return val;
 }

@@ -19,6 +19,7 @@ class ItemValue extends WidgetValue {
   }
 
   String? text;
+  String? image;
 
   factory ItemValue.fromJson(Map<String, dynamic> json) =>
       _$ItemValueFromJson(json);
