@@ -10,6 +10,7 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.values.CTabFolderValue;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.FlutterComposite;
 import org.eclipse.swt.widgets.FlutterSwt;
 import org.eclipse.swt.widgets.FlutterWidget;
@@ -1375,6 +1376,9 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
                 if (itemControl != null && !itemControl.isVisible()) {
                     itemControl.setBounds(getClientArea());
                     itemControl.setVisible(true);
+                    if (childComposite.getLayout() instanceof StackLayout layout) {
+                        layout.topControl = Control.getInstance(itemControl);
+                    }
                 }
             });
 
@@ -1393,6 +1397,9 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
                 display.asyncExec(() -> {
                     newControl.setBounds(getClientArea());
                     newControl.setVisible(true);
+                    if (childComposite.getLayout() instanceof StackLayout layout) {
+                        layout.topControl = Control.getInstance(newControl);
+                    }
                 });
             }
             if (oldControl != null && !oldControl.isDisposed()) {
