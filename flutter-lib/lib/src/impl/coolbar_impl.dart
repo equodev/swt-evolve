@@ -2,17 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:swtflutter/src/styles.dart';
 import 'package:swtflutter/src/swt/coolitem.dart';
 import 'package:swtflutter/src/swt/swt.dart';
-import 'package:swtflutter/src/swt/toolitem.dart';
-import 'package:swtflutter/src/widgets.dart';
-
 import '../swt/coolbar.dart';
 import '../impl/composite_impl.dart';
+
 
 class CoolBarImpl<T extends CoolBarSwt, V extends CoolBarValue>
     extends CompositeImpl<T, V> {
 
   final bool useDarkTheme;
-  //todo que el tema se propague a los items
 
   CoolBarImpl({this.useDarkTheme = true});
 
@@ -92,13 +89,13 @@ class CoolBarImpl<T extends CoolBarSwt, V extends CoolBarValue>
   }
 
   Widget getWidgetForCoolItem(CoolItemValue coolItem) {
+
     final itemWidget = CoolItemSwt(value: coolItem);
 
     return Builder(
         builder: (context) {
           final theme = Theme.of(context);
           final isDark = theme.brightness == Brightness.dark;
-
 
           final iconColor = isDark ? Colors.grey.shade400 : Colors.grey.shade700;
           final textColor = isDark ? Colors.grey.shade300 : Colors.grey.shade800;
@@ -135,7 +132,7 @@ class CoolBarImpl<T extends CoolBarSwt, V extends CoolBarValue>
             )
           };
 
-          // Envolver con Tooltip si hay texto de ayuda
+
           if (coolItem.toolTipText != null) {
             item = Tooltip(
               message: coolItem.toolTipText!,
@@ -143,7 +140,6 @@ class CoolBarImpl<T extends CoolBarSwt, V extends CoolBarValue>
             );
           }
 
-          // Añadir un pequeño espacio entre elementos
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2.0),
             child: item,

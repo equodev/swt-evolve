@@ -2,12 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:flutter/widgets.dart';
 import '../swt/item.dart';
 import '../impl/toolitem_impl.dart';
-import '../comm/comm.dart';
-import '../widgets.dart';
-import 'layout.dart';
 import 'widget.dart';
-import 'rectangle.dart';
-
 part 'toolitem.g.dart';
 
 class ToolItemSwt<V extends ToolItemValue> extends ItemSwt<V> {
