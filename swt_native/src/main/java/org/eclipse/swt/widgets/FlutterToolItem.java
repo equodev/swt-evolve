@@ -555,6 +555,9 @@ public class FlutterToolItem extends FlutterItem implements IToolItem {
 
     @Override
     public void setImage(Image image) {
+        if (image != null){
+            builder().setImage(image.getImageData().getFilename());
+        }
     }
 
     boolean setRadioSelection(boolean value) {

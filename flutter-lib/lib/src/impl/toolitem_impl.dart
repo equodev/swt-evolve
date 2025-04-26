@@ -67,7 +67,8 @@ class ToolItemImpl<T extends ToolItemSwt, V extends ToolItemValue>
         },
       ),
       SWT.PUSH => PushButton(
-        text: state.text,
+        text: text,
+        image: image,
         enabled: enabled,
         useDarkTheme: useDarkTheme,
         onPressed: () {

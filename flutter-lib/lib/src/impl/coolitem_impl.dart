@@ -93,6 +93,16 @@ class CoolItemImpl<T extends CoolItemSwt, V extends CoolItemValue>
           }
         },
       ),
+      SWT.PUSH => PushButton(
+        text: text,
+        image: image,
+        enabled: enabled,
+        useDarkTheme: useDarkTheme,
+        onPressed: () {
+          onPressed();
+          setState(() => state.selection = !(state.selection ?? false));
+        },
+      ),
       _ => Button(
         child: Text(text!),
         onPressed: () {

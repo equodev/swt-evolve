@@ -244,14 +244,14 @@ class _PushButtonState extends State<PushButton> {
   @override
   Widget build(BuildContext context) {
     final Color darkSelectedColor = const Color(0xFF6366F1);
-    final Color darkUnselectedColor = const Color(0xFF4E4D4D);
-    final Color darkSelectedTextColor = const Color(0xFFFFFFFF);
-    final Color darkUnselectedTextColor = const Color(0xFFFFFFFF);
+    final Color darkUnselectedColor = const Color(0xFF6366F1);
+    final Color darkSelectedTextColor = const Color(0xFF6366F1);
+    final Color darkUnselectedTextColor = const Color(0xFF6366F1);
 
     final Color lightSelectedColor = const Color(0xFF6366F1);
-    final Color lightUnselectedColor = const Color(0xFFC8C7C7);
-    final Color lightSelectedTextColor = const Color(0xFFFFFFFF);
-    final Color lightUnselectedTextColor = const Color(0xFF595858);
+    final Color lightUnselectedColor = const Color(0xFF6366F1);
+    final Color lightSelectedTextColor = const Color(0xFF6366F1);
+    final Color lightUnselectedTextColor = const Color(0xFF6366F1);
 
     final Color selectedColor = widget.useDarkTheme ? darkSelectedColor : lightSelectedColor;
     final Color unselectedColor = widget.useDarkTheme ? darkUnselectedColor : lightUnselectedColor;
@@ -261,27 +261,26 @@ class _PushButtonState extends State<PushButton> {
     final Color iconColor = _isPressed ? selectedTextColor : unselectedTextColor;
 
     final bool isIconOnly = widget.image != null && (widget.text == null || widget.text!.isEmpty);
-
     const double iconSize = 24.0;
 
+    // Para botones de solo ícono
     if (isIconOnly) {
-      return GestureDetector(
-        onTapDown: widget.enabled ? (_) {
+      return InkWell(
+        onTap: widget.enabled ? () {
           setState(() {
             _isPressed = true;
           });
-        } : null,
-        onTapUp: widget.enabled ? (_) {
-          setState(() {
-            _isPressed = false;
-          });
           widget.onPressed();
-        } : null,
-        onTapCancel: widget.enabled ? () {
-          setState(() {
-            _isPressed = false;
+          // Resetear el estado después de un breve delay para mostrar el efecto visual
+          Future.delayed(const Duration(milliseconds: 200), () {
+            if (mounted) {
+              setState(() {
+                _isPressed = false;
+              });
+            }
           });
         } : null,
+        borderRadius: BorderRadius.circular(iconSize),
         child: Container(
           width: iconSize + 8,
           height: iconSize + 8,
@@ -310,64 +309,66 @@ class _PushButtonState extends State<PushButton> {
       );
     }
 
-    return GestureDetector(
-      onTapDown: widget.enabled ? (_) {
+    return MaterialButton(
+      onPressed: widget.enabled ? () {
         setState(() {
           _isPressed = true;
         });
-      } : null,
-      onTapUp: widget.enabled ? (_) {
-        setState(() {
-          _isPressed = false;
-        });
         widget.onPressed();
-      } : null,
-      onTapCancel: widget.enabled ? () {
-        setState(() {
-          _isPressed = false;
+        // Resetear el estado después de un breve delay
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (mounted) {
+            setState(() {
+              _isPressed = false;
+            });
+          }
         });
       } : null,
-      child: Container(
-        height: widget.height,
-        constraints: BoxConstraints(minWidth: widget.minWidth),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        decoration: BoxDecoration(
-          color: _isPressed
-              ? (widget.enabled ? selectedColor : selectedColor.withOpacity(0.5))
-              : unselectedColor,
-          borderRadius: BorderRadius.circular(widget.borderRadius),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (widget.image != null) ...[
-              !materialIconMap.containsKey(widget.image)
-                  ? (widget.image!.toLowerCase().endsWith('.svg')
-                  ? SvgPicture.file(
-                File(widget.image!),
-              )
-                  : Image.file(
-                File(widget.image!),
-                width: iconSize - 8,
-                height: iconSize - 8,
-              ))
-                  : Icon(
-                getMaterialIconByName(widget.image!),
-                size: iconSize - 8,
-                color: iconColor,
-              ),
-              const SizedBox(width: 6),
-            ],
-            Text(
-              widget.text ?? "",
-              style: TextStyle(
-                color: _isPressed ? selectedTextColor : unselectedTextColor,
-                fontWeight: FontWeight.w500,
-              ),
+      elevation: 0,
+      focusElevation: 0,
+      hoverElevation: 0,
+      highlightElevation: 0,
+      disabledElevation: 0,
+      height: widget.height,
+      minWidth: widget.minWidth,
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      color: _isPressed
+          ? (widget.enabled ? selectedColor : selectedColor.withOpacity(0.5))
+          : unselectedColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(widget.borderRadius),
+      ),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (widget.image != null) ...[
+            !materialIconMap.containsKey(widget.image)
+                ? (widget.image!.toLowerCase().endsWith('.svg')
+                ? SvgPicture.file(
+              File(widget.image!),
+            )
+                : Image.file(
+              File(widget.image!),
+              width: iconSize - 8,
+              height: iconSize - 8,
+            ))
+                : Icon(
+              getMaterialIconByName(widget.image!),
+              size: iconSize - 8,
+              color: iconColor,
             ),
+            const SizedBox(width: 6),
           ],
-        ),
+          Text(
+            widget.text ?? "",
+            style: TextStyle(
+              color: _isPressed ? selectedTextColor : unselectedTextColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
