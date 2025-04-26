@@ -122,6 +122,7 @@ public class SWTToolItem extends SWTItem implements IToolItem {
         super(parent, checkStyle(style));
         this.parent = parent;
         createWidget(parent.getItemCount());
+        ToolItem.getInstance(this);
     }
 
     /**

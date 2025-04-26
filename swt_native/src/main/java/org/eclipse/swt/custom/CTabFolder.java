@@ -54,6 +54,23 @@ import java.util.WeakHashMap;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class CTabFolder extends Composite {
+    
+    /**
+     * marginWidth specifies the number of points of horizontal margin
+     * that will be placed along the left and right edges of the form.
+     *
+     * The default value is 0.
+     */
+    public int marginWidth = 0;
+
+    /**
+     * marginHeight specifies the number of points of vertical margin
+     * that will be placed along the top and bottom edges of the form.
+     *
+     * The default value is 0.
+     */
+    public int marginHeight = 0;
+
 
     // when disposing CTabFolder, don't try to layout the items or
     // keep track of size changes in order to redraw only affected area

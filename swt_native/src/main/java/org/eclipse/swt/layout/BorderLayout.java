@@ -133,13 +133,13 @@ public class BorderLayout extends Layout {
     public double heightDistributionFactor = 0.5;
 
     @Override
-    protected Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache) {
+    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         if (hHint > SWT.DEFAULT && wHint > SWT.DEFAULT) {
             return new Point(wHint, hHint);
         }
-        Stream<Entry<IControl, BorderData>> children = //
+        Stream<Entry<Control, BorderData>> children = //
         Arrays.stream(composite.getChildren()).map(control -> borderDataControl(control, flushCache));
-        Map<Integer, List<Entry<IControl, BorderData>>> regionMap = children.collect(Collectors.groupingBy(BorderLayout::region));
+        Map<Integer, List<Entry<Control, BorderData>>> regionMap = children.collect(Collectors.groupingBy(BorderLayout::region));
         int width;
         if (wHint <= SWT.DEFAULT) {
             Builder widthBuilder = IntStream.builder();
@@ -227,20 +227,20 @@ public class BorderLayout extends Layout {
      * @param regionMap the map of regions
      * @return the total W/H including the {@link #controlSpacing}
      */
-    private int getTotal(ToIntFunction<Point> extractor, int region, Map<Integer, List<Entry<IControl, BorderData>>> regionMap) {
-        List<Entry<IControl, BorderData>> list = regionMap.getOrDefault(region, Collections.emptyList());
+    private int getTotal(ToIntFunction<Point> extractor, int region, Map<Integer, List<Entry<Control, BorderData>>> regionMap) {
+        List<Entry<Control, BorderData>> list = regionMap.getOrDefault(region, Collections.emptyList());
         if (list.isEmpty()) {
             return 0;
         }
         return list.stream().mapToInt(entry -> extractor.applyAsInt(entry.getValue().getSize(entry.getKey()))).sum() + ((list.size() - 1) * controlSpacing);
     }
 
-    private static int getMax(ToIntFunction<Point> extractor, int region, Map<Integer, List<Entry<IControl, BorderData>>> regionMap) {
-        List<Entry<IControl, BorderData>> list = regionMap.getOrDefault(region, Collections.emptyList());
+    private static int getMax(ToIntFunction<Point> extractor, int region, Map<Integer, List<Entry<Control, BorderData>>> regionMap) {
+        List<Entry<Control, BorderData>> list = regionMap.getOrDefault(region, Collections.emptyList());
         return getMax(extractor, list, SWT.DEFAULT, SWT.DEFAULT, false);
     }
 
-    private static int getMax(ToIntFunction<Point> extractor, List<Entry<IControl, BorderData>> list, int maxW, int maxH, boolean flushCache) {
+    private static int getMax(ToIntFunction<Point> extractor, List<Entry<Control, BorderData>> list, int maxW, int maxH, boolean flushCache) {
         if (list.isEmpty()) {
             return 0;
         }
@@ -252,21 +252,21 @@ public class BorderLayout extends Layout {
     }
 
     @Override
-    protected void layout(IComposite composite, boolean flushCache) {
+    protected void layout(Composite composite, boolean flushCache) {
         Rectangle clientArea = composite.getClientArea();
         int clientX = clientArea.x + marginWidth;
         int clientY = clientArea.y + marginHeight;
         int clientWidth = clientArea.width - 2 * marginWidth;
         int clientHeight = clientArea.height - 2 * marginHeight;
-        Stream<Entry<IControl, BorderData>> children = //
+        Stream<Entry<Control, BorderData>> children = //
         Arrays.stream(composite.getChildren()).map(control -> borderDataControl(control, flushCache));
-        Map<Integer, List<Entry<IControl, BorderData>>> regionMap = children.collect(Collectors.groupingBy(BorderLayout::region));
+        Map<Integer, List<Entry<Control, BorderData>>> regionMap = children.collect(Collectors.groupingBy(BorderLayout::region));
         regionMap.getOrDefault(SWT.NONE, Collections.emptyList()).forEach(entry -> entry.getKey().setBounds(clientX, clientY, 0, 0));
-        List<Entry<IControl, BorderData>> northList = regionMap.getOrDefault(TOP, Collections.emptyList());
-        List<Entry<IControl, BorderData>> southList = regionMap.getOrDefault(BOTTOM, Collections.emptyList());
-        List<Entry<IControl, BorderData>> westList = regionMap.getOrDefault(LEFT, Collections.emptyList());
-        List<Entry<IControl, BorderData>> eastList = regionMap.getOrDefault(RIGHT, Collections.emptyList());
-        List<Entry<IControl, BorderData>> centerList = regionMap.getOrDefault(CENTER, Collections.emptyList());
+        List<Entry<Control, BorderData>> northList = regionMap.getOrDefault(TOP, Collections.emptyList());
+        List<Entry<Control, BorderData>> southList = regionMap.getOrDefault(BOTTOM, Collections.emptyList());
+        List<Entry<Control, BorderData>> westList = regionMap.getOrDefault(LEFT, Collections.emptyList());
+        List<Entry<Control, BorderData>> eastList = regionMap.getOrDefault(RIGHT, Collections.emptyList());
+        List<Entry<Control, BorderData>> centerList = regionMap.getOrDefault(CENTER, Collections.emptyList());
         int northControlCount = northList.size();
         int northPerControlWidth = northControlCount > 0 ? (clientWidth - (northControlCount - 1) * controlSpacing) / northControlCount : 0;
         int northControlHeight = getMax(HEIGHT, northList, northPerControlWidth, SWT.DEFAULT, flushCache);
@@ -298,7 +298,7 @@ public class BorderLayout extends Layout {
         if (northControlCount > 0) {
             int x = clientX;
             int y = clientY;
-            for (Entry<IControl, BorderData> entry : northList) {
+            for (Entry<Control, BorderData> entry : northList) {
                 entry.getKey().setBounds(x, y, northPerControlWidth, northControlHeight);
                 x += northPerControlWidth + controlSpacing;
             }
@@ -306,7 +306,7 @@ public class BorderLayout extends Layout {
         if (southControlCount > 0) {
             int x = clientX;
             int y = clientY + centerControlHeight + northControlHeight;
-            for (Entry<IControl, BorderData> entry : southList) {
+            for (Entry<Control, BorderData> entry : southList) {
                 entry.getKey().setBounds(x, y, southPerControlWidth, southControlHeight);
                 x += southPerControlWidth + controlSpacing;
             }
@@ -325,7 +325,7 @@ public class BorderLayout extends Layout {
                 h -= spacing;
             }
             int controlHeight = (h - (westControlCount - 1) * controlSpacing) / westControlCount;
-            for (Entry<IControl, BorderData> entry : westList) {
+            for (Entry<Control, BorderData> entry : westList) {
                 entry.getKey().setBounds(x, y, westControlWidth, controlHeight);
                 y += controlHeight + controlSpacing;
             }
@@ -342,7 +342,7 @@ public class BorderLayout extends Layout {
                 h -= spacing;
             }
             int controlHeight = (h - (eastControlCount - 1) * controlSpacing) / eastControlCount;
-            for (Entry<IControl, BorderData> entry : eastList) {
+            for (Entry<Control, BorderData> entry : eastList) {
                 entry.getKey().setBounds(x, y, eastControlWidth, controlHeight);
                 y += controlHeight + controlSpacing;
             }
@@ -376,7 +376,7 @@ public class BorderLayout extends Layout {
                 controlWidth = w;
                 controlHeight = (h - (centerControlCount - 1) * controlSpacing) / centerControlCount;
             }
-            for (Entry<IControl, BorderData> entry : centerList) {
+            for (Entry<Control, BorderData> entry : centerList) {
                 entry.getKey().setBounds(x, y, controlWidth, controlHeight);
                 if (type == SWT.HORIZONTAL) {
                     x += controlWidth + controlSpacing;
@@ -387,7 +387,7 @@ public class BorderLayout extends Layout {
         }
     }
 
-    private <C extends IControl> Entry<C, BorderData> borderDataControl(C control, boolean flushCache) {
+    private <C extends Control> Entry<C, BorderData> borderDataControl(C control, boolean flushCache) {
         Object layoutData = control.getLayoutData();
         if (layoutData instanceof BorderData borderData) {
             if (flushCache) {
@@ -403,7 +403,7 @@ public class BorderLayout extends Layout {
         }
     }
 
-    private static int region(Entry<IControl, BorderData> entry) {
+    private static int region(Entry<Control, BorderData> entry) {
         BorderData borderData = entry.getValue();
         if (borderData == null) {
             // we assume all controls without explicit data to be placed in the center area

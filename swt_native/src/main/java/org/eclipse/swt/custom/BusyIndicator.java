@@ -54,11 +54,11 @@ public class BusyIndicator {
      *    <li>ERROR_NULL_ARGUMENT - if the runnable is null</li>
      * </ul>
      */
-    public static void showWhile(SWTDisplay display, Runnable runnable) {
+    public static void showWhile(Display display, Runnable runnable) {
         if (runnable == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (display == null) {
-            display = SWTDisplay.getCurrent();
+            display = Display.getCurrent();
             if (display == null) {
                 runnable.run();
                 return;
@@ -94,7 +94,7 @@ public class BusyIndicator {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
         if (!future.isDone()) {
-            SWTDisplay display = (SWTDisplay) (SWTDisplay.getCurrent());
+            Display display = Display.getCurrent();
             if (display == null || display.isDisposed()) {
                 try {
                     future.get();
@@ -234,7 +234,7 @@ public class BusyIndicator {
         if (executor instanceof SWTDisplay) {
             throw new IllegalArgumentException("passing a Display as an executor is not allowed!");
         }
-        SWTDisplay display = (SWTDisplay) (SWTDisplay.findDisplay(Thread.currentThread()));
+        Display display = Display.findDisplay(Thread.currentThread());
         if (display == null) {
             try {
                 V inplaceResult = action.call();
@@ -261,13 +261,12 @@ public class BusyIndicator {
         return future;
     }
 
-    private static void clearBusyCursor(SWTDisplay display, Integer busyId) {
+    private static void clearBusyCursor(Display display, Integer busyId) {
         if (display.isDisposed()) {
             return;
         }
-        IShell[] shells = display.getShells();
-        for (IShell shell_ : shells) {
-        	SWTShell shell = (SWTShell) shell_;
+        Shell[] shells = display.getShells();
+        for (Shell shell : shells) {
             Integer id = (Integer) shell.getData(BUSYID_NAME);
             if (Objects.equals(id, busyId)) {
                 setCursorAndId(shell, null, null);
@@ -275,12 +274,11 @@ public class BusyIndicator {
         }
     }
 
-    private static Integer setBusyCursor(SWTDisplay display) {
+    private static Integer setBusyCursor(Display display) {
         Integer busyId = nextBusyId.getAndIncrement();
         Cursor cursor = display.getSystemCursor(SWT.CURSOR_WAIT);
-        IShell[] shells = display.getShells();
-        for (IShell shell_ : shells) {
-        	SWTShell shell = (SWTShell) shell_;
+        Shell[] shells = display.getShells();
+        for (Shell shell : shells) {
             Integer id = (Integer) shell.getData(BUSYID_NAME);
             if (id == null) {
                 setCursorAndId(shell, cursor, busyId);
@@ -293,7 +291,7 @@ public class BusyIndicator {
      * Paranoia code to make sure we don't break UI because of one shell disposed,
      * see bug 532632 comment 20
      */
-    private static void setCursorAndId(SWTShell shell, Cursor cursor, Integer busyId) {
+    private static void setCursorAndId(Shell shell, Cursor cursor, Integer busyId) {
         if (!shell.isDisposed()) {
             shell.setCursor(cursor);
         }

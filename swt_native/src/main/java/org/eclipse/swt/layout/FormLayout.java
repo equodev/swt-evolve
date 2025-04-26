@@ -225,7 +225,7 @@ public final class FormLayout extends Layout {
  * 		to CX. We can find the height of the entire form by setting
  * 		CX = -B. Solving in terms of U and V gives us X = (-B * V) / U.
  */
-    int computeHeight(IControl control, FormData data, boolean flushCache) {
+    int computeHeight(Control control, FormData data, boolean flushCache) {
         FormAttachment top = data.getTopAttachment(control, spacing, flushCache);
         FormAttachment bottom = data.getBottomAttachment(control, spacing, flushCache);
         FormAttachment height = bottom.minus(top);
@@ -244,7 +244,7 @@ public final class FormLayout extends Layout {
     }
 
     @Override
-    protected Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache) {
+    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         Point size = layout(composite, false, 0, 0, wHint, hHint, flushCache);
         if (wHint != SWT.DEFAULT)
             size.x = wHint;
@@ -254,7 +254,7 @@ public final class FormLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(IControl control) {
+    protected boolean flushCache(Control control) {
         Object data = control.getLayoutData();
         if (data != null)
             ((FormData) data).flushCache();
@@ -273,7 +273,7 @@ public final class FormLayout extends Layout {
  * Computes the preferred height of the form with
  * respect to the preferred height of the control.
  */
-    int computeWidth(IControl control, FormData data, boolean flushCache) {
+    int computeWidth(Control control, FormData data, boolean flushCache) {
         FormAttachment left = data.getLeftAttachment(control, spacing, flushCache);
         FormAttachment right = data.getRightAttachment(control, spacing, flushCache);
         FormAttachment width = right.minus(left);
@@ -292,7 +292,7 @@ public final class FormLayout extends Layout {
     }
 
     @Override
-    protected void layout(IComposite composite, boolean flushCache) {
+    protected void layout(Composite composite, boolean flushCache) {
         Rectangle rect = composite.getClientArea();
         int x = rect.x + marginLeft + marginWidth;
         int y = rect.y + marginTop + marginHeight;
@@ -301,9 +301,9 @@ public final class FormLayout extends Layout {
         layout(composite, true, x, y, width, height, flushCache);
     }
 
-    Point layout(IComposite composite, boolean move, int x, int y, int width, int height, boolean flushCache) {
-        IControl[] children = (IControl[]) (composite.getChildren());
-        for (IControl child : children) {
+    Point layout(Composite composite, boolean move, int x, int y, int width, int height, boolean flushCache) {
+        Control[] children = composite.getChildren();
+        for (Control child : children) {
             FormData data = (FormData) child.getLayoutData();
             if (data == null)
                 child.setLayoutData(data = new FormData());
@@ -315,7 +315,7 @@ public final class FormLayout extends Layout {
         Rectangle[] bounds = null;
         int w = 0, h = 0;
         for (int i = 0; i < children.length; i++) {
-            IControl child = (IControl) (children[i]);
+            Control child = children[i];
             FormData data = (FormData) child.getLayoutData();
             if (width != SWT.DEFAULT) {
                 data.needed = false;
@@ -351,7 +351,7 @@ public final class FormLayout extends Layout {
             }
         }
         for (int i = 0; i < children.length; i++) {
-            IControl child = (IControl) (children[i]);
+            Control child = children[i];
             FormData data = (FormData) child.getLayoutData();
             if (height != SWT.DEFAULT) {
                 int y1 = data.getTopAttachment(child, spacing, flushCache).solveX(height);
@@ -366,7 +366,7 @@ public final class FormLayout extends Layout {
             }
         }
         for (int i = 0; i < children.length; i++) {
-            IControl child = (IControl) (children[i]);
+            Control child = children[i];
             FormData data = (FormData) child.getLayoutData();
             if (flush != null && flush[i])
                 data.cacheWidth = data.cacheHeight = -1;

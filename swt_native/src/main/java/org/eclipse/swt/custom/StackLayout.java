@@ -94,10 +94,10 @@ public class StackLayout extends Layout {
     public Control topControl;
 
     @Override
-    protected Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache) {
+    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         int maxWidth = 0;
         int maxHeight = 0;
-        for (IControl element : composite.getChildren()) {
+        for (Control element : composite.getChildren()) {
             Point size = element.computeSize(wHint, hHint, flushCache);
             maxWidth = Math.max(size.x, maxWidth);
             maxHeight = Math.max(size.y, maxHeight);
@@ -112,18 +112,18 @@ public class StackLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(IControl control) {
+    protected boolean flushCache(Control control) {
         return true;
     }
 
     @Override
-    protected void layout(IComposite composite, boolean flushCache) {
+    protected void layout(Composite composite, boolean flushCache) {
         Rectangle rect = composite.getClientArea();
         rect.x += marginWidth;
         rect.y += marginHeight;
         rect.width -= 2 * marginWidth;
         rect.height -= 2 * marginHeight;
-        for (Control element : (Composite.getInstance(composite).getChildren())) {
+        for (Control element : composite.getChildren()) {
             element.setBounds(rect);
             element.setVisible(element == topControl);
         }

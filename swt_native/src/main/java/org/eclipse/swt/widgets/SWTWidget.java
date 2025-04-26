@@ -497,7 +497,7 @@ public abstract class SWTWidget implements IWidget {
      * @see #notifyListeners
      * @since 3.126
      */
-    protected void addTypedListener(EventListener listener, int... eventTypes) {
+    public void addTypedListener(EventListener listener, int... eventTypes) {
         checkWidget();
         if (listener == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -660,7 +660,7 @@ public abstract class SWTWidget implements IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    protected void checkWidget() {
+    public void checkWidget() {
         SWTDisplay display = this.display;
         if (display == null)
             error(SWT.ERROR_WIDGET_DISPOSED);

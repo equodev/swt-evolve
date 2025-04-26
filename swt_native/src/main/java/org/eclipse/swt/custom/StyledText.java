@@ -2423,7 +2423,7 @@ public class StyledText extends Canvas {
      */
     @Override
     public void setCaret(Caret caret) {
-        ((IStyledText) this.delegate).setCaret((ICaret) caret.delegate);
+        ((IStyledText) this.delegate).setCaret((ICaret) (caret != null ? caret.delegate : null));
     }
 
     /**

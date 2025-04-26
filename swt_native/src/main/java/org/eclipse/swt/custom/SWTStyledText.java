@@ -913,7 +913,7 @@ public class SWTStyledText extends SWTCanvas implements IStyledText {
         renderer = new StyledTextRenderer(((SWTDisplay) (getDisplay())), this);
         renderer.setContent(content);
         renderer.setFont(getFont(), tabLength);
-        ime = new SWTIME(this, SWT.NONE);
+        ime = (SWTIME)new IME(StyledText.getInstance(this), SWT.NONE).delegate;
         defaultCaret = new SWTCaret(this, SWT.NONE);
         if ((style & SWT.WRAP) != 0) {
             setWordWrap(true);

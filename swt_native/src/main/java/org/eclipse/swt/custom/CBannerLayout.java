@@ -27,7 +27,8 @@ import org.eclipse.swt.widgets.*;
 class CBannerLayout extends Layout {
 
     @Override
-    protected Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache) {
+    protected Point computeSize(Composite composite_, int wHint, int hHint, boolean flushCache) {
+        IComposite composite = (IComposite)composite_.delegate;
         SWTCBanner banner = (SWTCBanner) ((SWTCBanner) composite);
         SWTControl left = (SWTControl) (banner.getLeft());
         SWTControl right = (SWTControl) (banner.getRight());
@@ -108,7 +109,7 @@ class CBannerLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(IControl control) {
+    protected boolean flushCache(Control control) {
         Object data = control.getLayoutData();
         if (data instanceof CLayoutData)
             ((CLayoutData) data).flushCache();
@@ -116,7 +117,8 @@ class CBannerLayout extends Layout {
     }
 
     @Override
-    protected void layout(IComposite composite, boolean flushCache) {
+    protected void layout(Composite composite_, boolean flushCache) {
+        IComposite composite = (IComposite)composite_.delegate;
         SWTCBanner banner = (SWTCBanner) ((SWTCBanner) composite);
         SWTControl left = (SWTControl) (banner.getLeft());
         SWTControl right = (SWTControl) (banner.getRight());

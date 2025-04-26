@@ -218,7 +218,7 @@ public class SWTBrowser extends SWTComposite implements IBrowser {
     }
 
     @Override
-    protected void checkWidget() {
+    public void checkWidget() {
         super.checkWidget();
     }
 

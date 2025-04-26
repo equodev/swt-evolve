@@ -203,7 +203,7 @@ public final class RowLayout extends Layout {
     }
 
     @Override
-    protected Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache) {
+    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         Point extent;
         if (type == SWT.HORIZONTAL) {
             extent = layoutHorizontal(composite, false, (wHint != SWT.DEFAULT) && wrap, wHint, flushCache);
@@ -217,7 +217,7 @@ public final class RowLayout extends Layout {
         return extent;
     }
 
-    Point computeSize(IControl control, boolean flushCache) {
+    Point computeSize(Control control, boolean flushCache) {
         int wHint = SWT.DEFAULT, hHint = SWT.DEFAULT;
         RowData data = (RowData) control.getLayoutData();
         if (data != null) {
@@ -228,7 +228,7 @@ public final class RowLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(IControl control) {
+    protected boolean flushCache(Control control) {
         return true;
     }
 
@@ -241,7 +241,7 @@ public final class RowLayout extends Layout {
     }
 
     @Override
-    protected void layout(IComposite composite, boolean flushCache) {
+    protected void layout(Composite composite, boolean flushCache) {
         Rectangle clientArea = composite.getClientArea();
         if (type == SWT.HORIZONTAL) {
             layoutHorizontal(composite, true, wrap, clientArea.width, flushCache);
@@ -250,11 +250,11 @@ public final class RowLayout extends Layout {
         }
     }
 
-    Point layoutHorizontal(IComposite composite, boolean move, boolean wrap, int width, boolean flushCache) {
-        IControl[] children = (IControl[]) (composite.getChildren());
+    Point layoutHorizontal(Composite composite, boolean move, boolean wrap, int width, boolean flushCache) {
+        Control[] children = composite.getChildren();
         int count = 0;
         for (int i = 0; i < children.length; i++) {
-            IControl control = (IControl) (children[i]);
+            Control control = children[i];
             RowData data = (RowData) control.getLayoutData();
             if (data == null || !data.exclude) {
                 children[count++] = children[i];
@@ -266,7 +266,7 @@ public final class RowLayout extends Layout {
         int childWidth = 0, childHeight = 0, maxHeight = 0;
         if (!pack) {
             for (int i = 0; i < count; i++) {
-                IControl child = (IControl) (children[i]);
+                Control child = children[i];
                 Point size = computeSize(child, flushCache);
                 if (width > SWT.DEFAULT && width < size.x && wrap) {
                     size = child.computeSize(width, child.getLayoutData() == null ? SWT.DEFAULT : ((RowData) child.getLayoutData()).height, flushCache);
@@ -291,7 +291,7 @@ public final class RowLayout extends Layout {
         }
         int maxX = 0, x = marginLeft + marginWidth, y = marginTop + marginHeight;
         for (int i = 0; i < count; i++) {
-            IControl child = (IControl) (children[i]);
+            Control child = children[i];
             if (pack) {
                 Point size = computeSize(child, flushCache);
                 if (width > SWT.DEFAULT && width < size.x && wrap) {
@@ -381,11 +381,11 @@ public final class RowLayout extends Layout {
         return new Point(maxX, y + maxHeight + marginBottom + marginHeight);
     }
 
-    Point layoutVertical(IComposite composite, boolean move, boolean wrap, int height, boolean flushCache) {
-        IControl[] children = (IControl[]) (composite.getChildren());
+    Point layoutVertical(Composite composite, boolean move, boolean wrap, int height, boolean flushCache) {
+        Control[] children = composite.getChildren();
         int count = 0;
         for (int i = 0; i < children.length; i++) {
-            IControl control = (IControl) (children[i]);
+            Control control = children[i];
             RowData data = (RowData) control.getLayoutData();
             if (data == null || !data.exclude) {
                 children[count++] = children[i];
@@ -397,7 +397,7 @@ public final class RowLayout extends Layout {
         int childWidth = 0, childHeight = 0, maxWidth = 0;
         if (!pack) {
             for (int i = 0; i < count; i++) {
-                IControl child = (IControl) (children[i]);
+                Control child = children[i];
                 Point size = computeSize(child, flushCache);
                 if (height > SWT.DEFAULT && height < size.y && wrap)
                     size = child.computeSize(child.getLayoutData() == null ? SWT.DEFAULT : ((RowData) child.getLayoutData()).width, height, flushCache);
@@ -421,7 +421,7 @@ public final class RowLayout extends Layout {
         }
         int maxY = 0, x = marginLeft + marginWidth, y = marginTop + marginHeight;
         for (int i = 0; i < count; i++) {
-            IControl child = (IControl) (children[i]);
+            Control child = children[i];
             if (pack) {
                 Point size = computeSize(child, flushCache);
                 if (height > SWT.DEFAULT && height < size.y && wrap)

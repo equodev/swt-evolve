@@ -760,7 +760,7 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
         if (gdkEvents == null) {
             int length = GROW_SIZE;
             gdkEvents = new long[length];
-            gdkEventWidgets = new SWTWidget[length];
+            gdkEventWidgets = new IWidget[length];
             gdkEventCount = 0;
         }
         if (gdkEventCount == gdkEvents.length) {
@@ -768,7 +768,7 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
             long[] newEvents = new long[length];
             System.arraycopy(gdkEvents, 0, newEvents, 0, gdkEventCount);
             gdkEvents = newEvents;
-            SWTWidget[] newWidgets = new SWTWidget[length];
+            IWidget[] newWidgets = new IWidget[length];
             System.arraycopy(gdkEventWidgets, 0, newWidgets, 0, gdkEventCount);
             gdkEventWidgets = newWidgets;
         }
@@ -4613,7 +4613,7 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
         if (gdkEventCount != 0) {
             for (int i = 0; i < gdkEventCount; i++) {
                 long event = gdkEvents[i];
-                SWTWidget widget = (SWTWidget) (gdkEventWidgets[i]);
+                IWidget widget = gdkEventWidgets[i];
                 if (widget == null || !widget.isDisposed()) {
                     if (GTK.GTK4) {
                         long display = GDK.gdk_display_get_default();

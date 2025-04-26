@@ -30,14 +30,14 @@ import org.eclipse.swt.widgets.*;
 public class TabFolderLayout extends Layout {
 
     @Override
-    protected Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache) {
+    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         if (wHint != SWT.DEFAULT && hHint != SWT.DEFAULT)
             return new Point(wHint, hHint);
-        IControl[] children = (IControl[]) (composite.getChildren());
+        Control[] children = composite.getChildren();
         int count = children.length;
         int maxWidth = 0, maxHeight = 0;
         for (int i = 0; i < count; i++) {
-            IControl child = (IControl) (children[i]);
+            Control child = children[i];
             Point pt = child.computeSize(SWT.DEFAULT, SWT.DEFAULT, flushCache);
             maxWidth = Math.max(maxWidth, pt.x);
             maxHeight = Math.max(maxHeight, pt.y);
@@ -50,10 +50,10 @@ public class TabFolderLayout extends Layout {
     }
 
     @Override
-    protected void layout(IComposite composite, boolean flushCache) {
+    protected void layout(Composite composite, boolean flushCache) {
         Rectangle rect = composite.getClientArea();
-        IControl[] children = (IControl[]) (composite.getChildren());
-        for (IControl c : children) {
+        Control[] children = composite.getChildren();
+        for (Control c : children) {
             c.setBounds(rect);
         }
     }

@@ -19,6 +19,8 @@ import org.eclipse.swt.widgets.IControl;
 import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.widgets.TypedListener;
 
+import java.util.ArrayList;
+
 /**
  * Instances of this class implement the notebook user interface metaphor. It
  * allows the user to select a notebook page from set of pages.
@@ -153,7 +155,8 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
      * @see #getStyle()
      */
     public FlutterCTabFolder(IComposite parent, int style) {
-        super(parent, checkStyle(parent, style));
+         super(parent, checkStyle(parent, style));
+        children = new ArrayList<>();
 //        init(style);
     }
 
@@ -379,6 +382,9 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
      *                                     </ul>
      */
     public ICTabItem getItem(int index) {
+        if (children != null && children.size() > index) {
+            return (FlutterCTabItem)children.get(index);
+        }
         return null;
         /*
          * This call is intentionally commented out, to allow this getter method to be
@@ -660,7 +666,7 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
      *                         </ul>
      */
     public int getSelectionIndex() {
-        return builder().getSelectionIndex().orElse(0);
+        return builder().getSelectionIndex().orElse(-1);
         /*
          * This call is intentionally commented out, to allow this getter method to be
          * called from a thread which is different from one that created the widget.

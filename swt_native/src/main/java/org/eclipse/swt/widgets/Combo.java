@@ -97,7 +97,7 @@ public class Combo extends Composite {
      * @see Widget#getStyle
      */
     public Combo(Composite parent, int style) {
-        this(new FlutterCombo((SWTComposite) parent.delegate, style));
+        this(new SWTCombo((SWTComposite) parent.delegate, style));
     }
 
     /**

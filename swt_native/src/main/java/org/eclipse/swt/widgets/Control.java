@@ -51,7 +51,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Control extends Widget implements Drawable {
+public abstract class Control extends Widget implements Drawable {
 
     Control() {
     }
@@ -483,7 +483,7 @@ public class Control extends Widget implements Drawable {
      * @see Composite#getChildren
      */
     public void moveAbove(Control control) {
-        ((IControl) this.delegate).moveAbove((IControl) control.delegate);
+        ((IControl) this.delegate).moveAbove((IControl) (control != null ? control.delegate : null));
     }
 
     /**
@@ -507,7 +507,7 @@ public class Control extends Widget implements Drawable {
      * @see Composite#getChildren
      */
     public void moveBelow(Control control) {
-        ((IControl) this.delegate).moveBelow((IControl) control.delegate);
+        ((IControl) this.delegate).moveBelow((IControl) (control != null ? control.delegate : null));
     }
 
     /**
@@ -2423,10 +2423,6 @@ public class Control extends Widget implements Drawable {
         if (delegate == null) {
             return null;
         }
-        Control ref = (Control) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Control(delegate);
-        }
-        return ref;
+        return (Control) INSTANCES.get(delegate);
     }
 }
