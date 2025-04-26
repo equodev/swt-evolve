@@ -193,7 +193,11 @@ public class FlutterTabItem extends FlutterItem implements ITabItem {
 
     @Override
     public void setImage(Image image) {
+        if (image != null){
+            builder().setImage(image.getImageData().getFilename());
+        }
     }
+
 
     /**
      * Sets the receiver's text.  The string may include
