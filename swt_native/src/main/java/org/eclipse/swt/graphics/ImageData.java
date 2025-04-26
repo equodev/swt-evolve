@@ -17,6 +17,7 @@ package org.eclipse.swt.graphics;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 
@@ -213,7 +214,6 @@ public final class ImageData implements Cloneable {
 	public int delayTime;
 
 	private String fileName;
-
 	/**
 	 * Arbitrary channel width data to 8-bit conversion table.
 	 */
@@ -389,7 +389,10 @@ public ImageData(String filename) {
 			this.fileName = filename;
 		}
 	}
-	else this.fileName = filename;
+	else{
+		this.fileName = filename;
+	}
+
 
 	ImageData[] data = ImageDataLoader.load(filename);
 	if (data.length < 1) SWT.error(SWT.ERROR_INVALID_IMAGE);
@@ -415,12 +418,9 @@ public ImageData(String filename) {
 }
 
 	public static boolean isValidPath(String pathStr) {
-		return Files.isRegularFile(Paths.get(pathStr));
+		return Files.exists(Paths.get(pathStr));
 	}
 
-	public String getFilename(){
-		return this.fileName;
-	}
 
 /**
  * Prevents uninitialized instances from being created outside the package.

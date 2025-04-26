@@ -5,9 +5,8 @@ import 'package:swtflutter/src/swt/button.dart';
 import 'package:swtflutter/src/swt/swt.dart';
 import '../swt/coolitem.dart';
 import '../impl/item_impl.dart';
-import 'dropdown_button.dart';
-import 'selectable_buttton.dart';
-
+import '../swt/toolbar.dart';
+import 'styled_buttons.dart';
 
 class CoolItemImpl<T extends CoolItemSwt, V extends CoolItemValue>
     extends ItemImpl<T, V> {
@@ -18,14 +17,24 @@ class CoolItemImpl<T extends CoolItemSwt, V extends CoolItemValue>
 
   @override
   Widget build(BuildContext context) {
-    var enabled = state.enabled ?? true;
-    var text = state.children!.whereType<ButtonValue>().first.text ?? "";
-    var image = state.children!.whereType<ButtonValue>().first.image;
-    var buttonStyle = state.children!.whereType<ButtonValue>().first.style ?? SWT.NONE;
-    var bits = SWT.ARROW | SWT.TOGGLE | SWT.CHECK | SWT.RADIO | SWT.PUSH | SWT.DROP_DOWN ;
-    print('button image $image');
 
-    return switch (buttonStyle & bits) {
+    final isButtonValue = state.children?.isNotEmpty == true && state.children?.first is ButtonValue;
+    final buttonValue = isButtonValue ? state.children!.whereType<ButtonValue>().first : null;
+
+    final bool enabled = isButtonValue ? (state.enabled ?? true) : true;
+    final String? text = isButtonValue ? buttonValue?.text : null;
+    final dynamic image = isButtonValue ? buttonValue?.image : null;
+
+    var childStyle = state.children!.first.style;
+
+    var bits = SWT.ARROW | SWT.TOGGLE | SWT.CHECK | SWT.RADIO | SWT.PUSH | SWT.DROP_DOWN | SWT.FLAT ;
+
+    return switch (childStyle & bits) {
+      SWT.FLAT => (() {
+        final toolBarValue = state.children!.whereType<ToolBarValue>().first;
+        return ToolBarSwt<ToolBarValue>(value: toolBarValue);
+      })(),
+
       SWT.TOGGLE => SelectableButton(
         text: text,
         image: image,
@@ -61,7 +70,7 @@ class CoolItemImpl<T extends CoolItemSwt, V extends CoolItemValue>
           // onPressed();
           setState(() => state.selection = checked);
         },
-        child: Text(text),
+        child: Text(text!),
       ),
       SWT.RADIO => ToggleButton(
         checked: state.selection ?? false,
@@ -71,7 +80,7 @@ class CoolItemImpl<T extends CoolItemSwt, V extends CoolItemValue>
           // onPressed();
           setState(() => state.selection = checked);
         },
-        child: Text(text),
+        child: Text(text!),
       ),
       SWT.DROP_DOWN => MaterialDropdownButton(
         text: text ?? "",
@@ -84,8 +93,18 @@ class CoolItemImpl<T extends CoolItemSwt, V extends CoolItemValue>
           }
         },
       ),
+      SWT.PUSH => PushButton(
+        text: text,
+        image: image,
+        enabled: enabled,
+        useDarkTheme: useDarkTheme,
+        onPressed: () {
+          onPressed();
+          setState(() => state.selection = !(state.selection ?? false));
+        },
+      ),
       _ => Button(
-        child: Text(text),
+        child: Text(text!),
         onPressed: () {
           print("click onPressed Button $text");
         },

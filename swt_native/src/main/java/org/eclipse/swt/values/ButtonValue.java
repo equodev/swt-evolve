@@ -13,6 +13,8 @@ public interface ButtonValue extends ControlValue {
 
     Optional<String> getText();
 
+    Optional<String> getImage();
+
     static Builder builder() {
         return new AutoValue_ButtonValueA.Builder().setSwt("Button");
     }
@@ -31,7 +33,11 @@ public interface ButtonValue extends ControlValue {
 
         Optional<Boolean> getSelection();
 
+        Optional<String> getImage();
+
         Builder setText(String string);
+
+        Builder setImage(String string);
 
         Optional<String> getText();
     }

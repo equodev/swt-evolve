@@ -103,6 +103,9 @@ public class FlutterButton extends FlutterControl implements IButton {
 
     @Override
     public void setImage(Image image) {
+        if (image != null){
+            builder().setImage(image.getImageData(). getFilename());
+        }
     }
 
     @Override
@@ -117,8 +120,8 @@ public class FlutterButton extends FlutterControl implements IButton {
     public void setText(String string) {
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if ((style & SWT.ARROW) != 0)
-            return;
+        //if ((style & SWT.ARROW) != 0)
+          //  return;
         builder().setText(string);
         FlutterSwt.dirty(this);
     }

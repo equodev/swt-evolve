@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:io';
 import 'icons_map.dart';
 
-class SelectableButtton extends StatelessWidget {
+class SelectableButton extends StatelessWidget {
   final String? text;
   final String? image;
   final bool isSelected;
@@ -28,6 +29,7 @@ class SelectableButtton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('');
     final Color darkSelectedColor = const Color(0xFF6366F1);
     final Color darkUnselectedColor = const Color(0xFF4E4D4D);
     final Color darkSelectedTextColor = const Color(0xFFFFFFFF);
@@ -58,27 +60,29 @@ class SelectableButtton extends StatelessWidget {
         onTap: enabled ? onPressed : null,
         borderRadius: BorderRadius.circular(iconSize),
         child: Container(
-          width: iconSize + 8,
-          height: iconSize + 8,
-          decoration: isSelected ? BoxDecoration(
-            color: selectedColor.withOpacity(0.2),
-            shape: BoxShape.circle,
-          ) : null,
-          child: Center(
-            child: !materialIconMap.containsKey(image)
-                ? Image.file(
-              File(image!),
-              width: iconSize,
-              height: iconSize,
-            )
-                : Icon(
-              getMaterialIconByName(image!),
-              size: iconSize,
-              color: iconColor,
-            ),
-          ),
-        ),
-      );
+            width: iconSize + 8,
+            height: iconSize + 8,
+            decoration: isSelected ? BoxDecoration(
+              color: selectedColor.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ) : null,
+            child: Center(
+              child: !materialIconMap.containsKey(image)
+                  ? (image!.toLowerCase().endsWith('.svg')
+                  ? SvgPicture.file(
+                File(image!),
+              )
+                  : Image.file(
+                File(image!),
+                width: iconSize,
+                height: iconSize,
+              ))
+                  : Icon(
+                getMaterialIconByName(image!),
+                size: iconSize,
+                color: iconColor,
+              ),
+            )),);
     }
 
 
@@ -106,11 +110,15 @@ class SelectableButtton extends StatelessWidget {
 
           if (image != null) ...[
             !materialIconMap.containsKey(image)
-                ? Image.file(
+                ? (image!.toLowerCase().endsWith('.svg')
+                ? SvgPicture.file(
+              File(image!),
+            )
+                : Image.file(
               File(image!),
               width: iconSize - 8,
               height: iconSize - 8,
-            )
+            ))
                 : Icon(
               getMaterialIconByName(image!),
               size: iconSize - 8,
