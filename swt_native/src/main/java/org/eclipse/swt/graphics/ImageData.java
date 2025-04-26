@@ -41,6 +41,10 @@ import org.eclipse.swt.internal.*;
  */
 
 public final class ImageData implements Cloneable {
+    
+    public String getFilename() {
+        return fileName;
+    }
 
 	/**
 	 * The width of the image, in pixels.

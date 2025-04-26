@@ -485,7 +485,7 @@ public abstract class FlutterControl extends FlutterWidget implements IControl {
             FlutterSwt.dirty(flutterParent);
         }
         parentComposite.setBounds(rect);
-        rect.y += 38;
+        rect.y += 27;
         childComposite.setBounds(rect);
     }
 

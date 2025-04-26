@@ -18,7 +18,7 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
 
     var text = state.text;
     var image = state.image;
-    var enabled = state.enabled?? false;
+    var enabled = state.enabled ?? true;
 
     return switch (state.style & bits) {
       SWT.TOGGLE => SelectableButton(
