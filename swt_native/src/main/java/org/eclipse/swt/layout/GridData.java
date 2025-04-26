@@ -499,7 +499,7 @@ public final class GridData {
         this.heightHint = height;
     }
 
-    void computeSize(IControl control, int wHint, int hHint, boolean flushCache) {
+    void computeSize(Control control, int wHint, int hHint, boolean flushCache) {
         if (cacheWidth != -1 && cacheHeight != -1)
             return;
         if (wHint == this.widthHint && hHint == this.heightHint) {

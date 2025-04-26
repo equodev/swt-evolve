@@ -33,7 +33,9 @@ class ScrolledCompositeLayout extends Layout {
     static final int DEFAULT_HEIGHT = 64;
 
     @Override
-    protected Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache) {
+    protected Point computeSize(Composite composite_, int wHint, int hHint, boolean flushCache) {
+        IComposite composite = (IComposite)composite_.delegate;
+
         SWTScrolledComposite sc = (SWTScrolledComposite) ((SWTScrolledComposite) composite);
         Point size = new Point(DEFAULT_WIDTH, DEFAULT_HEIGHT);
         if (sc.getContent() != null) {
@@ -52,12 +54,14 @@ class ScrolledCompositeLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(IControl control) {
+    protected boolean flushCache(Control control) {
         return true;
     }
 
     @Override
-    protected void layout(IComposite composite, boolean flushCache) {
+    protected void layout(Composite composite_, boolean flushCache) {
+        IComposite composite = (IComposite)composite_.delegate;
+
         if (inLayout)
             return;
         SWTScrolledComposite sc = (SWTScrolledComposite) ((SWTScrolledComposite) composite);

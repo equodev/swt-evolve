@@ -167,7 +167,7 @@ public final class GridLayout extends Layout {
     }
 
     @Override
-    protected Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache) {
+    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         Point size = layout(composite, false, 0, 0, wHint, hHint, flushCache);
         if (wHint != SWT.DEFAULT)
             size.x = wHint;
@@ -177,15 +177,15 @@ public final class GridLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(IControl control) {
+    protected boolean flushCache(Control control) {
         Object data = control.getLayoutData();
         if (data != null)
             ((GridData) data).flushCache();
         return true;
     }
 
-    GridData getData(IControl[][] grid, int row, int column, int rowCount, int columnCount, boolean first) {
-        IControl control = (IControl) (grid[row][column]);
+    GridData getData(Control[][] grid, int row, int column, int rowCount, int columnCount, boolean first) {
+        Control control = grid[row][column];
         if (control != null) {
             GridData data = (GridData) control.getLayoutData();
             int hSpan = Math.max(1, Math.min(data.horizontalSpan, columnCount));
@@ -203,19 +203,19 @@ public final class GridLayout extends Layout {
     }
 
     @Override
-    protected void layout(IComposite composite, boolean flushCache) {
+    protected void layout(Composite composite, boolean flushCache) {
         Rectangle rect = composite.getClientArea();
         layout(composite, true, rect.x, rect.y, rect.width, rect.height, flushCache);
     }
 
-    Point layout(IComposite composite, boolean move, int x, int y, int width, int height, boolean flushCache) {
+    Point layout(Composite composite, boolean move, int x, int y, int width, int height, boolean flushCache) {
         if (numColumns < 1) {
             return new Point(marginLeft + marginWidth * 2 + marginRight, marginTop + marginHeight * 2 + marginBottom);
         }
-        IControl[] children = (IControl[]) (composite.getChildren());
+        Control[] children = composite.getChildren();
         int count = 0;
         for (int i = 0; i < children.length; i++) {
-            IControl control = (IControl) (children[i]);
+            Control control = children[i];
             GridData data = (GridData) control.getLayoutData();
             if (data == null || !data.exclude) {
                 children[count++] = children[i];
@@ -225,7 +225,7 @@ public final class GridLayout extends Layout {
             return new Point(marginLeft + marginWidth * 2 + marginRight, marginTop + marginHeight * 2 + marginBottom);
         }
         for (int i = 0; i < count; i++) {
-            IControl child = (IControl) (children[i]);
+            Control child = children[i];
             GridData data = (GridData) child.getLayoutData();
             if (data == null)
                 child.setLayoutData(data = new GridData());
@@ -252,21 +252,21 @@ public final class GridLayout extends Layout {
         }
         /* Build the grid */
         int row = 0, column = 0, rowCount = 0, columnCount = numColumns;
-        IControl[][] grid = new IControl[4][columnCount];
+        Control[][] grid = new Control[4][columnCount];
         for (int i = 0; i < count; i++) {
-            IControl child = (IControl) (children[i]);
+            Control child = children[i];
             GridData data = (GridData) child.getLayoutData();
             int hSpan = Math.max(1, Math.min(data.horizontalSpan, columnCount));
             int vSpan = Math.max(1, data.verticalSpan);
             while (true) {
                 int lastRow = row + vSpan;
                 if (lastRow >= grid.length) {
-                    IControl[][] newGrid = new IControl[lastRow + 4][columnCount];
+                    Control[][] newGrid = new Control[lastRow + 4][columnCount];
                     System.arraycopy(grid, 0, newGrid, 0, grid.length);
                     grid = newGrid;
                 }
                 if (grid[row] == null) {
-                    grid[row] = new IControl[columnCount];
+                    grid[row] = new Control[columnCount];
                 }
                 while (column < columnCount && grid[row][column] != null) {
                     column++;
@@ -288,7 +288,7 @@ public final class GridLayout extends Layout {
             }
             for (int j = 0; j < vSpan; j++) {
                 if (grid[row + j] == null) {
-                    grid[row + j] = new IControl[columnCount];
+                    grid[row + j] = new Control[columnCount];
                 }
                 for (int k = 0; k < hSpan; k++) {
                     grid[row + j][column + k] = child;
@@ -481,7 +481,7 @@ public final class GridLayout extends Layout {
                     GridData data = getData(grid, i, j, rowCount, columnCount, false);
                     if (data != null) {
                         if (data.heightHint == SWT.DEFAULT) {
-                            IControl child = (IControl) (grid[i][j]);
+                            Control child = grid[i][j];
                             //TEMPORARY CODE
                             int hSpan = Math.max(1, Math.min(data.horizontalSpan, columnCount));
                             int currentWidth = 0;
@@ -713,7 +713,7 @@ public final class GridLayout extends Layout {
                                 childHeight = cellHeight - data.verticalIndent;
                                 break;
                         }
-                        IControl child = (IControl) (grid[i][j]);
+                        Control child = grid[i][j];
                         if (child != null) {
                             child.setBounds(childX, childY, childWidth, childHeight);
                         }

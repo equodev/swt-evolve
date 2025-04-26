@@ -28,7 +28,7 @@ import org.eclipse.swt.widgets.*;
  */
 public final class BorderData {
 
-    private final Map<IControl, Point> cachedSize = new IdentityHashMap<>(1);
+    private final Map<Control, Point> cachedSize = new IdentityHashMap<>(1);
 
     public int hHint = SWT.DEFAULT;
 
@@ -71,11 +71,11 @@ public final class BorderData {
         this.hHint = heightHint;
     }
 
-    Point getSize(IControl control) {
+    Point getSize(Control control) {
         return cachedSize.computeIfAbsent(control, c -> c.computeSize(wHint, hHint, true));
     }
 
-    Point computeSize(IControl control, int wHint, int hHint, boolean changed) {
+    Point computeSize(Control control, int wHint, int hHint, boolean changed) {
         if (wHint == SWT.DEFAULT) {
             wHint = this.wHint;
         }
@@ -85,7 +85,7 @@ public final class BorderData {
         return control.computeSize(wHint, hHint, changed);
     }
 
-    void flushCache(IControl control) {
+    void flushCache(Control control) {
         cachedSize.remove(control);
     }
 

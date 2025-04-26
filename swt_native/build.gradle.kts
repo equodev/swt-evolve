@@ -140,9 +140,18 @@ tasks.jar {
         into(".")
     }
     
+    // Add all dependencies to the JAR
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    
+    // Exclude META-INF signatures to avoid signature validation errors
+    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
+    
     manifest {
         attributes(
         )
     }
+    
+    // Avoid duplicate files in the JAR
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 

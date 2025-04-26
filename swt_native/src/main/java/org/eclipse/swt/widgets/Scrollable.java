@@ -40,7 +40,7 @@ import java.util.WeakHashMap;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Scrollable extends Control {
+public abstract class Scrollable extends Control {
 
     /**
      * Prevents uninitialized instances from being created outside the package.
@@ -221,10 +221,6 @@ public class Scrollable extends Control {
         if (delegate == null) {
             return null;
         }
-        Scrollable ref = (Scrollable) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Scrollable(delegate);
-        }
-        return ref;
+        return (Scrollable) INSTANCES.get(delegate);
     }
 }

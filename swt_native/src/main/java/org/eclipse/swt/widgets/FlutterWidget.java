@@ -42,6 +42,9 @@ import java.util.stream.Stream;
  *      information</a>
  */
 public abstract class FlutterWidget implements IWidget {
+    public void addTypedListener(EventListener listener, int... eventTypes) {
+    }
+    
 
     /**
      * the handle to the OS resource (Warning: This field is platform dependent)
@@ -347,7 +350,7 @@ public abstract class FlutterWidget implements IWidget {
      *                         the thread that created the receiver</li>
      *                         </ul>
      */
-    protected void checkWidget() {
+    public void checkWidget() {
         IDisplay display = this.display;
         if (display == null)
             error(SWT.ERROR_WIDGET_DISPOSED);

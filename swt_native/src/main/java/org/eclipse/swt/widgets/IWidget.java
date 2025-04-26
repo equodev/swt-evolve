@@ -11,6 +11,9 @@ import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
 
 public interface IWidget {
+    
+    void addTypedListener(EventListener listener, int... eventTypes);
+    void checkWidget();
 
     /**
      * Adds the listener to the collection of {@link Listener listeners} who will

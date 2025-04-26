@@ -15,44 +15,44 @@
  */
 package org.eclipse.swt.widgets;
 
-import java.util.*;
-import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.cairo.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
+import org.eclipse.swt.graphics.GC;
 
 /**
- * Instances of this class are controls which are capable
- * of containing other controls.
+ * Instances of this class are controls which are capable of containing other
+ * controls.
  * <dl>
  * <dt><b>Styles:</b></dt>
- * <dd>NO_BACKGROUND, NO_FOCUS, NO_MERGE_PAINTS, NO_REDRAW_RESIZE, NO_RADIO_GROUP, EMBEDDED, DOUBLE_BUFFERED</dd>
+ * <dd>NO_BACKGROUND, NO_FOCUS, NO_MERGE_PAINTS, NO_REDRAW_RESIZE,
+ * NO_RADIO_GROUP, EMBEDDED, DOUBLE_BUFFERED</dd>
  * <dt><b>Events:</b></dt>
  * <dd>(none)</dd>
  * </dl>
  * <p>
- * Note: The <code>NO_BACKGROUND</code>, <code>NO_FOCUS</code>, <code>NO_MERGE_PAINTS</code>,
- * and <code>NO_REDRAW_RESIZE</code> styles are intended for use with <code>Canvas</code>.
- * They can be used with <code>Composite</code> if you are drawing your own, but their
- * behavior is undefined if they are used with subclasses of <code>Composite</code> other
+ * Note: The <code>NO_BACKGROUND</code>, <code>NO_FOCUS</code>,
+ * <code>NO_MERGE_PAINTS</code>, and <code>NO_REDRAW_RESIZE</code> styles are
+ * intended for use with <code>Canvas</code>. They can be used with
+ * <code>Composite</code> if you are drawing your own, but their behavior is
+ * undefined if they are used with subclasses of <code>Composite</code> other
  * than <code>Canvas</code>.
- * </p><p>
- * Note: The <code>CENTER</code> style, although undefined for composites, has the
- * same value as <code>EMBEDDED</code> which is used to embed widgets from other
- * widget toolkits into SWT.  On some operating systems (GTK), this may cause
- * the children of this composite to be obscured.
- * </p><p>
- * This class may be subclassed by custom control implementors
- * who are building controls that are constructed from aggregates
- * of other controls.
+ * </p>
+ * <p>
+ * Note: The <code>CENTER</code> style, although undefined for composites, has
+ * the same value as <code>EMBEDDED</code> which is used to embed widgets from
+ * other widget toolkits into SWT. On some operating systems (GTK), this may
+ * cause the children of this composite to be obscured.
+ * </p>
+ * <p>
+ * This class may be subclassed by custom control implementors who are building
+ * controls that are constructed from aggregates of other controls.
  * </p>
  *
  * @see Canvas
- * @see <a href="http://www.eclipse.org/swt/snippets/#composite">Composite snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="http://www.eclipse.org/swt/snippets/#composite">Composite
+ *      snippets</a>
+ * @see <a href="http://www.eclipse.org/swt/">Sample code and further
+ *      information</a>
  */
 public class Composite extends Scrollable {
 
@@ -93,24 +93,35 @@ public class Composite extends Scrollable {
      * @see Widget#getStyle
      */
     public Composite(Composite parent, int style) {
-        this(new SWTComposite((SWTComposite) parent.delegate, style));
+        this(parent.delegate instanceof SWTComposite ? new SWTComposite((SWTComposite) parent.delegate, style)
+                : new SWTComposite(((FlutterComposite) parent.delegate).childComposite, style));
     }
 
     /**
-     * Clears any data that has been cached by a Layout for all widgets that
-     * are in the parent hierarchy of the changed control up to and including the
-     * receiver.  If an ancestor does not have a layout, it is skipped.
+     * Clears any data that has been cached by a Layout for all widgets that are in
+     * the parent hierarchy of the changed control up to and including the receiver.
+     * If an ancestor does not have a layout, it is skipped.
      *
-     * @param changed an array of controls that changed state and require a recalculation of size
+     * @param changed an array of controls that changed state and require a
+     *                recalculation of size
      *
-     * @exception IllegalArgumentException <ul>
-     *    <li>ERROR_INVALID_ARGUMENT - if the changed array is null any of its controls are null or have been disposed</li>
-     *    <li>ERROR_INVALID_PARENT - if any control in changed is not in the widget tree of the receiver</li>
-     * </ul>
-     * @exception SWTException <ul>
-     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
-     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
-     * </ul>
+     * @exception IllegalArgumentException
+     *                                     <ul>
+     *                                     <li>ERROR_INVALID_ARGUMENT - if the
+     *                                     changed array is null any of its controls
+     *                                     are null or have been disposed</li>
+     *                                     <li>ERROR_INVALID_PARENT - if any control
+     *                                     in changed is not in the widget tree of
+     *                                     the receiver</li>
+     *                                     </ul>
+     * @exception SWTException
+     *                                     <ul>
+     *                                     <li>ERROR_WIDGET_DISPOSED - if the
+     *                                     receiver has been disposed</li>
+     *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+     *                                     called from the thread that created the
+     *                                     receiver</li>
+     *                                     </ul>
      *
      * @deprecated use {@link Composite#layout(Control[], int)} instead
      * @since 3.1

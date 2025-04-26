@@ -27,7 +27,9 @@ import org.eclipse.swt.widgets.*;
 class CTabFolderLayout extends Layout {
 
     @Override
-    protected Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache) {
+    protected Point computeSize(Composite composite_, int wHint, int hHint, boolean flushCache) {
+        IComposite composite = (IComposite)composite_.delegate;
+
         SWTCTabFolder folder = (SWTCTabFolder) ((SWTCTabFolder) composite);
         ICTabItem[] items = folder.getItems();
         CTabFolderRenderer renderer = folder.getRenderer();
@@ -113,12 +115,14 @@ class CTabFolderLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(IControl control) {
+    protected boolean flushCache(Control control) {
         return true;
     }
 
     @Override
-    protected void layout(IComposite composite, boolean flushCache) {
+    protected void layout(Composite composite_, boolean flushCache) {
+        IComposite composite = (IComposite)composite_.delegate;
+
         SWTCTabFolder folder = (SWTCTabFolder) ((SWTCTabFolder) composite);
         // resize content
         if (folder.getSelectionIndex() != -1) {

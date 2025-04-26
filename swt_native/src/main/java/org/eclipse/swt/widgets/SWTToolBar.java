@@ -115,6 +115,7 @@ public class SWTToolBar extends SWTComposite implements IToolBar {
         }
         int orientation = (style & SWT.VERTICAL) != 0 ? GTK.GTK_ORIENTATION_VERTICAL : GTK.GTK_ORIENTATION_HORIZONTAL;
         GTK.gtk_orientable_set_orientation(handle, orientation);
+        ToolBar.getInstance(this);
     }
 
     static int checkStyle(int style) {

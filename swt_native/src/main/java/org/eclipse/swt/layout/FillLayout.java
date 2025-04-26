@@ -112,12 +112,12 @@ public final class FillLayout extends Layout {
     }
 
     @Override
-    protected Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache) {
-        IControl[] children = (IControl[]) (composite.getChildren());
+    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+        Control[] children = composite.getChildren();
         int count = children.length;
         int maxWidth = 0, maxHeight = 0;
         for (int i = 0; i < count; i++) {
-            IControl child = (IControl) (children[i]);
+            Control child = children[i];
             int w = wHint, h = hHint;
             if (count > 0) {
                 if (type == SWT.HORIZONTAL && wHint != SWT.DEFAULT) {
@@ -152,7 +152,7 @@ public final class FillLayout extends Layout {
         return new Point(width, height);
     }
 
-    Point computeChildSize(IControl control, int wHint, int hHint, boolean flushCache) {
+    Point computeChildSize(Control control, int wHint, int hHint, boolean flushCache) {
         Object data = control.getLayoutData();
         FillData fillData;
         if (data instanceof FillData) {
@@ -184,7 +184,7 @@ public final class FillLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(IControl control) {
+    protected boolean flushCache(Control control) {
         Object data = control.getLayoutData();
         if (data instanceof FillData) {
             ((FillData) data).flushCache();
@@ -202,9 +202,9 @@ public final class FillLayout extends Layout {
     }
 
     @Override
-    protected void layout(IComposite composite, boolean flushCache) {
+    protected void layout(Composite composite, boolean flushCache) {
         Rectangle rect = composite.getClientArea();
-        IControl[] children = (IControl[]) (composite.getChildren());
+        Control[] children = composite.getChildren();
         int count = children.length;
         if (count == 0)
             return;
@@ -215,7 +215,7 @@ public final class FillLayout extends Layout {
             int x = rect.x + marginWidth, extra = width % count;
             int y = rect.y + marginHeight, cellWidth = width / count;
             for (int i = 0; i < count; i++) {
-                IControl child = (IControl) (children[i]);
+                Control child = children[i];
                 int childWidth = cellWidth;
                 if (i == 0) {
                     childWidth += extra / 2;
@@ -231,7 +231,7 @@ public final class FillLayout extends Layout {
             int x = rect.x + marginWidth, cellHeight = height / count;
             int y = rect.y + marginHeight, extra = height % count;
             for (int i = 0; i < count; i++) {
-                IControl child = (IControl) (children[i]);
+                Control child = children[i];
                 int childHeight = cellHeight;
                 if (i == 0) {
                     childHeight += extra / 2;

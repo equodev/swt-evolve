@@ -376,7 +376,7 @@ public class SWTCTabFolder extends SWTComposite implements ICTabFolder {
         SWTDisplay display = (SWTDisplay) (getDisplay());
         selectionForeground = display.getSystemColor(SELECTION_FOREGROUND);
         selectionBackground = display.getSystemColor(SELECTION_BACKGROUND);
-        renderer = new CTabFolderRenderer(this);
+        renderer = new CTabFolderRenderer(CTabFolder.getInstance(this));
         useDefaultRenderer = true;
         controls = new SWTControl[0];
         controlAlignments = new int[0];
@@ -3424,7 +3424,7 @@ public class SWTCTabFolder extends SWTComposite implements ICTabFolder {
             this.renderer.dispose();
         useDefaultRenderer = renderer == null;
         if (useDefaultRenderer)
-            renderer = new CTabFolderRenderer(this);
+            renderer = new CTabFolderRenderer(CTabFolder.getInstance(this));
         this.renderer = renderer;
         updateFolder(REDRAW);
     }

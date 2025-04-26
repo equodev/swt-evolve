@@ -1139,7 +1139,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Point map(Control from, Control to, int x, int y) {
-        return ((IDisplay) this.delegate).map((IControl) from.delegate, (IControl) to.delegate, x, y);
+        return ((IDisplay) this.delegate).map((IControl) (from != null ? from.delegate : null), (IControl) (to != null ? to.delegate : null), x, y);
     }
 
     /**
@@ -1179,7 +1179,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Rectangle map(Control from, Control to, Rectangle rectangle) {
-        return ((IDisplay) this.delegate).map((IControl) from.delegate, (IControl) to.delegate, rectangle);
+        return ((IDisplay) this.delegate).map((IControl) (from != null ? from.delegate : null), (IControl) (to != null ? to.delegate : null), rectangle);
     }
 
     /**
@@ -1221,7 +1221,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Rectangle map(Control from, Control to, int x, int y, int width, int height) {
-        return ((IDisplay) this.delegate).map((IControl) from.delegate, (IControl) to.delegate, x, y, width, height);
+        return ((IDisplay) this.delegate).map((IControl) (from != null ? from.delegate : null), (IControl) (to != null ? to.delegate : null), x, y, width, height);
     }
 
     /**

@@ -53,7 +53,15 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see #checkSubclass
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Widget {
+public abstract class Widget {
+    
+    protected void addTypedListener(EventListener listener, int... eventTypes) {
+        delegate.addTypedListener(listener, eventTypes);
+    }
+
+    protected void checkWidget() {
+        delegate.checkWidget();
+    }
 
     /**
      * Prevents uninitialized instances from being created outside the package.
@@ -540,8 +548,20 @@ public class Widget {
 
     @SuppressWarnings("unchecked")
     protected static <T extends Widget, I extends IWidget> T[] ofArray(I[] items, Class<T> clazz) {
+        if (items == null)
+            return (T[]) java.lang.reflect.Array.newInstance(clazz, 0);
         T[] target = (T[]) java.lang.reflect.Array.newInstance(clazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = (T)INSTANCES.get(items[i]);
+        for (int i = 0; i < target.length; ++i) {
+            Object obj = INSTANCES.get(items[i]);
+            if (clazz.isInstance(obj)) {
+                target[i] = (T)obj;
+            } else {
+                // Handle the case where the object isn't of the expected type
+                // Maybe log an error, throw a specific exception, or use a default value
+                System.err.println("Type mismatch: Expected " + clazz.getName() + 
+                                  " but found " + (obj != null ? obj.getClass().getName() : "null"));
+            }
+        }
         return target;
     }
 
@@ -565,10 +585,6 @@ public class Widget {
         if (delegate == null) {
             return null;
         }
-        Widget ref = (Widget) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Widget(delegate);
-        }
-        return ref;
+        return (Widget) INSTANCES.get(delegate);
     }
 }
