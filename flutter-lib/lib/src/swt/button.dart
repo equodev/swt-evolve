@@ -15,7 +15,7 @@ class ButtonSwt<V extends ButtonValue> extends ControlSwt<V> {
   const ButtonSwt({super.key, required super.value});
 
   @override
-  State createState() => ButtonImpl<ButtonSwt<ButtonValue>, ButtonValue>();
+  State createState() => ButtonImpl<ButtonSwt<ButtonValue>, ButtonValue>(useDarkTheme: true);
 
   void sendSelectionSelection(V val, Object? payload) {
     sendEvent(val, "Selection/Selection", payload);
@@ -37,6 +37,7 @@ class ButtonValue extends ControlValue {
   bool? grayed;
   bool? selection;
   String? text;
+  String? image;
 
   factory ButtonValue.fromJson(Map<String, dynamic> json) =>
       _$ButtonValueFromJson(json);
