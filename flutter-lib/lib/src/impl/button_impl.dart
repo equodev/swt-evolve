@@ -2,7 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import '../swt/swt.dart';
 import '../swt/button.dart';
 import '../impl/control_impl.dart';
-import 'styled_buttons.dart';
+import 'selectable_buttton.dart';
 
 
 class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
@@ -13,14 +13,11 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
 
   @override
   Widget build(BuildContext context) {
-
     var bits = SWT.ARROW | SWT.TOGGLE | SWT.CHECK | SWT.RADIO | SWT.PUSH | SWT.DROP_DOWN;
-
-    var text = state.text;
-    var image = state.image;
-    var enabled = state.enabled?? false;
+    var enabled = state.enabled ?? true;
 
     return switch (state.style & bits) {
+    // SWT.ARROW => ,
       SWT.TOGGLE => SelectableButton(
         text: state.text,
         isSelected: state.selection ?? false,
@@ -62,26 +59,6 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
           setState(() => state.selection = checked);
         },
         content: Text(state.text ?? ""),
-      ),
-      SWT.DROP_DOWN => MaterialDropdownButton(
-        text: text ?? "",
-        height: 50.0,
-        enabled: enabled,
-        useDarkTheme: useDarkTheme,
-        onPressed: () {
-          if (enabled) {
-            onPressed();
-          }
-        },
-      ),
-      SWT.PUSH => PushButton(
-        text: state.text,
-        enabled: enabled,
-        useDarkTheme: useDarkTheme,
-        onPressed: () {
-          onPressed();
-          setState(() => state.selection = !(state.selection ?? false));
-        },
       ),
       _ => Button(
         onPressed: enabled ? onPressed : null,

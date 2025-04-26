@@ -15,6 +15,7 @@ CoolItemValue _$CoolItemValueFromJson(Map<String, dynamic> json) =>
           .toList()
       ..style = (json['style'] as num).toInt()
       ..text = json['text'] as String?
+      ..image = json['image'] as String?
       ..enabled = json['enabled'] as bool?
       ..selection = json['selection'] as bool?
       ..toolTipText = json['toolTipText'] as String?
@@ -35,6 +36,7 @@ Map<String, dynamic> _$CoolItemValueToJson(CoolItemValue instance) {
   writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
   val['style'] = instance.style;
   writeNotNull('text', instance.text);
+  writeNotNull('image', instance.image);
   writeNotNull('enabled', instance.enabled);
   writeNotNull('selection', instance.selection);
   writeNotNull('toolTipText', instance.toolTipText);

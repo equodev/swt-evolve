@@ -30,7 +30,8 @@ ButtonValue _$ButtonValueFromJson(Map<String, dynamic> json) => ButtonValue()
   ..alignment = (json['alignment'] as num?)?.toInt()
   ..grayed = json['grayed'] as bool?
   ..selection = json['selection'] as bool?
-  ..text = json['text'] as String?;
+  ..text = json['text'] as String?
+  ..image = json['image'] as String?;
 
 Map<String, dynamic> _$ButtonValueToJson(ButtonValue instance) {
   final val = <String, dynamic>{
@@ -60,5 +61,6 @@ Map<String, dynamic> _$ButtonValueToJson(ButtonValue instance) {
   writeNotNull('grayed', instance.grayed);
   writeNotNull('selection', instance.selection);
   writeNotNull('text', instance.text);
+  writeNotNull('image', instance.image);
   return val;
 }
