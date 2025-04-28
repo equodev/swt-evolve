@@ -4,17 +4,13 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.util.ButtonSwtSizingConstants;
 import org.eclipse.swt.values.ButtonValue;
 
 public class FlutterButton extends FlutterControl implements IButton {
 
     public FlutterButton(IComposite parent, int style) {
         super(parent, style);
-    }
-
-    public Point computeSize(int wHint, int hHint, boolean changed) {
-        // Not Generated
-        return new Point(100, 30);
     }
 
     @Override
@@ -163,6 +159,88 @@ public class FlutterButton extends FlutterControl implements IButton {
                 sendEvent(SWT.DefaultSelection);
             });
         });
+    }
+
+    @Override
+    public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget(); // Standard SWT check to ensure the widget isn't disposed
+
+        int style = getStyle();
+        String text = getText(); // Get the button's text
+        int textLength = text != null ? text.length() : 0;
+        // Check if the button currently has an image set
+        boolean hasImage = getImage() != null;
+
+        double calculatedWidth = 0;
+        double calculatedHeight = 0;
+
+        // Determine size based on button style (PUSH, CHECK, RADIO, TOGGLE)
+        if ((style & SWT.PUSH) != 0) {
+            // Calculate size for a standard Push Button
+            calculatedWidth = ButtonSwtSizingConstants.calculatePushWidth(textLength); //
+            calculatedHeight = ButtonSwtSizingConstants.PUSH_FIXED_HEIGHT; //
+        } else if ((style & SWT.CHECK) != 0) {
+            // Calculate size for a Checkbox Button
+            calculatedWidth = ButtonSwtSizingConstants.calculateCheckWidth(textLength); //
+            calculatedHeight = ButtonSwtSizingConstants.CHECK_FIXED_HEIGHT; //
+        } else if ((style & SWT.RADIO) != 0) {
+            // Calculate size for a Radio Button
+            calculatedWidth = ButtonSwtSizingConstants.calculateRadioWidth(textLength); //
+            calculatedHeight = ButtonSwtSizingConstants.RADIO_FIXED_HEIGHT; //
+        } else if ((style & SWT.TOGGLE) != 0) {
+            // Calculate size for a Toggle Button
+            calculatedHeight = ButtonSwtSizingConstants.TOGGLE_FIXED_HEIGHT; // Height is fixed for all toggle types
+            if (hasImage && textLength == 0) {
+                // Toggle Button with Icon only
+                calculatedWidth = ButtonSwtSizingConstants.calculateToggleIconOnlyWidth(); //
+            } else if (hasImage && textLength > 0) {
+                // Toggle Button with Text and Icon
+                calculatedWidth = ButtonSwtSizingConstants.calculateToggleTextAndIconWidth(textLength); //
+            } else {
+                // Toggle Button with Text only (or neither, fallback to text only calculation)
+                calculatedWidth = ButtonSwtSizingConstants.calculateToggleTextOnlyWidth(textLength); //
+            }
+        } else {
+            // --- Fallback Case ---
+            // If the style is none of the above (or SWT.FLAT without other types?),
+            // default to PUSH button sizing as a reasonable fallback.
+            // Alternatively, you could call super.computeSize() if appropriate,
+            // or throw an exception for unsupported styles.
+            System.err.println("Warning: Unsupported Button style encountered in computeSize. Falling back to PUSH sizing.");
+            calculatedWidth = ButtonSwtSizingConstants.calculatePushWidth(textLength); //
+            calculatedHeight = ButtonSwtSizingConstants.PUSH_FIXED_HEIGHT; //
+        }
+
+        // --- Apply Hints ---
+        // If a specific width or height hint is provided (and it's not SWT.DEFAULT),
+        // use the hint value instead of the calculated value.
+        if (wHint != SWT.DEFAULT) {
+            calculatedWidth = wHint;
+        }
+        if (hHint != SWT.DEFAULT) {
+            calculatedHeight = hHint;
+        }
+
+        int trimWidth = 0;
+        int trimHeight = 0;
+        // Calculate the trim based on the style and OS. Example values:
+        if ((style & SWT.BORDER) != 0) {
+//             Simplified: Actual trim depends on OS theme. Use computeTrim for accuracy.
+            trimWidth = 4; // e.g., 2px border on each side
+            trimHeight = 4; // e.g., 2px border top/bottom
+        }
+
+        // --- Final Dimensions ---
+        // Convert double calculations to integers (rounding up) and add trim.
+        int finalWidth = (int) Math.ceil(calculatedWidth) + trimWidth;
+        int finalHeight = (int) Math.ceil(calculatedHeight) + trimHeight;
+
+        // --- Apply SWT Constraints ---
+        // Ensure the size isn't negative or unreasonably small (though minWidth in constants helps).
+        finalWidth = Math.max(0, finalWidth);
+        finalHeight = Math.max(0, finalHeight);
+
+        return new Point(finalWidth, finalHeight);
     }
 
 }
