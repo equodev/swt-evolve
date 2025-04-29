@@ -16,7 +16,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends CTabFolderValue>
 
   final bool useDarkTheme;
 
-  CTabFolderImpl({this.useDarkTheme = false});
+  CTabFolderImpl({this.useDarkTheme = true});
 
   @override
   void initState() {
@@ -156,16 +156,6 @@ class _CustomTabBarState extends State<CustomTabBar> {
 
                   Spacer(),
 
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Row(
-                      children: [
-                        Icon(Icons.help_outline, size: 16, color: iconColor),
-                        SizedBox(width: 8),
-                        Icon(Icons.calendar_today, size: 16, color: iconColor),
-                      ],
-                    ),
-                  ),
                   SizedBox(width: 4),
                 ],
               ),
