@@ -431,8 +431,8 @@ public abstract class FlutterControl extends FlutterWidget implements IControl {
      */
     public Accessible getAccessible() {
         // Not Generated
-//        return new Accessible();
-        return null;
+        return new Accessible();
+//        return null;
     }
 
     /**
@@ -485,8 +485,10 @@ public abstract class FlutterControl extends FlutterWidget implements IControl {
             FlutterSwt.dirty(flutterParent);
         }
         parentComposite.setBounds(rect);
-        rect.y += 27;
+        rect.x = 0;
+        rect.y = 27;
         childComposite.setBounds(rect);
+        childComposite.moveAbove(parentComposite);
     }
 
     /**

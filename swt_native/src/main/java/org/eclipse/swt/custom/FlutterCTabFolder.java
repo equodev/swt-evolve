@@ -11,6 +11,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.values.CTabFolderValue;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FlutterComposite;
 import org.eclipse.swt.widgets.FlutterSwt;
 import org.eclipse.swt.widgets.FlutterWidget;
@@ -18,6 +19,7 @@ import org.eclipse.swt.widgets.IComposite;
 import org.eclipse.swt.widgets.IControl;
 import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.widgets.TypedListener;
+import org.eclipse.swt.widgets.Widget;
 
 import java.util.ArrayList;
 
@@ -445,7 +447,7 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
      *                         </ul>
      */
     public ICTabItem[] getItems() {
-        return null;
+        return children == null ? new ICTabItem[0] : children.stream().filter(ICTabItem.class::isInstance).toArray(ICTabItem[]::new);
         /*
          * This call is intentionally commented out, to allow this getter method to be
          * called from a thread which is different from one that created the widget.
@@ -754,7 +756,7 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
      * @since 2.1
      */
     public IControl getTopRight() {
-        return null;
+        return topRight;
     }
 
     /**
@@ -823,7 +825,7 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
      *                                     </ul>
      */
     public int indexOf(ICTabItem item) {
-        if (!(item instanceof FlutterWidget)) return -1;
+        if (!(item instanceof FlutterWidget) || children == null) return -1;
         for (int i = 0; i < children.size(); ++i) {
             if (children.get(i) == item) {
                 return i;
@@ -1379,7 +1381,9 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
         if (getSelectionIndex() == index) {
             IControl itemControl = selection.getControl();
             display.asyncExec(() -> {
-                if (itemControl != null && !itemControl.isVisible()) {
+                if (itemControl != null
+//                        && !itemControl.isVisible()
+                        ) {
                     itemControl.setBounds(getClientArea());
                     itemControl.setVisible(true);
                     if (childComposite.getLayout() instanceof StackLayout layout) {
@@ -1681,7 +1685,9 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
      * @since 2.1
      */
     public void setTopRight(IControl control) {
+        setTopRight(control, SWT.RIGHT);
     }
+    private IControl topRight;
 
     /**
      * Set the control that appears in the top right corner of the tab folder.
@@ -1715,6 +1721,7 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setTopRight(IControl control, int alignment) {
+        topRight = control;
     }
 
     /**
@@ -1912,11 +1919,16 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
         String ev = FlutterSwt.getEvent(this);
         FlutterSwt.CLIENT.getComm().on(ev + "/Selection/Selection", p -> {
             System.out.println(ev + "/Selection/Selection event");
+            int oldSelection = getSelectionIndex();
             int newSelection = FlutterSwt.SERIALIZER.from(p, Integer.class);
             setSelection(newSelection);
             
             display.asyncExec(() -> {
-                sendEvent(SWT.Selection);
+                if (oldSelection != newSelection) {
+                    Event event = new Event();
+                    event.item = Widget.getInstance(getItem(newSelection));
+                    notifyListeners(SWT.Selection, event);
+                }
             });
         });
         FlutterSwt.CLIENT.getComm().on(ev + "/Selection/DefaultSelection", p -> {
@@ -1953,6 +1965,11 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
     @Override
     public void setSelectedImageVisible(boolean visible) {
         // TODO Auto-generated method stub
+    }
+
+    public String toString() {
+        FlutterCTabItem firstItem = ((FlutterCTabItem) getItem(0));
+        return firstItem == null ? "" : firstItem.getText();
     }
 
 }

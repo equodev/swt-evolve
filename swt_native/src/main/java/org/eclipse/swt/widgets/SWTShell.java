@@ -1088,7 +1088,7 @@ public class SWTShell extends SWTDecorations implements IShell {
     }
 
     @Override
-    long topHandle() {
+    public long topHandle() {
         return shellHandle;
     }
 
@@ -3079,7 +3079,7 @@ public class SWTShell extends SWTDecorations implements IShell {
     }
 
     @Override
-    void setZOrder(SWTControl sibling, boolean above, boolean fixRelations) {
+    void setZOrder(IControl sibling, boolean above, boolean fixRelations) {
         /*
 	* Bug in GTK+.  Changing the toplevel window Z-order causes
 	* X to send a resize event.  Before the shell is mapped, these

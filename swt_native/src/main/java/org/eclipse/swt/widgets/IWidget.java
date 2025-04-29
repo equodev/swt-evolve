@@ -14,6 +14,8 @@ public interface IWidget {
     
     void addTypedListener(EventListener listener, int... eventTypes);
     void checkWidget();
+    long getHandle();
+    long topHandle();
 
     /**
      * Adds the listener to the collection of {@link Listener listeners} who will
@@ -415,5 +417,4 @@ public interface IWidget {
      */
     String toString();
 
-    long getHandle();
 }

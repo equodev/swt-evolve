@@ -123,7 +123,7 @@ public class ToolItem extends Item {
      * @see Widget#getStyle
      */
     public ToolItem(ToolBar parent, int style, int index) {
-        this(new SWTToolItem((SWTToolBar) parent.delegate, style, index));
+        this(parent.delegate instanceof SWTToolBar ? new SWTToolItem((SWTToolBar) parent.delegate, style, index) : new FlutterToolItem((FlutterToolBar)parent.delegate, style, index));
     }
 
     /**
@@ -467,7 +467,7 @@ public class ToolItem extends Item {
      *                                     </ul>
      */
     public void setControl(Control control) {
-        ((IToolItem) this.delegate).setControl((IControl) control.delegate);
+        ((IToolItem) this.delegate).setControl((IControl) (control == null ? null : control.delegate));
     }
 
     /**

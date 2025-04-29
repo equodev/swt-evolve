@@ -622,7 +622,7 @@ public abstract class SWTScrollable extends SWTControl implements IScrollable {
     }
 
     @Override
-    long topHandle() {
+    public long topHandle() {
         if (fixedHandle != 0)
             return fixedHandle;
         if (scrolledHandle != 0)

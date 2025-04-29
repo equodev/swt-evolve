@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.custom.ICTabItem;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.values.ToolBarValue;
 
@@ -112,6 +113,9 @@ public class FlutterToolBar extends FlutterComposite implements IToolBar {
      * </ul>
      */
     public IToolItem getItem(int index) {
+        if (children != null && children.size() > index) {
+            return (FlutterToolItem)children.get(index);
+        }
         return null;
     }
 
@@ -146,7 +150,7 @@ public class FlutterToolBar extends FlutterComposite implements IToolBar {
      * </ul>
      */
     public int getItemCount() {
-        return -1;
+        return children == null ? 0 : children.size();
     }
 
     /**
@@ -166,7 +170,7 @@ public class FlutterToolBar extends FlutterComposite implements IToolBar {
      * </ul>
      */
     public IToolItem[] getItems() {
-        return null;
+        return children == null ? new IToolItem[0] : children.stream().filter(IToolItem.class::isInstance).toArray(IToolItem[]::new);
     }
 
     /**
@@ -205,11 +209,21 @@ public class FlutterToolBar extends FlutterComposite implements IToolBar {
      * </ul>
      */
     public int indexOf(IToolItem item) {
+        if (!(item instanceof FlutterWidget) || children == null) return -1;
+        for (int i = 0; i < children.size(); ++i) {
+            if (children.get(i) == item) {
+                return i;
+            }
+        }
         return -1;
     }
 
     @Override
     public void setToolTipText(String string) {
+        if (string != null) {
+            builder().setToolTipText(string);
+            FlutterSwt.dirty(this);
+        }
     }
 
     public ToolBarValue.Builder builder() {

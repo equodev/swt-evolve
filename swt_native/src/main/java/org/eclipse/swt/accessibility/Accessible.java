@@ -129,7 +129,7 @@ public class Accessible {
      * @deprecated
      */
     @Deprecated
-    protected Accessible() {
+    public Accessible() {
     }
 
     static Accessible checkNull(Accessible parent) {
@@ -525,6 +525,7 @@ public class Accessible {
 
     /* checkWidget was copied from Widget, and rewritten to work in this package */
     void checkWidget() {
+        if (control == null) return;
         if (!isValidThread())
             SWT.error(SWT.ERROR_THREAD_INVALID_ACCESS);
         if (control.isDisposed())

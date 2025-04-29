@@ -2632,7 +2632,7 @@ public abstract class SWTWidget implements IWidget {
         return getName() + " {" + string + "}";
     }
 
-    long topHandle() {
+    public long topHandle() {
         return handle;
     }
 

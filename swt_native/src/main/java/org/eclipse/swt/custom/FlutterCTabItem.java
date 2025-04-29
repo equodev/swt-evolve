@@ -304,17 +304,17 @@ public class FlutterCTabItem extends FlutterItem implements ICTabItem {
         if (this.control != null) {
             int index = parent.indexOf(this);
             if (index == parent.getSelectionIndex()) {
-                this.control.setBounds(parent.getClientArea());
-                this.control.setVisible(true);
+                parent.setSelection(index);
             } else {
                 int selectedIndex = parent.getSelectionIndex();
                 IControl selectedControl = null;
                 if (selectedIndex != -1) {
-//                    selectedControl = ((FlutterCTabItem) (parent.getItem(selectedIndex))).control;
+                    selectedControl = ((FlutterCTabItem) (parent.getItem(selectedIndex))).control;
                 }
                 if (this.control != selectedControl) {
                     this.control.setVisible(false);
                 }
+                parent.setSelection(index);
             }
         }
     }
@@ -455,8 +455,10 @@ public class FlutterCTabItem extends FlutterItem implements ICTabItem {
      * </ul>
      */
     public void setToolTipText(String string) {
-        builder().setToolTipText(string);
-        FlutterSwt.dirty(this);
+        if (string != null) {
+            builder().setToolTipText(string);
+            FlutterSwt.dirty(this);
+        }
     }
 
     public CTabItemValue.Builder builder() {

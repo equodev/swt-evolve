@@ -2087,4 +2087,5 @@ public interface IControl extends IWidget {
      * @see SWT#Paint
      */
     void update();
+
 }

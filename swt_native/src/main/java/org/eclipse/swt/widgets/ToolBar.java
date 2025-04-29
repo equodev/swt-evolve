@@ -87,7 +87,7 @@ public class ToolBar extends Composite {
      * @see Widget#getStyle()
      */
     public ToolBar(Composite parent, int style) {
-        this(new FlutterToolBar((SWTComposite) parent.delegate, style));
+        this(new SWTToolBar((SWTComposite) parent.delegate, style));
     }
 
     /**

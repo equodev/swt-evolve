@@ -1106,6 +1106,10 @@ public abstract class FlutterWidget implements IWidget {
         return handle;
     }
 
+    public long topHandle() {
+        return handle;
+    }
+
     public <L extends EventListener> Stream<L> getTypedListeners(int eventType, Class<L> listenerType) {
         return //
         Arrays.stream(getListeners(eventType)).filter(TypedListener.class::isInstance)

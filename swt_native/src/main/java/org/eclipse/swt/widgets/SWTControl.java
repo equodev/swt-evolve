@@ -603,7 +603,7 @@ public abstract class SWTControl extends SWTWidget implements Drawable, IControl
     }
 
     @Override
-    long topHandle() {
+    public long topHandle() {
         if (fixedHandle != 0)
             return fixedHandle;
         return super.topHandle();
@@ -1614,13 +1614,12 @@ public abstract class SWTControl extends SWTWidget implements Drawable, IControl
      * @see Control#moveAbove
      * @see Composite#getChildren
      */
-    public void moveBelow(IControl control_) {
-        SWTControl control = (SWTControl) control_;
+    public void moveBelow(IControl control) {
         checkWidget();
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if (parent != control.parent)
+            if (parent != control.getParent())
                 return;
             if (this == control)
                 return;
@@ -6286,11 +6285,11 @@ public abstract class SWTControl extends SWTWidget implements Drawable, IControl
         }
     }
 
-    void setZOrder(SWTControl sibling, boolean above, boolean fixRelations) {
+    void setZOrder(IControl sibling, boolean above, boolean fixRelations) {
         setZOrder(sibling, above, fixRelations, true);
     }
 
-    void setZOrder(SWTControl sibling, boolean above, boolean fixRelations, boolean fixChildren) {
+    void setZOrder(IControl sibling, boolean above, boolean fixRelations, boolean fixChildren) {
         int index = 0, siblingIndex = 0, oldNextIndex = -1;
         IControl[] children = null;
         if (fixRelations) {
@@ -6317,8 +6316,8 @@ public abstract class SWTControl extends SWTWidget implements Drawable, IControl
                 }
             }
             if (sibling != null) {
-                if (above) {
-                    sibling.removeRelation();
+                if (sibling instanceof SWTControl control && above) {
+                    control.removeRelation();
                 } else {
                     if (siblingIndex + 1 < children.length) {
                         if (children[siblingIndex + 1] instanceof SWTControl control) {
@@ -6337,7 +6336,7 @@ public abstract class SWTControl extends SWTWidget implements Drawable, IControl
             if (window != 0) {
                 long siblingWindow = 0;
                 if (sibling != null) {
-                    if (above && sibling.enableWindow != 0) {
+                    if (above && sibling instanceof SWTControl control && control.enableWindow != 0) {
                         siblingWindow = enableWindow;
                     } else {
                         siblingWindow = GTK3.gtk_widget_get_window(siblingHandle);
