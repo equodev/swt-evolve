@@ -22,8 +22,10 @@ import org.eclipse.swt.events.TouchListener;
 import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Cursor;
+import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -58,7 +60,7 @@ import org.eclipse.swt.values.ControlValue;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class FlutterControl extends FlutterWidget implements IControl {
+public abstract class FlutterControl extends FlutterWidget implements Drawable, IControl {
 
     IComposite parent;
 
@@ -3140,6 +3142,15 @@ public abstract class FlutterControl extends FlutterWidget implements IControl {
         if (builder == null)
             builder = ControlValue.builder().setId(hashCode()).setStyle(style);
         return (ControlValue.Builder) builder;
+    }
+
+    @Override
+    public long internal_new_GC(GCData data) {
+        return 0;
+    }
+
+    @Override
+    public void internal_dispose_GC(long handle, GCData data) {
     }
 
 }
