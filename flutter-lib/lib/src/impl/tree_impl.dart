@@ -1,8 +1,9 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:swtflutter/src/styles.dart';
 import 'package:swtflutter/src/swt/treecolumn.dart';
 import 'package:swtflutter/src/swt/widget.dart';
 import '../impl/composite_impl.dart';
+import '../impl/widget_config.dart';
 import '../swt/swt.dart';
 import '../swt/tree.dart';
 import '../swt/treeitem.dart';
@@ -12,6 +13,7 @@ class TreeImpl<T extends TreeSwt, V extends TreeValue>
     extends CompositeImpl<T, V> {
   final List<TreeColumnValue> columns = [];
   final List<String> eventNames = [];
+  final bool useDarkTheme = getCurrentTheme();
 
   @override
   Widget build(BuildContext context) {
@@ -19,10 +21,37 @@ class TreeImpl<T extends TreeSwt, V extends TreeValue>
     return super.wrap(createTreeWithHeader());
   }
 
-  List<Expanded> buildHeaders() {
+  Widget buildHeader(TreeColumnValue treeColumnValue) {
+    final Color textColor = useDarkTheme ? Colors.white70 : Colors.black87;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+        decoration: BoxDecoration(
+          color: useDarkTheme ? const Color(0xFF333333) : Colors.grey.shade200,
+          border: Border(
+            bottom: BorderSide(
+              color: useDarkTheme ? Colors.black38 : Colors.grey.shade400,
+              width: 1.0,
+            ),
+          ),
+        ),
+        child: Text(
+          treeColumnValue.text ?? "",
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> buildHeaders() {
     return columns
-        .map((treeColumnValue) =>
-            Expanded(child: Row(children: [Text(treeColumnValue.text ?? "")])))
+        .map((treeColumnValue) => Expanded(child: buildHeader(treeColumnValue)))
         .toList();
   }
 
@@ -35,53 +64,48 @@ class TreeImpl<T extends TreeSwt, V extends TreeValue>
         final double maxHeight = constraints.maxHeight.isFinite
             ? constraints.maxHeight
             : MediaQuery.of(context).size.height;
-        return SizedBox(
+        return Container(
           width: maxWidth,
           height: maxHeight,
-          child: ListView(shrinkWrap: true, children: [
-            if (state.headerVisible == true)
-              Row(
-                children: buildHeaders(),
-              ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [buildTreeView()],
-            )
-          ]),
+          color: useDarkTheme ? const Color(0xFF1E1E1E) : Colors.white,
+          child: Column(
+            children: [
+              if (state.headerVisible == true)
+                Row(
+                  children: buildHeaders(),
+                ),
+              Expanded(
+                child: buildTreeView(),
+              )
+            ],
+          ),
         );
       },
     );
   }
 
-  TreeViewSelectionMode getTreeViewSelectionMode() {
-    return StyleBits(state.style).has(SWT.CHECK)
-        ? TreeViewSelectionMode.multiple
-        : TreeViewSelectionMode.single;
+  bool getTreeViewSelectionMode() {
+    return StyleBits(state.style).has(SWT.CHECK);
   }
 
   Widget buildTreeView() {
-    onSelectionChanged(Iterable<TreeViewItem> selectedItems) async {
-      List<dynamic> selectedIds = selectedItems
-          .map((item) => item.value)
-          .toList();
-      widget.sendSelectionSelection(state, selectedIds);
-    }
-
-    return Expanded(
-      child: TreeView(
-        selectionMode: getTreeViewSelectionMode(),
-        items: buildTreeViewItemsWithColumns(state.children),
-        onSelectionChanged: onSelectionChanged,
+    return Material(
+      color: Colors.transparent,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: buildTreeItems(state.children, 0),
+        ),
       ),
     );
   }
 
-  List<TreeViewItem> buildTreeViewItemsWithColumns(List<WidgetValue>? items) {
+  List<Widget> buildTreeItems(List<WidgetValue>? items, int level) {
     if (items == null || items.isEmpty) return [];
 
     return items
         .whereType<TreeItemValue>()
-        .map((treeItemDynamic) => buildTreeViewItemWithColumns(treeItemDynamic))
+        .map((treeItem) => buildTreeItem(treeItem, level))
         .toList();
   }
 
@@ -101,34 +125,163 @@ class TreeImpl<T extends TreeSwt, V extends TreeValue>
     return (widgetValue as TreeItemValue).expanded ?? false;
   }
 
-  TreeViewItem buildTreeViewItemWithColumns(TreeItemValue treeItemValue) {
-    addTreeItemExpandListener(treeItemValue);
+  Widget buildExpandIcon(TreeItemValue treeItem, bool hasChildren) {
+    final bool expanded = treeItem.expanded ?? false;
 
-    final content = super.applyMenu(Row(
-      children: buildTreeColumns(getTreeColumns(treeItemValue)),
-    ));
-    onExpandToggle(_, expanded) async {
-      if (expanded) {
-        widget.sendTreeExpand(state, treeItemValue.id);
-      } else {
-        setState(() {
-          treeItemValue.children = [TreeItemValue()];
-          treeItemValue.expanded = false;
-        });
-        widget.sendTreeCollapse(state, treeItemValue.id);
-      }
+    if (!hasChildren) {
+      return const SizedBox(width: 16);
     }
 
-    final children = buildTreeViewItemsWithColumns(treeItemValue.children);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () {
+          if (expanded) {
+            setState(() {
+              treeItem.children = [TreeItemValue()];
+              treeItem.expanded = false;
+            });
+            widget.sendTreeCollapse(state, treeItem.id);
+          } else {
+            widget.sendTreeExpand(state, treeItem.id);
+          }
+        },
+        child: Icon(
+          expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+          size: 16,
+          color: useDarkTheme ? Colors.white70 : Colors.black54,
+        ),
+      ),
+    );
+  }
 
-    return TreeViewItem(
-      value: treeItemValue.id,
-      content: content,
-      expanded: isExpanded(treeItemValue),
-      lazy: isVirtual(),
-      onExpandToggle: onExpandToggle,
-      children: children,
-      selected: treeItemValue.selected
+  Widget buildCheckbox(TreeItemValue treeItem) {
+    if (!getTreeViewSelectionMode()) return const SizedBox.shrink();
+
+    final bool checked = treeItem.checked ?? false;
+    final bool grayed = treeItem.grayed ?? false;
+
+    return Container(
+      margin: const EdgeInsets.only(right: 4),
+      child: SizedBox(
+        width: 16,
+        height: 16,
+        child: Checkbox(
+          value: checked,
+          tristate: grayed,
+          activeColor: const Color(0xFF6366F1),
+          side: BorderSide(
+            color: useDarkTheme ? Colors.white70 : Colors.grey.shade600,
+            width: 1.5,
+          ),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          onChanged: (value) {
+            setState(() {
+              treeItem.checked = value ?? false;
+            });
+            widget.sendSelectionSelection(state, treeItem.id);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget buildIcon(TreeItemValue treeItem) {
+    final IconData iconData;
+
+    if (treeItem.children != null && treeItem.children!.isNotEmpty) {
+      iconData = treeItem.expanded ?? false
+          ? Icons.folder_open
+          : Icons.folder;
+    } else {
+      iconData = Icons.insert_drive_file;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(right: 4),
+      child: Icon(
+        iconData,
+        size: 16,
+        color: useDarkTheme ? Colors.white70 : Colors.grey.shade700,
+      ),
+    );
+  }
+
+  Widget buildTreeItemRow(TreeItemValue treeItem, int level) {
+    final List<String> columns = getTreeColumns(treeItem);
+    final bool hasChildren = treeItem.children != null && treeItem.children!.isNotEmpty;
+    final bool isSelected = treeItem.selected ?? false;
+    final Color textColor = useDarkTheme ? Colors.white : Colors.black87;
+    final Color bgColor = isSelected
+        ? (useDarkTheme ? const Color(0xFF3C3C3C) : const Color(0xFFE8E8FF))
+        : Colors.transparent;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
+      onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            treeItem.selected = true;
+          });
+          widget.sendSelectionSelection(state, treeItem.id);
+        },
+        onDoubleTap: () {
+          widget.sendSelectionDefaultSelection(state, treeItem.id);
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: bgColor,
+          ),
+          child: Row(
+            children: [
+              SizedBox(width: 8.0 + level * 16.0),
+              buildExpandIcon(treeItem, hasChildren),
+              buildCheckbox(treeItem),
+              buildIcon(treeItem),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Text(
+                    columns.isNotEmpty ? columns[0] : "",
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 14,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildTreeItem(TreeItemValue treeItem, int level) {
+    addTreeItemExpandListener(treeItem);
+
+    final bool expanded = treeItem.expanded ?? false;
+    final bool hasChildren = treeItem.children != null && treeItem.children!.isNotEmpty;
+
+    return Focus(
+      onFocusChange: (hasFocus) {
+        if (hasFocus) {
+          widget.sendFocusFocusIn(state, null);
+        } else {
+          widget.sendFocusFocusOut(state, null);
+        }
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          buildTreeItemRow(treeItem, level),
+          if (expanded && hasChildren)
+            ...buildTreeItems(treeItem.children, level + 1),
+        ],
+      ),
     );
   }
 
@@ -157,11 +310,6 @@ class TreeImpl<T extends TreeSwt, V extends TreeValue>
         treeItemValue.expanded = true;
       });
     });
-  }
-
-  List<Widget> buildTreeColumns(List<String>? items) {
-    if (items == null) return [];
-    return items.map((item) => Expanded(child: Text(item))).toList();
   }
 
   void extractAndRemoveTreeColumns() {
