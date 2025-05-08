@@ -14,6 +14,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FlutterComposite;
 import org.eclipse.swt.widgets.FlutterSwt;
+import org.eclipse.swt.widgets.FlutterSwt.ExpandPolicy;
 import org.eclipse.swt.widgets.FlutterWidget;
 import org.eclipse.swt.widgets.IComposite;
 import org.eclipse.swt.widgets.IControl;
@@ -72,6 +73,10 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
      * The default value is 0.
      */
     public int marginHeight = 0;
+
+    protected ExpandPolicy getExpandPolicy() {
+        return ExpandPolicy.FOLLOW_W_PARENT;
+    }
 
     /**
      * A multiple of the tab height that specifies the minimum width to which a tab
@@ -344,24 +349,12 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
         return builder().getBorderVisible().orElse(false);
     }
 
-    /**
-     * Returns <code>true</code> if the chevron button is visible when necessary.
-     *
-     * @return the visibility of the chevron button
-     *
-     * @exception SWTException
-     *                         <ul>
-     *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-     *                         disposed</li>
-     *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-     *                         the thread that created the receiver</li>
-     *                         </ul>
-     */
     @Override
     public Rectangle getClientArea() {
-        Point parentSize = childComposite.getSize();
-//        Point thisSize_FIX = new Point(0, 50);
-        return new Rectangle(0, 0, parentSize.x, parentSize.y);
+        Point parentSize = parentComposite.getSize();
+        Point childSize = childComposite.computeSize(-1, -1, false);
+        Rectangle clientArea = new Rectangle(0, 0, Math.max(parentSize.x, childSize.x), Math.max(parentSize.y, childSize.y));
+        return clientArea;
     }
 
     /**
@@ -1965,6 +1958,11 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
     @Override
     public void setSelectedImageVisible(boolean visible) {
         // TODO Auto-generated method stub
+    }
+
+    @Override
+    public Point computeSize(int width, int height, boolean changed) {
+        return new Point(width == SWT.DEFAULT ? 100 : width, 28);
     }
 
     public String toString() {

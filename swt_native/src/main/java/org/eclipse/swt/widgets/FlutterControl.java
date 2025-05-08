@@ -1,5 +1,7 @@
 package org.eclipse.swt.widgets;
 
+import static org.eclipse.swt.widgets.FlutterSwt.ExpandPolicy.FOLLOW_W_PARENT;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.accessibility.Accessible;
@@ -31,6 +33,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.values.ControlValue;
+import org.eclipse.swt.widgets.FlutterSwt.ExpandPolicy;
 
 /**
  * Control is the abstract superclass of all windowed user interface classes.
@@ -69,17 +72,20 @@ public abstract class FlutterControl extends FlutterWidget implements Drawable, 
     IMenu menu;
 
     public SWTComposite parentComposite;
-    public SWTComposite childComposite;
+
+    protected ExpandPolicy getExpandPolicy() {
+        return ExpandPolicy.FOLLOW_PARENT;
+    }
 
     @Override
     void createHandle(int index) {
         state |= HANDLE;
         parentComposite = new SWTComposite((SWTComposite) parent, SWT.NONE);
         handle = parentComposite.handle;
-        childComposite = new SWTComposite(parentComposite, SWT.NONE);
-        childComposite.setLayout(new StackLayout());
+        Composite.getInstance(parentComposite);
         String widget = FlutterSwt.getWidgetName(this);
-        FlutterSwt.InitializeFlutterWindow(handle, FlutterSwt.CLIENT.getPort(), this.hashCode(), widget);
+        Point size = computeSize(-1, -1, true);
+        FlutterSwt.InitializeFlutterWindow(handle, FlutterSwt.CLIENT.getPort(), this.hashCode(), widget, size.x, size.y, getExpandPolicy().getValue());
         FlutterSwt.dirty(this);
     }
 
@@ -487,10 +493,9 @@ public abstract class FlutterControl extends FlutterWidget implements Drawable, 
             FlutterSwt.dirty(flutterParent);
         }
         parentComposite.setBounds(rect);
-        rect.x = 0;
-        rect.y = 27;
-        childComposite.setBounds(rect);
-        childComposite.moveAbove(parentComposite);
+//        rect.y += 27;
+//        childComposite.setBounds(rect);
+//        childComposite.moveAbove(parentComposite);
     }
 
     /**
@@ -600,7 +605,9 @@ public abstract class FlutterControl extends FlutterWidget implements Drawable, 
      *                         </ul>
      */
     public Point getSize() {
-        return parentComposite.getSize();
+        return computeSize(SWT.DEFAULT, SWT.DEFAULT, false);
+//        Rectangle bounds = builder().getBounds().get();
+//        return new Point(bounds.width, bounds.height);
     }
 
     /**

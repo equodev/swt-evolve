@@ -2,10 +2,13 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.ExceptionStash;
 import org.eclipse.swt.values.CompositeValue;
+import org.eclipse.swt.widgets.FlutterSwt.ExpandPolicy;
 
 /**
  * Instances of this class are controls which are capable
@@ -42,7 +45,45 @@ public class FlutterComposite extends FlutterScrollable implements IComposite {
     public long getEmbeddedHandle() {
         return -1;
     }
-    
+
+    public SWTComposite childComposite;
+
+    @Override
+    void createHandle(int index) {
+        super.createHandle(index);
+        childComposite = new SWTComposite(parentComposite, SWT.NONE);
+        childComposite.setLayout(new StackLayout());
+        Composite.getInstance(childComposite);
+    }
+
+    @Override
+    public void setBounds(Rectangle rect) {
+        super.setBounds(rect);
+        ExpandPolicy policy = getExpandPolicy();
+        Point thisSize = getSize();
+        Point childSize = new Point(0, 0);
+        switch (policy) {
+        case FOLLOW_W_PARENT: {
+            thisSize.x = 0;
+            childSize = childComposite.computeSize(rect.width, SWT.DEFAULT, true);
+            rect.height += childSize.y;
+            break;
+        }
+        case FOLLOW_H_PARENT: {
+            thisSize.y = 0;
+            childSize = childComposite.computeSize(SWT.DEFAULT, rect.height, true);
+            rect.width += childSize.x;
+            break;
+        }
+        case FOLLOW_PARENT: {
+            break;
+        }
+        }
+        parentComposite.setBounds(rect);
+        childComposite.setBounds(thisSize.x, thisSize.y, Math.max(rect.width, childSize.x), Math.max(rect.height, childSize.y));
+//        childComposite.moveAbove(parentComposite);
+    }
+
     FlutterComposite() {
         /* Do nothing */
     }
