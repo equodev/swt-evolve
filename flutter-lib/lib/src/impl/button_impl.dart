@@ -31,36 +31,55 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
             setState(() => state.selection = !(state.selection ?? false));
           }
         },
+        onMouseEnter: () => handleMouseEnter(),
+        onMouseExit: () => handleMouseExit(),
+        onFocusIn: () => handleFocusIn(),
+        onFocusOut: () => handleFocusOut(),
       ),
-      SWT.CHECK => Checkbox(
+      SWT.CHECK => MaterialCheckBox(
+        text: state.text,
         checked: state.selection ?? false,
+        useDarkTheme: useDarkTheme,
         onChanged: !enabled
             ? null
             : (checked) {
           onPressed();
           setState(() => state.selection = checked);
         },
-        content: Text(state.text ?? ""),
+        onMouseEnter: () => handleMouseEnter(),
+        onMouseExit: () => handleMouseExit(),
+        onFocusIn: () => handleFocusIn(),
+        onFocusOut: () => handleFocusOut(),
       ),
-      SWT.RADIO => RadioButton(
+      SWT.RADIO => MaterialRadioButton(
+        text: state.text,
         checked: state.selection ?? false,
+        useDarkTheme: useDarkTheme,
         onChanged: !enabled
             ? null
             : (checked) {
           onPressed();
           setState(() => state.selection = checked);
         },
-        content: Text(state.text ?? ""),
+        onMouseEnter: () => handleMouseEnter(),
+        onMouseExit: () => handleMouseExit(),
+        onFocusIn: () => handleFocusIn(),
+        onFocusOut: () => handleFocusOut(),
       ),
-      SWT.NONE => RadioButton(
+      SWT.NONE => MaterialRadioButton(
+        text: state.text,
         checked: state.selection ?? false,
+        useDarkTheme: useDarkTheme,
         onChanged: !enabled
             ? null
             : (checked) {
           onPressed();
           setState(() => state.selection = checked);
         },
-        content: Text(state.text ?? ""),
+        onMouseEnter: () => handleMouseEnter(),
+        onMouseExit: () => handleMouseExit(),
+        onFocusIn: () => handleFocusIn(),
+        onFocusOut: () => handleFocusOut(),
       ),
       SWT.DROP_DOWN => MaterialDropdownButton(
         text: text ?? "",
@@ -82,6 +101,10 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
           onPressed();
           setState(() => state.selection = !(state.selection ?? false));
         },
+        onMouseEnter: () => handleMouseEnter(),
+        onMouseExit: () => handleMouseExit(),
+        onFocusIn: () => handleFocusIn(),
+        onFocusOut: () => handleFocusOut(),
       ),
       _ => Button(
         onPressed: enabled ? onPressed : null,
@@ -90,25 +113,23 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
     };
   }
 
-
-
-//    return ElevatedButton(onPressed: onPressed, child: Text(state.text ?? ""));
-//     if (state.style & SWT.CHECK == 0)
-//     return Button(
-//       onPressed: state.enabled ? onPressed : null,
-//       child: Text(state.text ?? ""),
-//     );
-//     bool checked = false;
-  // Checkbox(
-  //   checked: checked,
-  //   onPressed: state.enabled ? null : (v) => setState(() => checked = v),
-  // )
-
-
   void onPressed() {
     widget.sendSelectionSelection(state, null);
   }
 
+  void handleMouseEnter() {
+    widget.sendMouseTrackMouseEnter(state, null);
+  }
 
+  void handleMouseExit() {
+    widget.sendMouseTrackMouseExit(state, null);
+  }
 
+  void handleFocusIn() {
+    widget.sendFocusFocusIn(state, null);
+  }
+
+  void handleFocusOut() {
+    widget.sendFocusFocusOut(state, null);
+  }
 }

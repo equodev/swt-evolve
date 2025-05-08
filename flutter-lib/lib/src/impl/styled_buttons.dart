@@ -83,6 +83,10 @@ class SelectableButton extends StatelessWidget {
   final double height;
   final double minWidth;
   final bool useDarkTheme;
+  final VoidCallback? onMouseEnter;
+  final VoidCallback? onMouseExit;
+  final VoidCallback? onFocusIn;
+  final VoidCallback? onFocusOut;
 
   const SelectableButton({
     Key? key,
@@ -95,11 +99,14 @@ class SelectableButton extends StatelessWidget {
     this.height = 30.0,
     this.minWidth = 70.0,
     this.useDarkTheme = false,
+    this.onMouseEnter,
+    this.onMouseExit,
+    this.onFocusIn,
+    this.onFocusOut,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    print('');
     final Color darkSelectedColor = const Color(0xFF6366F1);
     final Color darkUnselectedColor = const Color(0xFF4E4D4D);
     final Color darkSelectedTextColor = const Color(0xFFFFFFFF);
@@ -115,101 +122,121 @@ class SelectableButton extends StatelessWidget {
     final Color selectedTextColor = useDarkTheme ? darkSelectedTextColor : lightSelectedTextColor;
     final Color unselectedTextColor = useDarkTheme ? darkUnselectedTextColor : lightUnselectedTextColor;
 
-
     final Color iconColor = isSelected ? selectedTextColor : unselectedTextColor;
-
 
     final bool isIconOnly = image != null && (text == null || text!.isEmpty);
 
-
     const double iconSize = 24.0;
 
-
     if (isIconOnly) {
-      return InkWell(
-        onTap: enabled ? onPressed : null,
-        borderRadius: BorderRadius.circular(iconSize),
-        child: Container(
-            width: iconSize + 8,
-            height: iconSize + 8,
-            decoration: isSelected ? BoxDecoration(
-              color: selectedColor.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ) : null,
-            child: Center(
-              child: !materialIconMap.containsKey(image)
-                  ? (image!.toLowerCase().endsWith('.svg')
-                  ? SvgPicture.file(
-                File(image!),
-              )
-                  : Image.file(
-                File(image!),
-                width: iconSize,
-                height: iconSize,
-              ))
-                  : Icon(
-                getMaterialIconByName(image!),
-                size: iconSize,
-                color: iconColor,
-              ),
-            )),);
+      return MouseRegion(
+        onEnter: (_) => onMouseEnter?.call(),
+        onExit: (_) => onMouseExit?.call(),
+        child: Focus(
+          onFocusChange: (hasFocus) {
+            if (hasFocus) {
+              onFocusIn?.call();
+            } else {
+              onFocusOut?.call();
+            }
+          },
+          child: InkWell(
+            onTap: enabled ? onPressed : null,
+            borderRadius: BorderRadius.circular(iconSize),
+            child: Container(
+                width: iconSize + 8,
+                height: iconSize + 8,
+                decoration: isSelected ? BoxDecoration(
+                  color: selectedColor.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ) : null,
+                child: Center(
+                  child: !materialIconMap.containsKey(image)
+                      ? (image!.toLowerCase().endsWith('.svg')
+                      ? SvgPicture.file(
+                    File(image!),
+                  )
+                      : Image.file(
+                    File(image!),
+                    width: iconSize,
+                    height: iconSize,
+                  ))
+                      : Icon(
+                    getMaterialIconByName(image!),
+                    size: iconSize,
+                    color: iconColor,
+                  ),
+                )),
+          ),
+        ),
+      );
     }
 
-
-    return MaterialButton(
-      onPressed: enabled ? onPressed : null,
-      elevation: 0,
-      focusElevation: 0,
-      hoverElevation: 0,
-      highlightElevation: 0,
-      disabledElevation: 0,
-      height: height,
-      minWidth: minWidth,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      color: isSelected
-          ? (enabled ? selectedColor : selectedColor.withOpacity(0.5))
-          : unselectedColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-
-          if (image != null) ...[
-            !materialIconMap.containsKey(image)
-                ? (image!.toLowerCase().endsWith('.svg')
-                ? SvgPicture.file(
-              File(image!),
-            )
-                : Image.file(
-              File(image!),
-              width: iconSize - 8,
-              height: iconSize - 8,
-            ))
-                : Icon(
-              getMaterialIconByName(image!),
-              size: iconSize - 8,
-              color: iconColor,
-            ),
-            const SizedBox(width: 6),
-          ],
-          // Display text
-          Text(
-            text ?? "",
-            style: TextStyle(
-              color: isSelected ? selectedTextColor : unselectedTextColor,
-              fontWeight: FontWeight.w500,
-            ),
+    return MouseRegion(
+      onEnter: (_) => onMouseEnter?.call(),
+      onExit: (_) => onMouseExit?.call(),
+      child: Focus(
+        onFocusChange: (hasFocus) {
+          if (hasFocus) {
+            onFocusIn?.call();
+          } else {
+            onFocusOut?.call();
+          }
+        },
+        child: MaterialButton(
+          onPressed: enabled ? onPressed : null,
+          elevation: 0,
+          focusElevation: 0,
+          hoverElevation: 0,
+          highlightElevation: 0,
+          disabledElevation: 0,
+          height: height,
+          minWidth: minWidth,
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          color: isSelected
+              ? (enabled ? selectedColor : selectedColor.withOpacity(0.5))
+              : unselectedColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
           ),
-        ],
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (image != null) ...[
+                !materialIconMap.containsKey(image)
+                    ? (image!.toLowerCase().endsWith('.svg')
+                    ? SvgPicture.file(
+                  File(image!),
+                )
+                    : Image.file(
+                  File(image!),
+                  width: iconSize - 8,
+                  height: iconSize - 8,
+                ))
+                    : Icon(
+                  getMaterialIconByName(image!),
+                  size: iconSize - 8,
+                  color: iconColor,
+                ),
+                const SizedBox(width: 6),
+              ],
+              // Display text
+              Text(
+                text ?? "",
+                style: TextStyle(
+                  color: isSelected ? selectedTextColor : unselectedTextColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
-
 
 // PUSH BUTTON
 class PushButton extends StatefulWidget {
@@ -221,6 +248,10 @@ class PushButton extends StatefulWidget {
   final double height;
   final double minWidth;
   final bool useDarkTheme;
+  final VoidCallback? onMouseEnter;
+  final VoidCallback? onMouseExit;
+  final VoidCallback? onFocusIn;
+  final VoidCallback? onFocusOut;
 
   const PushButton({
     Key? key,
@@ -232,6 +263,10 @@ class PushButton extends StatefulWidget {
     this.height = 30.0,
     this.minWidth = 70.0,
     this.useDarkTheme = false,
+    this.onMouseEnter,
+    this.onMouseExit,
+    this.onFocusIn,
+    this.onFocusOut,
   }) : super(key: key);
 
   @override
@@ -245,13 +280,13 @@ class _PushButtonState extends State<PushButton> {
   Widget build(BuildContext context) {
     final Color darkSelectedColor = const Color(0xFF6366F1);
     final Color darkUnselectedColor = const Color(0xFF6366F1);
-    final Color darkSelectedTextColor = const Color(0xFF6366F1);
-    final Color darkUnselectedTextColor = const Color(0xFF6366F1);
+    final Color darkSelectedTextColor = const Color(0xFFFFFFFF);
+    final Color darkUnselectedTextColor = const Color(0xFFFFFFFF);
 
     final Color lightSelectedColor = const Color(0xFF6366F1);
     final Color lightUnselectedColor = const Color(0xFF6366F1);
-    final Color lightSelectedTextColor = const Color(0xFF6366F1);
-    final Color lightUnselectedTextColor = const Color(0xFF6366F1);
+    final Color lightSelectedTextColor = const Color(0xFFFFFFFF);
+    final Color lightUnselectedTextColor = const Color(0xFF595858);
 
     final Color selectedColor = widget.useDarkTheme ? darkSelectedColor : lightSelectedColor;
     final Color unselectedColor = widget.useDarkTheme ? darkUnselectedColor : lightUnselectedColor;
@@ -265,110 +300,328 @@ class _PushButtonState extends State<PushButton> {
 
     // Para botones de solo ícono
     if (isIconOnly) {
-      return InkWell(
-        onTap: widget.enabled ? () {
-          setState(() {
-            _isPressed = true;
-          });
-          widget.onPressed();
-          // Resetear el estado después de un breve delay para mostrar el efecto visual
-          Future.delayed(const Duration(milliseconds: 200), () {
-            if (mounted) {
-              setState(() {
-                _isPressed = false;
-              });
+      return MouseRegion(
+        onEnter: (_) => widget.onMouseEnter?.call(),
+        onExit: (_) => widget.onMouseExit?.call(),
+        child: Focus(
+          onFocusChange: (hasFocus) {
+            if (hasFocus) {
+              widget.onFocusIn?.call();
+            } else {
+              widget.onFocusOut?.call();
             }
-          });
-        } : null,
-        borderRadius: BorderRadius.circular(iconSize),
-        child: Container(
-          width: iconSize + 8,
-          height: iconSize + 8,
-          decoration: _isPressed ? BoxDecoration(
-            color: selectedColor.withOpacity(0.2),
-            shape: BoxShape.circle,
-          ) : null,
-          child: Center(
-            child: !materialIconMap.containsKey(widget.image)
-                ? (widget.image!.toLowerCase().endsWith('.svg')
-                ? SvgPicture.file(
-              File(widget.image!),
-            )
-                : Image.file(
-              File(widget.image!),
-              width: iconSize,
-              height: iconSize,
-            ))
-                : Icon(
-              getMaterialIconByName(widget.image!),
-              size: iconSize,
-              color: iconColor,
+          },
+          child: InkWell(
+            onTap: widget.enabled ? () {
+              setState(() {
+                _isPressed = true;
+              });
+              widget.onPressed();
+              // Resetear el estado después de un breve delay para mostrar el efecto visual
+              Future.delayed(const Duration(milliseconds: 200), () {
+                if (mounted) {
+                  setState(() {
+                    _isPressed = false;
+                  });
+                }
+              });
+            } : null,
+            borderRadius: BorderRadius.circular(iconSize),
+            child: Container(
+              width: iconSize + 8,
+              height: iconSize + 8,
+              decoration: _isPressed ? BoxDecoration(
+                color: selectedColor.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ) : null,
+              child: Center(
+                child: !materialIconMap.containsKey(widget.image)
+                    ? (widget.image!.toLowerCase().endsWith('.svg')
+                    ? SvgPicture.file(
+                  File(widget.image!),
+                )
+                    : Image.file(
+                  File(widget.image!),
+                  width: iconSize,
+                  height: iconSize,
+                ))
+                    : Icon(
+                  getMaterialIconByName(widget.image!),
+                  size: iconSize,
+                  color: iconColor,
+                ),
+              ),
             ),
           ),
         ),
       );
     }
 
-    return MaterialButton(
-      onPressed: widget.enabled ? () {
-        setState(() {
-          _isPressed = true;
-        });
-        widget.onPressed();
-        // Resetear el estado después de un breve delay
-        Future.delayed(const Duration(milliseconds: 200), () {
-          if (mounted) {
-            setState(() {
-              _isPressed = false;
-            });
+    return MouseRegion(
+      onEnter: (_) => widget.onMouseEnter?.call(),
+      onExit: (_) => widget.onMouseExit?.call(),
+      child: Focus(
+        onFocusChange: (hasFocus) {
+          if (hasFocus) {
+            widget.onFocusIn?.call();
+          } else {
+            widget.onFocusOut?.call();
           }
-        });
-      } : null,
-      elevation: 0,
-      focusElevation: 0,
-      hoverElevation: 0,
-      highlightElevation: 0,
-      disabledElevation: 0,
-      height: widget.height,
-      minWidth: widget.minWidth,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      color: _isPressed
-          ? (widget.enabled ? selectedColor : selectedColor.withOpacity(0.5))
-          : unselectedColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(widget.borderRadius),
-      ),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (widget.image != null) ...[
-            !materialIconMap.containsKey(widget.image)
-                ? (widget.image!.toLowerCase().endsWith('.svg')
-                ? SvgPicture.file(
-              File(widget.image!),
-            )
-                : Image.file(
-              File(widget.image!),
-              width: iconSize - 8,
-              height: iconSize - 8,
-            ))
-                : Icon(
-              getMaterialIconByName(widget.image!),
-              size: iconSize - 8,
-              color: iconColor,
-            ),
-            const SizedBox(width: 6),
-          ],
-          Text(
-            widget.text ?? "",
-            style: TextStyle(
-              color: _isPressed ? selectedTextColor : unselectedTextColor,
-              fontWeight: FontWeight.w500,
-            ),
+        },
+        child: MaterialButton(
+          onPressed: widget.enabled ? () {
+            setState(() {
+              _isPressed = true;
+            });
+            widget.onPressed();
+            // Resetear el estado después de un breve delay
+            Future.delayed(const Duration(milliseconds: 200), () {
+              if (mounted) {
+                setState(() {
+                  _isPressed = false;
+                });
+              }
+            });
+          } : null,
+          elevation: 0,
+          focusElevation: 0,
+          hoverElevation: 0,
+          highlightElevation: 0,
+          disabledElevation: 0,
+          height: widget.height,
+          minWidth: widget.minWidth,
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          color: _isPressed
+              ? (widget.enabled ? selectedColor : selectedColor.withOpacity(0.5))
+              : unselectedColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
           ),
-        ],
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (widget.image != null) ...[
+                !materialIconMap.containsKey(widget.image)
+                    ? (widget.image!.toLowerCase().endsWith('.svg')
+                    ? SvgPicture.file(
+                  File(widget.image!),
+                )
+                    : Image.file(
+                  File(widget.image!),
+                  width: iconSize - 8,
+                  height: iconSize - 8,
+                ))
+                    : Icon(
+                  getMaterialIconByName(widget.image!),
+                  size: iconSize - 8,
+                  color: iconColor,
+                ),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                widget.text ?? "",
+                style: TextStyle(
+                  color: _isPressed ? selectedTextColor : unselectedTextColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// RADIO BUTTON
+class MaterialRadioButton extends StatelessWidget {
+  final String? text;
+  final bool checked;
+  final ValueChanged<bool>? onChanged;
+  final bool useDarkTheme;
+  final VoidCallback? onMouseEnter;
+  final VoidCallback? onMouseExit;
+  final VoidCallback? onFocusIn;
+  final VoidCallback? onFocusOut;
+
+  const MaterialRadioButton({
+    Key? key,
+    this.text,
+    required this.checked,
+    this.onChanged,
+    this.useDarkTheme = false,
+    this.onMouseEnter,
+    this.onMouseExit,
+    this.onFocusIn,
+    this.onFocusOut,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final Color activeColor = const Color(0xFF6366F1);
+    final Color inactiveColor = useDarkTheme ? Colors.white70 : const Color(0xFF757575);
+    final Color textColor = useDarkTheme ? Colors.white : Colors.black87;
+
+    return MouseRegion(
+      onEnter: (_) => onMouseEnter?.call(),
+      onExit: (_) => onMouseExit?.call(),
+      child: Focus(
+        onFocusChange: (hasFocus) {
+          if (hasFocus) {
+            onFocusIn?.call();
+          } else {
+            onFocusOut?.call();
+          }
+        },
+        child: MaterialButton(
+          onPressed: onChanged != null ? () => onChanged!(!checked) : null,
+          elevation: 0,
+          focusElevation: 0,
+          hoverElevation: 0,
+          highlightElevation: 0,
+          disabledElevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+          color: Colors.transparent,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Custom radio button
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: checked ? activeColor : inactiveColor,
+                    width: 2,
+                  ),
+                ),
+                child: Center(
+                  child: checked
+                      ? Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: activeColor,
+                    ),
+                  )
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Text label
+              Flexible(
+                child: Text(
+                  text ?? '',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// CHECKBOX BUTTON
+class MaterialCheckBox extends StatelessWidget {
+  final String? text;
+  final bool checked;
+  final ValueChanged<bool>? onChanged;
+  final bool useDarkTheme;
+  final VoidCallback? onMouseEnter;
+  final VoidCallback? onMouseExit;
+  final VoidCallback? onFocusIn;
+  final VoidCallback? onFocusOut;
+
+  const MaterialCheckBox({
+    Key? key,
+    this.text,
+    required this.checked,
+    this.onChanged,
+    this.useDarkTheme = false,
+    this.onMouseEnter,
+    this.onMouseExit,
+    this.onFocusIn,
+    this.onFocusOut,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final Color activeColor = const Color(0xFF6366F1);
+    final Color inactiveColor = useDarkTheme ? Colors.white70 : const Color(0xFF757575);
+    final Color textColor = useDarkTheme ? Colors.white : Colors.black87;
+
+    return MouseRegion(
+      onEnter: (_) => onMouseEnter?.call(),
+      onExit: (_) => onMouseExit?.call(),
+      child: Focus(
+        onFocusChange: (hasFocus) {
+          if (hasFocus) {
+            onFocusIn?.call();
+          } else {
+            onFocusOut?.call();
+          }
+        },
+        child: MaterialButton(
+          onPressed: onChanged != null ? () => onChanged!(!checked) : null,
+          elevation: 0,
+          focusElevation: 0,
+          hoverElevation: 0,
+          highlightElevation: 0,
+          disabledElevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+          color: Colors.transparent,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Custom checkbox
+              Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(3),
+                  border: Border.all(
+                    color: checked ? activeColor : inactiveColor,
+                    width: 2,
+                  ),
+                  color: checked ? activeColor : null,
+                ),
+                child: checked
+                    ? const Icon(
+                  Icons.check,
+                  size: 14,
+                  color: Colors.white,
+                )
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              // Text label
+              Flexible(
+                child: Text(
+                  text ?? '',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
