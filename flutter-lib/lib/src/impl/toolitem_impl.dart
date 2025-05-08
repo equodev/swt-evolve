@@ -1,5 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:swtflutter/src/impl/separator.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 import '../impl/item_impl.dart';
 import '../swt/swt.dart';
 import '../swt/toolitem.dart';
@@ -8,9 +9,7 @@ import 'styled_buttons.dart';
 class ToolItemImpl<T extends ToolItemSwt, V extends ToolItemValue>
     extends ItemImpl<T, V> {
 
-  final bool useDarkTheme;
-
-  ToolItemImpl({this.useDarkTheme = false});
+  final bool useDarkTheme = getCurrentTheme();
 
   @override
   Widget build(BuildContext context) {

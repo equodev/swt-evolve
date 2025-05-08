@@ -15,7 +15,7 @@ class ButtonSwt<V extends ButtonValue> extends ControlSwt<V> {
   const ButtonSwt({super.key, required super.value});
 
   @override
-  State createState() => ButtonImpl<ButtonSwt<ButtonValue>, ButtonValue>(useDarkTheme: true);
+  State createState() => ButtonImpl<ButtonSwt<ButtonValue>, ButtonValue>();
 
   void sendSelectionSelection(V val, Object? payload) {
     sendEvent(val, "Selection/Selection", payload);

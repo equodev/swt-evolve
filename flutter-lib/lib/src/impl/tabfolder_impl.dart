@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/widgets.dart';
 
 import '../swt/tabfolder.dart';
@@ -15,9 +16,7 @@ import 'icons_map.dart';
 class TabFolderImpl<T extends TabFolderSwt, V extends TabFolderValue>
     extends CompositeImpl<T, V> {
 
-  final bool useDarkTheme;
-
-  TabFolderImpl({this.useDarkTheme = false});
+  final bool useDarkTheme = getCurrentTheme();
 
   @override
   void initState() {

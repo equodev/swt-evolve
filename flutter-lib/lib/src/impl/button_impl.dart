@@ -3,13 +3,12 @@ import '../swt/swt.dart';
 import '../swt/button.dart';
 import '../impl/control_impl.dart';
 import 'styled_buttons.dart';
+import 'widget_config.dart';
 
 
 class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
     extends ControlImpl<T, V> {
-  final bool useDarkTheme;
-
-  ButtonImpl({this.useDarkTheme = false});
+  final bool useDarkTheme = getCurrentTheme();
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +17,7 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
 
     var text = state.text;
     var image = state.image;
-    var enabled = state.enabled ?? true;
+    var enabled = state.enabled?? false;
 
     return switch (state.style & bits) {
       SWT.TOGGLE => SelectableButton(
@@ -76,6 +75,7 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
       ),
       SWT.PUSH => PushButton(
         text: state.text,
+        image: image,
         enabled: enabled,
         useDarkTheme: useDarkTheme,
         onPressed: () {
@@ -108,5 +108,7 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
   void onPressed() {
     widget.sendSelectionSelection(state, null);
   }
+
+
 
 }

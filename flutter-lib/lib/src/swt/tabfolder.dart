@@ -16,7 +16,7 @@ class TabFolderSwt<V extends TabFolderValue> extends CompositeSwt<V> {
 
   @override
   State createState() =>
-      TabFolderImpl<TabFolderSwt<TabFolderValue>, TabFolderValue>(useDarkTheme: true);
+      TabFolderImpl<TabFolderSwt<TabFolderValue>, TabFolderValue>();
 
   void sendSelectionSelection(V val, Object? payload) {
     sendEvent(val, "Selection/Selection", payload);

@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/swt/button.dart';
 import 'package:swtflutter/src/swt/swt.dart';
 import '../swt/coolitem.dart';
@@ -11,9 +12,7 @@ import 'styled_buttons.dart';
 class CoolItemImpl<T extends CoolItemSwt, V extends CoolItemValue>
     extends ItemImpl<T, V> {
 
-  final bool useDarkTheme;
-
-  CoolItemImpl({this.useDarkTheme = true});
+  final bool useDarkTheme = getCurrentTheme();
 
   @override
   Widget build(BuildContext context) {
