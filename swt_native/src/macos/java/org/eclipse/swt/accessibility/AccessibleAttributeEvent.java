@@ -1,16 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2009, 2017 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2009, 2017 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.accessibility;
 
 import java.util.*;
@@ -26,126 +28,129 @@ import java.util.*;
  */
 public class AccessibleAttributeEvent extends EventObject {
 
-	/**
-	 * [out] the top margin in pixels
-	 *
-	 * @see AccessibleAttributeListener#getAttributes
-	 */
-	public int topMargin;
+    /**
+     * [out] the top margin in pixels
+     *
+     * @see AccessibleAttributeListener#getAttributes
+     */
+    public int topMargin;
 
-	/**
-	 * [out] the bottom margin in pixels
-	 *
-	 * @see AccessibleAttributeListener#getAttributes
-	 */
-	public int bottomMargin;
+    /**
+     * [out] the bottom margin in pixels
+     *
+     * @see AccessibleAttributeListener#getAttributes
+     */
+    public int bottomMargin;
 
-	/**
-	 * [out] the left margin in pixels
-	 *
-	 * @see AccessibleAttributeListener#getAttributes
-	 */
-	public int leftMargin;
+    /**
+     * [out] the left margin in pixels
+     *
+     * @see AccessibleAttributeListener#getAttributes
+     */
+    public int leftMargin;
 
-	/**
-	 * [out] the right margin in pixels
-	 *
-	 * @see AccessibleAttributeListener#getAttributes
-	 */
-	public int rightMargin;
+    /**
+     * [out] the right margin in pixels
+     *
+     * @see AccessibleAttributeListener#getAttributes
+     */
+    public int rightMargin;
 
-	/**
-	 * [out] an array of pixel locations representing tab stops
-	 *
-	 * @see AccessibleAttributeListener#getAttributes
-	 */
-	public int[] tabStops;
+    /**
+     * [out] an array of pixel locations representing tab stops
+     *
+     * @see AccessibleAttributeListener#getAttributes
+     */
+    public int[] tabStops;
 
-	/**
-	 * [out] whether or not to justify the text
-	 *
-	 * @see AccessibleAttributeListener#getAttributes
-	 */
-	public boolean justify;
+    /**
+     * [out] whether or not to justify the text
+     *
+     * @see AccessibleAttributeListener#getAttributes
+     */
+    public boolean justify;
 
-	/**
-	 * [out] the alignment, which is one of SWT#LEFT, SWT#RIGHT or SWT#CENTER
-	 *
-	 * @see AccessibleAttributeListener#getAttributes
-	 */
-	public int alignment;
+    /**
+     * [out] the alignment, which is one of SWT#LEFT, SWT#RIGHT or SWT#CENTER
+     *
+     * @see AccessibleAttributeListener#getAttributes
+     */
+    public int alignment;
 
-	/**
-	 * [out] the indent in pixels
-	 *
-	 * @see AccessibleAttributeListener#getAttributes
-	 */
-	public int indent;
+    /**
+     * [out] the indent in pixels
+     *
+     * @see AccessibleAttributeListener#getAttributes
+     */
+    public int indent;
 
-	/**
-	 * [out] the 1-based level of this accessible in its group
-	 *  (0 means "not applicable")
-	 *
-	 * @see AccessibleAttributeListener#getAttributes
-	 * @since 3.102
-	 */
-	public int groupLevel;
-	/**
-	 * [out] the 1-based number of similar children in this accessible's group,
-	 * including this accessible (0 means "not applicable")
-	 *
-	 * @see AccessibleAttributeListener#getAttributes
-	 * @since 3.102
-	 */
-	public int groupCount;
-	/**
-	 * [out] the 1-based index of this accessible in its group
-	 *  (0 means "not applicable")
-	 *
-	 * @see AccessibleAttributeListener#getAttributes
-	 * @since 3.102
-	 */
-	public int groupIndex;
+    /**
+     * [out] the 1-based level of this accessible in its group
+     *  (0 means "not applicable")
+     *
+     * @see AccessibleAttributeListener#getAttributes
+     * @since 3.102
+     */
+    public int groupLevel;
 
-	/**
-	 * [out] an array of alternating key and value Strings which
-	 * represent additional (i.e. non predefined) attributes
-	 *
-	 * @see AccessibleAttributeListener#getAttributes
-	 */
-	public String [] attributes;
+    /**
+     * [out] the 1-based number of similar children in this accessible's group,
+     * including this accessible (0 means "not applicable")
+     *
+     * @see AccessibleAttributeListener#getAttributes
+     * @since 3.102
+     */
+    public int groupCount;
 
-	static final long serialVersionUID = -2894665777259297851L;
+    /**
+     * [out] the 1-based index of this accessible in its group
+     *  (0 means "not applicable")
+     *
+     * @see AccessibleAttributeListener#getAttributes
+     * @since 3.102
+     */
+    public int groupIndex;
 
-/**
- * Constructs a new instance of this class.
- *
- * @param source the object that fired the event
- */
-public AccessibleAttributeEvent(Object source) {
-	super(source);
-}
+    /**
+     * [out] an array of alternating key and value Strings which
+     * represent additional (i.e. non predefined) attributes
+     *
+     * @see AccessibleAttributeListener#getAttributes
+     */
+    public String[] attributes;
 
-/**
- * Returns a string containing a concise, human-readable
- * description of the receiver.
- *
- * @return a string representation of the event
- */
-@Override
-public String toString () {
-	return "AccessibleAttributeEvent {" //$NON-NLS-1$
-		+ " topMargin=" + topMargin   //$NON-NLS-1$
-		+ " bottomMargin=" + bottomMargin   //$NON-NLS-1$
-		+ " leftMargin=" + leftMargin   //$NON-NLS-1$
-		+ " rightMargin=" + rightMargin   //$NON-NLS-1$
-		+ " tabStops=" + Arrays.toString(tabStops)   //$NON-NLS-1$
-		+ " justify=" + justify   //$NON-NLS-1$
-		+ " alignment=" + alignment   //$NON-NLS-1$
-		+ " indent=" + indent   //$NON-NLS-1$
-		+ " groupLevel=" + groupLevel   //$NON-NLS-1$
-		+ " groupCount=" + groupCount   //$NON-NLS-1$
-		+ " groupIndex=" + groupIndex   //$NON-NLS-1$
-		+ "}";  //$NON-NLS-1$
-}
+    static final long serialVersionUID = -2894665777259297851L;
+
+    /**
+     * Constructs a new instance of this class.
+     *
+     * @param source the object that fired the event
+     */
+    public AccessibleAttributeEvent(Object source) {
+        super(source);
+    }
+
+    /**
+     * Returns a string containing a concise, human-readable
+     * description of the receiver.
+     *
+     * @return a string representation of the event
+     */
+    @Override
+    public String toString() {
+        return //$NON-NLS-1$
+        "AccessibleAttributeEvent {" + " topMargin=" + //$NON-NLS-1$
+        topMargin + " bottomMargin=" + //$NON-NLS-1$
+        bottomMargin + " leftMargin=" + //$NON-NLS-1$
+        leftMargin + " rightMargin=" + //$NON-NLS-1$
+        rightMargin + " tabStops=" + //$NON-NLS-1$
+        Arrays.toString(tabStops) + " justify=" + //$NON-NLS-1$
+        justify + " alignment=" + //$NON-NLS-1$
+        alignment + " indent=" + //$NON-NLS-1$
+        indent + " groupLevel=" + //$NON-NLS-1$
+        groupLevel + " groupCount=" + //$NON-NLS-1$
+        groupCount + " groupIndex=" + //$NON-NLS-1$
+        groupIndex + //$NON-NLS-1$
+        "}";
+    }
 }

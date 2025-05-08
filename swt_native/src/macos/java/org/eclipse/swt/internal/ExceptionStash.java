@@ -1,17 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2021, 2023 Syntevo and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2021, 2023 Syntevo and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     Syntevo - initial API and implementation
- *******************************************************************************/
-
+ *  Contributors:
+ *      Syntevo - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.internal;
 
 import org.eclipse.swt.widgets.Display;
@@ -52,47 +53,45 @@ import org.eclipse.swt.widgets.Display;
  * } </pre>
  */
 public class ExceptionStash implements AutoCloseable {
-	Throwable storedThrowable;
 
-public void stash(Throwable throwable) {
-	/* First, try to pass it to the global handler */
-	try {
-		Display display = Display.getCurrent ();
-		if (display != null) {
-			if (throwable instanceof RuntimeException runtimeEx) {
-				display.getRuntimeExceptionHandler().accept(runtimeEx);
-				/* If handler doesn't throw then the exception is fully handled */
-				return;
-			} else if (throwable instanceof Error er) {
-				display.getErrorHandler().accept(er);
-				/* If handler doesn't throw then the exception is fully handled */
-				return;
-			}
-		}
-	} catch (Throwable ex) {
-		/* Handler may have thrown something new */
-		throwable = ex;
-	}
+    Throwable storedThrowable;
 
-	/* No handler or it also thrown */
-	if (storedThrowable != null) {
-		storedThrowable.addSuppressed(throwable);
-	} else {
-		storedThrowable = throwable;
-	}
-}
+    public void stash(Throwable throwable) {
+        /* First, try to pass it to the global handler */
+        try {
+            Display display = Display.getCurrent();
+            if (display != null) {
+                if (throwable instanceof RuntimeException runtimeEx) {
+                    display.getRuntimeExceptionHandler().accept(runtimeEx);
+                    /* If handler doesn't throw then the exception is fully handled */
+                    return;
+                } else if (throwable instanceof Error er) {
+                    display.getErrorHandler().accept(er);
+                    /* If handler doesn't throw then the exception is fully handled */
+                    return;
+                }
+            }
+        } catch (Throwable ex) {
+            /* Handler may have thrown something new */
+            throwable = ex;
+        }
+        /* No handler or it also thrown */
+        if (storedThrowable != null) {
+            storedThrowable.addSuppressed(throwable);
+        } else {
+            storedThrowable = throwable;
+        }
+    }
 
-public void close() {
-	if (storedThrowable == null) return;
-
-	Throwable throwable = storedThrowable;
-	storedThrowable = null;
-
-	if (throwable instanceof RuntimeException runtimeEx) {
-		throw runtimeEx;
-	} else if (throwable instanceof Error er) {
-		throw er;
-	}
-}
-
+    public void close() {
+        if (storedThrowable == null)
+            return;
+        Throwable throwable = storedThrowable;
+        storedThrowable = null;
+        if (throwable instanceof RuntimeException runtimeEx) {
+            throw runtimeEx;
+        } else if (throwable instanceof Error er) {
+            throw er;
+        }
+    }
 }

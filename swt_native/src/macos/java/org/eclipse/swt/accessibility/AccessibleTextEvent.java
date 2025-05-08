@@ -1,21 +1,21 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2017 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.accessibility;
 
-
 import java.util.*;
-
 import org.eclipse.swt.graphics.*;
 
 /**
@@ -36,55 +36,83 @@ import org.eclipse.swt.graphics.*;
  * @since 3.0
  */
 public class AccessibleTextEvent extends EventObject {
-	public int childID;				// IN
-	public int offset, length;		// OUT
-	/** @since 3.6 */
-	public Accessible accessible;
 
-	/**
-	 * The value of this field must be set in the accessible text extended listener method
-	 * before returning. What to set it to depends on the listener method called.
-	 * @since 3.6
-	 */
-	public String result;
+    // IN
+    public int childID;
 
-	/** @since 3.6 */
-	public int count;
-	/** @since 3.6 */
-	public int index;
-	/** @since 3.6 */
-	public int start, end;
-	/** @since 3.6 */
-	public int type;
-	/** @since 3.6 */
-	public int x, y, width, height;
-	/** @since 3.6 */
-	public int [] ranges;
-	/** @since 3.6 */
-	public Rectangle [] rectangles;
+    // OUT
+    public int offset, length;
 
-	static final long serialVersionUID = 3977019530868308275L;
+    /**
+     * @since 3.6
+     */
+    public Accessible accessible;
 
-/**
- * Constructs a new instance of this class.
- *
- * @param source the object that fired the event
- */
-public AccessibleTextEvent (Object source) {
-	super (source);
-}
+    /**
+     * The value of this field must be set in the accessible text extended listener method
+     * before returning. What to set it to depends on the listener method called.
+     * @since 3.6
+     */
+    public String result;
 
-/**
- * Returns a string containing a concise, human-readable
- * description of the receiver.
- *
- * @return a string representation of the event
- */
-@Override
-public String toString () {
-	return "AccessibleTextEvent {childID=" + childID +  //$NON-NLS-1$
-		" offset=" + offset +  //$NON-NLS-1$
-		" length=" + length +  //$NON-NLS-1$
-		"}"; //$NON-NLS-1$
-}
+    /**
+     * @since 3.6
+     */
+    public int count;
+
+    /**
+     * @since 3.6
+     */
+    public int index;
+
+    /**
+     * @since 3.6
+     */
+    public int start, end;
+
+    /**
+     * @since 3.6
+     */
+    public int type;
+
+    /**
+     * @since 3.6
+     */
+    public int x, y, width, height;
+
+    /**
+     * @since 3.6
+     */
+    public int[] ranges;
+
+    /**
+     * @since 3.6
+     */
+    public Rectangle[] rectangles;
+
+    static final long serialVersionUID = 3977019530868308275L;
+
+    /**
+     * Constructs a new instance of this class.
+     *
+     * @param source the object that fired the event
+     */
+    public AccessibleTextEvent(Object source) {
+        super(source);
+    }
+
+    /**
+     * Returns a string containing a concise, human-readable
+     * description of the receiver.
+     *
+     * @return a string representation of the event
+     */
+    @Override
+    public String toString() {
+        return //$NON-NLS-1$
+        "AccessibleTextEvent {childID=" + childID + " offset=" + //$NON-NLS-1$
+        offset + " length=" + //$NON-NLS-1$
+        length + //$NON-NLS-1$
+        "}";
+    }
 }

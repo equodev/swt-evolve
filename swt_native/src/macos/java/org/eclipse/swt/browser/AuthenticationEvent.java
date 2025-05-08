@@ -1,16 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2003, 2009 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2003, 2009 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.browser;
 
 import org.eclipse.swt.widgets.*;
@@ -27,47 +29,51 @@ import org.eclipse.swt.events.*;
  * @since 3.5
  */
 public class AuthenticationEvent extends TypedEvent {
-	/** The location that triggered the authentication challenge */
-	public String location;
 
-	/** The user name to authenticate with */
-	public String user;
+    /**
+     * The location that triggered the authentication challenge
+     */
+    public String location;
 
-	/** The password to authenticate with */
-	public String password;
+    /**
+     * The user name to authenticate with
+     */
+    public String user;
 
-	/**
-	 * A flag indicating whether the authentication should proceed.
-	 * Setting this field to <code>false</code> will cancel the operation.
-	 */
-	public boolean doit = true;
+    /**
+     * The password to authenticate with
+     */
+    public String password;
 
-	static final long serialVersionUID = -8322331206780057921L;
+    /**
+     * A flag indicating whether the authentication should proceed.
+     * Setting this field to <code>false</code> will cancel the operation.
+     */
+    public boolean doit = true;
 
-/**
- * Constructs a new instance of this class.
- *
- * @param widget the widget that fired the event
- *
- * @since 3.5
- */
-public AuthenticationEvent(Widget widget) {
-	super(widget);
-}
+    static final long serialVersionUID = -8322331206780057921L;
 
-/**
- * Returns a string containing a concise, human-readable
- * description of the receiver.
- *
- * @return a string representation of the event
- */
-@Override
-public String toString() {
-	String string = super.toString ();
-	return string.substring (0, string.length() - 1) // remove trailing '}'
-		+ " name=" + user
-		+ " password=" + password
-		+ " location=" + location
-		+ "}";
-}
+    /**
+     * Constructs a new instance of this class.
+     *
+     * @param widget the widget that fired the event
+     *
+     * @since 3.5
+     */
+    public AuthenticationEvent(Widget widget) {
+        super(widget);
+    }
+
+    /**
+     * Returns a string containing a concise, human-readable
+     * description of the receiver.
+     *
+     * @return a string representation of the event
+     */
+    @Override
+    public String toString() {
+        String string = super.toString();
+        return // remove trailing '}'
+        string.substring(0, string.length() - 1) + " name=" + user + " password=" + password + " location=" + location + "}";
+    }
 }

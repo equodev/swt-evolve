@@ -1,16 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2018 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2018 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.graphics;
 
 /**
@@ -25,22 +27,20 @@ package org.eclipse.swt.graphics;
  */
 public interface ImageDataProvider {
 
-
-	/**
-	 * Returns the image data for the given zoom level.
-	 * <p>
-	 * If no image is available for a particular zoom level, this method should
-	 * return <code>null</code>. For <code>zoom == 100</code>, returning
-	 * <code>null</code> is not allowed, and SWT will throw an exception.
-	 *
-	 * @param zoom
-	 *            The zoom level in % of the standard resolution (which is 1
-	 *            physical monitor pixel == 1 SWT logical point). Typically 100,
-	 *            150, or 200.
-	 * @return the image data, or <code>null</code> if <code>zoom != 100</code>
-	 *         and no image is available for the given zoom level.
-	 * @since 3.104
-	 */
-	ImageData getImageData (int zoom);
-
+    /**
+     * Returns the image data for the given zoom level.
+     * <p>
+     * If no image is available for a particular zoom level, this method should
+     * return <code>null</code>. For <code>zoom == 100</code>, returning
+     * <code>null</code> is not allowed, and SWT will throw an exception.
+     *
+     * @param zoom
+     *            The zoom level in % of the standard resolution (which is 1
+     *            physical monitor pixel == 1 SWT logical point). Typically 100,
+     *            150, or 200.
+     * @return the image data, or <code>null</code> if <code>zoom != 100</code>
+     *         and no image is available for the given zoom level.
+     * @since 3.104
+     */
+    ImageData getImageData(int zoom);
 }

@@ -22,16 +22,15 @@ package org.eclipse.swt.custom;
 @FunctionalInterface
 public interface StyledTextLineSpacingProvider {
 
-	/**
-	 * Returns the line spacing of the given line index and null otherwise. In this
-	 * case, it will use the {@link StyledText#getLineSpacing()}.
-	 *
-	 * @param lineIndex
-	 *            line index.
-	 * @return the line spacing of the given line index and null otherwise. In this
-	 *         case, it will use the {@link StyledText#getLineSpacing()}.
-	 * @since 3.107
-	 */
-	Integer getLineSpacing(int lineIndex);
-
+    /**
+     * Returns the line spacing of the given line index and null otherwise. In this
+     * case, it will use the {@link StyledText#getLineSpacing()}.
+     *
+     * @param lineIndex
+     *            line index.
+     * @return the line spacing of the given line index and null otherwise. In this
+     *         case, it will use the {@link StyledText#getLineSpacing()}.
+     * @since 3.107
+     */
+    Integer getLineSpacing(int lineIndex);
 }

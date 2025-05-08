@@ -1,20 +1,21 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2010 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2010 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.dnd;
 
 import org.eclipse.swt.internal.cocoa.*;
-
 
 /**
  * The <code>TransferData</code> class is a platform specific data structure for
@@ -33,33 +34,33 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 public class TransferData {
-	/**
-	 * The type is a unique identifier of a system format or user defined format.
-	 * (Warning: This field is platform dependent)
-	 * <p>
-	 * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
-	 * public API. It is marked public only so that it can be shared
-	 * within the packages provided by SWT. It is not available on all
-	 * platforms and should never be accessed from application code.
-	 * </p>
-	 *
-	 * @noreference This field is not intended to be referenced by clients.
-	 */
-	public int type;
 
-	/**
-	 * The data being transferred.
-	 * The data field may contain multiple values.
-	 * (Warning: This field is platform dependent)
-	 * <p>
-	 * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
-	 * public API. It is marked public only so that it can be shared
-	 * within the packages provided by SWT. It is not available on all
-	 * platforms and should never be accessed from application code.
-	 * </p>
-	 *
-	 * @noreference This field is not intended to be referenced by clients.
-	 */
-	public NSObject data;
+    /**
+     * The type is a unique identifier of a system format or user defined format.
+     * (Warning: This field is platform dependent)
+     * <p>
+     * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
+     * public API. It is marked public only so that it can be shared
+     * within the packages provided by SWT. It is not available on all
+     * platforms and should never be accessed from application code.
+     * </p>
+     *
+     * @noreference This field is not intended to be referenced by clients.
+     */
+    public int type;
 
+    /**
+     * The data being transferred.
+     * The data field may contain multiple values.
+     * (Warning: This field is platform dependent)
+     * <p>
+     * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
+     * public API. It is marked public only so that it can be shared
+     * within the packages provided by SWT. It is not available on all
+     * platforms and should never be accessed from application code.
+     * </p>
+     *
+     * @noreference This field is not intended to be referenced by clients.
+     */
+    public NSObject data;
 }

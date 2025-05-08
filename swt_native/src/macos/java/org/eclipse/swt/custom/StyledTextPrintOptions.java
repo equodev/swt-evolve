@@ -1,16 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2008 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2008 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.custom;
 
 /**
@@ -36,72 +38,79 @@ package org.eclipse.swt.custom;
  * @since 2.1
  */
 public class StyledTextPrintOptions {
-	/**
-	 * Page number placeholder constant for use in <code>header</code>
-	 * and <code>footer</code>. Value is <code>&lt;page&gt;</code>
-	 */
-	public static final String PAGE_TAG = "<page>";
-	/**
-	 * Separator constant for use in <code>header</code> and
-	 * <code>footer</code>. Value is <code>\t</code>
-	 */
-	public static final String SEPARATOR = "\t";
-	/**
-	 * Formatted text to print in the header of each page.
-	 * <p>"left '\t' center '\t' right"</p>
-	 * <p>left, center, right = &lt;page&gt; | #CDATA</p>
-	 * <p>Header and footer are defined as three separate regions for arbitrary
-	 * text or the page number placeholder &lt;page&gt;
-	 * (<code>StyledTextPrintOptions.PAGE_TAG</code>). The three regions are
-	 * left aligned, centered and right aligned. They are separated by a tab
-	 * character (<code>StyledTextPrintOptions.SEPARATOR</code>).
-	 */
-	public String header = null;
-	/**
-	 * Formatted text to print in the footer of each page.
-	 * <p>"left '\t' center '\t' right"</p>
-	 * <p>left, center, right = &lt;page&gt; | #CDATA</p>
-	 * <p>Header and footer are defined as three separate regions for arbitrary
-	 * text or the page number placeholder &lt;page&gt;
-	 * (<code>StyledTextPrintOptions.PAGE_TAG</code>). The three regions are
-	 * left aligned, centered and right aligned. They are separated by a tab
-	 * character (<code>StyledTextPrintOptions.SEPARATOR</code>).
-	 */
-	public String footer = null;
-	/**
-	 * Name of the print job.
-	 */
-	public String jobName = null;
 
-	/**
-	 * Print the text foreground color. Default value is <code>false</code>.
-	 */
-	public boolean printTextForeground = false;
-	/**
-	 * Print the text background color. Default value is <code>false</code>.
-	 */
-	public boolean printTextBackground = false;
-	/**
-	 * Print the font styles. Default value is <code>false</code>.
-	 */
-	public boolean printTextFontStyle = false;
-	/**
-	 * Print the line background color. Default value is <code>false</code>.
-	 */
-	public boolean printLineBackground = false;
+    /**
+     * Page number placeholder constant for use in <code>header</code>
+     * and <code>footer</code>. Value is <code>&lt;page&gt;</code>
+     */
+    public static final String PAGE_TAG = "<page>";
 
-	/**
-	 * Print line numbers. Default value is <code>false</code>.
-	 *
-	 * @since 3.3
-	 */
-	public boolean printLineNumbers = false;
+    /**
+     * Separator constant for use in <code>header</code> and
+     * <code>footer</code>. Value is <code>\t</code>
+     */
+    public static final String SEPARATOR = "\t";
 
-	/**
-	 * Labels used for printing line numbers.
-	 *
-	 * @since 3.4
-	 */
-	public String[] lineLabels = null;
+    /**
+     * Formatted text to print in the header of each page.
+     * <p>"left '\t' center '\t' right"</p>
+     * <p>left, center, right = &lt;page&gt; | #CDATA</p>
+     * <p>Header and footer are defined as three separate regions for arbitrary
+     * text or the page number placeholder &lt;page&gt;
+     * (<code>StyledTextPrintOptions.PAGE_TAG</code>). The three regions are
+     * left aligned, centered and right aligned. They are separated by a tab
+     * character (<code>StyledTextPrintOptions.SEPARATOR</code>).
+     */
+    public String header = null;
 
+    /**
+     * Formatted text to print in the footer of each page.
+     * <p>"left '\t' center '\t' right"</p>
+     * <p>left, center, right = &lt;page&gt; | #CDATA</p>
+     * <p>Header and footer are defined as three separate regions for arbitrary
+     * text or the page number placeholder &lt;page&gt;
+     * (<code>StyledTextPrintOptions.PAGE_TAG</code>). The three regions are
+     * left aligned, centered and right aligned. They are separated by a tab
+     * character (<code>StyledTextPrintOptions.SEPARATOR</code>).
+     */
+    public String footer = null;
+
+    /**
+     * Name of the print job.
+     */
+    public String jobName = null;
+
+    /**
+     * Print the text foreground color. Default value is <code>false</code>.
+     */
+    public boolean printTextForeground = false;
+
+    /**
+     * Print the text background color. Default value is <code>false</code>.
+     */
+    public boolean printTextBackground = false;
+
+    /**
+     * Print the font styles. Default value is <code>false</code>.
+     */
+    public boolean printTextFontStyle = false;
+
+    /**
+     * Print the line background color. Default value is <code>false</code>.
+     */
+    public boolean printLineBackground = false;
+
+    /**
+     * Print line numbers. Default value is <code>false</code>.
+     *
+     * @since 3.3
+     */
+    public boolean printLineNumbers = false;
+
+    /**
+     * Labels used for printing line numbers.
+     *
+     * @since 3.4
+     */
+    public String[] lineLabels = null;
 }

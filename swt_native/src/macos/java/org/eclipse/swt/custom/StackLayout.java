@@ -1,18 +1,19 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2018 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.custom;
-
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
@@ -68,85 +69,91 @@ import org.eclipse.swt.widgets.*;
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: LayoutExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-
 public class StackLayout extends Layout {
 
-	/**
-	 * marginWidth specifies the number of points of horizontal margin
-	 * that will be placed along the left and right edges of the layout.
-	 *
-	 * The default value is 0.
-	 */
-	public int marginWidth = 0;
-	/**
-	 * marginHeight specifies the number of points of vertical margin
-	 * that will be placed along the top and bottom edges of the layout.
-	 *
-	 * The default value is 0.
-	 */
-	public int marginHeight = 0;
+    /**
+     * marginWidth specifies the number of points of horizontal margin
+     * that will be placed along the left and right edges of the layout.
+     *
+     * The default value is 0.
+     */
+    public int marginWidth = 0;
 
-	/**
-	 * topControl the Control that is displayed at the top of the stack.
-	 * All other controls that are children of the parent composite will not be visible.
-	 */
-	public Control topControl;
+    /**
+     * marginHeight specifies the number of points of vertical margin
+     * that will be placed along the top and bottom edges of the layout.
+     *
+     * The default value is 0.
+     */
+    public int marginHeight = 0;
 
-@Override
-protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-	int maxWidth = 0;
-	int maxHeight = 0;
-	for (Control element : composite.getChildren()) {
-		Point size = element.computeSize(wHint, hHint, flushCache);
-		maxWidth = Math.max(size.x, maxWidth);
-		maxHeight = Math.max(size.y, maxHeight);
-	}
-	int width = maxWidth + 2 * marginWidth;
-	int height = maxHeight + 2 * marginHeight;
-	if (wHint != SWT.DEFAULT) width = wHint;
-	if (hHint != SWT.DEFAULT) height = hHint;
-	return new Point(width, height);
-}
+    /**
+     * topControl the Control that is displayed at the top of the stack.
+     * All other controls that are children of the parent composite will not be visible.
+     */
+    public Control topControl;
 
-@Override
-protected boolean flushCache(Control control) {
-	return true;
-}
+    @Override
+    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+        int maxWidth = 0;
+        int maxHeight = 0;
+        for (Control element : composite.getChildren()) {
+            Point size = element.computeSize(wHint, hHint, flushCache);
+            maxWidth = Math.max(size.x, maxWidth);
+            maxHeight = Math.max(size.y, maxHeight);
+        }
+        int width = maxWidth + 2 * marginWidth;
+        int height = maxHeight + 2 * marginHeight;
+        if (wHint != SWT.DEFAULT)
+            width = wHint;
+        if (hHint != SWT.DEFAULT)
+            height = hHint;
+        return new Point(width, height);
+    }
 
-@Override
-protected void layout(Composite composite, boolean flushCache) {
-	Rectangle rect = composite.getClientArea();
-	rect.x += marginWidth;
-	rect.y += marginHeight;
-	rect.width -= 2 * marginWidth;
-	rect.height -= 2 * marginHeight;
-	for (Control element : composite.getChildren()) {
-		element.setBounds(rect);
-		element.setVisible(element == topControl);
-	}
-}
+    @Override
+    protected boolean flushCache(Control control) {
+        return true;
+    }
 
-String getName () {
-	String string = getClass ().getName ();
-	int index = string.lastIndexOf ('.');
-	if (index == -1) return string;
-	return string.substring (index + 1, string.length ());
-}
+    @Override
+    protected void layout(Composite composite, boolean flushCache) {
+        Rectangle rect = composite.getClientArea();
+        rect.x += marginWidth;
+        rect.y += marginHeight;
+        rect.width -= 2 * marginWidth;
+        rect.height -= 2 * marginHeight;
+        for (Control element : composite.getChildren()) {
+            element.setBounds(rect);
+            element.setVisible(element == topControl);
+        }
+    }
 
-/**
- * Returns a string containing a concise, human-readable
- * description of the receiver.
- *
- * @return a string representation of the layout
- */
-@Override
-public String toString () {
-	String string = getName ()+" {";
-	if (marginWidth != 0) string += "marginWidth="+marginWidth+" ";
-	if (marginHeight != 0) string += "marginHeight="+marginHeight+" ";
-	if (topControl != null) string += "topControl="+topControl+" ";
-	string = string.trim();
-	string += "}";
-	return string;
-}
+    String getName() {
+        String string = getClass().getName();
+        int index = string.lastIndexOf('.');
+        if (index == -1)
+            return string;
+        return string.substring(index + 1, string.length());
+    }
+
+    /**
+     * Returns a string containing a concise, human-readable
+     * description of the receiver.
+     *
+     * @return a string representation of the layout
+     */
+    @Override
+    public String toString() {
+        String string = getName() + " {";
+        if (marginWidth != 0)
+            string += "marginWidth=" + marginWidth + " ";
+        if (marginHeight != 0)
+            string += "marginHeight=" + marginHeight + " ";
+        if (topControl != null)
+            string += "topControl=" + topControl + " ";
+        string = string.trim();
+        string += "}";
+        return string;
+    }
 }

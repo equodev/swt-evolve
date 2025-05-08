@@ -1,18 +1,19 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2005 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2005 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.accessibility;
-
 
 import org.eclipse.swt.internal.*;
 
@@ -45,34 +46,34 @@ import org.eclipse.swt.internal.*;
  */
 public interface AccessibleTextListener extends SWTEventListener {
 
-	/**
-	 * Sent when an accessibility client requests the current character offset
-	 * of the text caret.
-	 * <p>
-	 * Return the caret offset in the <code>offset</code>
-	 * field of the event object.
-	 * </p>
-	 *
-	 * @param e an event object containing the following fields:<ul>
-	 *    <li>childID [IN] - an identifier specifying a child of the control</li>
-	 *    <li>offset [OUT] - the current offset of the text caret</li>
-	 * </ul>
-	 */
-	public void getCaretOffset (AccessibleTextEvent e);
+    /**
+     * Sent when an accessibility client requests the current character offset
+     * of the text caret.
+     * <p>
+     * Return the caret offset in the <code>offset</code>
+     * field of the event object.
+     * </p>
+     *
+     * @param e an event object containing the following fields:<ul>
+     *    <li>childID [IN] - an identifier specifying a child of the control</li>
+     *    <li>offset [OUT] - the current offset of the text caret</li>
+     * </ul>
+     */
+    public void getCaretOffset(AccessibleTextEvent e);
 
-	/**
-	 * Sent when an accessibility client requests the range of the current
-	 * text selection.
-	 * <p>
-	 * Return the selection start offset and non-negative length in the
-	 * <code>offset</code> and <code>length</code> fields of the event object.
-	 * </p>
-	 *
-	 * @param e an event object containing the following fields:<ul>
-	 *    <li>childID [IN] - an identifier specifying a child of the control</li>
-	 *    <li>offset [OUT] - the offset of the current text selection</li>
-	 *    <li>length [OUT] - the length of the current text selection</li>
-	 * </ul>
-	 */
-	public void getSelectionRange (AccessibleTextEvent e);
+    /**
+     * Sent when an accessibility client requests the range of the current
+     * text selection.
+     * <p>
+     * Return the selection start offset and non-negative length in the
+     * <code>offset</code> and <code>length</code> fields of the event object.
+     * </p>
+     *
+     * @param e an event object containing the following fields:<ul>
+     *    <li>childID [IN] - an identifier specifying a child of the control</li>
+     *    <li>offset [OUT] - the offset of the current text selection</li>
+     *    <li>length [OUT] - the length of the current text selection</li>
+     * </ul>
+     */
+    public void getSelectionRange(AccessibleTextEvent e);
 }

@@ -1,18 +1,19 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2011 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2011 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.widgets;
-
 
 /**
  * Implementers of <code>Listener</code> provide a simple
@@ -46,10 +47,10 @@ package org.eclipse.swt.widgets;
  */
 public interface Listener {
 
-/**
- * Sent when an event that the receiver has registered for occurs.
- *
- * @param event the event which occurred
- */
-void handleEvent (Event event);
+    /**
+     * Sent when an event that the receiver has registered for occurs.
+     *
+     * @param event the event which occurred
+     */
+    void handleEvent(Event event);
 }

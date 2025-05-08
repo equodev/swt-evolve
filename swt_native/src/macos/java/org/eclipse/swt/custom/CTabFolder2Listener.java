@@ -1,20 +1,21 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2017 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.custom;
 
 import java.util.function.*;
-
 import org.eclipse.swt.internal.*;
 
 /**
@@ -37,194 +38,200 @@ import org.eclipse.swt.internal.*;
  */
 public interface CTabFolder2Listener extends SWTEventListener {
 
-/**
- * Sent when the user clicks on the close button of an item in the CTabFolder.
- * The item being closed is specified in the event.item field.
- * Setting the event.doit field to false will stop the CTabItem from closing.
- * When the CTabItem is closed, it is disposed.  The contents of the
- * CTabItem (see CTabItem.setControl) will be made not visible when
- * the CTabItem is closed.
- *
- * @param event an event indicating the item being closed
- */
-public void close(CTabFolderEvent event);
+    /**
+     * Sent when the user clicks on the close button of an item in the CTabFolder.
+     * The item being closed is specified in the event.item field.
+     * Setting the event.doit field to false will stop the CTabItem from closing.
+     * When the CTabItem is closed, it is disposed.  The contents of the
+     * CTabItem (see CTabItem.setControl) will be made not visible when
+     * the CTabItem is closed.
+     *
+     * @param event an event indicating the item being closed
+     */
+    public void close(CTabFolderEvent event);
 
-/**
- * Sent when the user clicks on the minimize button of a CTabFolder.
- * The state of the CTabFolder does not change automatically - it
- * is up to the application to change the state of the CTabFolder
- * in response to this event using CTabFolder.setMinimized(true).
- *
- * @param event an event containing information about the minimize
- *
- * @see CTabFolder#getMinimized()
- * @see CTabFolder#setMinimized(boolean)
- * @see CTabFolder#setMinimizeVisible(boolean)
- */
-public void minimize(CTabFolderEvent event);
+    /**
+     * Sent when the user clicks on the minimize button of a CTabFolder.
+     * The state of the CTabFolder does not change automatically - it
+     * is up to the application to change the state of the CTabFolder
+     * in response to this event using CTabFolder.setMinimized(true).
+     *
+     * @param event an event containing information about the minimize
+     *
+     * @see CTabFolder#getMinimized()
+     * @see CTabFolder#setMinimized(boolean)
+     * @see CTabFolder#setMinimizeVisible(boolean)
+     */
+    public void minimize(CTabFolderEvent event);
 
-/**
- * Sent when the user clicks on the maximize button of a CTabFolder.
- * The state of the CTabFolder does not change automatically - it
- * is up to the application to change the state of the CTabFolder
- * in response to this event using CTabFolder.setMaximized(true).
- *
- * @param event an event containing information about the maximize
- *
- * @see CTabFolder#getMaximized()
- * @see CTabFolder#setMaximized(boolean)
- * @see CTabFolder#setMaximizeVisible(boolean)
- */
-public void maximize(CTabFolderEvent event);
+    /**
+     * Sent when the user clicks on the maximize button of a CTabFolder.
+     * The state of the CTabFolder does not change automatically - it
+     * is up to the application to change the state of the CTabFolder
+     * in response to this event using CTabFolder.setMaximized(true).
+     *
+     * @param event an event containing information about the maximize
+     *
+     * @see CTabFolder#getMaximized()
+     * @see CTabFolder#setMaximized(boolean)
+     * @see CTabFolder#setMaximizeVisible(boolean)
+     */
+    public void maximize(CTabFolderEvent event);
 
-/**
- * Sent when the user clicks on the restore button of a CTabFolder.
- * This event is sent either to restore the CTabFolder from the
- * minimized state or from the maximized state.  To determine
- * which restore is requested, use CTabFolder.getMinimized() or
- * CTabFolder.getMaximized() to determine the current state.
- * The state of the CTabFolder does not change automatically - it
- * is up to the application to change the state of the CTabFolder
- * in response to this event using CTabFolder.setMaximized(false)
- * or CTabFolder.setMinimized(false).
- *
- * @param event an event containing information about the restore
- *
- * @see CTabFolder#getMinimized()
- * @see CTabFolder#getMaximized()
- * @see CTabFolder#setMinimized(boolean)
- * @see CTabFolder#setMinimizeVisible(boolean)
- * @see CTabFolder#setMaximized(boolean)
- * @see CTabFolder#setMaximizeVisible(boolean)
- */
-public void restore(CTabFolderEvent event);
+    /**
+     * Sent when the user clicks on the restore button of a CTabFolder.
+     * This event is sent either to restore the CTabFolder from the
+     * minimized state or from the maximized state.  To determine
+     * which restore is requested, use CTabFolder.getMinimized() or
+     * CTabFolder.getMaximized() to determine the current state.
+     * The state of the CTabFolder does not change automatically - it
+     * is up to the application to change the state of the CTabFolder
+     * in response to this event using CTabFolder.setMaximized(false)
+     * or CTabFolder.setMinimized(false).
+     *
+     * @param event an event containing information about the restore
+     *
+     * @see CTabFolder#getMinimized()
+     * @see CTabFolder#getMaximized()
+     * @see CTabFolder#setMinimized(boolean)
+     * @see CTabFolder#setMinimizeVisible(boolean)
+     * @see CTabFolder#setMaximized(boolean)
+     * @see CTabFolder#setMaximizeVisible(boolean)
+     */
+    public void restore(CTabFolderEvent event);
 
-/**
- * Sent when the user clicks on the chevron button of the CTabFolder.
- * A chevron appears in the CTabFolder when there are more tabs
- * than can be displayed at the current widget size.  To select a
- * tab that is not currently visible, the user clicks on the
- * chevron and selects a tab item from a list.  By default, the
- * CTabFolder provides a list of all the items that are not currently
- * visible, however, the application can provide its own list by setting
- * the event.doit field to <code>false</code> and displaying a selection list.
- *
- * @param event an event containing information about the show list
- *
- * @see CTabFolder#setSelection(CTabItem)
- */
-public void showList(CTabFolderEvent event);
+    /**
+     * Sent when the user clicks on the chevron button of the CTabFolder.
+     * A chevron appears in the CTabFolder when there are more tabs
+     * than can be displayed at the current widget size.  To select a
+     * tab that is not currently visible, the user clicks on the
+     * chevron and selects a tab item from a list.  By default, the
+     * CTabFolder provides a list of all the items that are not currently
+     * visible, however, the application can provide its own list by setting
+     * the event.doit field to <code>false</code> and displaying a selection list.
+     *
+     * @param event an event containing information about the show list
+     *
+     * @see CTabFolder#setSelection(CTabItem)
+     */
+    public void showList(CTabFolderEvent event);
 
-/**
- * Sent when the tab items count changes
- * 
- * @param event from observed tab folder
- * @since 3.124
- */
-public default void itemsCount(CTabFolderEvent event) {
-	// do nothing by default
-}
+    /**
+     * Sent when the tab items count changes
+     *
+     * @param event from observed tab folder
+     * @since 3.124
+     */
+    public default void itemsCount(CTabFolderEvent event) {
+        // do nothing by default
+    }
 
-/**
- * Static helper method to create a <code>CTabFolder2Listener</code> for the
- * {@link #itemsCount(CTabFolderEvent e)}) method, given a lambda expression or
- * a method reference.
- *
- * @param c the consumer of the event
- * @return CTabFolder2Listener
- * @since 3.124
- */
-public static CTabFolder2Listener itemsCountAdapter(Consumer<CTabFolderEvent> c) {
-	return new CTabFolder2Adapter() {
-		@Override
-		public void itemsCount(CTabFolderEvent e) {
-			c.accept(e);
-		}
-	};
-}
+    /**
+     * Static helper method to create a <code>CTabFolder2Listener</code> for the
+     * {@link #itemsCount(CTabFolderEvent e)}) method, given a lambda expression or
+     * a method reference.
+     *
+     * @param c the consumer of the event
+     * @return CTabFolder2Listener
+     * @since 3.124
+     */
+    public static CTabFolder2Listener itemsCountAdapter(Consumer<CTabFolderEvent> c) {
+        return new CTabFolder2Adapter() {
 
-/**
- * Static helper method to create a <code>CTabFolder2Listener</code> for the
- * {@link #close(CTabFolderEvent e)}) method, given a lambda expression or a method reference.
- *
- * @param c the consumer of the event
- * @return CTabFolder2Listener
- * @since 3.107
- */
-public static CTabFolder2Listener closeAdapter(Consumer<CTabFolderEvent> c) {
-	return new CTabFolder2Adapter() {
-		@Override
-		public void close(CTabFolderEvent e) {
-			c.accept(e);
-		}
-	};
-}
+            @Override
+            public void itemsCount(CTabFolderEvent e) {
+                c.accept(e);
+            }
+        };
+    }
 
-/**
- * Static helper method to create a <code>CTabFolder2Listener</code> for the
- * {@link #minimize(CTabFolderEvent e)}) method, given a lambda expression or a method reference.
- *
- * @param c the consumer of the event
- * @return CTabFolder2Listener
- * @since 3.107
- */
-public static CTabFolder2Listener minimizeAdapter(Consumer<CTabFolderEvent> c) {
-	return new CTabFolder2Adapter() {
-		@Override
-		public void minimize(CTabFolderEvent e) {
-			c.accept(e);
-		}
-	};
-}
+    /**
+     * Static helper method to create a <code>CTabFolder2Listener</code> for the
+     * {@link #close(CTabFolderEvent e)}) method, given a lambda expression or a method reference.
+     *
+     * @param c the consumer of the event
+     * @return CTabFolder2Listener
+     * @since 3.107
+     */
+    public static CTabFolder2Listener closeAdapter(Consumer<CTabFolderEvent> c) {
+        return new CTabFolder2Adapter() {
 
-/**
- * Static helper method to create a <code>CTabFolder2Listener</code> for the
- * {@link #maximize(CTabFolderEvent e)}) method, given a lambda expression or a method reference.
- *
- * @param c the consumer of the event
- * @return CTabFolder2Listener
- * @since 3.107
- */
-public static CTabFolder2Listener maximizeAdapter(Consumer<CTabFolderEvent> c) {
-	return new CTabFolder2Adapter() {
-		@Override
-		public void maximize(CTabFolderEvent e) {
-			c.accept(e);
-		}
-	};
-}
+            @Override
+            public void close(CTabFolderEvent e) {
+                c.accept(e);
+            }
+        };
+    }
 
-/**
- * Static helper method to create a <code>CTabFolder2Listener</code> for the
- * {@link #restore(CTabFolderEvent e)}) method, given a lambda expression or a method reference.
- *
- * @param c the consumer of the event
- * @return CTabFolder2Listener
- * @since 3.107
- */
-public static CTabFolder2Listener restoreAdapter(Consumer<CTabFolderEvent> c) {
-	return new CTabFolder2Adapter() {
-		@Override
-		public void restore(CTabFolderEvent e) {
-			c.accept(e);
-		}
-	};
-}
+    /**
+     * Static helper method to create a <code>CTabFolder2Listener</code> for the
+     * {@link #minimize(CTabFolderEvent e)}) method, given a lambda expression or a method reference.
+     *
+     * @param c the consumer of the event
+     * @return CTabFolder2Listener
+     * @since 3.107
+     */
+    public static CTabFolder2Listener minimizeAdapter(Consumer<CTabFolderEvent> c) {
+        return new CTabFolder2Adapter() {
 
-/**
- * Static helper method to create a <code>CTabFolder2Listener</code> for the
- * {@link #showList(CTabFolderEvent e)}) method, given a lambda expression or a method reference.
- *
- * @param c the consumer of the event
- * @return CTabFolder2Listener
- * @since 3.107
- */
-public static CTabFolder2Listener showListAdapter(Consumer<CTabFolderEvent> c) {
-	return new CTabFolder2Adapter() {
-		@Override
-		public void showList(CTabFolderEvent e) {
-			c.accept(e);
-		}
-	};
-}
+            @Override
+            public void minimize(CTabFolderEvent e) {
+                c.accept(e);
+            }
+        };
+    }
+
+    /**
+     * Static helper method to create a <code>CTabFolder2Listener</code> for the
+     * {@link #maximize(CTabFolderEvent e)}) method, given a lambda expression or a method reference.
+     *
+     * @param c the consumer of the event
+     * @return CTabFolder2Listener
+     * @since 3.107
+     */
+    public static CTabFolder2Listener maximizeAdapter(Consumer<CTabFolderEvent> c) {
+        return new CTabFolder2Adapter() {
+
+            @Override
+            public void maximize(CTabFolderEvent e) {
+                c.accept(e);
+            }
+        };
+    }
+
+    /**
+     * Static helper method to create a <code>CTabFolder2Listener</code> for the
+     * {@link #restore(CTabFolderEvent e)}) method, given a lambda expression or a method reference.
+     *
+     * @param c the consumer of the event
+     * @return CTabFolder2Listener
+     * @since 3.107
+     */
+    public static CTabFolder2Listener restoreAdapter(Consumer<CTabFolderEvent> c) {
+        return new CTabFolder2Adapter() {
+
+            @Override
+            public void restore(CTabFolderEvent e) {
+                c.accept(e);
+            }
+        };
+    }
+
+    /**
+     * Static helper method to create a <code>CTabFolder2Listener</code> for the
+     * {@link #showList(CTabFolderEvent e)}) method, given a lambda expression or a method reference.
+     *
+     * @param c the consumer of the event
+     * @return CTabFolder2Listener
+     * @since 3.107
+     */
+    public static CTabFolder2Listener showListAdapter(Consumer<CTabFolderEvent> c) {
+        return new CTabFolder2Adapter() {
+
+            @Override
+            public void showList(CTabFolderEvent e) {
+                c.accept(e);
+            }
+        };
+    }
 }

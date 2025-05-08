@@ -1,18 +1,19 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2017 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2017 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.graphics;
-
 
 import java.util.*;
 
@@ -34,58 +35,57 @@ import java.util.*;
  * @see ImageLoaderListener
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-
 public class ImageLoaderEvent extends EventObject {
 
-	/**
-	 * if the <code>endOfImage</code> flag is false, then this is a
-	 * partially complete copy of the current <code>ImageData</code>,
-	 * otherwise this is a completely loaded <code>ImageData</code>
-	 */
-	public ImageData imageData;
+    /**
+     * if the <code>endOfImage</code> flag is false, then this is a
+     * partially complete copy of the current <code>ImageData</code>,
+     * otherwise this is a completely loaded <code>ImageData</code>
+     */
+    public ImageData imageData;
 
-	/**
-	 * the zero-based count of image data increments -- this is
-	 * equivalent to the number of events that have been generated
-	 * while loading a particular image
-	 */
-	public int incrementCount;
+    /**
+     * the zero-based count of image data increments -- this is
+     * equivalent to the number of events that have been generated
+     * while loading a particular image
+     */
+    public int incrementCount;
 
-	/**
-	 * If this flag is true, then the current image data has been
-	 * completely loaded, otherwise the image data is only partially
-	 * loaded, and further ImageLoader events will occur unless an
-	 * exception is thrown
-	 */
-	public boolean endOfImage;
+    /**
+     * If this flag is true, then the current image data has been
+     * completely loaded, otherwise the image data is only partially
+     * loaded, and further ImageLoader events will occur unless an
+     * exception is thrown
+     */
+    public boolean endOfImage;
 
-	static final long serialVersionUID = 3257284738325558065L;
+    static final long serialVersionUID = 3257284738325558065L;
 
-/**
- * Constructs a new instance of this class given the event source and
- * the values to store in its fields.
- *
- * @param source the ImageLoader that was loading when the event occurred
- * @param imageData the image data for the event
- * @param incrementCount the image data increment for the event
- * @param endOfImage the end of image flag for the event
- */
-public ImageLoaderEvent(ImageLoader source, ImageData imageData, int incrementCount, boolean endOfImage) {
-	super(source);
-	this.imageData = imageData;
-	this.incrementCount = incrementCount;
-	this.endOfImage = endOfImage;
-}
+    /**
+     * Constructs a new instance of this class given the event source and
+     * the values to store in its fields.
+     *
+     * @param source the ImageLoader that was loading when the event occurred
+     * @param imageData the image data for the event
+     * @param incrementCount the image data increment for the event
+     * @param endOfImage the end of image flag for the event
+     */
+    public ImageLoaderEvent(ImageLoader source, ImageData imageData, int incrementCount, boolean endOfImage) {
+        super(source);
+        this.imageData = imageData;
+        this.incrementCount = incrementCount;
+        this.endOfImage = endOfImage;
+    }
 
-/**
- * Returns a string containing a concise, human-readable
- * description of the receiver.
- *
- * @return a string representation of the event
- */
-@Override
-public String toString () {
-	return "ImageLoaderEvent {source=" + source + " imageData=" + imageData + " incrementCount=" + incrementCount + " endOfImage=" + endOfImage + "}"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
-}
-
+    /**
+     * Returns a string containing a concise, human-readable
+     * description of the receiver.
+     *
+     * @return a string representation of the event
+     */
+    @Override
+    public String toString() {
+        //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+        return "ImageLoaderEvent {source=" + source + " imageData=" + imageData + " incrementCount=" + incrementCount + " endOfImage=" + endOfImage + "}";
+    }
 }

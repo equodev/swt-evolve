@@ -1,16 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2003, 2016 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2003, 2016 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.browser;
 
 /**
@@ -33,11 +35,11 @@ package org.eclipse.swt.browser;
  */
 public abstract class ProgressAdapter implements ProgressListener {
 
-@Override
-public void changed(ProgressEvent event) {
-}
+    @Override
+    public void changed(ProgressEvent event) {
+    }
 
-@Override
-public void completed(ProgressEvent event) {
-}
+    @Override
+    public void completed(ProgressEvent event) {
+    }
 }

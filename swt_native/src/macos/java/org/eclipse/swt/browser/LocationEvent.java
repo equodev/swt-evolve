@@ -1,16 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2003, 2012 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2003, 2012 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.browser;
 
 import org.eclipse.swt.events.*;
@@ -29,50 +31,48 @@ import org.eclipse.swt.widgets.*;
  * @since 3.0
  */
 public class LocationEvent extends TypedEvent {
-	/**
-	 * The URL of this event, escaped and encoded for consumption by
-	 * {@link java.net.URI#URI(String)}.
-	 */
-	public String location;
 
-	/**
-	 * A flag indicating whether the location opens in the top frame
-	 * or not.
-	 */
-	public boolean top;
+    /**
+     * The URL of this event, escaped and encoded for consumption by
+     * {@link java.net.URI#URI(String)}.
+     */
+    public String location;
 
-	/**
-	 * A flag indicating whether the location loading should be allowed.
-	 * Setting this field to <code>false</code> will cancel the operation.
-	 */
-	public boolean doit;
+    /**
+     * A flag indicating whether the location opens in the top frame
+     * or not.
+     */
+    public boolean top;
 
-	static final long serialVersionUID = 3906644198244299574L;
+    /**
+     * A flag indicating whether the location loading should be allowed.
+     * Setting this field to <code>false</code> will cancel the operation.
+     */
+    public boolean doit;
 
-/**
- * Constructs a new instance of this class.
- *
- * @param widget the widget that fired the event
- *
- * @since 3.5
- */
-public LocationEvent(Widget widget) {
-	super(widget);
-}
+    static final long serialVersionUID = 3906644198244299574L;
 
-/**
- * Returns a string containing a concise, human-readable
- * description of the receiver.
- *
- * @return a string representation of the event
- */
-@Override
-public String toString() {
-	String string = super.toString ();
-	return string.substring (0, string.length() - 1) // remove trailing '}'
-		+ " location=" + location
-		+ " top=" + top
-		+ " doit=" + doit
-		+ "}";
-}
+    /**
+     * Constructs a new instance of this class.
+     *
+     * @param widget the widget that fired the event
+     *
+     * @since 3.5
+     */
+    public LocationEvent(Widget widget) {
+        super(widget);
+    }
+
+    /**
+     * Returns a string containing a concise, human-readable
+     * description of the receiver.
+     *
+     * @return a string representation of the event
+     */
+    @Override
+    public String toString() {
+        String string = super.toString();
+        return // remove trailing '}'
+        string.substring(0, string.length() - 1) + " location=" + location + " top=" + top + " doit=" + doit + "}";
+    }
 }

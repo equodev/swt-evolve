@@ -1,16 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2010 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2010 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.accessibility;
 
 import org.eclipse.swt.internal.cocoa.*;
@@ -28,84 +30,78 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 class AccessibleTableHeader extends Accessible {
 
-	public AccessibleTableHeader(Accessible accessible, int childID) {
-		super(accessible);
-		index = childID;
+    public AccessibleTableHeader(Accessible accessible, int childID) {
+        super(accessible);
+        index = childID;
+        addAccessibleControlListener(new AccessibleControlAdapter() {
 
-		addAccessibleControlListener(new AccessibleControlAdapter() {
-			@Override
-			public void getChildren(AccessibleControlEvent e) {
-				int validColumnCount = Math.max (1, parent.getColumnCount());
-				Accessible[] children = new Accessible[validColumnCount];
-				AccessibleControlEvent event = new AccessibleControlEvent(this);
+            @Override
+            public void getChildren(AccessibleControlEvent e) {
+                int validColumnCount = Math.max(1, parent.getColumnCount());
+                Accessible[] children = new Accessible[validColumnCount];
+                AccessibleControlEvent event = new AccessibleControlEvent(this);
+                for (int i = 0; i < validColumnCount; i++) {
+                    event.childID = i;
+                    event.detail = ACC.CHILDID_CHILD_AT_INDEX;
+                    for (int j = 0; j < parent.accessibleControlListeners.size(); j++) {
+                        AccessibleControlListener listener = parent.accessibleControlListeners.get(j);
+                        listener.getChild(event);
+                    }
+                    event.accessible.parent = AccessibleTableHeader.this;
+                    children[i] = event.accessible;
+                }
+                e.children = children;
+            }
 
-				for (int i = 0; i < validColumnCount; i++) {
-					event.childID = i;
-					event.detail = ACC.CHILDID_CHILD_AT_INDEX;
+            @Override
+            public void getChildCount(AccessibleControlEvent e) {
+                e.detail = Math.max(1, parent.getColumnCount());
+            }
 
-					for (int j = 0; j < parent.accessibleControlListeners.size(); j++) {
-						AccessibleControlListener listener = parent.accessibleControlListeners.get(j);
-						listener.getChild(event);
-					}
+            @Override
+            public void getLocation(AccessibleControlEvent e) {
+                int validColumnCount = Math.max(1, parent.getColumnCount());
+                Accessible[] children = new Accessible[validColumnCount];
+                AccessibleControlEvent event = new AccessibleControlEvent(this);
+                for (int i = 0; i < validColumnCount; i++) {
+                    event.childID = i;
+                    event.detail = ACC.CHILDID_CHILD_AT_INDEX;
+                    for (int j = 0; j < parent.accessibleControlListeners.size(); j++) {
+                        AccessibleControlListener listener = parent.accessibleControlListeners.get(j);
+                        listener.getChild(event);
+                    }
+                    event.accessible.parent = AccessibleTableHeader.this;
+                    children[i] = event.accessible;
+                }
+                // Ask first child for position.
+                NSValue positionObj = (NSValue) children[0].getPositionAttribute(ACC.CHILDID_SELF);
+                NSPoint position = positionObj.pointValue();
+                // Ask all children for size.
+                int height = 0;
+                int width = 0;
+                for (int j = 0; j < children.length; j++) {
+                    NSValue sizeObj = (NSValue) children[j].getSizeAttribute(ACC.CHILDID_SELF);
+                    NSSize size = sizeObj.sizeValue();
+                    if (size.height > height)
+                        height = (int) size.height;
+                    width += size.width;
+                }
+                e.x = (int) position.x;
+                // Flip y coordinate for Cocoa.
+                NSArray screens = NSScreen.screens();
+                if (screens == null)
+                    return;
+                NSScreen screen = new NSScreen(screens.objectAtIndex(0));
+                NSRect frame = screen.frame();
+                e.y = (int) (frame.height - position.y - height);
+                e.width = width;
+                e.height = height;
+            }
 
-					event.accessible.parent = AccessibleTableHeader.this;
-					children[i] = event.accessible;
-				}
-				e.children = children;
-			}
-			@Override
-			public void getChildCount(AccessibleControlEvent e) {
-				e.detail = Math.max (1, parent.getColumnCount());
-			}
-			@Override
-			public void getLocation(AccessibleControlEvent e) {
-				int validColumnCount = Math.max (1, parent.getColumnCount());
-				Accessible[] children = new Accessible[validColumnCount];
-				AccessibleControlEvent event = new AccessibleControlEvent(this);
-
-				for (int i = 0; i < validColumnCount; i++) {
-					event.childID = i;
-					event.detail = ACC.CHILDID_CHILD_AT_INDEX;
-
-					for (int j = 0; j < parent.accessibleControlListeners.size(); j++) {
-						AccessibleControlListener listener = parent.accessibleControlListeners.get(j);
-						listener.getChild(event);
-					}
-
-					event.accessible.parent = AccessibleTableHeader.this;
-					children[i] = event.accessible;
-				}
-
-				// Ask first child for position.
-				NSValue positionObj = (NSValue)children[0].getPositionAttribute(ACC.CHILDID_SELF);
-				NSPoint position = positionObj.pointValue();
-
-				// Ask all children for size.
-				int height = 0;
-				int width = 0;
-				for (int j = 0; j < children.length; j++) {
-					NSValue sizeObj = (NSValue)children[j].getSizeAttribute(ACC.CHILDID_SELF);
-					NSSize size = sizeObj.sizeValue();
-					if (size.height > height) height = (int) size.height;
-					width += size.width;
-				}
-				e.x = (int) position.x;
-				// Flip y coordinate for Cocoa.
-				NSArray screens = NSScreen.screens();
-				if (screens == null) return;
-
-				NSScreen screen = new NSScreen(screens.objectAtIndex(0));
-				NSRect frame = screen.frame();
-				e.y = (int) (frame.height - position.y - height);
-				e.width = width;
-				e.height = height;
-			}
-
-			@Override
-			public void getRole(AccessibleControlEvent e) {
-				e.detail = ACC.ROLE_TABLECOLUMNHEADER;
-			}
-		});
-	}
-
+            @Override
+            public void getRole(AccessibleControlEvent e) {
+                e.detail = ACC.ROLE_TABLECOLUMNHEADER;
+            }
+        });
+    }
 }

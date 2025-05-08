@@ -1,17 +1,19 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2012 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2012 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *     Outhink - support for typeFileURL
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ *      Outhink - support for typeFileURL
+ * *****************************************************************************
+ */
 package org.eclipse.swt.dnd;
 
 import org.eclipse.swt.internal.cocoa.*;
@@ -38,95 +40,105 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class FileTransfer extends ByteArrayTransfer {
 
-	static FileTransfer _instance = new FileTransfer();
-	static final String ID_NAME = OS.NSFilenamesPboardType.getString();
-	static final int ID = registerType(ID_NAME);
-	static final String ID1_NAME = OS.kUTTypeFileURL.getString();
-	static final int ID1 = registerType(ID1_NAME);
+    static FileTransfer _instance = new FileTransfer();
 
-FileTransfer() {}
+    static final String ID_NAME = OS.NSFilenamesPboardType.getString();
 
-/**
- * Returns the singleton instance of the FileTransfer class.
- *
- * @return the singleton instance of the FileTransfer class
- */
-public static FileTransfer getInstance () {
-	return _instance;
-}
+    static final int ID = registerType(ID_NAME);
 
-/**
- * This implementation of <code>javaToNative</code> converts a list of file names
- * represented by a java <code>String[]</code> to a platform specific representation.
- * Each <code>String</code> in the array contains the absolute path for a single
- * file or directory.
- *
- * @param object a java <code>String[]</code> containing the file names to be converted
- * @param transferData an empty <code>TransferData</code> object that will
- *  	be filled in on return with the platform specific format of the data
- *
- * @see Transfer#nativeToJava
- */
-@Override
-public void javaToNative(Object object, TransferData transferData) {
-	if (!checkFile(object) || !isSupportedType(transferData)) {
-		DND.error(DND.ERROR_INVALID_DATA);
-	}
-	String[] files = (String[])object;
-	int length = files.length;
-	NSMutableArray array = NSMutableArray.arrayWithCapacity(length);
-	for (int i = 0; i < length; i++) {
-		String fileName = files[i];
-		NSString string = NSString.stringWith(fileName);
-		array.addObject(string);
-	}
-	transferData.data = array;
-}
-/**
- * This implementation of <code>nativeToJava</code> converts a platform specific
- * representation of a list of file names to a java <code>String[]</code>.
- * Each String in the array contains the absolute path for a single file or directory.
- *
- * @param transferData the platform specific representation of the data to be converted
- * @return a java <code>String[]</code> containing a list of file names if the conversion
- * 		was successful; otherwise null
- *
- * @see Transfer#javaToNative
- */
-@Override
-public Object nativeToJava(TransferData transferData) {
-	if (!isSupportedType(transferData) || transferData.data == null) return null;
-	NSArray array = (NSArray) transferData.data;
-	if (array.count() == 0) return null;
-	int count = (int)array.count();
-	String[] fileNames = new String[count];
-	for (int i=0; i<count; i++) {
-		NSString string = new NSString(array.objectAtIndex(i));
-		fileNames[i] = string.getString();
-	}
-	return fileNames;
-}
+    static final String ID1_NAME = OS.kUTTypeFileURL.getString();
 
-@Override
-protected int[] getTypeIds(){
-	return new int[] {ID, ID1};
-}
+    static final int ID1 = registerType(ID1_NAME);
 
-@Override
-protected String[] getTypeNames(){
-	return new String[] {ID_NAME, ID1_NAME};
-}
+    FileTransfer() {
+    }
 
-boolean checkFile(Object object) {
-	if (object == null || !(object instanceof String[] strings) || ((String[])object).length == 0) return false;
-	for (int i = 0; i < strings.length; i++) {
-		if (strings[i] == null || strings[i].length() == 0) return false;
-	}
-	return true;
-}
+    /**
+     * Returns the singleton instance of the FileTransfer class.
+     *
+     * @return the singleton instance of the FileTransfer class
+     */
+    public static FileTransfer getInstance() {
+        return _instance;
+    }
 
-@Override
-protected boolean validate(Object object) {
-	return checkFile(object);
-}
+    /**
+     * This implementation of <code>javaToNative</code> converts a list of file names
+     * represented by a java <code>String[]</code> to a platform specific representation.
+     * Each <code>String</code> in the array contains the absolute path for a single
+     * file or directory.
+     *
+     * @param object a java <code>String[]</code> containing the file names to be converted
+     * @param transferData an empty <code>TransferData</code> object that will
+     *  	be filled in on return with the platform specific format of the data
+     *
+     * @see Transfer#nativeToJava
+     */
+    @Override
+    public void javaToNative(Object object, TransferData transferData) {
+        if (!checkFile(object) || !isSupportedType(transferData)) {
+            DND.error(DND.ERROR_INVALID_DATA);
+        }
+        String[] files = (String[]) object;
+        int length = files.length;
+        NSMutableArray array = NSMutableArray.arrayWithCapacity(length);
+        for (int i = 0; i < length; i++) {
+            String fileName = files[i];
+            NSString string = NSString.stringWith(fileName);
+            array.addObject(string);
+        }
+        transferData.data = array;
+    }
+
+    /**
+     * This implementation of <code>nativeToJava</code> converts a platform specific
+     * representation of a list of file names to a java <code>String[]</code>.
+     * Each String in the array contains the absolute path for a single file or directory.
+     *
+     * @param transferData the platform specific representation of the data to be converted
+     * @return a java <code>String[]</code> containing a list of file names if the conversion
+     * 		was successful; otherwise null
+     *
+     * @see Transfer#javaToNative
+     */
+    @Override
+    public Object nativeToJava(TransferData transferData) {
+        if (!isSupportedType(transferData) || transferData.data == null)
+            return null;
+        NSArray array = (NSArray) transferData.data;
+        if (array.count() == 0)
+            return null;
+        int count = (int) array.count();
+        String[] fileNames = new String[count];
+        for (int i = 0; i < count; i++) {
+            NSString string = new NSString(array.objectAtIndex(i));
+            fileNames[i] = string.getString();
+        }
+        return fileNames;
+    }
+
+    @Override
+    protected int[] getTypeIds() {
+        return new int[] { ID, ID1 };
+    }
+
+    @Override
+    protected String[] getTypeNames() {
+        return new String[] { ID_NAME, ID1_NAME };
+    }
+
+    boolean checkFile(Object object) {
+        if (object == null || !(object instanceof String[] strings) || ((String[]) object).length == 0)
+            return false;
+        for (int i = 0; i < strings.length; i++) {
+            if (strings[i] == null || strings[i].length() == 0)
+                return false;
+        }
+        return true;
+    }
+
+    @Override
+    protected boolean validate(Object object) {
+        return checkFile(object);
+    }
 }

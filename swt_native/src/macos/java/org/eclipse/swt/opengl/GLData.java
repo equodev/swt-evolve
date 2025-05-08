@@ -1,16 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2005, 2009 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2005, 2009 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.opengl;
 
 /**
@@ -23,129 +25,124 @@ package org.eclipse.swt.opengl;
  *
  * @since 3.2
  */
-
 public class GLData {
-	/**
-	 * Specifies a double-buffered surface.  During context
-	 * creation, only double-buffered formats are considered
-	 * when set to true.
-	 */
-	public boolean doubleBuffer;
 
-	/**
-	 * Specifies a stereo surface.  During context creation,
-	 * only stereo formats are considered when set to true.
-	 */
-	public boolean stereo;
+    /**
+     * Specifies a double-buffered surface.  During context
+     * creation, only double-buffered formats are considered
+     * when set to true.
+     */
+    public boolean doubleBuffer;
 
-	/**
-	 * The size in bits of the color buffer's red channel.
-	 * During context creation, this specifies the minimum
-	 * required red bits.
-	 */
-	public int redSize;
+    /**
+     * Specifies a stereo surface.  During context creation,
+     * only stereo formats are considered when set to true.
+     */
+    public boolean stereo;
 
-	/**
-	 * The size in bits of the color buffer's green channel.
-	 * During context creation, this specifies the minimum
-	 * required green bits.
-	 */
-	public int greenSize;
+    /**
+     * The size in bits of the color buffer's red channel.
+     * During context creation, this specifies the minimum
+     * required red bits.
+     */
+    public int redSize;
 
-	/**
-	 * The size in bits of the color buffer's blue channel.
-	 * During context creation, this specifies the minimum
-	 * required blue bits.
-	 */
-	public int blueSize;
+    /**
+     * The size in bits of the color buffer's green channel.
+     * During context creation, this specifies the minimum
+     * required green bits.
+     */
+    public int greenSize;
 
-	/**
-	 * The size in bits of the color buffer's alpha channel.
-	 * During context creation, this specifies the minimum
-	 * required alpha bits.
-	 */
-	public int alphaSize;
+    /**
+     * The size in bits of the color buffer's blue channel.
+     * During context creation, this specifies the minimum
+     * required blue bits.
+     */
+    public int blueSize;
 
-	/**
-	 * The size in bits of the depth buffer.  During context
-	 * creation, the smallest depth buffer of at least the
-	 * specified value is preferred, or zero for no depth
-	 * buffer.
-	 */
-	public int depthSize;
+    /**
+     * The size in bits of the color buffer's alpha channel.
+     * During context creation, this specifies the minimum
+     * required alpha bits.
+     */
+    public int alphaSize;
 
-	/**
-	 * The desired number of stencil bitplanes.  During
-	 * context creation, the smallest stencil buffer of at
-	 * least the specified value is preferred, or zero for
-	 * no stencil buffer.
-	 */
-	public int stencilSize;
+    /**
+     * The size in bits of the depth buffer.  During context
+     * creation, the smallest depth buffer of at least the
+     * specified value is preferred, or zero for no depth
+     * buffer.
+     */
+    public int depthSize;
 
-	/**
-	 * The size in bits of the accumulation buffer's red
-	 * channel. During context creation, this specifies the
-	 * minimum required red bits.
-	 */
-	public int accumRedSize;
+    /**
+     * The desired number of stencil bitplanes.  During
+     * context creation, the smallest stencil buffer of at
+     * least the specified value is preferred, or zero for
+     * no stencil buffer.
+     */
+    public int stencilSize;
 
-	/**
-	 * The size in bits of the accumulation buffer's green
-	 * channel. During context creation, this specifies the
-	 * minimum required green bits.
-	 */
-	public int accumGreenSize;
+    /**
+     * The size in bits of the accumulation buffer's red
+     * channel. During context creation, this specifies the
+     * minimum required red bits.
+     */
+    public int accumRedSize;
 
-	/**
-	 * The size in bits of the accumulation buffer's blue
-	 * channel. During context creation, this specifies the
-	 * minimum required blue bits.
-	 */
-	public int accumBlueSize;
+    /**
+     * The size in bits of the accumulation buffer's green
+     * channel. During context creation, this specifies the
+     * minimum required green bits.
+     */
+    public int accumGreenSize;
 
-	/**
-	 * The size in bits of the accumulation buffer's alpha
-	 * channel. During context creation, this specifies the
-	 * minimum required alpha bits.
-	 */
-	public int accumAlphaSize;
+    /**
+     * The size in bits of the accumulation buffer's blue
+     * channel. During context creation, this specifies the
+     * minimum required blue bits.
+     */
+    public int accumBlueSize;
 
-	/**
-	 * The number of multisample buffers used by this context.
-	 * During context creation, this specifies the minimum
-	 * number of multisample buffers requested.
-	 */
-	public int sampleBuffers;
+    /**
+     * The size in bits of the accumulation buffer's alpha
+     * channel. During context creation, this specifies the
+     * minimum required alpha bits.
+     */
+    public int accumAlphaSize;
 
-	/**
-	 * The number of samples accepted in the multisample buffer.
-	 * During creation, pixel formats with the smallest number of
-	 * samples that meets or exceeds the specified minimum number
-	 * are preferred.
-	 */
-	public int samples;
+    /**
+     * The number of multisample buffers used by this context.
+     * During context creation, this specifies the minimum
+     * number of multisample buffers requested.
+     */
+    public int sampleBuffers;
 
-	/**
-	 * Another GLCanvas whose texture namespace and display lists
-	 * should be shared.
-	 *
-	 * @since 3.5
-	 */
-	public GLCanvas shareContext;
+    /**
+     * The number of samples accepted in the multisample buffer.
+     * During creation, pixel formats with the smallest number of
+     * samples that meets or exceeds the specified minimum number
+     * are preferred.
+     */
+    public int samples;
 
-/**
- * Returns a string containing a concise, human-readable
- * description of the receiver.
- *
- * @return a string representation of the data
- */
-@Override
-public String toString() {
-	return (doubleBuffer ? "doubleBuffer," : "") +
-		(stereo ? "stereo," : "") +
-		"r:" + redSize + " g:" + greenSize + " b:" + blueSize + " a:" + alphaSize + "," +
-		"depth:" + depthSize + ",stencil:" + stencilSize +
-		",accum r:" + accumRedSize + "g:" + accumGreenSize + "b:" + accumBlueSize + "a:" + accumAlphaSize +
-		",sampleBuffers:" + sampleBuffers + ",samples:" + samples;
-}
+    /**
+     * Another GLCanvas whose texture namespace and display lists
+     * should be shared.
+     *
+     * @since 3.5
+     */
+    public GLCanvas shareContext;
+
+    /**
+     * Returns a string containing a concise, human-readable
+     * description of the receiver.
+     *
+     * @return a string representation of the data
+     */
+    @Override
+    public String toString() {
+        return (doubleBuffer ? "doubleBuffer," : "") + (stereo ? "stereo," : "") + "r:" + redSize + " g:" + greenSize + " b:" + blueSize + " a:" + alphaSize + "," + "depth:" + depthSize + ",stencil:" + stencilSize + ",accum r:" + accumRedSize + "g:" + accumGreenSize + "b:" + accumBlueSize + "a:" + accumAlphaSize + ",sampleBuffers:" + sampleBuffers + ",samples:" + samples;
+    }
 }

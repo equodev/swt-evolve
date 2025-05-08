@@ -1,16 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2008 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2008 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.custom;
 
 import org.eclipse.swt.events.*;
@@ -25,53 +27,51 @@ import org.eclipse.swt.events.*;
  */
 public class MovementEvent extends TypedEvent {
 
-	/**
-	 * line start offset (input)
-	 */
-	public int lineOffset;
+    /**
+     * line start offset (input)
+     */
+    public int lineOffset;
 
-	/**
-	 * line text (input)
-	 */
-	public String lineText;
+    /**
+     * line text (input)
+     */
+    public String lineText;
 
-	/**
-	 * the current offset (input)
-	 */
-	public int offset;
+    /**
+     * the current offset (input)
+     */
+    public int offset;
 
-	/**
-	 * the new offset  (input, output)
-	 */
-	public int newOffset;
+    /**
+     * the new offset  (input, output)
+     */
+    public int newOffset;
 
-	/**
-	 * the movement type (input)
-	 *
-	 * @see org.eclipse.swt.SWT#MOVEMENT_WORD
-	 * @see org.eclipse.swt.SWT#MOVEMENT_WORD_END
-	 * @see org.eclipse.swt.SWT#MOVEMENT_WORD_START
-	 * @see org.eclipse.swt.SWT#MOVEMENT_CHAR
-	 * @see org.eclipse.swt.SWT#MOVEMENT_CLUSTER
-	 */
-	public int movement;
+    /**
+     * the movement type (input)
+     *
+     * @see org.eclipse.swt.SWT#MOVEMENT_WORD
+     * @see org.eclipse.swt.SWT#MOVEMENT_WORD_END
+     * @see org.eclipse.swt.SWT#MOVEMENT_WORD_START
+     * @see org.eclipse.swt.SWT#MOVEMENT_CHAR
+     * @see org.eclipse.swt.SWT#MOVEMENT_CLUSTER
+     */
+    public int movement;
 
-	static final long serialVersionUID = 3978765487853324342L;
+    static final long serialVersionUID = 3978765487853324342L;
 
-/**
- * Constructs a new instance of this class based on the
- * information in the given event.
- *
- * @param e the event containing the information
- */
-public MovementEvent(StyledTextEvent e) {
-	super(e);
-	lineOffset = e.detail;
-	lineText = e.text;
-	movement = e.count;
-	offset = e.start;
-	newOffset = e.end;
+    /**
+     * Constructs a new instance of this class based on the
+     * information in the given event.
+     *
+     * @param e the event containing the information
+     */
+    public MovementEvent(StyledTextEvent e) {
+        super(e);
+        lineOffset = e.detail;
+        lineText = e.text;
+        movement = e.count;
+        offset = e.start;
+        newOffset = e.end;
+    }
 }
-}
-
-

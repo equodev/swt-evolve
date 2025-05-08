@@ -1,16 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2007, 2008 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2007, 2008 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.dnd;
 
 import org.eclipse.swt.*;
@@ -40,29 +42,31 @@ import org.eclipse.swt.widgets.*;
  * @since 3.3
  */
 public class DragSourceEffect extends DragSourceAdapter {
-	Control control = null;
 
-	/**
-	 * Creates a new <code>DragSourceEffect</code> to handle drag effect from the specified <code>Control</code>.
-	 *
-	 * @param control the <code>Control</code> that the user clicks on to initiate the drag
-	 *
-	 * @exception IllegalArgumentException <ul>
-	 *    <li>ERROR_NULL_ARGUMENT - if the control is null</li>
-	 * </ul>
-	 */
-	public DragSourceEffect(Control control) {
-		if (control == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-		this.control = control;
-	}
+    Control control = null;
 
-	/**
-	 * Returns the Control which is registered for this DragSourceEffect.  This is the control that the
-	 * user clicks in to initiate dragging.
-	 *
-	 * @return the Control which is registered for this DragSourceEffect
-	 */
-	public Control getControl() {
-		return control;
-	}
+    /**
+     * Creates a new <code>DragSourceEffect</code> to handle drag effect from the specified <code>Control</code>.
+     *
+     * @param control the <code>Control</code> that the user clicks on to initiate the drag
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the control is null</li>
+     * </ul>
+     */
+    public DragSourceEffect(Control control) {
+        if (control == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        this.control = control;
+    }
+
+    /**
+     * Returns the Control which is registered for this DragSourceEffect.  This is the control that the
+     * user clicks in to initiate dragging.
+     *
+     * @return the Control which is registered for this DragSourceEffect
+     */
+    public Control getControl() {
+        return control;
+    }
 }

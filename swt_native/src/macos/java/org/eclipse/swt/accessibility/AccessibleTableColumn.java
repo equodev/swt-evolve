@@ -1,16 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2010 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2010 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.accessibility;
 
 import org.eclipse.swt.internal.cocoa.*;
@@ -26,83 +28,81 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 class AccessibleTableColumn extends Accessible {
 
-	public AccessibleTableColumn(Accessible accessible, int childID) {
-		super(accessible);
-		index = childID;
+    public AccessibleTableColumn(Accessible accessible, int childID) {
+        super(accessible);
+        index = childID;
+        addAccessibleControlListener(new AccessibleControlAdapter() {
 
-		addAccessibleControlListener(new AccessibleControlAdapter() {
-			@Override
-			public void getLocation(AccessibleControlEvent e) {
-				Accessible[] cells = AccessibleTableColumn.this.getColumnCells();
+            @Override
+            public void getLocation(AccessibleControlEvent e) {
+                Accessible[] cells = AccessibleTableColumn.this.getColumnCells();
+                // Ask first row for position.
+                AccessibleControlEvent event = new AccessibleControlEvent(this);
+                event.childID = ACC.CHILDID_SELF;
+                event.width = -1;
+                Accessible child = cells[0];
+                for (int i = 0; i < child.accessibleControlListeners.size(); i++) {
+                    AccessibleControlListener listener = child.accessibleControlListeners.get(i);
+                    listener.getLocation(event);
+                }
+                // Ask all children for size.
+                int height = 0;
+                int width = 0;
+                for (int j = 0; j < cells.length; j++) {
+                    NSValue sizeObj = (NSValue) cells[j].getSizeAttribute(ACC.CHILDID_SELF);
+                    NSSize size = sizeObj.sizeValue();
+                    if (size.width > width)
+                        width = (int) size.width;
+                    height += size.height;
+                }
+                e.x = event.x;
+                e.y = event.y;
+                e.width = width;
+                e.height = height;
+            }
 
-				// Ask first row for position.
-				AccessibleControlEvent event = new AccessibleControlEvent(this);
-				event.childID = ACC.CHILDID_SELF;
-				event.width = -1;
-				Accessible child = cells[0];
+            @Override
+            public void getRole(AccessibleControlEvent e) {
+                e.detail = ACC.ROLE_COLUMN;
+            }
+        });
+        addAccessibleTableListener(new AccessibleTableAdapter() {
 
-				for (int i = 0; i < child.accessibleControlListeners.size(); i++) {
-					AccessibleControlListener listener = child.accessibleControlListeners.get(i);
-					listener.getLocation(event);
-				}
+            @Override
+            public void getRowCount(AccessibleTableEvent e) {
+                e.count = getColumnCells().length;
+            }
 
-				// Ask all children for size.
-				int height = 0;
-				int width = 0;
-				for (int j = 0; j < cells.length; j++) {
-					NSValue sizeObj = (NSValue)cells[j].getSizeAttribute(ACC.CHILDID_SELF);
-					NSSize size = sizeObj.sizeValue();
-					if (size.width > width) width = (int) size.width;
-					height += size.height;
-				}
+            @Override
+            public void getRow(AccessibleTableEvent e) {
+                int index = e.row;
+                Accessible[] children = getColumnCells();
+                int count = children.length;
+                if (0 <= index && index < count) {
+                    e.accessible = children[index];
+                }
+            }
 
-				e.x = event.x;
-				e.y = event.y;
-				e.width = width;
-				e.height = height;
-			}
-			@Override
-			public void getRole(AccessibleControlEvent e) {
-				e.detail = ACC.ROLE_COLUMN;
-			}
-		});
-		addAccessibleTableListener(new AccessibleTableAdapter() {
-			@Override
-			public void getRowCount(AccessibleTableEvent e) {
-				e.count = getColumnCells().length;
-			}
-			@Override
-			public void getRow(AccessibleTableEvent e) {
-				int index = e.row;
-				Accessible[] children = getColumnCells();
-				int count = children.length;
-				if (0 <= index && index < count) {
-					e.accessible = children[index];
-				}
-			}
-			@Override
-			public void getRows(AccessibleTableEvent e) {
-				e.accessibles = getColumnCells();
-			}
-		});
-	}
+            @Override
+            public void getRows(AccessibleTableEvent e) {
+                e.accessibles = getColumnCells();
+            }
+        });
+    }
 
-	private Accessible[] getColumnCells() {
-		int validRowCount = Math.max (1, parent.getRowCount());
-		Accessible[] cells = new Accessible[validRowCount];
-		AccessibleTableEvent event = new AccessibleTableEvent(this);
-		for (int i = 0; i < validRowCount; i++) {
-			event.column = index;
-			event.row = i;
-
-			for (int j = 0; j < parent.accessibleTableListeners.size(); j++) {
-				AccessibleTableListener listener = parent.accessibleTableListeners.get(j);
-				listener.getCell(event);
-			}
-
-			cells[i] = event.accessible;
-		}
-		return cells;
-	}
-
+    private Accessible[] getColumnCells() {
+        int validRowCount = Math.max(1, parent.getRowCount());
+        Accessible[] cells = new Accessible[validRowCount];
+        AccessibleTableEvent event = new AccessibleTableEvent(this);
+        for (int i = 0; i < validRowCount; i++) {
+            event.column = index;
+            event.row = i;
+            for (int j = 0; j < parent.accessibleTableListeners.size(); j++) {
+                AccessibleTableListener listener = parent.accessibleTableListeners.get(j);
+                listener.getCell(event);
+            }
+            cells[i] = event.accessible;
+        }
+        return cells;
+    }
 }

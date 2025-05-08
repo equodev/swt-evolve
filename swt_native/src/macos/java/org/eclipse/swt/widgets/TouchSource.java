@@ -1,18 +1,19 @@
-/*******************************************************************************
- * Copyright (c) 2010, 2018 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2010, 2018 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.widgets;
-
 
 import org.eclipse.swt.graphics.*;
 
@@ -41,53 +42,47 @@ import org.eclipse.swt.graphics.*;
  * @since 3.7
  */
 public final class TouchSource {
-	long handle;
-	boolean direct;
-	Rectangle bounds;
 
-/**
- * Constructs a new touch source from the given inputs.
- *
- * @param direct Is the touch source direct or indirect?
- * @param height height of the source in points.
- * @param width width of the source in points.
- */
-TouchSource (long handle, boolean direct, Rectangle bounds) {
-	this.handle = handle;
-	this.direct = direct;
-	this.bounds = bounds;
-}
+    /**
+     * Returns the type of touch input this source generates, <code>true</code> for direct or <code>false</code> for indirect.
+     *
+     * @return <code>true</code> if the input source is direct, or <code>false</code> otherwise
+     */
+    public boolean isDirect() {
+        return getDelegate().isDirect();
+    }
 
-/**
- * Returns the type of touch input this source generates, <code>true</code> for direct or <code>false</code> for indirect.
- *
- * @return <code>true</code> if the input source is direct, or <code>false</code> otherwise
- */
-public boolean isDirect () {
-	return direct;
-}
+    /**
+     * Returns the bounding rectangle of the device. For a direct source, this corresponds to the bounds of
+     * the display device in pixels. For an indirect source, this contains the size of the device in points.
+     * <p>
+     * Note that the x and y values may not necessarily be 0 if the TouchSource is a direct source.
+     *
+     * @return the bounding rectangle of the input source
+     */
+    public Rectangle getBounds() {
+        return getDelegate().getBounds();
+    }
 
-/**
- * Returns the bounding rectangle of the device. For a direct source, this corresponds to the bounds of
- * the display device in pixels. For an indirect source, this contains the size of the device in points.
- * <p>
- * Note that the x and y values may not necessarily be 0 if the TouchSource is a direct source.
- *
- * @return the bounding rectangle of the input source
- */
-public Rectangle getBounds () {
-	return new Rectangle (bounds.x, bounds.y, bounds.width, bounds.height);
-}
+    /**
+     * Returns a string containing a concise, human-readable
+     * description of the receiver.
+     *
+     * @return a string representation of the event
+     */
+    @Override
+    public String toString() {
+        return getDelegate().toString();
+    }
 
-/**
- * Returns a string containing a concise, human-readable
- * description of the receiver.
- *
- * @return a string representation of the event
- */
-@Override
-public String toString () {
-	return "TouchSource {handle=" + handle + " direct=" + direct + " bounds=" + bounds + "}";
-}
+    ITouchSource delegate;
 
+    TouchSource(ITouchSource delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    ITouchSource getDelegate() {
+        return (ITouchSource) delegate;
+    }
 }

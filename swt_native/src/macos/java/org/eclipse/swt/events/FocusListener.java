@@ -1,22 +1,22 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2016 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *     Lars Vogel <Lars.Vogel@vogella.com> - Bug 506538
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ *      Lars Vogel <Lars.Vogel@vogella.com> - Bug 506538
+ * *****************************************************************************
+ */
 package org.eclipse.swt.events;
 
-
 import java.util.function.*;
-
 import org.eclipse.swt.internal.*;
 
 /**
@@ -37,52 +37,53 @@ import org.eclipse.swt.internal.*;
  */
 public interface FocusListener extends SWTEventListener {
 
-/**
- * Sent when a control gets focus.
- *
- * @param e an event containing information about the focus change
- */
-void focusGained(FocusEvent e);
+    /**
+     * Sent when a control gets focus.
+     *
+     * @param e an event containing information about the focus change
+     */
+    void focusGained(FocusEvent e);
 
-/**
- * Sent when a control loses focus.
- *
- * @param e an event containing information about the focus change
- */
-void focusLost(FocusEvent e);
+    /**
+     * Sent when a control loses focus.
+     *
+     * @param e an event containing information about the focus change
+     */
+    void focusLost(FocusEvent e);
 
+    /**
+     * Static helper method to create a <code>FocusListener</code> for the
+     * {@link #focusGained(FocusEvent e)}) method with a lambda expression.
+     *
+     * @param c the consumer of the event
+     * @return FocusListener
+     * @since 3.106
+     */
+    static FocusListener focusGainedAdapter(Consumer<FocusEvent> c) {
+        return new FocusAdapter() {
 
-/**
- * Static helper method to create a <code>FocusListener</code> for the
- * {@link #focusGained(FocusEvent e)}) method with a lambda expression.
- *
- * @param c the consumer of the event
- * @return FocusListener
- * @since 3.106
- */
-static FocusListener focusGainedAdapter(Consumer<FocusEvent> c) {
-	return new FocusAdapter() {
-		@Override
-		public void focusGained(FocusEvent e) {
-			c.accept(e);
-		}
-	};
-}
+            @Override
+            public void focusGained(FocusEvent e) {
+                c.accept(e);
+            }
+        };
+    }
 
-/**
- * Static helper method to create a <code>FocusListener</code> for the
- * {@link #focusLost(FocusEvent e)}) method with a lambda expression.
- *
- * @param c the consumer of the event
- * @return FocusListener
- * @since 3.106
-*/
-static FocusListener focusLostAdapter(Consumer<FocusEvent> c) {
-	return new FocusAdapter() {
-		@Override
-		public void focusLost(FocusEvent e) {
-			c.accept(e);
-		}
-	};
-}
+    /**
+     * Static helper method to create a <code>FocusListener</code> for the
+     * {@link #focusLost(FocusEvent e)}) method with a lambda expression.
+     *
+     * @param c the consumer of the event
+     * @return FocusListener
+     * @since 3.106
+     */
+    static FocusListener focusLostAdapter(Consumer<FocusEvent> c) {
+        return new FocusAdapter() {
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                c.accept(e);
+            }
+        };
+    }
 }
