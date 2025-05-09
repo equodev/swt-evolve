@@ -356,11 +356,11 @@ public class Button extends Control {
         getDelegate().setText(string);
     }
 
-    Button(IButton delegate) {
+    protected Button(IButton delegate) {
         super(delegate);
     }
 
-    IButton getDelegate() {
-        return (IButton) delegate;
+    protected IButton getDelegate() {
+        return (IButton) super.getDelegate();
     }
 }

@@ -1759,11 +1759,11 @@ public class Display extends Device implements Executor {
         return getDelegate().setRescalingAtRuntime(activate);
     }
 
-    Display(IDisplay delegate) {
+    protected Display(IDisplay delegate) {
         super(delegate);
     }
 
-    IDisplay getDelegate() {
-        return (IDisplay) delegate;
+    protected IDisplay getDelegate() {
+        return (IDisplay) super.getDelegate();
     }
 }

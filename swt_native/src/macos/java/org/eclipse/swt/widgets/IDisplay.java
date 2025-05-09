@@ -8,7 +8,7 @@ import java.util.function.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
-public interface IDisplay {
+public interface IDisplay extends IDevice {
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -1360,6 +1360,4 @@ public interface IDisplay {
     boolean setRescalingAtRuntime(boolean activate);
 
     Display getApi();
-
-    void setApi(Display api);
 }

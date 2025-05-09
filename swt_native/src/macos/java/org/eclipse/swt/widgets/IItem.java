@@ -66,6 +66,4 @@ public interface IItem extends IWidget {
     void setText(String string);
 
     Item getApi();
-
-    void setApi(Item api);
 }

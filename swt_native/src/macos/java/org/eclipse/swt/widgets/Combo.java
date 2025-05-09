@@ -1028,11 +1028,11 @@ public class Combo extends Composite {
         getDelegate().setVisibleItemCount(count);
     }
 
-    Combo(ICombo delegate) {
+    protected Combo(ICombo delegate) {
         super(delegate);
     }
 
-    ICombo getDelegate() {
-        return (ICombo) delegate;
+    protected ICombo getDelegate() {
+        return (ICombo) super.getDelegate();
     }
 }

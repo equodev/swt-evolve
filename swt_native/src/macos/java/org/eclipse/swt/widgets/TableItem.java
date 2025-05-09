@@ -647,11 +647,11 @@ public class TableItem extends Item {
         getDelegate().setText(string);
     }
 
-    TableItem(ITableItem delegate) {
+    protected TableItem(ITableItem delegate) {
         super(delegate);
     }
 
-    ITableItem getDelegate() {
-        return (ITableItem) delegate;
+    protected ITableItem getDelegate() {
+        return (ITableItem) super.getDelegate();
     }
 }

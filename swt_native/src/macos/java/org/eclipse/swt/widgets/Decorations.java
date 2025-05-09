@@ -461,11 +461,11 @@ public class Decorations extends Canvas {
         getDelegate().setText(string);
     }
 
-    Decorations(IDecorations delegate) {
+    protected Decorations(IDecorations delegate) {
         super(delegate);
     }
 
-    IDecorations getDelegate() {
-        return (IDecorations) delegate;
+    protected IDecorations getDelegate() {
+        return (IDecorations) super.getDelegate();
     }
 }

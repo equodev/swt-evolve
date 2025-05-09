@@ -226,6 +226,4 @@ public interface ITabFolder extends IComposite {
     void setSelection(int index);
 
     TabFolder getApi();
-
-    void setApi(TabFolder api);
 }

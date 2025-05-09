@@ -169,11 +169,11 @@ public abstract class Scrollable extends Control {
         return getDelegate().getVerticalBar().getApi();
     }
 
-    Scrollable(IScrollable delegate) {
+    protected Scrollable(IScrollable delegate) {
         super(delegate);
     }
 
-    IScrollable getDelegate() {
-        return (IScrollable) delegate;
+    protected IScrollable getDelegate() {
+        return (IScrollable) super.getDelegate();
     }
 }

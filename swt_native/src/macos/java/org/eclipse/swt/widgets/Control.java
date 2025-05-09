@@ -2379,11 +2379,11 @@ public abstract class Control extends Widget implements Drawable {
         getDelegate().update();
     }
 
-    Control(IControl delegate) {
+    protected Control(IControl delegate) {
         super(delegate);
     }
 
-    IControl getDelegate() {
-        return (IControl) delegate;
+    protected IControl getDelegate() {
+        return (IControl) super.getDelegate();
     }
 }

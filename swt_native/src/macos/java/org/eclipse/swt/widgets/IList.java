@@ -671,6 +671,4 @@ public interface IList extends IScrollable {
     void showSelection();
 
     List getApi();
-
-    void setApi(List api);
 }

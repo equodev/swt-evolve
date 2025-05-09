@@ -153,12 +153,12 @@ public abstract class Dialog {
 
     IDialog delegate;
 
-    Dialog(IDialog delegate) {
+    protected Dialog(IDialog delegate) {
         this.delegate = delegate;
         delegate.setApi(this);
     }
 
-    IDialog getDelegate() {
-        return (IDialog) delegate;
+    protected IDialog getDelegate() {
+        return delegate;
     }
 }

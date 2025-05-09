@@ -92,12 +92,12 @@ public final class Monitor {
 
     IMonitor delegate;
 
-    Monitor(IMonitor delegate) {
+    protected Monitor(IMonitor delegate) {
         this.delegate = delegate;
         delegate.setApi(this);
     }
 
-    IMonitor getDelegate() {
-        return (IMonitor) delegate;
+    protected IMonitor getDelegate() {
+        return delegate;
     }
 }

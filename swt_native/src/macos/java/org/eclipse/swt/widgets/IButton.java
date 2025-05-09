@@ -245,6 +245,4 @@ public interface IButton extends IControl {
     void setText(String string);
 
     Button getApi();
-
-    void setApi(Button api);
 }

@@ -18,10 +18,7 @@ package nat.org.eclipse.swt.widgets;
 import java.util.*;
 import java.util.concurrent.*;
 import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Layout;
-import org.eclipse.swt.widgets.Listener;
+import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.ISynchronizer;
 
 /**

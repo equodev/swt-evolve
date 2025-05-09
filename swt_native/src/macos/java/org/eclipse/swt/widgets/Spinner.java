@@ -523,11 +523,11 @@ public class Spinner extends Composite {
         getDelegate().setValues(selection, minimum, maximum, digits, increment, pageIncrement);
     }
 
-    Spinner(ISpinner delegate) {
+    protected Spinner(ISpinner delegate) {
         super(delegate);
     }
 
-    ISpinner getDelegate() {
-        return (ISpinner) delegate;
+    protected ISpinner getDelegate() {
+        return (ISpinner) super.getDelegate();
     }
 }

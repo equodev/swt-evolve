@@ -949,6 +949,4 @@ public interface IText extends IScrollable {
     void showSelection();
 
     Text getApi();
-
-    void setApi(Text api);
 }

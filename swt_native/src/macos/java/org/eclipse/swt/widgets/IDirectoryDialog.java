@@ -89,6 +89,4 @@ public interface IDirectoryDialog extends IDialog {
     void setFilterPath(String string);
 
     DirectoryDialog getApi();
-
-    void setApi(DirectoryDialog api);
 }

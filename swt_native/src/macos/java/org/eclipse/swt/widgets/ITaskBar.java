@@ -67,6 +67,4 @@ public interface ITaskBar extends IWidget {
     ITaskItem[] getItems();
 
     TaskBar getApi();
-
-    void setApi(TaskBar api);
 }

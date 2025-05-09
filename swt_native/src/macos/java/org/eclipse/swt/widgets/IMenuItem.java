@@ -438,6 +438,4 @@ public interface IMenuItem extends IItem {
     void setToolTipText(String toolTip);
 
     MenuItem getApi();
-
-    void setApi(MenuItem api);
 }

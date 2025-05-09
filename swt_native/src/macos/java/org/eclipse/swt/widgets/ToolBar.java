@@ -225,11 +225,11 @@ public class ToolBar extends Composite {
         getDelegate().setVisible(visible);
     }
 
-    ToolBar(IToolBar delegate) {
+    protected ToolBar(IToolBar delegate) {
         super(delegate);
     }
 
-    IToolBar getDelegate() {
-        return (IToolBar) delegate;
+    protected IToolBar getDelegate() {
+        return (IToolBar) super.getDelegate();
     }
 }

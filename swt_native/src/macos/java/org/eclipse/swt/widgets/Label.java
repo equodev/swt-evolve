@@ -218,11 +218,11 @@ public class Label extends Control {
         getDelegate().setText(string);
     }
 
-    Label(ILabel delegate) {
+    protected Label(ILabel delegate) {
         super(delegate);
     }
 
-    ILabel getDelegate() {
-        return (ILabel) delegate;
+    protected ILabel getDelegate() {
+        return (ILabel) super.getDelegate();
     }
 }

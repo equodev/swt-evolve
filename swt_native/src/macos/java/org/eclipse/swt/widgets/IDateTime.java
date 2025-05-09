@@ -281,6 +281,4 @@ public interface IDateTime extends IComposite {
     void setYear(int year);
 
     DateTime getApi();
-
-    void setApi(DateTime api);
 }

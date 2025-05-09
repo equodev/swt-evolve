@@ -293,6 +293,4 @@ public interface IDecorations extends ICanvas {
     void setText(String string);
 
     Decorations getApi();
-
-    void setApi(Decorations api);
 }

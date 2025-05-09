@@ -216,6 +216,4 @@ public interface IFileDialog extends IDialog {
     void setOverwrite(boolean overwrite);
 
     FileDialog getApi();
-
-    void setApi(FileDialog api);
 }

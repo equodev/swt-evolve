@@ -18,9 +18,9 @@ package nat.org.eclipse.swt.widgets;
 import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.TypedListener;
 import org.eclipse.swt.widgets.IEventTable;
 
 /**

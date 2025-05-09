@@ -442,11 +442,11 @@ public class TableColumn extends Item {
         getDelegate().setWidth(width);
     }
 
-    TableColumn(ITableColumn delegate) {
+    protected TableColumn(ITableColumn delegate) {
         super(delegate);
     }
 
-    ITableColumn getDelegate() {
-        return (ITableColumn) delegate;
+    protected ITableColumn getDelegate() {
+        return (ITableColumn) super.getDelegate();
     }
 }

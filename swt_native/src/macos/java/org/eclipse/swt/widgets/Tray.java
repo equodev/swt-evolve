@@ -94,11 +94,11 @@ public class Tray extends Widget {
         return Convert.array(getDelegate().getItems(), ITrayItem::getApi, TrayItem[]::new);
     }
 
-    Tray(ITray delegate) {
+    protected Tray(ITray delegate) {
         super(delegate);
     }
 
-    ITray getDelegate() {
-        return (ITray) delegate;
+    protected ITray getDelegate() {
+        return (ITray) super.getDelegate();
     }
 }

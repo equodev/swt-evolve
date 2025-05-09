@@ -546,11 +546,11 @@ public class ScrollBar extends Widget {
         getDelegate().setVisible(visible);
     }
 
-    ScrollBar(IScrollBar delegate) {
+    protected ScrollBar(IScrollBar delegate) {
         super(delegate);
     }
 
-    IScrollBar getDelegate() {
-        return (IScrollBar) delegate;
+    protected IScrollBar getDelegate() {
+        return (IScrollBar) super.getDelegate();
     }
 }

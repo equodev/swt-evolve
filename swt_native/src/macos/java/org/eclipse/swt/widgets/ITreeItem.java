@@ -646,6 +646,4 @@ public interface ITreeItem extends IItem {
     void setText(String string);
 
     TreeItem getApi();
-
-    void setApi(TreeItem api);
 }

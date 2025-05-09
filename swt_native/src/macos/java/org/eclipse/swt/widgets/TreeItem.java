@@ -897,11 +897,11 @@ public class TreeItem extends Item {
         getDelegate().setText(string);
     }
 
-    TreeItem(ITreeItem delegate) {
+    protected TreeItem(ITreeItem delegate) {
         super(delegate);
     }
 
-    ITreeItem getDelegate() {
-        return (ITreeItem) delegate;
+    protected ITreeItem getDelegate() {
+        return (ITreeItem) super.getDelegate();
     }
 }

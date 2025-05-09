@@ -819,11 +819,11 @@ public class List extends Scrollable {
         getDelegate().showSelection();
     }
 
-    List(IList delegate) {
+    protected List(IList delegate) {
         super(delegate);
     }
 
-    IList getDelegate() {
-        return (IList) delegate;
+    protected IList getDelegate() {
+        return (IList) super.getDelegate();
     }
 }

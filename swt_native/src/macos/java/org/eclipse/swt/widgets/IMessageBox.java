@@ -62,6 +62,4 @@ public interface IMessageBox extends IDialog {
     void setButtonLabels(Map<Integer, String> labels);
 
     MessageBox getApi();
-
-    void setApi(MessageBox api);
 }

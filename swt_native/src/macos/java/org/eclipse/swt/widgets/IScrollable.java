@@ -125,6 +125,4 @@ public interface IScrollable extends IControl {
     IScrollBar getVerticalBar();
 
     Scrollable getApi();
-
-    void setApi(Scrollable api);
 }

@@ -838,6 +838,4 @@ public interface ICombo extends IComposite {
     void setVisibleItemCount(int count);
 
     Combo getApi();
-
-    void setApi(Combo api);
 }

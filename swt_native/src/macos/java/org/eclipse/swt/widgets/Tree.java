@@ -1175,11 +1175,11 @@ public class Tree extends Composite {
         getDelegate().showSelection();
     }
 
-    Tree(ITree delegate) {
+    protected Tree(ITree delegate) {
         super(delegate);
     }
 
-    ITree getDelegate() {
-        return (ITree) delegate;
+    protected ITree getDelegate() {
+        return (ITree) super.getDelegate();
     }
 }

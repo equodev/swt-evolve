@@ -129,6 +129,4 @@ public interface ICanvas extends IComposite {
     void setIME(IIME ime);
 
     Canvas getApi();
-
-    void setApi(Canvas api);
 }

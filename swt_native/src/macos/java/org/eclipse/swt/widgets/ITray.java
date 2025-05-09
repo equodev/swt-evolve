@@ -52,6 +52,4 @@ public interface ITray extends IWidget {
     ITrayItem[] getItems();
 
     Tray getApi();
-
-    void setApi(Tray api);
 }

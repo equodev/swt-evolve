@@ -115,6 +115,4 @@ public interface ILabel extends IControl {
     void setText(String string);
 
     Label getApi();
-
-    void setApi(Label api);
 }

@@ -77,12 +77,12 @@ public final class TouchSource {
 
     ITouchSource delegate;
 
-    TouchSource(ITouchSource delegate) {
+    protected TouchSource(ITouchSource delegate) {
         this.delegate = delegate;
         delegate.setApi(this);
     }
 
-    ITouchSource getDelegate() {
-        return (ITouchSource) delegate;
+    protected ITouchSource getDelegate() {
+        return delegate;
     }
 }

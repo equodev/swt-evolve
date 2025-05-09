@@ -389,11 +389,11 @@ public class Slider extends Control {
         getDelegate().setValues(selection, minimum, maximum, thumb, increment, pageIncrement);
     }
 
-    Slider(ISlider delegate) {
+    protected Slider(ISlider delegate) {
         super(delegate);
     }
 
-    ISlider getDelegate() {
-        return (ISlider) delegate;
+    protected ISlider getDelegate() {
+        return (ISlider) super.getDelegate();
     }
 }

@@ -250,11 +250,11 @@ public class ExpandBar extends Composite {
         getDelegate().setSpacing(spacing);
     }
 
-    ExpandBar(IExpandBar delegate) {
+    protected ExpandBar(IExpandBar delegate) {
         super(delegate);
     }
 
-    IExpandBar getDelegate() {
-        return (IExpandBar) delegate;
+    protected IExpandBar getDelegate() {
+        return (IExpandBar) super.getDelegate();
     }
 }

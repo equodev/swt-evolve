@@ -16,10 +16,14 @@
 package nat.org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Layout;
+import nat.org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.ICoolBar;
 
 /**

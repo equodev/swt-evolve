@@ -238,11 +238,11 @@ public class ExpandItem extends Item {
         getDelegate().setText(string);
     }
 
-    ExpandItem(IExpandItem delegate) {
+    protected ExpandItem(IExpandItem delegate) {
         super(delegate);
     }
 
-    IExpandItem getDelegate() {
-        return (IExpandItem) delegate;
+    protected IExpandItem getDelegate() {
+        return (IExpandItem) super.getDelegate();
     }
 }

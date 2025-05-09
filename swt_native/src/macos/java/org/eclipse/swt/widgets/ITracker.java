@@ -179,6 +179,4 @@ public interface ITracker extends IWidget {
     void setStippled(boolean stippled);
 
     Tracker getApi();
-
-    void setApi(Tracker api);
 }

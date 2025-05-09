@@ -958,6 +958,4 @@ public interface ITree extends IComposite {
     void showSelection();
 
     Tree getApi();
-
-    void setApi(Tree api);
 }

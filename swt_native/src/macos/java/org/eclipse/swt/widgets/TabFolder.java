@@ -339,11 +339,11 @@ public class TabFolder extends Composite {
         getDelegate().setSelection(index);
     }
 
-    TabFolder(ITabFolder delegate) {
+    protected TabFolder(ITabFolder delegate) {
         super(delegate);
     }
 
-    ITabFolder getDelegate() {
-        return (ITabFolder) delegate;
+    protected ITabFolder getDelegate() {
+        return (ITabFolder) super.getDelegate();
     }
 }

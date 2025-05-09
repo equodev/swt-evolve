@@ -141,6 +141,4 @@ public interface ILink extends IControl {
     void setText(String string);
 
     Link getApi();
-
-    void setApi(Link api);
 }

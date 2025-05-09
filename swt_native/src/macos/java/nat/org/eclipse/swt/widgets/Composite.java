@@ -17,12 +17,15 @@ package nat.org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
-import org.eclipse.swt.graphics.*;
+import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.ExceptionStash;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Layout;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.GCData;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.IComposite;
 
 /**
@@ -243,7 +246,7 @@ public class Composite extends Scrollable implements IComposite {
         if (layout != null) {
             if ((wHint == SWT.DEFAULT) || (hHint == SWT.DEFAULT)) {
                 changed |= (state & LAYOUT_CHANGED) != 0;
-                size = layout.computeSize(this, wHint, hHint, changed);
+                size = layout.computeSize(this.getApi(), wHint, hHint, changed);
                 state &= ~LAYOUT_CHANGED;
             } else {
                 size = new Point(wHint, hHint);
@@ -1372,7 +1375,7 @@ public class Composite extends Scrollable implements IComposite {
             boolean changed = (state & LAYOUT_CHANGED) != 0;
             state &= ~(LAYOUT_NEEDED | LAYOUT_CHANGED);
             display.runSkin();
-            layout.layout(this, changed);
+            layout.layout(this.getApi(), changed);
         }
         if (all) {
             state &= ~LAYOUT_CHILD;

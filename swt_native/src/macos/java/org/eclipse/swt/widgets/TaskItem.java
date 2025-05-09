@@ -288,11 +288,11 @@ public class TaskItem extends Item {
         getDelegate().setProgressState(progressState);
     }
 
-    TaskItem(ITaskItem delegate) {
+    protected TaskItem(ITaskItem delegate) {
         super(delegate);
     }
 
-    ITaskItem getDelegate() {
-        return (ITaskItem) delegate;
+    protected ITaskItem getDelegate() {
+        return (ITaskItem) super.getDelegate();
     }
 }

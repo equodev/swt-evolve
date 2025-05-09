@@ -107,11 +107,11 @@ public class TaskBar extends Widget {
         return Convert.array(getDelegate().getItems(), ITaskItem::getApi, TaskItem[]::new);
     }
 
-    TaskBar(ITaskBar delegate) {
+    protected TaskBar(ITaskBar delegate) {
         super(delegate);
     }
 
-    ITaskBar getDelegate() {
-        return (ITaskBar) delegate;
+    protected ITaskBar getDelegate() {
+        return (ITaskBar) super.getDelegate();
     }
 }

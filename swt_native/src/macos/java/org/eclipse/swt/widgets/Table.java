@@ -1364,11 +1364,11 @@ public class Table extends Composite {
         getDelegate().showSelection();
     }
 
-    Table(ITable delegate) {
+    protected Table(ITable delegate) {
         super(delegate);
     }
 
-    ITable getDelegate() {
-        return (ITable) delegate;
+    protected ITable getDelegate() {
+        return (ITable) super.getDelegate();
     }
 }

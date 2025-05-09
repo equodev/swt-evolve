@@ -115,6 +115,4 @@ public interface IExpandItem extends IItem {
     void setText(String string);
 
     ExpandItem getApi();
-
-    void setApi(ExpandItem api);
 }

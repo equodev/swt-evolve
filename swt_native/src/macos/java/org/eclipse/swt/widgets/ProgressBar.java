@@ -221,11 +221,11 @@ public class ProgressBar extends Control {
         //NOT IMPLEMENTED
     }
 
-    ProgressBar(IProgressBar delegate) {
+    protected ProgressBar(IProgressBar delegate) {
         super(delegate);
     }
 
-    IProgressBar getDelegate() {
-        return (IProgressBar) delegate;
+    protected IProgressBar getDelegate() {
+        return (IProgressBar) super.getDelegate();
     }
 }

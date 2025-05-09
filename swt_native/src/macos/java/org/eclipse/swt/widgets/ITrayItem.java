@@ -254,6 +254,4 @@ public interface ITrayItem extends IItem {
     void setVisible(boolean visible);
 
     TrayItem getApi();
-
-    void setApi(TrayItem api);
 }

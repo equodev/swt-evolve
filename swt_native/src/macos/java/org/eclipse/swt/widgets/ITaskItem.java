@@ -235,6 +235,4 @@ public interface ITaskItem extends IItem {
     void setProgressState(int progressState);
 
     TaskItem getApi();
-
-    void setApi(TaskItem api);
 }

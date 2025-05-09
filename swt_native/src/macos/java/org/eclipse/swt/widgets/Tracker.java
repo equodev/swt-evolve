@@ -45,6 +45,8 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class Tracker extends Widget {
 
+    boolean tracking, cancelled, stippled;
+
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.
@@ -314,11 +316,11 @@ public class Tracker extends Widget {
         getDelegate().setStippled(stippled);
     }
 
-    Tracker(ITracker delegate) {
+    protected Tracker(ITracker delegate) {
         super(delegate);
     }
 
-    ITracker getDelegate() {
-        return (ITracker) delegate;
+    protected ITracker getDelegate() {
+        return (ITracker) super.getDelegate();
     }
 }

@@ -116,6 +116,4 @@ public interface IFontDialog extends IDialog {
     void setRGB(RGB rgb);
 
     FontDialog getApi();
-
-    void setApi(FontDialog api);
 }

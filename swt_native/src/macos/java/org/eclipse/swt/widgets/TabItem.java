@@ -252,11 +252,11 @@ public class TabItem extends Item {
         getDelegate().setToolTipText(string);
     }
 
-    TabItem(ITabItem delegate) {
+    protected TabItem(ITabItem delegate) {
         super(delegate);
     }
 
-    ITabItem getDelegate() {
-        return (ITabItem) delegate;
+    protected ITabItem getDelegate() {
+        return (ITabItem) super.getDelegate();
     }
 }

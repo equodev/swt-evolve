@@ -328,11 +328,11 @@ public class CoolBar extends Composite {
         getDelegate().setOrientation(orientation);
     }
 
-    CoolBar(ICoolBar delegate) {
+    protected CoolBar(ICoolBar delegate) {
         super(delegate);
     }
 
-    ICoolBar getDelegate() {
-        return (ICoolBar) delegate;
+    protected ICoolBar getDelegate() {
+        return (ICoolBar) super.getDelegate();
     }
 }

@@ -15,10 +15,8 @@
  */
 package nat.org.eclipse.swt.widgets;
 
-import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Layout;
-import org.eclipse.swt.widgets.Listener;
+import nat.org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.IMonitor;
 
 /**

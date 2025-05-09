@@ -245,6 +245,4 @@ public interface IToolTip extends IWidget {
     void setVisible(boolean visible);
 
     ToolTip getApi();
-
-    void setApi(ToolTip api);
 }

@@ -257,6 +257,4 @@ public interface ICaret extends IWidget {
     void setVisible(boolean visible);
 
     Caret getApi();
-
-    void setApi(Caret api);
 }

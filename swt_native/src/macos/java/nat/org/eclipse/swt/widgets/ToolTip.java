@@ -17,10 +17,19 @@ package nat.org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
-import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Layout;
+import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.graphics.TextLayout;
+import org.eclipse.swt.graphics.Region;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.graphics.TextStyle;
 import org.eclipse.swt.widgets.IToolTip;
 
 /**

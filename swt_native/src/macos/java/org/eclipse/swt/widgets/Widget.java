@@ -492,12 +492,12 @@ public abstract class Widget {
 
     IWidget delegate;
 
-    Widget(IWidget delegate) {
+    protected Widget(IWidget delegate) {
         this.delegate = delegate;
         delegate.setApi(this);
     }
 
-    IWidget getDelegate() {
-        return (IWidget) delegate;
+    protected IWidget getDelegate() {
+        return delegate;
     }
 }

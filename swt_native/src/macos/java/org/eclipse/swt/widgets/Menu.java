@@ -633,11 +633,11 @@ public class Menu extends Widget {
         getDelegate().setVisible(visible);
     }
 
-    Menu(IMenu delegate) {
+    protected Menu(IMenu delegate) {
         super(delegate);
     }
 
-    IMenu getDelegate() {
-        return (IMenu) delegate;
+    protected IMenu getDelegate() {
+        return (IMenu) super.getDelegate();
     }
 }

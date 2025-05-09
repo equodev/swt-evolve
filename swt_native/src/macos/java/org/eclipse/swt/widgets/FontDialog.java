@@ -213,11 +213,11 @@ public class FontDialog extends Dialog {
         getDelegate().setRGB(rgb);
     }
 
-    FontDialog(IFontDialog delegate) {
+    protected FontDialog(IFontDialog delegate) {
         super(delegate);
     }
 
-    IFontDialog getDelegate() {
-        return (IFontDialog) delegate;
+    protected IFontDialog getDelegate() {
+        return (IFontDialog) super.getDelegate();
     }
 }

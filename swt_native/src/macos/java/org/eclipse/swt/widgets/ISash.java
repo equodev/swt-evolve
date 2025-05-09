@@ -56,6 +56,4 @@ public interface ISash extends IControl {
     void removeSelectionListener(SelectionListener listener);
 
     Sash getApi();
-
-    void setApi(Sash api);
 }

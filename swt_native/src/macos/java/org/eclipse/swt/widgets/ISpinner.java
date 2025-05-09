@@ -390,6 +390,4 @@ public interface ISpinner extends IComposite {
     void setValues(int selection, int minimum, int maximum, int digits, int increment, int pageIncrement);
 
     Spinner getApi();
-
-    void setApi(Spinner api);
 }

@@ -20,12 +20,20 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
-import org.eclipse.swt.graphics.*;
+import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Cursor;
+import org.eclipse.swt.graphics.Region;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Layout;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.GCData;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.widgets.IControl;
 
 /**
@@ -1256,7 +1264,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
         /* Send paint event */
         GCData data = new GCData();
         data.paintRect = rect;
-        GC gc = GC.cocoa_new(this, data);
+        GC gc = GC.cocoa_new(this.getApi(), data);
         Event event = new Event();
         event.gc = gc;
         event.x = (int) rect.x;
@@ -2819,7 +2827,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
     }
 
     Accessible new_Accessible(Control control) {
-        return Accessible.internal_new_Accessible(this);
+        return Accessible.internal_new_Accessible(this.getApi());
     }
 
     /**

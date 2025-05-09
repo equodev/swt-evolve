@@ -17,11 +17,17 @@ package nat.org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
-import org.eclipse.swt.graphics.*;
+import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Layout;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.widgets.ITable;
 
 /**
@@ -507,7 +513,7 @@ public class Table extends Composite implements ITable {
                     width += columns[i].getWidth();
                 }
             } else {
-                GC gc = new GC(this);
+                GC gc = new GC(this.getApi());
                 width += calculateWidth(items, 0, gc) + CELL_GAP;
                 gc.dispose();
             }
@@ -1072,7 +1078,7 @@ public class Table extends Composite implements ITable {
             transform.concat();
             GCData data = new GCData();
             data.paintRect = cellRect;
-            GC gc = GC.cocoa_new(this, data);
+            GC gc = GC.cocoa_new(this.getApi(), data);
             gc.setFont(item.getFont(columnIndex));
             Color fg;
             if (isSelected && ((style & SWT.HIDE_SELECTION) == 0 || hasFocus)) {
@@ -1227,7 +1233,7 @@ public class Table extends Composite implements ITable {
             transform.concat();
             GCData data = new GCData();
             data.paintRect = cellRect;
-            GC gc = GC.cocoa_new(this, data);
+            GC gc = GC.cocoa_new(this.getApi(), data);
             gc.setFont(item.getFont(columnIndex));
             if (drawSelection) {
                 gc.setForeground(selectionForeground);
@@ -3005,7 +3011,7 @@ public class Table extends Composite implements ITable {
                 fixScrollWidth = true;
             return false;
         }
-        GC gc = new GC(this);
+        GC gc = new GC(this.getApi());
         int newWidth = item.calculateWidth(0, gc, isSelected(indexOf(item)));
         gc.dispose();
         int oldWidth = (int) firstColumn.width();
@@ -3029,7 +3035,7 @@ public class Table extends Composite implements ITable {
             fixScrollWidth = true;
             return false;
         }
-        GC gc = new GC(this);
+        GC gc = new GC(this.getApi());
         int newWidth = 0;
         for (int i = 0; i < items.length; i++) {
             TableItem item = items[i];
@@ -3512,7 +3518,7 @@ public class Table extends Composite implements ITable {
         int itemHeight = (int) Math.ceil(widget.rowHeight() + spacing.height);
         GCData data = new GCData();
         data.paintRect = widget.frame();
-        GC gc = GC.cocoa_new(this, data);
+        GC gc = GC.cocoa_new(this.getApi(), data);
         gc.setFont(item.getFont(columnIndex));
         Event event = new Event();
         event.item = item;

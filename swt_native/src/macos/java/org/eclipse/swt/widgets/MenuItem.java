@@ -596,11 +596,11 @@ public class MenuItem extends Item {
         getDelegate().setToolTipText(toolTip);
     }
 
-    MenuItem(IMenuItem delegate) {
+    protected MenuItem(IMenuItem delegate) {
         super(delegate);
     }
 
-    IMenuItem getDelegate() {
-        return (IMenuItem) delegate;
+    protected IMenuItem getDelegate() {
+        return (IMenuItem) super.getDelegate();
     }
 }

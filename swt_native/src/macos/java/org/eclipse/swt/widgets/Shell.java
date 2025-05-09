@@ -954,11 +954,11 @@ public class Shell extends Decorations {
         getDelegate().setVisible(visible);
     }
 
-    Shell(IShell delegate) {
+    protected Shell(IShell delegate) {
         super(delegate);
     }
 
-    IShell getDelegate() {
-        return (IShell) delegate;
+    protected IShell getDelegate() {
+        return (IShell) super.getDelegate();
     }
 }

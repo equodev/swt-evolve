@@ -25,12 +25,12 @@ public class RunnableLock {
 
     IRunnableLock delegate;
 
-    RunnableLock(IRunnableLock delegate) {
+    protected RunnableLock(IRunnableLock delegate) {
         this.delegate = delegate;
         delegate.setApi(this);
     }
 
-    IRunnableLock getDelegate() {
-        return (IRunnableLock) delegate;
+    protected IRunnableLock getDelegate() {
+        return delegate;
     }
 }

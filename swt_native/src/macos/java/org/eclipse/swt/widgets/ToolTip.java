@@ -346,11 +346,11 @@ public class ToolTip extends Widget {
         getDelegate().setVisible(visible);
     }
 
-    ToolTip(IToolTip delegate) {
+    protected ToolTip(IToolTip delegate) {
         super(delegate);
     }
 
-    IToolTip getDelegate() {
-        return (IToolTip) delegate;
+    protected IToolTip getDelegate() {
+        return (IToolTip) super.getDelegate();
     }
 }

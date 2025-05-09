@@ -133,11 +133,11 @@ public class Sash extends Control {
         getDelegate().removeSelectionListener(listener);
     }
 
-    Sash(ISash delegate) {
+    protected Sash(ISash delegate) {
         super(delegate);
     }
 
-    ISash getDelegate() {
-        return (ISash) delegate;
+    protected ISash getDelegate() {
+        return (ISash) super.getDelegate();
     }
 }

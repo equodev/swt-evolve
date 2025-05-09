@@ -80,12 +80,12 @@ public final class Touch {
 
     ITouch delegate;
 
-    Touch(ITouch delegate) {
+    protected Touch(ITouch delegate) {
         this.delegate = delegate;
         delegate.setApi(this);
     }
 
-    ITouch getDelegate() {
-        return (ITouch) delegate;
+    protected ITouch getDelegate() {
+        return delegate;
     }
 }

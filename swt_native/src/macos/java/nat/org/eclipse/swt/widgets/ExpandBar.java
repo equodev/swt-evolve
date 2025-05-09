@@ -17,10 +17,15 @@ package nat.org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
-import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Layout;
+import nat.org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.FontMetrics;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.IExpandBar;
 
 /**
@@ -188,7 +193,7 @@ public class ExpandBar extends Composite implements IExpandBar {
         if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
             if (itemCount > 0) {
                 height += spacing;
-                GC gc = new GC(this);
+                GC gc = new GC(this.getApi());
                 for (int i = 0; i < itemCount; i++) {
                     ExpandItem item = items[i];
                     height += item.getHeaderHeight();
@@ -258,7 +263,7 @@ public class ExpandBar extends Composite implements IExpandBar {
     int getBandHeight() {
         if (font == null)
             return ExpandItem.CHEVRON_SIZE;
-        GC gc = new GC(this);
+        GC gc = new GC(this.getApi());
         FontMetrics metrics = gc.getFontMetrics();
         gc.dispose();
         return Math.max(ExpandItem.CHEVRON_SIZE, metrics.getHeight());

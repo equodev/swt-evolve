@@ -585,11 +585,11 @@ public class Composite extends Scrollable {
         return getDelegate().toString();
     }
 
-    Composite(IComposite delegate) {
+    protected Composite(IComposite delegate) {
         super(delegate);
     }
 
-    IComposite getDelegate() {
-        return (IComposite) delegate;
+    protected IComposite getDelegate() {
+        return (IComposite) super.getDelegate();
     }
 }

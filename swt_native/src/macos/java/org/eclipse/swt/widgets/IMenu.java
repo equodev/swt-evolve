@@ -422,6 +422,4 @@ public interface IMenu extends IWidget {
     void setVisible(boolean visible);
 
     Menu getApi();
-
-    void setApi(Menu api);
 }

@@ -161,11 +161,11 @@ public class ColorDialog extends Dialog {
         getDelegate().setRGBs(rgbs);
     }
 
-    ColorDialog(IColorDialog delegate) {
+    protected ColorDialog(IColorDialog delegate) {
         super(delegate);
     }
 
-    IColorDialog getDelegate() {
-        return (IColorDialog) delegate;
+    protected IColorDialog getDelegate() {
+        return (IColorDialog) super.getDelegate();
     }
 }

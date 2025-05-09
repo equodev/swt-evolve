@@ -2117,6 +2117,4 @@ public interface IControl extends IWidget {
     void update();
 
     Control getApi();
-
-    void setApi(Control api);
 }

@@ -628,11 +628,11 @@ public class ToolItem extends Item {
         getDelegate().setWidth(width);
     }
 
-    ToolItem(IToolItem delegate) {
+    protected ToolItem(IToolItem delegate) {
         super(delegate);
     }
 
-    IToolItem getDelegate() {
-        return (IToolItem) delegate;
+    protected IToolItem getDelegate() {
+        return (IToolItem) super.getDelegate();
     }
 }

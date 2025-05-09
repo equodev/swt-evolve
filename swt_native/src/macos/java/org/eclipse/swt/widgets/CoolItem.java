@@ -425,11 +425,11 @@ public class CoolItem extends Item {
         getDelegate().setSize(size);
     }
 
-    CoolItem(ICoolItem delegate) {
+    protected CoolItem(ICoolItem delegate) {
         super(delegate);
     }
 
-    ICoolItem getDelegate() {
-        return (ICoolItem) delegate;
+    protected ICoolItem getDelegate() {
+        return (ICoolItem) super.getDelegate();
     }
 }

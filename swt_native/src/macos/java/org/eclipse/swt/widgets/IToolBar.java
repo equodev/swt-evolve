@@ -117,6 +117,4 @@ public interface IToolBar extends IComposite {
     void setVisible(boolean visible);
 
     ToolBar getApi();
-
-    void setApi(ToolBar api);
 }

@@ -414,6 +414,4 @@ public interface IScrollBar extends IWidget {
     void setVisible(boolean visible);
 
     ScrollBar getApi();
-
-    void setApi(ScrollBar api);
 }

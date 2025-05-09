@@ -184,11 +184,11 @@ public class DirectoryDialog extends Dialog {
         getDelegate().setFilterPath(string);
     }
 
-    DirectoryDialog(IDirectoryDialog delegate) {
+    protected DirectoryDialog(IDirectoryDialog delegate) {
         super(delegate);
     }
 
-    IDirectoryDialog getDelegate() {
-        return (IDirectoryDialog) delegate;
+    protected IDirectoryDialog getDelegate() {
+        return (IDirectoryDialog) super.getDelegate();
     }
 }

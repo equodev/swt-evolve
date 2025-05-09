@@ -356,11 +356,11 @@ public class Caret extends Widget {
         getDelegate().setVisible(visible);
     }
 
-    Caret(ICaret delegate) {
+    protected Caret(ICaret delegate) {
         super(delegate);
     }
 
-    ICaret getDelegate() {
-        return (ICaret) delegate;
+    protected ICaret getDelegate() {
+        return (ICaret) super.getDelegate();
     }
 }

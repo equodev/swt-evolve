@@ -102,11 +102,11 @@ public abstract class Item extends Widget {
         getDelegate().setText(string);
     }
 
-    Item(IItem delegate) {
+    protected Item(IItem delegate) {
         super(delegate);
     }
 
-    IItem getDelegate() {
-        return (IItem) delegate;
+    protected IItem getDelegate() {
+        return (IItem) super.getDelegate();
     }
 }

@@ -289,6 +289,4 @@ public interface ICoolItem extends IItem {
     void setSize(Point size);
 
     CoolItem getApi();
-
-    void setApi(CoolItem api);
 }

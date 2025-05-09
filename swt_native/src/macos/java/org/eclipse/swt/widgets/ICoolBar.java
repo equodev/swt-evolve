@@ -216,6 +216,4 @@ public interface ICoolBar extends IComposite {
     void setOrientation(int orientation);
 
     CoolBar getApi();
-
-    void setApi(CoolBar api);
 }

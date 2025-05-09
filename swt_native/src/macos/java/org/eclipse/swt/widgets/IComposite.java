@@ -455,6 +455,4 @@ public interface IComposite extends IScrollable {
     String toString();
 
     Composite getApi();
-
-    void setApi(Composite api);
 }

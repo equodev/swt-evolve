@@ -130,6 +130,4 @@ public interface IProgressBar extends IControl {
     void setState(int state);
 
     ProgressBar getApi();
-
-    void setApi(ProgressBar api);
 }

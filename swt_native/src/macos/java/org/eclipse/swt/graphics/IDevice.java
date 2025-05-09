@@ -1,45 +1,8 @@
-/**
- * ****************************************************************************
- *  Copyright (c) 2000, 2016 IBM Corporation and others.
- *
- *  This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License 2.0
- *  which accompanies this distribution, and is available at
- *  https://www.eclipse.org/legal/epl-2.0/
- *
- *  SPDX-License-Identifier: EPL-2.0
- *
- *  Contributors:
- *      IBM Corporation - initial API and implementation
- * *****************************************************************************
- */
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.internal.ExceptionStash;
-import org.eclipse.swt.internal.cocoa.*;
 
-/**
- * This class is the abstract superclass of all device objects,
- * such as the Display device and the Printer device. Devices
- * can have a graphics context (GC) created for them, and they
- * can be drawn on by sending messages to the associated GC.
- *
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
- */
-public abstract class Device implements Drawable {
-
-    /* Debugging */
-    public static boolean DEBUG;
-
-    boolean tracking = DEBUG;
-
-    /*
-* TEMPORARY CODE.
-*/
-    static synchronized Device getDevice() {
-        return nat.org.eclipse.swt.graphics.Device.getDevice().getApi();
-    }
+public interface IDevice {
 
     /**
      * @exception SWTException <ul>
@@ -47,9 +10,7 @@ public abstract class Device implements Drawable {
      * </ul>
      * @since 3.115
      */
-    public boolean isTracking() {
-        return getDelegate().isTracking();
-    }
+    boolean isTracking();
 
     /**
      * @exception SWTException <ul>
@@ -57,9 +18,7 @@ public abstract class Device implements Drawable {
      * </ul>
      * @since 3.115
      */
-    public void setTracking(boolean tracking) {
-        getDelegate().setTracking(tracking);
-    }
+    void setTracking(boolean tracking);
 
     /**
      * Disposes of the operating system resources associated with
@@ -71,13 +30,9 @@ public abstract class Device implements Drawable {
      * @see #destroy
      * @see #checkDevice
      */
-    public void dispose() {
-        getDelegate().dispose();
-    }
+    void dispose();
 
-    void dispose_Object(Object object) {
-        getDelegate().dispose_Object(object);
-    }
+    void dispose_Object(Object object);
 
     /**
      * Returns a rectangle describing the receiver's size and location.
@@ -88,9 +43,7 @@ public abstract class Device implements Drawable {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    public Rectangle getBounds() {
-        return getDelegate().getBounds();
-    }
+    Rectangle getBounds();
 
     /**
      * Returns a <code>DeviceData</code> based on the receiver.
@@ -105,9 +58,7 @@ public abstract class Device implements Drawable {
      *
      * @see DeviceData
      */
-    public DeviceData getDeviceData() {
-        return getDelegate().getDeviceData();
-    }
+    DeviceData getDeviceData();
 
     /**
      * Returns a rectangle which describes the area of the
@@ -121,9 +72,7 @@ public abstract class Device implements Drawable {
      *
      * @see #getBounds
      */
-    public Rectangle getClientArea() {
-        return getDelegate().getClientArea();
-    }
+    Rectangle getClientArea();
 
     /**
      * Returns the bit depth of the screen, which is the number of
@@ -137,9 +86,7 @@ public abstract class Device implements Drawable {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    public int getDepth() {
-        return getDelegate().getDepth();
-    }
+    int getDepth();
 
     /**
      * Returns a point whose x coordinate is the logical horizontal
@@ -152,9 +99,7 @@ public abstract class Device implements Drawable {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    public Point getDPI() {
-        return getDelegate().getDPI();
-    }
+    Point getDPI();
 
     /**
      * Returns <code>FontData</code> objects which describe
@@ -169,9 +114,7 @@ public abstract class Device implements Drawable {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    public FontData[] getFontList(String faceName, boolean scalable) {
-        return getDelegate().getFontList(faceName, scalable);
-    }
+    FontData[] getFontList(String faceName, boolean scalable);
 
     /**
      * Returns the matching standard color for the given
@@ -191,9 +134,7 @@ public abstract class Device implements Drawable {
      *
      * @see SWT
      */
-    public Color getSystemColor(int id) {
-        return getDelegate().getSystemColor(id);
-    }
+    Color getSystemColor(int id);
 
     /**
      * Returns a reasonable font for applications to use.
@@ -215,9 +156,7 @@ public abstract class Device implements Drawable {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    public Font getSystemFont() {
-        return getDelegate().getSystemFont();
-    }
+    Font getSystemFont();
 
     /**
      * Returns <code>true</code> if the underlying window system prints out
@@ -230,9 +169,7 @@ public abstract class Device implements Drawable {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    public boolean getWarnings() {
-        return getDelegate().getWarnings();
-    }
+    boolean getWarnings();
 
     /**
      * Invokes platform specific functionality to allocate a new GC handle.
@@ -249,8 +186,7 @@ public abstract class Device implements Drawable {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
-    public abstract long internal_new_GC(GCData data);
+    abstract long internal_new_GC(GCData data);
 
     /**
      * Invokes platform specific functionality to dispose a GC handle.
@@ -267,8 +203,7 @@ public abstract class Device implements Drawable {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
-    public abstract void internal_dispose_GC(long hDC, GCData data);
+    abstract void internal_dispose_GC(long hDC, GCData data);
 
     /**
      * Returns <code>true</code> if the device has been disposed,
@@ -280,9 +215,7 @@ public abstract class Device implements Drawable {
      *
      * @return <code>true</code> when the device is disposed and <code>false</code> otherwise
      */
-    public boolean isDisposed() {
-        return getDelegate().isDisposed();
-    }
+    boolean isDisposed();
 
     /**
      * Loads the font specified by a file.  The font will be
@@ -300,13 +233,9 @@ public abstract class Device implements Drawable {
      *
      * @since 3.3
      */
-    public boolean loadFont(String path) {
-        return getDelegate().loadFont(path);
-    }
+    boolean loadFont(String path);
 
-    void new_Object(Object object) {
-        getDelegate().new_Object(object);
-    }
+    void new_Object(Object object);
 
     /**
      * If the underlying window system supports printing warning messages
@@ -320,18 +249,9 @@ public abstract class Device implements Drawable {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    public void setWarnings(boolean warnings) {
-        getDelegate().setWarnings(warnings);
-    }
+    void setWarnings(boolean warnings);
 
-    IDevice delegate;
+    Device getApi();
 
-    protected Device(IDevice delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
-    }
-
-    protected IDevice getDelegate() {
-        return delegate;
-    }
+    void setApi(Device api);
 }

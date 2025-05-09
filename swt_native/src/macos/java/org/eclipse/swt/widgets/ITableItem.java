@@ -472,6 +472,4 @@ public interface ITableItem extends IItem {
     void setText(String string);
 
     TableItem getApi();
-
-    void setApi(TableItem api);
 }

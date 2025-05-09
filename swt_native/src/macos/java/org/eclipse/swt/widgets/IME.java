@@ -227,11 +227,11 @@ public class IME extends Widget {
         getDelegate().setCompositionOffset(offset);
     }
 
-    IME(IIME delegate) {
+    protected IME(IIME delegate) {
         super(delegate);
     }
 
-    IIME getDelegate() {
-        return (IIME) delegate;
+    protected IIME getDelegate() {
+        return (IIME) super.getDelegate();
     }
 }

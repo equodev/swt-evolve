@@ -254,6 +254,4 @@ public interface ISlider extends IControl {
     void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement);
 
     Slider getApi();
-
-    void setApi(Slider api);
 }

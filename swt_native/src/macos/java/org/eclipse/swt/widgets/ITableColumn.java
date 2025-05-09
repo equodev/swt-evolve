@@ -294,6 +294,4 @@ public interface ITableColumn extends IItem {
     void setWidth(int width);
 
     TableColumn getApi();
-
-    void setApi(TableColumn api);
 }

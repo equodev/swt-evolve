@@ -132,6 +132,4 @@ public interface ITabItem extends IItem {
     void setToolTipText(String string);
 
     TabItem getApi();
-
-    void setApi(TabItem api);
 }

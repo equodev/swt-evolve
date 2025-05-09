@@ -66,6 +66,4 @@ public interface IColorDialog extends IDialog {
     void setRGBs(RGB[] rgbs);
 
     ColorDialog getApi();
-
-    void setApi(ColorDialog api);
 }

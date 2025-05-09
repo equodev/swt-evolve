@@ -460,6 +460,4 @@ public interface IToolItem extends IItem {
     void setWidth(int width);
 
     ToolItem getApi();
-
-    void setApi(ToolItem api);
 }

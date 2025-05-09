@@ -57,12 +57,12 @@ public class EventTable {
 
     IEventTable delegate;
 
-    EventTable(IEventTable delegate) {
+    protected EventTable(IEventTable delegate) {
         this.delegate = delegate;
         delegate.setApi(this);
     }
 
-    IEventTable getDelegate() {
-        return (IEventTable) delegate;
+    protected IEventTable getDelegate() {
+        return delegate;
     }
 }

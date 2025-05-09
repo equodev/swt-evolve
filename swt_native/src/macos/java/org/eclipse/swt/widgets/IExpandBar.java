@@ -147,6 +147,4 @@ public interface IExpandBar extends IComposite {
     void setSpacing(int spacing);
 
     ExpandBar getApi();
-
-    void setApi(ExpandBar api);
 }

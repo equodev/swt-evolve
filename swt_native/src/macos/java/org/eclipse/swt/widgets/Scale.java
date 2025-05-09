@@ -287,11 +287,11 @@ public class Scale extends Control {
         getDelegate().setSelection(value);
     }
 
-    Scale(IScale delegate) {
+    protected Scale(IScale delegate) {
         super(delegate);
     }
 
-    IScale getDelegate() {
-        return (IScale) delegate;
+    protected IScale getDelegate() {
+        return (IScale) super.getDelegate();
     }
 }

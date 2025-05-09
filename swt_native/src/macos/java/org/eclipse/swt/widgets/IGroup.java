@@ -53,6 +53,4 @@ public interface IGroup extends IComposite {
     void setText(String string);
 
     Group getApi();
-
-    void setApi(Group api);
 }

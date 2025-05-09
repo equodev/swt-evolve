@@ -335,11 +335,11 @@ public class FileDialog extends Dialog {
         getDelegate().setOverwrite(overwrite);
     }
 
-    FileDialog(IFileDialog delegate) {
+    protected FileDialog(IFileDialog delegate) {
         super(delegate);
     }
 
-    IFileDialog getDelegate() {
-        return (IFileDialog) delegate;
+    protected IFileDialog getDelegate() {
+        return (IFileDialog) super.getDelegate();
     }
 }

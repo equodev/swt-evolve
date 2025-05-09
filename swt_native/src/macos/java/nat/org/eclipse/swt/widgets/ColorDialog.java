@@ -16,11 +16,9 @@
 package nat.org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
+import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Layout;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.IColorDialog;
 
 /**

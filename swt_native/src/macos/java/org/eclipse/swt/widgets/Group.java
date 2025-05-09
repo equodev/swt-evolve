@@ -138,11 +138,11 @@ public class Group extends Composite {
         getDelegate().setText(string);
     }
 
-    Group(IGroup delegate) {
+    protected Group(IGroup delegate) {
         super(delegate);
     }
 
-    IGroup getDelegate() {
-        return (IGroup) delegate;
+    protected IGroup getDelegate() {
+        return (IGroup) super.getDelegate();
     }
 }

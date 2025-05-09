@@ -442,11 +442,11 @@ public class TreeColumn extends Item {
         getDelegate().setWidth(width);
     }
 
-    TreeColumn(ITreeColumn delegate) {
+    protected TreeColumn(ITreeColumn delegate) {
         super(delegate);
     }
 
-    ITreeColumn getDelegate() {
-        return (ITreeColumn) delegate;
+    protected ITreeColumn getDelegate() {
+        return (ITreeColumn) super.getDelegate();
     }
 }

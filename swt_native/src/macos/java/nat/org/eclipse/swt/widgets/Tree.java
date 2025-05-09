@@ -17,11 +17,17 @@ package nat.org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
-import org.eclipse.swt.graphics.*;
+import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Layout;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.widgets.ITree;
 
 /**
@@ -539,7 +545,7 @@ public class Tree extends Composite implements ITree {
                     width += columns[i].getWidth();
                 }
             } else {
-                GC gc = new GC(this);
+                GC gc = new GC(this.getApi());
                 width = calculateWidth(items, 0, gc, true) + CELL_GAP;
                 gc.dispose();
             }
@@ -1151,7 +1157,7 @@ public class Tree extends Composite implements ITree {
             transform.concat();
             GCData data = new GCData();
             data.paintRect = cellRect;
-            GC gc = GC.cocoa_new(this, data);
+            GC gc = GC.cocoa_new(this.getApi(), data);
             gc.setFont(item.getFont(columnIndex));
             Color fg;
             if (isSelected && ((style & SWT.HIDE_SELECTION) == 0 || hasFocus)) {
@@ -1229,7 +1235,7 @@ public class Tree extends Composite implements ITree {
             NSRect contentRect = cell.titleRectForBounds(rect);
             GCData data = new GCData();
             data.paintRect = contentRect;
-            GC gc = GC.cocoa_new(this, data);
+            GC gc = GC.cocoa_new(this.getApi(), data);
             gc.setClipping((int) (contentRect.x - offsetX), (int) (contentRect.y - offsetY), (int) contentRect.width, (int) contentRect.height);
             Rectangle itemRect = insertItem.getImageBounds(0).union(insertItem.getBounds());
             Rectangle clientRect = getClientArea();
@@ -1325,7 +1331,7 @@ public class Tree extends Composite implements ITree {
             transform.concat();
             GCData data = new GCData();
             data.paintRect = cellRect;
-            GC gc = GC.cocoa_new(this, data);
+            GC gc = GC.cocoa_new(this.getApi(), data);
             gc.setFont(item.getFont(columnIndex));
             if (drawSelection) {
                 gc.setForeground(selectionForeground);
@@ -2898,7 +2904,7 @@ public class Tree extends Composite implements ITree {
         int itemHeight = (int) Math.ceil(widget.rowHeight() + spacing.height);
         GCData data = new GCData();
         data.paintRect = widget.frame();
-        GC gc = GC.cocoa_new(this, data);
+        GC gc = GC.cocoa_new(this.getApi(), data);
         gc.setFont(item.getFont(columnIndex));
         Event event = new Event();
         event.item = item;
@@ -3379,7 +3385,7 @@ public class Tree extends Composite implements ITree {
             return false;
         if (columnCount != 0)
             return false;
-        GC gc = new GC(this);
+        GC gc = new GC(this.getApi());
         int newWidth = calculateWidth(items, 0, gc, recurse);
         gc.dispose();
         if (!set) {
@@ -3401,7 +3407,7 @@ public class Tree extends Composite implements ITree {
         TreeItem parentItem = item.parentItem;
         if (parentItem != null && !parentItem.getExpanded())
             return false;
-        GC gc = new GC(this);
+        GC gc = new GC(this.getApi());
         int newWidth = item.calculateWidth(0, gc);
         gc.dispose();
         int oldWidth = (int) firstColumn.width();

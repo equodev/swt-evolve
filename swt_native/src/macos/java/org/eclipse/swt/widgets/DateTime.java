@@ -403,11 +403,11 @@ public class DateTime extends Composite {
         getDelegate().setYear(year);
     }
 
-    DateTime(IDateTime delegate) {
+    protected DateTime(IDateTime delegate) {
         super(delegate);
     }
 
-    IDateTime getDelegate() {
-        return (IDateTime) delegate;
+    protected IDateTime getDelegate() {
+        return (IDateTime) super.getDelegate();
     }
 }

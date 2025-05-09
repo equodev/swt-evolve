@@ -292,6 +292,4 @@ public interface ITreeColumn extends IItem {
     void setWidth(int width);
 
     TreeColumn getApi();
-
-    void setApi(TreeColumn api);
 }

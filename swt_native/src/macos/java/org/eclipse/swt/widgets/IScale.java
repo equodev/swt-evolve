@@ -190,6 +190,4 @@ public interface IScale extends IControl {
     void setSelection(int value);
 
     Scale getApi();
-
-    void setApi(Scale api);
 }

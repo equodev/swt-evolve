@@ -1131,6 +1131,4 @@ public interface ITable extends IComposite {
     void showSelection();
 
     Table getApi();
-
-    void setApi(Table api);
 }

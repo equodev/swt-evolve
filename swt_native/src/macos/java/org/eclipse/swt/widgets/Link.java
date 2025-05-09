@@ -225,11 +225,11 @@ public class Link extends Control {
         getDelegate().setText(string);
     }
 
-    Link(ILink delegate) {
+    protected Link(ILink delegate) {
         super(delegate);
     }
 
-    ILink getDelegate() {
-        return (ILink) delegate;
+    protected ILink getDelegate() {
+        return (ILink) super.getDelegate();
     }
 }

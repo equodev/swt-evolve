@@ -351,11 +351,11 @@ public class TrayItem extends Item {
         getDelegate().setVisible(visible);
     }
 
-    TrayItem(ITrayItem delegate) {
+    protected TrayItem(ITrayItem delegate) {
         super(delegate);
     }
 
-    ITrayItem getDelegate() {
-        return (ITrayItem) delegate;
+    protected ITrayItem getDelegate() {
+        return (ITrayItem) super.getDelegate();
     }
 }

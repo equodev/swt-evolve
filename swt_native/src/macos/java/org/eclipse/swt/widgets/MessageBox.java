@@ -166,11 +166,11 @@ public class MessageBox extends Dialog {
         getDelegate().setButtonLabels(labels);
     }
 
-    MessageBox(IMessageBox delegate) {
+    protected MessageBox(IMessageBox delegate) {
         super(delegate);
     }
 
-    IMessageBox getDelegate() {
-        return (IMessageBox) delegate;
+    protected IMessageBox getDelegate() {
+        return (IMessageBox) super.getDelegate();
     }
 }

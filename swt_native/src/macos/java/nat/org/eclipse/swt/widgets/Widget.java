@@ -21,9 +21,9 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.TypedListener;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.IWidget;
 
 /**
@@ -2549,13 +2549,13 @@ public abstract class Widget implements IWidget {
 
     void notifyCreationTracker() {
         if (WidgetSpy.isEnabled) {
-            WidgetSpy.getInstance().widgetCreated(this);
+            WidgetSpy.getInstance().widgetCreated(this.getApi());
         }
     }
 
     void notifyDisposalTracker() {
         if (WidgetSpy.isEnabled) {
-            WidgetSpy.getInstance().widgetDisposed(this);
+            WidgetSpy.getInstance().widgetDisposed(this.getApi());
         }
     }
 

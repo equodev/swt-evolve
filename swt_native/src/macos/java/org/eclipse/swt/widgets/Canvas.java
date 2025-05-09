@@ -212,11 +212,11 @@ public class Canvas extends Composite {
         getDelegate().setIME(ime.getDelegate());
     }
 
-    Canvas(ICanvas delegate) {
+    protected Canvas(ICanvas delegate) {
         super(delegate);
     }
 
-    ICanvas getDelegate() {
-        return (ICanvas) delegate;
+    protected ICanvas getDelegate() {
+        return (ICanvas) super.getDelegate();
     }
 }

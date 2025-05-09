@@ -499,6 +499,4 @@ public interface IShell extends IDecorations {
     void setVisible(boolean visible);
 
     Shell getApi();
-
-    void setApi(Shell api);
 }

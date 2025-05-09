@@ -51,12 +51,12 @@ public class Synchronizer {
 
     ISynchronizer delegate;
 
-    Synchronizer(ISynchronizer delegate) {
+    protected Synchronizer(ISynchronizer delegate) {
         this.delegate = delegate;
         delegate.setApi(this);
     }
 
-    ISynchronizer getDelegate() {
-        return (ISynchronizer) delegate;
+    protected ISynchronizer getDelegate() {
+        return delegate;
     }
 }

@@ -143,6 +143,4 @@ public interface IIME extends IWidget {
     void setCompositionOffset(int offset);
 
     IME getApi();
-
-    void setApi(IME api);
 }
