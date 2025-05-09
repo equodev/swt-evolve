@@ -22,6 +22,7 @@ import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.ITrayItem;
+import org.eclipse.swt.widgets.IToolTip;
 
 /**
  * Instances of this class represent icons that can be placed on the
@@ -422,7 +423,8 @@ public class TrayItem extends Item implements ITrayItem {
      *
      * @since 3.2
      */
-    public void setToolTip(ToolTip toolTip) {
+    public void setToolTip(IToolTip itoolTip) {
+        ToolTip toolTip = (ToolTip) itoolTip;
         checkWidget();
         ToolTip oldTip = this.toolTip, newTip = toolTip;
         if (oldTip != null)

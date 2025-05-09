@@ -27,6 +27,7 @@ import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.IShell;
+import org.eclipse.swt.widgets.IMenu;
 
 /**
  * Instances of this class represent the "windows"
@@ -1880,7 +1881,8 @@ public class Shell extends Decorations implements IShell {
     }
 
     @Override
-    public void setMenuBar(Menu menu) {
+    public void setMenuBar(IMenu imenu) {
+        Menu menu = (Menu) imenu;
         checkWidget();
         super.setMenuBar(menu);
         if (display.getActiveShell() == this) {

@@ -27,6 +27,7 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.IComposite;
+import org.eclipse.swt.widgets.IControl;
 
 /**
  * Instances of this class are controls which are capable
@@ -234,7 +235,8 @@ public class Composite extends Scrollable implements IComposite {
      * @since 3.1
      */
     @Deprecated
-    public void changed(Control[] changed) {
+    public void changed(IControl[] ichanged) {
+        Control[] changed = (Control[]) ichanged;
         layout(changed, SWT.DEFER);
     }
 
@@ -821,7 +823,8 @@ public class Composite extends Scrollable implements IComposite {
      *
      * @since 3.1
      */
-    public void layout(Control[] changed) {
+    public void layout(IControl[] ichanged) {
+        Control[] changed = (Control[]) ichanged;
         checkWidget();
         if (changed == null)
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -886,7 +889,8 @@ public class Composite extends Scrollable implements IComposite {
      *
      * @since 3.6
      */
-    public void layout(Control[] changed, int flags) {
+    public void layout(IControl[] ichanged, int flags) {
+        Control[] changed = (Control[]) ichanged;
         checkWidget();
         if (changed != null) {
             for (int i = 0; i < changed.length; i++) {
@@ -1293,7 +1297,8 @@ public class Composite extends Scrollable implements IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setTabList(Control[] tabList) {
+    public void setTabList(IControl[] itabList) {
+        Control[] tabList = (Control[]) itabList;
         checkWidget();
         if (tabList != null) {
             for (int i = 0; i < tabList.length; i++) {

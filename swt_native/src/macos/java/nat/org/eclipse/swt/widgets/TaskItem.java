@@ -20,6 +20,7 @@ import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.ITaskItem;
+import org.eclipse.swt.widgets.IMenu;
 
 /**
  * Instances of this class represent a task item.
@@ -256,7 +257,8 @@ public class TaskItem extends Item implements ITaskItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setMenu(Menu menu) {
+    public void setMenu(IMenu imenu) {
+        Menu menu = (Menu) imenu;
         checkWidget();
         if (menu != null) {
             if (menu.isDisposed())

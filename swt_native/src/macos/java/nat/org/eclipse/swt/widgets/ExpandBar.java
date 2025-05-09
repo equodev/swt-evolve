@@ -27,6 +27,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.FontMetrics;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.IExpandBar;
+import org.eclipse.swt.widgets.IExpandItem;
 
 /**
  * Instances of this class support the layout of selectable
@@ -372,7 +373,8 @@ public class ExpandBar extends Composite implements IExpandBar {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public int indexOf(ExpandItem item) {
+    public int indexOf(IExpandItem iitem) {
+        ExpandItem item = (ExpandItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);

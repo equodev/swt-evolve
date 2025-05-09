@@ -25,6 +25,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.ICoolBar;
+import org.eclipse.swt.widgets.ICoolItem;
 
 /**
  * Instances of this class provide an area for dynamically
@@ -343,7 +344,8 @@ public class CoolBar extends Composite implements ICoolBar {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public int indexOf(CoolItem item) {
+    public int indexOf(ICoolItem iitem) {
+        CoolItem item = (CoolItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);

@@ -21,6 +21,7 @@ import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.IMenu;
+import org.eclipse.swt.widgets.IMenuItem;
 
 /**
  * Instances of this class are user interface objects that contain
@@ -757,7 +758,8 @@ public class Menu extends Widget implements IMenu {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public int indexOf(MenuItem item) {
+    public int indexOf(IMenuItem iitem) {
+        MenuItem item = (MenuItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1036,7 +1038,8 @@ public class Menu extends Widget implements IMenu {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setDefaultItem(MenuItem item) {
+    public void setDefaultItem(IMenuItem iitem) {
+        MenuItem item = (MenuItem) iitem;
         checkWidget();
         if (item != null && item.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);

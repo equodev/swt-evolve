@@ -22,6 +22,7 @@ import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.IMenuItem;
+import org.eclipse.swt.widgets.IMenu;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -782,7 +783,8 @@ public class MenuItem extends Item implements IMenuItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setMenu(Menu menu) {
+    public void setMenu(IMenu imenu) {
+        Menu menu = (Menu) imenu;
         checkWidget();
         /* Check to make sure the new menu is valid */
         if ((style & SWT.CASCADE) == 0) {

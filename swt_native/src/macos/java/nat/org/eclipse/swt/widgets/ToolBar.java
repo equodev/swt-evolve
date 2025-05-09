@@ -22,6 +22,7 @@ import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.IToolBar;
+import org.eclipse.swt.widgets.IToolItem;
 
 /**
  * Instances of this class support the layout of selectable
@@ -546,7 +547,8 @@ public class ToolBar extends Composite implements IToolBar {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public int indexOf(ToolItem item) {
+    public int indexOf(IToolItem iitem) {
+        ToolItem item = (ToolItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);

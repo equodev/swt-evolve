@@ -29,6 +29,8 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.widgets.ITable;
+import org.eclipse.swt.widgets.ITableColumn;
+import org.eclipse.swt.widgets.ITableItem;
 
 /**
  * Instances of this class implement a selectable user interface
@@ -2039,7 +2041,8 @@ public class Table extends Composite implements ITable {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public int indexOf(TableColumn column) {
+    public int indexOf(ITableColumn icolumn) {
+        TableColumn column = (TableColumn) icolumn;
         checkWidget();
         if (column == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -2067,7 +2070,8 @@ public class Table extends Composite implements ITable {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public int indexOf(TableItem item) {
+    public int indexOf(ITableItem iitem) {
+        TableItem item = (TableItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -3174,7 +3178,8 @@ public class Table extends Composite implements ITable {
      *
      * @since 3.2
      */
-    public void setSelection(TableItem item) {
+    public void setSelection(ITableItem iitem) {
+        TableItem item = (TableItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -3206,7 +3211,8 @@ public class Table extends Composite implements ITable {
      * @see Table#select(int[])
      * @see Table#setSelection(int[])
      */
-    public void setSelection(TableItem[] items) {
+    public void setSelection(ITableItem[] iitems) {
+        TableItem[] items = (TableItem[]) iitems;
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -3251,7 +3257,8 @@ public class Table extends Composite implements ITable {
      *
      * @since 3.2
      */
-    public void setSortColumn(TableColumn column) {
+    public void setSortColumn(ITableColumn icolumn) {
+        TableColumn column = (TableColumn) icolumn;
         checkWidget();
         if (column != null && column.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -3358,7 +3365,8 @@ public class Table extends Composite implements ITable {
      *
      * @since 3.0
      */
-    public void showColumn(TableColumn column) {
+    public void showColumn(ITableColumn icolumn) {
+        TableColumn column = (TableColumn) icolumn;
         checkWidget();
         if (column == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -3424,7 +3432,8 @@ public class Table extends Composite implements ITable {
      *
      * @see Table#showSelection()
      */
-    public void showItem(TableItem item) {
+    public void showItem(ITableItem iitem) {
+        TableItem item = (TableItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);

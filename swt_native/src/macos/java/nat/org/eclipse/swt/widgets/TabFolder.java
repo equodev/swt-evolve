@@ -23,6 +23,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ITabFolder;
+import org.eclipse.swt.widgets.ITabItem;
 
 /**
  * Instances of this class implement the notebook user interface
@@ -426,7 +427,8 @@ public class TabFolder extends Composite implements ITabFolder {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public int indexOf(TabItem item) {
+    public int indexOf(ITabItem iitem) {
+        TabItem item = (TabItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -568,7 +570,8 @@ public class TabFolder extends Composite implements ITabFolder {
      *
      * @since 3.2
      */
-    public void setSelection(TabItem item) {
+    public void setSelection(ITabItem iitem) {
+        TabItem item = (TabItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -590,7 +593,8 @@ public class TabFolder extends Composite implements ITabFolder {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setSelection(TabItem[] items) {
+    public void setSelection(ITabItem[] iitems) {
+        TabItem[] items = (TabItem[]) iitems;
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);

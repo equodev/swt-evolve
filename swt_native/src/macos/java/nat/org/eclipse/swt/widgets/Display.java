@@ -26,6 +26,7 @@ import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.EventTable;
 import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Cursor;
@@ -35,6 +36,9 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.IDisplay;
+import org.eclipse.swt.widgets.IWidget;
+import org.eclipse.swt.widgets.IControl;
+import org.eclipse.swt.widgets.ISynchronizer;
 
 /**
  * Instances of this class are responsible for managing the
@@ -1327,7 +1331,8 @@ public class Display extends Device implements Executor, IDisplay {
      *
      * @since 3.3
      */
-    public Widget findWidget(Widget widget, long id) {
+    public Widget findWidget(IWidget iwidget, long id) {
+        Widget widget = (Widget) iwidget;
         checkDevice();
         return null;
     }
@@ -3746,7 +3751,9 @@ public class Display extends Device implements Executor, IDisplay {
      *
      * @since 2.1.2
      */
-    public Point map(Control from, Control to, Point point) {
+    public Point map(IControl ifrom, IControl ito, Point point) {
+        Control to = (Control) ito;
+        Control from = (Control) ifrom;
         checkDevice();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -3789,7 +3796,9 @@ public class Display extends Device implements Executor, IDisplay {
      *
      * @since 2.1.2
      */
-    public Point map(Control from, Control to, int x, int y) {
+    public Point map(IControl ifrom, IControl ito, int x, int y) {
+        Control to = (Control) ito;
+        Control from = (Control) ifrom;
         checkDevice();
         if (from != null && from.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -3873,7 +3882,9 @@ public class Display extends Device implements Executor, IDisplay {
      *
      * @since 2.1.2
      */
-    public Rectangle map(Control from, Control to, Rectangle rectangle) {
+    public Rectangle map(IControl ifrom, IControl ito, Rectangle rectangle) {
+        Control to = (Control) ito;
+        Control from = (Control) ifrom;
         checkDevice();
         if (rectangle == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -3918,7 +3929,9 @@ public class Display extends Device implements Executor, IDisplay {
      *
      * @since 2.1.2
      */
-    public Rectangle map(Control from, Control to, int x, int y, int width, int height) {
+    public Rectangle map(IControl ifrom, IControl ito, int x, int y, int width, int height) {
+        Control to = (Control) ito;
+        Control from = (Control) ifrom;
         checkDevice();
         if (from != null && from.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -5233,7 +5246,8 @@ public class Display extends Device implements Executor, IDisplay {
      *    <li>ERROR_FAILED_EXEC - if an exception occurred while running an inter-thread message</li>
      * </ul>
      */
-    public void setSynchronizer(Synchronizer synchronizer) {
+    public void setSynchronizer(ISynchronizer isynchronizer) {
+        Synchronizer synchronizer = (Synchronizer) isynchronizer;
         checkDevice();
         if (synchronizer == null)
             error(SWT.ERROR_NULL_ARGUMENT);

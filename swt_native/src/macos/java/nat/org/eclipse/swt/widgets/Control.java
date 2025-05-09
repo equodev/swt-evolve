@@ -35,6 +35,8 @@ import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.widgets.IControl;
+import org.eclipse.swt.widgets.IMenu;
+import org.eclipse.swt.widgets.IComposite;
 
 /**
  * Control is the abstract superclass of all windowed user interface classes.
@@ -2784,7 +2786,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      * @see Control#moveBelow
      * @see Composite#getChildren
      */
-    public void moveAbove(Control control) {
+    public void moveAbove(IControl icontrol) {
+        Control control = (Control) icontrol;
         checkWidget();
         if (control != null) {
             if (control.isDisposed())
@@ -2815,7 +2818,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      * @see Control#moveAbove
      * @see Composite#getChildren
      */
-    public void moveBelow(Control control) {
+    public void moveBelow(IControl icontrol) {
+        Control control = (Control) icontrol;
         checkWidget();
         if (control != null) {
             if (control.isDisposed())
@@ -4232,7 +4236,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setMenu(Menu menu) {
+    public void setMenu(IMenu imenu) {
+        Menu menu = (Menu) imenu;
         checkWidget();
         if (menu != null) {
             if (menu.isDisposed())
@@ -4280,7 +4285,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      *     <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * 	</ul>
      */
-    public boolean setParent(Composite parent) {
+    public boolean setParent(IComposite iparent) {
+        Composite parent = (Composite) iparent;
         checkWidget();
         if (parent == null)
             error(SWT.ERROR_NULL_ARGUMENT);

@@ -25,6 +25,8 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.ICanvas;
+import org.eclipse.swt.widgets.ICaret;
+import org.eclipse.swt.widgets.IIME;
 
 /**
  * Instances of this class provide a surface for drawing
@@ -570,7 +572,8 @@ public class Canvas extends Composite implements ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setCaret(Caret caret) {
+    public void setCaret(ICaret icaret) {
+        Caret caret = (Caret) icaret;
         checkWidget();
         Caret newCaret = caret;
         Caret oldCaret = this.caret;
@@ -621,7 +624,8 @@ public class Canvas extends Composite implements ICanvas {
      *
      * @since 3.4
      */
-    public void setIME(IME ime) {
+    public void setIME(IIME iime) {
+        IME ime = (IME) iime;
         checkWidget();
         if (ime != null && ime.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);

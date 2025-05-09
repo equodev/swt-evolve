@@ -22,6 +22,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.IExpandItem;
+import org.eclipse.swt.widgets.IControl;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -333,7 +334,8 @@ public class ExpandItem extends Item implements IExpandItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setControl(Control control) {
+    public void setControl(IControl icontrol) {
+        Control control = (Control) icontrol;
         checkWidget();
         if (control != null) {
             if (control.isDisposed())

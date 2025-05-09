@@ -983,7 +983,8 @@ public class TreeItem extends Item implements ITreeItem {
      *
      * @since 3.1
      */
-    public int indexOf(TreeItem item) {
+    public int indexOf(ITreeItem iitem) {
+        TreeItem item = (TreeItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);

@@ -17,6 +17,7 @@ package nat.org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.widgets.ITaskBar;
+import org.eclipse.swt.widgets.IShell;
 
 /**
  * Instances of this class represent the system task bar.
@@ -136,7 +137,8 @@ public class TaskBar extends Widget implements ITaskBar {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public TaskItem getItem(Shell shell) {
+    public TaskItem getItem(IShell ishell) {
+        Shell shell = (Shell) ishell;
         checkWidget();
         for (int i = 0; i < itemCount; i++) {
             if (items[i] != null && items[i].shell == shell) {

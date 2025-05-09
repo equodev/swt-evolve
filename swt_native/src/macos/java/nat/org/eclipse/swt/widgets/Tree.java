@@ -29,6 +29,8 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.widgets.ITree;
+import org.eclipse.swt.widgets.ITreeItem;
+import org.eclipse.swt.widgets.ITreeColumn;
 
 /**
  * Instances of this class provide a selectable user interface object
@@ -905,7 +907,8 @@ public class Tree extends Composite implements ITree {
      *
      * @since 3.4
      */
-    public void deselect(TreeItem item) {
+    public void deselect(ITreeItem iitem) {
+        TreeItem item = (TreeItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -2126,7 +2129,8 @@ public class Tree extends Composite implements ITree {
      *
      * @since 3.1
      */
-    public int indexOf(TreeColumn column) {
+    public int indexOf(ITreeColumn icolumn) {
+        TreeColumn column = (TreeColumn) icolumn;
         checkWidget();
         if (column == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -2159,7 +2163,8 @@ public class Tree extends Composite implements ITree {
      *
      * @since 3.1
      */
-    public int indexOf(TreeItem item) {
+    public int indexOf(ITreeItem iitem) {
+        TreeItem item = (TreeItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -2768,7 +2773,8 @@ public class Tree extends Composite implements ITree {
      *     <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      *  </ul>
      */
-    public void setInsertMark(TreeItem item, boolean before) {
+    public void setInsertMark(ITreeItem iitem, boolean before) {
+        TreeItem item = (TreeItem) iitem;
         checkWidget();
         if (item != null && item.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -2820,7 +2826,8 @@ public class Tree extends Composite implements ITree {
      *
      * @since 3.4
      */
-    public void select(TreeItem item) {
+    public void select(ITreeItem iitem) {
+        TreeItem item = (TreeItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -3451,7 +3458,8 @@ public class Tree extends Composite implements ITree {
      *
      * @since 3.2
      */
-    public void setSelection(TreeItem item) {
+    public void setSelection(ITreeItem iitem) {
+        TreeItem item = (TreeItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -3481,7 +3489,8 @@ public class Tree extends Composite implements ITree {
      *
      * @see Tree#deselectAll()
      */
-    public void setSelection(TreeItem[] items) {
+    public void setSelection(ITreeItem[] iitems) {
+        TreeItem[] items = (TreeItem[]) iitems;
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -3519,7 +3528,8 @@ public class Tree extends Composite implements ITree {
      *
      * @since 3.2
      */
-    public void setSortColumn(TreeColumn column) {
+    public void setSortColumn(ITreeColumn icolumn) {
+        TreeColumn column = (TreeColumn) icolumn;
         checkWidget();
         if (column != null && column.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -3590,7 +3600,8 @@ public class Tree extends Composite implements ITree {
      *
      * @since 2.1
      */
-    public void setTopItem(TreeItem item) {
+    public void setTopItem(ITreeItem iitem) {
+        TreeItem item = (TreeItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -3636,7 +3647,8 @@ public class Tree extends Composite implements ITree {
      *
      * @since 3.1
      */
-    public void showColumn(TreeColumn column) {
+    public void showColumn(ITreeColumn icolumn) {
+        TreeColumn column = (TreeColumn) icolumn;
         checkWidget();
         if (column == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -3670,7 +3682,8 @@ public class Tree extends Composite implements ITree {
      *
      * @see Tree#showSelection()
      */
-    public void showItem(TreeItem item) {
+    public void showItem(ITreeItem iitem) {
+        TreeItem item = (TreeItem) iitem;
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);

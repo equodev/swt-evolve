@@ -21,6 +21,8 @@ import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.IDecorations;
+import org.eclipse.swt.widgets.IButton;
+import org.eclipse.swt.widgets.IMenu;
 
 /**
  * Instances of this class provide the appearance and
@@ -505,7 +507,8 @@ public class Decorations extends Canvas implements IDecorations {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setDefaultButton(Button button) {
+    public void setDefaultButton(IButton ibutton) {
+        Button button = (Button) ibutton;
         checkWidget();
         if (button != null) {
             if (button.isDisposed())
@@ -648,7 +651,8 @@ public class Decorations extends Canvas implements IDecorations {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setMenuBar(Menu menu) {
+    public void setMenuBar(IMenu imenu) {
+        Menu menu = (Menu) imenu;
         checkWidget();
         if (menuBar == menu)
             return;
