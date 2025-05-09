@@ -8,15 +8,14 @@ import 'package:swtflutter/src/widgets.dart';
 import '../swt/tabfolder.dart';
 import '../swt/tabitem.dart';
 
-
 import '../impl/composite_impl.dart';
 import 'icons_map.dart';
-
 
 class TabFolderImpl<T extends TabFolderSwt, V extends TabFolderValue>
     extends CompositeImpl<T, V> {
 
   final bool useDarkTheme = getCurrentTheme();
+  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -30,35 +29,65 @@ class TabFolderImpl<T extends TabFolderSwt, V extends TabFolderValue>
 
   @override
   Widget build(BuildContext context) {
-    return CustomTabView(
-      tabs: tabItemsList(),
-      children: tabBodiesList(),
-      useDarkTheme: useDarkTheme,
+    final tabItems = getTabItems();
+    final tabBodies = getTabBodies();
+
+    return Column(
+      children: [
+        CustomTabBar(
+          tabs: tabItems,
+          initialSelectedIndex: _selectedIndex,
+          useDarkTheme: useDarkTheme,
+          onTabChanged: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+        ),
+        Expanded(
+          child: IndexedStack(
+            index: _selectedIndex,
+            children: tabBodies,
+          ),
+        ),
+      ],
     );
   }
 
-  List<TabItem> tabItemsList() {
+  List<TabItem> getTabItems() {
     if (state.children == null) {
       return [];
     }
     return state.children!
-        .map((e) => e as TabItemValue)
-        .map((e) => TabItem(label: e.text ?? "", image: e.image))
+        .whereType<TabItemValue>()
+        .map((tabItem) => getWidgetForTabItem(tabItem))
         .toList();
   }
 
-  List<Widget> tabBodiesList() {
+  TabItem getWidgetForTabItem(TabItemValue tabItem) {
+    // Create the TabItem instance using the TabItemSwt to render
+    final tabItemWidget = TabItemSwt(value: tabItem);
+
+    return TabItem(
+      label: tabItem.text ?? "",
+      image: tabItem.image,
+      showCloseButton: true,
+      customContent: tabItemWidget,
+    );
+  }
+
+  List<Widget> getTabBodies() {
     if (state.children == null) {
       return <Widget>[];
     }
     return state.children!
-        .map((e) => e as TabItemValue)
+        .whereType<TabItemValue>()
         .map((e) => tabBody(e))
         .toList();
   }
 
   Widget tabBody(TabItemValue e) {
-    if (e.children != null) {
+    if (e.children != null && e.children!.isNotEmpty) {
       return mapWidgetFromValue(e.children!.first);
     }
     return Container();
@@ -107,12 +136,9 @@ class _CustomTabBarState extends State<CustomTabBar> {
           builder: (context) {
             final theme = Theme.of(context);
             final isDark = theme.brightness == Brightness.dark;
-            final backgroundColor = isDark ? Color(0xFF1E1E1E) : Color(
-                0xFFF2F2F2);
-            final borderColor = isDark ? Color(0xFF333333) : Color(
-                0xFFDDDDDD);
-            final iconColor = isDark ? Colors.grey.shade400 : Colors.grey
-                .shade600;
+            final backgroundColor = isDark ? Color(0xFF1E1E1E) : Color(0xFFF2F2F2);
+            final borderColor = isDark ? Color(0xFF333333) : Color(0xFFDDDDDD);
+            final iconColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
 
             return Container(
               height: 28,
@@ -134,14 +160,13 @@ class _CustomTabBarState extends State<CustomTabBar> {
                     return _buildTab(
                       context: context,
                       isSelected: index == _selectedTabIndex,
-                      label: tab.label,
+                      tab: tab,
                       onTap: () {
                         setState(() {
                           _selectedTabIndex = index;
                         });
                         widget.onTabChanged(index);
                       },
-                      showCloseButton: tab.showCloseButton,
                       onClose: tab.showCloseButton ? () {
                         if (tab.onClose != null) {
                           tab.onClose!();
@@ -149,7 +174,6 @@ class _CustomTabBarState extends State<CustomTabBar> {
                           widget.onCloseTab!();
                         }
                       } : null,
-                      icon: tab.image,
                     );
                   }).toList(),
 
@@ -177,28 +201,22 @@ class _CustomTabBarState extends State<CustomTabBar> {
   Widget _buildTab({
     required BuildContext context,
     required bool isSelected,
-    required String label,
+    required TabItem tab,
     required VoidCallback onTap,
-    required bool showCloseButton,
     VoidCallback? onClose,
-    String? icon,
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final backgroundColor = isDark ? Color(0xFF1A1A1A) : Color(
-        0xFFF2F2F2);
-    final selectedColor = isDark ? Color(0xFF2D2D2D) : Colors
-        .white;
-
+    final backgroundColor = isDark ? Color(0xFF1A1A1A) : Color(0xFFF2F2F2);
+    final selectedColor = isDark ? Color(0xFF2D2D2D) : Colors.white;
     final borderColor = isDark ? Color(0xFF333333) : Color(0xFFDDDDDD);
 
-    final textColor = isDark ? Colors.grey.shade500 : Colors.grey
-        .shade600;
-    final selectedTextColor = isDark ? Colors.white : Colors.grey
-        .shade900;
+    // Colores para texto e iconos
+    final textColor = isDark ? Colors.grey.shade500 : Colors.grey.shade600;
+    final selectedTextColor = isDark ? Colors.white : Colors.grey.shade900; // Blanco cuando seleccionado en tema oscuro
 
-
+    // Colores para iconos - Blanco cuando seleccionado en tema oscuro
     final iconColor = isDark
         ? (isSelected ? Colors.white : Colors.grey.shade600)
         : (isSelected ? Colors.grey.shade900 : Colors.grey.shade500);
@@ -206,10 +224,7 @@ class _CustomTabBarState extends State<CustomTabBar> {
     final closeIconColor = isDark
         ? (isSelected ? Colors.white.withOpacity(0.9) : Colors.grey.shade600)
         : (isSelected ? Colors.grey.shade700 : Colors.grey.shade400);
-
-
-    final activeTabIndicatorColor = isDark ? Color(0xFF6366F1) : theme
-        .primaryColor; // Color azul según la imagen
+    final activeTabIndicatorColor = isDark ? Color(0xFF6366F1) : theme.primaryColor;
 
     return InkWell(
       onTap: onTap,
@@ -243,34 +258,48 @@ class _CustomTabBarState extends State<CustomTabBar> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            icon != null
-                ? Padding(
-              padding: const EdgeInsets.only(bottom: 1.0, right: 3.0),
-              child: !materialIconMap.containsKey(icon)
-                  ? Image.file(
-                File(icon),
-                width: 16,
-                height: 16,
-              )
-                  : Icon(
-                  getMaterialIconByName(icon),
-                  size: 16,
-                  color: iconColor
+            // Usar el widget personalizado cuando está disponible, o construir uno básico
+            tab.customContent != null
+                ? DefaultTextStyle(
+              style: TextStyle(
+                fontSize: 12,
+                color: isSelected ? selectedTextColor : textColor,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, // Aquí puedes ajustar la negrita para tabs seleccionados
               ),
+              child: tab.customContent!,
             )
-                : const SizedBox(),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 2.0),
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isSelected ? selectedTextColor : textColor,
-                  fontWeight: isSelected ?FontWeight.w600 : FontWeight.normal,
+                : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (tab.image != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 1.0, right: 3.0),
+                    child: !materialIconMap.containsKey(tab.image)
+                        ? Image.file(
+                      File(tab.image!),
+                      width: 16,
+                      height: 16,
+                    )
+                        : Icon(
+                        getMaterialIconByName(tab.image!),
+                        size: 16,
+                        color: iconColor
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 2.0),
+                  child: Text(
+                    tab.label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isSelected ? selectedTextColor : textColor,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, // Aquí puedes ajustar la negrita para tabs seleccionados
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-            if (showCloseButton) ...[
+            if (tab.showCloseButton) ...[
               const SizedBox(width: 6),
               MouseRegion(
                 cursor: SystemMouseCursors.click,
@@ -293,12 +322,14 @@ class _CustomTabBarState extends State<CustomTabBar> {
     );
   }
 }
+
 class TabItem {
   final String label;
   final String? image;
   final bool showCloseButton;
   final VoidCallback? onClose;
   final bool alignRight;
+  final Widget? customContent;  // Nuevo campo para permitir contenido personalizado
 
   TabItem({
     required this.label,
@@ -306,6 +337,7 @@ class TabItem {
     this.showCloseButton = true,
     this.onClose,
     this.alignRight = false,
+    this.customContent,  // Nuevo campo opcional
   });
 }
 
