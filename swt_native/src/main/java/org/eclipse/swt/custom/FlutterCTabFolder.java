@@ -9,6 +9,8 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.internal.CtabfolderSwtSizingConstants;
+import org.eclipse.swt.internal.TabfolderSwtSizingConstants;
 import org.eclipse.swt.values.CTabFolderValue;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
@@ -1960,9 +1962,50 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
         // TODO Auto-generated method stub
     }
 
+    // --- Generated computeSize method for Tabfolder ---
+    // IMPORTANT: Review and adjust the parameter initializations (TODO sections)
+    // and SWT style checks below to match the specific behavior of Tabfolder.
     @Override
-    public Point computeSize(int width, int height, boolean changed) {
-        return new Point(width == SWT.DEFAULT ? 100 : width, 28);
+    public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
+        int width = 0;
+        int height = 0;
+
+        // --- Layout-specific calculations for TabFolder ---
+        // This part would be custom for TabFolder and not fully auto-generated beyond a template
+        double accumulatedWidth = 0;
+        double maxChildHeight = 0;
+        int visibleItemCount = 0;
+
+        // Assuming getItems() returns the TabItems or equivalent Control objects
+        ICTabItem[] items = getItems();
+
+        for (ICTabItem item : items) {
+            if (!item.getControl().getVisible()) continue; // Or however visibility is handled
+
+            Point itemSize = item.computeSize(); // Get preferred size of child
+
+            if (visibleItemCount > 0) {
+                accumulatedWidth += TabfolderSwtSizingConstants.TAB_SPACING; // Constant for spacing
+            }
+            accumulatedWidth += itemSize.x;
+            maxChildHeight = Math.max(maxChildHeight, itemSize.y);
+            visibleItemCount++;
+        }
+
+        // Add TabFolder's own padding
+        width = (int) (accumulatedWidth + 2 * TabfolderSwtSizingConstants.TAB_HORIZONTAL_PADDING);
+        height = (int) (maxChildHeight + 2 * TabfolderSwtSizingConstants.TAB_VERTICAL_PADDING);
+
+        // --- Apply hints and border (standard part from your generator) ---
+        if (wHint != SWT.DEFAULT) width = wHint;
+        if (hHint != SWT.DEFAULT) height = hHint;
+
+        int borderWidth = (int) TabfolderSwtSizingConstants.BORDER_WIDTH; // Assuming this method exists
+        width += borderWidth * 2;
+        height += borderWidth * 2;
+
+        return new Point(width, height);
     }
 
     public String toString() {

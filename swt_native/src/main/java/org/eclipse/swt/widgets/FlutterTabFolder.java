@@ -2,9 +2,11 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.custom.ICTabItem;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.internal.TabfolderSwtSizingConstants;
 import org.eclipse.swt.values.TabFolderValue;
 
 /**
@@ -405,5 +407,48 @@ public class FlutterTabFolder extends FlutterComposite implements ITabFolder{
         if (builder == null)
             builder = TabFolderValue.builder().setId(handle).setStyle(style);
         return (TabFolderValue.Builder) builder;
+    }
+
+    @Override
+    public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
+        int width = 0;
+        int height = 0;
+
+        // --- Layout-specific calculations for TabFolder ---
+        // This part would be custom for TabFolder and not fully auto-generated beyond a template
+        double accumulatedWidth = 0;
+        double maxChildHeight = 0;
+        int visibleItemCount = 0;
+
+        // Assuming getItems() returns the TabItems or equivalent Control objects
+        ITabItem[] items = getItems();
+
+        for (ITabItem item : items) {
+            if (!item.getControl().getVisible()) continue; // Or however visibility is handled
+
+            Point itemSize = item.computeSize(); // Get preferred size of child
+
+            if (visibleItemCount > 0) {
+                accumulatedWidth += TabfolderSwtSizingConstants.TAB_SPACING; // Constant for spacing
+            }
+            accumulatedWidth += itemSize.x;
+            maxChildHeight = Math.max(maxChildHeight, itemSize.y);
+            visibleItemCount++;
+        }
+
+        // Add TabFolder's own padding
+        width = (int) (accumulatedWidth + 2 * TabfolderSwtSizingConstants.TAB_HORIZONTAL_PADDING);
+        height = (int) (maxChildHeight + 2 * TabfolderSwtSizingConstants.TAB_VERTICAL_PADDING);
+
+        // --- Apply hints and border (standard part from your generator) ---
+        if (wHint != SWT.DEFAULT) width = wHint;
+        if (hHint != SWT.DEFAULT) height = hHint;
+
+        int borderWidth = (int) TabfolderSwtSizingConstants.BORDER_WIDTH; // Assuming this method exists
+        width += borderWidth * 2;
+        height += borderWidth * 2;
+
+        return new Point(width, height);
     }
 }

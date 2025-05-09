@@ -524,6 +524,11 @@ public class SWTTabItem extends SWTItem implements ITabItem {
     }
 
     @Override
+    public Point computeSize() {
+        return null;
+    }
+
+    @Override
     long dpiChanged(long object, long arg0) {
         super.dpiChanged(object, arg0);
         if (image != null) {

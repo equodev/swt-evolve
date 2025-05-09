@@ -3,7 +3,9 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.internal.TabitemSwtSizingConstants;
 import org.eclipse.swt.values.TabItemValue;
 
 import java.util.ArrayList;
@@ -257,6 +259,27 @@ public class FlutterTabItem extends FlutterItem implements ITabItem {
     public void setToolTipText(String string) {
         builder().setToolTipText(string);
         FlutterSwt.dirty(this);
+    }
+
+    // --- Generated computeSize method for Ctabitem ---
+    // IMPORTANT: Review and adjust the parameter initializations (TODO sections)
+    // and SWT style checks below to match the specific behavior of Ctabitem.
+    @Override
+    public Point computeSize() {
+        checkWidget();
+        int width = 0;
+        int height = 0;
+
+        // --- Parameter initializations---
+        boolean hasImage = getImage() != null;
+        boolean hasText = getText() != null && !getText().isEmpty();
+        double textLength = hasText ? getText().length() : 0.0;
+
+        // --- Style-based calculations ---
+        width = (int) (TabitemSwtSizingConstants.RIGHT_PADDING + (hasImage ? (TabitemSwtSizingConstants.ICON_SIZE + TabitemSwtSizingConstants.ICON_RIGHT_PADDING) : 0.0) + (hasText ? (textLength * TabitemSwtSizingConstants.AVERAGE_CHAR_WIDTH) : 0.0));
+        height = (int) (Math.max(TabitemSwtSizingConstants.TEXT_HEIGHT + TabitemSwtSizingConstants.TEXT_BOTTOM_PADDING, hasImage ? (TabitemSwtSizingConstants.ICON_SIZE + TabitemSwtSizingConstants.ICON_BOTTOM_PADDING) : 0.0));
+
+        return new Point(width, height);
     }
 
     public TabItemValue.Builder builder() {

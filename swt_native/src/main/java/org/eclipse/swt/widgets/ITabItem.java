@@ -134,4 +134,6 @@ public interface ITabItem extends IItem {
      * </ul>
      */
     void setToolTipText(String string);
+
+    Point computeSize();
 }
