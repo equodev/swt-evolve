@@ -133,7 +133,7 @@ public class BorderLayout extends Layout {
     public double heightDistributionFactor = 0.5;
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         if (hHint > SWT.DEFAULT && wHint > SWT.DEFAULT) {
             return new Point(wHint, hHint);
         }
@@ -252,7 +252,7 @@ public class BorderLayout extends Layout {
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(Composite composite, boolean flushCache) {
         Rectangle clientArea = composite.getClientArea();
         int clientX = clientArea.x + marginWidth;
         int clientY = clientArea.y + marginHeight;

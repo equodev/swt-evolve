@@ -167,7 +167,7 @@ public final class GridLayout extends Layout {
     }
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         Point size = layout(composite, false, 0, 0, wHint, hHint, flushCache);
         if (wHint != SWT.DEFAULT)
             size.x = wHint;
@@ -177,7 +177,7 @@ public final class GridLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(Control control) {
         Object data = control.getLayoutData();
         if (data != null)
             ((GridData) data).flushCache();
@@ -203,7 +203,7 @@ public final class GridLayout extends Layout {
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(Composite composite, boolean flushCache) {
         Rectangle rect = composite.getClientArea();
         layout(composite, true, rect.x, rect.y, rect.width, rect.height, flushCache);
     }

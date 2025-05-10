@@ -203,7 +203,7 @@ public final class RowLayout extends Layout {
     }
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         Point extent;
         if (type == SWT.HORIZONTAL) {
             extent = layoutHorizontal(composite, false, (wHint != SWT.DEFAULT) && wrap, wHint, flushCache);
@@ -228,7 +228,7 @@ public final class RowLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(Control control) {
         return true;
     }
 
@@ -241,7 +241,7 @@ public final class RowLayout extends Layout {
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(Composite composite, boolean flushCache) {
         Rectangle clientArea = composite.getClientArea();
         if (type == SWT.HORIZONTAL) {
             layoutHorizontal(composite, true, wrap, clientArea.width, flushCache);

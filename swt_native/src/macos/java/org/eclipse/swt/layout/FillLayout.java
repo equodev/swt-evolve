@@ -112,7 +112,7 @@ public final class FillLayout extends Layout {
     }
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         Control[] children = composite.getChildren();
         int count = children.length;
         int maxWidth = 0, maxHeight = 0;
@@ -184,7 +184,7 @@ public final class FillLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(Control control) {
         Object data = control.getLayoutData();
         if (data instanceof FillData) {
             ((FillData) data).flushCache();
@@ -202,7 +202,7 @@ public final class FillLayout extends Layout {
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(Composite composite, boolean flushCache) {
         Rectangle rect = composite.getClientArea();
         Control[] children = composite.getChildren();
         int count = children.length;

@@ -244,7 +244,7 @@ public final class FormLayout extends Layout {
     }
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         Point size = layout(composite, false, 0, 0, wHint, hHint, flushCache);
         if (wHint != SWT.DEFAULT)
             size.x = wHint;
@@ -254,7 +254,7 @@ public final class FormLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(Control control) {
         Object data = control.getLayoutData();
         if (data != null)
             ((FormData) data).flushCache();
@@ -292,7 +292,7 @@ public final class FormLayout extends Layout {
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(Composite composite, boolean flushCache) {
         Rectangle rect = composite.getClientArea();
         int x = rect.x + marginLeft + marginWidth;
         int y = rect.y + marginTop + marginHeight;
