@@ -280,7 +280,7 @@ public class TreeItem extends Item implements ITreeItem {
         if (sendMeasure && parent.hooks(SWT.MeasureItem)) {
             gc.setFont(font);
             Event event = new Event();
-            event.item = this;
+            event.item = this.getApi();
             event.index = index;
             event.gc = gc;
             NSTableView widget = (NSTableView) parent.view;
@@ -1101,7 +1101,7 @@ public class TreeItem extends Item implements ITreeItem {
             return;
         if (expanded != expand) {
             Event event = new Event();
-            event.item = this;
+            event.item = this.getApi();
             parent.sendEvent(expand ? SWT.Expand : SWT.Collapse, event);
             if (isDisposed())
                 return;

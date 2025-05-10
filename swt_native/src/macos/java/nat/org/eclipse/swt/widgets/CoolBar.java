@@ -114,12 +114,12 @@ public class CoolBar extends Composite implements ICoolBar {
         super(parent, checkStyle(style));
         if ((style & SWT.VERTICAL) != 0) {
             this.style |= SWT.VERTICAL;
-            hoverCursor = new Cursor(display, SWT.CURSOR_SIZENS);
+            hoverCursor = new Cursor(display.getApi(), SWT.CURSOR_SIZENS);
         } else {
             this.style |= SWT.HORIZONTAL;
-            hoverCursor = new Cursor(display, SWT.CURSOR_SIZEWE);
+            hoverCursor = new Cursor(display.getApi(), SWT.CURSOR_SIZEWE);
         }
-        dragCursor = new Cursor(display, SWT.CURSOR_SIZEALL);
+        dragCursor = new Cursor(display.getApi(), SWT.CURSOR_SIZEALL);
         Listener listener = event -> {
             switch(event.type) {
                 case SWT.Dispose:

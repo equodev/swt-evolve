@@ -60,7 +60,7 @@ public abstract class Layout {
      * @see Control#pack(boolean)
      * @see "computeTrim, getClientArea for controls that implement them"
      */
-    protected abstract Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache);
+    abstract public Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache);
 
     /**
      * Instruct the layout to flush any cached values
@@ -72,7 +72,7 @@ public abstract class Layout {
      *
      * @since 3.1
      */
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(Control control) {
         return false;
     }
 
@@ -104,5 +104,5 @@ public abstract class Layout {
      * @param composite a composite widget using this layout
      * @param flushCache <code>true</code> means flush cached layout values
      */
-    protected abstract void layout(Composite composite, boolean flushCache);
+    abstract public void layout(Composite composite, boolean flushCache);
 }

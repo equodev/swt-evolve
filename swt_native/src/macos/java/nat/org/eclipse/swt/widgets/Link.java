@@ -303,7 +303,7 @@ public class Link extends Control implements ILink {
      */
     public Color getLinkForeground() {
         checkWidget();
-        return Color.cocoa_new(display, display.getNSColorRGB(getLinkForegroundColor()));
+        return Color.cocoa_new(display.getApi(), display.getNSColorRGB(getLinkForegroundColor()));
     }
 
     NSColor getLinkForegroundColor() {

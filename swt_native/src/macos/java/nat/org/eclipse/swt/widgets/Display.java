@@ -3439,7 +3439,7 @@ public class Display extends Device implements Executor, IDisplay {
             if ((data.style & mask) == 0) {
                 data.style |= SWT.LEFT_TO_RIGHT;
             }
-            data.device = this;
+            data.device = this.getApi();
             data.background = getSystemColor(SWT.COLOR_WHITE).handle;
             data.foreground = getSystemColor(SWT.COLOR_BLACK).handle;
             data.font = getSystemFont();
@@ -4695,7 +4695,7 @@ public class Display extends Device implements Executor, IDisplay {
                         widget.state &= ~Widget.SKIN_NEEDED;
                         oldSkinWidgets[i] = null;
                         Event event = new Event();
-                        event.widget = widget;
+                        event.widget = widget.getApi();
                         sendEvent(SWT.Skin, event);
                     }
                 }
@@ -4735,7 +4735,7 @@ public class Display extends Device implements Executor, IDisplay {
         }
         Event event = new Event();
         event.detail = detail;
-        event.display = this;
+        event.display = this.getApi();
         event.type = eventType;
         // time is set for debugging purpose only:
         event.time = (int) (System.nanoTime() / 1000_000L);
@@ -4750,7 +4750,7 @@ public class Display extends Device implements Executor, IDisplay {
         }
         if (event == null)
             event = new Event();
-        event.display = this;
+        event.display = this.getApi();
         event.type = eventType;
         if (event.time == 0)
             event.time = getLastEventTime();

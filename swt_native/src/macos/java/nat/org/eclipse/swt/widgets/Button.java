@@ -304,7 +304,7 @@ public class Button extends Control implements IButton {
 
     @Override
     Font defaultFont() {
-        return Font.cocoa_new(display, defaultNSFont());
+        return Font.cocoa_new(display.getApi(), defaultNSFont());
     }
 
     @Override

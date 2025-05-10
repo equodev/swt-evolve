@@ -366,7 +366,7 @@ public class Tree extends Composite implements ITree {
             item.cached = true;
             Event event = new Event();
             TreeItem parentItem = item.getParentItem();
-            event.item = item;
+            event.item = item.getApi();
             event.index = parentItem == null ? indexOf(item) : parentItem.indexOf(item);
             ignoreRedraw = true;
             sendEvent(SWT.SetData, event);
@@ -1120,8 +1120,8 @@ public class Tree extends Composite implements ITree {
         boolean hasFocus = hasFocus();
         Color selectionBackground = null, selectionForeground = null;
         if (isSelected && (hooksErase || hooksPaint)) {
-            selectionForeground = Color.cocoa_new(display, (hasFocus || Display.APPEARANCE.Dark == display.appAppearance) ? display.alternateSelectedControlTextColor : display.selectedControlTextColor);
-            selectionBackground = Color.cocoa_new(display, hasFocus ? display.getAlternateSelectedControlColor() : display.getSecondarySelectedControlColor());
+            selectionForeground = Color.cocoa_new(display.getApi(), (hasFocus || Display.APPEARANCE.Dark == display.appAppearance) ? display.alternateSelectedControlTextColor : display.selectedControlTextColor);
+            selectionBackground = Color.cocoa_new(display.getApi(), hasFocus ? display.getAlternateSelectedControlColor() : display.getSecondarySelectedControlColor());
         }
         NSSize contentSize = super.cellSize(id, OS.sel_cellSize);
         NSImage image = cell.image();
@@ -1175,7 +1175,7 @@ public class Tree extends Composite implements ITree {
                 gc.setClipping((int) (cellRect.x - offsetX), (int) (cellRect.y - offsetY), (int) cellRect.width, (int) cellRect.height);
             }
             Event event = new Event();
-            event.item = item;
+            event.item = item.getApi();
             event.gc = gc;
             event.index = columnIndex;
             event.detail = SWT.FOREGROUND;
@@ -1196,7 +1196,7 @@ public class Tree extends Composite implements ITree {
                 drawSelection = drawSelection && (event.detail & SWT.SELECTED) != 0;
             }
             if (!drawSelection && isSelected) {
-                userForeground = Color.cocoa_new(display, gc.getForeground().handle);
+                userForeground = Color.cocoa_new(display.getApi(), gc.getForeground().handle);
             }
             if (isDisposed() || item.isDisposed()) {
                 gc.dispose();
@@ -1351,7 +1351,7 @@ public class Tree extends Composite implements ITree {
 		 */
             item.width = -1;
             Event event = new Event();
-            event.item = item;
+            event.item = item.getApi();
             event.gc = gc;
             event.index = columnIndex;
             if (drawForeground)
@@ -1670,7 +1670,7 @@ public class Tree extends Composite implements ITree {
     }
 
     private Color getHeaderBackgroundColor() {
-        return headerBackground != null ? Color.cocoa_new(display, headerBackground) : defaultBackground();
+        return headerBackground != null ? Color.cocoa_new(display.getApi(), headerBackground) : defaultBackground();
     }
 
     /**
@@ -1690,7 +1690,7 @@ public class Tree extends Composite implements ITree {
     }
 
     Color getHeaderForegroundColor() {
-        return headerForeground != null ? Color.cocoa_new(display, headerForeground) : defaultForeground();
+        return headerForeground != null ? Color.cocoa_new(display.getApi(), headerForeground) : defaultForeground();
     }
 
     /**
@@ -2558,7 +2558,7 @@ public class Tree extends Composite implements ITree {
             id _id = widget.itemAtRow(row);
             TreeItem item = (TreeItem) display.getWidget(_id.id);
             Event event = new Event();
-            event.item = item;
+            event.item = item.getApi();
             event.index = row;
             sendSelectionEvent(SWT.Selection, event, false);
         }
@@ -2588,7 +2588,7 @@ public class Tree extends Composite implements ITree {
             item.checked = !item.checked;
             Event event = new Event();
             event.detail = SWT.CHECK;
-            event.item = item;
+            event.item = item.getApi();
             sendSelectionEvent(SWT.Selection, event, false);
             item.redraw(-1);
         }
@@ -2877,7 +2877,7 @@ public class Tree extends Composite implements ITree {
             if (itemAtRow != null) {
                 TreeItem item = (TreeItem) display.getWidget(itemAtRow.id);
                 Event event = new Event();
-                event.item = item;
+                event.item = item.getApi();
                 sendSelectionEvent(SWT.DefaultSelection, event, false);
             }
         }
@@ -2914,7 +2914,7 @@ public class Tree extends Composite implements ITree {
         GC gc = GC.cocoa_new(this.getApi(), data);
         gc.setFont(item.getFont(columnIndex));
         Event event = new Event();
-        event.item = item;
+        event.item = item.getApi();
         event.gc = gc;
         event.index = columnIndex;
         event.width = contentWidth;
@@ -2970,7 +2970,7 @@ public class Tree extends Composite implements ITree {
                     if (itemID != null) {
                         Widget item = display.getWidget(itemID.id);
                         if (item != null && item instanceof TreeItem) {
-                            event.item = display.getWidget(itemID.id);
+                            event.item = display.getWidget(itemID.id).getApi();
                             sendSelectionEvent(SWT.Selection, event, false);
                         }
                     }
@@ -3700,7 +3700,7 @@ public class Tree extends Composite implements ITree {
             if (!parentItem.getExpanded()) {
                 parentItem.setExpanded(true);
                 Event event = new Event();
-                event.item = parentItem;
+                event.item = parentItem.getApi();
                 sendEvent(SWT.Expand, event);
             }
         }

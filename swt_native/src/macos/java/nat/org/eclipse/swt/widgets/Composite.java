@@ -921,7 +921,7 @@ public class Composite extends Scrollable implements IComposite {
                 while (child != this) {
                     if (composite.layout != null) {
                         composite.state |= LAYOUT_NEEDED;
-                        if (!composite.layout.flushCache(child)) {
+                        if (!composite.layout.flushCache(child.getApi())) {
                             composite.state |= LAYOUT_CHANGED;
                         }
                     }

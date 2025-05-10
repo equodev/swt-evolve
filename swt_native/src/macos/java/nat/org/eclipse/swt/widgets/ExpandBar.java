@@ -554,7 +554,7 @@ public class ExpandBar extends Composite implements IExpandBar {
             case 32:
                 /* Space */
                 Event ev = new Event();
-                ev.item = focusItem;
+                ev.item = focusItem.getApi();
                 sendEvent(focusItem.expanded ? SWT.Collapse : SWT.Expand, ev);
                 focusItem.expanded = !focusItem.expanded;
                 showItem(focusItem);
@@ -610,7 +610,7 @@ public class ExpandBar extends Composite implements IExpandBar {
         boolean hover = focusItem.x <= x && x < (focusItem.x + focusItem.width) && focusItem.y <= y && y < (focusItem.y + getBandHeight());
         if (hover) {
             Event ev = new Event();
-            ev.item = focusItem;
+            ev.item = focusItem.getApi();
             notifyListeners(focusItem.expanded ? SWT.Collapse : SWT.Expand, ev);
             focusItem.expanded = !focusItem.expanded;
             showItem(focusItem);

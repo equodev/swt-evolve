@@ -1038,7 +1038,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
     Font defaultFont() {
         if (display.smallFonts)
             return display.getSystemFont();
-        return Font.cocoa_new(display, defaultNSFont());
+        return Font.cocoa_new(display.getApi(), defaultNSFont());
     }
 
     Color defaultForeground() {
@@ -1616,7 +1616,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
     public Color getBackground() {
         checkWidget();
         if (backgroundAlpha == 0) {
-            Color color = Color.cocoa_new(display, background, 0);
+            Color color = Color.cocoa_new(display.getApi(), background, 0);
             return color;
         } else {
             Control control = findBackgroundControl();
@@ -1627,7 +1627,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
     }
 
     Color getBackgroundColor() {
-        return background != null ? Color.cocoa_new(display, background, backgroundAlpha) : defaultBackground();
+        return background != null ? Color.cocoa_new(display.getApi(), background, backgroundAlpha) : defaultBackground();
     }
 
     /**
@@ -1779,7 +1779,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
     }
 
     Color getForegroundColor() {
-        return foreground != null ? Color.cocoa_new(display, foreground) : defaultForeground();
+        return foreground != null ? Color.cocoa_new(display.getApi(), foreground) : defaultForeground();
     }
 
     /**
@@ -2246,7 +2246,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
             if ((data.style & mask) == 0) {
                 data.style |= style & (mask | SWT.MIRRORED);
             }
-            data.device = display;
+            data.device = display.getApi();
             data.thread = display.thread;
             data.view = view;
             data.view.retain();

@@ -254,7 +254,7 @@ public class TreeColumn extends Item implements ITreeColumn {
         NSAttributedString attrString = null;
         NSTableHeaderCell headerCell = nsColumn.headerCell();
         if (displayText != null) {
-            Font font = Font.cocoa_new(display, headerCell.font());
+            Font font = Font.cocoa_new(display.getApi(), headerCell.font());
             attrString = parent.createString(displayText, font, parent.getHeaderForegroundColor().handle, SWT.LEFT, false, (parent.state & DISABLED) == 0, false);
             stringSize = attrString.size();
             contentWidth += Math.ceil(stringSize.width);

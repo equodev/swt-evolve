@@ -308,7 +308,7 @@ public class Table extends Composite implements ITable {
         if ((style & SWT.VIRTUAL) != 0) {
             item.cached = true;
             Event event = new Event();
-            event.item = item;
+            event.item = item.getApi();
             event.index = indexOf(item);
             currentItem = item;
             sendEvent(SWT.SetData, event);
@@ -1040,8 +1040,8 @@ public class Table extends Composite implements ITable {
         boolean hasFocus = hasFocus();
         Color selectionBackground = null, selectionForeground = null;
         if (isSelected && (hooksErase || hooksPaint)) {
-            selectionForeground = Color.cocoa_new(display, (hasFocus || Display.APPEARANCE.Dark == display.appAppearance) ? display.alternateSelectedControlTextColor : display.selectedControlTextColor);
-            selectionBackground = Color.cocoa_new(display, hasFocus ? display.getAlternateSelectedControlColor() : display.getSecondarySelectedControlColor());
+            selectionForeground = Color.cocoa_new(display.getApi(), (hasFocus || Display.APPEARANCE.Dark == display.appAppearance) ? display.alternateSelectedControlTextColor : display.selectedControlTextColor);
+            selectionBackground = Color.cocoa_new(display.getApi(), hasFocus ? display.getAlternateSelectedControlColor() : display.getSecondarySelectedControlColor());
         }
         NSSize contentSize = super.cellSize(id, OS.sel_cellSize);
         NSImage image = cell.image();
@@ -1095,7 +1095,7 @@ public class Table extends Composite implements ITable {
                 gc.setClipping((int) (cellRect.x - offsetX), (int) (cellRect.y - offsetY), (int) cellRect.width, (int) cellRect.height);
             }
             Event event = new Event();
-            event.item = item;
+            event.item = item.getApi();
             event.gc = gc;
             event.index = columnIndex;
             event.detail = SWT.FOREGROUND;
@@ -1116,7 +1116,7 @@ public class Table extends Composite implements ITable {
                 drawSelection = drawSelection && (event.detail & SWT.SELECTED) != 0;
             }
             if (!drawSelection && isSelected) {
-                userForeground = Color.cocoa_new(display, gc.getForeground().handle);
+                userForeground = Color.cocoa_new(display.getApi(), gc.getForeground().handle);
             }
             if (isDisposed() || item.isDisposed()) {
                 gc.dispose();
@@ -1252,7 +1252,7 @@ public class Table extends Composite implements ITable {
 		 */
             item.width = -1;
             Event event = new Event();
-            event.item = item;
+            event.item = item.getApi();
             event.gc = gc;
             event.index = columnIndex;
             if (drawForeground)
@@ -1574,7 +1574,7 @@ public class Table extends Composite implements ITable {
     }
 
     private Color getHeaderBackgroundColor() {
-        return headerBackground != null ? Color.cocoa_new(display, headerBackground) : defaultBackground();
+        return headerBackground != null ? Color.cocoa_new(display.getApi(), headerBackground) : defaultBackground();
     }
 
     /**
@@ -1594,7 +1594,7 @@ public class Table extends Composite implements ITable {
     }
 
     Color getHeaderForegroundColor() {
-        return headerForeground != null ? Color.cocoa_new(display, headerForeground) : defaultForeground();
+        return headerForeground != null ? Color.cocoa_new(display.getApi(), headerForeground) : defaultForeground();
     }
 
     /**
@@ -3494,7 +3494,7 @@ public class Table extends Composite implements ITable {
                 }
             }
             Event event = new Event();
-            event.item = _getItem(rowIndex);
+            event.item = _getItem(rowIndex).getApi();
             sendSelectionEvent(SWT.DefaultSelection, event, false);
         }
     }
@@ -3530,7 +3530,7 @@ public class Table extends Composite implements ITable {
         GC gc = GC.cocoa_new(this.getApi(), data);
         gc.setFont(item.getFont(columnIndex));
         Event event = new Event();
-        event.item = item;
+        event.item = item.getApi();
         event.gc = gc;
         event.index = columnIndex;
         event.width = contentWidth;
@@ -3633,7 +3633,7 @@ public class Table extends Composite implements ITable {
         else {
             TableItem item = _getItem(row);
             Event event = new Event();
-            event.item = item;
+            event.item = item.getApi();
             event.index = row;
             sendSelectionEvent(SWT.Selection, event, false);
         }
@@ -3742,7 +3742,7 @@ public class Table extends Composite implements ITable {
         item.checked = !item.checked;
         Event event = new Event();
         event.detail = SWT.CHECK;
-        event.item = item;
+        event.item = item.getApi();
         event.index = (int) rowIndex;
         sendSelectionEvent(SWT.Selection, event, false);
         item.redraw(-1);
@@ -3871,7 +3871,7 @@ public class Table extends Composite implements ITable {
             return;
         // Emulate SWT.Selection
         Event event = new Event();
-        event.item = _getItem(clickedRow);
+        event.item = _getItem(clickedRow).getApi();
         sendSelectionEvent(SWT.Selection, event, false);
         // Ignore real SWT.Selection that will arrive later
         ignoreSelect = true;

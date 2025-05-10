@@ -658,7 +658,7 @@ public class TabFolder extends Composite implements ITabFolder {
                 }
                 if (notify) {
                     Event event = new Event();
-                    event.item = item;
+                    event.item = item.getApi();
                     sendSelectionEvent(SWT.Selection, event, true);
                 }
             }
@@ -735,7 +735,7 @@ public class TabFolder extends Composite implements ITabFolder {
             if (item.nsItem.id == tabViewItem) {
                 if (!ignoreSelect) {
                     Event event = new Event();
-                    event.item = item;
+                    event.item = item.getApi();
                     sendSelectionEvent(SWT.Selection, event, false);
                 }
             }

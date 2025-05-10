@@ -193,7 +193,7 @@ public class TableItem extends Item implements ITableItem {
         if (sendMeasure && parent.hooks(SWT.MeasureItem)) {
             gc.setFont(font);
             Event event = new Event();
-            event.item = this;
+            event.item = this.getApi();
             event.index = index;
             event.gc = gc;
             NSTableView widget = (NSTableView) parent.view;

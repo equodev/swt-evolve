@@ -202,7 +202,7 @@ public class CoolItem extends Item implements ICoolItem {
     void calculateChevronTrim() {
         ToolBar tb = new ToolBar(parent, SWT.FLAT);
         ToolItem ti = new ToolItem(tb, SWT.PUSH);
-        Image image = new Image(display, 1, 1);
+        Image image = new Image(display.getApi(), 1, 1);
         ti.setImage(image);
         Point size = tb.computeSize(SWT.DEFAULT, SWT.DEFAULT);
         size = parent.fixPoint(size.x, size.y);
@@ -289,7 +289,7 @@ public class CoolItem extends Item implements ICoolItem {
         PaletteData palette = new PaletteData(foreground.getRGB(), background.getRGB(), black.getRGB());
         ImageData imageData = new ImageData(width, height, 4, palette);
         imageData.transparentPixel = 1;
-        Image image = new Image(display, imageData);
+        Image image = new Image(display.getApi(), imageData);
         GC gc = new GC(image, parent.getStyle() & SWT.RIGHT_TO_LEFT);
         gc.setBackground(background);
         gc.fillRectangle(0, 0, width, height);

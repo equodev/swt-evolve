@@ -232,7 +232,7 @@ public class ToolTip extends Widget implements IToolTip {
         if ((style & SWT.BALLOON) != 0) {
             if (region != null)
                 region.dispose();
-            region = new Region(display);
+            region = new Region(display.getApi());
             region.add(polyline);
             tip.setRegion(region);
         }
@@ -560,7 +560,7 @@ public class ToolTip extends Widget implements IToolTip {
         layoutMessage = null;
         if (string.length() != 0) {
             Display display = getDisplay();
-            layoutMessage = new TextLayout(display);
+            layoutMessage = new TextLayout(display.getApi());
             layoutMessage.setText(string);
         }
         if (tip.getVisible())
@@ -592,11 +592,11 @@ public class ToolTip extends Widget implements IToolTip {
         boldFont = null;
         if (string.length() != 0) {
             Display display = getDisplay();
-            layoutText = new TextLayout(display);
+            layoutText = new TextLayout(display.getApi());
             layoutText.setText(string);
             Font font = display.getSystemFont();
             FontData data = font.getFontData()[0];
-            boldFont = new Font(display, data.getName(), data.getHeight(), SWT.BOLD);
+            boldFont = new Font(display.getApi(), data.getName(), data.getHeight(), SWT.BOLD);
             TextStyle style = new TextStyle(boldFont, null, null);
             layoutText.setStyle(style, 0, string.length());
         }

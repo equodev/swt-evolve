@@ -1712,8 +1712,8 @@ public abstract class Widget implements IWidget {
         if (event == null)
             event = new Event();
         event.type = eventType;
-        event.display = display;
-        event.widget = this;
+        event.display = display.getApi();
+        event.widget = this.getApi();
         if (event.time == 0) {
             event.time = display.getLastEventTime();
         }

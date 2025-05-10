@@ -228,7 +228,7 @@ public class Spinner extends Composite implements ISpinner {
         checkWidget();
         double width = 0, height = 0;
         String string = Double.toString(buttonView.maxValue());
-        Font font = Font.cocoa_new(display, textView.font());
+        Font font = Font.cocoa_new(display.getApi(), textView.font());
         NSAttributedString str = parent.createString(string, font, null, 0, false, true, false);
         NSSize size = str.size();
         str.release();

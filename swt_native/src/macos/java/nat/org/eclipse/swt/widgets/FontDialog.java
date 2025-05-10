@@ -177,7 +177,7 @@ public class FontDialog extends Dialog implements IFontDialog {
         NSFontPanel panel = NSFontPanel.sharedFontPanel();
         panel.setTitle(NSString.stringWith(title != null ? title : ""));
         boolean create = fontData != null;
-        Font font = create ? new Font(display, fontData) : display.getSystemFont();
+        Font font = create ? new Font(display.getApi(), fontData) : display.getSystemFont();
         panel.setPanelFont(font.handle, false);
         SWTPanelDelegate delegate = (SWTPanelDelegate) new SWTPanelDelegate().alloc().init();
         long jniRef = OS.NewGlobalRef(this);
@@ -194,7 +194,7 @@ public class FontDialog extends Dialog implements IFontDialog {
         if (selected) {
             NSFont nsFont = panel.panelConvertFont(font.handle);
             if (nsFont != null) {
-                fontData = Font.cocoa_new(display, nsFont).getFontData()[0];
+                fontData = Font.cocoa_new(display.getApi(), nsFont).getFontData()[0];
             }
         }
         panel.setDelegate(null);
