@@ -2038,6 +2038,6 @@ public class Combo extends Composite implements ICombo {
     }
 
     public org.eclipse.swt.widgets.Combo getApi() {
-        return (org.eclipse.swt.widgets.Combo) api;
+        return (org.eclipse.swt.widgets.Combo) super.getApi();
     }
 }

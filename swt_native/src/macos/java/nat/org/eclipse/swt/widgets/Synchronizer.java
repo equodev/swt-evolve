@@ -19,7 +19,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
-import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.ISynchronizer;
 
 /**

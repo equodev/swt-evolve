@@ -547,6 +547,6 @@ public class Caret extends Widget implements ICaret {
     }
 
     public org.eclipse.swt.widgets.Caret getApi() {
-        return (org.eclipse.swt.widgets.Caret) api;
+        return (org.eclipse.swt.widgets.Caret) super.getApi();
     }
 }

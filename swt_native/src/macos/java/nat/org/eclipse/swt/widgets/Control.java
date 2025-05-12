@@ -23,6 +23,7 @@ import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Convert;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Cursor;
@@ -4928,7 +4929,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
                 }
             }
         }
-        event.touches = touches;
+        event.touches = Convert.array(touches, org.eclipse.swt.widgets.ITouch::getApi, org.eclipse.swt.widgets.Touch[]::new);
         postEvent(SWT.Touch, event);
         return true;
     }
@@ -5533,6 +5534,6 @@ public abstract class Control extends Widget implements Drawable, IControl {
     }
 
     public org.eclipse.swt.widgets.Control getApi() {
-        return (org.eclipse.swt.widgets.Control) api;
+        return (org.eclipse.swt.widgets.Control) super.getApi();
     }
 }

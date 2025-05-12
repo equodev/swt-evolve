@@ -1179,7 +1179,7 @@ public class Tree extends Composite {
         super(delegate);
     }
 
-    protected ITree getDelegate() {
+    public ITree getDelegate() {
         return (ITree) super.getDelegate();
     }
 }

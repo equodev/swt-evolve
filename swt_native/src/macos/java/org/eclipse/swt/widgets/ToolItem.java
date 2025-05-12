@@ -632,7 +632,7 @@ public class ToolItem extends Item {
         super(delegate);
     }
 
-    protected IToolItem getDelegate() {
+    public IToolItem getDelegate() {
         return (IToolItem) super.getDelegate();
     }
 }

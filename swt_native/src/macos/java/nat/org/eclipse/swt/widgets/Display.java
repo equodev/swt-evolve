@@ -7233,6 +7233,6 @@ public class Display extends Device implements Executor, IDisplay {
     }
 
     public org.eclipse.swt.widgets.Display getApi() {
-        return (org.eclipse.swt.widgets.Display) api;
+        return (org.eclipse.swt.widgets.Display) super.getApi();
     }
 }

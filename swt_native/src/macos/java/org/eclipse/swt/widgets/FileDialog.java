@@ -339,7 +339,7 @@ public class FileDialog extends Dialog {
         super(delegate);
     }
 
-    protected IFileDialog getDelegate() {
+    public IFileDialog getDelegate() {
         return (IFileDialog) super.getDelegate();
     }
 }

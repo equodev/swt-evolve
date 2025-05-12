@@ -142,7 +142,7 @@ public class Group extends Composite {
         super(delegate);
     }
 
-    protected IGroup getDelegate() {
+    public IGroup getDelegate() {
         return (IGroup) super.getDelegate();
     }
 }

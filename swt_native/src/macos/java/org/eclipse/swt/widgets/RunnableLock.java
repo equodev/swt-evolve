@@ -30,7 +30,7 @@ public class RunnableLock {
         delegate.setApi(this);
     }
 
-    protected IRunnableLock getDelegate() {
+    public IRunnableLock getDelegate() {
         return delegate;
     }
 }

@@ -589,7 +589,7 @@ public class Composite extends Scrollable {
         super(delegate);
     }
 
-    protected IComposite getDelegate() {
+    public IComposite getDelegate() {
         return (IComposite) super.getDelegate();
     }
 }

@@ -231,7 +231,7 @@ public class IME extends Widget {
         super(delegate);
     }
 
-    protected IIME getDelegate() {
+    public IIME getDelegate() {
         return (IIME) super.getDelegate();
     }
 }

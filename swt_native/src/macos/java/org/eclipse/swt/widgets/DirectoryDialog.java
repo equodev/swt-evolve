@@ -188,7 +188,7 @@ public class DirectoryDialog extends Dialog {
         super(delegate);
     }
 
-    protected IDirectoryDialog getDelegate() {
+    public IDirectoryDialog getDelegate() {
         return (IDirectoryDialog) super.getDelegate();
     }
 }

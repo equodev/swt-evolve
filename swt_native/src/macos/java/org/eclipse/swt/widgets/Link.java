@@ -229,7 +229,7 @@ public class Link extends Control {
         super(delegate);
     }
 
-    protected ILink getDelegate() {
+    public ILink getDelegate() {
         return (ILink) super.getDelegate();
     }
 }

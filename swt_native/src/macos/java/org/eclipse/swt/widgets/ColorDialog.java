@@ -165,7 +165,7 @@ public class ColorDialog extends Dialog {
         super(delegate);
     }
 
-    protected IColorDialog getDelegate() {
+    public IColorDialog getDelegate() {
         return (IColorDialog) super.getDelegate();
     }
 }

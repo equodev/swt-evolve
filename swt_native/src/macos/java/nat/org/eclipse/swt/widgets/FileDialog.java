@@ -751,6 +751,6 @@ public class FileDialog extends Dialog implements IFileDialog {
     }
 
     public org.eclipse.swt.widgets.FileDialog getApi() {
-        return (org.eclipse.swt.widgets.FileDialog) api;
+        return (org.eclipse.swt.widgets.FileDialog) super.getApi();
     }
 }

@@ -111,7 +111,7 @@ public class TaskBar extends Widget {
         super(delegate);
     }
 
-    protected ITaskBar getDelegate() {
+    public ITaskBar getDelegate() {
         return (ITaskBar) super.getDelegate();
     }
 }

@@ -3768,6 +3768,6 @@ public class Tree extends Composite implements ITree {
     }
 
     public org.eclipse.swt.widgets.Tree getApi() {
-        return (org.eclipse.swt.widgets.Tree) api;
+        return (org.eclipse.swt.widgets.Tree) super.getApi();
     }
 }

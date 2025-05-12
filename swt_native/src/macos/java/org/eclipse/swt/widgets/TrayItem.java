@@ -355,7 +355,7 @@ public class TrayItem extends Item {
         super(delegate);
     }
 
-    protected ITrayItem getDelegate() {
+    public ITrayItem getDelegate() {
         return (ITrayItem) super.getDelegate();
     }
 }

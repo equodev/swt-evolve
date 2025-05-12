@@ -407,7 +407,7 @@ public class DateTime extends Composite {
         super(delegate);
     }
 
-    protected IDateTime getDelegate() {
+    public IDateTime getDelegate() {
         return (IDateTime) super.getDelegate();
     }
 }

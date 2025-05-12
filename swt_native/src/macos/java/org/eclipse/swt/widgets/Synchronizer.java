@@ -56,7 +56,7 @@ public class Synchronizer {
         delegate.setApi(this);
     }
 
-    protected ISynchronizer getDelegate() {
+    public ISynchronizer getDelegate() {
         return delegate;
     }
 }

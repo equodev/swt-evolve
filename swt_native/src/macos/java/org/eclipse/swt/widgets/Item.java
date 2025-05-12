@@ -106,7 +106,7 @@ public abstract class Item extends Widget {
         super(delegate);
     }
 
-    protected IItem getDelegate() {
+    public IItem getDelegate() {
         return (IItem) super.getDelegate();
     }
 }

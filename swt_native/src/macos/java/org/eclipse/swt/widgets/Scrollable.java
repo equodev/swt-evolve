@@ -173,7 +173,7 @@ public abstract class Scrollable extends Control {
         super(delegate);
     }
 
-    protected IScrollable getDelegate() {
+    public IScrollable getDelegate() {
         return (IScrollable) super.getDelegate();
     }
 }

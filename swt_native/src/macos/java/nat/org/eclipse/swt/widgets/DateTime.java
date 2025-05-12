@@ -863,6 +863,6 @@ public class DateTime extends Composite implements IDateTime {
     }
 
     public org.eclipse.swt.widgets.DateTime getApi() {
-        return (org.eclipse.swt.widgets.DateTime) api;
+        return (org.eclipse.swt.widgets.DateTime) super.getApi();
     }
 }

@@ -446,7 +446,7 @@ public class TableColumn extends Item {
         super(delegate);
     }
 
-    protected ITableColumn getDelegate() {
+    public ITableColumn getDelegate() {
         return (ITableColumn) super.getDelegate();
     }
 }

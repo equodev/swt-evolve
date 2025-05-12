@@ -935,6 +935,6 @@ public class ToolBar extends Composite implements IToolBar {
     }
 
     public org.eclipse.swt.widgets.ToolBar getApi() {
-        return (org.eclipse.swt.widgets.ToolBar) api;
+        return (org.eclipse.swt.widgets.ToolBar) super.getApi();
     }
 }

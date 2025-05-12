@@ -331,7 +331,7 @@ public abstract class Device implements Drawable {
         delegate.setApi(this);
     }
 
-    protected IDevice getDelegate() {
+    public IDevice getDelegate() {
         return delegate;
     }
 }

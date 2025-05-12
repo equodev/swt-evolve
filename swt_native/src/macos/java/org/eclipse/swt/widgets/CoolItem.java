@@ -429,7 +429,7 @@ public class CoolItem extends Item {
         super(delegate);
     }
 
-    protected ICoolItem getDelegate() {
+    public ICoolItem getDelegate() {
         return (ICoolItem) super.getDelegate();
     }
 }

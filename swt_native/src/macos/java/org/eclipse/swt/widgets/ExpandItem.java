@@ -242,7 +242,7 @@ public class ExpandItem extends Item {
         super(delegate);
     }
 
-    protected IExpandItem getDelegate() {
+    public IExpandItem getDelegate() {
         return (IExpandItem) super.getDelegate();
     }
 }

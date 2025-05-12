@@ -503,6 +503,6 @@ public class TaskItem extends Item implements ITaskItem {
     }
 
     public org.eclipse.swt.widgets.TaskItem getApi() {
-        return (org.eclipse.swt.widgets.TaskItem) api;
+        return (org.eclipse.swt.widgets.TaskItem) super.getApi();
     }
 }

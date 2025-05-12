@@ -637,7 +637,7 @@ public class Menu extends Widget {
         super(delegate);
     }
 
-    protected IMenu getDelegate() {
+    public IMenu getDelegate() {
         return (IMenu) super.getDelegate();
     }
 }

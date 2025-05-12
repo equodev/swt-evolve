@@ -412,6 +412,6 @@ public class ExpandItem extends Item implements IExpandItem {
     }
 
     public org.eclipse.swt.widgets.ExpandItem getApi() {
-        return (org.eclipse.swt.widgets.ExpandItem) api;
+        return (org.eclipse.swt.widgets.ExpandItem) super.getApi();
     }
 }

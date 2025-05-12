@@ -332,7 +332,7 @@ public class CoolBar extends Composite {
         super(delegate);
     }
 
-    protected ICoolBar getDelegate() {
+    public ICoolBar getDelegate() {
         return (ICoolBar) super.getDelegate();
     }
 }

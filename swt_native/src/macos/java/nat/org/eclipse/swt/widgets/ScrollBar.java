@@ -782,6 +782,6 @@ public class ScrollBar extends Widget implements IScrollBar {
     }
 
     public org.eclipse.swt.widgets.ScrollBar getApi() {
-        return (org.eclipse.swt.widgets.ScrollBar) api;
+        return (org.eclipse.swt.widgets.ScrollBar) super.getApi();
     }
 }

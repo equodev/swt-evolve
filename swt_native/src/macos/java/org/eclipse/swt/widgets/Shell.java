@@ -958,7 +958,7 @@ public class Shell extends Decorations {
         super(delegate);
     }
 
-    protected IShell getDelegate() {
+    public IShell getDelegate() {
         return (IShell) super.getDelegate();
     }
 }

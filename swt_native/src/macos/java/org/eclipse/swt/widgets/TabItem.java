@@ -256,7 +256,7 @@ public class TabItem extends Item {
         super(delegate);
     }
 
-    protected ITabItem getDelegate() {
+    public ITabItem getDelegate() {
         return (ITabItem) super.getDelegate();
     }
 }

@@ -350,7 +350,7 @@ public class ToolTip extends Widget {
         super(delegate);
     }
 
-    protected IToolTip getDelegate() {
+    public IToolTip getDelegate() {
         return (IToolTip) super.getDelegate();
     }
 }

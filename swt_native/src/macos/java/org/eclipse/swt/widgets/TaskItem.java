@@ -292,7 +292,7 @@ public class TaskItem extends Item {
         super(delegate);
     }
 
-    protected ITaskItem getDelegate() {
+    public ITaskItem getDelegate() {
         return (ITaskItem) super.getDelegate();
     }
 }

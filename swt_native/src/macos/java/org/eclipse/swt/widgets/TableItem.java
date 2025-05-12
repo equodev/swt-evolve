@@ -651,7 +651,7 @@ public class TableItem extends Item {
         super(delegate);
     }
 
-    protected ITableItem getDelegate() {
+    public ITableItem getDelegate() {
         return (ITableItem) super.getDelegate();
     }
 }

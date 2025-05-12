@@ -794,6 +794,6 @@ public class TreeColumn extends Item implements ITreeColumn {
     }
 
     public org.eclipse.swt.widgets.TreeColumn getApi() {
-        return (org.eclipse.swt.widgets.TreeColumn) api;
+        return (org.eclipse.swt.widgets.TreeColumn) super.getApi();
     }
 }

@@ -2383,7 +2383,7 @@ public abstract class Control extends Widget implements Drawable {
         super(delegate);
     }
 
-    protected IControl getDelegate() {
+    public IControl getDelegate() {
         return (IControl) super.getDelegate();
     }
 }

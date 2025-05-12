@@ -82,7 +82,7 @@ public final class TouchSource {
         delegate.setApi(this);
     }
 
-    protected ITouchSource getDelegate() {
+    public ITouchSource getDelegate() {
         return delegate;
     }
 }

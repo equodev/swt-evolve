@@ -229,7 +229,7 @@ public class ToolBar extends Composite {
         super(delegate);
     }
 
-    protected IToolBar getDelegate() {
+    public IToolBar getDelegate() {
         return (IToolBar) super.getDelegate();
     }
 }

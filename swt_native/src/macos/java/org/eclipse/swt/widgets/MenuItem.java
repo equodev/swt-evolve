@@ -600,7 +600,7 @@ public class MenuItem extends Item {
         super(delegate);
     }
 
-    protected IMenuItem getDelegate() {
+    public IMenuItem getDelegate() {
         return (IMenuItem) super.getDelegate();
     }
 }

@@ -217,7 +217,7 @@ public class FontDialog extends Dialog {
         super(delegate);
     }
 
-    protected IFontDialog getDelegate() {
+    public IFontDialog getDelegate() {
         return (IFontDialog) super.getDelegate();
     }
 }

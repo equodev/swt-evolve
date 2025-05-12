@@ -1032,7 +1032,7 @@ public class Combo extends Composite {
         super(delegate);
     }
 
-    protected ICombo getDelegate() {
+    public ICombo getDelegate() {
         return (ICombo) super.getDelegate();
     }
 }

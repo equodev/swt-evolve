@@ -97,7 +97,7 @@ public final class Monitor {
         delegate.setApi(this);
     }
 
-    protected IMonitor getDelegate() {
+    public IMonitor getDelegate() {
         return delegate;
     }
 }

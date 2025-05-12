@@ -137,7 +137,7 @@ public class Sash extends Control {
         super(delegate);
     }
 
-    protected ISash getDelegate() {
+    public ISash getDelegate() {
         return (ISash) super.getDelegate();
     }
 }

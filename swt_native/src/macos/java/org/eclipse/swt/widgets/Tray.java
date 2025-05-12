@@ -98,7 +98,7 @@ public class Tray extends Widget {
         super(delegate);
     }
 
-    protected ITray getDelegate() {
+    public ITray getDelegate() {
         return (ITray) super.getDelegate();
     }
 }

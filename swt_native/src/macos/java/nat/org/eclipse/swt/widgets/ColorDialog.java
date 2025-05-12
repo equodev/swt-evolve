@@ -247,6 +247,6 @@ public class ColorDialog extends Dialog implements IColorDialog {
     }
 
     public org.eclipse.swt.widgets.ColorDialog getApi() {
-        return (org.eclipse.swt.widgets.ColorDialog) api;
+        return (org.eclipse.swt.widgets.ColorDialog) super.getApi();
     }
 }

@@ -1368,7 +1368,7 @@ public class Table extends Composite {
         super(delegate);
     }
 
-    protected ITable getDelegate() {
+    public ITable getDelegate() {
         return (ITable) super.getDelegate();
     }
 }

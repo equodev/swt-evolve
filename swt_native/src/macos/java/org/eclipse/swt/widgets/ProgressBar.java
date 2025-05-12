@@ -225,7 +225,7 @@ public class ProgressBar extends Control {
         super(delegate);
     }
 
-    protected IProgressBar getDelegate() {
+    public IProgressBar getDelegate() {
         return (IProgressBar) super.getDelegate();
     }
 }

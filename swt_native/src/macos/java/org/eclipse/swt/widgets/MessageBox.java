@@ -170,7 +170,7 @@ public class MessageBox extends Dialog {
         super(delegate);
     }
 
-    protected IMessageBox getDelegate() {
+    public IMessageBox getDelegate() {
         return (IMessageBox) super.getDelegate();
     }
 }

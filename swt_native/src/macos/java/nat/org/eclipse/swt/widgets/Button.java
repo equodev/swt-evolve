@@ -1085,6 +1085,6 @@ public class Button extends Control implements IButton {
     }
 
     public org.eclipse.swt.widgets.Button getApi() {
-        return (org.eclipse.swt.widgets.Button) api;
+        return (org.eclipse.swt.widgets.Button) super.getApi();
     }
 }

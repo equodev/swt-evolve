@@ -1192,6 +1192,6 @@ public class TableItem extends Item implements ITableItem {
     }
 
     public org.eclipse.swt.widgets.TableItem getApi() {
-        return (org.eclipse.swt.widgets.TableItem) api;
+        return (org.eclipse.swt.widgets.TableItem) super.getApi();
     }
 }

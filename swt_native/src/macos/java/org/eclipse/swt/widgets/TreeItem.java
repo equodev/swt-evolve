@@ -901,7 +901,7 @@ public class TreeItem extends Item {
         super(delegate);
     }
 
-    protected ITreeItem getDelegate() {
+    public ITreeItem getDelegate() {
         return (ITreeItem) super.getDelegate();
     }
 }

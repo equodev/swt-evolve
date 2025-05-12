@@ -712,6 +712,6 @@ public class CoolItem extends Item implements ICoolItem {
     }
 
     public org.eclipse.swt.widgets.CoolItem getApi() {
-        return (org.eclipse.swt.widgets.CoolItem) api;
+        return (org.eclipse.swt.widgets.CoolItem) super.getApi();
     }
 }

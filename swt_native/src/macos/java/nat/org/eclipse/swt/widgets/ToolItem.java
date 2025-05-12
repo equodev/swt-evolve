@@ -1505,6 +1505,6 @@ public class ToolItem extends Item implements IToolItem {
     }
 
     public org.eclipse.swt.widgets.ToolItem getApi() {
-        return (org.eclipse.swt.widgets.ToolItem) api;
+        return (org.eclipse.swt.widgets.ToolItem) super.getApi();
     }
 }

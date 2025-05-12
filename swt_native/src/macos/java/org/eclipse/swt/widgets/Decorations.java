@@ -465,7 +465,7 @@ public class Decorations extends Canvas {
         super(delegate);
     }
 
-    protected IDecorations getDelegate() {
+    public IDecorations getDelegate() {
         return (IDecorations) super.getDelegate();
     }
 }

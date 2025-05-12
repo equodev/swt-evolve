@@ -360,7 +360,7 @@ public class Button extends Control {
         super(delegate);
     }
 
-    protected IButton getDelegate() {
+    public IButton getDelegate() {
         return (IButton) super.getDelegate();
     }
 }

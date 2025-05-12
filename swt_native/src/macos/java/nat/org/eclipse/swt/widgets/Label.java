@@ -590,6 +590,6 @@ public class Label extends Control implements ILabel {
     }
 
     public org.eclipse.swt.widgets.Label getApi() {
-        return (org.eclipse.swt.widgets.Label) api;
+        return (org.eclipse.swt.widgets.Label) super.getApi();
     }
 }

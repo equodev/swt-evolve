@@ -360,7 +360,7 @@ public class Caret extends Widget {
         super(delegate);
     }
 
-    protected ICaret getDelegate() {
+    public ICaret getDelegate() {
         return (ICaret) super.getDelegate();
     }
 }

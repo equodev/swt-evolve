@@ -254,7 +254,7 @@ public class ExpandBar extends Composite {
         super(delegate);
     }
 
-    protected IExpandBar getDelegate() {
+    public IExpandBar getDelegate() {
         return (IExpandBar) super.getDelegate();
     }
 }

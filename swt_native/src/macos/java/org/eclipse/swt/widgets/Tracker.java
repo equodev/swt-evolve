@@ -320,7 +320,7 @@ public class Tracker extends Widget {
         super(delegate);
     }
 
-    protected ITracker getDelegate() {
+    public ITracker getDelegate() {
         return (ITracker) super.getDelegate();
     }
 }

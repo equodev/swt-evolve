@@ -1222,6 +1222,6 @@ public class Tracker extends Widget implements ITracker {
     }
 
     public org.eclipse.swt.widgets.Tracker getApi() {
-        return (org.eclipse.swt.widgets.Tracker) api;
+        return (org.eclipse.swt.widgets.Tracker) super.getApi();
     }
 }

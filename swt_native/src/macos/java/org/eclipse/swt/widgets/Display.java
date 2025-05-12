@@ -1763,7 +1763,7 @@ public class Display extends Device implements Executor {
         super(delegate);
     }
 
-    protected IDisplay getDelegate() {
+    public IDisplay getDelegate() {
         return (IDisplay) super.getDelegate();
     }
 }

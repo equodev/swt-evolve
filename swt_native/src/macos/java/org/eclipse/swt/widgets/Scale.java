@@ -291,7 +291,7 @@ public class Scale extends Control {
         super(delegate);
     }
 
-    protected IScale getDelegate() {
+    public IScale getDelegate() {
         return (IScale) super.getDelegate();
     }
 }

@@ -497,7 +497,7 @@ public abstract class Widget {
         delegate.setApi(this);
     }
 
-    protected IWidget getDelegate() {
+    public IWidget getDelegate() {
         return delegate;
     }
 }

@@ -1611,6 +1611,6 @@ public class TreeItem extends Item implements ITreeItem {
     }
 
     public org.eclipse.swt.widgets.TreeItem getApi() {
-        return (org.eclipse.swt.widgets.TreeItem) api;
+        return (org.eclipse.swt.widgets.TreeItem) super.getApi();
     }
 }

@@ -823,7 +823,7 @@ public class List extends Scrollable {
         super(delegate);
     }
 
-    protected IList getDelegate() {
+    public IList getDelegate() {
         return (IList) super.getDelegate();
     }
 }

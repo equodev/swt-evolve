@@ -639,6 +639,6 @@ public class ToolTip extends Widget implements IToolTip {
     }
 
     public org.eclipse.swt.widgets.ToolTip getApi() {
-        return (org.eclipse.swt.widgets.ToolTip) api;
+        return (org.eclipse.swt.widgets.ToolTip) super.getApi();
     }
 }

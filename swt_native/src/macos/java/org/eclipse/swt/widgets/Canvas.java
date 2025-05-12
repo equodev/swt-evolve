@@ -216,7 +216,7 @@ public class Canvas extends Composite {
         super(delegate);
     }
 
-    protected ICanvas getDelegate() {
+    public ICanvas getDelegate() {
         return (ICanvas) super.getDelegate();
     }
 }

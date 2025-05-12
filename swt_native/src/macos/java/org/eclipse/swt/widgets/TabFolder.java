@@ -343,7 +343,7 @@ public class TabFolder extends Composite {
         super(delegate);
     }
 
-    protected ITabFolder getDelegate() {
+    public ITabFolder getDelegate() {
         return (ITabFolder) super.getDelegate();
     }
 }

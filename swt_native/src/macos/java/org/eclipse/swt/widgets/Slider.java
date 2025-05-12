@@ -393,7 +393,7 @@ public class Slider extends Control {
         super(delegate);
     }
 
-    protected ISlider getDelegate() {
+    public ISlider getDelegate() {
         return (ISlider) super.getDelegate();
     }
 }

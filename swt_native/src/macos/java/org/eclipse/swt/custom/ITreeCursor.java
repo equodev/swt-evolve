@@ -1,18 +1,3 @@
-/**
- * ****************************************************************************
- *  Copyright (c) 2011, 2016 IBM Corporation and others.
- *
- *  This program and the accompanying materials
- *  are made available under the terms of the Eclipse Public License 2.0
- *  which accompanies this distribution, and is available at
- *  https://www.eclipse.org/legal/epl-2.0/
- *
- *  SPDX-License-Identifier: EPL-2.0
- *
- *  Contributors:
- *      IBM Corporation - initial API and implementation
- * *****************************************************************************
- */
 package org.eclipse.swt.custom;
 
 import org.eclipse.swt.*;
@@ -21,53 +6,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-/**
- * A TreeCursor provides a way for the user to navigate around a Tree with columns using the
- * keyboard. It also provides a mechanism for selecting an individual cell in a tree.
- * <p>
- * For a detailed example of using a TreeCursor to navigate to a cell and then edit it see
- * https://github.com/eclipse-platform/eclipse.platform.swt/tree/master/examples/org.eclipse.swt.snippets/src/org/eclipse/swt/snippets/Snippet360.java .
- *
- * <dl>
- * <dt><b>Styles:</b></dt>
- * <dd>BORDER</dd>
- * <dt><b>Events:</b></dt>
- * <dd>Selection, DefaultSelection</dd>
- * </dl>
- *
- * @since 3.8
- */
-public class TreeCursor extends Canvas {
-
-    /**
-     * Constructs a new instance of this class given its parent tree and a style value describing
-     * its behavior and appearance.
-     * <p>
-     * The style value is either one of the style constants defined in class <code>SWT</code> which
-     * is applicable to instances of this class, or must be built by <em>bitwise OR</em>'ing
-     * together (that is, using the <code>int</code> "|" operator) two or more of those
-     * <code>SWT</code> style constants. The class description lists the style constants that are
-     * applicable to the class. Style bits are also inherited from superclasses.
-     * </p>
-     *
-     * @param parent a Tree control which will be the parent of the new instance (cannot be null)
-     * @param style the style of control to construct
-     *
-     * @exception IllegalArgumentException <ul>
-     *    <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
-     * </ul>
-     * @exception SWTException <ul>
-     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the parent</li>
-     *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
-     * </ul>
-     *
-     * @see SWT#BORDER
-     * @see Widget#checkSubclass()
-     * @see Widget#getStyle()
-     */
-    public TreeCursor(Tree parent, int style) {
-        this(new nat.org.eclipse.swt.custom.TreeCursor((nat.org.eclipse.swt.widgets.Tree) parent.getDelegate(), style));
-    }
+public interface ITreeCursor extends ICanvas {
 
     /**
      * Adds the listener to the collection of listeners who will be notified when the receiver's
@@ -94,19 +33,14 @@ public class TreeCursor extends Canvas {
      * @see SelectionEvent
      * @see #removeSelectionListener(SelectionListener)
      */
-    public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
-    }
+    void addSelectionListener(SelectionListener listener);
 
     /**
      * Returns the background color that the receiver will use to draw.
      *
      * @return the receiver's background color
      */
-    @Override
-    public Color getBackground() {
-        return getDelegate().getBackground();
-    }
+    Color getBackground();
 
     /**
      * Returns the index of the column over which the TreeCursor is positioned.
@@ -118,19 +52,14 @@ public class TreeCursor extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public int getColumn() {
-        return getDelegate().getColumn();
-    }
+    int getColumn();
 
     /**
      * Returns the foreground color that the receiver will use to draw.
      *
      * @return the receiver's foreground color
      */
-    @Override
-    public Color getForeground() {
-        return getDelegate().getForeground();
-    }
+    Color getForeground();
 
     /**
      * Returns the row over which the TreeCursor is positioned.
@@ -142,9 +71,7 @@ public class TreeCursor extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public TreeItem getRow() {
-        return getDelegate().getRow().getApi();
-    }
+    ITreeItem getRow();
 
     /**
      * Removes the listener from the collection of listeners who will be notified when the
@@ -163,9 +90,7 @@ public class TreeCursor extends Canvas {
      * @see SelectionListener
      * @see #addSelectionListener(SelectionListener)
      */
-    public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
-    }
+    void removeSelectionListener(SelectionListener listener);
 
     /**
      * Sets the receiver's background color to the color specified
@@ -185,10 +110,7 @@ public class TreeCursor extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
-    public void setBackground(Color color) {
-        getDelegate().setBackground(color);
-    }
+    void setBackground(Color color);
 
     /**
      * Sets the receiver's foreground color to the color specified
@@ -207,10 +129,7 @@ public class TreeCursor extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
-    public void setForeground(Color color) {
-        getDelegate().setForeground(color);
-    }
+    void setForeground(Color color);
 
     /**
      * Positions the TreeCursor over the root-level cell at the given row and column in the parent tree.
@@ -223,9 +142,7 @@ public class TreeCursor extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setSelection(int row, int column) {
-        getDelegate().setSelection(row, column);
-    }
+    void setSelection(int row, int column);
 
     /**
      * Positions the TreeCursor over the cell at the given row and column in the parent tree.
@@ -238,20 +155,9 @@ public class TreeCursor extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setSelection(TreeItem row, int column) {
-        getDelegate().setSelection(row.getDelegate(), column);
-    }
+    void setSelection(ITreeItem row, int column);
 
-    @Override
-    public void setVisible(boolean visible) {
-        getDelegate().setVisible(visible);
-    }
+    void setVisible(boolean visible);
 
-    protected TreeCursor(ITreeCursor delegate) {
-        super(delegate);
-    }
-
-    public ITreeCursor getDelegate() {
-        return (ITreeCursor) super.getDelegate();
-    }
+    TreeCursor getApi();
 }

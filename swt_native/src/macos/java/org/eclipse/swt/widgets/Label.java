@@ -222,7 +222,7 @@ public class Label extends Control {
         super(delegate);
     }
 
-    protected ILabel getDelegate() {
+    public ILabel getDelegate() {
         return (ILabel) super.getDelegate();
     }
 }

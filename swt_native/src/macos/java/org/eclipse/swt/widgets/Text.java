@@ -1177,7 +1177,7 @@ public class Text extends Scrollable {
         super(delegate);
     }
 
-    protected IText getDelegate() {
+    public IText getDelegate() {
         return (IText) super.getDelegate();
     }
 }

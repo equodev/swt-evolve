@@ -527,7 +527,7 @@ public class Spinner extends Composite {
         super(delegate);
     }
 
-    protected ISpinner getDelegate() {
+    public ISpinner getDelegate() {
         return (ISpinner) super.getDelegate();
     }
 }
