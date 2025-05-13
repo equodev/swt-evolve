@@ -22,8 +22,10 @@ import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import nat.org.eclipse.swt.widgets.*;
+import dev.equo.swt.Convert;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.dnd.DropTargetListener;
+import org.eclipse.swt.dnd.DNDEvent;
 import org.eclipse.swt.dnd.IDropTarget;
 import org.eclipse.swt.dnd.IDropTargetEffect;
 import org.eclipse.swt.dnd.ITransfer;
@@ -316,7 +318,7 @@ public class DropTarget extends Widget implements IDropTarget {
             return;
         keyOperation = -1;
         DNDEvent event = new DNDEvent();
-        event.widget = this;
+        event.widget = this.getApi();
         event.time = (int) System.currentTimeMillis();
         event.detail = DND.DROP_NONE;
         notifyListeners(DND.DragLeave, event);
@@ -340,11 +342,11 @@ public class DropTarget extends Widget implements IDropTarget {
         System.arraycopy(event.dataTypes, 0, allowedDataTypes, 0, allowedDataTypes.length);
         if (keyOperation == oldKeyOperation) {
             event.type = DND.DragOver;
-            event.dataType = selectedDataType;
+            event.dataType = selectedDataType.getApi();
             event.detail = selectedOperation;
         } else {
             event.type = DND.DragOperationChanged;
-            event.dataType = selectedDataType;
+            event.dataType = selectedDataType.getApi();
         }
         selectedDataType = null;
         selectedOperation = DND.DROP_NONE;
@@ -643,12 +645,12 @@ public class DropTarget extends Widget implements IDropTarget {
     boolean drop(NSObject sender) {
         clearDropNotAllowed();
         DNDEvent event = new DNDEvent();
-        event.widget = this;
+        event.widget = this.getApi();
         event.time = (int) System.currentTimeMillis();
         if (dropEffect != null) {
             NSPoint mouseLocation = sender.draggingLocation();
             NSPoint globalLoc = sender.draggingDestinationWindow().convertBaseToScreen(mouseLocation);
-            event.item = dropEffect.getItem((int) globalLoc.x, (int) globalLoc.y);
+            event.item = dropEffect.getItem((int) globalLoc.x, (int) globalLoc.y).getApi();
         }
         event.detail = DND.DROP_NONE;
         notifyListeners(DND.DragLeave, event);
@@ -660,7 +662,7 @@ public class DropTarget extends Widget implements IDropTarget {
         int allowedOperations = event.operations;
         TransferData[] allowedDataTypes = new TransferData[event.dataTypes.length];
         System.arraycopy(event.dataTypes, 0, allowedDataTypes, 0, event.dataTypes.length);
-        event.dataType = selectedDataType;
+        event.dataType = selectedDataType.getApi();
         event.detail = selectedOperation;
         notifyListeners(DND.DropAccept, event);
         selectedDataType = null;
@@ -724,7 +726,7 @@ public class DropTarget extends Widget implements IDropTarget {
         if (object == null) {
             selectedOperation = DND.DROP_NONE;
         }
-        event.dataType = selectedDataType;
+        event.dataType = selectedDataType.getApi();
         event.detail = selectedOperation;
         event.data = object;
         notifyListeners(DND.Drop, event);
@@ -880,17 +882,17 @@ public class DropTarget extends Widget implements IDropTarget {
             return false;
         NSRect screenRect = new NSScreen(screens.objectAtIndex(0)).frame();
         globalMouse.y = screenRect.height - globalMouse.y;
-        event.widget = this;
+        event.widget = this.getApi();
         event.x = (int) globalMouse.x;
         event.y = (int) globalMouse.y;
         event.time = (int) System.currentTimeMillis();
         event.feedback = DND.FEEDBACK_SELECT;
-        event.dataTypes = dataTypes;
-        event.dataType = dataTypes[0];
+        event.dataTypes = Convert.array(dataTypes, org.eclipse.swt.dnd.ITransferData::getApi, org.eclipse.swt.dnd.TransferData[]::new);
+        event.dataType = dataTypes[0].getApi();
         event.operations = operations;
         event.detail = operation;
         if (dropEffect != null) {
-            event.item = dropEffect.getItem(event.x, event.y);
+            event.item = dropEffect.getItem(event.x, event.y).getApi();
         }
         return true;
     }

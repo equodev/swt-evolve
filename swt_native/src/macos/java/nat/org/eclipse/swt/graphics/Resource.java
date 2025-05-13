@@ -200,7 +200,7 @@ public abstract class Resource implements IResource {
         // work of detecting and reporting errors. This works because Resource
         // holds the only reference to 'ResourceTracker' and therefore the tracker
         // is only GC'ed when Resource itself is ready to be GC'ed.
-        tracker = new ResourceTracker(this.getApi(), error);
+        tracker = new ResourceTracker(this, error);
     }
 
     /**

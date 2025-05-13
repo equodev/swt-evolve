@@ -24,6 +24,7 @@ import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.dnd.DragSourceListener;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.dnd.DNDEvent;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.dnd.IDragSource;
 import org.eclipse.swt.dnd.IDragSourceEffect;
@@ -696,9 +697,9 @@ public class DragSource extends Widget implements IDragSource {
         TransferData transferData = new TransferData();
         transferData.type = Transfer.registerType(dataType.getString());
         DNDEvent event = new DNDEvent();
-        event.widget = this;
+        event.widget = this.getApi();
         event.time = (int) System.currentTimeMillis();
-        event.dataType = transferData;
+        event.dataType = transferData.getApi();
         notifyListeners(DND.DragSetData, event);
         if (!event.doit)
             return;
@@ -798,7 +799,7 @@ public class DragSource extends Widget implements IDragSource {
 
     DNDEvent startDrag(Event dragEvent) {
         DNDEvent event = new DNDEvent();
-        event.widget = this;
+        event.widget = this.getApi();
         event.x = dragEvent.x;
         event.y = dragEvent.y;
         event.time = dragEvent.time;

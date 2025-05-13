@@ -27,13 +27,13 @@ import org.eclipse.swt.internal.*;
  */
 public class EventTable {
 
-    int[] types;
+    public int[] types;
 
-    Listener[] listeners;
+    public Listener[] listeners;
 
-    int level;
+    public int level;
 
-    static final int GROW_SIZE = 4;
+    static final public int GROW_SIZE = 4;
 
     public Listener[] getListeners(int eventType) {
         if (types == null)

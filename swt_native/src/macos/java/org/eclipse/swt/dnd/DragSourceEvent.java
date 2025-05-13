@@ -120,7 +120,7 @@ public class DragSourceEvent extends TypedEvent {
         this.offsetY = e.offsetY;
     }
 
-    void updateEvent(DNDEvent e) {
+    public void updateEvent(DNDEvent e) {
         e.widget = this.widget;
         e.time = this.time;
         e.data = this.data;

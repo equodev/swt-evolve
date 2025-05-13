@@ -21,50 +21,50 @@ import org.eclipse.swt.widgets.*;
 public class StyledTextEvent extends Event {
 
     // used by LineStyleEvent
-    int[] ranges;
+    public int[] ranges;
 
-    StyleRange[] styles;
+    public StyleRange[] styles;
 
-    int alignment;
+    public int alignment;
 
-    int indent;
+    public int indent;
 
-    int verticalIndent;
+    public int verticalIndent;
 
-    int wrapIndent;
+    public int wrapIndent;
 
-    boolean justify;
+    public boolean justify;
 
-    Bullet bullet;
+    public Bullet bullet;
 
-    int bulletIndex;
+    public int bulletIndex;
 
-    int[] tabStops;
+    public int[] tabStops;
 
     // used by LineBackgroundEvent
-    Color lineBackground;
+    public Color lineBackground;
 
     // used by TextChangedEvent
-    int replaceCharCount;
+    public int replaceCharCount;
 
-    int newCharCount;
+    public int newCharCount;
 
-    int replaceLineCount;
+    public int replaceLineCount;
 
-    int newLineCount;
+    public int newLineCount;
 
     // used by PaintObjectEvent
-    int x;
+    public int x;
 
-    int y;
+    public int y;
 
-    int ascent;
+    public int ascent;
 
-    int descent;
+    public int descent;
 
-    StyleRange style;
+    public StyleRange style;
 
-    StyledTextEvent(StyledTextContent content) {
+    public StyledTextEvent(StyledTextContent content) {
         super();
         data = content;
     }

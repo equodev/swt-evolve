@@ -33,15 +33,4 @@ public class DNDEvent extends Event {
     public int offsetX;
 
     public int offsetY;
-
-    IDNDEvent delegate;
-
-    protected DNDEvent(IDNDEvent delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
-    }
-
-    public IDNDEvent getDelegate() {
-        return delegate;
-    }
 }
