@@ -642,7 +642,7 @@ public class TreeCursor extends Canvas implements ITreeCursor {
                 break;
             }
         }
-        GC gc = event.gc;
+        GC gc = (GC) event.gc.getDelegate();
         gc.setBackground(getBackground());
         gc.setForeground(getForeground());
         gc.fillRectangle(event.x, event.y, event.width, event.height);

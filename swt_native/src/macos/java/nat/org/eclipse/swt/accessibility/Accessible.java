@@ -1708,7 +1708,7 @@ public class Accessible implements IAccessible {
             // Reset the offset so we pick up the next set of attributes that change.
             event.offset = event.end;
             if (event.textStyle != null) {
-                TextStyle ts = event.textStyle;
+                TextStyle ts = (TextStyle) event.textStyle.getDelegate();
                 if (ts.font != null) {
                     NSMutableDictionary fontInfoDict = NSMutableDictionary.dictionaryWithCapacity(4);
                     NSFont fontUsed = ts.font.handle;

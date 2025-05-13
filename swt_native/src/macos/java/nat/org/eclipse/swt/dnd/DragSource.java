@@ -353,7 +353,7 @@ public class DragSource extends Widget implements IDragSource {
         NSImage dragImage = null;
         Image defaultDragImage = null;
         try {
-            Image image = event.image;
+            Image image = (Image) event.image.getDelegate();
             // If no image was provided, just create a trivial image. dragImage requires a non-null image.
             if (image == null) {
                 int width = 20, height = 20;

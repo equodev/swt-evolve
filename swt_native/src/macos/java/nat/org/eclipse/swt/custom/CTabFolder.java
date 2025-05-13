@@ -2249,7 +2249,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
                 return;
             }
         }
-        GC gc = event.gc;
+        GC gc = (GC) event.gc.getDelegate();
         Font gcFont = gc.getFont();
         Color gcBackground = gc.getBackground();
         Color gcForeground = gc.getForeground();

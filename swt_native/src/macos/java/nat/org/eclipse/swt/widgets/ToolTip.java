@@ -396,7 +396,7 @@ public class ToolTip extends Widget implements IToolTip {
     }
 
     void onPaint(Event event) {
-        GC gc = event.gc;
+        GC gc = (GC) event.gc.getDelegate();
         int x = BORDER + PADDING;
         int y = BORDER + PADDING;
         if ((style & SWT.BALLOON) != 0) {

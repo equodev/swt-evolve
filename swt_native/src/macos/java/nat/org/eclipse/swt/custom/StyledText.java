@@ -6412,7 +6412,7 @@ public class StyledText extends Canvas implements IStyledText {
         if (clientAreaWidth == 0 || clientAreaHeight == 0)
             return;
         final int endY = event.y + event.height;
-        GC gc = event.gc;
+        GC gc = (GC) event.gc.getDelegate();
         Color background = getBackground();
         Color foreground = getForeground();
         if (endY > 0) {

@@ -769,7 +769,7 @@ public class CoolBar extends Composite implements ICoolBar {
     }
 
     void onPaint(Event event) {
-        GC gc = event.gc;
+        GC gc = (GC) event.gc.getDelegate();
         if (items.length == 0)
             return;
         Color shadowColor = display.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);

@@ -187,7 +187,7 @@ public class ScrolledComposite extends Composite implements IScrolledComposite {
                         showControl(control);
                 }
             } else {
-                Widget w = event.widget;
+                Widget w = (Widget) event.widget.getDelegate();
                 if (w instanceof Control) {
                     showNextFocusedControl = w.getDisplay().getActiveShell() == ((Control) w).getShell();
                 }
