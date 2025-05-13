@@ -53,8 +53,6 @@ public final class Point implements Serializable {
      */
     public int y;
 
-    static final long serialVersionUID = 3257002163938146354L;
-
     /**
      * Constructs a new point with the given x and y coordinates.
      *
@@ -62,8 +60,7 @@ public final class Point implements Serializable {
      * @param y the y coordinate of the new point
      */
     public Point(int x, int y) {
-        this.x = x;
-        this.y = y;
+        this(new nat.org.eclipse.swt.graphics.Point(x, y));
     }
 
     /**
@@ -76,13 +73,8 @@ public final class Point implements Serializable {
      *
      * @see #hashCode()
      */
-    @Override
     public boolean equals(Object object) {
-        if (object == this)
-            return true;
-        if (!(object instanceof Point p))
-            return false;
-        return (p.x == this.x) && (p.y == this.y);
+        return getDelegate().equals(object);
     }
 
     /**
@@ -95,9 +87,8 @@ public final class Point implements Serializable {
      *
      * @see #equals(Object)
      */
-    @Override
     public int hashCode() {
-        return x ^ y;
+        return getDelegate().hashCode();
     }
 
     /**
@@ -106,9 +97,18 @@ public final class Point implements Serializable {
      *
      * @return a string representation of the point
      */
-    @Override
     public String toString() {
-        //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-        return "Point {" + x + ", " + y + "}";
+        return getDelegate().toString();
+    }
+
+    IPoint delegate;
+
+    protected Point(IPoint delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IPoint getDelegate() {
+        return delegate;
     }
 }

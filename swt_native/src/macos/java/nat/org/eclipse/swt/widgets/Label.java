@@ -18,7 +18,6 @@ package nat.org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.ILabel;
 import org.eclipse.swt.graphics.IImage;
 

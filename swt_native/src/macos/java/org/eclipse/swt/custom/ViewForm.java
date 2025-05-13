@@ -109,44 +109,6 @@ public class ViewForm extends Composite {
     @Deprecated
     public static RGB borderOutsideRGB = new RGB(171, 168, 165);
 
-    // SWT widgets
-    Control topLeft;
-
-    Control topCenter;
-
-    Control topRight;
-
-    Control content;
-
-    // Configuration and state info
-    boolean separateTopCenter = false;
-
-    boolean showBorder = false;
-
-    int separator = -1;
-
-    int borderTop = 0;
-
-    int borderBottom = 0;
-
-    int borderLeft = 0;
-
-    int borderRight = 0;
-
-    int highlight = 0;
-
-    Point oldSize;
-
-    Color selectionBackground;
-
-    Listener listener;
-
-    static final int OFFSCREEN = -200;
-
-    static final int BORDER1_COLOR = SWT.COLOR_WIDGET_NORMAL_SHADOW;
-
-    static final int SELECTION_BACKGROUND = SWT.COLOR_LIST_BACKGROUND;
-
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.
@@ -175,31 +137,7 @@ public class ViewForm extends Composite {
      * @see #getStyle()
      */
     public ViewForm(Composite parent, int style) {
-        super(parent, checkStyle(style));
-        super.setLayout(new ViewFormLayout());
-        setBorderVisible((style & SWT.BORDER) != 0);
-        listener = e -> {
-            switch(e.type) {
-                case SWT.Dispose:
-                    onDispose(e);
-                    break;
-                case SWT.Paint:
-                    onPaint(e.gc);
-                    break;
-                case SWT.Resize:
-                    onResize();
-                    break;
-            }
-        };
-        int[] events = new int[] { SWT.Dispose, SWT.Paint, SWT.Resize };
-        for (int event : events) {
-            addListener(event, listener);
-        }
-    }
-
-    static int checkStyle(int style) {
-        int mask = SWT.FLAT | SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
-        return style & mask | SWT.NO_REDRAW_RESIZE;
+        this(new nat.org.eclipse.swt.custom.ViewForm((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
     }
 
     //protected void checkSubclass () {
@@ -209,25 +147,12 @@ public class ViewForm extends Composite {
     //		SWT.error (SWT.ERROR_INVALID_SUBCLASS);
     //	}
     //}
-    @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        checkWidget();
-        int trimX = x - borderLeft - highlight;
-        int trimY = y - borderTop - highlight;
-        int trimWidth = width + borderLeft + borderRight + 2 * highlight;
-        int trimHeight = height + borderTop + borderBottom + 2 * highlight;
-        return new Rectangle(trimX, trimY, trimWidth, trimHeight);
+        return getDelegate().computeTrim(x, y, width, height).getApi();
     }
 
-    @Override
     public Rectangle getClientArea() {
-        checkWidget();
-        Rectangle clientArea = super.getClientArea();
-        clientArea.x += borderLeft;
-        clientArea.y += borderTop;
-        clientArea.width -= borderLeft + borderRight;
-        clientArea.height -= borderTop + borderBottom;
-        return clientArea;
+        return getDelegate().getClientArea().getApi();
     }
 
     /**
@@ -236,12 +161,11 @@ public class ViewForm extends Composite {
      * @return the control in the content area of the pane or null
      */
     public Control getContent() {
+        return getDelegate().getContent().getApi();
         /*
 	 * This call is intentionally commented out, to allow this getter method to be
 	 * called from a thread which is different from one that created the parent.
 	 */
-        //checkWidget();
-        return content;
     }
 
     /**
@@ -251,12 +175,11 @@ public class ViewForm extends Composite {
      * @return the control in the top center of the pane or null
      */
     public Control getTopCenter() {
+        return getDelegate().getTopCenter().getApi();
         /*
 	 * This call is intentionally commented out, to allow this getter method to be
 	 * called from a thread which is different from one that created the widget.
 	 */
-        //checkWidget();
-        return topCenter;
     }
 
     /**
@@ -266,12 +189,11 @@ public class ViewForm extends Composite {
      * @return the control in the top left corner of the pane or null
      */
     public Control getTopLeft() {
+        return getDelegate().getTopLeft().getApi();
         /*
 	 * This call is intentionally commented out, to allow this getter method to be
 	 * called from a thread which is different from one that created the widget.
 	 */
-        //checkWidget();
-        return topLeft;
     }
 
     /**
@@ -281,73 +203,11 @@ public class ViewForm extends Composite {
      * @return the control in the top right corner of the pane or null
      */
     public Control getTopRight() {
+        return getDelegate().getTopRight().getApi();
         /*
 	 * This call is intentionally commented out, to allow this getter method to be
 	 * called from a thread which is different from one that created the widget.
 	 */
-        //checkWidget();
-        return topRight;
-    }
-
-    void onDispose(Event event) {
-        removeListener(SWT.Dispose, listener);
-        notifyListeners(SWT.Dispose, event);
-        event.type = SWT.None;
-        topLeft = null;
-        topCenter = null;
-        topRight = null;
-        content = null;
-        oldSize = null;
-        selectionBackground = null;
-    }
-
-    void onPaint(GC gc) {
-        Color gcForeground = gc.getForeground();
-        Point size = getSize();
-        Color border = getDisplay().getSystemColor(BORDER1_COLOR);
-        if (showBorder) {
-            gc.setForeground(border);
-            gc.drawRectangle(0, 0, size.x - 1, size.y - 1);
-            if (highlight > 0) {
-                int x1 = 1;
-                int y1 = 1;
-                int x2 = size.x - 1;
-                int y2 = size.y - 1;
-                int[] shape = new int[] { x1, y1, x2, y1, x2, y2, x1, y2, x1, y1 + highlight, x1 + highlight, y1 + highlight, x1 + highlight, y2 - highlight, x2 - highlight, y2 - highlight, x2 - highlight, y1 + highlight, x1, y1 + highlight };
-                Color highlightColor = getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION);
-                gc.setBackground(highlightColor);
-                gc.fillPolygon(shape);
-            }
-        }
-        if (separator > -1) {
-            gc.setForeground(border);
-            gc.drawLine(borderLeft + highlight, separator, size.x - borderLeft - borderRight - highlight, separator);
-        }
-        gc.setForeground(gcForeground);
-    }
-
-    void onResize() {
-        Point size = getSize();
-        if (oldSize == null || oldSize.x == 0 || oldSize.y == 0) {
-            redraw();
-        } else {
-            int width = 0;
-            if (oldSize.x < size.x) {
-                width = size.x - oldSize.x + borderRight + highlight;
-            } else if (oldSize.x > size.x) {
-                width = borderRight + highlight;
-            }
-            redraw(size.x - width, 0, width, size.y, false);
-            int height = 0;
-            if (oldSize.y < size.y) {
-                height = size.y - oldSize.y + borderBottom + highlight;
-            }
-            if (oldSize.y > size.y) {
-                height = borderBottom + highlight;
-            }
-            redraw(0, size.y - height, size.x, height, false);
-        }
-        oldSize = size;
     }
 
     /**
@@ -364,15 +224,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setContent(Control content) {
-        checkWidget();
-        if (content != null && content.getParent() != this) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        if (this.content != null && !this.content.isDisposed()) {
-            this.content.setBounds(OFFSCREEN, OFFSCREEN, 0, 0);
-        }
-        this.content = content;
-        layout(false);
+        getDelegate().setContent(content.getDelegate());
     }
 
     /**
@@ -390,20 +242,8 @@ public class ViewForm extends Composite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setLayout(Layout layout) {
-        checkWidget();
-        return;
-    }
-
-    void setSelectionBackground(Color color) {
-        checkWidget();
-        if (selectionBackground == color)
-            return;
-        if (color == null)
-            color = getDisplay().getSystemColor(SELECTION_BACKGROUND);
-        selectionBackground = color;
-        redraw();
+        getDelegate().setLayout(layout.getDelegate());
     }
 
     /**
@@ -421,16 +261,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopCenter(Control topCenter) {
-        checkWidget();
-        if (topCenter != null && topCenter.getParent() != this) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        if (this.topCenter != null && !this.topCenter.isDisposed()) {
-            Point size = this.topCenter.getSize();
-            this.topCenter.setLocation(OFFSCREEN - size.x, OFFSCREEN - size.y);
-        }
-        this.topCenter = topCenter;
-        layout(false);
+        getDelegate().setTopCenter(topCenter.getDelegate());
     }
 
     /**
@@ -448,16 +279,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopLeft(Control c) {
-        checkWidget();
-        if (c != null && c.getParent() != this) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        if (this.topLeft != null && !this.topLeft.isDisposed()) {
-            Point size = this.topLeft.getSize();
-            this.topLeft.setLocation(OFFSCREEN - size.x, OFFSCREEN - size.y);
-        }
-        this.topLeft = c;
-        layout(false);
+        getDelegate().setTopLeft(c.getDelegate());
     }
 
     /**
@@ -475,16 +297,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopRight(Control c) {
-        checkWidget();
-        if (c != null && c.getParent() != this) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        if (this.topRight != null && !this.topRight.isDisposed()) {
-            Point size = this.topRight.getSize();
-            this.topRight.setLocation(OFFSCREEN - size.x, OFFSCREEN - size.y);
-        }
-        this.topRight = c;
-        layout(false);
+        getDelegate().setTopRight(c.getDelegate());
     }
 
     /**
@@ -498,20 +311,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setBorderVisible(boolean show) {
-        checkWidget();
-        if (showBorder == show)
-            return;
-        showBorder = show;
-        if (showBorder) {
-            borderLeft = borderTop = borderRight = borderBottom = 1;
-            if ((getStyle() & SWT.FLAT) == 0)
-                highlight = 2;
-        } else {
-            borderBottom = borderTop = borderLeft = borderRight = 0;
-            highlight = 0;
-        }
-        layout(false);
-        redraw();
+        getDelegate().setBorderVisible(show);
     }
 
     /**
@@ -527,8 +327,14 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopCenterSeparate(boolean show) {
-        checkWidget();
-        separateTopCenter = show;
-        layout(false);
+        getDelegate().setTopCenterSeparate(show);
+    }
+
+    protected ViewForm(IViewForm delegate) {
+        super(delegate);
+    }
+
+    public IViewForm getDelegate() {
+        return (IViewForm) super.getDelegate();
     }
 }

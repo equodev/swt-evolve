@@ -15,15 +15,13 @@
  */
 package nat.org.eclipse.swt.widgets;
 
-import org.eclipse.swt.widgets.IRunnableLock;
-
 /**
  * Instances of this class are used to ensure that an
  * application cannot interfere with the locking mechanism
  * used to implement asynchronous and synchronous communication
  * between widgets and background threads.
  */
-class RunnableLock implements IRunnableLock {
+class RunnableLock {
 
     Runnable runnable;
 
@@ -50,15 +48,5 @@ class RunnableLock implements IRunnableLock {
             }
         }
         runnable = null;
-    }
-
-    public org.eclipse.swt.widgets.RunnableLock getApi() {
-        return (org.eclipse.swt.widgets.RunnableLock) api;
-    }
-
-    org.eclipse.swt.widgets.RunnableLock api;
-
-    public void setApi(org.eclipse.swt.widgets.RunnableLock api) {
-        this.api = api;
     }
 }

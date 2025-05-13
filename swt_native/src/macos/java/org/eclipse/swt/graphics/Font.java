@@ -17,6 +17,7 @@ package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Convert;
 
 /**
  * Instances of this class manage operating system resources that
@@ -85,7 +86,7 @@ public final class Font extends Resource {
      * @see #dispose()
      */
     public Font(Device device, FontData fd) {
-        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), fd));
+        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), (nat.org.eclipse.swt.graphics.FontData) fd.getDelegate()));
     }
 
     /**
@@ -114,7 +115,7 @@ public final class Font extends Resource {
      * @since 2.1
      */
     public Font(Device device, FontData[] fds) {
-        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), fds));
+        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), (nat.org.eclipse.swt.graphics.FontData[]) Convert.array(fds, FontData::getDelegate, nat.org.eclipse.swt.graphics.FontData[][]::new)));
     }
 
     /**
@@ -155,7 +156,6 @@ public final class Font extends Resource {
      *
      * @see #hashCode
      */
-    @Override
     public boolean equals(Object object) {
         return getDelegate().equals(object);
     }
@@ -173,7 +173,7 @@ public final class Font extends Resource {
      * </ul>
      */
     public FontData[] getFontData() {
-        return getDelegate().getFontData();
+        return Convert.array(getDelegate().getFontData(), IFontData::getApi, FontData[]::new);
     }
 
     /**
@@ -186,7 +186,6 @@ public final class Font extends Resource {
      *
      * @see #equals
      */
-    @Override
     public int hashCode() {
         return getDelegate().hashCode();
     }
@@ -201,7 +200,6 @@ public final class Font extends Resource {
      *
      * @return <code>true</code> when the font is disposed and <code>false</code> otherwise
      */
-    @Override
     public boolean isDisposed() {
         return getDelegate().isDisposed();
     }
@@ -212,7 +210,6 @@ public final class Font extends Resource {
      *
      * @return a string representation of the receiver
      */
-    @Override
     public String toString() {
         return getDelegate().toString();
     }

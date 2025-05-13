@@ -115,19 +115,16 @@ public class TabFolder extends Composite {
         getDelegate().addSelectionListener(listener);
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed);
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
-    @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getDelegate().computeTrim(x, y, width, height);
+        return getDelegate().computeTrim(x, y, width, height).getApi();
     }
 
-    @Override
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea();
+        return getDelegate().getClientArea().getApi();
     }
 
     /**
@@ -168,7 +165,7 @@ public class TabFolder extends Composite {
      * @since 3.4
      */
     public TabItem getItem(Point point) {
-        return getDelegate().getItem(point).getApi();
+        return getDelegate().getItem(point.getDelegate()).getApi();
     }
 
     /**

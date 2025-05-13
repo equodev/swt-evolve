@@ -289,7 +289,7 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public void setLocation(Point location) {
-        getDelegate().setLocation(location);
+        getDelegate().setLocation(location.getDelegate());
     }
 
     /**

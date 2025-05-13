@@ -141,8 +141,18 @@ public class GLData {
      *
      * @return a string representation of the data
      */
-    @Override
     public String toString() {
-        return (doubleBuffer ? "doubleBuffer," : "") + (stereo ? "stereo," : "") + "r:" + redSize + " g:" + greenSize + " b:" + blueSize + " a:" + alphaSize + "," + "depth:" + depthSize + ",stencil:" + stencilSize + ",accum r:" + accumRedSize + "g:" + accumGreenSize + "b:" + accumBlueSize + "a:" + accumAlphaSize + ",sampleBuffers:" + sampleBuffers + ",samples:" + samples;
+        return getDelegate().toString();
+    }
+
+    IGLData delegate;
+
+    protected GLData(IGLData delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IGLData getDelegate() {
+        return delegate;
     }
 }

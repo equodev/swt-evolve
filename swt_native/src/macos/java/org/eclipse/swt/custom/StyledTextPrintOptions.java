@@ -113,4 +113,15 @@ public class StyledTextPrintOptions {
      * @since 3.4
      */
     public String[] lineLabels = null;
+
+    IStyledTextPrintOptions delegate;
+
+    protected StyledTextPrintOptions(IStyledTextPrintOptions delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IStyledTextPrintOptions getDelegate() {
+        return delegate;
+    }
 }

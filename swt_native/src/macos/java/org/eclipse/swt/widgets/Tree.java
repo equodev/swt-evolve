@@ -221,9 +221,8 @@ public class Tree extends Composite {
         getDelegate().clearAll(all);
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed);
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
     /**
@@ -259,9 +258,8 @@ public class Tree extends Composite {
         getDelegate().deselect(item.getDelegate());
     }
 
-    @Override
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea();
+        return getDelegate().getClientArea().getApi();
     }
 
     /**
@@ -512,7 +510,7 @@ public class Tree extends Composite {
      * </ul>
      */
     public TreeItem getItem(Point point) {
-        return getDelegate().getItem(point).getApi();
+        return getDelegate().getItem(point.getDelegate()).getApi();
     }
 
     /**
@@ -996,7 +994,6 @@ public class Tree extends Composite {
         getDelegate().setLinesVisible(show);
     }
 
-    @Override
     public void setRedraw(boolean redraw) {
         getDelegate().setRedraw(redraw);
     }

@@ -27,7 +27,7 @@ public interface IComposite extends IScrollable {
      */
     void changed(IControl[] changed);
 
-    Point computeSize(int wHint, int hHint, boolean changed);
+    IPoint computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Fills the interior of the rectangle specified by the arguments,
@@ -112,7 +112,7 @@ public interface IComposite extends IScrollable {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Layout getLayout();
+    ILayout getLayout();
 
     /**
      * Returns <code>true</code> if the receiver has deferred
@@ -409,7 +409,7 @@ public interface IComposite extends IScrollable {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setLayout(Layout layout);
+    void setLayout(ILayout layout);
 
     /**
      * If the argument is <code>true</code>, causes subsequent layout

@@ -39,22 +39,13 @@ import org.eclipse.swt.widgets.*;
  */
 public class ImageTransfer extends ByteArrayTransfer {
 
-    static ImageTransfer _instance = new ImageTransfer();
-
-    static final String TIFF = OS.NSTIFFPboardType.getString();
-
-    static final int TIFFID = registerType(TIFF);
-
-    ImageTransfer() {
-    }
-
     /**
      * Returns the singleton instance of the ImageTransfer class.
      *
      * @return the singleton instance of the ImageTransfer class
      */
     public static ImageTransfer getInstance() {
-        return _instance;
+        return nat.org.eclipse.swt.dnd.ImageTransfer.getInstance().getApi();
     }
 
     /**
@@ -67,16 +58,8 @@ public class ImageTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#nativeToJava
      */
-    @Override
     public void javaToNative(Object object, TransferData transferData) {
-        if (!checkImage(object) || !isSupportedType(transferData)) {
-            DND.error(DND.ERROR_INVALID_DATA);
-        }
-        ImageData imgData = (ImageData) object;
-        Image image = new Image(Display.getCurrent(), imgData);
-        NSImage handle = image.handle;
-        transferData.data = handle.TIFFRepresentation();
-        image.dispose();
+        getDelegate().javaToNative(object, transferData.getDelegate());
     }
 
     /**
@@ -89,55 +72,15 @@ public class ImageTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#javaToNative
      */
-    @Override
     public Object nativeToJava(TransferData transferData) {
-        if (!isSupportedType(transferData) || transferData.data == null)
-            return null;
-        NSData data = (NSData) transferData.data;
-        if (data.length() == 0)
-            return null;
-        NSImage nsImage = (NSImage) new NSImage().alloc();
-        nsImage.initWithData(data);
-        NSSize size = nsImage.size();
-        NSImageRep rep = nsImage.bestRepresentationForDevice(null);
-        if (size.width != rep.pixelsWide() || size.height != rep.pixelsHigh()) {
-            size.width /= (rep.pixelsWide() / size.width);
-            size.height /= (rep.pixelsHigh() / size.height);
-            NSImage newImage = ((NSImage) new NSImage().alloc()).initWithSize(size);
-            newImage.lockFocus();
-            NSRect rect = new NSRect();
-            rect.width = size.width;
-            rect.height = size.height;
-            nsImage.drawInRect(rect, new NSRect(), OS.NSCompositeCopy, 1);
-            newImage.unlockFocus();
-            nsImage.release();
-            nsImage = newImage;
-        }
-        //TODO: Image representation wrong???
-        Image image = Image.cocoa_new(Display.getCurrent(), SWT.BITMAP, nsImage);
-        ImageData imageData = image.getImageData();
-        image.dispose();
-        return imageData;
+        return getDelegate().nativeToJava(transferData.getDelegate());
     }
 
-    @Override
-    protected int[] getTypeIds() {
-        return new int[] { TIFFID };
+    protected ImageTransfer(IImageTransfer delegate) {
+        super(delegate);
     }
 
-    @Override
-    protected String[] getTypeNames() {
-        return new String[] { TIFF };
-    }
-
-    boolean checkImage(Object object) {
-        if (object == null || !(object instanceof ImageData))
-            return false;
-        return true;
-    }
-
-    @Override
-    protected boolean validate(Object object) {
-        return checkImage(object);
+    public IImageTransfer getDelegate() {
+        return (IImageTransfer) super.getDelegate();
     }
 }

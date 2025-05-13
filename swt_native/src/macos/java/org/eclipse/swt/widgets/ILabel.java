@@ -5,7 +5,7 @@ import org.eclipse.swt.graphics.*;
 
 public interface ILabel extends IControl {
 
-    Point computeSize(int wHint, int hHint, boolean changed);
+    IPoint computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Returns a value which describes the position of the

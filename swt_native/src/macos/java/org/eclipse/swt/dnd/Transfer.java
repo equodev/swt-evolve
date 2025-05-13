@@ -32,8 +32,6 @@ package org.eclipse.swt.dnd;
  */
 public abstract class Transfer {
 
-    static String[] TYPES = new String[4];
-
     /**
      * Returns a list of the platform specific data types that can be converted using
      * this transfer agent.
@@ -59,66 +57,6 @@ public abstract class Transfer {
     abstract public boolean isSupportedType(TransferData transferData);
 
     /**
-     * Returns the platform specific ids of the  data types that can be converted using
-     * this transfer agent.
-     *
-     * @return the platform specific ids of the data types that can be converted using
-     * this transfer agent
-     */
-    abstract protected int[] getTypeIds();
-
-    /**
-     * Returns the platform specific names of the  data types that can be converted
-     * using this transfer agent.
-     *
-     * @return the platform specific names of the data types that can be converted
-     * using this transfer agent.
-     */
-    abstract protected String[] getTypeNames();
-
-    /**
-     * Converts a java representation of data to a platform specific representation of
-     * the data.
-     *
-     * <p>On a successful conversion, the transferData.result field will be set as follows:</p>
-     * <ul>
-     * <li>Windows: COM.S_OK
-     * <li>GTK: 1
-     * </ul>
-     *
-     * <p>If this transfer agent is unable to perform the conversion, the transferData.result
-     * field will be set to a failure value as follows:</p>
-     * <ul>
-     * <li>Windows: COM.DV_E_TYMED or COM.E_FAIL
-     * <li>GTK: 0
-     * </ul>
-     *
-     * @param object a java representation of the data to be converted; the type of
-     * Object that is passed in is dependent on the <code>Transfer</code> subclass.
-     *
-     * @param transferData an empty TransferData object; this object will be
-     * filled in on return with the platform specific representation of the data
-     *
-     * @exception org.eclipse.swt.SWTException <ul>
-     *    <li>ERROR_INVALID_DATA - if object does not contain data in a valid format or is <code>null</code></li>
-     * </ul>
-     */
-    abstract protected void javaToNative(Object object, TransferData transferData);
-
-    /**
-     * Converts a platform specific representation of data to a java representation.
-     *
-     * @param transferData the platform specific representation of the data to be
-     * converted
-     *
-     * @return a java representation of the converted data if the conversion was
-     * successful; otherwise null.  If transferData is <code>null</code> then
-     * <code>null</code> is returned.  The type of Object that is returned is
-     * dependent on the <code>Transfer</code> subclass.
-     */
-    abstract protected Object nativeToJava(TransferData transferData);
-
-    /**
      * Registers a name for a data type and returns the associated unique identifier.
      *
      * <p>You may register the same type more than once, the same unique identifier
@@ -133,34 +71,17 @@ public abstract class Transfer {
      * @return the unique identifier associated with this data type
      */
     public static int registerType(String formatName) {
-        /* Note the type 0 is not used */
-        int index = 1;
-        while (index < TYPES.length) {
-            String type = TYPES[index];
-            if (type != null && formatName.equals(type)) {
-                return index;
-            }
-            index++;
-        }
-        if (index == TYPES.length) {
-            String[] newTypes = new String[TYPES.length + 4];
-            System.arraycopy(TYPES, 0, newTypes, 0, TYPES.length);
-            TYPES = newTypes;
-        }
-        TYPES[index] = formatName;
-        return index;
+        return nat.org.eclipse.swt.dnd.Transfer.registerType(formatName);
     }
 
-    /**
-     * Test that the object is of the correct format for this Transfer class.
-     *
-     * @param object a java representation of the data to be converted
-     *
-     * @return true if object is of the correct form for this transfer type
-     *
-     * @since 3.1
-     */
-    protected boolean validate(Object object) {
-        return true;
+    ITransfer delegate;
+
+    protected Transfer(ITransfer delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public ITransfer getDelegate() {
+        return delegate;
     }
 }

@@ -240,9 +240,8 @@ public class Table extends Composite {
         getDelegate().clearAll();
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed);
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
     /**
@@ -313,9 +312,8 @@ public class Table extends Composite {
         getDelegate().deselectAll();
     }
 
-    @Override
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea();
+        return getDelegate().getClientArea().getApi();
     }
 
     /**
@@ -554,7 +552,7 @@ public class Table extends Composite {
      * </ul>
      */
     public TableItem getItem(Point point) {
-        return getDelegate().getItem(point).getApi();
+        return getDelegate().getItem(point.getDelegate()).getApi();
     }
 
     /**
@@ -1097,7 +1095,6 @@ public class Table extends Composite {
         getDelegate().setItemCount(count);
     }
 
-    @Override
     public void setRedraw(boolean redraw) {
         getDelegate().setRedraw(redraw);
     }

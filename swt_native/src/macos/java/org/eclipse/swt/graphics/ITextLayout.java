@@ -114,7 +114,7 @@ public interface ITextLayout extends IResource {
      * @see #setWidth(int)
      * @see #getLineBounds(int)
      */
-    Rectangle getBounds();
+    IRectangle getBounds();
 
     /**
      * Returns the bounds for the specified range of characters. The
@@ -130,7 +130,7 @@ public interface ITextLayout extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    Rectangle getBounds(int start, int end);
+    IRectangle getBounds(int start, int end);
 
     /**
      * Returns the descent of the receiver.
@@ -244,7 +244,7 @@ public interface ITextLayout extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    Rectangle getLineBounds(int lineIndex);
+    IRectangle getLineBounds(int lineIndex);
 
     /**
      * Returns the receiver's line count. This includes lines caused
@@ -271,7 +271,7 @@ public interface ITextLayout extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    FontMetrics getLineMetrics(int lineIndex);
+    IFontMetrics getLineMetrics(int lineIndex);
 
     /**
      * Returns the location for the specified character offset. The
@@ -289,7 +289,7 @@ public interface ITextLayout extends IResource {
      * @see #getOffset(Point, int[])
      * @see #getOffset(int, int, int[])
      */
-    Point getLocation(int offset, boolean trailing);
+    IPoint getLocation(int offset, boolean trailing);
 
     /**
      * Returns the next offset for the specified offset and movement
@@ -335,7 +335,7 @@ public interface ITextLayout extends IResource {
      *
      * @see #getLocation(int, boolean)
      */
-    int getOffset(Point point, int[] trailing);
+    int getOffset(IPoint point, int[] trailing);
 
     /**
      * Returns the character offset for the specified point.
@@ -470,7 +470,7 @@ public interface ITextLayout extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    TextStyle getStyle(int offset);
+    ITextStyle getStyle(int offset);
 
     /**
      * Gets all styles of the receiver.
@@ -485,7 +485,7 @@ public interface ITextLayout extends IResource {
      *
      * @since 3.2
      */
-    TextStyle[] getStyles();
+    ITextStyle[] getStyles();
 
     /**
      * Returns the tab list of the receiver.
@@ -648,7 +648,7 @@ public interface ITextLayout extends IResource {
      *
      * @since 3.125
      */
-    void setFixedLineMetrics(FontMetrics metrics);
+    void setFixedLineMetrics(IFontMetrics metrics);
 
     /**
      * Sets the default font which will be used by the receiver
@@ -815,7 +815,7 @@ public interface ITextLayout extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void setStyle(TextStyle style, int start, int end);
+    void setStyle(ITextStyle style, int start, int end);
 
     /**
      * Sets the receiver's tab list. Each value in the tab list specifies

@@ -102,7 +102,7 @@ public interface ITree extends IComposite {
      */
     void clearAll(boolean all);
 
-    Point computeSize(int wHint, int hHint, boolean changed);
+    IPoint computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Deselects all selected items in the receiver.
@@ -133,7 +133,7 @@ public interface ITree extends IComposite {
      */
     void deselect(ITreeItem item);
 
-    Rectangle getClientArea();
+    IRectangle getClientArea();
 
     /**
      * Returns the column at the given, zero-relative index in the
@@ -362,7 +362,7 @@ public interface ITree extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITreeItem getItem(Point point);
+    ITreeItem getItem(IPoint point);
 
     /**
      * Returns the number of items contained in the receiver

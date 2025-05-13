@@ -34,22 +34,6 @@ import org.eclipse.swt.widgets.*;
 @Deprecated
 public class AnimatedProgress extends Canvas {
 
-    static final int SLEEP = 70;
-
-    static final int DEFAULT_WIDTH = 160;
-
-    static final int DEFAULT_HEIGHT = 18;
-
-    boolean active = false;
-
-    boolean showStripes = false;
-
-    int value;
-
-    int orientation = SWT.HORIZONTAL;
-
-    boolean showBorder = false;
-
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.
@@ -79,19 +63,7 @@ public class AnimatedProgress extends Canvas {
      * @see #getStyle()
      */
     public AnimatedProgress(Composite parent, int style) {
-        super(parent, checkStyle(style));
-        if ((style & SWT.VERTICAL) != 0) {
-            orientation = SWT.VERTICAL;
-        }
-        showBorder = (style & SWT.BORDER) != 0;
-        addControlListener(ControlListener.controlResizedAdapter(e -> redraw()));
-        addPaintListener(this::paint);
-        addDisposeListener(e -> stop());
-    }
-
-    private static int checkStyle(int style) {
-        int mask = SWT.NONE;
-        return style & mask;
+        this(new nat.org.eclipse.swt.custom.AnimatedProgress((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
     }
 
     /**
@@ -104,83 +76,11 @@ public class AnimatedProgress extends Canvas {
      * </ul>
      */
     public synchronized void clear() {
-        checkWidget();
-        if (active)
-            stop();
-        showStripes = false;
-        redraw();
+        getDelegate().clear();
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        Point size = null;
-        if (orientation == SWT.HORIZONTAL) {
-            size = new Point(DEFAULT_WIDTH, DEFAULT_HEIGHT);
-        } else {
-            size = new Point(DEFAULT_HEIGHT, DEFAULT_WIDTH);
-        }
-        if (wHint != SWT.DEFAULT)
-            size.x = wHint;
-        if (hHint != SWT.DEFAULT)
-            size.y = hHint;
-        return size;
-    }
-
-    private void drawBevelRect(GC gc, int x, int y, int w, int h, Color topleft, Color bottomright) {
-        gc.setForeground(topleft);
-        gc.drawLine(x, y, x + w - 1, y);
-        gc.drawLine(x, y, x, y + h - 1);
-        gc.setForeground(bottomright);
-        gc.drawLine(x + w, y, x + w, y + h);
-        gc.drawLine(x, y + h, x + w, y + h);
-    }
-
-    void paint(PaintEvent event) {
-        GC gc = event.gc;
-        Display disp = getDisplay();
-        Rectangle rect = getClientArea();
-        gc.fillRectangle(rect);
-        if (showBorder) {
-            drawBevelRect(gc, rect.x, rect.y, rect.width - 1, rect.height - 1, disp.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW), disp.getSystemColor(SWT.COLOR_WIDGET_HIGHLIGHT_SHADOW));
-        }
-        paintStripes(gc);
-    }
-
-    void paintStripes(GC gc) {
-        if (!showStripes)
-            return;
-        Rectangle rect = getClientArea();
-        // Subtracted border painted by paint.
-        rect = new Rectangle(rect.x + 2, rect.y + 2, rect.width - 4, rect.height - 4);
-        gc.setLineWidth(2);
-        gc.setClipping(rect);
-        Color color = getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION);
-        gc.setBackground(color);
-        gc.fillRectangle(rect);
-        gc.setForeground(this.getBackground());
-        int step = 12;
-        int foregroundValue = value == 0 ? step - 2 : value - 2;
-        if (orientation == SWT.HORIZONTAL) {
-            int y = rect.y - 1;
-            int w = rect.width;
-            int h = rect.height + 2;
-            for (int i = 0; i < w; i += step) {
-                int x = i + foregroundValue;
-                gc.drawLine(x, y, x, h);
-            }
-        } else {
-            int x = rect.x - 1;
-            int w = rect.width + 2;
-            int h = rect.height;
-            for (int i = 0; i < h; i += step) {
-                int y = i + foregroundValue;
-                gc.drawLine(x, y, w, y);
-            }
-        }
-        if (active) {
-            value = (value + 2) % step;
-        }
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
     /**
@@ -192,29 +92,21 @@ public class AnimatedProgress extends Canvas {
      * </ul>
      */
     public synchronized void start() {
-        checkWidget();
-        if (active)
-            return;
-        active = true;
-        showStripes = true;
-        final Display display = getDisplay();
-        final Runnable[] timer = new Runnable[1];
-        timer[0] = () -> {
-            if (!active)
-                return;
-            GC gc = new GC(AnimatedProgress.this);
-            paintStripes(gc);
-            gc.dispose();
-            display.timerExec(SLEEP, timer[0]);
-        };
-        display.timerExec(SLEEP, timer[0]);
+        getDelegate().start();
     }
 
     /**
      * Stop the animation.   Freeze the presentation at its current appearance.
      */
     public synchronized void stop() {
-        //checkWidget();
-        active = false;
+        getDelegate().stop();
+    }
+
+    protected AnimatedProgress(IAnimatedProgress delegate) {
+        super(delegate);
+    }
+
+    public IAnimatedProgress getDelegate() {
+        return (IAnimatedProgress) super.getDelegate();
     }
 }

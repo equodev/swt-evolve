@@ -16,18 +16,16 @@
 package nat.org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.accessibility.*;
+import nat.org.eclipse.swt.accessibility.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.ExceptionStash;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.widgets.Layout;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.accessibility.ACC;
 import org.eclipse.swt.widgets.IComposite;
 import org.eclipse.swt.widgets.IControl;
 import org.eclipse.swt.graphics.IGC;
+import org.eclipse.swt.widgets.ILayout;
 
 /**
  * Instances of this class are controls which are capable
@@ -248,7 +246,7 @@ public class Composite extends Scrollable implements IComposite {
         if (layout != null) {
             if ((wHint == SWT.DEFAULT) || (hHint == SWT.DEFAULT)) {
                 changed |= (state & LAYOUT_CHANGED) != 0;
-                size = layout.computeSize(this.getApi(), wHint, hHint, changed);
+                size = layout.computeSize(this, wHint, hHint, changed);
                 state &= ~LAYOUT_CHANGED;
             } else {
                 size = new Point(wHint, hHint);
@@ -922,7 +920,7 @@ public class Composite extends Scrollable implements IComposite {
                 while (child != this) {
                     if (composite.layout != null) {
                         composite.state |= LAYOUT_NEEDED;
-                        if (!composite.layout.flushCache(child.getApi())) {
+                        if (!composite.layout.flushCache(child)) {
                             composite.state |= LAYOUT_CHANGED;
                         }
                     }
@@ -1211,7 +1209,8 @@ public class Composite extends Scrollable implements IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setLayout(Layout layout) {
+    public void setLayout(ILayout ilayout) {
+        Layout layout = (Layout) ilayout;
         checkWidget();
         this.layout = layout;
     }
@@ -1381,7 +1380,7 @@ public class Composite extends Scrollable implements IComposite {
             boolean changed = (state & LAYOUT_CHANGED) != 0;
             state &= ~(LAYOUT_NEEDED | LAYOUT_CHANGED);
             display.runSkin();
-            layout.layout(this.getApi(), changed);
+            layout.layout(this, changed);
         }
         if (all) {
             state &= ~LAYOUT_CHILD;

@@ -68,6 +68,15 @@ public class Combo extends Composite {
      */
     public static final int LIMIT;
 
+    /*
+	* These values can be different on different platforms.
+	* Therefore they are not initialized in the declaration
+	* to stop the compiler from inlining.
+	*/
+    static {
+        LIMIT = 0x7FFFFFFF;
+    }
+
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.
@@ -289,9 +298,8 @@ public class Combo extends Composite {
         getDelegate().clearSelection();
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed);
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
     /**
@@ -396,7 +404,7 @@ public class Combo extends Composite {
      * @since 3.8
      */
     public Point getCaretLocation() {
-        return getDelegate().getCaretLocation();
+        return getDelegate().getCaretLocation().getApi();
     }
 
     /**
@@ -503,7 +511,6 @@ public class Combo extends Composite {
      *
      * @since 2.1.2
      */
-    @Override
     public int getOrientation() {
         return getDelegate().getOrientation();
     }
@@ -528,7 +535,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public Point getSelection() {
-        return getDelegate().getSelection();
+        return getDelegate().getSelection().getApi();
     }
 
     /**
@@ -926,7 +933,6 @@ public class Combo extends Composite {
      *
      * @since 2.1.2
      */
-    @Override
     public void setOrientation(int orientation) {
         getDelegate().setOrientation(orientation);
     }
@@ -948,7 +954,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public void setSelection(Point selection) {
-        getDelegate().setSelection(selection);
+        getDelegate().setSelection(selection.getDelegate());
     }
 
     /**

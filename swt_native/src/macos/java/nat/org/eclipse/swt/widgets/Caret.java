@@ -18,11 +18,11 @@ package nat.org.eclipse.swt.widgets;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.ICaret;
+import org.eclipse.swt.graphics.IRectangle;
 import org.eclipse.swt.graphics.IFont;
 import org.eclipse.swt.graphics.IImage;
+import org.eclipse.swt.graphics.IPoint;
 
 /**
  * Instances of this class provide an i-beam that is typically used
@@ -370,7 +370,8 @@ public class Caret extends Widget implements ICaret {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setBounds(Rectangle rect) {
+    public void setBounds(IRectangle irect) {
+        Rectangle rect = (Rectangle) irect;
         checkWidget();
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -468,7 +469,8 @@ public class Caret extends Widget implements ICaret {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setLocation(Point location) {
+    public void setLocation(IPoint ilocation) {
+        Point location = (Point) ilocation;
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -504,7 +506,8 @@ public class Caret extends Widget implements ICaret {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setSize(Point size) {
+    public void setSize(IPoint isize) {
+        Point size = (Point) isize;
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);

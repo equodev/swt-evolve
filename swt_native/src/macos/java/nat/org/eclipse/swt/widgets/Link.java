@@ -22,7 +22,6 @@ import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import nat.org.eclipse.swt.widgets.Display.*;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ILink;
 import org.eclipse.swt.graphics.IColor;

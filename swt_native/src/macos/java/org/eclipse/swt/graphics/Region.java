@@ -121,7 +121,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public void add(Rectangle rect) {
-        getDelegate().add(rect);
+        getDelegate().add(rect.getDelegate());
     }
 
     /**
@@ -198,7 +198,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public boolean contains(Point pt) {
-        return getDelegate().contains(pt);
+        return getDelegate().contains(pt.getDelegate());
     }
 
     /**
@@ -211,7 +211,6 @@ public final class Region extends Resource {
      *
      * @see #hashCode
      */
-    @Override
     public boolean equals(Object object) {
         return getDelegate().equals(object);
     }
@@ -230,7 +229,7 @@ public final class Region extends Resource {
      * @see Rectangle#union
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
     }
 
     /**
@@ -243,7 +242,6 @@ public final class Region extends Resource {
      *
      * @see #equals
      */
-    @Override
     public int hashCode() {
         return getDelegate().hashCode();
     }
@@ -265,7 +263,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void intersect(Rectangle rect) {
-        getDelegate().intersect(rect);
+        getDelegate().intersect(rect.getDelegate());
     }
 
     /**
@@ -350,7 +348,7 @@ public final class Region extends Resource {
      * @see Rectangle#intersects(Rectangle)
      */
     public boolean intersects(Rectangle rect) {
-        return getDelegate().intersects(rect);
+        return getDelegate().intersects(rect.getDelegate());
     }
 
     /**
@@ -363,7 +361,6 @@ public final class Region extends Resource {
      *
      * @return <code>true</code> when the region is disposed, and <code>false</code> otherwise
      */
-    @Override
     public boolean isDisposed() {
         return getDelegate().isDisposed();
     }
@@ -419,7 +416,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void subtract(Rectangle rect) {
-        getDelegate().subtract(rect);
+        getDelegate().subtract(rect.getDelegate());
     }
 
     /**
@@ -498,7 +495,7 @@ public final class Region extends Resource {
      * @since 3.1
      */
     public void translate(Point pt) {
-        getDelegate().translate(pt);
+        getDelegate().translate(pt.getDelegate());
     }
 
     /**
@@ -507,7 +504,6 @@ public final class Region extends Resource {
      *
      * @return a string representation of the receiver
      */
-    @Override
     public String toString() {
         return getDelegate().toString();
     }

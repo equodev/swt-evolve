@@ -73,7 +73,6 @@ public final class Touch {
      *
      * @return a string representation of the event
      */
-    @Override
     public String toString() {
         return getDelegate().toString();
     }

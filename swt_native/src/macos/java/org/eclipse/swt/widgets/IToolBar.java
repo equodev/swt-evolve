@@ -6,11 +6,11 @@ import org.eclipse.swt.graphics.*;
 
 public interface IToolBar extends IComposite {
 
-    Point computeSize(int wHint, int hHint, boolean changed);
+    IPoint computeSize(int wHint, int hHint, boolean changed);
 
-    Rectangle computeTrim(int x, int y, int width, int height);
+    IRectangle computeTrim(int x, int y, int width, int height);
 
-    Rectangle getBounds();
+    IRectangle getBounds();
 
     /**
      * Returns the item at the given, zero-relative index in the
@@ -45,7 +45,7 @@ public interface IToolBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IToolItem getItem(Point point);
+    IToolItem getItem(IPoint point);
 
     /**
      * Returns the number of items contained in the receiver.

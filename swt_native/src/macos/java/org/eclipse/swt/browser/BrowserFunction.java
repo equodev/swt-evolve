@@ -48,20 +48,6 @@ import org.eclipse.swt.*;
  */
 public class BrowserFunction {
 
-    Browser browser;
-
-    String name;
-
-    String functionString;
-
-    int index;
-
-    boolean isEvaluate, top;
-
-    String token;
-
-    String[] frameNames;
-
     /**
      * Constructs a new instance of this class, which will be invokable
      * by javascript running in the specified Browser.  The function will
@@ -92,7 +78,7 @@ public class BrowserFunction {
      * @see org.eclipse.swt.browser.LocationListener#changed(LocationEvent)
      */
     public BrowserFunction(Browser browser, String name) {
-        this(browser, name, true, null, true);
+        this(new nat.org.eclipse.swt.browser.BrowserFunction((nat.org.eclipse.swt.browser.Browser) browser.getDelegate(), name));
     }
 
     /**
@@ -133,32 +119,7 @@ public class BrowserFunction {
      * @since 3.8
      */
     public BrowserFunction(Browser browser, String name, boolean top, String[] frameNames) {
-        this(browser, name, top, frameNames, true);
-    }
-
-    BrowserFunction(Browser browser, String name, boolean top, String[] frameNames, boolean create) {
-        super();
-        if (browser == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (name == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (browser.isDisposed())
-            SWT.error(SWT.ERROR_WIDGET_DISPOSED);
-        browser.checkWidget();
-        this.browser = browser;
-        this.name = name;
-        this.top = top;
-        this.frameNames = frameNames;
-        Random random = new Random();
-        byte[] bytes = new byte[16];
-        random.nextBytes(bytes);
-        StringBuilder buffer = new StringBuilder();
-        for (byte b : bytes) {
-            buffer.append(Integer.toHexString(b & 0xff));
-        }
-        token = buffer.toString();
-        if (create)
-            browser.webBrowser.createFunction(this);
+        this(new nat.org.eclipse.swt.browser.BrowserFunction((nat.org.eclipse.swt.browser.Browser) browser.getDelegate(), name, top, frameNames));
     }
 
     /**
@@ -170,17 +131,7 @@ public class BrowserFunction {
      * </p>
      */
     public void dispose() {
-        dispose(true);
-    }
-
-    void dispose(boolean remove) {
-        if (index < 0)
-            return;
-        if (remove)
-            browser.webBrowser.destroyFunction(this);
-        browser = null;
-        name = functionString = null;
-        index = -1;
+        getDelegate().dispose();
     }
 
     /**
@@ -214,10 +165,7 @@ public class BrowserFunction {
      * </ul>
      */
     public Object function(Object[] arguments) {
-        if (index < 0)
-            SWT.error(SWT.ERROR_FUNCTION_DISPOSED);
-        browser.checkWidget();
-        return null;
+        return getDelegate().function(arguments);
     }
 
     /**
@@ -231,10 +179,7 @@ public class BrowserFunction {
      * </ul>
      */
     public Browser getBrowser() {
-        if (index < 0)
-            SWT.error(SWT.ERROR_FUNCTION_DISPOSED);
-        browser.checkWidget();
-        return browser;
+        return getDelegate().getBrowser().getApi();
     }
 
     /**
@@ -248,10 +193,7 @@ public class BrowserFunction {
      * </ul>
      */
     public String getName() {
-        if (index < 0)
-            SWT.error(SWT.ERROR_FUNCTION_DISPOSED);
-        browser.checkWidget();
-        return name;
+        return getDelegate().getName();
     }
 
     /**
@@ -269,6 +211,17 @@ public class BrowserFunction {
      * and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return index < 0;
+        return getDelegate().isDisposed();
+    }
+
+    IBrowserFunction delegate;
+
+    protected BrowserFunction(IBrowserFunction delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IBrowserFunction getDelegate() {
+        return delegate;
     }
 }

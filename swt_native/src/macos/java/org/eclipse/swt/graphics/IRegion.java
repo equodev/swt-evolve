@@ -35,7 +35,7 @@ public interface IRegion extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void add(Rectangle rect);
+    void add(IRectangle rect);
 
     /**
      * Adds the given rectangle to the collection of polygons
@@ -104,7 +104,7 @@ public interface IRegion extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    boolean contains(Point pt);
+    boolean contains(IPoint pt);
 
     /**
      * Compares the argument to the receiver, and returns true
@@ -131,7 +131,7 @@ public interface IRegion extends IResource {
      *
      * @see Rectangle#union
      */
-    Rectangle getBounds();
+    IRectangle getBounds();
 
     /**
      * Returns an integer hash code for the receiver. Any two
@@ -161,7 +161,7 @@ public interface IRegion extends IResource {
      *
      * @since 3.0
      */
-    void intersect(Rectangle rect);
+    void intersect(IRectangle rect);
 
     /**
      * Intersects the given rectangle to the collection of polygons
@@ -238,7 +238,7 @@ public interface IRegion extends IResource {
      *
      * @see Rectangle#intersects(Rectangle)
      */
-    boolean intersects(Rectangle rect);
+    boolean intersects(IRectangle rect);
 
     /**
      * Returns <code>true</code> if the region has been disposed,
@@ -298,7 +298,7 @@ public interface IRegion extends IResource {
      *
      * @since 3.0
      */
-    void subtract(Rectangle rect);
+    void subtract(IRectangle rect);
 
     /**
      * Subtracts the given rectangle from the collection of polygons
@@ -369,7 +369,7 @@ public interface IRegion extends IResource {
      *
      * @since 3.1
      */
-    void translate(Point pt);
+    void translate(IPoint pt);
 
     /**
      * Returns a string containing a concise, human-readable

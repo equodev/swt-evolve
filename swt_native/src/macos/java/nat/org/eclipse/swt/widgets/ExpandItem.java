@@ -17,8 +17,6 @@ package nat.org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.IExpandItem;
 import org.eclipse.swt.widgets.IControl;
 import org.eclipse.swt.graphics.IImage;

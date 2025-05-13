@@ -66,8 +66,6 @@ public final class Rectangle implements Serializable {
      */
     public int height;
 
-    static final long serialVersionUID = 3256439218279428914L;
-
     /**
      * Construct a new instance of this class given the
      * x, y, width and height values.
@@ -78,10 +76,7 @@ public final class Rectangle implements Serializable {
      * @param height the height of the rectangle
      */
     public Rectangle(int x, int y, int width, int height) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
+        this(new nat.org.eclipse.swt.graphics.Rectangle(x, y, width, height));
     }
 
     /**
@@ -101,20 +96,7 @@ public final class Rectangle implements Serializable {
      * </ul>
      */
     public void add(Rectangle rect) {
-        if (rect == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        int left = x < rect.x ? x : rect.x;
-        int top = y < rect.y ? y : rect.y;
-        int lhs = x + width;
-        int rhs = rect.x + rect.width;
-        int right = lhs > rhs ? lhs : rhs;
-        lhs = y + height;
-        rhs = rect.y + rect.height;
-        int bottom = lhs > rhs ? lhs : rhs;
-        x = left;
-        y = top;
-        width = right - left;
-        height = bottom - top;
+        getDelegate().add(rect.getDelegate());
     }
 
     /**
@@ -127,7 +109,7 @@ public final class Rectangle implements Serializable {
      * @return <code>true</code> if the rectangle contains the point and <code>false</code> otherwise
      */
     public boolean contains(int x, int y) {
-        return (x >= this.x) && (y >= this.y) && x < (this.x + width) && y < (this.y + height);
+        return getDelegate().contains(x, y);
     }
 
     /**
@@ -143,9 +125,7 @@ public final class Rectangle implements Serializable {
      * </ul>
      */
     public boolean contains(Point pt) {
-        if (pt == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return contains(pt.x, pt.y);
+        return getDelegate().contains(pt.getDelegate());
     }
 
     /**
@@ -158,13 +138,8 @@ public final class Rectangle implements Serializable {
      *
      * @see #hashCode()
      */
-    @Override
     public boolean equals(Object object) {
-        if (object == this)
-            return true;
-        if (!(object instanceof Rectangle r))
-            return false;
-        return (r.x == this.x) && (r.y == this.y) && (r.width == this.width) && (r.height == this.height);
+        return getDelegate().equals(object);
     }
 
     /**
@@ -177,9 +152,8 @@ public final class Rectangle implements Serializable {
      *
      * @see #equals(Object)
      */
-    @Override
     public int hashCode() {
-        return x ^ y ^ width ^ height;
+        return getDelegate().hashCode();
     }
 
     /**
@@ -196,22 +170,7 @@ public final class Rectangle implements Serializable {
      * since 3.0
      */
     public void intersect(Rectangle rect) {
-        if (rect == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (this == rect)
-            return;
-        int left = x > rect.x ? x : rect.x;
-        int top = y > rect.y ? y : rect.y;
-        int lhs = x + width;
-        int rhs = rect.x + rect.width;
-        int right = lhs < rhs ? lhs : rhs;
-        lhs = y + height;
-        rhs = rect.y + rect.height;
-        int bottom = lhs < rhs ? lhs : rhs;
-        x = right < left ? 0 : left;
-        y = bottom < top ? 0 : top;
-        width = right < left ? 0 : right - left;
-        height = bottom < top ? 0 : bottom - top;
+        getDelegate().intersect(rect.getDelegate());
     }
 
     /**
@@ -230,19 +189,7 @@ public final class Rectangle implements Serializable {
      * </ul>
      */
     public Rectangle intersection(Rectangle rect) {
-        if (rect == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (this == rect)
-            return new Rectangle(x, y, width, height);
-        int left = x > rect.x ? x : rect.x;
-        int top = y > rect.y ? y : rect.y;
-        int lhs = x + width;
-        int rhs = rect.x + rect.width;
-        int right = lhs < rhs ? lhs : rhs;
-        lhs = y + height;
-        rhs = rect.y + rect.height;
-        int bottom = lhs < rhs ? lhs : rhs;
-        return new Rectangle(right < left ? 0 : left, bottom < top ? 0 : top, right < left ? 0 : right - left, bottom < top ? 0 : bottom - top);
+        return getDelegate().intersection(rect.getDelegate()).getApi();
     }
 
     /**
@@ -270,7 +217,7 @@ public final class Rectangle implements Serializable {
      * @since 3.0
      */
     public boolean intersects(int x, int y, int width, int height) {
-        return (x < this.x + this.width) && (y < this.y + this.height) && (x + width > this.x) && (y + height > this.y);
+        return getDelegate().intersects(x, y, width, height);
     }
 
     /**
@@ -292,9 +239,7 @@ public final class Rectangle implements Serializable {
      * @see #isEmpty()
      */
     public boolean intersects(Rectangle rect) {
-        if (rect == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return rect == this || intersects(rect.x, rect.y, rect.width, rect.height);
+        return getDelegate().intersects(rect.getDelegate());
     }
 
     /**
@@ -310,7 +255,7 @@ public final class Rectangle implements Serializable {
      * @return <code>true</code> if the receiver is empty, and <code>false</code> otherwise
      */
     public boolean isEmpty() {
-        return (width <= 0) || (height <= 0);
+        return getDelegate().isEmpty();
     }
 
     /**
@@ -319,10 +264,8 @@ public final class Rectangle implements Serializable {
      *
      * @return a string representation of the rectangle
      */
-    @Override
     public String toString() {
-        //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
-        return "Rectangle {" + x + ", " + y + ", " + width + ", " + height + "}";
+        return getDelegate().toString();
     }
 
     /**
@@ -344,16 +287,17 @@ public final class Rectangle implements Serializable {
      * @see #add(Rectangle)
      */
     public Rectangle union(Rectangle rect) {
-        if (rect == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        int left = x < rect.x ? x : rect.x;
-        int top = y < rect.y ? y : rect.y;
-        int lhs = x + width;
-        int rhs = rect.x + rect.width;
-        int right = lhs > rhs ? lhs : rhs;
-        lhs = y + height;
-        rhs = rect.y + rect.height;
-        int bottom = lhs > rhs ? lhs : rhs;
-        return new Rectangle(left, top, right - left, bottom - top);
+        return getDelegate().union(rect.getDelegate()).getApi();
+    }
+
+    IRectangle delegate;
+
+    protected Rectangle(IRectangle delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IRectangle getDelegate() {
+        return delegate;
     }
 }

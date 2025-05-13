@@ -204,7 +204,6 @@ public class Transform extends Resource {
      *
      * @return <code>true</code> when the Transform is disposed, and <code>false</code> otherwise
      */
-    @Override
     public boolean isDisposed() {
         return getDelegate().isDisposed();
     }
@@ -345,7 +344,6 @@ public class Transform extends Resource {
      *
      * @return a string representation of the receiver
      */
-    @Override
     public String toString() {
         return getDelegate().toString();
     }

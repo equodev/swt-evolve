@@ -33,22 +33,13 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class HTMLTransfer extends ByteArrayTransfer {
 
-    static HTMLTransfer _instance = new HTMLTransfer();
-
-    static final String HTML = OS.NSPasteboardTypeHTML.getString();
-
-    static final int HTMLID = registerType(HTML);
-
-    HTMLTransfer() {
-    }
-
     /**
      * Returns the singleton instance of the HTMLTransfer class.
      *
      * @return the singleton instance of the HTMLTransfer class
      */
     public static HTMLTransfer getInstance() {
-        return _instance;
+        return nat.org.eclipse.swt.dnd.HTMLTransfer.getInstance().getApi();
     }
 
     /**
@@ -61,12 +52,8 @@ public class HTMLTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#nativeToJava
      */
-    @Override
     public void javaToNative(Object object, TransferData transferData) {
-        if (!checkHTML(object) || !isSupportedType(transferData)) {
-            DND.error(DND.ERROR_INVALID_DATA);
-        }
-        transferData.data = NSString.stringWith((String) object);
+        getDelegate().javaToNative(object, transferData.getDelegate());
     }
 
     /**
@@ -79,30 +66,15 @@ public class HTMLTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#javaToNative
      */
-    @Override
     public Object nativeToJava(TransferData transferData) {
-        if (!isSupportedType(transferData) || transferData.data == null)
-            return null;
-        NSString string = (NSString) transferData.data;
-        return string.getString();
+        return getDelegate().nativeToJava(transferData.getDelegate());
     }
 
-    @Override
-    protected int[] getTypeIds() {
-        return new int[] { HTMLID };
+    protected HTMLTransfer(IHTMLTransfer delegate) {
+        super(delegate);
     }
 
-    @Override
-    protected String[] getTypeNames() {
-        return new String[] { HTML };
-    }
-
-    boolean checkHTML(Object object) {
-        return (object != null && object instanceof String && ((String) object).length() > 0);
-    }
-
-    @Override
-    protected boolean validate(Object object) {
-        return checkHTML(object);
+    public IHTMLTransfer getDelegate() {
+        return (IHTMLTransfer) super.getDelegate();
     }
 }

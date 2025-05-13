@@ -18,23 +18,23 @@ package nat.org.eclipse.swt.widgets;
 
 import java.util.*;
 import org.eclipse.swt.*;
-import org.eclipse.swt.accessibility.*;
+import nat.org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import dev.equo.swt.Convert;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.graphics.GCData;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Drawable;
+import org.eclipse.swt.accessibility.ACC;
 import org.eclipse.swt.widgets.IControl;
 import org.eclipse.swt.graphics.IGC;
 import org.eclipse.swt.graphics.IColor;
 import org.eclipse.swt.graphics.IImage;
+import org.eclipse.swt.graphics.IRectangle;
 import org.eclipse.swt.graphics.ICursor;
 import org.eclipse.swt.graphics.IFont;
+import org.eclipse.swt.graphics.IPoint;
 import org.eclipse.swt.widgets.IMenu;
 import org.eclipse.swt.widgets.IComposite;
 import org.eclipse.swt.graphics.IRegion;
@@ -2199,7 +2199,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      * @noreference This method is not intended to be referenced by clients.
      */
     @Override
-    public long internal_new_GC(GCData data) {
+    public long internal_new_GC(org.eclipse.swt.graphics.GCData idata) {
+        GCData data = (GCData) idata.getDelegate();
         checkWidget();
         NSView view = paintView();
         NSGraphicsContext graphicsContext = null;
@@ -2247,7 +2248,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
             if ((data.style & mask) == 0) {
                 data.style |= style & (mask | SWT.MIRRORED);
             }
-            data.device = display.getApi();
+            data.device = display;
             data.thread = display.thread;
             data.view = view;
             data.view.retain();
@@ -2257,7 +2258,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
             if (control == null)
                 control = this;
             data.background = control.getBackgroundColor().handle;
-            data.font = font != null ? font : defaultFont().getApi();
+            data.font = font != null ? font : defaultFont();
         }
         if (graphicsContext != null) {
             return graphicsContext.id;
@@ -2281,7 +2282,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      * @noreference This method is not intended to be referenced by clients.
      */
     @Override
-    public void internal_dispose_GC(long hDC, GCData data) {
+    public void internal_dispose_GC(long hDC, org.eclipse.swt.graphics.GCData idata) {
+        GCData data = (GCData) idata.getDelegate();
         checkWidget();
         long context = hDC;
         NSGraphicsContext graphicsContext = new NSGraphicsContext(context);
@@ -2832,7 +2834,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
     }
 
     Accessible new_Accessible(Control control) {
-        return Accessible.internal_new_Accessible(this.getApi());
+        return Accessible.internal_new_Accessible(this);
     }
 
     /**
@@ -3885,7 +3887,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setBounds(Rectangle rect) {
+    public void setBounds(IRectangle irect) {
+        Rectangle rect = (Rectangle) irect;
         checkWidget();
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -4211,7 +4214,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setLocation(Point location) {
+    public void setLocation(IPoint ilocation) {
+        Point location = (Point) ilocation;
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -4460,7 +4464,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setSize(Point size) {
+    public void setSize(IPoint isize) {
+        Point size = (Point) isize;
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -4804,7 +4809,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public Point toControl(Point point) {
+    public Point toControl(IPoint ipoint) {
+        Point point = (Point) ipoint;
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -4856,7 +4862,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public Point toDisplay(Point point) {
+    public Point toDisplay(IPoint ipoint) {
+        Point point = (Point) ipoint;
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);

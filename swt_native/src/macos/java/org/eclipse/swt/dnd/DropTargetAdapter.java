@@ -48,8 +48,8 @@ public class DropTargetAdapter implements DropTargetListener {
      *
      * @param event the information associated with the drag enter event
      */
-    @Override
     public void dragEnter(DropTargetEvent event) {
+        getDelegate().dragEnter(event);
     }
 
     /**
@@ -58,8 +58,8 @@ public class DropTargetAdapter implements DropTargetListener {
      *
      * @param event the information associated with the drag leave event
      */
-    @Override
     public void dragLeave(DropTargetEvent event) {
+        getDelegate().dragLeave(event);
     }
 
     /**
@@ -70,8 +70,8 @@ public class DropTargetAdapter implements DropTargetListener {
      *
      * @param event the information associated with the drag operation changed event
      */
-    @Override
     public void dragOperationChanged(DropTargetEvent event) {
+        getDelegate().dragOperationChanged(event);
     }
 
     /**
@@ -82,8 +82,8 @@ public class DropTargetAdapter implements DropTargetListener {
      *
      * @param event the information associated with the drag over event
      */
-    @Override
     public void dragOver(DropTargetEvent event) {
+        getDelegate().dragOver(event);
     }
 
     /**
@@ -92,8 +92,8 @@ public class DropTargetAdapter implements DropTargetListener {
      *
      * @param event the information associated with the drop event
      */
-    @Override
     public void drop(DropTargetEvent event) {
+        getDelegate().drop(event);
     }
 
     /**
@@ -104,7 +104,18 @@ public class DropTargetAdapter implements DropTargetListener {
      *
      * @param event the information associated with the drop accept event
      */
-    @Override
     public void dropAccept(DropTargetEvent event) {
+        getDelegate().dropAccept(event);
+    }
+
+    IDropTargetAdapter delegate;
+
+    protected DropTargetAdapter(IDropTargetAdapter delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IDropTargetAdapter getDelegate() {
+        return delegate;
     }
 }

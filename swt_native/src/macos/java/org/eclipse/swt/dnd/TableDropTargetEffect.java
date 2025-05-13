@@ -48,8 +48,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class TableDropTargetEffect extends DropTargetEffect {
 
-    boolean shouldEnableScrolling;
-
     /**
      * Creates a new <code>TableDropTargetEffect</code> to handle the drag under effect on the specified
      * <code>Table</code>.
@@ -57,16 +55,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
      * @param table the <code>Table</code> over which the user positions the cursor to drop the data
      */
     public TableDropTargetEffect(Table table) {
-        super(table);
-    }
-
-    int checkEffect(int effect) {
-        // Some effects are mutually exclusive.  Make sure that only one of the mutually exclusive effects has been specified.
-        if ((effect & DND.FEEDBACK_SELECT) != 0)
-            effect = effect & ~DND.FEEDBACK_INSERT_AFTER & ~DND.FEEDBACK_INSERT_BEFORE;
-        if ((effect & DND.FEEDBACK_INSERT_BEFORE) != 0)
-            effect = effect & ~DND.FEEDBACK_INSERT_AFTER;
-        return effect;
+        this(new nat.org.eclipse.swt.dnd.TableDropTargetEffect((nat.org.eclipse.swt.widgets.Table) table.getDelegate()));
     }
 
     /**
@@ -83,8 +72,8 @@ public class TableDropTargetEffect extends DropTargetEffect {
      * @see DropTargetAdapter
      * @see DropTargetEvent
      */
-    @Override
     public void dragEnter(DropTargetEvent event) {
+        getDelegate().dragEnter(event);
     }
 
     /**
@@ -101,13 +90,8 @@ public class TableDropTargetEffect extends DropTargetEffect {
      * @see DropTargetAdapter
      * @see DropTargetEvent
      */
-    @Override
     public void dragLeave(DropTargetEvent event) {
-        if (shouldEnableScrolling) {
-            shouldEnableScrolling = false;
-            OS.objc_msgSend(control.view.id, OS.sel_setShouldScrollClipView_, 1);
-            control.redraw();
-        }
+        getDelegate().dragLeave(event);
     }
 
     /**
@@ -127,15 +111,15 @@ public class TableDropTargetEffect extends DropTargetEffect {
      * @see DND#FEEDBACK_SELECT
      * @see DND#FEEDBACK_SCROLL
      */
-    @Override
     public void dragOver(DropTargetEvent event) {
-        int effect = checkEffect(event.feedback);
-        ((DropTarget) event.widget).feedback = effect;
-        if ((effect & DND.FEEDBACK_SCROLL) == 0) {
-            shouldEnableScrolling = true;
-            OS.objc_msgSend(control.view.id, OS.sel_setShouldScrollClipView_, 0);
-        } else {
-            OS.objc_msgSend(control.view.id, OS.sel_setShouldScrollClipView_, 1);
-        }
+        getDelegate().dragOver(event);
+    }
+
+    protected TableDropTargetEffect(ITableDropTargetEffect delegate) {
+        super(delegate);
+    }
+
+    public ITableDropTargetEffect getDelegate() {
+        return (ITableDropTargetEffect) super.getDelegate();
     }
 }

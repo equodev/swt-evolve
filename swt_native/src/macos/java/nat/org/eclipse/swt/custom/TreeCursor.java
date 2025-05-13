@@ -16,14 +16,17 @@
 package nat.org.eclipse.swt.custom;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.accessibility.*;
+import nat.org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.accessibility.AccessibleControlAdapter;
+import org.eclipse.swt.accessibility.AccessibleControlEvent;
+import org.eclipse.swt.accessibility.AccessibleAdapter;
+import org.eclipse.swt.accessibility.AccessibleEvent;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.accessibility.ACC;
 import org.eclipse.swt.custom.ITreeCursor;
 import org.eclipse.swt.graphics.IColor;
 import org.eclipse.swt.widgets.ITreeItem;

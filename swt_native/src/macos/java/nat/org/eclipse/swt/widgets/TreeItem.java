@@ -19,7 +19,6 @@ import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.ITreeItem;
 import org.eclipse.swt.graphics.IColor;
 import org.eclipse.swt.graphics.IFont;

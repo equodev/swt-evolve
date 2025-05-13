@@ -5,7 +5,7 @@ import org.eclipse.swt.graphics.*;
 
 public interface ICoolBar extends IComposite {
 
-    Point computeSize(int wHint, int hHint, boolean changed);
+    IPoint computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Returns the item that is currently displayed at the given,
@@ -112,7 +112,7 @@ public interface ICoolBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point[] getItemSizes();
+    IPoint[] getItemSizes();
 
     /**
      * Returns whether or not the receiver is 'locked'. When a coolbar
@@ -211,7 +211,7 @@ public interface ICoolBar extends IComposite {
      *    <li>ERROR_INVALID_ARGUMENT - if item order or sizes is not the same length as the number of items</li>
      * </ul>
      */
-    void setItemLayout(int[] itemOrder, int[] wrapIndices, Point[] sizes);
+    void setItemLayout(int[] itemOrder, int[] wrapIndices, IPoint[] sizes);
 
     void setOrientation(int orientation);
 

@@ -386,7 +386,7 @@ public interface IMenu extends IWidget {
      *
      * @since 2.1
      */
-    void setLocation(Point location);
+    void setLocation(IPoint location);
 
     /**
      * Sets the orientation of the receiver, which must be one

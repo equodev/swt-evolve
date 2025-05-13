@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Convert;
 
 /**
  * Instances of this class represent input method editors.
@@ -167,7 +168,7 @@ public class IME extends Widget {
      * @see IME#getRanges
      */
     public TextStyle[] getStyles() {
-        return getDelegate().getStyles();
+        return Convert.array(getDelegate().getStyles(), ITextStyle::getApi, TextStyle[]::new);
     }
 
     /**

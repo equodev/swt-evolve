@@ -40,26 +40,13 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class FileTransfer extends ByteArrayTransfer {
 
-    static FileTransfer _instance = new FileTransfer();
-
-    static final String ID_NAME = OS.NSFilenamesPboardType.getString();
-
-    static final int ID = registerType(ID_NAME);
-
-    static final String ID1_NAME = OS.kUTTypeFileURL.getString();
-
-    static final int ID1 = registerType(ID1_NAME);
-
-    FileTransfer() {
-    }
-
     /**
      * Returns the singleton instance of the FileTransfer class.
      *
      * @return the singleton instance of the FileTransfer class
      */
     public static FileTransfer getInstance() {
-        return _instance;
+        return nat.org.eclipse.swt.dnd.FileTransfer.getInstance().getApi();
     }
 
     /**
@@ -74,20 +61,8 @@ public class FileTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#nativeToJava
      */
-    @Override
     public void javaToNative(Object object, TransferData transferData) {
-        if (!checkFile(object) || !isSupportedType(transferData)) {
-            DND.error(DND.ERROR_INVALID_DATA);
-        }
-        String[] files = (String[]) object;
-        int length = files.length;
-        NSMutableArray array = NSMutableArray.arrayWithCapacity(length);
-        for (int i = 0; i < length; i++) {
-            String fileName = files[i];
-            NSString string = NSString.stringWith(fileName);
-            array.addObject(string);
-        }
-        transferData.data = array;
+        getDelegate().javaToNative(object, transferData.getDelegate());
     }
 
     /**
@@ -101,44 +76,15 @@ public class FileTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#javaToNative
      */
-    @Override
     public Object nativeToJava(TransferData transferData) {
-        if (!isSupportedType(transferData) || transferData.data == null)
-            return null;
-        NSArray array = (NSArray) transferData.data;
-        if (array.count() == 0)
-            return null;
-        int count = (int) array.count();
-        String[] fileNames = new String[count];
-        for (int i = 0; i < count; i++) {
-            NSString string = new NSString(array.objectAtIndex(i));
-            fileNames[i] = string.getString();
-        }
-        return fileNames;
+        return getDelegate().nativeToJava(transferData.getDelegate());
     }
 
-    @Override
-    protected int[] getTypeIds() {
-        return new int[] { ID, ID1 };
+    protected FileTransfer(IFileTransfer delegate) {
+        super(delegate);
     }
 
-    @Override
-    protected String[] getTypeNames() {
-        return new String[] { ID_NAME, ID1_NAME };
-    }
-
-    boolean checkFile(Object object) {
-        if (object == null || !(object instanceof String[] strings) || ((String[]) object).length == 0)
-            return false;
-        for (int i = 0; i < strings.length; i++) {
-            if (strings[i] == null || strings[i].length() == 0)
-                return false;
-        }
-        return true;
-    }
-
-    @Override
-    protected boolean validate(Object object) {
-        return checkFile(object);
+    public IFileTransfer getDelegate() {
+        return (IFileTransfer) super.getDelegate();
     }
 }

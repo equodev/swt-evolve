@@ -38,7 +38,7 @@ public interface IButton extends IControl {
      */
     void addSelectionListener(SelectionListener listener);
 
-    Point computeSize(int wHint, int hHint, boolean changed);
+    IPoint computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Returns a value which describes the position of the

@@ -103,7 +103,6 @@ public class TreeCursor extends Canvas {
      *
      * @return the receiver's background color
      */
-    @Override
     public Color getBackground() {
         return getDelegate().getBackground().getApi();
     }
@@ -127,7 +126,6 @@ public class TreeCursor extends Canvas {
      *
      * @return the receiver's foreground color
      */
-    @Override
     public Color getForeground() {
         return getDelegate().getForeground().getApi();
     }
@@ -185,7 +183,6 @@ public class TreeCursor extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setBackground(Color color) {
         getDelegate().setBackground(color.getDelegate());
     }
@@ -207,7 +204,6 @@ public class TreeCursor extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setForeground(Color color) {
         getDelegate().setForeground(color.getDelegate());
     }
@@ -242,7 +238,6 @@ public class TreeCursor extends Canvas {
         getDelegate().setSelection(row.getDelegate(), column);
     }
 
-    @Override
     public void setVisible(boolean visible) {
         getDelegate().setVisible(visible);
     }

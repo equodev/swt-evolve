@@ -34,7 +34,7 @@ public interface ISash extends IControl {
      */
     void addSelectionListener(SelectionListener listener);
 
-    Point computeSize(int wHint, int hHint, boolean changed);
+    IPoint computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Removes the listener from the collection of listeners who will

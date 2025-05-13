@@ -38,7 +38,6 @@ public final class Monitor {
      *
      * @see #hashCode()
      */
-    @Override
     public boolean equals(Object object) {
         return getDelegate().equals(object);
     }
@@ -51,7 +50,7 @@ public final class Monitor {
      * @return the receiver's bounding rectangle
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
     }
 
     /**
@@ -61,7 +60,7 @@ public final class Monitor {
      * @return the client area
      */
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea();
+        return getDelegate().getClientArea().getApi();
     }
 
     /**
@@ -85,7 +84,6 @@ public final class Monitor {
      *
      * @see #equals(Object)
      */
-    @Override
     public int hashCode() {
         return getDelegate().hashCode();
     }

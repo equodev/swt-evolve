@@ -146,7 +146,7 @@ public interface IScrollBar extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point getSize();
+    IPoint getSize();
 
     /**
      * Returns the receiver's thumb value.
@@ -175,7 +175,7 @@ public interface IScrollBar extends IWidget {
      *
      * @since 3.6
      */
-    Rectangle getThumbBounds();
+    IRectangle getThumbBounds();
 
     /**
      * Returns a rectangle describing the size and location of the
@@ -191,7 +191,7 @@ public interface IScrollBar extends IWidget {
      *
      * @since 3.6
      */
-    Rectangle getThumbTrackBounds();
+    IRectangle getThumbTrackBounds();
 
     /**
      * Returns <code>true</code> if the receiver is visible, and

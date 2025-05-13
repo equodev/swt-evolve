@@ -265,7 +265,7 @@ public interface IDisplay extends IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    Rectangle getBounds();
+    IRectangle getBounds();
 
     /**
      * Returns a rectangle which describes the area of the
@@ -280,7 +280,7 @@ public interface IDisplay extends IDevice {
      *
      * @see #getBounds
      */
-    Rectangle getClientArea();
+    IRectangle getClientArea();
 
     /**
      * Returns the control which the on-screen pointer is currently
@@ -307,7 +307,7 @@ public interface IDisplay extends IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    Point getCursorLocation();
+    IPoint getCursorLocation();
 
     /**
      * Returns an array containing the recommended cursor sizes.
@@ -321,7 +321,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.0
      */
-    Point[] getCursorSizes();
+    IPoint[] getCursorSizes();
 
     /**
      * Returns the application defined property of the receiver
@@ -471,7 +471,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.0
      */
-    Point[] getIconSizes();
+    IPoint[] getIconSizes();
 
     /**
      * Returns an array of monitors attached to the device.
@@ -733,7 +733,7 @@ public interface IDisplay extends IDevice {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    long internal_new_GC(GCData data);
+    long internal_new_GC(org.eclipse.swt.graphics.GCData data);
 
     /**
      * Invokes platform specific functionality to dispose a GC handle.
@@ -750,7 +750,7 @@ public interface IDisplay extends IDevice {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    void internal_dispose_GC(long hDC, GCData data);
+    void internal_dispose_GC(long hDC, org.eclipse.swt.graphics.GCData data);
 
     /**
      * Generate a low level system event.
@@ -852,7 +852,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 2.1.2
      */
-    Point map(IControl from, IControl to, Point point);
+    IPoint map(IControl from, IControl to, IPoint point);
 
     /**
      * Maps a point from one coordinate system to another.
@@ -890,7 +890,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 2.1.2
      */
-    Point map(IControl from, IControl to, int x, int y);
+    IPoint map(IControl from, IControl to, int x, int y);
 
     /**
      * Maps a point from one coordinate system to another.
@@ -928,7 +928,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 2.1.2
      */
-    Rectangle map(IControl from, IControl to, Rectangle rectangle);
+    IRectangle map(IControl from, IControl to, IRectangle rectangle);
 
     /**
      * Maps a point from one coordinate system to another.
@@ -968,7 +968,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 2.1.2
      */
-    Rectangle map(IControl from, IControl to, int x, int y, int width, int height);
+    IRectangle map(IControl from, IControl to, int x, int y, int width, int height);
 
     /**
      * Reads an event from the operating system's event queue,
@@ -1091,7 +1091,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 2.0
      */
-    void setCursorLocation(Point point);
+    void setCursorLocation(IPoint point);
 
     /**
      * Sets the application defined property of the receiver

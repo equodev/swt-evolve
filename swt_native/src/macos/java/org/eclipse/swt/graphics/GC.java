@@ -478,7 +478,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawRectangle(Rectangle rect) {
-        getDelegate().drawRectangle(rect);
+        getDelegate().drawRectangle(rect.getDelegate());
     }
 
     /**
@@ -670,7 +670,6 @@ public final class GC extends Resource {
      *
      * @see #hashCode
      */
-    @Override
     public boolean equals(Object object) {
         return getDelegate().equals(object);
     }
@@ -840,7 +839,7 @@ public final class GC extends Resource {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(Rectangle rect) {
-        getDelegate().fillRectangle(rect);
+        getDelegate().fillRectangle(rect.getDelegate());
     }
 
     /**
@@ -1012,7 +1011,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Rectangle getClipping() {
-        return getDelegate().getClipping();
+        return getDelegate().getClipping().getApi();
     }
 
     /**
@@ -1075,7 +1074,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public FontMetrics getFontMetrics() {
-        return getDelegate().getFontMetrics();
+        return getDelegate().getFontMetrics().getApi();
     }
 
     /**
@@ -1132,7 +1131,7 @@ public final class GC extends Resource {
      * @since 3.2
      */
     public GCData getGCData() {
-        return getDelegate().getGCData();
+        return getDelegate().getGCData().getApi();
     }
 
     /**
@@ -1164,7 +1163,7 @@ public final class GC extends Resource {
      * @since 3.3
      */
     public LineAttributes getLineAttributes() {
-        return getDelegate().getLineAttributes();
+        return getDelegate().getLineAttributes().getApi();
     }
 
     /**
@@ -1347,7 +1346,6 @@ public final class GC extends Resource {
      *
      * @see #equals
      */
-    @Override
     public int hashCode() {
         return getDelegate().hashCode();
     }
@@ -1380,7 +1378,6 @@ public final class GC extends Resource {
      *
      * @return <code>true</code> when the GC is disposed and <code>false</code> otherwise
      */
-    @Override
     public boolean isDisposed() {
         return getDelegate().isDisposed();
     }
@@ -1596,7 +1593,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setClipping(Rectangle rect) {
-        getDelegate().setClipping(rect);
+        getDelegate().setClipping(rect.getDelegate());
     }
 
     /**
@@ -1758,7 +1755,7 @@ public final class GC extends Resource {
      * @since 3.3
      */
     public void setLineAttributes(LineAttributes attributes) {
-        getDelegate().setLineAttributes(attributes);
+        getDelegate().setLineAttributes(attributes.getDelegate());
     }
 
     /**
@@ -1965,7 +1962,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point stringExtent(String string) {
-        return getDelegate().stringExtent(string);
+        return getDelegate().stringExtent(string).getApi();
     }
 
     /**
@@ -1988,7 +1985,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point textExtent(String string) {
-        return getDelegate().textExtent(string);
+        return getDelegate().textExtent(string).getApi();
     }
 
     /**
@@ -2023,7 +2020,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point textExtent(String string, int flags) {
-        return getDelegate().textExtent(string, flags);
+        return getDelegate().textExtent(string, flags).getApi();
     }
 
     /**
@@ -2032,7 +2029,6 @@ public final class GC extends Resource {
      *
      * @return a string representation of the receiver
      */
-    @Override
     public String toString() {
         return getDelegate().toString();
     }

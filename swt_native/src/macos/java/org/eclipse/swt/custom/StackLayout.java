@@ -93,67 +93,21 @@ public class StackLayout extends Layout {
      */
     public Control topControl;
 
-    @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-        int maxWidth = 0;
-        int maxHeight = 0;
-        for (Control element : composite.getChildren()) {
-            Point size = element.computeSize(wHint, hHint, flushCache);
-            maxWidth = Math.max(size.x, maxWidth);
-            maxHeight = Math.max(size.y, maxHeight);
-        }
-        int width = maxWidth + 2 * marginWidth;
-        int height = maxHeight + 2 * marginHeight;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
-        return new Point(width, height);
-    }
-
-    @Override
-    protected boolean flushCache(Control control) {
-        return true;
-    }
-
-    @Override
-    protected void layout(Composite composite, boolean flushCache) {
-        Rectangle rect = composite.getClientArea();
-        rect.x += marginWidth;
-        rect.y += marginHeight;
-        rect.width -= 2 * marginWidth;
-        rect.height -= 2 * marginHeight;
-        for (Control element : composite.getChildren()) {
-            element.setBounds(rect);
-            element.setVisible(element == topControl);
-        }
-    }
-
-    String getName() {
-        String string = getClass().getName();
-        int index = string.lastIndexOf('.');
-        if (index == -1)
-            return string;
-        return string.substring(index + 1, string.length());
-    }
-
     /**
      * Returns a string containing a concise, human-readable
      * description of the receiver.
      *
      * @return a string representation of the layout
      */
-    @Override
     public String toString() {
-        String string = getName() + " {";
-        if (marginWidth != 0)
-            string += "marginWidth=" + marginWidth + " ";
-        if (marginHeight != 0)
-            string += "marginHeight=" + marginHeight + " ";
-        if (topControl != null)
-            string += "topControl=" + topControl + " ";
-        string = string.trim();
-        string += "}";
-        return string;
+        return getDelegate().toString();
+    }
+
+    protected StackLayout(IStackLayout delegate) {
+        super(delegate);
+    }
+
+    public IStackLayout getDelegate() {
+        return (IStackLayout) super.getDelegate();
     }
 }

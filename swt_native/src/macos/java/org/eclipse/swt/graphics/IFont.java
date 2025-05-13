@@ -28,7 +28,7 @@ public interface IFont extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    FontData[] getFontData();
+    IFontData[] getFontData();
 
     /**
      * Returns an integer hash code for the receiver. Any two

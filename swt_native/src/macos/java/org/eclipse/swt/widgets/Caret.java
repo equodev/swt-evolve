@@ -83,7 +83,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
     }
 
     /**
@@ -126,7 +126,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public Point getLocation() {
-        return getDelegate().getLocation();
+        return getDelegate().getLocation().getApi();
     }
 
     /**
@@ -154,7 +154,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public Point getSize() {
-        return getDelegate().getSize();
+        return getDelegate().getSize().getApi();
     }
 
     /**
@@ -230,7 +230,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setBounds(Rectangle rect) {
-        getDelegate().setBounds(rect);
+        getDelegate().setBounds(rect.getDelegate());
     }
 
     /**
@@ -301,7 +301,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setLocation(Point location) {
-        getDelegate().setLocation(location);
+        getDelegate().setLocation(location.getDelegate());
     }
 
     /**
@@ -333,7 +333,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setSize(Point size) {
-        getDelegate().setSize(size);
+        getDelegate().setSize(size.getDelegate());
     }
 
     /**

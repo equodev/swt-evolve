@@ -45,9 +45,9 @@ public interface IShell extends IDecorations {
      */
     void close();
 
-    Point computeSize(int wHint, int hHint, boolean changed);
+    IPoint computeSize(int wHint, int hHint, boolean changed);
 
-    Rectangle computeTrim(int x, int y, int width, int height);
+    IRectangle computeTrim(int x, int y, int width, int height);
 
     /**
      * If the receiver is visible, moves it to the top of the
@@ -87,9 +87,9 @@ public interface IShell extends IDecorations {
      */
     int getAlpha();
 
-    Rectangle getBounds();
+    IRectangle getBounds();
 
-    Rectangle getClientArea();
+    IRectangle getClientArea();
 
     /**
      * Returns <code>true</code> if the receiver is currently
@@ -125,7 +125,7 @@ public interface IShell extends IDecorations {
      */
     int getImeInputMode();
 
-    Point getLocation();
+    IPoint getLocation();
 
     boolean getMaximized();
 
@@ -160,7 +160,7 @@ public interface IShell extends IDecorations {
      *
      * @since 3.116
      */
-    Point getMaximumSize();
+    IPoint getMaximumSize();
 
     /**
      * Returns a point describing the minimum receiver's size. The
@@ -177,7 +177,7 @@ public interface IShell extends IDecorations {
      *
      * @since 3.1
      */
-    Point getMinimumSize();
+    IPoint getMinimumSize();
 
     /**
      * Returns the region that defines the shape of the shell,
@@ -209,7 +209,7 @@ public interface IShell extends IDecorations {
      */
     IShell[] getShells();
 
-    Point getSize();
+    IPoint getSize();
 
     /**
      * Returns a ToolBar object representing the tool bar that can be shown in the receiver's
@@ -414,7 +414,7 @@ public interface IShell extends IDecorations {
      *
      * @since 3.116
      */
-    void setMaximumSize(Point size);
+    void setMaximumSize(IPoint size);
 
     void setMinimized(boolean minimized);
 
@@ -452,7 +452,7 @@ public interface IShell extends IDecorations {
      *
      * @since 3.1
      */
-    void setMinimumSize(Point size);
+    void setMinimumSize(IPoint size);
 
     /**
      * Sets the receiver's modified state as specified by the argument.

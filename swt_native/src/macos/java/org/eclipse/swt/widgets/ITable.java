@@ -125,7 +125,7 @@ public interface ITable extends IComposite {
      */
     void clearAll();
 
-    Point computeSize(int wHint, int hHint, boolean changed);
+    IPoint computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Deselects the item at the given zero-relative index in the receiver.
@@ -187,7 +187,7 @@ public interface ITable extends IComposite {
      */
     void deselectAll();
 
-    Rectangle getClientArea();
+    IRectangle getClientArea();
 
     /**
      * Returns the column at the given, zero-relative index in the
@@ -404,7 +404,7 @@ public interface ITable extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITableItem getItem(Point point);
+    ITableItem getItem(IPoint point);
 
     /**
      * Returns the number of items contained in the receiver.

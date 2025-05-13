@@ -266,7 +266,6 @@ public class TrayItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setImage(Image image) {
         getDelegate().setImage(image.getDelegate());
     }

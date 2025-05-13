@@ -88,19 +88,16 @@ public class ToolBar extends Composite {
         this(new nat.org.eclipse.swt.widgets.ToolBar((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed);
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
-    @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getDelegate().computeTrim(x, y, width, height);
+        return getDelegate().computeTrim(x, y, width, height).getApi();
     }
 
-    @Override
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
     }
 
     /**
@@ -139,7 +136,7 @@ public class ToolBar extends Composite {
      * </ul>
      */
     public ToolItem getItem(Point point) {
-        return getDelegate().getItem(point).getApi();
+        return getDelegate().getItem(point.getDelegate()).getApi();
     }
 
     /**
@@ -215,12 +212,10 @@ public class ToolBar extends Composite {
         return getDelegate().indexOf(item.getDelegate());
     }
 
-    @Override
     public void setRedraw(boolean redraw) {
         getDelegate().setRedraw(redraw);
     }
 
-    @Override
     public void setVisible(boolean visible) {
         getDelegate().setVisible(visible);
     }

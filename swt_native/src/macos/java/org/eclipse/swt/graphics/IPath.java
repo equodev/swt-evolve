@@ -179,7 +179,7 @@ public interface IPath extends IResource {
      *
      * @see PathData
      */
-    PathData getPathData();
+    IPathData getPathData();
 
     /**
      * Returns <code>true</code> if the Path has been disposed,

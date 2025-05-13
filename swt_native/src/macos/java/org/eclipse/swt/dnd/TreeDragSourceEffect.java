@@ -40,8 +40,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class TreeDragSourceEffect extends DragSourceEffect {
 
-    Image dragSourceImage = null;
-
     /**
      * Creates a new <code>TreeDragSourceEffect</code> to handle drag effect
      * from the specified <code>Tree</code>.
@@ -49,7 +47,7 @@ public class TreeDragSourceEffect extends DragSourceEffect {
      * @param tree the <code>Tree</code> that the user clicks on to initiate the drag
      */
     public TreeDragSourceEffect(Tree tree) {
-        super(tree);
+        this(new nat.org.eclipse.swt.dnd.TreeDragSourceEffect((nat.org.eclipse.swt.widgets.Tree) tree.getDelegate()));
     }
 
     /**
@@ -61,11 +59,8 @@ public class TreeDragSourceEffect extends DragSourceEffect {
      *
      * @param event the information associated with the drag finished event
      */
-    @Override
     public void dragFinished(DragSourceEvent event) {
-        if (dragSourceImage != null)
-            dragSourceImage.dispose();
-        dragSourceImage = null;
+        getDelegate().dragFinished(event);
     }
 
     /**
@@ -79,29 +74,15 @@ public class TreeDragSourceEffect extends DragSourceEffect {
      *
      * @param event the information associated with the drag start event
      */
-    @Override
     public void dragStart(DragSourceEvent event) {
-        event.image = getDragSourceImage(event);
+        getDelegate().dragStart(event);
     }
 
-    Image getDragSourceImage(DragSourceEvent event) {
-        if (dragSourceImage != null)
-            dragSourceImage.dispose();
-        dragSourceImage = null;
-        NSPoint point = new NSPoint();
-        long ptr = C.malloc(NSPoint.sizeof);
-        OS.memmove(ptr, point, NSPoint.sizeof);
-        NSEvent nsEvent = NSApplication.sharedApplication().currentEvent();
-        NSTableView widget = (NSTableView) control.view;
-        NSImage nsImage = widget.dragImageForRowsWithIndexes(widget.selectedRowIndexes(), widget.tableColumns(), nsEvent, ptr);
-        OS.memmove(point, ptr, NSPoint.sizeof);
-        C.free(ptr);
-        //TODO: Image representation wrong???
-        Image image = Image.cocoa_new(control.getDisplay(), SWT.BITMAP, nsImage);
-        dragSourceImage = image;
-        nsImage.retain();
-        event.offsetX = (int) point.x;
-        event.offsetY = (int) point.y;
-        return image;
+    protected TreeDragSourceEffect(ITreeDragSourceEffect delegate) {
+        super(delegate);
+    }
+
+    public ITreeDragSourceEffect getDelegate() {
+        return (ITreeDragSourceEffect) super.getDelegate();
     }
 }

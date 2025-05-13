@@ -89,7 +89,7 @@ public interface IIME extends IWidget {
      *
      * @see IME#getRanges
      */
-    TextStyle[] getStyles();
+    ITextStyle[] getStyles();
 
     /**
      * Returns the composition text.

@@ -18,15 +18,13 @@ package nat.org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.FontMetrics;
-import org.eclipse.swt.graphics.TextStyle;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.GlyphMetrics;
 import org.eclipse.swt.graphics.ITextLayout;
 import org.eclipse.swt.graphics.IGC;
 import org.eclipse.swt.graphics.IColor;
+import org.eclipse.swt.graphics.IPoint;
+import org.eclipse.swt.graphics.IFontMetrics;
 import org.eclipse.swt.graphics.IFont;
+import org.eclipse.swt.graphics.ITextStyle;
 
 /**
  * <code>TextLayout</code> is a graphic object that represents
@@ -1391,7 +1389,8 @@ public final class TextLayout extends Resource implements ITextLayout {
      *
      * @see #getLocation(int, boolean)
      */
-    public int getOffset(Point point, int[] trailing) {
+    public int getOffset(IPoint ipoint, int[] trailing) {
+        Point point = (Point) ipoint;
         checkLayout();
         if (point == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -1961,7 +1960,8 @@ public final class TextLayout extends Resource implements ITextLayout {
      *
      * @since 3.125
      */
-    public void setFixedLineMetrics(FontMetrics metrics) {
+    public void setFixedLineMetrics(IFontMetrics imetrics) {
+        FontMetrics metrics = (FontMetrics) imetrics;
         if (metrics == null) {
             fixedLineMetrics = null;
             return;
@@ -2302,7 +2302,8 @@ public final class TextLayout extends Resource implements ITextLayout {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    public void setStyle(TextStyle style, int start, int end) {
+    public void setStyle(ITextStyle istyle, int start, int end) {
+        TextStyle style = (TextStyle) istyle;
         checkLayout();
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
@@ -2349,7 +2350,7 @@ public final class TextLayout extends Resource implements ITextLayout {
                 int styleStart = styles[modifyStart].start;
                 int styleEnd = styles[modifyEnd + 1].start - 1;
                 if (styleStart == start && styleEnd == end) {
-                    styles[modifyStart].style = style;
+                    styles[modifyStart].style = style.getApi();
                     return;
                 }
                 if (styleStart != start && styleEnd != end) {
@@ -2363,11 +2364,11 @@ public final class TextLayout extends Resource implements ITextLayout {
                     System.arraycopy(styles, modifyEnd + 1, styles, modifyEnd + 3, stylesCount - modifyEnd - 1);
                     StyleItem item = new StyleItem();
                     item.start = start;
-                    item.style = style;
+                    item.style = style.getApi();
                     styles[modifyStart + 1] = item;
                     item = new StyleItem();
                     item.start = end + 1;
-                    item.style = styles[modifyStart].style;
+                    item.style = styles[modifyStart].style.getApi();
                     styles[modifyStart + 2] = item;
                     stylesCount = newLength;
                     return;
@@ -2387,7 +2388,7 @@ public final class TextLayout extends Resource implements ITextLayout {
             System.arraycopy(styles, modifyEnd, styles, modifyStart + 2, stylesCount - modifyEnd);
             StyleItem item = new StyleItem();
             item.start = start;
-            item.style = style;
+            item.style = style.getApi();
             styles[modifyStart + 1] = item;
             styles[modifyStart + 2].start = end + 1;
             stylesCount = newLength;

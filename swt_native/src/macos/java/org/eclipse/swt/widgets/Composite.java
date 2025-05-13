@@ -114,9 +114,8 @@ public class Composite extends Scrollable {
         getDelegate().changed(Convert.array(changed, Control::getDelegate, IControl[]::new));
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed);
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
     /**
@@ -209,7 +208,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public Layout getLayout() {
-        return getDelegate().getLayout();
+        return getDelegate().getLayout().getApi();
     }
 
     /**
@@ -489,7 +488,6 @@ public class Composite extends Scrollable {
         getDelegate().layout(Convert.array(changed, Control::getDelegate, IControl[]::new), flags);
     }
 
-    @Override
     public void redraw(int x, int y, int width, int height, boolean all) {
         getDelegate().redraw(x, y, width, height, all);
     }
@@ -515,7 +513,6 @@ public class Composite extends Scrollable {
         getDelegate().setBackgroundMode(mode);
     }
 
-    @Override
     public boolean setFocus() {
         return getDelegate().setFocus();
     }
@@ -532,7 +529,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void setLayout(Layout layout) {
-        getDelegate().setLayout(layout);
+        getDelegate().setLayout(layout.getDelegate());
     }
 
     /**
@@ -580,7 +577,6 @@ public class Composite extends Scrollable {
         getDelegate().setTabList(Convert.array(tabList, Control::getDelegate, IControl[]::new));
     }
 
-    @Override
     public String toString() {
         return getDelegate().toString();
     }

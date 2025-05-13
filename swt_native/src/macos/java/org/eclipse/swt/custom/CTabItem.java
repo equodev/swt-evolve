@@ -39,38 +39,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class CTabItem extends Item {
 
-    CTabFolder parent;
-
-    int x, y, width, height = 0;
-
-    // the tab page
-    Control control;
-
-    String toolTipText;
-
-    String shortenedText;
-
-    int shortenedTextWidth;
-
-    // Appearance
-    Font font;
-
-    Color foreground;
-
-    Color selectionForeground;
-
-    Image disabledImage;
-
-    Rectangle closeRect = new Rectangle(0, 0, 0, 0);
-
-    int closeImageState = SWT.BACKGROUND;
-
-    int state = SWT.NONE;
-
-    boolean showClose = false;
-
-    boolean showing = false;
-
     /**
      * Constructs a new instance of this class given its parent
      * (which must be a <code>CTabFolder</code>) and a style value
@@ -100,7 +68,7 @@ public class CTabItem extends Item {
      * @see Widget#getStyle()
      */
     public CTabItem(CTabFolder parent, int style) {
-        this(parent, style, parent.getItemCount());
+        this(new nat.org.eclipse.swt.custom.CTabItem((nat.org.eclipse.swt.custom.CTabFolder) parent.getDelegate(), style));
     }
 
     /**
@@ -134,23 +102,11 @@ public class CTabItem extends Item {
      * @see Widget#getStyle()
      */
     public CTabItem(CTabFolder parent, int style, int index) {
-        super(parent, style);
-        showClose = (style & SWT.CLOSE) != 0;
-        parent.createItem(this, index);
+        this(new nat.org.eclipse.swt.custom.CTabItem((nat.org.eclipse.swt.custom.CTabFolder) parent.getDelegate(), style, index));
     }
 
-    @Override
     public void dispose() {
-        if (isDisposed())
-            return;
-        //if (!isValidThread ()) error (SWT.ERROR_THREAD_INVALID_ACCESS);
-        parent.destroyItem(this);
-        super.dispose();
-        parent = null;
-        control = null;
-        toolTipText = null;
-        shortenedText = null;
-        font = null;
+        getDelegate().dispose();
     }
 
     /**
@@ -165,13 +121,11 @@ public class CTabItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
+        return getDelegate().getBounds().getApi();
         /*
 	 * This call is intentionally commented out, to allow this getter method to be
 	 * called from a thread which is different from one that created the widget.
 	 */
-        //checkWidget();
-        parent.runUpdate();
-        return new Rectangle(x, y, width, height);
     }
 
     /**
@@ -185,8 +139,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        checkWidget();
-        return control;
+        return getDelegate().getControl().getApi();
     }
 
     /**
@@ -203,8 +156,7 @@ public class CTabItem extends Item {
      */
     @Deprecated
     public Image getDisabledImage() {
-        checkWidget();
-        return disabledImage;
+        return getDelegate().getDisabledImage().getApi();
     }
 
     /**
@@ -219,10 +171,7 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public Color getForeground() {
-        checkWidget();
-        if (foreground != null)
-            return foreground;
-        return parent.getForeground();
+        return getDelegate().getForeground().getApi();
     }
 
     /**
@@ -237,10 +186,7 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public Color getSelectionForeground() {
-        checkWidget();
-        if (selectionForeground != null)
-            return selectionForeground;
-        return parent.getSelectionForeground();
+        return getDelegate().getSelectionForeground().getApi();
     }
 
     /**
@@ -256,10 +202,7 @@ public class CTabItem extends Item {
      *  @since 3.0
      */
     public Font getFont() {
-        checkWidget();
-        if (font != null)
-            return font;
-        return parent.getFont();
+        return getDelegate().getFont().getApi();
     }
 
     /**
@@ -273,12 +216,11 @@ public class CTabItem extends Item {
      * </ul>
      */
     public CTabFolder getParent() {
+        return getDelegate().getParent().getApi();
         /*
 	 * This call is intentionally commented out, to allow this getter method to be
 	 * called from a thread which is different from one that created the widget.
 	 */
-        //checkWidget();
-        return parent;
     }
 
     /**
@@ -296,8 +238,7 @@ public class CTabItem extends Item {
      * @since 3.4
      */
     public boolean getShowClose() {
-        checkWidget();
-        return showClose;
+        return getDelegate().getShowClose();
     }
 
     /**
@@ -312,13 +253,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public String getToolTipText() {
-        checkWidget();
-        if (toolTipText == null && shortenedText != null) {
-            String text = getText();
-            if (!shortenedText.equals(text))
-                return text;
-        }
-        return toolTipText;
+        return getDelegate().getToolTipText();
     }
 
     /**
@@ -334,8 +269,7 @@ public class CTabItem extends Item {
      * @since 3.0
      */
     public boolean isShowing() {
-        checkWidget();
-        return showing;
+        return getDelegate().isShowing();
     }
 
     /**
@@ -354,33 +288,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        checkWidget();
-        if (control != null) {
-            if (control.isDisposed())
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-            if (control.getParent() != parent)
-                SWT.error(SWT.ERROR_INVALID_PARENT);
-        }
-        if (this.control != null && !this.control.isDisposed()) {
-            this.control.setVisible(false);
-        }
-        this.control = control;
-        if (this.control != null) {
-            int index = parent.indexOf(this);
-            if (index == parent.getSelectionIndex()) {
-                this.control.setBounds(parent.getClientArea());
-                this.control.setVisible(true);
-            } else {
-                int selectedIndex = parent.getSelectionIndex();
-                Control selectedControl = null;
-                if (selectedIndex != -1) {
-                    selectedControl = parent.getItem(selectedIndex).control;
-                }
-                if (this.control != selectedControl) {
-                    this.control.setVisible(false);
-                }
-            }
-        }
+        getDelegate().setControl(control.getDelegate());
     }
 
     /**
@@ -398,15 +306,7 @@ public class CTabItem extends Item {
      */
     @Deprecated
     public void setDisabledImage(Image image) {
-        checkWidget();
-        if (image != null && image.isDisposed()) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        this.disabledImage = image;
-    }
-
-    boolean setFocus() {
-        return control != null && !control.isDisposed() && control.setFocus();
+        getDelegate().setDisabledImage(image.getDelegate());
     }
 
     /**
@@ -427,16 +327,7 @@ public class CTabItem extends Item {
      * @since 3.0
      */
     public void setFont(Font font) {
-        checkWidget();
-        if (font != null && font.isDisposed()) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        if (font == null && this.font == null)
-            return;
-        if (font != null && font.equals(this.font))
-            return;
-        this.font = font;
-        parent.updateFolder(CTabFolder.UPDATE_TAB_HEIGHT | CTabFolder.REDRAW_TABS);
+        getDelegate().setFont(font.getDelegate());
     }
 
     /**
@@ -456,15 +347,7 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public void setForeground(Color color) {
-        checkWidget();
-        if (color != null) {
-            if (color.isDisposed())
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        if (color == foreground)
-            return;
-        foreground = color;
-        parent.updateFolder(CTabFolder.REDRAW_TABS);
+        getDelegate().setForeground(color.getDelegate());
     }
 
     /**
@@ -484,30 +367,11 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public void setSelectionForeground(Color color) {
-        checkWidget();
-        if (color != null) {
-            if (color.isDisposed())
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        if (color == selectionForeground)
-            return;
-        selectionForeground = color;
-        parent.updateFolder(CTabFolder.REDRAW_TABS);
+        getDelegate().setSelectionForeground(color.getDelegate());
     }
 
-    @Override
     public void setImage(Image image) {
-        checkWidget();
-        if (image != null && image.isDisposed()) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        Image oldImage = getImage();
-        if (image == null && oldImage == null)
-            return;
-        if (image != null && image.equals(oldImage))
-            return;
-        super.setImage(image);
-        parent.updateFolder(CTabFolder.UPDATE_TAB_HEIGHT | CTabFolder.REDRAW_TABS);
+        getDelegate().setImage(image.getDelegate());
     }
 
     /**
@@ -525,11 +389,7 @@ public class CTabItem extends Item {
      * @since 3.4
      */
     public void setShowClose(boolean close) {
-        checkWidget();
-        if (showClose == close)
-            return;
-        showClose = close;
-        parent.updateFolder(CTabFolder.REDRAW_TABS);
+        getDelegate().setShowClose(close);
     }
 
     /**
@@ -543,17 +403,8 @@ public class CTabItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setText(String string) {
-        checkWidget();
-        if (string == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (string.equals(getText()))
-            return;
-        super.setText(string);
-        shortenedText = null;
-        shortenedTextWidth = 0;
-        parent.updateFolder(CTabFolder.UPDATE_TAB_HEIGHT | CTabFolder.REDRAW_TABS);
+        getDelegate().setText(string);
     }
 
     /**
@@ -577,7 +428,14 @@ public class CTabItem extends Item {
      * </ul>
      */
     public void setToolTipText(String string) {
-        checkWidget();
-        toolTipText = string;
+        getDelegate().setToolTipText(string);
+    }
+
+    protected CTabItem(ICTabItem delegate) {
+        super(delegate);
+    }
+
+    public ICTabItem getDelegate() {
+        return (ICTabItem) super.getDelegate();
     }
 }

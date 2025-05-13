@@ -65,7 +65,7 @@ public interface ICoolItem extends IItem {
      * @see Scrollable#computeTrim
      * @see Scrollable#getClientArea
      */
-    Point computeSize(int wHint, int hHint);
+    IPoint computeSize(int wHint, int hHint);
 
     void dispose();
 
@@ -80,7 +80,7 @@ public interface ICoolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Rectangle getBounds();
+    IRectangle getBounds();
 
     /**
      * Returns the control that is associated with the receiver.
@@ -107,7 +107,7 @@ public interface ICoolItem extends IItem {
      *
      * @since 2.0
      */
-    Point getMinimumSize();
+    IPoint getMinimumSize();
 
     /**
      * Returns the receiver's parent, which must be a <code>CoolBar</code>.
@@ -133,7 +133,7 @@ public interface ICoolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point getPreferredSize();
+    IPoint getPreferredSize();
 
     /**
      * Returns a point describing the receiver's size. The
@@ -148,7 +148,7 @@ public interface ICoolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point getSize();
+    IPoint getSize();
 
     /**
      * Removes the listener from the collection of listeners that
@@ -220,7 +220,7 @@ public interface ICoolItem extends IItem {
      *
      * @since 2.0
      */
-    void setMinimumSize(Point size);
+    void setMinimumSize(IPoint size);
 
     /**
      * Sets the receiver's ideal size to the point specified by the arguments.
@@ -248,7 +248,7 @@ public interface ICoolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setPreferredSize(Point size);
+    void setPreferredSize(IPoint size);
 
     /**
      * Sets the receiver's size to the point specified by the arguments.
@@ -286,7 +286,7 @@ public interface ICoolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSize(Point size);
+    void setSize(IPoint size);
 
     CoolItem getApi();
 }

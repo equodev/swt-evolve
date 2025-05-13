@@ -28,4 +28,15 @@ public class DeviceData {
     public Error[] errors;
 
     public Object[] objects;
+
+    IDeviceData delegate;
+
+    protected DeviceData(IDeviceData delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IDeviceData getDelegate() {
+        return delegate;
+    }
 }

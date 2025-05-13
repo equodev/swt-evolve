@@ -16,8 +16,6 @@
 package nat.org.eclipse.swt.custom;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.custom.StyleRange;
-import org.eclipse.swt.custom.ST;
 import org.eclipse.swt.custom.IBullet;
 
 /**

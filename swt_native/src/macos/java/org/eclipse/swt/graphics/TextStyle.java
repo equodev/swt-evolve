@@ -157,6 +157,7 @@ public class TextStyle {
      * @since 3.4
      */
     public TextStyle() {
+        this(new nat.org.eclipse.swt.graphics.TextStyle());
     }
 
     /**
@@ -168,15 +169,7 @@ public class TextStyle {
      * @param background the background color of the style, <code>null</code> if none
      */
     public TextStyle(Font font, Color foreground, Color background) {
-        if (font != null && font.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (foreground != null && foreground.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (background != null && background.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        this.font = font;
-        this.foreground = foreground;
-        this.background = background;
+        this(new nat.org.eclipse.swt.graphics.TextStyle((nat.org.eclipse.swt.graphics.Font) font.getDelegate(), (nat.org.eclipse.swt.graphics.Color) foreground.getDelegate(), (nat.org.eclipse.swt.graphics.Color) background.getDelegate()));
     }
 
     /**
@@ -187,21 +180,7 @@ public class TextStyle {
      * @since 3.4
      */
     public TextStyle(TextStyle style) {
-        if (style == null)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        font = style.font;
-        foreground = style.foreground;
-        background = style.background;
-        underline = style.underline;
-        underlineColor = style.underlineColor;
-        underlineStyle = style.underlineStyle;
-        strikeout = style.strikeout;
-        strikeoutColor = style.strikeoutColor;
-        borderStyle = style.borderStyle;
-        borderColor = style.borderColor;
-        metrics = style.metrics;
-        rise = style.rise;
-        data = style.data;
+        this(new nat.org.eclipse.swt.graphics.TextStyle((nat.org.eclipse.swt.graphics.TextStyle) style.getDelegate()));
     }
 
     /**
@@ -214,67 +193,8 @@ public class TextStyle {
      *
      * @see #hashCode()
      */
-    @Override
     public boolean equals(Object object) {
-        if (object == this)
-            return true;
-        if (object == null)
-            return false;
-        if (!(object instanceof TextStyle style))
-            return false;
-        if (foreground != null) {
-            if (!foreground.equals(style.foreground))
-                return false;
-        } else if (style.foreground != null)
-            return false;
-        if (background != null) {
-            if (!background.equals(style.background))
-                return false;
-        } else if (style.background != null)
-            return false;
-        if (font != null) {
-            if (!font.equals(style.font))
-                return false;
-        } else if (style.font != null)
-            return false;
-        if (metrics != null) {
-            if (!metrics.equals(style.metrics))
-                return false;
-        } else if (style.metrics != null)
-            return false;
-        if (underline != style.underline)
-            return false;
-        if (underlineStyle != style.underlineStyle)
-            return false;
-        if (borderStyle != style.borderStyle)
-            return false;
-        if (strikeout != style.strikeout)
-            return false;
-        if (rise != style.rise)
-            return false;
-        if (underlineColor != null) {
-            if (!underlineColor.equals(style.underlineColor))
-                return false;
-        } else if (style.underlineColor != null)
-            return false;
-        if (strikeoutColor != null) {
-            if (!strikeoutColor.equals(style.strikeoutColor))
-                return false;
-        } else if (style.strikeoutColor != null)
-            return false;
-        if (underlineStyle != style.underlineStyle)
-            return false;
-        if (borderColor != null) {
-            if (!borderColor.equals(style.borderColor))
-                return false;
-        } else if (style.borderColor != null)
-            return false;
-        if (data != null) {
-            if (!data.equals(style.data))
-                return false;
-        } else if (style.data != null)
-            return false;
-        return true;
+        return getDelegate().equals(object);
     }
 
     /**
@@ -287,98 +207,8 @@ public class TextStyle {
      *
      * @see #equals(Object)
      */
-    @Override
     public int hashCode() {
-        int hash = 0;
-        if (foreground != null)
-            hash ^= foreground.hashCode();
-        if (background != null)
-            hash ^= background.hashCode();
-        if (font != null)
-            hash ^= font.hashCode();
-        if (metrics != null)
-            hash ^= metrics.hashCode();
-        if (underline)
-            hash ^= (hash << 1);
-        if (strikeout)
-            hash ^= (hash << 2);
-        hash ^= rise;
-        if (underlineColor != null)
-            hash ^= underlineColor.hashCode();
-        if (strikeoutColor != null)
-            hash ^= strikeoutColor.hashCode();
-        if (borderColor != null)
-            hash ^= borderColor.hashCode();
-        hash ^= underlineStyle;
-        return hash;
-    }
-
-    boolean isAdherentBorder(TextStyle style) {
-        if (this == style)
-            return true;
-        if (style == null)
-            return false;
-        if (borderStyle != style.borderStyle)
-            return false;
-        if (borderColor != null) {
-            if (!borderColor.equals(style.borderColor))
-                return false;
-        } else {
-            if (style.borderColor != null)
-                return false;
-            if (foreground != null) {
-                if (!foreground.equals(style.foreground))
-                    return false;
-            } else if (style.foreground != null)
-                return false;
-        }
-        return true;
-    }
-
-    boolean isAdherentUnderline(TextStyle style) {
-        if (this == style)
-            return true;
-        if (style == null)
-            return false;
-        if (underline != style.underline)
-            return false;
-        if (underlineStyle != style.underlineStyle)
-            return false;
-        if (underlineColor != null) {
-            if (!underlineColor.equals(style.underlineColor))
-                return false;
-        } else {
-            if (style.underlineColor != null)
-                return false;
-            if (foreground != null) {
-                if (!foreground.equals(style.foreground))
-                    return false;
-            } else if (style.foreground != null)
-                return false;
-        }
-        return true;
-    }
-
-    boolean isAdherentStrikeout(TextStyle style) {
-        if (this == style)
-            return true;
-        if (style == null)
-            return false;
-        if (strikeout != style.strikeout)
-            return false;
-        if (strikeoutColor != null) {
-            if (!strikeoutColor.equals(style.strikeoutColor))
-                return false;
-        } else {
-            if (style.strikeoutColor != null)
-                return false;
-            if (foreground != null) {
-                if (!foreground.equals(style.foreground))
-                    return false;
-            } else if (style.foreground != null)
-                return false;
-        }
-        return true;
+        return getDelegate().hashCode();
     }
 
     /**
@@ -387,125 +217,18 @@ public class TextStyle {
      *
      * @return a string representation of the <code>TextStyle</code>
      */
-    @Override
     public String toString() {
-        //$NON-NLS-1$
-        StringBuilder buffer = new StringBuilder("TextStyle {");
-        int startLength = buffer.length();
-        if (font != null) {
-            //$NON-NLS-1$
-            if (buffer.length() > startLength)
-                buffer.append(", ");
-            //$NON-NLS-1$
-            buffer.append("font=");
-            buffer.append(font);
-        }
-        if (foreground != null) {
-            //$NON-NLS-1$
-            if (buffer.length() > startLength)
-                buffer.append(", ");
-            //$NON-NLS-1$
-            buffer.append("foreground=");
-            buffer.append(foreground);
-        }
-        if (background != null) {
-            //$NON-NLS-1$
-            if (buffer.length() > startLength)
-                buffer.append(", ");
-            //$NON-NLS-1$
-            buffer.append("background=");
-            buffer.append(background);
-        }
-        if (underline) {
-            //$NON-NLS-1$
-            if (buffer.length() > startLength)
-                buffer.append(", ");
-            //$NON-NLS-1$
-            buffer.append("underline=");
-            switch(underlineStyle) {
-                //$NON-NLS-1$
-                case SWT.UNDERLINE_SINGLE:
-                    buffer.append("single");
-                    break;
-                //$NON-NLS-1$
-                case SWT.UNDERLINE_DOUBLE:
-                    buffer.append("double");
-                    break;
-                //$NON-NLS-1$
-                case SWT.UNDERLINE_SQUIGGLE:
-                    buffer.append("squiggle");
-                    break;
-                //$NON-NLS-1$
-                case SWT.UNDERLINE_ERROR:
-                    buffer.append("error");
-                    break;
-                //$NON-NLS-1$
-                case SWT.UNDERLINE_LINK:
-                    buffer.append("link");
-                    break;
-            }
-            if (underlineColor != null) {
-                //$NON-NLS-1$
-                buffer.append(", underlineColor=");
-                buffer.append(underlineColor);
-            }
-        }
-        if (strikeout) {
-            //$NON-NLS-1$
-            if (buffer.length() > startLength)
-                buffer.append(", ");
-            //$NON-NLS-1$
-            buffer.append("striked out");
-            if (strikeoutColor != null) {
-                //$NON-NLS-1$
-                buffer.append(", strikeoutColor=");
-                buffer.append(strikeoutColor);
-            }
-        }
-        if (borderStyle != SWT.NONE) {
-            //$NON-NLS-1$
-            if (buffer.length() > startLength)
-                buffer.append(", ");
-            //$NON-NLS-1$
-            buffer.append("border=");
-            switch(borderStyle) {
-                //$NON-NLS-1$
-                case SWT.BORDER_SOLID:
-                    buffer.append("solid");
-                    break;
-                //$NON-NLS-1$
-                case SWT.BORDER_DOT:
-                    buffer.append("dot");
-                    break;
-                //$NON-NLS-1$
-                case SWT.BORDER_DASH:
-                    buffer.append("dash");
-                    break;
-            }
-            if (borderColor != null) {
-                //$NON-NLS-1$
-                buffer.append(", borderColor=");
-                buffer.append(borderColor);
-            }
-        }
-        if (rise != 0) {
-            //$NON-NLS-1$
-            if (buffer.length() > startLength)
-                buffer.append(", ");
-            //$NON-NLS-1$
-            buffer.append("rise=");
-            buffer.append(rise);
-        }
-        if (metrics != null) {
-            //$NON-NLS-1$
-            if (buffer.length() > startLength)
-                buffer.append(", ");
-            //$NON-NLS-1$
-            buffer.append("metrics=");
-            buffer.append(metrics);
-        }
-        //$NON-NLS-1$
-        buffer.append("}");
-        return buffer.toString();
+        return getDelegate().toString();
+    }
+
+    ITextStyle delegate;
+
+    protected TextStyle(ITextStyle delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public ITextStyle getDelegate() {
+        return delegate;
     }
 }

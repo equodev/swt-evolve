@@ -219,7 +219,7 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, Rectangle bounds) {
-        this(new nat.org.eclipse.swt.graphics.Image((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), bounds));
+        this(new nat.org.eclipse.swt.graphics.Image((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), (nat.org.eclipse.swt.graphics.Rectangle) bounds.getDelegate()));
     }
 
     /**
@@ -452,7 +452,6 @@ public final class Image extends Resource implements Drawable {
      *
      * @see #hashCode
      */
-    @Override
     public boolean equals(Object object) {
         return getDelegate().equals(object);
     }
@@ -492,7 +491,7 @@ public final class Image extends Resource implements Drawable {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
     }
 
     /**
@@ -512,7 +511,7 @@ public final class Image extends Resource implements Drawable {
      */
     @Deprecated
     public Rectangle getBoundsInPixels() {
-        return getDelegate().getBoundsInPixels();
+        return getDelegate().getBoundsInPixels().getApi();
     }
 
     /**
@@ -601,7 +600,6 @@ public final class Image extends Resource implements Drawable {
      *
      * @see #equals
      */
-    @Override
     public int hashCode() {
         return getDelegate().hashCode();
     }
@@ -621,7 +619,6 @@ public final class Image extends Resource implements Drawable {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public long internal_new_GC(GCData data) {
         return getDelegate().internal_new_GC(data);
     }
@@ -641,7 +638,6 @@ public final class Image extends Resource implements Drawable {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public void internal_dispose_GC(long hDC, GCData data) {
         getDelegate().internal_dispose_GC(hDC, data);
     }
@@ -656,7 +652,6 @@ public final class Image extends Resource implements Drawable {
      *
      * @return <code>true</code> when the image is disposed and <code>false</code> otherwise
      */
-    @Override
     public boolean isDisposed() {
         return getDelegate().isDisposed();
     }
@@ -705,7 +700,6 @@ public final class Image extends Resource implements Drawable {
      *
      * @return a string representation of the receiver
      */
-    @Override
     public String toString() {
         return getDelegate().toString();
     }

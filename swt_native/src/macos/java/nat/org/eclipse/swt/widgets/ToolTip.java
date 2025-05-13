@@ -19,12 +19,9 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.TextStyle;
 import org.eclipse.swt.widgets.IToolTip;
+import org.eclipse.swt.graphics.IPoint;
 
 /**
  * Instances of this class represent popup windows that are used
@@ -525,7 +522,8 @@ public class ToolTip extends Widget implements IToolTip {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setLocation(Point location) {
+    public void setLocation(IPoint ilocation) {
+        Point location = (Point) ilocation;
         checkWidget();
         if (location == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -591,7 +589,7 @@ public class ToolTip extends Widget implements IToolTip {
             Font font = display.getSystemFont();
             FontData data = font.getFontData()[0];
             boldFont = new Font(display, data.getName(), data.getHeight(), SWT.BOLD);
-            TextStyle style = new TextStyle(boldFont.getApi(), null, null);
+            TextStyle style = new TextStyle(boldFont, null, null);
             layoutText.setStyle(style, 0, string.length());
         }
         if (tip.getVisible())

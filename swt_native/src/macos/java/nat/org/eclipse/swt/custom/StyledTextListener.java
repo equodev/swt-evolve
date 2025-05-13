@@ -20,7 +20,6 @@ import org.eclipse.swt.internal.*;
 import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.custom.ExtendedModifyEvent;
-import org.eclipse.swt.custom.StyledTextEvent;
 import org.eclipse.swt.custom.ExtendedModifyListener;
 import org.eclipse.swt.custom.LineBackgroundEvent;
 import org.eclipse.swt.custom.LineBackgroundListener;
@@ -40,7 +39,6 @@ import org.eclipse.swt.custom.MovementListener;
 import org.eclipse.swt.custom.CaretEvent;
 import org.eclipse.swt.custom.CaretListener;
 import org.eclipse.swt.widgets.TypedListener;
-import org.eclipse.swt.custom.ST;
 
 class StyledTextListener extends TypedListener {
 

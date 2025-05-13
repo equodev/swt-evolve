@@ -35,8 +35,8 @@ public class DragSourceAdapter implements DragSourceListener {
      *
      * @param event the information associated with the drag start event
      */
-    @Override
     public void dragStart(DragSourceEvent event) {
+        getDelegate().dragStart(event);
     }
 
     /**
@@ -45,8 +45,8 @@ public class DragSourceAdapter implements DragSourceListener {
      *
      * @param event the information associated with the drag finished event
      */
-    @Override
     public void dragFinished(DragSourceEvent event) {
+        getDelegate().dragFinished(event);
     }
 
     /**
@@ -55,7 +55,18 @@ public class DragSourceAdapter implements DragSourceListener {
      *
      * @param event the information associated with the drag set data event
      */
-    @Override
     public void dragSetData(DragSourceEvent event) {
+        getDelegate().dragSetData(event);
+    }
+
+    IDragSourceAdapter delegate;
+
+    protected DragSourceAdapter(IDragSourceAdapter delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IDragSourceAdapter getDelegate() {
+        return delegate;
     }
 }

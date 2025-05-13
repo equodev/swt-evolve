@@ -18,6 +18,7 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.ExceptionStash;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Convert;
 
 /**
  * This class is the abstract superclass of all device objects,
@@ -33,13 +34,6 @@ public abstract class Device implements Drawable {
     public static boolean DEBUG;
 
     boolean tracking = DEBUG;
-
-    /*
-* TEMPORARY CODE.
-*/
-    static synchronized Device getDevice() {
-        return nat.org.eclipse.swt.graphics.Device.getDevice().getApi();
-    }
 
     /**
      * @exception SWTException <ul>
@@ -89,7 +83,7 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
     }
 
     /**
@@ -106,7 +100,7 @@ public abstract class Device implements Drawable {
      * @see DeviceData
      */
     public DeviceData getDeviceData() {
-        return getDelegate().getDeviceData();
+        return getDelegate().getDeviceData().getApi();
     }
 
     /**
@@ -122,7 +116,7 @@ public abstract class Device implements Drawable {
      * @see #getBounds
      */
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea();
+        return getDelegate().getClientArea().getApi();
     }
 
     /**
@@ -153,7 +147,7 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     public Point getDPI() {
-        return getDelegate().getDPI();
+        return getDelegate().getDPI().getApi();
     }
 
     /**
@@ -170,7 +164,7 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     public FontData[] getFontList(String faceName, boolean scalable) {
-        return getDelegate().getFontList(faceName, scalable);
+        return Convert.array(getDelegate().getFontList(faceName, scalable), IFontData::getApi, FontData[]::new);
     }
 
     /**
@@ -249,7 +243,6 @@ public abstract class Device implements Drawable {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public abstract long internal_new_GC(GCData data);
 
     /**
@@ -267,7 +260,6 @@ public abstract class Device implements Drawable {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public abstract void internal_dispose_GC(long hDC, GCData data);
 
     /**

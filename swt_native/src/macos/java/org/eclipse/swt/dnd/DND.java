@@ -230,25 +230,13 @@ public class DND {
     //$NON-NLS-1$
     public static final String DRAG_SOURCE_KEY = "DragSource";
 
-    //$NON-NLS-1$
-    static final String INIT_DRAG_MESSAGE = "Cannot initialize Drag";
-
-    //$NON-NLS-1$
-    static final String INIT_DROP_MESSAGE = "Cannot initialize Drop";
-
-    //$NON-NLS-1$
-    static final String CANNOT_SET_CLIPBOARD_MESSAGE = "Cannot set data in clipboard";
-
-    //$NON-NLS-1$
-    static final String INVALID_DATA_MESSAGE = "Data does not have correct format for type";
-
     /**
      * Throws an appropriate exception based on the passed in error code.
      *
      * @param code the DND error code
      */
     public static void error(int code) {
-        error(code, 0);
+        nat.org.eclipse.swt.dnd.DND.error(code);
     }
 
     /**
@@ -278,42 +266,17 @@ public class DND {
      * @see IllegalArgumentException
      */
     public static void error(int code, int hresult) {
-        switch(code) {
-            /* OS Failure/Limit (fatal, may occur only on some platforms) */
-            case DND.ERROR_CANNOT_INIT_DRAG:
-                {
-                    String msg = DND.INIT_DRAG_MESSAGE;
-                    //$NON-NLS-1$
-                    if (hresult != 0)
-                        msg += " result = " + hresult;
-                    throw new SWTError(code, msg);
-                }
-            case DND.ERROR_CANNOT_INIT_DROP:
-                {
-                    String msg = DND.INIT_DROP_MESSAGE;
-                    //$NON-NLS-1$
-                    if (hresult != 0)
-                        msg += " result = " + hresult;
-                    throw new SWTError(code, msg);
-                }
-            case DND.ERROR_CANNOT_SET_CLIPBOARD:
-                {
-                    String msg = DND.CANNOT_SET_CLIPBOARD_MESSAGE;
-                    //$NON-NLS-1$
-                    if (hresult != 0)
-                        msg += " result = " + hresult;
-                    throw new SWTError(code, msg);
-                }
-            case DND.ERROR_INVALID_DATA:
-                {
-                    String msg = DND.INVALID_DATA_MESSAGE;
-                    //$NON-NLS-1$
-                    if (hresult != 0)
-                        msg += " result = " + hresult;
-                    throw new SWTException(code, msg);
-                }
-        }
-        /* Unknown/Undefined Error */
-        SWT.error(code);
+        nat.org.eclipse.swt.dnd.DND.error(code, hresult);
+    }
+
+    IDND delegate;
+
+    protected DND(IDND delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IDND getDelegate() {
+        return delegate;
     }
 }

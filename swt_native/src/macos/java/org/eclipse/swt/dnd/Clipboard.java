@@ -18,6 +18,7 @@ package org.eclipse.swt.dnd;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Convert;
 
 /**
  * The <code>Clipboard</code> provides a mechanism for transferring data from one
@@ -31,8 +32,6 @@ import org.eclipse.swt.widgets.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Clipboard {
-
-    Display display;
 
     /**
      * Constructs a new instance of this class.  Creating an instance of a Clipboard
@@ -50,84 +49,7 @@ public class Clipboard {
      * @see Clipboard#checkSubclass
      */
     public Clipboard(Display display) {
-        checkSubclass();
-        if (display == null) {
-            display = Display.getCurrent();
-            if (display == null) {
-                display = Display.getDefault();
-            }
-        }
-        if (display.getThread() != Thread.currentThread()) {
-            DND.error(SWT.ERROR_THREAD_INVALID_ACCESS);
-        }
-        this.display = display;
-    }
-
-    /**
-     * Checks that this class can be subclassed.
-     * <p>
-     * The SWT class library is intended to be subclassed
-     * only at specific, controlled points. This method enforces this
-     * rule unless it is overridden.
-     * </p><p>
-     * <em>IMPORTANT:</em> By providing an implementation of this
-     * method that allows a subclass of a class which does not
-     * normally allow subclassing to be created, the implementer
-     * agrees to be fully responsible for the fact that any such
-     * subclass will likely fail between SWT releases and will be
-     * strongly platform specific. No support is provided for
-     * user-written classes which are implemented in this fashion.
-     * </p><p>
-     * The ability to subclass outside of the allowed SWT classes
-     * is intended purely to enable those not on the SWT development
-     * team to implement patches in order to get around specific
-     * limitations in advance of when those limitations can be
-     * addressed by the team. Subclassing should not be attempted
-     * without an intimate and detailed understanding of the hierarchy.
-     * </p>
-     *
-     * @exception SWTException <ul>
-     *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
-     * </ul>
-     */
-    protected void checkSubclass() {
-        String name = getClass().getName();
-        String validName = Clipboard.class.getName();
-        if (!validName.equals(name)) {
-            DND.error(SWT.ERROR_INVALID_SUBCLASS);
-        }
-    }
-
-    /**
-     * Throws an <code>SWTException</code> if the receiver can not
-     * be accessed by the caller. This may include both checks on
-     * the state of the receiver and more generally on the entire
-     * execution context. This method <em>should</em> be called by
-     * widget implementors to enforce the standard SWT invariants.
-     * <p>
-     * Currently, it is an error to invoke any method (other than
-     * <code>isDisposed()</code>) on a widget that has had its
-     * <code>dispose()</code> method called. It is also an error
-     * to call widget methods from any thread that is different
-     * from the thread that created the widget.
-     * </p><p>
-     * In future releases of SWT, there may be more or fewer error
-     * checks and exceptions may be thrown for different reasons.
-     * </p>
-     *
-     * @exception SWTException <ul>
-     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
-     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
-     * </ul>
-     */
-    protected void checkWidget() {
-        Display display = this.display;
-        if (display == null)
-            DND.error(SWT.ERROR_WIDGET_DISPOSED);
-        if (display.getThread() != Thread.currentThread())
-            DND.error(SWT.ERROR_THREAD_INVALID_ACCESS);
-        if (display.isDisposed())
-            DND.error(SWT.ERROR_WIDGET_DISPOSED);
+        this(new nat.org.eclipse.swt.dnd.Clipboard((nat.org.eclipse.swt.widgets.Display) display.getDelegate()));
     }
 
     /**
@@ -145,7 +67,7 @@ public class Clipboard {
      * @since 3.1
      */
     public void clearContents() {
-        clearContents(DND.CLIPBOARD);
+        getDelegate().clearContents();
     }
 
     /**
@@ -175,12 +97,7 @@ public class Clipboard {
      * @since 3.1
      */
     public void clearContents(int clipboards) {
-        checkWidget();
-        if ((clipboards & DND.CLIPBOARD) == 0)
-            return;
-        NSPasteboard pasteboard = NSPasteboard.generalPasteboard();
-        if (pasteboard != null)
-            pasteboard.declareTypes(NSMutableArray.arrayWithCapacity(0), null);
+        getDelegate().clearContents(clipboards);
     }
 
     /**
@@ -196,11 +113,7 @@ public class Clipboard {
      * </ul>
      */
     public void dispose() {
-        if (isDisposed())
-            return;
-        if (display.getThread() != Thread.currentThread())
-            DND.error(SWT.ERROR_THREAD_INVALID_ACCESS);
-        display = null;
+        getDelegate().dispose();
     }
 
     /**
@@ -236,7 +149,7 @@ public class Clipboard {
      * @see Transfer
      */
     public Object getContents(Transfer transfer) {
-        return getContents(transfer, DND.CLIPBOARD);
+        return getDelegate().getContents(transfer.getDelegate());
     }
 
     /**
@@ -283,40 +196,7 @@ public class Clipboard {
      * @since 3.1
      */
     public Object getContents(Transfer transfer, int clipboards) {
-        checkWidget();
-        if (transfer == null)
-            DND.error(SWT.ERROR_NULL_ARGUMENT);
-        if ((clipboards & DND.CLIPBOARD) == 0)
-            return null;
-        NSPasteboard pasteboard = NSPasteboard.generalPasteboard();
-        if (pasteboard == null)
-            return null;
-        String[] typeNames = transfer.getTypeNames();
-        NSMutableArray types = NSMutableArray.arrayWithCapacity(typeNames.length);
-        for (int i = 0; i < typeNames.length; i++) {
-            types.addObject(NSString.stringWith(typeNames[i]));
-        }
-        NSString type = pasteboard.availableTypeFromArray(types);
-        if (type != null) {
-            TransferData tdata = new TransferData();
-            tdata.type = Transfer.registerType(type.getString());
-            if (type.isEqualToString(OS.NSPasteboardTypeString) || type.isEqual(OS.NSPasteboardTypeRTF) || type.isEqual(OS.NSPasteboardTypeHTML)) {
-                tdata.data = pasteboard.stringForType(type);
-            } else if (type.isEqual(OS.NSFilenamesPboardType) || type.isEqual(OS.kUTTypeFileURL)) {
-                id propertyList = pasteboard.propertyListForType(OS.NSFilenamesPboardType);
-                if (propertyList == null)
-                    return null;
-                tdata.data = new NSArray(propertyList.id);
-            } else if (type.isEqual(OS.NSURLPboardType) || type.isEqual(OS.kUTTypeURL)) {
-                tdata.data = NSURL.URLFromPasteboard(pasteboard);
-            } else {
-                tdata.data = pasteboard.dataForType(type);
-            }
-            if (tdata.data != null) {
-                return transfer.nativeToJava(tdata);
-            }
-        }
-        return null;
+        return getDelegate().getContents(transfer.getDelegate(), clipboards);
     }
 
     /**
@@ -333,7 +213,7 @@ public class Clipboard {
      * @since 3.0
      */
     public boolean isDisposed() {
-        return (display == null);
+        return getDelegate().isDisposed();
     }
 
     /**
@@ -384,7 +264,7 @@ public class Clipboard {
      *  recoverable error, but can not be changed due to backward compatibility.</p>
      */
     public void setContents(Object[] data, Transfer[] dataTypes) {
-        setContents(data, dataTypes, DND.CLIPBOARD);
+        getDelegate().setContents(data, Convert.array(dataTypes, Transfer::getDelegate, ITransfer[]::new));
     }
 
     /**
@@ -447,43 +327,7 @@ public class Clipboard {
      *  @since 3.1
      */
     public void setContents(Object[] data, Transfer[] dataTypes, int clipboards) {
-        checkWidget();
-        if (data == null || dataTypes == null || data.length != dataTypes.length || data.length == 0) {
-            DND.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        for (int i = 0; i < data.length; i++) {
-            if (data[i] == null || dataTypes[i] == null || !dataTypes[i].validate(data[i])) {
-                DND.error(SWT.ERROR_INVALID_ARGUMENT);
-            }
-        }
-        if ((clipboards & DND.CLIPBOARD) == 0)
-            return;
-        NSPasteboard pasteboard = NSPasteboard.generalPasteboard();
-        if (pasteboard == null) {
-            DND.error(DND.ERROR_CANNOT_SET_CLIPBOARD);
-        }
-        pasteboard.declareTypes(NSMutableArray.arrayWithCapacity(0), null);
-        for (int i = 0; i < dataTypes.length; i++) {
-            String[] typeNames = dataTypes[i].getTypeNames();
-            for (int j = 0; j < typeNames.length; j++) {
-                TransferData transferData = new TransferData();
-                transferData.type = Transfer.registerType(typeNames[j]);
-                dataTypes[i].javaToNative(data[i], transferData);
-                NSObject tdata = transferData.data;
-                NSString dataType = NSString.stringWith(typeNames[j]);
-                pasteboard.addTypes(NSArray.arrayWithObject(dataType), null);
-                if (dataType.isEqual(OS.NSPasteboardTypeString) || dataType.isEqual(OS.NSPasteboardTypeRTF) || dataType.isEqual(OS.NSPasteboardTypeHTML)) {
-                    pasteboard.setString((NSString) tdata, dataType);
-                } else if (dataType.isEqual(OS.NSURLPboardType) || dataType.isEqual(OS.kUTTypeURL)) {
-                    NSURL url = (NSURL) tdata;
-                    pasteboard.writeObjects(NSArray.arrayWithObject(url));
-                } else if (dataType.isEqual(OS.NSFilenamesPboardType) || dataType.isEqual(OS.kUTTypeFileURL)) {
-                    pasteboard.setPropertyList((NSArray) tdata, OS.NSFilenamesPboardType);
-                } else {
-                    pasteboard.setData((NSData) tdata, dataType);
-                }
-            }
-        }
+        getDelegate().setContents(data, Convert.array(dataTypes, Transfer::getDelegate, ITransfer[]::new), clipboards);
     }
 
     /**
@@ -502,7 +346,7 @@ public class Clipboard {
      * @since 3.0
      */
     public TransferData[] getAvailableTypes() {
-        return getAvailableTypes(DND.CLIPBOARD);
+        return Convert.array(getDelegate().getAvailableTypes(), ITransferData::getApi, TransferData[]::new);
     }
 
     /**
@@ -529,22 +373,7 @@ public class Clipboard {
      * @since 3.1
      */
     public TransferData[] getAvailableTypes(int clipboards) {
-        checkWidget();
-        if ((clipboards & DND.CLIPBOARD) == 0)
-            return new TransferData[0];
-        NSPasteboard pasteboard = NSPasteboard.generalPasteboard();
-        if (pasteboard == null)
-            return new TransferData[0];
-        NSArray types = pasteboard.types();
-        if (types == null)
-            return new TransferData[0];
-        int count = (int) types.count();
-        TransferData[] result = new TransferData[count];
-        for (int i = 0; i < count; i++) {
-            result[i] = new TransferData();
-            result[i].type = Transfer.registerType(new NSString(types.objectAtIndex(i)).getString());
-        }
-        return result;
+        return Convert.array(getDelegate().getAvailableTypes(clipboards), ITransferData::getApi, TransferData[]::new);
     }
 
     /**
@@ -564,18 +393,17 @@ public class Clipboard {
      * </ul>
      */
     public String[] getAvailableTypeNames() {
-        checkWidget();
-        NSPasteboard pasteboard = NSPasteboard.generalPasteboard();
-        if (pasteboard == null)
-            return new String[0];
-        NSArray types = pasteboard.types();
-        if (types == null)
-            return new String[0];
-        int count = (int) types.count();
-        String[] result = new String[count];
-        for (int i = 0; i < count; i++) {
-            result[i] = new NSString(types.objectAtIndex(i)).getString();
-        }
-        return result;
+        return getDelegate().getAvailableTypeNames();
+    }
+
+    IClipboard delegate;
+
+    protected Clipboard(IClipboard delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IClipboard getDelegate() {
+        return delegate;
     }
 }

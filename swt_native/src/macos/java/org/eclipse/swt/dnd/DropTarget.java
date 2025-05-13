@@ -22,6 +22,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Convert;
 
 /**
  *  Class <code>DropTarget</code> defines the target object for a drag and drop transfer.
@@ -80,119 +81,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class DropTarget extends Widget {
 
-    static Callback dropTarget2Args, dropTarget3Args, dropTarget6Args;
-
-    static long proc2Args, proc3Args, proc6Args;
-
-    //$NON-NLS-1$
-    static final String LOCK_CURSOR = "org.eclipse.swt.internal.lockCursor";
-
-    static {
-        Class<?> clazz = DropTarget.class;
-        dropTarget2Args = new Callback(clazz, "dropTargetProc", 2);
-        proc2Args = dropTarget2Args.getAddress();
-        dropTarget3Args = new Callback(clazz, "dropTargetProc", 3);
-        proc3Args = dropTarget3Args.getAddress();
-        dropTarget6Args = new Callback(clazz, "dropTargetProc", 6);
-        proc6Args = dropTarget6Args.getAddress();
-    }
-
-    static boolean dropNotAllowed = false;
-
-    Control control;
-
-    Listener controlListener;
-
-    Transfer[] transferAgents = new Transfer[0];
-
-    DropTargetEffect dropEffect;
-
-    int feedback = DND.FEEDBACK_NONE;
-
-    boolean labelDragHandlersAdded = false;
-
-    // Track application selections
-    TransferData selectedDataType;
-
-    int selectedOperation;
-
-    // workaround - There is no event for "operation changed" so track operation based on key state
-    int keyOperation = -1;
-
-    //$NON-NLS-1$
-    static final String DEFAULT_DROP_TARGET_EFFECT = "DEFAULT_DROP_TARGET_EFFECT";
-
-    //$NON-NLS-1$
-    static final String IS_ACTIVE = "org.eclipse.swt.internal.isActive";
-
-    /**
-     * Recursively traverses the hierarchy of a control to handle labels with image
-     * views.
-     * If the child of a control is a label with an image view, drag handlers are added for
-     * the corresponding label class to enable it to act as a drop target.
-     * @param c the Control whose hierarchy needs to be iterated to check for label with imageView
-     */
-    void handleLabels(Control c) {
-        if (labelDragHandlersAdded)
-            return;
-        if (c instanceof Label) {
-            long labelViewClass = OS.object_getClass(c.view.id);
-            // adding the handlers to label class
-            addDragHandlers(labelViewClass);
-            /*
-		 * If the content view can be an image view, then add the dragging methods to
-		 * the image view too. This is used by Label so that dragging can work even when
-		 * the Label has an image set on it.
-		 */
-            long imageView = 0;
-            if ((imageView = OS.objc_msgSend(c.view.id, OS.sel_getImageView)) != 0) {
-                long cls = OS.object_getClass(imageView);
-                addDragHandlers(cls);
-                labelDragHandlersAdded = true;
-            }
-        } else if (c instanceof Composite) {
-            Control[] cal = ((Composite) c).getChildren();
-            for (Control child : cal) {
-                handleLabels(child);
-            }
-        }
-    }
-
-    void addDragHandlers() {
-        /*
-	 * Our strategy here is to dynamically add methods to the control's class that
-	 * are required by NSDraggingDestination. Then, when setTransfer is called, we
-	 * just register the types with the Control's NSView and AppKit will call the
-	 * methods in the protocol when a drag goes over the view.
-	 */
-        long cls = OS.object_getClass(control.view.id);
-        if (cls == 0) {
-            DND.error(DND.ERROR_CANNOT_INIT_DROP);
-        }
-        addDragHandlers(cls);
-        handleLabels(control);
-    }
-
-    void addDragHandlers(long cls) {
-        // If we already added it, no need to do it again.
-        long procPtr = OS.class_getMethodImplementation(cls, OS.sel_draggingEntered_);
-        if (procPtr == proc3Args)
-            return;
-        // Add the NSDraggingDestination callbacks
-        OS.class_addMethod(cls, OS.sel_draggingEntered_, proc3Args, "@:@");
-        OS.class_addMethod(cls, OS.sel_draggingUpdated_, proc3Args, "@:@");
-        OS.class_addMethod(cls, OS.sel_draggingExited_, proc3Args, "@:@");
-        OS.class_addMethod(cls, OS.sel_performDragOperation_, proc3Args, "@:@");
-        OS.class_addMethod(cls, OS.sel_wantsPeriodicDraggingUpdates, proc2Args, "@:");
-        if (OS.class_getSuperclass(cls) == OS.class_NSOutlineView) {
-            OS.class_addMethod(cls, OS.sel_outlineView_acceptDrop_item_childIndex_, proc6Args, "@:@@@i");
-            OS.class_addMethod(cls, OS.sel_outlineView_validateDrop_proposedItem_proposedChildIndex_, proc6Args, "@:@@@i");
-        } else if (OS.class_getSuperclass(cls) == OS.class_NSTableView) {
-            OS.class_addMethod(cls, OS.sel_tableView_acceptDrop_row_dropOperation_, proc6Args, "@:@@@i");
-            OS.class_addMethod(cls, OS.sel_tableView_validateDrop_proposedRow_proposedDropOperation_, proc6Args, "@:@@@i");
-        }
-    }
-
     /**
      * Adds the listener to the collection of listeners who will
      * be notified when a drag and drop operation is in progress, by sending
@@ -227,150 +115,7 @@ public class DropTarget extends Widget {
      * @see DropTargetEvent
      */
     public void addDropListener(DropTargetListener listener) {
-        if (listener == null)
-            DND.error(SWT.ERROR_NULL_ARGUMENT);
-        DNDListener typedListener = new DNDListener(listener);
-        typedListener.dndWidget = this;
-        addListener(DND.DragEnter, typedListener);
-        addListener(DND.DragLeave, typedListener);
-        addListener(DND.DragOver, typedListener);
-        addListener(DND.DragOperationChanged, typedListener);
-        addListener(DND.Drop, typedListener);
-        addListener(DND.DropAccept, typedListener);
-    }
-
-    long dndCallSuper(long id, long sel, long arg0) {
-        objc_super super_struct = new objc_super();
-        super_struct.receiver = id;
-        super_struct.super_class = OS.objc_msgSend(id, OS.sel_superclass);
-        return OS.objc_msgSendSuper(super_struct, sel, arg0);
-    }
-
-    static int checkStyle(int style) {
-        if (style == SWT.NONE)
-            return DND.DROP_MOVE;
-        return style;
-    }
-
-    @Override
-    protected void checkSubclass() {
-        String name = getClass().getName();
-        String validName = DropTarget.class.getName();
-        if (!validName.equals(name)) {
-            DND.error(SWT.ERROR_INVALID_SUBCLASS);
-        }
-    }
-
-    int draggingEntered(long id, long sel, NSObject sender) {
-        if (sender == null)
-            return OS.NSDragOperationNone;
-        DNDEvent event = new DNDEvent();
-        if (!setEventData(sender, event)) {
-            keyOperation = -1;
-            setDropNotAllowed();
-            return OS.NSDragOperationNone;
-        }
-        int allowedOperations = event.operations;
-        TransferData[] allowedDataTypes = new TransferData[event.dataTypes.length];
-        System.arraycopy(event.dataTypes, 0, allowedDataTypes, 0, allowedDataTypes.length);
-        selectedDataType = null;
-        selectedOperation = DND.DROP_NONE;
-        notifyListeners(DND.DragEnter, event);
-        if (event.detail == DND.DROP_DEFAULT) {
-            event.detail = (allowedOperations & DND.DROP_MOVE) != 0 ? DND.DROP_MOVE : DND.DROP_NONE;
-        }
-        if (event.dataType != null) {
-            for (int i = 0; i < allowedDataTypes.length; i++) {
-                if (allowedDataTypes[i].type == event.dataType.type) {
-                    selectedDataType = allowedDataTypes[i];
-                    break;
-                }
-            }
-        }
-        if (selectedDataType != null && (allowedOperations & event.detail) != 0) {
-            selectedOperation = event.detail;
-        }
-        if (selectedOperation == DND.DROP_NONE) {
-            setDropNotAllowed();
-        } else {
-            if (((Boolean) control.getData(IS_ACTIVE)).booleanValue() == false) {
-                setDropNotAllowed();
-            } else {
-                clearDropNotAllowed();
-            }
-        }
-        if (new NSObject(id).isKindOfClass(OS.class_NSTableView)) {
-            return (int) dndCallSuper(id, sel, sender.id);
-        }
-        return opToOsOp(selectedOperation);
-    }
-
-    void draggingExited(long id, long sel, NSObject sender) {
-        clearDropNotAllowed();
-        if (keyOperation == -1)
-            return;
-        keyOperation = -1;
-        DNDEvent event = new DNDEvent();
-        event.widget = this;
-        event.time = (int) System.currentTimeMillis();
-        event.detail = DND.DROP_NONE;
-        notifyListeners(DND.DragLeave, event);
-        if (new NSObject(id).isKindOfClass(OS.class_NSTableView)) {
-            dndCallSuper(id, sel, sender.id);
-        }
-    }
-
-    int draggingUpdated(long id, long sel, NSObject sender) {
-        if (sender == null)
-            return OS.NSDragOperationNone;
-        int oldKeyOperation = keyOperation;
-        DNDEvent event = new DNDEvent();
-        if (!setEventData(sender, event)) {
-            keyOperation = -1;
-            setDropNotAllowed();
-            return OS.NSDragOperationNone;
-        }
-        int allowedOperations = event.operations;
-        TransferData[] allowedDataTypes = new TransferData[event.dataTypes.length];
-        System.arraycopy(event.dataTypes, 0, allowedDataTypes, 0, allowedDataTypes.length);
-        if (keyOperation == oldKeyOperation) {
-            event.type = DND.DragOver;
-            event.dataType = selectedDataType;
-            event.detail = selectedOperation;
-        } else {
-            event.type = DND.DragOperationChanged;
-            event.dataType = selectedDataType;
-        }
-        selectedDataType = null;
-        selectedOperation = DND.DROP_NONE;
-        notifyListeners(event.type, event);
-        if (event.detail == DND.DROP_DEFAULT) {
-            event.detail = (allowedOperations & DND.DROP_MOVE) != 0 ? DND.DROP_MOVE : DND.DROP_NONE;
-        }
-        if (event.dataType != null) {
-            for (int i = 0; i < allowedDataTypes.length; i++) {
-                if (allowedDataTypes[i].type == event.dataType.type) {
-                    selectedDataType = allowedDataTypes[i];
-                    break;
-                }
-            }
-        }
-        if (selectedDataType != null && (event.detail & allowedOperations) != 0) {
-            selectedOperation = event.detail;
-        }
-        if (selectedOperation == DND.DROP_NONE) {
-            setDropNotAllowed();
-        } else {
-            if (((Boolean) control.getData(IS_ACTIVE)).booleanValue() == false) {
-                setDropNotAllowed();
-            } else {
-                clearDropNotAllowed();
-            }
-        }
-        if (new NSObject(id).isKindOfClass(OS.class_NSTableView)) {
-            return (int) dndCallSuper(id, sel, sender.id);
-        }
-        return opToOsOp(selectedOperation);
+        getDelegate().addDropListener(listener);
     }
 
     /**
@@ -405,105 +150,7 @@ public class DropTarget extends Widget {
      *  @see DND#DROP_LINK
      */
     public DropTarget(Control control, int style) {
-        super(control, checkStyle(style));
-        this.control = control;
-        if (control.getData(DND.DROP_TARGET_KEY) != null) {
-            DND.error(DND.ERROR_CANNOT_INIT_DROP);
-        }
-        control.setData(DND.DROP_TARGET_KEY, this);
-        controlListener = event -> {
-            if (!DropTarget.this.isDisposed()) {
-                DropTarget.this.dispose();
-            }
-        };
-        control.addListener(SWT.Dispose, controlListener);
-        this.addListener(SWT.Dispose, event -> onDispose());
-        Object effect = control.getData(DEFAULT_DROP_TARGET_EFFECT);
-        if (effect instanceof DropTargetEffect) {
-            dropEffect = (DropTargetEffect) effect;
-        } else if (control instanceof Table) {
-            dropEffect = new TableDropTargetEffect((Table) control);
-        } else if (control instanceof Tree) {
-            dropEffect = new TreeDropTargetEffect((Tree) control);
-        }
-        addDragHandlers();
-    }
-
-    static long dropTargetProc(long id, long sel) {
-        Display display = Display.findDisplay(Thread.currentThread());
-        if (display == null || display.isDisposed())
-            return 0;
-        Widget widget = display.findWidget(id);
-        if (widget == null)
-            return 0;
-        DropTarget dt = (DropTarget) widget.getData(DND.DROP_TARGET_KEY);
-        if (dt == null)
-            return 0;
-        if (sel == OS.sel_wantsPeriodicDraggingUpdates) {
-            return dt.wantsPeriodicDraggingUpdates(id, sel) ? 1 : 0;
-        }
-        return 0;
-    }
-
-    static long dropTargetProc(long id, long sel, long arg0) {
-        Display display = Display.findDisplay(Thread.currentThread());
-        if (display == null || display.isDisposed())
-            return 0;
-        Widget widget = display.findWidget(id);
-        if (widget == null)
-            return 0;
-        Widget tempWidget = widget;
-        DropTarget dt = (DropTarget) tempWidget.getData(DND.DROP_TARGET_KEY);
-        if (dt == null && tempWidget instanceof Label) {
-            while (tempWidget != null && !(tempWidget instanceof Shell)) {
-                dt = (DropTarget) tempWidget.getData(DND.DROP_TARGET_KEY);
-                if (dt != null) {
-                    break;
-                }
-                if (tempWidget instanceof Control) {
-                    Composite widgetParent = ((Control) tempWidget).getParent();
-                    tempWidget = widgetParent;
-                } else
-                    break;
-            }
-        }
-        if (dt == null)
-            return 0;
-        // arg0 is _always_ the sender, and implements NSDraggingInfo.
-        // Looks like an NSObject for our purposes, though.
-        NSObject sender = new NSObject(arg0);
-        if (sel == OS.sel_draggingEntered_) {
-            return dt.draggingEntered(id, sel, sender);
-        } else if (sel == OS.sel_draggingUpdated_) {
-            return dt.draggingUpdated(id, sel, sender);
-        } else if (sel == OS.sel_draggingExited_) {
-            dt.draggingExited(id, sel, sender);
-        } else if (sel == OS.sel_performDragOperation_) {
-            return dt.performDragOperation(id, sel, sender) ? 1 : 0;
-        }
-        return 0;
-    }
-
-    static long dropTargetProc(long id, long sel, long arg0, long arg1, long arg2, long arg3) {
-        Display display = Display.findDisplay(Thread.currentThread());
-        if (display == null || display.isDisposed())
-            return 0;
-        Widget widget = display.findWidget(id);
-        if (widget == null)
-            return 0;
-        DropTarget dt = (DropTarget) widget.getData(DND.DROP_TARGET_KEY);
-        if (dt == null)
-            return 0;
-        if (sel == OS.sel_outlineView_acceptDrop_item_childIndex_) {
-            return dt.outlineView_acceptDrop_item_childIndex(id, sel, arg0, arg1, arg2, arg3) ? 1 : 0;
-        } else if (sel == OS.sel_outlineView_validateDrop_proposedItem_proposedChildIndex_) {
-            return dt.outlineView_validateDrop_proposedItem_proposedChildIndex(id, sel, arg0, arg1, arg2, arg3);
-        } else if (sel == OS.sel_tableView_acceptDrop_row_dropOperation_) {
-            return dt.tableView_acceptDrop_row_dropOperation(id, sel, arg0, arg1, arg2, arg3) ? 1 : 0;
-        } else if (sel == OS.sel_tableView_validateDrop_proposedRow_proposedDropOperation_) {
-            return dt.tableView_validateDrop_proposedRow_proposedDropOperation(id, sel, arg0, arg1, arg2, arg3);
-        }
-        return 0;
+        this(new nat.org.eclipse.swt.dnd.DropTarget((nat.org.eclipse.swt.widgets.Control) control.getDelegate(), style));
     }
 
     /**
@@ -513,7 +160,7 @@ public class DropTarget extends Widget {
      * @return the Control which is registered for this DropTarget
      */
     public Control getControl() {
-        return control;
+        return getDelegate().getControl().getApi();
     }
 
     /**
@@ -537,7 +184,7 @@ public class DropTarget extends Widget {
      * @since 3.4
      */
     public DropTargetListener[] getDropListeners() {
-        return getTypedListeners(DND.DragEnter, DropTargetListener.class).toArray(DropTargetListener[]::new);
+        return getDelegate().getDropListeners();
     }
 
     /**
@@ -550,30 +197,7 @@ public class DropTarget extends Widget {
      * @since 3.3
      */
     public DropTargetEffect getDropTargetEffect() {
-        return dropEffect;
-    }
-
-    int getOperationFromKeyState() {
-        // The NSDraggingInfo object already combined the modifier keys with the
-        // drag source's allowed events. This might be better accomplished by diffing
-        // the base drag source mask with the active drag state mask instead of snarfing
-        // the current event.
-        // See documentation on [NSDraggingInfo draggingSourceOperationMask] for the
-        // correct Cocoa behavior.  Control + Option or Command is NSDragOperationGeneric,
-        // or DND.DROP_DEFAULT in the SWT.
-        NSEvent currEvent = NSApplication.sharedApplication().currentEvent();
-        if (currEvent != null) {
-            long modifiers = currEvent.modifierFlags();
-            boolean option = (modifiers & OS.NSAlternateKeyMask) == OS.NSAlternateKeyMask;
-            boolean control = (modifiers & OS.NSControlKeyMask) == OS.NSControlKeyMask;
-            if (control && option)
-                return DND.DROP_DEFAULT;
-            if (control)
-                return DND.DROP_LINK;
-            if (option)
-                return DND.DROP_COPY;
-        }
-        return DND.DROP_DEFAULT;
+        return getDelegate().getDropTargetEffect().getApi();
     }
 
     /**
@@ -582,198 +206,7 @@ public class DropTarget extends Widget {
      * @return a list of the data types that can be transferred to this DropTarget
      */
     public Transfer[] getTransfer() {
-        return transferAgents;
-    }
-
-    void onDispose() {
-        if (control == null)
-            return;
-        if (controlListener != null)
-            control.removeListener(SWT.Dispose, controlListener);
-        controlListener = null;
-        control.setData(DND.DROP_TARGET_KEY, null);
-        transferAgents = null;
-        // Unregister the control as a drop target.
-        control.view.unregisterDraggedTypes();
-        control = null;
-    }
-
-    int opToOsOp(int operation) {
-        int osOperation = 0;
-        if ((operation & DND.DROP_COPY) != 0) {
-            osOperation |= OS.NSDragOperationCopy;
-        }
-        if ((operation & DND.DROP_LINK) != 0) {
-            osOperation |= OS.NSDragOperationLink;
-        }
-        if ((operation & DND.DROP_MOVE) != 0) {
-            osOperation |= OS.NSDragOperationMove;
-        }
-        if ((operation & DND.DROP_TARGET_MOVE) != 0) {
-            osOperation |= OS.NSDragOperationDelete;
-        }
-        return osOperation;
-    }
-
-    int osOpToOp(long osOperation) {
-        int operation = 0;
-        if ((osOperation & OS.NSDragOperationCopy) != 0) {
-            operation |= DND.DROP_COPY;
-        }
-        if ((osOperation & OS.NSDragOperationLink) != 0) {
-            operation |= DND.DROP_LINK;
-        }
-        if ((osOperation & OS.NSDragOperationDelete) != 0) {
-            operation |= DND.DROP_TARGET_MOVE;
-        }
-        if ((osOperation & OS.NSDragOperationMove) != 0) {
-            operation |= DND.DROP_MOVE;
-        }
-        if (osOperation == OS.NSDragOperationEvery) {
-            operation = DND.DROP_COPY | DND.DROP_MOVE | DND.DROP_LINK;
-        }
-        return operation;
-    }
-
-    boolean drop(NSObject sender) {
-        clearDropNotAllowed();
-        DNDEvent event = new DNDEvent();
-        event.widget = this;
-        event.time = (int) System.currentTimeMillis();
-        if (dropEffect != null) {
-            NSPoint mouseLocation = sender.draggingLocation();
-            NSPoint globalLoc = sender.draggingDestinationWindow().convertBaseToScreen(mouseLocation);
-            event.item = dropEffect.getItem((int) globalLoc.x, (int) globalLoc.y);
-        }
-        event.detail = DND.DROP_NONE;
-        notifyListeners(DND.DragLeave, event);
-        event = new DNDEvent();
-        if (!setEventData(sender, event) || (((Boolean) control.getData(IS_ACTIVE)).booleanValue() == false)) {
-            return false;
-        }
-        keyOperation = -1;
-        int allowedOperations = event.operations;
-        TransferData[] allowedDataTypes = new TransferData[event.dataTypes.length];
-        System.arraycopy(event.dataTypes, 0, allowedDataTypes, 0, event.dataTypes.length);
-        event.dataType = selectedDataType;
-        event.detail = selectedOperation;
-        notifyListeners(DND.DropAccept, event);
-        selectedDataType = null;
-        if (event.dataType != null) {
-            for (int i = 0; i < allowedDataTypes.length; i++) {
-                if (allowedDataTypes[i].type == event.dataType.type) {
-                    selectedDataType = allowedDataTypes[i];
-                    break;
-                }
-            }
-        }
-        selectedOperation = DND.DROP_NONE;
-        if (selectedDataType != null && (event.detail & allowedOperations) != 0) {
-            selectedOperation = event.detail;
-        }
-        if (selectedOperation == DND.DROP_NONE) {
-            return false;
-        }
-        // ask drag source for dropped data
-        NSPasteboard pasteboard = sender.draggingPasteboard();
-        NSObject data = null;
-        NSMutableArray types = NSMutableArray.arrayWithCapacity(10);
-        for (int i = 0; i < transferAgents.length; i++) {
-            Transfer transfer = transferAgents[i];
-            String[] typeNames = transfer.getTypeNames();
-            int[] typeIds = transfer.getTypeIds();
-            for (int j = 0; j < typeNames.length; j++) {
-                if (selectedDataType.type == typeIds[j]) {
-                    types.addObject(NSString.stringWith(typeNames[j]));
-                    break;
-                }
-            }
-        }
-        NSString type = pasteboard.availableTypeFromArray(types);
-        TransferData tdata = new TransferData();
-        if (type != null) {
-            tdata.type = Transfer.registerType(type.getString());
-            if (type.isEqual(OS.NSPasteboardTypeString) || type.isEqual(OS.NSPasteboardTypeHTML) || type.isEqual(OS.NSPasteboardTypeRTF)) {
-                tdata.data = pasteboard.stringForType(type);
-            } else if (type.isEqual(OS.NSURLPboardType) || type.isEqual(OS.kUTTypeURL)) {
-                tdata.data = NSURL.URLFromPasteboard(pasteboard);
-            } else if (type.isEqual(OS.NSFilenamesPboardType) || type.isEqual(OS.kUTTypeFileURL)) {
-                tdata.data = new NSArray(pasteboard.propertyListForType(OS.NSFilenamesPboardType).id);
-            } else {
-                tdata.data = pasteboard.dataForType(type);
-            }
-        }
-        if (tdata.data != null) {
-            data = tdata.data;
-        }
-        // Get Data in a Java format
-        Object object = null;
-        for (int i = 0; i < transferAgents.length; i++) {
-            Transfer transfer = transferAgents[i];
-            if (transfer != null && transfer.isSupportedType(selectedDataType)) {
-                selectedDataType.data = data;
-                object = transfer.nativeToJava(selectedDataType);
-                break;
-            }
-        }
-        if (object == null) {
-            selectedOperation = DND.DROP_NONE;
-        }
-        event.dataType = selectedDataType;
-        event.detail = selectedOperation;
-        event.data = object;
-        notifyListeners(DND.Drop, event);
-        selectedOperation = DND.DROP_NONE;
-        if ((allowedOperations & event.detail) == event.detail) {
-            selectedOperation = event.detail;
-        }
-        //notify source of action taken
-        return (selectedOperation != DND.DROP_NONE);
-    }
-
-    boolean performDragOperation(long id, long sel, NSObject sender) {
-        if (new NSObject(id).isKindOfClass(OS.class_NSTableView)) {
-            return dndCallSuper(id, sel, sender.id) != 0;
-        }
-        return drop(sender);
-    }
-
-    boolean outlineView_acceptDrop_item_childIndex(long id, long sel, long outlineView, long info, long item, long index) {
-        return drop(new NSObject(info));
-    }
-
-    long outlineView_validateDrop_proposedItem_proposedChildIndex(long id, long sel, long outlineView, long info, long item, long index) {
-        //TODO expansion animation and auto collapse not working because of outlineView:shouldExpandItem:
-        NSOutlineView widget = new NSOutlineView(outlineView);
-        NSObject sender = new NSObject(info);
-        NSPoint pt = sender.draggingLocation();
-        pt = widget.convertPoint_fromView_(pt, null);
-        Tree tree = (Tree) getControl();
-        TreeItem childItem = tree.getItem(new Point((int) pt.x, (int) pt.y));
-        if (feedback == 0 || childItem == null) {
-            widget.setDropItem(null, -1);
-        } else {
-            if ((feedback & DND.FEEDBACK_SELECT) != 0) {
-                widget.setDropItem(childItem.handle, -1);
-            } else {
-                TreeItem parentItem = childItem.getParentItem();
-                int childIndex;
-                id parentID = null;
-                if (parentItem != null) {
-                    parentID = parentItem.handle;
-                    childIndex = parentItem.indexOf(childItem);
-                } else {
-                    childIndex = ((Tree) getControl()).indexOf(childItem);
-                }
-                if ((feedback & DND.FEEDBACK_INSERT_AFTER) != 0) {
-                    widget.setDropItem(parentID, childIndex + 1);
-                }
-                if ((feedback & DND.FEEDBACK_INSERT_BEFORE) != 0) {
-                    widget.setDropItem(parentID, childIndex);
-                }
-            }
-        }
-        return opToOsOp(selectedOperation);
+        return Convert.array(getDelegate().getTransfer(), ITransfer::getApi, Transfer[]::new);
     }
 
     /**
@@ -795,14 +228,7 @@ public class DropTarget extends Widget {
      * @see #getDropListeners
      */
     public void removeDropListener(DropTargetListener listener) {
-        if (listener == null)
-            DND.error(SWT.ERROR_NULL_ARGUMENT);
-        removeTypedListener(DND.DragEnter, listener);
-        removeTypedListener(DND.DragLeave, listener);
-        removeTypedListener(DND.DragOver, listener);
-        removeTypedListener(DND.DragOperationChanged, listener);
-        removeTypedListener(DND.Drop, listener);
-        removeTypedListener(DND.DropAccept, listener);
+        getDelegate().removeDropListener(listener);
     }
 
     /**
@@ -815,78 +241,7 @@ public class DropTarget extends Widget {
      * @since 3.3
      */
     public void setDropTargetEffect(DropTargetEffect effect) {
-        dropEffect = effect;
-    }
-
-    boolean setEventData(NSObject draggingState, DNDEvent event) {
-        if (draggingState == null)
-            return false;
-        // get allowed operations
-        int style = getStyle();
-        long allowedActions = draggingState.draggingSourceOperationMask();
-        int operations = osOpToOp(allowedActions) & style;
-        if (operations == DND.DROP_NONE)
-            return false;
-        // get current operation
-        int operation = getOperationFromKeyState();
-        keyOperation = operation;
-        if (operation == DND.DROP_DEFAULT) {
-            if ((style & DND.DROP_DEFAULT) == 0) {
-                operation = (operations & DND.DROP_MOVE) != 0 ? DND.DROP_MOVE : DND.DROP_NONE;
-            }
-        } else {
-            if ((operation & operations) == 0)
-                operation = DND.DROP_NONE;
-        }
-        // get allowed transfer types
-        NSPasteboard dragPBoard = draggingState.draggingPasteboard();
-        NSArray draggedTypes = dragPBoard.types();
-        if (draggedTypes == null)
-            return false;
-        long draggedTypeCount = draggedTypes.count();
-        TransferData[] dataTypes = new TransferData[(int) draggedTypeCount];
-        int index = -1;
-        for (int i = 0; i < draggedTypeCount; i++) {
-            id draggedType = draggedTypes.objectAtIndex(i);
-            NSString nativeDataType = new NSString(draggedType);
-            TransferData data = new TransferData();
-            data.type = Transfer.registerType(nativeDataType.getString());
-            for (int j = 0; j < transferAgents.length; j++) {
-                Transfer transfer = transferAgents[j];
-                if (transfer != null && transfer.isSupportedType(data)) {
-                    dataTypes[++index] = data;
-                    break;
-                }
-            }
-        }
-        if (index == -1)
-            return false;
-        if (index < dataTypes.length - 1) {
-            TransferData[] temp = new TransferData[index + 1];
-            System.arraycopy(dataTypes, 0, temp, 0, index + 1);
-            dataTypes = temp;
-        }
-        // Convert from window-relative to global coordinates, and flip it.
-        NSPoint mouse = draggingState.draggingLocation();
-        NSPoint globalMouse = draggingState.draggingDestinationWindow().convertBaseToScreen(mouse);
-        NSArray screens = NSScreen.screens();
-        if (screens == null)
-            return false;
-        NSRect screenRect = new NSScreen(screens.objectAtIndex(0)).frame();
-        globalMouse.y = screenRect.height - globalMouse.y;
-        event.widget = this;
-        event.x = (int) globalMouse.x;
-        event.y = (int) globalMouse.y;
-        event.time = (int) System.currentTimeMillis();
-        event.feedback = DND.FEEDBACK_SELECT;
-        event.dataTypes = dataTypes;
-        event.dataType = dataTypes[0];
-        event.operations = operations;
-        event.detail = operation;
-        if (dropEffect != null) {
-            event.item = dropEffect.getItem(event.x, event.y);
-        }
-        return true;
+        getDelegate().setDropTargetEffect(effect.getDelegate());
     }
 
     /**
@@ -903,80 +258,15 @@ public class DropTarget extends Widget {
      *  </ul>
      */
     public void setTransfer(Transfer... transferAgents) {
-        if (transferAgents == null)
-            DND.error(SWT.ERROR_NULL_ARGUMENT);
-        this.transferAgents = transferAgents;
+        getDelegate().setTransfer(Convert.array(transferAgents, Transfer::getDelegate, ITransfer[]::new));
         // Register the types as valid drop types in Cocoa.
-        // Accumulate all of the transfer types into a list.
-        List<String> typeStrings = new ArrayList<>();
-        for (int i = 0; i < this.transferAgents.length; i++) {
-            String[] types = transferAgents[i].getTypeNames();
-            for (int j = 0; j < types.length; j++) {
-                typeStrings.add(types[j]);
-            }
-        }
-        // Convert to an NSArray of NSStrings so we can register with the Control.
-        int typeStringCount = typeStrings.size();
-        NSMutableArray nsTypeStrings = NSMutableArray.arrayWithCapacity(typeStringCount);
-        for (int i = 0; i < typeStringCount; i++) {
-            nsTypeStrings.addObject(NSString.stringWith((String) typeStrings.get(i)));
-        }
-        control.view.registerForDraggedTypes(nsTypeStrings);
     }
 
-    void setDropNotAllowed() {
-        if (!dropNotAllowed) {
-            NSCursor.currentCursor().push();
-            Display display = getDisplay();
-            display.setData(LOCK_CURSOR, Boolean.FALSE);
-            NSCursor.operationNotAllowedCursor().push();
-            display.setData(LOCK_CURSOR, Boolean.TRUE);
-            dropNotAllowed = true;
-        }
+    protected DropTarget(IDropTarget delegate) {
+        super(delegate);
     }
 
-    void clearDropNotAllowed() {
-        if (dropNotAllowed) {
-            Display display = getDisplay();
-            display.setData(LOCK_CURSOR, Boolean.FALSE);
-            NSCursor.pop();
-            display.setData(LOCK_CURSOR, Boolean.TRUE);
-            NSCursor.pop();
-            dropNotAllowed = false;
-        }
-    }
-
-    boolean tableView_acceptDrop_row_dropOperation(long id, long sel, long tableView, long info, long row, long operation) {
-        return drop(new NSObject(info));
-    }
-
-    int tableView_validateDrop_proposedRow_proposedDropOperation(long id, long sel, long tableView, long info, long row, long operation) {
-        NSTableView widget = new NSTableView(tableView);
-        NSObject sender = new NSObject(info);
-        NSPoint pt = sender.draggingLocation();
-        pt = widget.convertPoint_fromView_(pt, null);
-        long hitRow = widget.rowAtPoint(pt);
-        if (0 <= hitRow && hitRow < widget.numberOfRows()) {
-            if (feedback == 0) {
-                widget.setDropRow(-1, OS.NSTableViewDropOn);
-            } else {
-                if ((feedback & DND.FEEDBACK_SELECT) != 0) {
-                    widget.setDropRow(hitRow, OS.NSTableViewDropOn);
-                } else {
-                    if ((feedback & DND.FEEDBACK_INSERT_AFTER) != 0) {
-                        widget.setDropRow(hitRow + 1, OS.NSTableViewDropAbove);
-                    }
-                    if ((feedback & DND.FEEDBACK_INSERT_BEFORE) != 0) {
-                        widget.setDropRow(hitRow, OS.NSTableViewDropAbove);
-                    }
-                }
-            }
-        }
-        return opToOsOp(selectedOperation);
-    }
-
-    // By returning true we get draggingUpdated messages even when the mouse isn't moving.
-    boolean wantsPeriodicDraggingUpdates(long id, long sel) {
-        return true;
+    public IDropTarget getDelegate() {
+        return (IDropTarget) super.getDelegate();
     }
 }

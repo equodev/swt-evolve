@@ -213,7 +213,7 @@ public final class ImageData implements Cloneable {
     /**
      * Arbitrary channel width data to 8-bit conversion table.
      */
-    static final byte[][] ANY_TO_EIGHT = new byte[9][];
+    static final public byte[][] ANY_TO_EIGHT = new byte[9][];
 
     static {
         for (int b = 0; b < 9; ++b) {
@@ -229,7 +229,7 @@ public final class ImageData implements Cloneable {
     /**
      * Scaled 8x8 Bayer dither matrix.
      */
-    static final int[][] DITHER_MATRIX = { { 0xfc0000, 0x7c0000, 0xdc0000, 0x5c0000, 0xf40000, 0x740000, 0xd40000, 0x540000 }, { 0x3c0000, 0xbc0000, 0x1c0000, 0x9c0000, 0x340000, 0xb40000, 0x140000, 0x940000 }, { 0xcc0000, 0x4c0000, 0xec0000, 0x6c0000, 0xc40000, 0x440000, 0xe40000, 0x640000 }, { 0x0c0000, 0x8c0000, 0x2c0000, 0xac0000, 0x040000, 0x840000, 0x240000, 0xa40000 }, { 0xf00000, 0x700000, 0xd00000, 0x500000, 0xf80000, 0x780000, 0xd80000, 0x580000 }, { 0x300000, 0xb00000, 0x100000, 0x900000, 0x380000, 0xb80000, 0x180000, 0x980000 }, { 0xc00000, 0x400000, 0xe00000, 0x600000, 0xc80000, 0x480000, 0xe80000, 0x680000 }, { 0x000000, 0x800000, 0x200000, 0xa00000, 0x080000, 0x880000, 0x280000, 0xa80000 } };
+    static final public int[][] DITHER_MATRIX = { { 0xfc0000, 0x7c0000, 0xdc0000, 0x5c0000, 0xf40000, 0x740000, 0xd40000, 0x540000 }, { 0x3c0000, 0xbc0000, 0x1c0000, 0x9c0000, 0x340000, 0xb40000, 0x140000, 0x940000 }, { 0xcc0000, 0x4c0000, 0xec0000, 0x6c0000, 0xc40000, 0x440000, 0xe40000, 0x640000 }, { 0x0c0000, 0x8c0000, 0x2c0000, 0xac0000, 0x040000, 0x840000, 0x240000, 0xa40000 }, { 0xf00000, 0x700000, 0xd00000, 0x500000, 0xf80000, 0x780000, 0xd80000, 0x580000 }, { 0x300000, 0xb00000, 0x100000, 0x900000, 0x380000, 0xb80000, 0x180000, 0x980000 }, { 0xc00000, 0x400000, 0xe00000, 0x600000, 0xc80000, 0x480000, 0xe80000, 0x680000 }, { 0x000000, 0x800000, 0x200000, 0xa00000, 0x080000, 0x880000, 0x280000, 0xa80000 } };
 
     /**
      * Constructs a new, empty ImageData with the given width, height,
@@ -457,7 +457,7 @@ public final class ImageData implements Cloneable {
         return mask;
     }
 
-    static byte[] checkData(byte[] data) {
+    static public byte[] checkData(byte[] data) {
         if (data == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         return data;
@@ -1034,7 +1034,7 @@ public final class ImageData implements Cloneable {
      *
      * @return MSB_FIRST or LSB_FIRST
      */
-    int getByteOrder() {
+    public int getByteOrder() {
         return depth != 16 ? MSB_FIRST : LSB_FIRST;
     }
 
@@ -1523,11 +1523,11 @@ public final class ImageData implements Cloneable {
     /**
      * Returns a palette with 2 colors: black & white.
      */
-    static PaletteData bwPalette() {
+    static public PaletteData bwPalette() {
         return new PaletteData(new RGB(0, 0, 0), new RGB(255, 255, 255));
     }
 
-    static ImageData convertMask(ImageData mask) {
+    static public ImageData convertMask(ImageData mask) {
         if (mask.depth == 1)
             return mask;
         PaletteData palette = new PaletteData(new RGB(0, 0, 0), new RGB(255, 255, 255));
@@ -1557,7 +1557,7 @@ public final class ImageData implements Cloneable {
         return newMask;
     }
 
-    static byte[] convertPad(byte[] data, int width, int height, int depth, int pad, int newPad) {
+    static public byte[] convertPad(byte[] data, int width, int height, int depth, int pad, int newPad) {
         if (pad == newPad)
             return data;
         int stride = (width * depth + 7) / 8;
@@ -1576,9 +1576,9 @@ public final class ImageData implements Cloneable {
     /**
      * Byte and bit order constants.
      */
-    static final int LSB_FIRST = 0;
+    static final public int LSB_FIRST = 0;
 
-    static final int MSB_FIRST = 1;
+    static final public int MSB_FIRST = 1;
 
     /**
      * Data types (internal)
@@ -1619,7 +1619,7 @@ public final class ImageData implements Cloneable {
      * @param flipX if true the resulting image is flipped along the vertical axis
      * @param flipY if true the resulting image is flipped along the horizontal axis
      */
-    static void blit(byte[] srcData, int srcDepth, int srcStride, int srcOrder, int srcWidth, int srcHeight, int srcRedMask, int srcGreenMask, int srcBlueMask, byte[] destData, int destDepth, int destStride, int destOrder, int destWidth, int destHeight, int destRedMask, int destGreenMask, int destBlueMask, boolean flipX, boolean flipY) {
+    static public void blit(byte[] srcData, int srcDepth, int srcStride, int srcOrder, int srcWidth, int srcHeight, int srcRedMask, int srcGreenMask, int srcBlueMask, byte[] destData, int destDepth, int destStride, int destOrder, int destWidth, int destHeight, int destRedMask, int destGreenMask, int destBlueMask, boolean flipX, boolean flipY) {
         if ((destWidth <= 0) || (destHeight <= 0))
             return;
         /**
@@ -1919,7 +1919,7 @@ public final class ImageData implements Cloneable {
      * @param flipX if true the resulting image is flipped along the vertical axis
      * @param flipY if true the resulting image is flipped along the horizontal axis
      */
-    static void blit(byte[] srcData, int srcDepth, int srcStride, int srcOrder, int srcWidth, int srcHeight, byte[] destData, int destDepth, int destStride, int destOrder, int destWidth, int destHeight, boolean flipX, boolean flipY) {
+    static public void blit(byte[] srcData, int srcDepth, int srcStride, int srcOrder, int srcWidth, int srcHeight, byte[] destData, int destDepth, int destStride, int destOrder, int destWidth, int destHeight, boolean flipX, boolean flipY) {
         if ((destWidth <= 0) || (destHeight <= 0))
             return;
         if (srcDepth > destDepth) {
@@ -2174,7 +2174,7 @@ public final class ImageData implements Cloneable {
      * @param destGreenMask the destination green channel mask
      * @param destBlueMask the destination blue channel mask
      */
-    static void blit(int srcWidth, int srcHeight, byte[] srcData, int srcDepth, int srcStride, int srcOrder, byte[] srcReds, byte[] srcGreens, byte[] srcBlues, byte[] destData, int destDepth, int destStride, int destOrder, int destRedMask, int destGreenMask, int destBlueMask) {
+    static public void blit(int srcWidth, int srcHeight, byte[] srcData, int srcDepth, int srcStride, int srcOrder, byte[] srcReds, byte[] srcGreens, byte[] srcBlues, byte[] destData, int destDepth, int destStride, int destOrder, int destRedMask, int destGreenMask, int destBlueMask) {
         /**
          * Fast blit (straight copy) **
          */
@@ -2360,7 +2360,7 @@ public final class ImageData implements Cloneable {
     /**
      * Computes the required channel shift from a mask.
      */
-    static int getChannelShift(int mask) {
+    static public int getChannelShift(int mask) {
         if (mask == 0)
             return 0;
         int i;
@@ -2373,7 +2373,7 @@ public final class ImageData implements Cloneable {
     /**
      * Computes the required channel width (depth) from a mask.
      */
-    static int getChannelWidth(int mask, int shift) {
+    static public int getChannelWidth(int mask, int shift) {
         if (mask == 0)
             return 0;
         int i;
@@ -2400,7 +2400,7 @@ public final class ImageData implements Cloneable {
      * @param blueBits the number of significant blue bits, 0 for palette modes
      * @return the new ImageData
      */
-    static ImageData createGradientBand(int width, int height, boolean vertical, RGB fromRGB, RGB toRGB, int redBits, int greenBits, int blueBits) {
+    static public ImageData createGradientBand(int width, int height, boolean vertical, RGB fromRGB, RGB toRGB, int redBits, int greenBits, int blueBits) {
         /* Gradients are drawn as tiled bands */
         final int bandWidth, bandHeight, bitmapDepth;
         final byte[] bitmapData;
@@ -2480,7 +2480,7 @@ public final class ImageData implements Cloneable {
     /*
  * Fill in gradated values for a color channel
  */
-    static void buildPreciseGradientChannel(int from, int to, int steps, int bandWidth, int bandHeight, boolean vertical, byte[] bitmapData, int dp, int bytesPerLine) {
+    static public void buildPreciseGradientChannel(int from, int to, int steps, int bandWidth, int bandHeight, boolean vertical, byte[] bitmapData, int dp, int bytesPerLine) {
         int val = from << 16;
         final int inc = ((to << 16) - val) / steps + 1;
         if (vertical) {
@@ -2499,7 +2499,7 @@ public final class ImageData implements Cloneable {
     /*
  * Fill in dithered gradated values for a color channel
  */
-    static void buildDitheredGradientChannel(int from, int to, int steps, int bandWidth, int bandHeight, boolean vertical, byte[] bitmapData, int dp, int bytesPerLine, int bits) {
+    static public void buildDitheredGradientChannel(int from, int to, int steps, int bandWidth, int bandHeight, boolean vertical, byte[] bitmapData, int dp, int bytesPerLine, int bits) {
         final int mask = 0xff00 >>> bits;
         int val = from << 16;
         final int inc = ((to << 16) - val) / steps + 1;
@@ -2550,7 +2550,7 @@ public final class ImageData implements Cloneable {
      * @param greenBits the number of significant green bits, 0 for palette modes
      * @param blueBits the number of significant blue bits, 0 for palette modes
      */
-    static void fillGradientRectangle(GC gc, Device device, int x, int y, int width, int height, boolean vertical, RGB fromRGB, RGB toRGB, int redBits, int greenBits, int blueBits) {
+    static public void fillGradientRectangle(GC gc, Device device, int x, int y, int width, int height, boolean vertical, RGB fromRGB, RGB toRGB, int redBits, int greenBits, int blueBits) {
         /* Create the bitmap and tile it */
         ImageData band = createGradientBand(width, height, vertical, fromRGB, toRGB, redBits, greenBits, blueBits);
         Image image = new Image(device, band);

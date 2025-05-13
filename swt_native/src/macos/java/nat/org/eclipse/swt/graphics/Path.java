@@ -18,8 +18,6 @@ package nat.org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.PathData;
-import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.graphics.IPath;
 import org.eclipse.swt.graphics.IFont;
 import org.eclipse.swt.graphics.IGC;

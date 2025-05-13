@@ -45,23 +45,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class Browser extends Composite {
 
-    WebBrowser webBrowser;
-
-    int userStyle;
-
-    boolean isClosing;
-
-    static int DefaultType = SWT.DEFAULT;
-
-    //$NON-NLS-1$
-    static final String NO_INPUT_METHOD = "org.eclipse.swt.internal.gtk.noInputMethod";
-
-    //$NON-NLS-1$
-    static final String PACKAGE_PREFIX = "org.eclipse.swt.browser.";
-
-    //$NON-NLS-1$
-    static final String PROPERTY_DEFAULTTYPE = "org.eclipse.swt.browser.DefaultType";
-
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.
@@ -93,133 +76,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public Browser(Composite parent, int style) {
-        super(checkParent(parent), checkStyle(style));
-        userStyle = style;
-        String platform = SWT.getPlatform();
-        if ("gtk".equals(platform)) {
-            //$NON-NLS-1$
-            parent.getDisplay().setData(NO_INPUT_METHOD, null);
-        }
-        style = getStyle();
-        webBrowser = new BrowserFactory().createWebBrowser(style);
-        if (webBrowser != null) {
-            webBrowser.setBrowser(this);
-            webBrowser.create(parent, style);
-            return;
-        }
-        dispose();
-        String errMsg = " because there is no underlying browser available.\n";
-        switch(SWT.getPlatform()) {
-            case "gtk":
-                errMsg = errMsg + "Please ensure that WebKit with its GTK 3.x/4.x bindings is installed.";
-                break;
-            case "cocoa":
-                errMsg = errMsg + "SWT failed to load the WebKit library.\n";
-                break;
-            case "win32":
-                errMsg = errMsg + "SWT uses either IE or WebKit. Either the SWT.WEBKIT flag is passed and the WebKit library was not " + "loaded properly by SWT, or SWT failed to load IE.\n";
-                break;
-            default:
-                break;
-        }
-        SWT.error(SWT.ERROR_NO_HANDLES, null, errMsg);
-    }
-
-    static Composite checkParent(Composite parent) {
-        String platform = SWT.getPlatform();
-        //$NON-NLS-1$
-        if (!"gtk".equals(platform))
-            return parent;
-        /*
-	* Note.  Mozilla provides all IM support needed for text input in web pages.
-	* If SWT creates another input method context for the widget it will cause
-	* indeterminate results to happen (hangs and crashes). The fix is to prevent
-	* SWT from creating an input method context for the  Browser widget.
-	*/
-        if (parent != null && !parent.isDisposed()) {
-            Display display = parent.getDisplay();
-            if (display != null) {
-                if (display.getThread() == Thread.currentThread()) {
-                    //$NON-NLS-1$
-                    display.setData(NO_INPUT_METHOD, "true");
-                }
-            }
-        }
-        return parent;
-    }
-
-    static int checkStyle(int style) {
-        String platform = SWT.getPlatform();
-        if (DefaultType == SWT.DEFAULT) {
-            /*
-		* Some Browser clients that explicitly specify the native renderer to use (by
-		* creating a Browser with SWT.WEBKIT) may also need to specify that all
-		* "default" Browser instances (those created with style SWT.NONE) should use
-		* this renderer as well. This may be needed in order to avoid incompatibilities
-		* that can arise from having multiple native renderers loaded within the same
-		* process. A client can do this by setting the
-		* "org.eclipse.swt.browser.DefaultType" java system property to a value like
-		* "ie" or "webkit".
-		*/
-            /*
-		* Plug-ins need an opportunity to set the org.eclipse.swt.browser.DefaultType
-		* system property before the first Browser is created.  To facilitate this,
-		* reflection is used to reference non-existent class
-		* org.eclipse.swt.browser.BrowserInitializer the first time a Browser is created.
-		* A client wishing to use this hook can do so by creating a fragment of
-		* org.eclipse.swt that implements this class and sets the system property in its
-		* static initializer.
-		*/
-            try {
-                //$NON-NLS-1$
-                Class.forName("org.eclipse.swt.browser.BrowserInitializer");
-            } catch (ClassNotFoundException e) {
-                /* no fragment is providing this class, which is the typical case */
-            }
-            String value = System.getProperty(PROPERTY_DEFAULTTYPE);
-            if (value != null) {
-                int index = 0;
-                int length = value.length();
-                do {
-                    int newIndex = value.indexOf(',', index);
-                    if (newIndex == -1) {
-                        newIndex = length;
-                    }
-                    String current = value.substring(index, newIndex).trim();
-                    if (current.equalsIgnoreCase("webkit")) {
-                        //$NON-NLS-1$
-                        DefaultType = SWT.WEBKIT;
-                        break;
-                    } else if (current.equalsIgnoreCase("edge") && "win32".equals(platform)) {
-                        //$NON-NLS-1$ //$NON-NLS-2$
-                        DefaultType = SWT.EDGE;
-                    } else if (current.equalsIgnoreCase("ie") && "win32".equals(platform)) {
-                        //$NON-NLS-1$ //$NON-NLS-2$
-                        DefaultType = SWT.NONE;
-                        break;
-                    }
-                    index = newIndex + 1;
-                } while (index < length);
-            }
-            if (DefaultType == SWT.DEFAULT) {
-                DefaultType = SWT.NONE;
-            }
-        }
-        /* If particular backend isn't specified, use the value from the system property. */
-        if ((style & (SWT.WEBKIT | SWT.EDGE)) == 0) {
-            style |= DefaultType;
-        }
-        if ("win32".equals(platform) && (style & SWT.EDGE) != 0) {
-            //$NON-NLS-1$
-            /* Hack to enable Browser to receive focus. */
-            style |= SWT.EMBEDDED;
-        }
-        return style;
-    }
-
-    @Override
-    protected void checkWidget() {
-        super.checkWidget();
+        this(new nat.org.eclipse.swt.browser.Browser((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
     }
 
     /**
@@ -228,7 +85,7 @@ public class Browser extends Composite {
      * @since 3.2
      */
     public static void clearSessions() {
-        WebBrowser.clearSessions();
+        nat.org.eclipse.swt.browser.Browser.clearSessions();
     }
 
     /**
@@ -247,11 +104,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public static String getCookie(String name, String url) {
-        if (name == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (url == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return WebBrowser.GetCookie(name, url);
+        return nat.org.eclipse.swt.browser.Browser.getCookie(name, url);
     }
 
     /**
@@ -279,11 +132,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public static boolean setCookie(String value, String url) {
-        if (value == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (url == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return WebBrowser.SetCookie(value, url, true);
+        return nat.org.eclipse.swt.browser.Browser.setCookie(value, url);
     }
 
     /**
@@ -308,10 +157,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public void addAuthenticationListener(AuthenticationListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.addAuthenticationListener(listener);
+        getDelegate().addAuthenticationListener(listener);
     }
 
     /**
@@ -336,10 +182,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addCloseWindowListener(CloseWindowListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.addCloseWindowListener(listener);
+        getDelegate().addCloseWindowListener(listener);
     }
 
     /**
@@ -365,10 +208,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addLocationListener(LocationListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.addLocationListener(listener);
+        getDelegate().addLocationListener(listener);
     }
 
     /**
@@ -393,10 +233,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addOpenWindowListener(OpenWindowListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.addOpenWindowListener(listener);
+        getDelegate().addOpenWindowListener(listener);
     }
 
     /**
@@ -418,10 +255,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addProgressListener(ProgressListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.addProgressListener(listener);
+        getDelegate().addProgressListener(listener);
     }
 
     /**
@@ -446,10 +280,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addStatusTextListener(StatusTextListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.addStatusTextListener(listener);
+        getDelegate().addStatusTextListener(listener);
     }
 
     /**
@@ -471,10 +302,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addTitleListener(TitleListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.addTitleListener(listener);
+        getDelegate().addTitleListener(listener);
     }
 
     /**
@@ -496,10 +324,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addVisibilityWindowListener(VisibilityWindowListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.addVisibilityWindowListener(listener);
+        getDelegate().addVisibilityWindowListener(listener);
     }
 
     /**
@@ -517,17 +342,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public boolean back() {
-        checkWidget();
-        return webBrowser.back();
-    }
-
-    @Override
-    protected void checkSubclass() {
-        String name = getClass().getName();
-        int index = name.lastIndexOf('.');
-        if (!name.substring(0, index + 1).equals(PACKAGE_PREFIX)) {
-            SWT.error(SWT.ERROR_INVALID_SUBCLASS);
-        }
+        return getDelegate().back();
     }
 
     /**
@@ -556,10 +371,7 @@ public class Browser extends Composite {
      * @since 3.1
      */
     public boolean execute(String script) {
-        checkWidget();
-        if (script == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return webBrowser.execute(script);
+        return getDelegate().execute(script);
     }
 
     /**
@@ -579,14 +391,7 @@ public class Browser extends Composite {
      * @since 3.6
      */
     public boolean close() {
-        checkWidget();
-        if (webBrowser.close()) {
-            isClosing = true;
-            dispose();
-            isClosing = false;
-            return true;
-        }
-        return false;
+        return getDelegate().close();
     }
 
     /**
@@ -634,8 +439,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public Object evaluate(String script) throws SWTException {
-        checkWidget();
-        return evaluate(script, false);
+        return getDelegate().evaluate(script);
     }
 
     /**
@@ -684,10 +488,7 @@ public class Browser extends Composite {
      * @see ProgressListener#completed(ProgressEvent)
      */
     public Object evaluate(String script, boolean trusted) throws SWTException {
-        checkWidget();
-        if (script == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return webBrowser.evaluate(script, trusted);
+        return getDelegate().evaluate(script, trusted);
     }
 
     /**
@@ -705,8 +506,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public boolean forward() {
-        checkWidget();
-        return webBrowser.forward();
+        return getDelegate().forward();
     }
 
     /**
@@ -718,8 +518,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public String getBrowserType() {
-        checkWidget();
-        return webBrowser.getBrowserType();
+        return getDelegate().getBrowserType();
     }
 
     /**
@@ -741,17 +540,11 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public boolean getJavascriptEnabled() {
-        checkWidget();
-        return webBrowser.jsEnabledOnNextPage;
+        return getDelegate().getJavascriptEnabled();
     }
 
-    @Override
     public int getStyle() {
-        /*
-	* If SWT.BORDER was specified at creation time then getStyle() should answer
-	* it even though it is removed for IE on win32 in checkStyle().
-	*/
-        return super.getStyle() | (userStyle & SWT.BORDER);
+        return getDelegate().getStyle();
     }
 
     /**
@@ -773,8 +566,7 @@ public class Browser extends Composite {
      * @since 3.4
      */
     public String getText() {
-        checkWidget();
-        return webBrowser.getText();
+        return getDelegate().getText();
     }
 
     /**
@@ -792,8 +584,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public String getUrl() {
-        checkWidget();
-        return webBrowser.getUrl();
+        return getDelegate().getUrl();
     }
 
     /**
@@ -812,8 +603,7 @@ public class Browser extends Composite {
      */
     @Deprecated
     public Object getWebBrowser() {
-        checkWidget();
-        return webBrowser.getWebBrowser();
+        return getDelegate().getWebBrowser();
     }
 
     /**
@@ -830,16 +620,11 @@ public class Browser extends Composite {
      * @see #back
      */
     public boolean isBackEnabled() {
-        checkWidget();
-        return webBrowser.isBackEnabled();
+        return getDelegate().isBackEnabled();
     }
 
-    @Override
     public boolean isFocusControl() {
-        checkWidget();
-        if (webBrowser.isFocusControl())
-            return true;
-        return super.isFocusControl();
+        return getDelegate().isFocusControl();
     }
 
     /**
@@ -856,8 +641,7 @@ public class Browser extends Composite {
      * @see #forward
      */
     public boolean isForwardEnabled() {
-        checkWidget();
-        return webBrowser.isForwardEnabled();
+        return getDelegate().isForwardEnabled();
     }
 
     /**
@@ -871,8 +655,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void refresh() {
-        checkWidget();
-        webBrowser.refresh();
+        getDelegate().refresh();
     }
 
     /**
@@ -893,10 +676,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public void removeAuthenticationListener(AuthenticationListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.removeAuthenticationListener(listener);
+        getDelegate().removeAuthenticationListener(listener);
     }
 
     /**
@@ -917,10 +697,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeCloseWindowListener(CloseWindowListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.removeCloseWindowListener(listener);
+        getDelegate().removeCloseWindowListener(listener);
     }
 
     /**
@@ -941,10 +718,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeLocationListener(LocationListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.removeLocationListener(listener);
+        getDelegate().removeLocationListener(listener);
     }
 
     /**
@@ -965,10 +739,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeOpenWindowListener(OpenWindowListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.removeOpenWindowListener(listener);
+        getDelegate().removeOpenWindowListener(listener);
     }
 
     /**
@@ -990,10 +761,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeProgressListener(ProgressListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.removeProgressListener(listener);
+        getDelegate().removeProgressListener(listener);
     }
 
     /**
@@ -1014,10 +782,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeStatusTextListener(StatusTextListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.removeStatusTextListener(listener);
+        getDelegate().removeStatusTextListener(listener);
     }
 
     /**
@@ -1039,10 +804,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeTitleListener(TitleListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.removeTitleListener(listener);
+        getDelegate().removeTitleListener(listener);
     }
 
     /**
@@ -1064,10 +826,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeVisibilityWindowListener(VisibilityWindowListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        webBrowser.removeVisibilityWindowListener(listener);
+        getDelegate().removeVisibilityWindowListener(listener);
     }
 
     /**
@@ -1085,8 +844,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public void setJavascriptEnabled(boolean enabled) {
-        checkWidget();
-        webBrowser.jsEnabledOnNextPage = enabled;
+        getDelegate().setJavascriptEnabled(enabled);
     }
 
     /**
@@ -1117,8 +875,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public boolean setText(String html) {
-        checkWidget();
-        return setText(html, true);
+        return getDelegate().setText(html);
     }
 
     /**
@@ -1158,10 +915,7 @@ public class Browser extends Composite {
      * @since 3.6
      */
     public boolean setText(String html, boolean trusted) {
-        checkWidget();
-        if (html == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return webBrowser.setText(html, trusted);
+        return getDelegate().setText(html, trusted);
     }
 
     /**
@@ -1186,8 +940,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public boolean setUrl(String url) {
-        checkWidget();
-        return setUrl(url, null, null);
+        return getDelegate().setUrl(url);
     }
 
     /**
@@ -1217,10 +970,7 @@ public class Browser extends Composite {
      * @since 3.6
      */
     public boolean setUrl(String url, String postData, String[] headers) {
-        checkWidget();
-        if (url == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return webBrowser.setUrl(url, postData, headers);
+        return getDelegate().setUrl(url, postData, headers);
     }
 
     /**
@@ -1234,7 +984,14 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void stop() {
-        checkWidget();
-        webBrowser.stop();
+        getDelegate().stop();
+    }
+
+    protected Browser(IBrowser delegate) {
+        super(delegate);
+    }
+
+    public IBrowser getDelegate() {
+        return (IBrowser) super.getDelegate();
     }
 }

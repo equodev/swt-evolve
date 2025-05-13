@@ -318,7 +318,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void drawRectangle(Rectangle rect);
+    void drawRectangle(IRectangle rect);
 
     /**
      * Draws the outline of the round-cornered rectangle specified by
@@ -651,7 +651,7 @@ public interface IGC extends IResource {
      *
      * @see #drawRectangle(int, int, int, int)
      */
-    void fillRectangle(Rectangle rect);
+    void fillRectangle(IRectangle rect);
 
     /**
      * Fills the interior of the round-cornered rectangle specified by
@@ -805,7 +805,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    Rectangle getClipping();
+    IRectangle getClipping();
 
     /**
      * Sets the region managed by the argument to the current
@@ -860,7 +860,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    FontMetrics getFontMetrics();
+    IFontMetrics getFontMetrics();
 
     /**
      * Returns the receiver's foreground color.
@@ -911,7 +911,7 @@ public interface IGC extends IResource {
      *
      * @since 3.2
      */
-    GCData getGCData();
+    IGCData getGCData();
 
     /**
      * Returns the receiver's interpolation setting, which will be one of
@@ -939,7 +939,7 @@ public interface IGC extends IResource {
      *
      * @since 3.3
      */
-    LineAttributes getLineAttributes();
+    ILineAttributes getLineAttributes();
 
     /**
      * Returns the receiver's line cap style, which will be one
@@ -1327,7 +1327,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void setClipping(Rectangle rect);
+    void setClipping(IRectangle rect);
 
     /**
      * Sets the area of the receiver which can be changed
@@ -1475,7 +1475,7 @@ public interface IGC extends IResource {
      *
      * @since 3.3
      */
-    void setLineAttributes(LineAttributes attributes);
+    void setLineAttributes(ILineAttributes attributes);
 
     /**
      * Sets the receiver's line cap style to the argument, which must be one
@@ -1664,7 +1664,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    Point stringExtent(String string);
+    IPoint stringExtent(String string);
 
     /**
      * Returns the extent of the given string. Tab expansion and
@@ -1685,7 +1685,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    Point textExtent(String string);
+    IPoint textExtent(String string);
 
     /**
      * Returns the extent of the given string. Tab expansion, line
@@ -1718,7 +1718,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    Point textExtent(String string, int flags);
+    IPoint textExtent(String string, int flags);
 
     /**
      * Returns a string containing a concise, human-readable

@@ -398,14 +398,12 @@ public class Shell extends Decorations {
         getDelegate().close();
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed);
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
-    @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getDelegate().computeTrim(x, y, width, height);
+        return getDelegate().computeTrim(x, y, width, height).getApi();
     }
 
     /**
@@ -450,14 +448,12 @@ public class Shell extends Decorations {
         return getDelegate().getAlpha();
     }
 
-    @Override
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
     }
 
-    @Override
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea();
+        return getDelegate().getClientArea().getApi();
     }
 
     /**
@@ -498,12 +494,10 @@ public class Shell extends Decorations {
         return getDelegate().getImeInputMode();
     }
 
-    @Override
     public Point getLocation() {
-        return getDelegate().getLocation();
+        return getDelegate().getLocation().getApi();
     }
 
-    @Override
     public boolean getMaximized() {
         return getDelegate().getMaximized();
     }
@@ -524,7 +518,6 @@ public class Shell extends Decorations {
         return getDelegate().getModified();
     }
 
-    @Override
     public boolean getMinimized() {
         return getDelegate().getMinimized();
     }
@@ -545,7 +538,7 @@ public class Shell extends Decorations {
      * @since 3.116
      */
     public Point getMaximumSize() {
-        return getDelegate().getMaximumSize();
+        return getDelegate().getMaximumSize().getApi();
     }
 
     /**
@@ -564,7 +557,7 @@ public class Shell extends Decorations {
      * @since 3.1
      */
     public Point getMinimumSize() {
-        return getDelegate().getMinimumSize();
+        return getDelegate().getMinimumSize().getApi();
     }
 
     /**
@@ -580,12 +573,10 @@ public class Shell extends Decorations {
      *
      * @since 3.0
      */
-    @Override
     public Region getRegion() {
         return getDelegate().getRegion().getApi();
     }
 
-    @Override
     public Shell getShell() {
         return getDelegate().getShell().getApi();
     }
@@ -605,9 +596,8 @@ public class Shell extends Decorations {
         return Convert.array(getDelegate().getShells(), IShell::getApi, Shell[]::new);
     }
 
-    @Override
     public Point getSize() {
-        return getDelegate().getSize();
+        return getDelegate().getSize().getApi();
     }
 
     /**
@@ -629,12 +619,10 @@ public class Shell extends Decorations {
         return getDelegate().getToolBar().getApi();
     }
 
-    @Override
     public boolean isEnabled() {
         return getDelegate().isEnabled();
     }
 
-    @Override
     public boolean isVisible() {
         return getDelegate().isVisible();
     }
@@ -664,7 +652,6 @@ public class Shell extends Decorations {
         getDelegate().open();
     }
 
-    @Override
     public boolean print(GC gc) {
         return getDelegate().print(gc.getDelegate());
     }
@@ -690,7 +677,6 @@ public class Shell extends Decorations {
         getDelegate().removeShellListener(listener);
     }
 
-    @Override
     public void requestLayout() {
         getDelegate().requestLayout();
     }
@@ -741,7 +727,6 @@ public class Shell extends Decorations {
         getDelegate().setAlpha(alpha);
     }
 
-    @Override
     public void setEnabled(boolean enabled) {
         getDelegate().setEnabled(enabled);
     }
@@ -774,7 +759,6 @@ public class Shell extends Decorations {
         getDelegate().setFullScreen(fullScreen);
     }
 
-    @Override
     public void setMenuBar(Menu menu) {
         getDelegate().setMenuBar(menu.getDelegate());
     }
@@ -799,7 +783,6 @@ public class Shell extends Decorations {
         getDelegate().setImeInputMode(mode);
     }
 
-    @Override
     public void setMaximized(boolean maximized) {
         getDelegate().setMaximized(maximized);
     }
@@ -851,10 +834,9 @@ public class Shell extends Decorations {
      * @since 3.116
      */
     public void setMaximumSize(Point size) {
-        getDelegate().setMaximumSize(size);
+        getDelegate().setMaximumSize(size.getDelegate());
     }
 
-    @Override
     public void setMinimized(boolean minimized) {
         getDelegate().setMinimized(minimized);
     }
@@ -896,7 +878,7 @@ public class Shell extends Decorations {
      * @since 3.1
      */
     public void setMinimumSize(Point size) {
-        getDelegate().setMinimumSize(size);
+        getDelegate().setMinimumSize(size.getDelegate());
     }
 
     /**
@@ -939,17 +921,14 @@ public class Shell extends Decorations {
      *
      * @since 3.0
      */
-    @Override
     public void setRegion(Region region) {
         getDelegate().setRegion(region.getDelegate());
     }
 
-    @Override
     public void setText(String string) {
         getDelegate().setText(string);
     }
 
-    @Override
     public void setVisible(boolean visible) {
         getDelegate().setVisible(visible);
     }

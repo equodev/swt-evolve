@@ -84,9 +84,8 @@ public class CoolBar extends Composite {
         this(new nat.org.eclipse.swt.widgets.CoolBar((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed);
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
     /**
@@ -190,7 +189,6 @@ public class CoolBar extends Composite {
         return getDelegate().getItemOrder();
     }
 
-    @Override
     public void setBackground(Color color) {
         getDelegate().setBackground(color.getDelegate());
     }
@@ -208,7 +206,7 @@ public class CoolBar extends Composite {
      * </ul>
      */
     public Point[] getItemSizes() {
-        return getDelegate().getItemSizes();
+        return Convert.array(getDelegate().getItemSizes(), IPoint::getApi, Point[]::new);
     }
 
     /**
@@ -281,7 +279,6 @@ public class CoolBar extends Composite {
         getDelegate().setWrapIndices(indices);
     }
 
-    @Override
     public void setCursor(Cursor cursor) {
         getDelegate().setCursor(cursor.getDelegate());
     }
@@ -320,10 +317,9 @@ public class CoolBar extends Composite {
      * </ul>
      */
     public void setItemLayout(int[] itemOrder, int[] wrapIndices, Point[] sizes) {
-        getDelegate().setItemLayout(itemOrder, wrapIndices, sizes);
+        getDelegate().setItemLayout(itemOrder, wrapIndices, Convert.array(sizes, Point::getDelegate, IPoint[]::new));
     }
 
-    @Override
     public void setOrientation(int orientation) {
         getDelegate().setOrientation(orientation);
     }

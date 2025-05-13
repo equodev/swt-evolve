@@ -18,6 +18,7 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Convert;
 
 /**
  * <code>TextLayout</code> is a graphic object that represents
@@ -179,7 +180,7 @@ public final class TextLayout extends Resource {
      * @see #getLineBounds(int)
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
     }
 
     /**
@@ -197,7 +198,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public Rectangle getBounds(int start, int end) {
-        return getDelegate().getBounds(start, end);
+        return getDelegate().getBounds(start, end).getApi();
     }
 
     /**
@@ -327,7 +328,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public Rectangle getLineBounds(int lineIndex) {
-        return getDelegate().getLineBounds(lineIndex);
+        return getDelegate().getLineBounds(lineIndex).getApi();
     }
 
     /**
@@ -358,7 +359,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public FontMetrics getLineMetrics(int lineIndex) {
-        return getDelegate().getLineMetrics(lineIndex);
+        return getDelegate().getLineMetrics(lineIndex).getApi();
     }
 
     /**
@@ -378,7 +379,7 @@ public final class TextLayout extends Resource {
      * @see #getOffset(int, int, int[])
      */
     public Point getLocation(int offset, boolean trailing) {
-        return getDelegate().getLocation(offset, trailing);
+        return getDelegate().getLocation(offset, trailing).getApi();
     }
 
     /**
@@ -428,7 +429,7 @@ public final class TextLayout extends Resource {
      * @see #getLocation(int, boolean)
      */
     public int getOffset(Point point, int[] trailing) {
-        return getDelegate().getOffset(point, trailing);
+        return getDelegate().getOffset(point.getDelegate(), trailing);
     }
 
     /**
@@ -581,7 +582,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public TextStyle getStyle(int offset) {
-        return getDelegate().getStyle(offset);
+        return getDelegate().getStyle(offset).getApi();
     }
 
     /**
@@ -598,7 +599,7 @@ public final class TextLayout extends Resource {
      * @since 3.2
      */
     public TextStyle[] getStyles() {
-        return getDelegate().getStyles();
+        return Convert.array(getDelegate().getStyles(), ITextStyle::getApi, TextStyle[]::new);
     }
 
     /**
@@ -681,7 +682,6 @@ public final class TextLayout extends Resource {
      *
      * @return <code>true</code> when the text layout is disposed and <code>false</code> otherwise
      */
-    @Override
     public boolean isDisposed() {
         return getDelegate().isDisposed();
     }
@@ -782,7 +782,7 @@ public final class TextLayout extends Resource {
      * @since 3.125
      */
     public void setFixedLineMetrics(FontMetrics metrics) {
-        getDelegate().setFixedLineMetrics(metrics);
+        getDelegate().setFixedLineMetrics(metrics.getDelegate());
     }
 
     /**
@@ -969,7 +969,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public void setStyle(TextStyle style, int start, int end) {
-        getDelegate().setStyle(style, start, end);
+        getDelegate().setStyle(style.getDelegate(), start, end);
     }
 
     /**
@@ -1055,7 +1055,6 @@ public final class TextLayout extends Resource {
      *
      * @return a string representation of the receiver
      */
-    @Override
     public String toString() {
         return getDelegate().toString();
     }

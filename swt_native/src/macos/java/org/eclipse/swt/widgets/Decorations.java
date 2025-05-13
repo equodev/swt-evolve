@@ -283,7 +283,6 @@ public class Decorations extends Canvas {
         return getDelegate().getText();
     }
 
-    @Override
     public boolean isReparentable() {
         return getDelegate().isReparentable();
     }

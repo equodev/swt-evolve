@@ -104,9 +104,8 @@ public class Scale extends Control {
         getDelegate().addSelectionListener(listener);
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed);
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
     /**

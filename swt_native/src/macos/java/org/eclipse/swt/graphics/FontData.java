@@ -101,15 +101,10 @@ public final class FontData {
     public String nsName;
 
     /**
-     * The locales of the font
-     */
-    String lang, country, variant;
-
-    /**
      * Constructs a new uninitialized font data.
      */
     public FontData() {
-        this("", 12, SWT.NORMAL);
+        this(new nat.org.eclipse.swt.graphics.FontData());
     }
 
     /**
@@ -132,63 +127,7 @@ public final class FontData {
      * @see #toString
      */
     public FontData(String string) {
-        if (string == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        int start = 0;
-        int end = string.indexOf('|');
-        if (end == -1)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        String version1 = string.substring(start, end);
-        try {
-            if (Integer.parseInt(version1) != 1)
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        } catch (NumberFormatException e) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        start = end + 1;
-        end = string.indexOf('|', start);
-        if (end == -1)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        String name = string.substring(start, end);
-        start = end + 1;
-        end = string.indexOf('|', start);
-        if (end == -1)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        float height = 0;
-        try {
-            height = Float.parseFloat(string.substring(start, end));
-        } catch (NumberFormatException e) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        start = end + 1;
-        end = string.indexOf('|', start);
-        if (end == -1)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        int style = 0;
-        try {
-            style = Integer.parseInt(string.substring(start, end));
-        } catch (NumberFormatException e) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        start = end + 1;
-        end = string.indexOf('|', start);
-        setName(name);
-        setHeight(height);
-        setStyle(style);
-        if (end == -1)
-            return;
-        String platform = string.substring(start, end);
-        start = end + 1;
-        end = string.indexOf('|', start);
-        if (end == -1)
-            return;
-        String version2 = string.substring(start, end);
-        if (platform.equals("COCOA") && version2.equals("1")) {
-            start = end + 1;
-            end = string.length();
-            if (start < end)
-                nsName = string.substring(start, end);
-        }
+        this(new nat.org.eclipse.swt.graphics.FontData(string));
     }
 
     /**
@@ -206,16 +145,7 @@ public final class FontData {
      * </ul>
      */
     public FontData(String name, int height, int style) {
-        setName(name);
-        setHeight(height);
-        setStyle(style);
-    }
-
-    /*public*/
-    FontData(String name, float height, int style) {
-        setName(name);
-        setHeight(height);
-        setStyle(style);
+        this(new nat.org.eclipse.swt.graphics.FontData(name, height, style));
     }
 
     /**
@@ -228,13 +158,8 @@ public final class FontData {
      *
      * @see #hashCode
      */
-    @Override
     public boolean equals(Object object) {
-        if (object == this)
-            return true;
-        if (!(object instanceof FontData data))
-            return false;
-        return name.equals(data.name) && height == data.height && style == data.style;
+        return getDelegate().equals(object);
     }
 
     /**
@@ -245,12 +170,7 @@ public final class FontData {
      * @see #setHeight(int)
      */
     public int getHeight() {
-        return (int) height;
-    }
-
-    /*public*/
-    float getHeightF() {
-        return height;
+        return getDelegate().getHeight();
     }
 
     /**
@@ -271,27 +191,7 @@ public final class FontData {
      * @since 3.0
      */
     public String getLocale() {
-        StringBuilder buffer = new StringBuilder();
-        char sep = '_';
-        if (lang != null) {
-            buffer.append(lang);
-            buffer.append(sep);
-        }
-        if (country != null) {
-            buffer.append(country);
-            buffer.append(sep);
-        }
-        if (variant != null) {
-            buffer.append(variant);
-        }
-        String result = buffer.toString();
-        int length = result.length();
-        if (length > 0) {
-            if (result.charAt(length - 1) == sep) {
-                result = result.substring(0, length - 1);
-            }
-        }
-        return result;
+        return getDelegate().getLocale();
     }
 
     /**
@@ -304,7 +204,7 @@ public final class FontData {
      * @see #setName
      */
     public String getName() {
-        return name;
+        return getDelegate().getName();
     }
 
     /**
@@ -317,7 +217,7 @@ public final class FontData {
      * @see #setStyle
      */
     public int getStyle() {
-        return style;
+        return getDelegate().getStyle();
     }
 
     /**
@@ -330,9 +230,8 @@ public final class FontData {
      *
      * @see #equals
      */
-    @Override
     public int hashCode() {
-        return name.hashCode() ^ getHeight() << 8 ^ style;
+        return getDelegate().hashCode();
     }
 
     /**
@@ -349,16 +248,7 @@ public final class FontData {
      * @see #getHeight
      */
     public void setHeight(int height) {
-        if (height < 0)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        this.height = height;
-    }
-
-    /*public*/
-    void setHeight(float height) {
-        if (height < 0)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        this.height = height;
+        getDelegate().setHeight(height);
     }
 
     /**
@@ -379,26 +269,7 @@ public final class FontData {
      * @see java.util.Locale#toString
      */
     public void setLocale(String locale) {
-        lang = country = variant = null;
-        if (locale != null) {
-            char sep = '_';
-            int length = locale.length();
-            int firstSep, secondSep;
-            firstSep = locale.indexOf(sep);
-            if (firstSep == -1) {
-                firstSep = secondSep = length;
-            } else {
-                secondSep = locale.indexOf(sep, firstSep + 1);
-                if (secondSep == -1)
-                    secondSep = length;
-            }
-            if (firstSep > 0)
-                lang = locale.substring(0, firstSep);
-            if (secondSep > firstSep + 1)
-                country = locale.substring(firstSep + 1, secondSep);
-            if (length > secondSep + 1)
-                variant = locale.substring(secondSep + 1);
-        }
+        getDelegate().setLocale(locale);
     }
 
     /**
@@ -428,10 +299,7 @@ public final class FontData {
      * @see #getName
      */
     public void setName(String name) {
-        if (name == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.name = name;
-        nsName = null;
+        getDelegate().setName(name);
     }
 
     /**
@@ -445,8 +313,7 @@ public final class FontData {
      * @see #getStyle
      */
     public void setStyle(int style) {
-        this.style = style;
-        nsName = null;
+        getDelegate().setStyle(style);
     }
 
     /**
@@ -458,19 +325,18 @@ public final class FontData {
      *
      * @see FontData
      */
-    @Override
     public String toString() {
-        StringBuilder buffer = new StringBuilder(128);
-        buffer.append("1|");
-        buffer.append(getName());
-        buffer.append("|");
-        buffer.append(getHeightF());
-        buffer.append("|");
-        buffer.append(getStyle());
-        buffer.append("|");
-        buffer.append("COCOA|1|");
-        if (nsName != null)
-            buffer.append(nsName);
-        return buffer.toString();
+        return getDelegate().toString();
+    }
+
+    IFontData delegate;
+
+    protected FontData(IFontData delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IFontData getDelegate() {
+        return delegate;
     }
 }

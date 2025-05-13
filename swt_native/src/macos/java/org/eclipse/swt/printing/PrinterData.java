@@ -215,24 +215,13 @@ public final class PrinterData extends DeviceData {
     public static final int DUPLEX_SHORT_EDGE = 2;
 
     /**
-     * private, platform-specific data
-     * On Windows, this contains a copy of the DEVMODE struct
-     * returned from the <code>PrintDialog</code>.
-     * On GTK, this contains a copy of the print_settings and page_setup
-     * returned from the <code>PrintDialog</code>.
-     * On OS X Cocoa, this contains a copy of the PrintSettings and PageFormat
-     * returned from the <code>PrintDialog</code>.
-     * This field is not currently used on the X/Window System.
-     */
-    byte[] otherData;
-
-    /**
      * Constructs an instance of this class that can be
      * used to print to the default printer.
      *
      * @see Printer#getDefaultPrinterData
      */
     public PrinterData() {
+        this(new nat.org.eclipse.swt.printing.PrinterData());
     }
 
     /**
@@ -246,8 +235,7 @@ public final class PrinterData extends DeviceData {
      * @see #name
      */
     public PrinterData(String driver, String name) {
-        this.driver = driver;
-        this.name = name;
+        this(new nat.org.eclipse.swt.printing.PrinterData(driver, name));
     }
 
     /**
@@ -256,9 +244,15 @@ public final class PrinterData extends DeviceData {
      *
      * @return a string representation of the receiver
      */
-    @Override
     public String toString() {
-        //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-        return "PrinterData {" + "driver = " + driver + ", name = " + name + "}";
+        return getDelegate().toString();
+    }
+
+    protected PrinterData(IPrinterData delegate) {
+        super(delegate);
+    }
+
+    public IPrinterData getDelegate() {
+        return (IPrinterData) super.getDelegate();
     }
 }

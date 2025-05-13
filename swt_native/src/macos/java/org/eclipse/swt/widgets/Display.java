@@ -239,7 +239,6 @@ public class Display extends Device implements Executor {
      *                                    execution
      * @throws NullPointerException       if runnable is null
      */
-    @Override
     public void execute(Runnable runnable) {
         getDelegate().execute(runnable);
     }
@@ -286,7 +285,7 @@ public class Display extends Device implements Executor {
      * @param data the device data
      */
     public Display(DeviceData data) {
-        this(new nat.org.eclipse.swt.widgets.Display(data));
+        this(new nat.org.eclipse.swt.widgets.Display((nat.org.eclipse.swt.graphics.DeviceData) data.getDelegate()));
     }
 
     /**
@@ -439,9 +438,8 @@ public class Display extends Device implements Executor {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    @Override
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
     }
 
     /**
@@ -468,9 +466,8 @@ public class Display extends Device implements Executor {
      *
      * @see #getBounds
      */
-    @Override
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea();
+        return getDelegate().getClientArea().getApi();
     }
 
     /**
@@ -501,7 +498,7 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public Point getCursorLocation() {
-        return getDelegate().getCursorLocation();
+        return getDelegate().getCursorLocation().getApi();
     }
 
     /**
@@ -517,7 +514,7 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Point[] getCursorSizes() {
-        return getDelegate().getCursorSizes();
+        return Convert.array(getDelegate().getCursorSizes(), IPoint::getApi, Point[]::new);
     }
 
     /**
@@ -694,7 +691,7 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Point[] getIconSizes() {
-        return getDelegate().getIconSizes();
+        return Convert.array(getDelegate().getIconSizes(), IPoint::getApi, Point[]::new);
     }
 
     /**
@@ -811,7 +808,6 @@ public class Display extends Device implements Executor {
      *
      * @see SWT
      */
-    @Override
     public Color getSystemColor(int id) {
         return getDelegate().getSystemColor(id).getApi();
     }
@@ -1009,7 +1005,6 @@ public class Display extends Device implements Executor {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public long internal_new_GC(GCData data) {
         return getDelegate().internal_new_GC(data);
         //	NSAffineTransform transform = NSAffineTransform.transform();
@@ -1033,7 +1028,6 @@ public class Display extends Device implements Executor {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public void internal_dispose_GC(long hDC, GCData data) {
         getDelegate().internal_dispose_GC(hDC, data);
     }
@@ -1141,7 +1135,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Point map(Control from, Control to, Point point) {
-        return getDelegate().map(from.getDelegate(), to.getDelegate(), point);
+        return getDelegate().map(from.getDelegate(), to.getDelegate(), point.getDelegate()).getApi();
     }
 
     /**
@@ -1181,7 +1175,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Point map(Control from, Control to, int x, int y) {
-        return getDelegate().map(from.getDelegate(), to.getDelegate(), x, y);
+        return getDelegate().map(from.getDelegate(), to.getDelegate(), x, y).getApi();
     }
 
     /**
@@ -1221,7 +1215,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Rectangle map(Control from, Control to, Rectangle rectangle) {
-        return getDelegate().map(from.getDelegate(), to.getDelegate(), rectangle);
+        return getDelegate().map(from.getDelegate(), to.getDelegate(), rectangle.getDelegate()).getApi();
     }
 
     /**
@@ -1263,7 +1257,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Rectangle map(Control from, Control to, int x, int y, int width, int height) {
-        return getDelegate().map(from.getDelegate(), to.getDelegate(), x, y, width, height);
+        return getDelegate().map(from.getDelegate(), to.getDelegate(), x, y, width, height).getApi();
     }
 
     /**
@@ -1460,7 +1454,7 @@ public class Display extends Device implements Executor {
      * @since 2.0
      */
     public void setCursorLocation(Point point) {
-        getDelegate().setCursorLocation(point);
+        getDelegate().setCursorLocation(point.getDelegate());
     }
 
     /**

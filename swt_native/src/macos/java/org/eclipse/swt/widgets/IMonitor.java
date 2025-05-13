@@ -23,7 +23,7 @@ public interface IMonitor {
      *
      * @return the receiver's bounding rectangle
      */
-    Rectangle getBounds();
+    IRectangle getBounds();
 
     /**
      * Returns a rectangle which describes the area of the
@@ -31,7 +31,7 @@ public interface IMonitor {
      *
      * @return the client area
      */
-    Rectangle getClientArea();
+    IRectangle getClientArea();
 
     /**
      * Returns the zoom value for the monitor

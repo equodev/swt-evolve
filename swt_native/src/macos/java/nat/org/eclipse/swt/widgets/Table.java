@@ -19,12 +19,10 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.widgets.ITable;
+import org.eclipse.swt.graphics.IPoint;
 import org.eclipse.swt.widgets.ITableColumn;
 import org.eclipse.swt.widgets.ITableItem;
 import org.eclipse.swt.graphics.IColor;
@@ -1681,7 +1679,8 @@ public class Table extends Composite implements ITable {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public TableItem getItem(Point point) {
+    public TableItem getItem(IPoint ipoint) {
+        Point point = (Point) ipoint;
         checkWidget();
         NSTableView widget = (NSTableView) view;
         NSPoint pt = new NSPoint();

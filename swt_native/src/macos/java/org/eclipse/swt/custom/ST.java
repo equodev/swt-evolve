@@ -294,4 +294,15 @@ public class ST {
      *  @since 3.8
      */
     public static final int CaretMoved = 3011;
+
+    IST delegate;
+
+    protected ST(IST delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IST getDelegate() {
+        return delegate;
+    }
 }

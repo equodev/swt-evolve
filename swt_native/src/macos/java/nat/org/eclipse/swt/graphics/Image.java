@@ -23,10 +23,8 @@ import org.eclipse.swt.internal.graphics.*;
 import org.eclipse.swt.graphics.ImageFileNameProvider;
 import org.eclipse.swt.graphics.ImageDataProvider;
 import org.eclipse.swt.graphics.RGB;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
-import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.IImage;
 import org.eclipse.swt.graphics.IColor;
@@ -1553,7 +1551,8 @@ public final class Image extends Resource implements Drawable, IImage {
      * @noreference This method is not intended to be referenced by clients.
      */
     @Override
-    public long internal_new_GC(GCData data) {
+    public long internal_new_GC(org.eclipse.swt.graphics.GCData idata) {
+        GCData data = (GCData) idata.getDelegate();
         if (handle == null)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (type != SWT.BITMAP || memGC != null) {
@@ -1588,11 +1587,11 @@ public final class Image extends Resource implements Drawable, IImage {
                 if ((data.style & mask) == 0) {
                     data.style |= SWT.LEFT_TO_RIGHT;
                 }
-                data.device = device.getApi();
+                data.device = device;
                 data.background = device.COLOR_WHITE.handle;
                 data.foreground = device.COLOR_BLACK.handle;
-                data.font = device.systemFont.getApi();
-                data.image = this.getApi();
+                data.font = device.systemFont;
+                data.image = this;
             }
             return context.id;
         } finally {
@@ -1617,7 +1616,8 @@ public final class Image extends Resource implements Drawable, IImage {
      * @noreference This method is not intended to be referenced by clients.
      */
     @Override
-    public void internal_dispose_GC(long hDC, GCData data) {
+    public void internal_dispose_GC(long hDC, org.eclipse.swt.graphics.GCData idata) {
+        GCData data = (GCData) idata.getDelegate();
         long context = hDC;
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())

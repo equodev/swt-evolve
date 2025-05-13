@@ -469,7 +469,6 @@ public class MenuItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setImage(Image image) {
         getDelegate().setImage(image.getDelegate());
     }
@@ -557,7 +556,6 @@ public class MenuItem extends Item {
      *
      * @see #setAccelerator
      */
-    @Override
     public void setText(String string) {
         getDelegate().setText(string);
     }

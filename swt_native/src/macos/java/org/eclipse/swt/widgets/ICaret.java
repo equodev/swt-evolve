@@ -16,7 +16,7 @@ public interface ICaret extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Rectangle getBounds();
+    IRectangle getBounds();
 
     /**
      * Returns the font that the receiver will use to paint textual information.
@@ -53,7 +53,7 @@ public interface ICaret extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point getLocation();
+    IPoint getLocation();
 
     /**
      * Returns the receiver's parent, which must be a <code>Canvas</code>.
@@ -77,7 +77,7 @@ public interface ICaret extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point getSize();
+    IPoint getSize();
 
     /**
      * Returns <code>true</code> if the receiver is visible, and
@@ -145,7 +145,7 @@ public interface ICaret extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setBounds(Rectangle rect);
+    void setBounds(IRectangle rect);
 
     /**
      * Sets the font that the receiver will use to paint textual information
@@ -208,7 +208,7 @@ public interface ICaret extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setLocation(Point location);
+    void setLocation(IPoint location);
 
     /**
      * Sets the receiver's size to the point specified by the arguments.
@@ -236,7 +236,7 @@ public interface ICaret extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSize(Point size);
+    void setSize(IPoint size);
 
     /**
      * Marks the receiver as visible if the argument is <code>true</code>,

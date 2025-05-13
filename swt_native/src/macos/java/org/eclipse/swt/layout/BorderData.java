@@ -28,8 +28,6 @@ import org.eclipse.swt.widgets.*;
  */
 public final class BorderData {
 
-    private final Map<Control, Point> cachedSize = new IdentityHashMap<>(1);
-
     public int hHint = SWT.DEFAULT;
 
     public int wHint = SWT.DEFAULT;
@@ -40,6 +38,7 @@ public final class BorderData {
      * creates a {@link BorderData} with default options
      */
     public BorderData() {
+        this(new nat.org.eclipse.swt.layout.BorderData());
     }
 
     /**
@@ -52,7 +51,7 @@ public final class BorderData {
      *               {@link SWT#BOTTOM}
      */
     public BorderData(int region) {
-        this.region = region;
+        this(new nat.org.eclipse.swt.layout.BorderData(region));
     }
 
     /**
@@ -66,63 +65,21 @@ public final class BorderData {
      * @param heightHint he default hint for the height
      */
     public BorderData(int region, int widthHint, int heightHint) {
-        this.region = region;
-        this.wHint = widthHint;
-        this.hHint = heightHint;
+        this(new nat.org.eclipse.swt.layout.BorderData(region, widthHint, heightHint));
     }
 
-    Point getSize(Control control) {
-        return cachedSize.computeIfAbsent(control, c -> c.computeSize(wHint, hHint, true));
-    }
-
-    Point computeSize(Control control, int wHint, int hHint, boolean changed) {
-        if (wHint == SWT.DEFAULT) {
-            wHint = this.wHint;
-        }
-        if (hHint == SWT.DEFAULT) {
-            hHint = this.hHint;
-        }
-        return control.computeSize(wHint, hHint, changed);
-    }
-
-    void flushCache(Control control) {
-        cachedSize.remove(control);
-    }
-
-    @Override
     public String toString() {
-        return "BorderData [region=" + getRegionString(region) + ", hHint=" + hHint + ", wHint=" + wHint + "]";
+        return getDelegate().toString();
     }
 
-    static String getRegionString(int region) {
-        return switch(region) {
-            case SWT.TOP ->
-                "SWT.TOP";
-            case SWT.RIGHT ->
-                "SWT.RIGHT";
-            case SWT.BOTTOM ->
-                "SWT.BOTTOM";
-            case SWT.LEFT ->
-                "SWT.LEFT";
-            case SWT.CENTER ->
-                "SWT.CENTER";
-            default ->
-                "SWT.NONE";
-        };
+    IBorderData delegate;
+
+    protected BorderData(IBorderData delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
     }
 
-    /**
-     * @return the region of this BorderData or {@link SWT#NONE} if it is out of
-     *         range
-     */
-    int getRegion() {
-        return switch(region) {
-            case TOP, BOTTOM, CENTER, RIGHT, LEFT ->
-                region;
-            case SWT.NONE ->
-                SWT.NONE;
-            default ->
-                SWT.NONE;
-        };
+    public IBorderData getDelegate() {
+        return delegate;
     }
 }

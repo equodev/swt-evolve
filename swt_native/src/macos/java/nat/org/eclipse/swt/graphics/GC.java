@@ -20,20 +20,17 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.graphics.Drawable;
-import org.eclipse.swt.graphics.GCData;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.RGB;
-import org.eclipse.swt.graphics.FontMetrics;
-import org.eclipse.swt.graphics.LineAttributes;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.IGC;
 import org.eclipse.swt.graphics.IImage;
 import org.eclipse.swt.graphics.IPath;
+import org.eclipse.swt.graphics.IRectangle;
 import org.eclipse.swt.graphics.IRegion;
 import org.eclipse.swt.graphics.ITransform;
 import org.eclipse.swt.graphics.IColor;
 import org.eclipse.swt.graphics.IPattern;
 import org.eclipse.swt.graphics.IFont;
+import org.eclipse.swt.graphics.ILineAttributes;
 
 /**
  * Class <code>GC</code> is where all of the drawing capabilities that are
@@ -319,13 +316,13 @@ public final class GC extends Resource implements IGC {
         try {
             GCData data = new GCData();
             data.style = checkStyle(style);
-            long contextId = drawable.internal_new_GC(data);
+            long contextId = drawable.internal_new_GC(data.getApi());
             Device device = data.device;
             if (device == null)
                 device = Device.getDevice();
             if (device == null)
                 SWT.error(SWT.ERROR_NULL_ARGUMENT);
-            this.device = data.device = device.getApi();
+            this.device = data.device = device;
             init(drawable, data, contextId);
             init();
         } finally {
@@ -359,7 +356,7 @@ public final class GC extends Resource implements IGC {
      */
     public static GC cocoa_new(Drawable drawable, GCData data) {
         GC gc = new GC();
-        long context = drawable.internal_new_GC(data);
+        long context = drawable.internal_new_GC(data.getApi());
         gc.device = data.device;
         gc.init(drawable, data, context);
         return gc;
@@ -1139,7 +1136,7 @@ public final class GC extends Resource implements IGC {
         textDataCache.release();
         /* Dispose the GC */
         if (drawable != null)
-            drawable.internal_dispose_GC(handle.id, data);
+            drawable.internal_dispose_GC(handle.id, data.getApi());
         handle.restoreGraphicsState();
         handle.release();
         drawable = null;
@@ -1731,7 +1728,8 @@ public final class GC extends Resource implements IGC {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    public void drawRectangle(Rectangle rect) {
+    public void drawRectangle(IRectangle irect) {
+        Rectangle rect = (Rectangle) irect;
         if (handle == null)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (rect == null)
@@ -2489,7 +2487,8 @@ public final class GC extends Resource implements IGC {
      *
      * @see #drawRectangle(int, int, int, int)
      */
-    public void fillRectangle(Rectangle rect) {
+    public void fillRectangle(IRectangle irect) {
+        Rectangle rect = (Rectangle) irect;
         if (handle == null)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (rect == null)
@@ -3647,7 +3646,7 @@ public final class GC extends Resource implements IGC {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (data.backgroundPattern == pattern)
             return;
-        data.backgroundPattern = pattern.getApi();
+        data.backgroundPattern = pattern;
         data.state &= ~BACKGROUND;
     }
 
@@ -3750,7 +3749,8 @@ public final class GC extends Resource implements IGC {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    public void setClipping(Rectangle rect) {
+    public void setClipping(IRectangle irect) {
+        Rectangle rect = (Rectangle) irect;
         if (handle == null)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (rect == null) {
@@ -3858,7 +3858,7 @@ public final class GC extends Resource implements IGC {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (font != null && font.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        data.font = font != null ? font : data.device.systemFont.getApi();
+        data.font = font != null ? font : data.device.systemFont;
         data.state &= ~FONT;
     }
 
@@ -3923,7 +3923,7 @@ public final class GC extends Resource implements IGC {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (data.foregroundPattern == pattern)
             return;
-        data.foregroundPattern = pattern.getApi();
+        data.foregroundPattern = pattern;
         data.state &= ~(FOREGROUND | FOREGROUND_FILL);
     }
 
@@ -4000,7 +4000,8 @@ public final class GC extends Resource implements IGC {
      *
      * @since 3.3
      */
-    public void setLineAttributes(LineAttributes attributes) {
+    public void setLineAttributes(ILineAttributes iattributes) {
+        LineAttributes attributes = (LineAttributes) iattributes;
         if (handle == null)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (attributes == null)

@@ -23,25 +23,22 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
-import org.eclipse.swt.accessibility.*;
-import org.eclipse.swt.dnd.*;
+import nat.org.eclipse.swt.accessibility.*;
+import nat.org.eclipse.swt.dnd.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.printing.*;
+import nat.org.eclipse.swt.printing.*;
 import nat.org.eclipse.swt.widgets.*;
-import org.eclipse.swt.graphics.Point;
+import dev.equo.swt.Convert;
 import org.eclipse.swt.custom.StyledTextContent;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.custom.TextChangeListener;
-import org.eclipse.swt.custom.StyledTextPrintOptions;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.custom.StyledTextEvent;
-import org.eclipse.swt.custom.StyleRange;
-import org.eclipse.swt.graphics.GlyphMetrics;
-import org.eclipse.swt.graphics.FontMetrics;
-import org.eclipse.swt.custom.StyledTextDropTargetEffect;
+import org.eclipse.swt.accessibility.AccessibleControlAdapter;
+import org.eclipse.swt.accessibility.AccessibleAttributeAdapter;
+import org.eclipse.swt.accessibility.AccessibleEditableTextListener;
+import org.eclipse.swt.accessibility.AccessibleTextExtendedAdapter;
+import org.eclipse.swt.accessibility.AccessibleAdapter;
 import org.eclipse.swt.custom.ExtendedModifyListener;
 import org.eclipse.swt.custom.BidiSegmentListener;
 import org.eclipse.swt.custom.CaretListener;
@@ -53,14 +50,24 @@ import org.eclipse.swt.custom.MovementListener;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.custom.TextChangingEvent;
 import org.eclipse.swt.custom.TextChangedEvent;
-import org.eclipse.swt.graphics.TextStyle;
-import org.eclipse.swt.custom.CLabel;
+import org.eclipse.swt.accessibility.AccessibleEvent;
+import org.eclipse.swt.accessibility.AccessibleTextEvent;
+import org.eclipse.swt.accessibility.AccessibleTextAttributeEvent;
+import org.eclipse.swt.accessibility.AccessibleEditableTextEvent;
+import org.eclipse.swt.accessibility.AccessibleAttributeEvent;
+import org.eclipse.swt.accessibility.AccessibleControlEvent;
 import org.eclipse.swt.custom.StyledTextLineSpacingProvider;
-import org.eclipse.swt.custom.ST;
+import org.eclipse.swt.accessibility.ACC;
 import org.eclipse.swt.custom.IStyledText;
+import org.eclipse.swt.graphics.IPoint;
+import org.eclipse.swt.printing.IPrinter;
+import org.eclipse.swt.custom.IStyledTextPrintOptions;
+import org.eclipse.swt.custom.IStyleRange;
 import org.eclipse.swt.graphics.IColor;
+import org.eclipse.swt.graphics.IRectangle;
 import org.eclipse.swt.widgets.ICaret;
 import org.eclipse.swt.graphics.ICursor;
+import org.eclipse.swt.graphics.IFontMetrics;
 import org.eclipse.swt.graphics.IFont;
 import org.eclipse.swt.custom.IBullet;
 
@@ -463,7 +470,7 @@ public class StyledText extends Canvas implements IStyledText {
             } else if (scope == PrinterData.SELECTION) {
                 selection = Arrays.copyOf(styledText.selection, styledText.selection.length);
             }
-            printerRenderer = new StyledTextRenderer(printer, null);
+            printerRenderer = new StyledTextRenderer(printer.getApi(), null);
             printerRenderer.setContent(copyContent(styledText.getContent()));
             cacheLineData(styledText.getApi());
         }
@@ -539,7 +546,7 @@ public class StyledText extends Canvas implements IStyledText {
                         printerFont = new Font(printer, font.getFontData());
                         resources.put(font, printerFont);
                     }
-                    style.font = printerFont.getApi();
+                    style.font = printerFont;
                 }
                 Color color = style.foreground;
                 if (color != null) {
@@ -549,7 +556,7 @@ public class StyledText extends Canvas implements IStyledText {
                             printerColor = new Color(color.getRGB());
                             resources.put(color, printerColor);
                         }
-                        style.foreground = printerColor.getApi();
+                        style.foreground = printerColor;
                     } else {
                         style.foreground = null;
                     }
@@ -562,7 +569,7 @@ public class StyledText extends Canvas implements IStyledText {
                             printerColor = new Color(color.getRGB());
                             resources.put(color, printerColor);
                         }
-                        style.background = printerColor.getApi();
+                        style.background = printerColor;
                     } else {
                         style.background = null;
                     }
@@ -941,7 +948,7 @@ public class StyledText extends Canvas implements IStyledText {
         alignment = style & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         if (alignment == 0)
             alignment = SWT.LEFT;
-        clipboard = new Clipboard(display.getApi());
+        clipboard = new Clipboard(display);
         installDefaultContent();
         renderer = new StyledTextRenderer(getDisplay(), this.getApi());
         renderer.setContent(content);
@@ -969,7 +976,7 @@ public class StyledText extends Canvas implements IStyledText {
         super.setCursor(display.getSystemCursor(SWT.CURSOR_IBEAM));
         installListeners();
         initializeAccessible();
-        setData("DEFAULT_DROP_TARGET_EFFECT", new StyledTextDropTargetEffect(this.getApi()));
+        setData("DEFAULT_DROP_TARGET_EFFECT", new StyledTextDropTargetEffect(this));
         if (IS_MAC)
             setData(STYLEDTEXT_KEY);
     }
@@ -4473,7 +4480,8 @@ public class StyledText extends Canvas implements IStyledText {
      * @deprecated Use {@link #getOffsetAtPoint(Point)} instead for better performance
      */
     @Deprecated
-    public int getOffsetAtLocation(Point point) {
+    public int getOffsetAtLocation(IPoint ipoint) {
+        Point point = (Point) ipoint;
         checkWidget();
         if (point == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -4513,7 +4521,8 @@ public class StyledText extends Canvas implements IStyledText {
      *
      * @since 3.107
      */
-    public int getOffsetAtPoint(Point point) {
+    public int getOffsetAtPoint(IPoint ipoint) {
+        Point point = (Point) ipoint;
         checkWidget();
         if (point == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -6866,7 +6875,7 @@ public class StyledText extends Canvas implements IStyledText {
                         bounds.add(rect);
                     }
                 }
-                e.rectangles = rects;
+                e.rectangles = Convert.array(rects, org.eclipse.swt.graphics.IRectangle::getApi, org.eclipse.swt.graphics.Rectangle[]::new);
                 if (bounds != null) {
                     e.x = bounds.x;
                     e.y = bounds.y;
@@ -7147,7 +7156,7 @@ public class StyledText extends Canvas implements IStyledText {
                 if (!isListening(ST.LineGetStyle) && st.renderer.styleCount == 0) {
                     e.start = 0;
                     e.end = contentLength;
-                    e.textStyle = new TextStyle(st.getApi().getFont(), st.getApi().foreground, st.getApi().background);
+                    e.textStyle = new TextStyle(st.getFont(), st.foreground, st.background).getApi();
                     return;
                 }
                 int offset = Math.max(0, Math.min(e.offset, contentLength - 1));
@@ -7158,21 +7167,21 @@ public class StyledText extends Canvas implements IStyledText {
                 TextLayout layout = st.renderer.getTextLayout(lineIndex);
                 int lineLength = layout.getText().length();
                 if (lineLength > 0) {
-                    e.textStyle = layout.getStyle(Math.max(0, Math.min(offset, lineLength - 1)));
+                    e.textStyle = layout.getStyle(Math.max(0, Math.min(offset, lineLength - 1))).getApi();
                 }
                 // If no override info available, use defaults. Don't supply default colors, though.
                 if (e.textStyle == null) {
-                    e.textStyle = new TextStyle(st.getApi().getFont(), st.getApi().foreground, st.getApi().background);
+                    e.textStyle = new TextStyle(st.getFont(), st.foreground, st.background).getApi();
                 } else {
                     if (e.textStyle.foreground == null || e.textStyle.background == null || e.textStyle.font == null) {
                         TextStyle textStyle = new TextStyle(e.textStyle);
                         if (textStyle.foreground == null)
-                            textStyle.foreground = st.foreground.getApi();
+                            textStyle.foreground = st.foreground;
                         if (textStyle.background == null)
-                            textStyle.background = st.background.getApi();
+                            textStyle.background = st.background;
                         if (textStyle.font == null)
-                            textStyle.font = st.getFont().getApi();
-                        e.textStyle = textStyle;
+                            textStyle.font = st.getFont();
+                        e.textStyle = textStyle.getApi();
                     }
                 }
                 //offset at line delimiter case
@@ -7701,7 +7710,7 @@ public class StyledText extends Canvas implements IStyledText {
             event.y = y;
             event.ascent = ascent;
             event.descent = descent;
-            event.style = style;
+            event.style = style.getApi();
             event.bullet = bullet.getApi();
             event.bulletIndex = bulletIndex;
             notifyListeners(ST.PaintObject, event);
@@ -7798,7 +7807,7 @@ public class StyledText extends Canvas implements IStyledText {
         options.printTextBackground = true;
         options.printTextFontStyle = true;
         options.printLineBackground = true;
-        new Printing(this.getApi(), printer, options).run();
+        new Printing(this.getApi(), printer.getApi(), options.getApi()).run();
         printer.dispose();
     }
 
@@ -7821,7 +7830,8 @@ public class StyledText extends Canvas implements IStyledText {
      *    <li>ERROR_NULL_ARGUMENT when printer is null</li>
      * </ul>
      */
-    public Runnable print(Printer printer) {
+    public Runnable print(IPrinter iprinter) {
+        Printer printer = (Printer) iprinter;
         checkWidget();
         if (printer == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -7855,12 +7865,14 @@ public class StyledText extends Canvas implements IStyledText {
      * </ul>
      * @since 2.1
      */
-    public Runnable print(Printer printer, StyledTextPrintOptions options) {
+    public Runnable print(IPrinter iprinter, IStyledTextPrintOptions ioptions) {
+        StyledTextPrintOptions options = (StyledTextPrintOptions) ioptions;
+        Printer printer = (Printer) iprinter;
         checkWidget();
         if (printer == null || options == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
-        return new Printing(this.getApi(), printer, options);
+        return new Printing(this.getApi(), printer.getApi(), options.getApi());
     }
 
     /**
@@ -8306,7 +8318,8 @@ public class StyledText extends Canvas implements IStyledText {
      *
      * @see #setStyleRanges(int, int, int[], StyleRange[])
      */
-    public void replaceStyleRanges(int start, int length, StyleRange[] ranges) {
+    public void replaceStyleRanges(int start, int length, IStyleRange[] iranges) {
+        StyleRange[] ranges = (StyleRange[]) iranges;
         checkWidget();
         if (isListening(ST.LineGetStyle))
             return;
@@ -8901,7 +8914,8 @@ public class StyledText extends Canvas implements IStyledText {
      *
      * @since 3.5
      */
-    public void setBlockSelectionBounds(Rectangle rect) {
+    public void setBlockSelectionBounds(IRectangle irect) {
+        Rectangle rect = (Rectangle) irect;
         checkWidget();
         if (rect == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -9409,8 +9423,9 @@ public class StyledText extends Canvas implements IStyledText {
      *
      * @since 3.125
      */
-    public void setFixedLineMetrics(FontMetrics metrics) {
-        renderer.setFixedLineMetrics(metrics);
+    public void setFixedLineMetrics(IFontMetrics imetrics) {
+        FontMetrics metrics = (FontMetrics) imetrics;
+        renderer.setFixedLineMetrics(metrics.getApi());
     }
 
     /**
@@ -10424,7 +10439,8 @@ public class StyledText extends Canvas implements IStyledText {
      * multi byte line delimiter (and thus neither clearly in front of or after the line delimiter)
      * </ul>
      */
-    public void setSelection(Point point) {
+    public void setSelection(IPoint ipoint) {
+        Point point = (Point) ipoint;
         checkWidget();
         if (point == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -10747,7 +10763,8 @@ public class StyledText extends Canvas implements IStyledText {
      *   <li>ERROR_INVALID_RANGE when the style range is outside the valid range (&gt; getCharCount())</li>
      * </ul>
      */
-    public void setStyleRange(StyleRange range) {
+    public void setStyleRange(IStyleRange irange) {
+        StyleRange range = (StyleRange) irange;
         checkWidget();
         if (isListening(ST.LineGetStyle))
             return;
@@ -10797,7 +10814,8 @@ public class StyledText extends Canvas implements IStyledText {
      *
      * @since 3.2
      */
-    public void setStyleRanges(int start, int length, int[] ranges, StyleRange[] styles) {
+    public void setStyleRanges(int start, int length, int[] ranges, IStyleRange[] istyles) {
+        StyleRange[] styles = (StyleRange[]) istyles;
         checkWidget();
         if (isListening(ST.LineGetStyle))
             return;
@@ -10841,7 +10859,8 @@ public class StyledText extends Canvas implements IStyledText {
      *
      * @since 3.2
      */
-    public void setStyleRanges(int[] ranges, StyleRange[] styles) {
+    public void setStyleRanges(int[] ranges, IStyleRange[] istyles) {
+        StyleRange[] styles = (StyleRange[]) istyles;
         checkWidget();
         if (isListening(ST.LineGetStyle))
             return;
@@ -10987,9 +11006,9 @@ public class StyledText extends Canvas implements IStyledText {
         int referenceRangeIndex = 0;
         int newRangeIndex = 0;
         StyleRange defaultStyle = new StyleRange();
-        defaultStyle.foreground = this.foreground.getApi();
-        defaultStyle.background = this.background.getApi();
-        defaultStyle.font = getFont().getApi();
+        defaultStyle.foreground = this.foreground;
+        defaultStyle.background = this.background;
+        defaultStyle.font = getFont();
         int currentOffset = referenceRanges.length > 0 ? referenceRanges[0] : Integer.MAX_VALUE;
         if (newRanges.length > 0) {
             currentOffset = Math.min(currentOffset, newRanges[0]);
@@ -11093,7 +11112,8 @@ public class StyledText extends Canvas implements IStyledText {
      *
      * @see #setStyleRanges(int[], StyleRange[])
      */
-    public void setStyleRanges(StyleRange[] ranges) {
+    public void setStyleRanges(IStyleRange[] iranges) {
+        StyleRange[] ranges = (StyleRange[]) iranges;
         checkWidget();
         if (isListening(ST.LineGetStyle))
             return;

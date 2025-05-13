@@ -105,12 +105,10 @@ public class ExpandBar extends Composite {
         getDelegate().addExpandListener(listener);
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed);
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
-    @Override
     public Color getForeground() {
         return getDelegate().getForeground().getApi();
     }
@@ -225,12 +223,10 @@ public class ExpandBar extends Composite {
         getDelegate().removeExpandListener(listener);
     }
 
-    @Override
     public void setFont(Font font) {
         getDelegate().setFont(font.getDelegate());
     }
 
-    @Override
     public void setForeground(Color color) {
         getDelegate().setForeground(color.getDelegate());
     }

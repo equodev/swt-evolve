@@ -18,13 +18,12 @@ package nat.org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ICoolItem;
 import org.eclipse.swt.widgets.IControl;
+import org.eclipse.swt.graphics.IPoint;
 
 /**
  * Instances of this class are selectable user interface
@@ -560,7 +559,8 @@ public class CoolItem extends Item implements ICoolItem {
      *
      * @since 2.0
      */
-    public void setMinimumSize(Point size) {
+    public void setMinimumSize(IPoint isize) {
+        Point size = (Point) isize;
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -599,7 +599,8 @@ public class CoolItem extends Item implements ICoolItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setPreferredSize(Point size) {
+    public void setPreferredSize(IPoint isize) {
+        Point size = (Point) isize;
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -662,7 +663,8 @@ public class CoolItem extends Item implements ICoolItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setSize(Point size) {
+    public void setSize(IPoint isize) {
+        Point size = (Point) isize;
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);

@@ -16,12 +16,12 @@
 package nat.org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.accessibility.*;
+import nat.org.eclipse.swt.accessibility.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.accessibility.ACC;
 import org.eclipse.swt.widgets.IToolBar;
+import org.eclipse.swt.graphics.IPoint;
 import org.eclipse.swt.widgets.IToolItem;
 
 /**
@@ -455,7 +455,8 @@ public class ToolBar extends Composite implements IToolBar {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public ToolItem getItem(Point point) {
+    public ToolItem getItem(IPoint ipoint) {
+        Point point = (Point) ipoint;
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);

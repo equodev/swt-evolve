@@ -32,11 +32,11 @@ public interface ITabFolder extends IComposite {
      */
     void addSelectionListener(SelectionListener listener);
 
-    Point computeSize(int wHint, int hHint, boolean changed);
+    IPoint computeSize(int wHint, int hHint, boolean changed);
 
-    Rectangle computeTrim(int x, int y, int width, int height);
+    IRectangle computeTrim(int x, int y, int width, int height);
 
-    Rectangle getClientArea();
+    IRectangle getClientArea();
 
     /**
      * Returns the item at the given, zero-relative index in the
@@ -73,7 +73,7 @@ public interface ITabFolder extends IComposite {
      *
      * @since 3.4
      */
-    ITabItem getItem(Point point);
+    ITabItem getItem(IPoint point);
 
     /**
      * Returns the number of items contained in the receiver.

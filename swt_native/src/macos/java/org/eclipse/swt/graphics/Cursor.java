@@ -193,7 +193,6 @@ public final class Cursor extends Resource {
      *
      * @see #hashCode
      */
-    @Override
     public boolean equals(Object object) {
         return getDelegate().equals(object);
     }
@@ -208,7 +207,6 @@ public final class Cursor extends Resource {
      *
      * @see #equals
      */
-    @Override
     public int hashCode() {
         return getDelegate().hashCode();
     }
@@ -223,7 +221,6 @@ public final class Cursor extends Resource {
      *
      * @return <code>true</code> when the cursor is disposed and <code>false</code> otherwise
      */
-    @Override
     public boolean isDisposed() {
         return getDelegate().isDisposed();
     }
@@ -234,7 +231,6 @@ public final class Cursor extends Resource {
      *
      * @return a string representation of the receiver
      */
-    @Override
     public String toString() {
         return getDelegate().toString();
     }

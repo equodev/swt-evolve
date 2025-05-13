@@ -194,7 +194,7 @@ public interface IToolTip extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setLocation(Point location);
+    void setLocation(IPoint location);
 
     /**
      * Sets the receiver's message.

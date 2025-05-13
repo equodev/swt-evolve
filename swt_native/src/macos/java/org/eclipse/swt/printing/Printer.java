@@ -18,6 +18,7 @@ package org.eclipse.swt.printing;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Convert;
 
 /**
  * Instances of this class are used to print to a printer.
@@ -43,22 +44,6 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public final class Printer extends Device {
 
-    PrinterData data;
-
-    NSPrinter printer;
-
-    NSPrintInfo printInfo;
-
-    NSPrintOperation operation;
-
-    NSView view;
-
-    NSWindow window;
-
-    boolean isGCCreated;
-
-    static final String DRIVER = "Mac";
-
     /**
      * Returns an array of <code>PrinterData</code> objects
      * representing all available printers.  If there are no
@@ -67,22 +52,7 @@ public final class Printer extends Device {
      * @return an array of PrinterData objects representing the available printers
      */
     public static PrinterData[] getPrinterList() {
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            NSArray printers = NSPrinter.printerNames();
-            int count = (int) printers.count();
-            PrinterData[] result = new PrinterData[count];
-            for (int i = 0; i < count; i++) {
-                NSString str = new NSString(printers.objectAtIndex(i));
-                result[i] = new PrinterData(DRIVER, str.getString());
-            }
-            return result;
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        return Convert.array(nat.org.eclipse.swt.printing.Printer.getPrinterList(), IPrinterData::getApi, PrinterData[]::new);
     }
 
     /**
@@ -95,19 +65,7 @@ public final class Printer extends Device {
      * @since 2.1
      */
     public static PrinterData getDefaultPrinterData() {
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            NSPrinter printer = NSPrintInfo.defaultPrinter();
-            if (printer == null)
-                return null;
-            NSString str = printer.name();
-            return new PrinterData(DRIVER, str.getString());
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        return nat.org.eclipse.swt.printing.Printer.getDefaultPrinterData().getApi();
     }
 
     /**
@@ -123,7 +81,7 @@ public final class Printer extends Device {
      * @see Device#dispose
      */
     public Printer() {
-        this(null);
+        this(new nat.org.eclipse.swt.printing.Printer());
     }
 
     /**
@@ -146,7 +104,7 @@ public final class Printer extends Device {
      * @see Device#dispose
      */
     public Printer(PrinterData data) {
-        super(checkNull(data));
+        this(new nat.org.eclipse.swt.printing.Printer((nat.org.eclipse.swt.printing.PrinterData) data.getDelegate()));
     }
 
     /**
@@ -185,131 +143,7 @@ public final class Printer extends Device {
      * @see #getClientArea
      */
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        checkDevice();
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            NSSize paperSize = printInfo.paperSize();
-            NSRect bounds = printInfo.imageablePageBounds();
-            Point dpi = getDPI(), screenDPI = getIndependentDPI();
-            float scaling = scalingFactor();
-            x -= (bounds.x * dpi.x / screenDPI.x) / scaling;
-            y -= (bounds.y * dpi.y / screenDPI.y) / scaling;
-            width += ((paperSize.width - bounds.width) * dpi.x / screenDPI.x) / scaling;
-            height += ((paperSize.height - bounds.height) * dpi.y / screenDPI.y) / scaling;
-            return new Rectangle(x, y, width, height);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
-    }
-
-    /**
-     * Creates the printer handle.
-     * This method is called internally by the instance creation
-     * mechanism of the <code>Device</code> class.
-     * @param deviceData the device data
-     */
-    @Override
-    protected void create(DeviceData deviceData) {
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            NSApplication.sharedApplication();
-            data = (PrinterData) deviceData;
-            if (data.otherData != null) {
-                NSData nsData = NSData.dataWithBytes(data.otherData, data.otherData.length);
-                printInfo = new NSPrintInfo(NSKeyedUnarchiver.unarchiveObjectWithData(nsData).id);
-            } else {
-                printInfo = NSPrintInfo.sharedPrintInfo();
-            }
-            printInfo.retain();
-            printer = NSPrinter.printerWithName(NSString.stringWith(data.name));
-            if (printer != null) {
-                printer.retain();
-                printInfo.setPrinter(printer);
-            }
-            if (data.duplex != SWT.DEFAULT) {
-                long settings = printInfo.PMPrintSettings();
-                int duplex = data.duplex == PrinterData.DUPLEX_SHORT_EDGE ? OS.kPMDuplexTumble : data.duplex == PrinterData.DUPLEX_LONG_EDGE ? OS.kPMDuplexNoTumble : OS.kPMDuplexNone;
-                OS.PMSetDuplex(settings, duplex);
-            }
-            /* Updating printInfo from PMPrintSettings overrides values in the printInfo dictionary. */
-            printInfo.updateFromPMPrintSettings();
-            NSMutableDictionary dict = printInfo.dictionary();
-            if (data.collate)
-                dict.setValue(NSNumber.numberWithBool(data.collate), OS.NSPrintMustCollate);
-            if (data.copyCount != 1)
-                dict.setValue(NSNumber.numberWithInt(data.copyCount), OS.NSPrintCopies);
-            dict.setValue(NSNumber.numberWithInt(data.orientation == PrinterData.LANDSCAPE ? OS.NSLandscapeOrientation : OS.NSPortraitOrientation), OS.NSPrintOrientation);
-            if (data.printToFile) {
-                dict.setValue(OS.NSPrintSaveJob, OS.NSPrintJobDisposition);
-                if (data.fileName != null)
-                    dict.setValue(NSString.stringWith(data.fileName), OS.NSPrintSavePath);
-            }
-            /*
-		* Bug in Cocoa.  For some reason, the output still goes to the printer when
-		* the user chooses the preview button.  The fix is to reset the job disposition.
-		*/
-            NSString job = printInfo.jobDisposition();
-            if (job.isEqual(OS.NSPrintPreviewJob)) {
-                printInfo.setJobDisposition(job);
-            }
-            NSRect rect = new NSRect();
-            window = (NSWindow) new NSWindow().alloc();
-            window.initWithContentRect(rect, OS.NSBorderlessWindowMask, OS.NSBackingStoreBuffered, false);
-            //$NON-NLS-1$
-            String className = "SWTPrinterView";
-            if (OS.objc_lookUpClass(className) == 0) {
-                long cls = OS.objc_allocateClassPair(OS.class_NSView, className, 0);
-                OS.class_addMethod(cls, OS.sel_isFlipped, OS.isFlipped_CALLBACK(), "@:");
-                OS.objc_registerClassPair(cls);
-            }
-            view = (NSView) new SWTPrinterView().alloc();
-            view.initWithFrame(rect);
-            window.setContentView(view);
-            operation = NSPrintOperation.printOperationWithView(view, printInfo);
-            operation.retain();
-            operation.setShowsPrintPanel(false);
-            operation.setShowsProgressPanel(false);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
-    }
-
-    /**
-     * Destroys the printer handle.
-     * This method is called internally by the dispose
-     * mechanism of the <code>Device</code> class.
-     */
-    @Override
-    protected void destroy() {
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            if (printer != null)
-                printer.release();
-            if (printInfo != null)
-                printInfo.release();
-            if (view != null)
-                view.release();
-            if (window != null)
-                window.release();
-            if (operation != null)
-                operation.release();
-            printer = null;
-            printInfo = null;
-            view = null;
-            window = null;
-            operation = null;
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        return getDelegate().computeTrim(x, y, width, height).getApi();
     }
 
     /**
@@ -327,60 +161,8 @@ public final class Printer extends Device {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public long internal_new_GC(GCData data) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            if (data != null) {
-                if (isGCCreated)
-                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-                data.device = this;
-                data.background = getSystemColor(SWT.COLOR_WHITE).handle;
-                data.foreground = getSystemColor(SWT.COLOR_BLACK).handle;
-                data.font = getSystemFont();
-                float scaling = scalingFactor();
-                Point dpi = getDPI(), screenDPI = getIndependentDPI();
-                NSSize size = printInfo.paperSize();
-                size.width = (size.width * (dpi.x / screenDPI.x)) / scaling;
-                size.height = (size.height * dpi.y / screenDPI.y) / scaling;
-                data.size = size;
-                isGCCreated = true;
-            }
-            createContext();
-            return operation.context().id;
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
-    }
-
-    /**
-     * Initializes any internal resources needed by the
-     * device.
-     * <p>
-     * This method is called after <code>create</code>.
-     * </p><p>
-     * If subclasses reimplement this method, they must
-     * call the <code>super</code> implementation.
-     * </p>
-     *
-     * @see #create
-     */
-    @Override
-    protected void init() {
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            super.init();
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        return getDelegate().internal_new_GC(data);
     }
 
     /**
@@ -398,33 +180,15 @@ public final class Printer extends Device {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public void internal_dispose_GC(long hDC, GCData data) {
-        if (data != null)
-            isGCCreated = false;
+        getDelegate().internal_dispose_GC(hDC, data);
     }
 
     /**
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public boolean isAutoScalable() {
-        return false;
-    }
-
-    /**
-     * Releases any internal state prior to destroying this printer.
-     * This method is called internally by the dispose
-     * mechanism of the <code>Device</code> class.
-     */
-    @Override
-    protected void release() {
-        super.release();
-    }
-
-    float scalingFactor() {
-        NSNumber scale = new NSNumber(printInfo.dictionary().objectForKey(OS.NSPrintScalingFactor));
-        return scale.floatValue();
+        return getDelegate().isAutoScalable();
     }
 
     /**
@@ -449,32 +213,7 @@ public final class Printer extends Device {
      * @see #endJob
      */
     public boolean startJob(String jobName) {
-        checkDevice();
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            if (jobName != null && jobName.length() != 0) {
-                operation.setJobTitle(NSString.stringWith(jobName));
-            }
-            if (createContext()) {
-                NSGraphicsContext.setCurrentContext(operation.context());
-                view.beginDocument();
-                return true;
-            }
-            return false;
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
-    }
-
-    boolean createContext() {
-        if (operation.context() != null)
-            return true;
-        printInfo.setUpPrintOperationDefaultValues();
-        NSPrintOperation.setCurrentOperation(operation);
-        return operation.createContext() != null;
+        return getDelegate().startJob(jobName);
     }
 
     /**
@@ -489,19 +228,7 @@ public final class Printer extends Device {
      * @see #endPage
      */
     public void endJob() {
-        checkDevice();
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            view.endDocument();
-            operation.deliverResult();
-            operation.destroyContext();
-            operation.cleanUpOperation();
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        getDelegate().endJob();
     }
 
     /**
@@ -512,30 +239,7 @@ public final class Printer extends Device {
      * </ul>
      */
     public void cancelJob() {
-        checkDevice();
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            operation.destroyContext();
-            operation.cleanUpOperation();
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
-    }
-
-    static DeviceData checkNull(PrinterData data) {
-        if (data == null)
-            data = new PrinterData();
-        if (data.driver == null || data.name == null) {
-            PrinterData defaultPrinter = getDefaultPrinterData();
-            if (defaultPrinter == null)
-                SWT.error(SWT.ERROR_NO_HANDLES);
-            data.driver = defaultPrinter.driver;
-            data.name = defaultPrinter.name;
-        }
-        return data;
+        getDelegate().cancelJob();
     }
 
     /**
@@ -557,36 +261,7 @@ public final class Printer extends Device {
      * @see #endJob
      */
     public boolean startPage() {
-        checkDevice();
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            float scaling = scalingFactor();
-            NSSize paperSize = printInfo.paperSize();
-            paperSize.width /= scaling;
-            paperSize.height /= scaling;
-            NSRect rect = new NSRect();
-            rect.width = paperSize.width;
-            rect.height = paperSize.height;
-            view.beginPageInRect(rect, new NSPoint());
-            NSRect imageBounds = printInfo.imageablePageBounds();
-            imageBounds.x /= scaling;
-            imageBounds.y /= scaling;
-            imageBounds.width /= scaling;
-            imageBounds.height /= scaling;
-            NSBezierPath.bezierPathWithRect(imageBounds).setClip();
-            NSAffineTransform transform = NSAffineTransform.transform();
-            transform.translateXBy(imageBounds.x, imageBounds.y);
-            Point dpi = getDPI(), screenDPI = getIndependentDPI();
-            transform.scaleXBy(screenDPI.x / (float) dpi.x, screenDPI.y / (float) dpi.y);
-            transform.concat();
-            operation.context().saveGraphicsState();
-            return true;
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        return getDelegate().startPage();
     }
 
     /**
@@ -601,17 +276,7 @@ public final class Printer extends Device {
      * @see #endJob
      */
     public void endPage() {
-        checkDevice();
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            operation.context().restoreGraphicsState();
-            view.endPage();
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        getDelegate().endPage();
     }
 
     /**
@@ -625,50 +290,8 @@ public final class Printer extends Device {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    @Override
     public Point getDPI() {
-        checkDevice();
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            long pmPrintSession = printInfo.PMPrintSession();
-            long[] printer = new long[1];
-            long err = OS.PMSessionGetCurrentPrinter(pmPrintSession, printer);
-            if (err == OS.noErr) {
-                long printSettings = printInfo.PMPrintSettings();
-                short[] destType = new short[1];
-                if (OS.PMSessionGetDestinationType(pmPrintSession, printSettings, destType) == OS.noErr) {
-                    if (destType[0] == OS.kPMDestinationPrinter) {
-                        PMResolution resolution = new PMResolution();
-                        if (OS.PMPrinterGetOutputResolution(printer[0], printSettings, resolution) != OS.noErr) {
-                            int[] numberOfResolutions = new int[1];
-                            if (OS.PMPrinterGetPrinterResolutionCount(printer[0], numberOfResolutions) == OS.noErr) {
-                                PMResolution tempResolution = new PMResolution();
-                                tempResolution.hRes = tempResolution.vRes = 300.0;
-                                for (int i = 1; i <= numberOfResolutions[0]; i++) {
-                                    // PMPrinterGetIndexedPrinterResolution indexes are 1-based.
-                                    if (OS.PMPrinterGetIndexedPrinterResolution(printer[0], i, tempResolution) == OS.noErr) {
-                                        if (tempResolution.vRes > resolution.vRes && tempResolution.hRes > resolution.hRes) {
-                                            resolution = tempResolution;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        return new Point((int) resolution.hRes, (int) resolution.vRes);
-                    }
-                }
-            }
-            return getIndependentDPI();
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
-    }
-
-    Point getIndependentDPI() {
-        return super.getDPI();
+        return getDelegate().getDPI().getApi();
     }
 
     /**
@@ -686,21 +309,8 @@ public final class Printer extends Device {
      * @see #getClientArea
      * @see #computeTrim
      */
-    @Override
     public Rectangle getBounds() {
-        checkDevice();
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            NSSize size = printInfo.paperSize();
-            float scaling = scalingFactor();
-            Point dpi = getDPI(), screenDPI = getIndependentDPI();
-            return new Rectangle(0, 0, (int) ((size.width * dpi.x / screenDPI.x) / scaling), (int) ((size.height * dpi.y / screenDPI.y) / scaling));
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        return getDelegate().getBounds().getApi();
     }
 
     /**
@@ -720,21 +330,8 @@ public final class Printer extends Device {
      * @see #getBounds
      * @see #computeTrim
      */
-    @Override
     public Rectangle getClientArea() {
-        checkDevice();
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            float scaling = scalingFactor();
-            NSRect rect = printInfo.imageablePageBounds();
-            Point dpi = getDPI(), screenDPI = getIndependentDPI();
-            return new Rectangle(0, 0, (int) ((rect.width * dpi.x / screenDPI.x) / scaling), (int) ((rect.height * dpi.y / screenDPI.y) / scaling));
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        return getDelegate().getClientArea().getApi();
     }
 
     /**
@@ -744,7 +341,14 @@ public final class Printer extends Device {
      * @return a PrinterData object describing the receiver
      */
     public PrinterData getPrinterData() {
-        checkDevice();
-        return data;
+        return getDelegate().getPrinterData().getApi();
+    }
+
+    protected Printer(IPrinter delegate) {
+        super(delegate);
+    }
+
+    public IPrinter getDelegate() {
+        return (IPrinter) super.getDelegate();
     }
 }

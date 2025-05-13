@@ -80,6 +80,7 @@ public final class RowData {
      * default values.
      */
     public RowData() {
+        this(new nat.org.eclipse.swt.layout.RowData());
     }
 
     /**
@@ -91,8 +92,7 @@ public final class RowData {
      * @param height a minimum height for the control
      */
     public RowData(int width, int height) {
-        this.width = width;
-        this.height = height;
+        this(new nat.org.eclipse.swt.layout.RowData(width, height));
     }
 
     /**
@@ -104,15 +104,7 @@ public final class RowData {
      * and y coordinate specifies a minimum height for the control
      */
     public RowData(Point point) {
-        this(point.x, point.y);
-    }
-
-    String getName() {
-        String string = getClass().getName();
-        int index = string.lastIndexOf('.');
-        if (index == -1)
-            return string;
-        return string.substring(index + 1, string.length());
+        this(new nat.org.eclipse.swt.layout.RowData((nat.org.eclipse.swt.graphics.Point) point.getDelegate()));
     }
 
     /**
@@ -121,17 +113,18 @@ public final class RowData {
      *
      * @return a string representation of the RowData object
      */
-    @Override
     public String toString() {
-        String string = getName() + " {";
-        if (width != SWT.DEFAULT)
-            string += "width=" + width + " ";
-        if (height != SWT.DEFAULT)
-            string += "height=" + height + " ";
-        if (exclude)
-            string += "exclude=" + exclude + " ";
-        string = string.trim();
-        string += "}";
-        return string;
+        return getDelegate().toString();
+    }
+
+    IRowData delegate;
+
+    protected RowData(IRowData delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IRowData getDelegate() {
+        return delegate;
     }
 }

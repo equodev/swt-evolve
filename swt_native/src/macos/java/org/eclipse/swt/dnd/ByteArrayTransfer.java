@@ -16,6 +16,7 @@
 package org.eclipse.swt.dnd;
 
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Convert;
 
 /**
  *  The class <code>ByteArrayTransfer</code> provides a platform specific
@@ -124,74 +125,19 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public abstract class ByteArrayTransfer extends Transfer {
 
-    @Override
     public TransferData[] getSupportedTypes() {
-        int[] types = getTypeIds();
-        TransferData[] data = new TransferData[types.length];
-        for (int i = 0; i < types.length; i++) {
-            data[i] = new TransferData();
-            data[i].type = types[i];
-        }
-        return data;
+        return Convert.array(getDelegate().getSupportedTypes(), ITransferData::getApi, TransferData[]::new);
     }
 
-    @Override
     public boolean isSupportedType(TransferData transferData) {
-        if (transferData == null)
-            return false;
-        int[] types = getTypeIds();
-        for (int i = 0; i < types.length; i++) {
-            if (transferData.type == types[i])
-                return true;
-        }
-        return false;
+        return getDelegate().isSupportedType(transferData.getDelegate());
     }
 
-    /**
-     * This implementation of <code>javaToNative</code> converts a java
-     * <code>byte[]</code> to a platform specific representation.
-     *
-     * @param object a java <code>byte[]</code> containing the data to be converted
-     * @param transferData an empty <code>TransferData</code> object that will
-     *  	be filled in on return with the platform specific format of the data
-     *
-     * @see Transfer#nativeToJava
-     */
-    @Override
-    protected void javaToNative(Object object, TransferData transferData) {
-        if (!checkByteArray(object) && !isSupportedType(transferData)) {
-            DND.error(DND.ERROR_INVALID_DATA);
-        }
-        byte[] orig = (byte[]) object;
-        NSData data = NSData.dataWithBytes(orig, orig.length);
-        transferData.data = data;
+    protected ByteArrayTransfer(IByteArrayTransfer delegate) {
+        super(delegate);
     }
 
-    /**
-     * This implementation of <code>nativeToJava</code> converts a platform specific
-     * representation of a byte array to a java <code>byte[]</code>.
-     *
-     * @param transferData the platform specific representation of the data to be converted
-     * @return a java <code>byte[]</code> containing the converted data if the conversion was
-     * 		successful; otherwise null
-     *
-     * @see Transfer#javaToNative
-     */
-    @Override
-    protected Object nativeToJava(TransferData transferData) {
-        if (!isSupportedType(transferData) || transferData.data == null)
-            return null;
-        if (transferData.data == null)
-            return null;
-        NSData data = (NSData) transferData.data;
-        if (data.length() == 0)
-            return null;
-        byte[] bytes = new byte[(int) data.length()];
-        data.getBytes(bytes);
-        return bytes;
-    }
-
-    boolean checkByteArray(Object object) {
-        return (object != null && object instanceof byte[] && ((byte[]) object).length > 0);
+    public IByteArrayTransfer getDelegate() {
+        return (IByteArrayTransfer) super.getDelegate();
     }
 }

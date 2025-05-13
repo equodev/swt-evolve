@@ -32,7 +32,7 @@ public interface IScrollable extends IControl {
      *
      * @see #getClientArea
      */
-    Rectangle computeTrim(int x, int y, int width, int height);
+    IRectangle computeTrim(int x, int y, int width, int height);
 
     /**
      * Returns a rectangle which describes the area of the
@@ -48,7 +48,7 @@ public interface IScrollable extends IControl {
      *
      * @see #computeTrim
      */
-    Rectangle getClientArea();
+    IRectangle getClientArea();
 
     /**
      * Returns the receiver's horizontal scroll bar if it has

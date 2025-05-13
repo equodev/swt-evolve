@@ -234,7 +234,7 @@ public interface IStyledText extends ICanvas {
      */
     void append(String string);
 
-    Point computeSize(int wHint, int hHint, boolean changed);
+    IPoint computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Copies the selected text to the <code>DND.CLIPBOARD</code> clipboard.
@@ -413,7 +413,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.5
      */
-    Rectangle getBlockSelectionBounds();
+    IRectangle getBlockSelectionBounds();
 
     /**
      * Returns the bottom margin.
@@ -893,7 +893,7 @@ public interface IStyledText extends ICanvas {
      *   <li>ERROR_INVALID_RANGE when the offset is outside the valid range (&lt; 0 or &gt; getCharCount())</li>
      * </ul>
      */
-    Point getLocationAtOffset(int offset);
+    IPoint getLocationAtOffset(int offset);
 
     /**
      * Returns <code>true</code> if the mouse navigator is enabled.
@@ -958,7 +958,7 @@ public interface IStyledText extends ICanvas {
      *
      * @deprecated Use {@link #getOffsetAtPoint(Point)} instead for better performance
      */
-    int getOffsetAtLocation(Point point);
+    int getOffsetAtLocation(IPoint point);
 
     /**
      * Returns the offset of the character at the given point relative
@@ -987,7 +987,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.107
      */
-    int getOffsetAtPoint(Point point);
+    int getOffsetAtPoint(IPoint point);
 
     /**
      * Returns the orientation of the receiver.
@@ -1096,7 +1096,7 @@ public interface IStyledText extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point getSelection();
+    IPoint getSelection();
 
     /**
      * Returns the selection.
@@ -1118,7 +1118,7 @@ public interface IStyledText extends ICanvas {
      * </ul>
      * @see #getSelectionRanges
      */
-    Point getSelectionRange();
+    IPoint getSelectionRange();
 
     /**
      * Returns the selected ranges of text.
@@ -1212,7 +1212,7 @@ public interface IStyledText extends ICanvas {
      *   <li>ERROR_INVALID_ARGUMENT when the offset is invalid</li>
      * </ul>
      */
-    StyleRange getStyleRangeAtOffset(int offset);
+    IStyleRange getStyleRangeAtOffset(int offset);
 
     /**
      * Returns the styles.
@@ -1237,7 +1237,7 @@ public interface IStyledText extends ICanvas {
      *
      * @see #getStyleRanges(boolean)
      */
-    StyleRange[] getStyleRanges();
+    IStyleRange[] getStyleRanges();
 
     /**
      * Returns the styles.
@@ -1267,7 +1267,7 @@ public interface IStyledText extends ICanvas {
      * @see #getRanges(int, int)
      * @see #setStyleRanges(int[], StyleRange[])
      */
-    StyleRange[] getStyleRanges(boolean includeRanges);
+    IStyleRange[] getStyleRanges(boolean includeRanges);
 
     /**
      * Returns the styles for the given text range.
@@ -1303,7 +1303,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.0
      */
-    StyleRange[] getStyleRanges(int start, int length);
+    IStyleRange[] getStyleRanges(int start, int length);
 
     /**
      * Returns the styles for the given text range.
@@ -1342,7 +1342,7 @@ public interface IStyledText extends ICanvas {
      * @see #getRanges(int, int)
      * @see #setStyleRanges(int[], StyleRange[])
      */
-    StyleRange[] getStyleRanges(int start, int length, boolean includeRanges);
+    IStyleRange[] getStyleRanges(int start, int length, boolean includeRanges);
 
     /**
      * Returns the tab width measured in characters.
@@ -1413,7 +1413,7 @@ public interface IStyledText extends ICanvas {
      * </ul>
      * @since 3.1
      */
-    Rectangle getTextBounds(int start, int end);
+    IRectangle getTextBounds(int start, int end);
 
     /**
      * Returns the widget content starting at start for length characters.
@@ -1593,7 +1593,7 @@ public interface IStyledText extends ICanvas {
      *    <li>ERROR_NULL_ARGUMENT when printer is null</li>
      * </ul>
      */
-    Runnable print(Printer printer);
+    Runnable print(IPrinter printer);
 
     /**
      * Returns a runnable that will print the widget's text
@@ -1616,7 +1616,7 @@ public interface IStyledText extends ICanvas {
      * </ul>
      * @since 2.1
      */
-    Runnable print(Printer printer, StyledTextPrintOptions options);
+    Runnable print(IPrinter printer, IStyledTextPrintOptions options);
 
     /**
      * Causes the entire bounds of the receiver to be marked
@@ -1891,7 +1891,7 @@ public interface IStyledText extends ICanvas {
      *
      * @see #setStyleRanges(int, int, int[], StyleRange[])
      */
-    void replaceStyleRanges(int start, int length, StyleRange[] ranges);
+    void replaceStyleRanges(int start, int length, IStyleRange[] ranges);
 
     /**
      * Replaces the given text range with new text.
@@ -2010,7 +2010,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.5
      */
-    void setBlockSelectionBounds(Rectangle rect);
+    void setBlockSelectionBounds(IRectangle rect);
 
     /**
      * Sets the block selection bounds. The bounds is
@@ -2143,7 +2143,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.125
      */
-    void setFixedLineMetrics(FontMetrics metrics);
+    void setFixedLineMetrics(IFontMetrics metrics);
 
     /**
      * Sets a new font to render text with.
@@ -2692,7 +2692,7 @@ public interface IStyledText extends ICanvas {
      * multi byte line delimiter (and thus neither clearly in front of or after the line delimiter)
      * </ul>
      */
-    void setSelection(Point point);
+    void setSelection(IPoint point);
 
     /**
      * Sets the receiver's selection background color to the color specified
@@ -2822,7 +2822,7 @@ public interface IStyledText extends ICanvas {
      *   <li>ERROR_INVALID_RANGE when the style range is outside the valid range (&gt; getCharCount())</li>
      * </ul>
      */
-    void setStyleRange(StyleRange range);
+    void setStyleRange(IStyleRange range);
 
     /**
      * Clears the styles in the range specified by <code>start</code> and
@@ -2859,7 +2859,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.2
      */
-    void setStyleRanges(int start, int length, int[] ranges, StyleRange[] styles);
+    void setStyleRanges(int start, int length, int[] ranges, IStyleRange[] styles);
 
     /**
      * Sets styles to be used for rendering the widget content.
@@ -2894,7 +2894,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.2
      */
-    void setStyleRanges(int[] ranges, StyleRange[] styles);
+    void setStyleRanges(int[] ranges, IStyleRange[] styles);
 
     /**
      * Sets styles to be used for rendering the widget content. All styles
@@ -2924,7 +2924,7 @@ public interface IStyledText extends ICanvas {
      *
      * @see #setStyleRanges(int[], StyleRange[])
      */
-    void setStyleRanges(StyleRange[] ranges);
+    void setStyleRanges(IStyleRange[] ranges);
 
     /**
      * Sets the tab width.

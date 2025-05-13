@@ -593,7 +593,7 @@ public class Menu extends Widget {
      * @since 2.1
      */
     public void setLocation(Point location) {
-        getDelegate().setLocation(location);
+        getDelegate().setLocation(location.getDelegate());
     }
 
     /**

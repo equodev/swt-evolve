@@ -122,7 +122,7 @@ public class TabItem extends Item {
      * @since 3.4
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
     }
 
     /**
@@ -189,7 +189,6 @@ public class TabItem extends Item {
         getDelegate().setControl(control.getDelegate());
     }
 
-    @Override
     public void setImage(Image image) {
         getDelegate().setImage(image.getDelegate());
     }
@@ -218,7 +217,6 @@ public class TabItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setText(String string) {
         getDelegate().setText(string);
     }

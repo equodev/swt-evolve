@@ -16,10 +16,8 @@ package nat.org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.graphics.Rectangle;
 
 /**
  * This class add the following behaviour to <code>StyledText</code> widgets:

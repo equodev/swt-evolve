@@ -63,4 +63,15 @@ public class TransferData {
      * @noreference This field is not intended to be referenced by clients.
      */
     public NSObject data;
+
+    ITransferData delegate;
+
+    protected TransferData(ITransferData delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public ITransferData getDelegate() {
+        return delegate;
+    }
 }

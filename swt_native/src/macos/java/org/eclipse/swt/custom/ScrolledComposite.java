@@ -108,26 +108,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class ScrolledComposite extends Composite {
 
-    Control content;
-
-    Listener contentListener;
-
-    Listener filter;
-
-    int minHeight = 0;
-
-    int minWidth = 0;
-
-    boolean expandHorizontal = false;
-
-    boolean expandVertical = false;
-
-    boolean alwaysShowScroll = false;
-
-    boolean showFocusedControl = false;
-
-    boolean showNextFocusedControl = true;
-
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.
@@ -156,59 +136,7 @@ public class ScrolledComposite extends Composite {
      * @see #getStyle()
      */
     public ScrolledComposite(Composite parent, int style) {
-        super(parent, checkStyle(style));
-        super.setLayout(new ScrolledCompositeLayout());
-        ScrollBar hBar = getHorizontalBar();
-        if (hBar != null) {
-            hBar.setVisible(false);
-            hBar.addListener(SWT.Selection, e -> hScroll());
-        }
-        ScrollBar vBar = getVerticalBar();
-        if (vBar != null) {
-            vBar.setVisible(false);
-            vBar.addListener(SWT.Selection, e -> vScroll());
-        }
-        contentListener = e -> {
-            if (e.type != SWT.Resize)
-                return;
-            layout(false);
-        };
-        filter = event -> {
-            if (event.type == SWT.FocusIn) {
-                if (!showNextFocusedControl) {
-                    showNextFocusedControl = true;
-                } else if (event.widget instanceof Control control) {
-                    if (contains(control))
-                        showControl(control);
-                }
-            } else {
-                Widget w = event.widget;
-                if (w instanceof Control) {
-                    showNextFocusedControl = w.getDisplay().getActiveShell() == ((Control) w).getShell();
-                }
-            }
-        };
-        addDisposeListener(e -> {
-            getDisplay().removeFilter(SWT.FocusIn, filter);
-            getDisplay().removeFilter(SWT.FocusOut, filter);
-        });
-    }
-
-    static int checkStyle(int style) {
-        int mask = SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER | SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
-        return style & mask;
-    }
-
-    boolean contains(Control control) {
-        if (control == null || control.isDisposed())
-            return false;
-        Composite parent = control.getParent();
-        while (parent != null && !(parent instanceof Shell)) {
-            if (this == parent)
-                return true;
-            parent = parent.getParent();
-        }
-        return false;
+        this(new nat.org.eclipse.swt.custom.ScrolledComposite((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
     }
 
     /**
@@ -221,12 +149,11 @@ public class ScrolledComposite extends Composite {
      * @return the Always Show Scrollbars flag value
      */
     public boolean getAlwaysShowScrollBars() {
+        return getDelegate().getAlwaysShowScrollBars();
         /*
 	 * This call is intentionally commented out, to allow this getter method to be
 	 * called from a thread which is different from one that created the widget.
 	 */
-        //checkWidget();
-        return alwaysShowScroll;
     }
 
     /**
@@ -243,8 +170,7 @@ public class ScrolledComposite extends Composite {
      * @since 3.2
      */
     public boolean getExpandHorizontal() {
-        checkWidget();
-        return expandHorizontal;
+        return getDelegate().getExpandHorizontal();
     }
 
     /**
@@ -261,8 +187,7 @@ public class ScrolledComposite extends Composite {
      * @since 3.2
      */
     public boolean getExpandVertical() {
-        checkWidget();
-        return expandVertical;
+        return getDelegate().getExpandVertical();
     }
 
     /**
@@ -278,8 +203,7 @@ public class ScrolledComposite extends Composite {
      * @since 3.2
      */
     public int getMinWidth() {
-        checkWidget();
-        return minWidth;
+        return getDelegate().getMinWidth();
     }
 
     /**
@@ -295,8 +219,7 @@ public class ScrolledComposite extends Composite {
      * @since 3.2
      */
     public int getMinHeight() {
-        checkWidget();
-        return minHeight;
+        return getDelegate().getMinHeight();
     }
 
     /**
@@ -305,12 +228,11 @@ public class ScrolledComposite extends Composite {
      * @return the control displayed in the content area
      */
     public Control getContent() {
+        return getDelegate().getContent().getApi();
         /*
 	 * This call is intentionally commented out, to allow this getter method to be
 	 * called from a thread which is different from one that created the widget.
 	 */
-        //checkWidget();
-        return content;
     }
 
     /**
@@ -327,51 +249,7 @@ public class ScrolledComposite extends Composite {
      * @since 3.4
      */
     public boolean getShowFocusedControl() {
-        checkWidget();
-        return showFocusedControl;
-    }
-
-    void hScroll() {
-        if (content == null)
-            return;
-        Point location = content.getLocation();
-        ScrollBar hBar = getHorizontalBar();
-        int hSelection = hBar.getSelection();
-        content.setLocation(-hSelection, location.y);
-    }
-
-    boolean needHScroll(Rectangle contentRect, boolean vVisible) {
-        ScrollBar hBar = getHorizontalBar();
-        if (hBar == null)
-            return false;
-        Rectangle hostRect = getBounds();
-        int border = getBorderWidth();
-        hostRect.width -= 2 * border;
-        ScrollBar vBar = getVerticalBar();
-        if (vVisible && vBar != null)
-            hostRect.width -= vBar.getSize().x;
-        if (!expandHorizontal && contentRect.width > hostRect.width)
-            return true;
-        if (expandHorizontal && minWidth > hostRect.width)
-            return true;
-        return false;
-    }
-
-    boolean needVScroll(Rectangle contentRect, boolean hVisible) {
-        ScrollBar vBar = getVerticalBar();
-        if (vBar == null)
-            return false;
-        Rectangle hostRect = getBounds();
-        int border = getBorderWidth();
-        hostRect.height -= 2 * border;
-        ScrollBar hBar = getHorizontalBar();
-        if (hVisible && hBar != null)
-            hostRect.height -= hBar.getSize().y;
-        if (!expandVertical && contentRect.height > hostRect.height)
-            return true;
-        if (expandVertical && minHeight > hostRect.height)
-            return true;
-        return false;
+        return getDelegate().getShowFocusedControl();
     }
 
     /**
@@ -390,11 +268,7 @@ public class ScrolledComposite extends Composite {
      * @since 2.0
      */
     public Point getOrigin() {
-        checkWidget();
-        if (content == null)
-            return new Point(0, 0);
-        Point location = content.getLocation();
-        return new Point(-location.x, -location.y);
+        return getDelegate().getOrigin().getApi();
     }
 
     /**
@@ -414,7 +288,7 @@ public class ScrolledComposite extends Composite {
      * @since 2.0
      */
     public void setOrigin(Point origin) {
-        setOrigin(origin.x, origin.y);
+        getDelegate().setOrigin(origin.getDelegate());
     }
 
     /**
@@ -436,24 +310,7 @@ public class ScrolledComposite extends Composite {
      * @since 2.0
      */
     public void setOrigin(int x, int y) {
-        checkWidget();
-        if (content == null)
-            return;
-        ScrollBar hBar = getHorizontalBar();
-        if (hBar != null) {
-            hBar.setSelection(x);
-            x = -hBar.getSelection();
-        } else {
-            x = 0;
-        }
-        ScrollBar vBar = getVerticalBar();
-        if (vBar != null) {
-            vBar.setSelection(y);
-            y = -vBar.getSelection();
-        } else {
-            y = 0;
-        }
-        content.setLocation(x, y);
+        getDelegate().setOrigin(x, y);
     }
 
     /**
@@ -471,17 +328,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setAlwaysShowScrollBars(boolean show) {
-        checkWidget();
-        if (show == alwaysShowScroll)
-            return;
-        alwaysShowScroll = show;
-        ScrollBar hBar = getHorizontalBar();
-        if (hBar != null && alwaysShowScroll)
-            hBar.setVisible(true);
-        ScrollBar vBar = getVerticalBar();
-        if (vBar != null && alwaysShowScroll)
-            vBar.setVisible(true);
-        layout(false);
+        getDelegate().setAlwaysShowScrollBars(show);
     }
 
     /**
@@ -495,34 +342,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setContent(Control content) {
-        checkWidget();
-        if (this.content != null && !this.content.isDisposed()) {
-            this.content.removeListener(SWT.Resize, contentListener);
-            this.content.setBounds(new Rectangle(-200, -200, 0, 0));
-        }
-        this.content = content;
-        ScrollBar vBar = getVerticalBar();
-        ScrollBar hBar = getHorizontalBar();
-        if (this.content != null) {
-            if (vBar != null) {
-                vBar.setMaximum(0);
-                vBar.setThumb(0);
-                vBar.setSelection(0);
-            }
-            if (hBar != null) {
-                hBar.setMaximum(0);
-                hBar.setThumb(0);
-                hBar.setSelection(0);
-            }
-            content.setLocation(0, 0);
-            layout(false);
-            this.content.addListener(SWT.Resize, contentListener);
-        } else {
-            if (hBar != null)
-                hBar.setVisible(alwaysShowScroll);
-            if (vBar != null)
-                vBar.setVisible(alwaysShowScroll);
-        }
+        getDelegate().setContent(content.getDelegate());
     }
 
     /**
@@ -541,11 +361,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setExpandHorizontal(boolean expand) {
-        checkWidget();
-        if (expand == expandHorizontal)
-            return;
-        expandHorizontal = expand;
-        layout(false);
+        getDelegate().setExpandHorizontal(expand);
     }
 
     /**
@@ -564,11 +380,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setExpandVertical(boolean expand) {
-        checkWidget();
-        if (expand == expandVertical)
-            return;
-        expandVertical = expand;
-        layout(false);
+        getDelegate().setExpandVertical(expand);
     }
 
     /**
@@ -586,10 +398,8 @@ public class ScrolledComposite extends Composite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setLayout(Layout layout) {
-        checkWidget();
-        return;
+        getDelegate().setLayout(layout.getDelegate());
     }
 
     /**
@@ -605,7 +415,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setMinHeight(int height) {
-        setMinSize(minWidth, height);
+        getDelegate().setMinHeight(height);
     }
 
     /**
@@ -621,11 +431,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setMinSize(Point size) {
-        if (size == null) {
-            setMinSize(0, 0);
-        } else {
-            setMinSize(size.x, size.y);
-        }
+        getDelegate().setMinSize(size.getDelegate());
     }
 
     /**
@@ -642,12 +448,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setMinSize(int width, int height) {
-        checkWidget();
-        if (width == minWidth && height == minHeight)
-            return;
-        minWidth = Math.max(0, width);
-        minHeight = Math.max(0, height);
-        layout(false);
+        getDelegate().setMinSize(width, height);
     }
 
     /**
@@ -663,7 +464,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setMinWidth(int width) {
-        setMinSize(width, minHeight);
+        getDelegate().setMinWidth(width);
     }
 
     /**
@@ -683,20 +484,7 @@ public class ScrolledComposite extends Composite {
      * @since 3.4
      */
     public void setShowFocusedControl(boolean show) {
-        checkWidget();
-        if (showFocusedControl == show)
-            return;
-        Display display = getDisplay();
-        display.removeFilter(SWT.FocusIn, filter);
-        display.removeFilter(SWT.FocusOut, filter);
-        showFocusedControl = show;
-        if (!showFocusedControl)
-            return;
-        display.addFilter(SWT.FocusIn, filter);
-        display.addFilter(SWT.FocusOut, filter);
-        Control control = display.getFocusControl();
-        if (contains(control))
-            showControl(control);
+        getDelegate().setShowFocusedControl(show);
     }
 
     /**
@@ -716,37 +504,14 @@ public class ScrolledComposite extends Composite {
      * @since 3.4
      */
     public void showControl(Control control) {
-        checkWidget();
-        if (control == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (control.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (!contains(control))
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        Rectangle itemRect = getDisplay().map(control.getParent(), this, control.getBounds());
-        Rectangle area = getClientArea();
-        Point origin = getOrigin();
-        if (itemRect.x < 0) {
-            origin.x = Math.max(0, origin.x + itemRect.x);
-        } else {
-            if (area.width < itemRect.x + itemRect.width)
-                origin.x = Math.max(0, origin.x + itemRect.x + Math.min(itemRect.width, area.width) - area.width);
-        }
-        if (itemRect.y < 0) {
-            origin.y = Math.max(0, origin.y + itemRect.y);
-        } else {
-            if (area.height < itemRect.y + itemRect.height)
-                origin.y = Math.max(0, origin.y + itemRect.y + Math.min(itemRect.height, area.height) - area.height);
-        }
-        setOrigin(origin);
+        getDelegate().showControl(control.getDelegate());
     }
 
-    void vScroll() {
-        if (content == null)
-            return;
-        Point location = content.getLocation();
-        ScrollBar vBar = getVerticalBar();
-        int vSelection = vBar.getSelection();
-        content.setLocation(location.x, -vSelection);
+    protected ScrolledComposite(IScrolledComposite delegate) {
+        super(delegate);
+    }
+
+    public IScrolledComposite getDelegate() {
+        return (IScrolledComposite) super.getDelegate();
     }
 }

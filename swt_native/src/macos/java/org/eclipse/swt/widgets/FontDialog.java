@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Convert;
 
 /**
  * Instances of this class allow the user to select a font
@@ -109,7 +110,7 @@ public class FontDialog extends Dialog {
      */
     @Deprecated
     public FontData getFontData() {
-        return getDelegate().getFontData();
+        return getDelegate().getFontData().getApi();
     }
 
     /**
@@ -120,7 +121,7 @@ public class FontDialog extends Dialog {
      * @since 2.1.1
      */
     public FontData[] getFontList() {
-        return getDelegate().getFontList();
+        return Convert.array(getDelegate().getFontList(), IFontData::getApi, FontData[]::new);
     }
 
     /**
@@ -150,7 +151,7 @@ public class FontDialog extends Dialog {
      * </ul>
      */
     public FontData open() {
-        return getDelegate().open();
+        return getDelegate().open().getApi();
     }
 
     /**
@@ -179,7 +180,7 @@ public class FontDialog extends Dialog {
      */
     @Deprecated
     public void setFontData(FontData fontData) {
-        getDelegate().setFontData(fontData);
+        getDelegate().setFontData(fontData.getDelegate());
     }
 
     /**
@@ -195,7 +196,7 @@ public class FontDialog extends Dialog {
      * @since 2.1.1
      */
     public void setFontList(FontData[] fontData) {
-        getDelegate().setFontList(fontData);
+        getDelegate().setFontList(Convert.array(fontData, FontData::getDelegate, IFontData[]::new));
     }
 
     /**

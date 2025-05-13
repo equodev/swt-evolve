@@ -17,9 +17,6 @@ package nat.org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.FontMetrics;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.IFont;
 
 /**

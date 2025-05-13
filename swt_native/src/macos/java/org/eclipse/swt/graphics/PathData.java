@@ -34,4 +34,15 @@ public final class PathData {
      * The points of a path.
      */
     public float[] points;
+
+    IPathData delegate;
+
+    protected PathData(IPathData delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IPathData getDelegate() {
+        return delegate;
+    }
 }

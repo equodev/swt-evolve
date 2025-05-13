@@ -43,7 +43,7 @@ public interface IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    Rectangle getBounds();
+    IRectangle getBounds();
 
     /**
      * Returns a <code>DeviceData</code> based on the receiver.
@@ -58,7 +58,7 @@ public interface IDevice {
      *
      * @see DeviceData
      */
-    DeviceData getDeviceData();
+    IDeviceData getDeviceData();
 
     /**
      * Returns a rectangle which describes the area of the
@@ -72,7 +72,7 @@ public interface IDevice {
      *
      * @see #getBounds
      */
-    Rectangle getClientArea();
+    IRectangle getClientArea();
 
     /**
      * Returns the bit depth of the screen, which is the number of
@@ -99,7 +99,7 @@ public interface IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    Point getDPI();
+    IPoint getDPI();
 
     /**
      * Returns <code>FontData</code> objects which describe
@@ -114,7 +114,7 @@ public interface IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    FontData[] getFontList(String faceName, boolean scalable);
+    IFontData[] getFontList(String faceName, boolean scalable);
 
     /**
      * Returns the matching standard color for the given
@@ -186,7 +186,7 @@ public interface IDevice {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    abstract long internal_new_GC(GCData data);
+    abstract long internal_new_GC(org.eclipse.swt.graphics.GCData data);
 
     /**
      * Invokes platform specific functionality to dispose a GC handle.
@@ -203,7 +203,7 @@ public interface IDevice {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    abstract void internal_dispose_GC(long hDC, GCData data);
+    abstract void internal_dispose_GC(long hDC, org.eclipse.swt.graphics.GCData data);
 
     /**
      * Returns <code>true</code> if the device has been disposed,

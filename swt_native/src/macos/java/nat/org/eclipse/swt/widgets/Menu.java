@@ -19,9 +19,9 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.IMenu;
 import org.eclipse.swt.widgets.IMenuItem;
+import org.eclipse.swt.graphics.IPoint;
 
 /**
  * Instances of this class are user interface objects that contain
@@ -1135,7 +1135,8 @@ public class Menu extends Widget implements IMenu {
      *
      * @since 2.1
      */
-    public void setLocation(Point location) {
+    public void setLocation(IPoint ilocation) {
+        Point location = (Point) ilocation;
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);

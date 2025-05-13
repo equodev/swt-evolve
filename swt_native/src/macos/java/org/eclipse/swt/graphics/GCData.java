@@ -132,4 +132,15 @@ public final class GCData {
     public NSGraphicsContext flippedContext;
 
     public boolean restoreContext;
+
+    IGCData delegate;
+
+    protected GCData(IGCData delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IGCData getDelegate() {
+        return delegate;
+    }
 }

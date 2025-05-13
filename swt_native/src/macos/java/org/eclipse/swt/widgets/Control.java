@@ -455,7 +455,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint) {
-        return getDelegate().computeSize(wHint, hHint);
+        return getDelegate().computeSize(wHint, hHint).getApi();
     }
 
     /**
@@ -493,7 +493,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed);
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
     /**
@@ -614,7 +614,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 2.0
      */
     public Accessible getAccessible() {
-        return getDelegate().getAccessible();
+        return getDelegate().getAccessible().getApi();
     }
 
     /**
@@ -679,7 +679,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
     }
 
     /**
@@ -794,7 +794,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Point getLocation() {
-        return getDelegate().getLocation();
+        return getDelegate().getLocation().getApi();
     }
 
     /**
@@ -915,7 +915,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Point getSize() {
-        return getDelegate().getSize();
+        return getDelegate().getSize().getApi();
     }
 
     /**
@@ -1010,7 +1010,6 @@ public abstract class Control extends Widget implements Drawable {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public long internal_new_GC(GCData data) {
         return getDelegate().internal_new_GC(data);
     }
@@ -1030,7 +1029,6 @@ public abstract class Control extends Widget implements Drawable {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public void internal_dispose_GC(long hDC, GCData data) {
         getDelegate().internal_dispose_GC(hDC, data);
     }
@@ -1711,7 +1709,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setBounds(Rectangle rect) {
-        getDelegate().setBounds(rect);
+        getDelegate().setBounds(rect.getDelegate());
     }
 
     /**
@@ -1895,7 +1893,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setLocation(Point location) {
-        getDelegate().setLocation(location);
+        getDelegate().setLocation(location.getDelegate());
     }
 
     /**
@@ -2061,7 +2059,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setSize(Point size) {
-        getDelegate().setSize(size);
+        getDelegate().setSize(size.getDelegate());
     }
 
     /**
@@ -2186,7 +2184,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 2.1
      */
     public Point toControl(int x, int y) {
-        return getDelegate().toControl(x, y);
+        return getDelegate().toControl(x, y).getApi();
     }
 
     /**
@@ -2210,7 +2208,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Point toControl(Point point) {
-        return getDelegate().toControl(point);
+        return getDelegate().toControl(point.getDelegate()).getApi();
     }
 
     /**
@@ -2234,7 +2232,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 2.1
      */
     public Point toDisplay(int x, int y) {
-        return getDelegate().toDisplay(x, y);
+        return getDelegate().toDisplay(x, y).getApi();
     }
 
     /**
@@ -2258,7 +2256,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Point toDisplay(Point point) {
-        return getDelegate().toDisplay(point);
+        return getDelegate().toDisplay(point.getDelegate()).getApi();
     }
 
     /**

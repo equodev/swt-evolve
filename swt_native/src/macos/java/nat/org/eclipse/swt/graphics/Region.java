@@ -18,9 +18,9 @@ package nat.org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.IRegion;
+import org.eclipse.swt.graphics.IRectangle;
+import org.eclipse.swt.graphics.IPoint;
 
 /**
  * Instances of this class represent areas of an x-y coordinate
@@ -267,7 +267,8 @@ public final class Region extends Resource implements IRegion {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    public void add(Rectangle rect) {
+    public void add(IRectangle irect) {
+        Rectangle rect = (Rectangle) irect;
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (rect == null)
@@ -401,7 +402,8 @@ public final class Region extends Resource implements IRegion {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    public boolean contains(Point pt) {
+    public boolean contains(IPoint ipt) {
+        Point pt = (Point) ipt;
         if (pt == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         return contains(pt.x, pt.y);
@@ -577,7 +579,8 @@ public final class Region extends Resource implements IRegion {
      *
      * @since 3.0
      */
-    public void intersect(Rectangle rect) {
+    public void intersect(IRectangle irect) {
+        Rectangle rect = (Rectangle) irect;
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (rect == null)
@@ -710,7 +713,8 @@ public final class Region extends Resource implements IRegion {
      *
      * @see Rectangle#intersects(Rectangle)
      */
-    public boolean intersects(Rectangle rect) {
+    public boolean intersects(IRectangle irect) {
+        Rectangle rect = (Rectangle) irect;
         if (rect == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         return intersects(rect.x, rect.y, rect.width, rect.height);
@@ -807,7 +811,8 @@ public final class Region extends Resource implements IRegion {
      *
      * @since 3.0
      */
-    public void subtract(Rectangle rect) {
+    public void subtract(IRectangle irect) {
+        Rectangle rect = (Rectangle) irect;
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (rect == null)
@@ -932,7 +937,8 @@ public final class Region extends Resource implements IRegion {
      *
      * @since 3.1
      */
-    public void translate(Point pt) {
+    public void translate(IPoint ipt) {
+        Point pt = (Point) ipt;
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (pt == null)

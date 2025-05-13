@@ -246,7 +246,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public Point getSize() {
-        return getDelegate().getSize();
+        return getDelegate().getSize().getApi();
     }
 
     /**
@@ -279,7 +279,7 @@ public class ScrollBar extends Widget {
      * @since 3.6
      */
     public Rectangle getThumbBounds() {
-        return getDelegate().getThumbBounds();
+        return getDelegate().getThumbBounds().getApi();
     }
 
     /**
@@ -297,7 +297,7 @@ public class ScrollBar extends Widget {
      * @since 3.6
      */
     public Rectangle getThumbTrackBounds() {
-        return getDelegate().getThumbTrackBounds();
+        return getDelegate().getThumbTrackBounds().getApi();
     }
 
     /**

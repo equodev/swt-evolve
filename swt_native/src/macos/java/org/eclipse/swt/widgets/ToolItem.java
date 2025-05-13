@@ -188,7 +188,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
     }
 
     /**
@@ -288,7 +288,6 @@ public class ToolItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public Image getImage() {
         return getDelegate().getImage().getApi();
     }
@@ -523,7 +522,6 @@ public class ToolItem extends Item {
         getDelegate().setHotImage(image.getDelegate());
     }
 
-    @Override
     public void setImage(Image image) {
         getDelegate().setImage(image.getDelegate());
     }
@@ -574,7 +572,6 @@ public class ToolItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setText(String string) {
         getDelegate().setText(string);
     }

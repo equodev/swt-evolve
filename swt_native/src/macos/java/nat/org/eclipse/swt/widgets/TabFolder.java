@@ -19,10 +19,9 @@ import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ITabFolder;
+import org.eclipse.swt.graphics.IPoint;
 import org.eclipse.swt.widgets.ITabItem;
 
 /**
@@ -301,7 +300,8 @@ public class TabFolder extends Composite implements ITabFolder {
      *
      * @since 3.4
      */
-    public TabItem getItem(Point point) {
+    public TabItem getItem(IPoint ipoint) {
+        Point point = (Point) ipoint;
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);

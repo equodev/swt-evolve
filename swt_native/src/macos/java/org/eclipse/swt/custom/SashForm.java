@@ -41,26 +41,9 @@ public class SashForm extends Composite {
      */
     public int SASH_WIDTH = 3;
 
-    int sashStyle;
-
-    Sash[] sashes = new Sash[0];
-
     // Remember background and foreground
     // colors to determine whether to set
     // sashes to the default color (null) or
-    // a specific color
-    Color background = null;
-
-    Color foreground = null;
-
-    Control[] controls = new Control[0];
-
-    Control maxControl = null;
-
-    Listener sashListener;
-
-    static final int DRAG_MINIMUM = 20;
-
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.
@@ -89,28 +72,7 @@ public class SashForm extends Composite {
      * @see #getStyle()
      */
     public SashForm(Composite parent, int style) {
-        super(parent, checkStyle(style));
-        super.setLayout(new SashFormLayout());
-        sashStyle = ((style & SWT.VERTICAL) != 0) ? SWT.HORIZONTAL : SWT.VERTICAL;
-        if ((style & SWT.BORDER) != 0)
-            sashStyle |= SWT.BORDER;
-        if ((style & SWT.SMOOTH) != 0)
-            sashStyle |= SWT.SMOOTH;
-        sashListener = this::onDragSash;
-    }
-
-    static int checkStyle(int style) {
-        int mask = SWT.BORDER | SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
-        return style & mask;
-    }
-
-    Sash createSash() {
-        Sash sash = new Sash(this, sashStyle);
-        sash.setBackground(background);
-        sash.setForeground(foreground);
-        sash.setToolTipText(getToolTipText());
-        sash.addListener(SWT.Selection, sashListener);
-        return sash;
+        this(new nat.org.eclipse.swt.custom.SashForm((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
     }
 
     /**
@@ -124,14 +86,12 @@ public class SashForm extends Composite {
      *
      * @return SWT.HORIZONTAL or SWT.VERTICAL
      */
-    @Override
     public int getOrientation() {
+        return getDelegate().getOrientation();
         /*
 	 * This call is intentionally commented out, to allow this getter method to be
 	 * called from a thread which is different from one that created the widget.
 	 */
-        //checkWidget();
-        return (sashStyle & SWT.VERTICAL) != 0 ? SWT.HORIZONTAL : SWT.VERTICAL;
     }
 
     /**
@@ -148,17 +108,11 @@ public class SashForm extends Composite {
      * @since 3.4
      */
     public int getSashWidth() {
-        checkWidget();
-        return SASH_WIDTH;
+        return getDelegate().getSashWidth();
     }
 
-    @Override
     public int getStyle() {
-        int style = super.getStyle();
-        style |= getOrientation() == SWT.VERTICAL ? SWT.VERTICAL : SWT.HORIZONTAL;
-        if ((sashStyle & SWT.SMOOTH) != 0)
-            style |= SWT.SMOOTH;
-        return style;
+        return getDelegate().getStyle();
     }
 
     /**
@@ -168,12 +122,11 @@ public class SashForm extends Composite {
      * @return the control that currently is maximized or null
      */
     public Control getMaximizedControl() {
+        return getDelegate().getMaximizedControl().getApi();
         /*
 	 * This call is intentionally commented out, to allow this getter method to be
 	 * called from a thread which is different from one that created the widget.
 	 */
-        //checkWidget();
-        return this.maxControl;
     }
 
     /**
@@ -191,125 +144,7 @@ public class SashForm extends Composite {
      * </ul>
      */
     public int[] getWeights() {
-        checkWidget();
-        Control[] cArray = getControls(false);
-        int[] ratios = new int[cArray.length];
-        for (int i = 0; i < cArray.length; i++) {
-            Object data = cArray[i].getLayoutData();
-            if (data instanceof SashFormData) {
-                ratios[i] = (int) (((SashFormData) data).weight * 1000 >> 16);
-            } else {
-                ratios[i] = 200;
-            }
-        }
-        return ratios;
-    }
-
-    Control[] getControls(boolean onlyVisible) {
-        Control[] result = new Control[0];
-        for (Control element : getChildren()) {
-            if (element instanceof Sash)
-                continue;
-            if (onlyVisible && !element.getVisible())
-                continue;
-            Control[] newResult = new Control[result.length + 1];
-            System.arraycopy(result, 0, newResult, 0, result.length);
-            newResult[result.length] = element;
-            result = newResult;
-        }
-        return result;
-    }
-
-    void onDragSash(Event event) {
-        Sash sash = (Sash) event.widget;
-        int sashIndex = -1;
-        for (int i = 0; i < sashes.length; i++) {
-            if (sashes[i] == sash) {
-                sashIndex = i;
-                break;
-            }
-        }
-        if (sashIndex == -1)
-            return;
-        Control c1 = controls[sashIndex];
-        Control c2 = controls[sashIndex + 1];
-        Rectangle b1 = c1.getBounds();
-        Rectangle b2 = c2.getBounds();
-        Rectangle sashBounds = sash.getBounds();
-        Rectangle area = getClientArea();
-        boolean correction = false;
-        if (getOrientation() == SWT.HORIZONTAL) {
-            correction = b1.width < DRAG_MINIMUM || b2.width < DRAG_MINIMUM;
-            int totalWidth = b2.x + b2.width - b1.x;
-            int shift = event.x - sashBounds.x;
-            b1.width += shift;
-            b2.x += shift;
-            b2.width -= shift;
-            if (b1.width < DRAG_MINIMUM) {
-                b1.width = DRAG_MINIMUM;
-                b2.x = b1.x + b1.width + sashBounds.width;
-                b2.width = totalWidth - b2.x;
-                event.x = b1.x + b1.width;
-                event.doit = false;
-            }
-            if (b2.width < DRAG_MINIMUM) {
-                b1.width = totalWidth - DRAG_MINIMUM - sashBounds.width;
-                b2.x = b1.x + b1.width + sashBounds.width;
-                b2.width = DRAG_MINIMUM;
-                event.x = b1.x + b1.width;
-                event.doit = false;
-            }
-            Object data1 = c1.getLayoutData();
-            if (data1 == null || !(data1 instanceof SashFormData)) {
-                data1 = new SashFormData();
-                c1.setLayoutData(data1);
-            }
-            Object data2 = c2.getLayoutData();
-            if (data2 == null || !(data2 instanceof SashFormData)) {
-                data2 = new SashFormData();
-                c2.setLayoutData(data2);
-            }
-            ((SashFormData) data1).weight = (((long) b1.width << 16) + area.width - 1) / area.width;
-            ((SashFormData) data2).weight = (((long) b2.width << 16) + area.width - 1) / area.width;
-        } else {
-            correction = b1.height < DRAG_MINIMUM || b2.height < DRAG_MINIMUM;
-            int totalHeight = b2.y + b2.height - b1.y;
-            int shift = event.y - sashBounds.y;
-            b1.height += shift;
-            b2.y += shift;
-            b2.height -= shift;
-            if (b1.height < DRAG_MINIMUM) {
-                b1.height = DRAG_MINIMUM;
-                b2.y = b1.y + b1.height + sashBounds.height;
-                b2.height = totalHeight - b2.y;
-                event.y = b1.y + b1.height;
-                event.doit = false;
-            }
-            if (b2.height < DRAG_MINIMUM) {
-                b1.height = totalHeight - DRAG_MINIMUM - sashBounds.height;
-                b2.y = b1.y + b1.height + sashBounds.height;
-                b2.height = DRAG_MINIMUM;
-                event.y = b1.y + b1.height;
-                event.doit = false;
-            }
-            Object data1 = c1.getLayoutData();
-            if (data1 == null || !(data1 instanceof SashFormData)) {
-                data1 = new SashFormData();
-                c1.setLayoutData(data1);
-            }
-            Object data2 = c2.getLayoutData();
-            if (data2 == null || !(data2 instanceof SashFormData)) {
-                data2 = new SashFormData();
-                c2.setLayoutData(data2);
-            }
-            ((SashFormData) data1).weight = (((long) b1.height << 16) + area.height - 1) / area.height;
-            ((SashFormData) data2).weight = (((long) b2.height << 16) + area.height - 1) / area.height;
-        }
-        if (correction || (event.doit && event.detail != SWT.DRAG)) {
-            c1.setBounds(b1);
-            sash.setBounds(event.x, event.y, event.width, event.height);
-            c2.setBounds(b2);
-        }
+        return getDelegate().getWeights();
     }
 
     /**
@@ -332,43 +167,16 @@ public class SashForm extends Composite {
      *    <li>ERROR_INVALID_ARGUMENT - if the value of orientation is not SWT.HORIZONTAL or SWT.VERTICAL, SWT.RIGHT_TO_LEFT or SWT.LEFT_TO_RIGHT
      * </ul>
      */
-    @Override
     public void setOrientation(int orientation) {
-        checkWidget();
-        if (orientation == SWT.RIGHT_TO_LEFT || orientation == SWT.LEFT_TO_RIGHT) {
-            super.setOrientation(orientation);
-            return;
-        }
-        if (getOrientation() == orientation)
-            return;
-        if (orientation != SWT.HORIZONTAL && orientation != SWT.VERTICAL) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        sashStyle &= ~(SWT.HORIZONTAL | SWT.VERTICAL);
-        sashStyle |= orientation == SWT.VERTICAL ? SWT.HORIZONTAL : SWT.VERTICAL;
-        for (int i = 0; i < sashes.length; i++) {
-            sashes[i].dispose();
-            sashes[i] = createSash();
-        }
-        layout(false);
+        getDelegate().setOrientation(orientation);
     }
 
-    @Override
     public void setBackground(Color color) {
-        super.setBackground(color);
-        background = color;
-        for (Sash sash : sashes) {
-            sash.setBackground(background);
-        }
+        getDelegate().setBackground(color.getDelegate());
     }
 
-    @Override
     public void setForeground(Color color) {
-        super.setForeground(color);
-        foreground = color;
-        for (Sash sash : sashes) {
-            sash.setForeground(foreground);
-        }
+        getDelegate().setForeground(color.getDelegate());
     }
 
     /**
@@ -386,10 +194,8 @@ public class SashForm extends Composite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setLayout(Layout layout) {
-        checkWidget();
-        return;
+        getDelegate().setLayout(layout.getDelegate());
     }
 
     /**
@@ -407,22 +213,7 @@ public class SashForm extends Composite {
      * </ul>
      */
     public void setMaximizedControl(Control control) {
-        checkWidget();
-        if (control == null) {
-            if (maxControl != null) {
-                this.maxControl = null;
-                layout(false);
-                for (Sash sashe : sashes) {
-                    sashe.setVisible(true);
-                }
-            }
-            return;
-        }
-        for (Sash sash : sashes) {
-            sash.setVisible(false);
-        }
-        maxControl = control;
-        layout(false);
+        getDelegate().setMaximizedControl(control.getDelegate());
     }
 
     /**
@@ -439,19 +230,11 @@ public class SashForm extends Composite {
      * @since 3.4
      */
     public void setSashWidth(int width) {
-        checkWidget();
-        if (SASH_WIDTH == width)
-            return;
-        SASH_WIDTH = width;
-        layout(false);
+        getDelegate().setSashWidth(width);
     }
 
-    @Override
     public void setToolTipText(String string) {
-        super.setToolTipText(string);
-        for (Sash sash : sashes) {
-            sash.setToolTipText(string);
-        }
+        getDelegate().setToolTipText(string);
     }
 
     /**
@@ -470,29 +253,14 @@ public class SashForm extends Composite {
      * </ul>
      */
     public void setWeights(int... weights) {
-        checkWidget();
-        Control[] cArray = getControls(false);
-        if (weights == null || weights.length != cArray.length) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        int total = 0;
-        for (int weight : weights) {
-            if (weight < 0) {
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-            }
-            total += weight;
-        }
-        if (total == 0) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        for (int i = 0; i < cArray.length; i++) {
-            Object data = cArray[i].getLayoutData();
-            if (data == null || !(data instanceof SashFormData)) {
-                data = new SashFormData();
-                cArray[i].setLayoutData(data);
-            }
-            ((SashFormData) data).weight = (((long) weights[i] << 16) + total - 1) / total;
-        }
-        layout(false);
+        getDelegate().setWeights(weights);
+    }
+
+    protected SashForm(ISashForm delegate) {
+        super(delegate);
+    }
+
+    public ISashForm getDelegate() {
+        return (ISashForm) super.getDelegate();
     }
 }

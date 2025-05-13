@@ -263,7 +263,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
         // Inlined for performance.  Also prevents a NPE or potential loop, because cellSize() will
     }
 
@@ -282,7 +282,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public Rectangle getBounds(int index) {
-        return getDelegate().getBounds(index);
+        return getDelegate().getBounds(index).getApi();
     }
 
     /**
@@ -399,7 +399,6 @@ public class TreeItem extends Item {
         return getDelegate().getGrayed();
     }
 
-    @Override
     public Image getImage() {
         return getDelegate().getImage().getApi();
     }
@@ -438,7 +437,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public Rectangle getImageBounds(int index) {
-        return getDelegate().getImageBounds(index);
+        return getDelegate().getImageBounds(index).getApi();
     }
 
     /**
@@ -527,7 +526,6 @@ public class TreeItem extends Item {
         return getDelegate().getParentItem().getApi();
     }
 
-    @Override
     public String getText() {
         return getDelegate().getText();
     }
@@ -566,7 +564,7 @@ public class TreeItem extends Item {
      * @since 3.3
      */
     public Rectangle getTextBounds(int index) {
-        return getDelegate().getTextBounds(index);
+        return getDelegate().getTextBounds(index).getApi();
     }
 
     /**
@@ -820,7 +818,6 @@ public class TreeItem extends Item {
         getDelegate().setImage(index, image.getDelegate());
     }
 
-    @Override
     public void setImage(Image image) {
         getDelegate().setImage(image.getDelegate());
     }
@@ -892,7 +889,6 @@ public class TreeItem extends Item {
         getDelegate().setText(index, string);
     }
 
-    @Override
     public void setText(String string) {
         getDelegate().setText(string);
     }

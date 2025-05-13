@@ -27,58 +27,6 @@ package org.eclipse.swt.graphics;
  */
 public final class FontMetrics {
 
-    int ascent, descent, leading, height;
-
-    double averageCharWidth;
-
-    FontMetrics() {
-    }
-
-    /**
-     * Convenience method to make a copy of receiver.
-     */
-    FontMetrics makeCopy() {
-        FontMetrics fontMetrics = new FontMetrics();
-        fontMetrics.ascent = this.ascent;
-        fontMetrics.descent = this.descent;
-        fontMetrics.averageCharWidth = this.averageCharWidth;
-        fontMetrics.leading = this.leading;
-        fontMetrics.height = this.height;
-        return fontMetrics;
-    }
-
-    public static FontMetrics cocoa_new(int ascent, int descent, int averageCharWidth, int leading, int height) {
-        FontMetrics fontMetrics = new FontMetrics();
-        fontMetrics.ascent = ascent;
-        fontMetrics.descent = descent;
-        fontMetrics.averageCharWidth = averageCharWidth;
-        fontMetrics.leading = leading;
-        fontMetrics.height = height;
-        return fontMetrics;
-    }
-
-    /**
-     * Invokes platform specific functionality to allocate a new FontMetrics.
-     * <p>
-     * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
-     * API for <code>FontMetrics</code>. It is marked public only so that it
-     * can be shared within the packages provided by SWT. It is not
-     * available on all platforms, and should never be called from
-     * application code.
-     * </p>
-     *
-     * @noreference This method is not intended to be referenced by clients.
-     */
-    public static FontMetrics cocoa_new(int ascent, int descent, double averageCharWidth, int leading, int height) {
-        FontMetrics fontMetrics = new FontMetrics();
-        fontMetrics.ascent = ascent;
-        fontMetrics.descent = descent;
-        fontMetrics.averageCharWidth = averageCharWidth;
-        fontMetrics.leading = leading;
-        fontMetrics.height = height;
-        return fontMetrics;
-    }
-
     /**
      * Compares the argument to the receiver, and returns true
      * if they represent the <em>same</em> object using a class
@@ -89,13 +37,8 @@ public final class FontMetrics {
      *
      * @see #hashCode
      */
-    @Override
     public boolean equals(Object object) {
-        if (object == this)
-            return true;
-        if (!(object instanceof FontMetrics metrics))
-            return false;
-        return ascent == metrics.ascent && descent == metrics.descent && leading == metrics.leading && height == metrics.height && (Double.compare(averageCharWidth, metrics.averageCharWidth) == 0);
+        return getDelegate().equals(object);
     }
 
     /**
@@ -107,7 +50,7 @@ public final class FontMetrics {
      * @return the ascent of the font
      */
     public int getAscent() {
-        return ascent;
+        return getDelegate().getAscent();
     }
 
     /**
@@ -118,7 +61,7 @@ public final class FontMetrics {
      * @since 3.107
      */
     public double getAverageCharacterWidth() {
-        return averageCharWidth;
+        return getDelegate().getAverageCharacterWidth();
     }
 
     /**
@@ -130,7 +73,7 @@ public final class FontMetrics {
      */
     @Deprecated
     public int getAverageCharWidth() {
-        return (int) averageCharWidth;
+        return getDelegate().getAverageCharWidth();
     }
 
     /**
@@ -142,7 +85,7 @@ public final class FontMetrics {
      * @return the descent of the font
      */
     public int getDescent() {
-        return descent;
+        return getDelegate().getDescent();
     }
 
     /**
@@ -157,7 +100,7 @@ public final class FontMetrics {
      * @see #getLeading
      */
     public int getHeight() {
-        return height;
+        return getDelegate().getHeight();
     }
 
     /**
@@ -168,7 +111,7 @@ public final class FontMetrics {
      * @return the leading space of the font
      */
     public int getLeading() {
-        return leading;
+        return getDelegate().getLeading();
     }
 
     /**
@@ -181,21 +124,22 @@ public final class FontMetrics {
      *
      * @see #equals
      */
-    @Override
     public int hashCode() {
-        return ascent ^ descent ^ Double.hashCode(averageCharWidth) ^ leading ^ height;
+        return getDelegate().hashCode();
     }
 
-    String getName() {
-        String string = getClass().getName();
-        int index = string.lastIndexOf('.');
-        if (index == -1)
-            return string;
-        return string.substring(index + 1, string.length());
-    }
-
-    @Override
     public String toString() {
-        return getName() + "{" + " ascent=" + ascent + " descent=" + descent + " averageCharWidth=" + averageCharWidth + " leading=" + leading + " height=" + height + "}";
+        return getDelegate().toString();
+    }
+
+    IFontMetrics delegate;
+
+    protected FontMetrics(IFontMetrics delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IFontMetrics getDelegate() {
+        return delegate;
     }
 }

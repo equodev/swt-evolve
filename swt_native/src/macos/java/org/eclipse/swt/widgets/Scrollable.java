@@ -66,7 +66,7 @@ public abstract class Scrollable extends Control {
      * @see #getClientArea
      */
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getDelegate().computeTrim(x, y, width, height);
+        return getDelegate().computeTrim(x, y, width, height).getApi();
     }
 
     /**
@@ -84,7 +84,7 @@ public abstract class Scrollable extends Control {
      * @see #computeTrim
      */
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea();
+        return getDelegate().getClientArea().getApi();
     }
 
     /**

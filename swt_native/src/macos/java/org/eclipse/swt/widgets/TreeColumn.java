@@ -346,7 +346,6 @@ public class TreeColumn extends Item {
         getDelegate().setAlignment(alignment);
     }
 
-    @Override
     public void setImage(Image image) {
         getDelegate().setImage(image.getDelegate());
     }
@@ -392,7 +391,6 @@ public class TreeColumn extends Item {
         getDelegate().setResizable(resizable);
     }
 
-    @Override
     public void setText(String string) {
         getDelegate().setText(string);
     }

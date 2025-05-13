@@ -34,26 +34,13 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class URLTransfer extends ByteArrayTransfer {
 
-    static URLTransfer _instance = new URLTransfer();
-
-    static final String URL = OS.NSURLPboardType.getString();
-
-    static final String URL1 = OS.kUTTypeURL.getString();
-
-    static final int URL_ID = registerType(URL);
-
-    static final int URL_ID1 = registerType(URL1);
-
-    private URLTransfer() {
-    }
-
     /**
      * Returns the singleton instance of the URLTransfer class.
      *
      * @return the singleton instance of the URLTransfer class
      */
     public static URLTransfer getInstance() {
-        return _instance;
+        return nat.org.eclipse.swt.dnd.URLTransfer.getInstance().getApi();
     }
 
     /**
@@ -66,15 +53,8 @@ public class URLTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#nativeToJava
      */
-    @Override
     public void javaToNative(Object object, TransferData transferData) {
-        if (!checkURL(object) || !isSupportedType(transferData)) {
-            DND.error(DND.ERROR_INVALID_DATA);
-        }
-        String url = (String) object;
-        NSString nsString = NSString.stringWith(url);
-        NSString escapedString = nsString.stringByAddingPercentEscapesUsingEncoding(OS.NSUTF8StringEncoding);
-        transferData.data = NSURL.URLWithString(escapedString);
+        getDelegate().javaToNative(object, transferData.getDelegate());
     }
 
     /**
@@ -87,32 +67,15 @@ public class URLTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#javaToNative
      */
-    @Override
     public Object nativeToJava(TransferData transferData) {
-        if (!isSupportedType(transferData) || transferData.data == null)
-            return null;
-        NSURL nsUrl = (NSURL) transferData.data;
-        NSString nsString = nsUrl.absoluteString();
-        nsString = nsString.stringByReplacingPercentEscapesUsingEncoding(OS.NSUTF8StringEncoding);
-        return nsString.getString();
+        return getDelegate().nativeToJava(transferData.getDelegate());
     }
 
-    @Override
-    protected int[] getTypeIds() {
-        return new int[] { URL_ID, URL_ID1 };
+    protected URLTransfer(IURLTransfer delegate) {
+        super(delegate);
     }
 
-    @Override
-    protected String[] getTypeNames() {
-        return new String[] { URL, URL1 };
-    }
-
-    boolean checkURL(Object object) {
-        return object != null && (object instanceof String) && ((String) object).length() > 0;
-    }
-
-    @Override
-    protected boolean validate(Object object) {
-        return checkURL(object);
+    public IURLTransfer getDelegate() {
+        return (IURLTransfer) super.getDelegate();
     }
 }

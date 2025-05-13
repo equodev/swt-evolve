@@ -26,15 +26,12 @@ import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.EventTable;
-import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.graphics.DeviceData;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.IDisplay;
 import org.eclipse.swt.widgets.IWidget;
 import org.eclipse.swt.widgets.IControl;
+import org.eclipse.swt.graphics.IPoint;
+import org.eclipse.swt.graphics.IRectangle;
 import org.eclipse.swt.widgets.ISynchronizer;
 
 /**
@@ -3404,7 +3401,8 @@ public class Display extends Device implements Executor, IDisplay {
      * @noreference This method is not intended to be referenced by clients.
      */
     @Override
-    public long internal_new_GC(GCData data) {
+    public long internal_new_GC(org.eclipse.swt.graphics.GCData idata) {
+        GCData data = (GCData) idata.getDelegate();
         if (isDisposed())
             error(SWT.ERROR_DEVICE_DISPOSED);
         if (screenWindow == null) {
@@ -3436,10 +3434,10 @@ public class Display extends Device implements Executor, IDisplay {
             if ((data.style & mask) == 0) {
                 data.style |= SWT.LEFT_TO_RIGHT;
             }
-            data.device = this.getApi();
+            data.device = this;
             data.background = getSystemColor(SWT.COLOR_WHITE).handle;
             data.foreground = getSystemColor(SWT.COLOR_BLACK).handle;
-            data.font = getSystemFont().getApi();
+            data.font = getSystemFont();
         }
         return context.id;
     }
@@ -3460,7 +3458,8 @@ public class Display extends Device implements Executor, IDisplay {
      * @noreference This method is not intended to be referenced by clients.
      */
     @Override
-    public void internal_dispose_GC(long hDC, GCData data) {
+    public void internal_dispose_GC(long hDC, org.eclipse.swt.graphics.GCData idata) {
+        GCData data = (GCData) idata.getDelegate();
         if (isDisposed())
             error(SWT.ERROR_DEVICE_DISPOSED);
     }
@@ -3748,7 +3747,8 @@ public class Display extends Device implements Executor, IDisplay {
      *
      * @since 2.1.2
      */
-    public Point map(IControl ifrom, IControl ito, Point point) {
+    public Point map(IControl ifrom, IControl ito, IPoint ipoint) {
+        Point point = (Point) ipoint;
         Control to = (Control) ito;
         Control from = (Control) ifrom;
         checkDevice();
@@ -3879,7 +3879,8 @@ public class Display extends Device implements Executor, IDisplay {
      *
      * @since 2.1.2
      */
-    public Rectangle map(IControl ifrom, IControl ito, Rectangle rectangle) {
+    public Rectangle map(IControl ifrom, IControl ito, IRectangle irectangle) {
+        Rectangle rectangle = (Rectangle) irectangle;
         Control to = (Control) ito;
         Control from = (Control) ifrom;
         checkDevice();
@@ -5002,7 +5003,8 @@ public class Display extends Device implements Executor, IDisplay {
      *
      * @since 2.0
      */
-    public void setCursorLocation(Point point) {
+    public void setCursorLocation(IPoint ipoint) {
+        Point point = (Point) ipoint;
         checkDevice();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);

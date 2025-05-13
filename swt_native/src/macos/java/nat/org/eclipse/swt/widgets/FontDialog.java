@@ -18,9 +18,9 @@ package nat.org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.IFontDialog;
+import org.eclipse.swt.graphics.IFontData;
 
 /**
  * Instances of this class allow the user to select a font
@@ -245,7 +245,8 @@ public class FontDialog extends Dialog implements IFontDialog {
      * @deprecated use #setFontList (FontData [])
      */
     @Deprecated
-    public void setFontData(FontData fontData) {
+    public void setFontData(IFontData ifontData) {
+        FontData fontData = (FontData) ifontData;
         this.fontData = fontData;
     }
 
@@ -261,7 +262,8 @@ public class FontDialog extends Dialog implements IFontDialog {
      *
      * @since 2.1.1
      */
-    public void setFontList(FontData[] fontData) {
+    public void setFontList(IFontData[] ifontData) {
+        FontData[] fontData = (FontData[]) ifontData;
         if (fontData != null && fontData.length > 0) {
             this.fontData = fontData[0];
         } else {

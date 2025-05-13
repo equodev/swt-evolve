@@ -55,6 +55,15 @@ public class Spinner extends Composite {
      */
     public static final int LIMIT;
 
+    /*
+	* These values can be different on different platforms.
+	* Therefore they are not initialized in the declaration
+	* to stop the compiler from inlining.
+	*/
+    static {
+        LIMIT = 0x7FFFFFFF;
+    }
+
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.
@@ -139,14 +148,12 @@ public class Spinner extends Composite {
         getDelegate().addSelectionListener(listener);
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed);
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
-    @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getDelegate().computeTrim(x, y, width, height);
+        return getDelegate().computeTrim(x, y, width, height).getApi();
     }
 
     /**

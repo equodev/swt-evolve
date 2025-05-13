@@ -119,12 +119,10 @@ public class DateTime extends Composite {
         getDelegate().addSelectionListener(listener);
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed);
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
-    @Override
     public Control[] getChildren() {
         return Convert.array(getDelegate().getChildren(), IControl::getApi, Control[]::new);
     }

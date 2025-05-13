@@ -16,7 +16,6 @@
 package nat.org.eclipse.swt.widgets;
 
 import nat.org.eclipse.swt.graphics.*;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.ITouchSource;
 
 /**

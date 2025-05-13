@@ -18,7 +18,7 @@ public interface ITabItem extends IItem {
      *
      * @since 3.4
      */
-    Rectangle getBounds();
+    IRectangle getBounds();
 
     /**
      * Returns the control that is used to fill the client area of

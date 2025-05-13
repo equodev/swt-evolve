@@ -18,11 +18,6 @@ package nat.org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.ExceptionStash;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.DeviceData;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.IDevice;
 
@@ -673,7 +668,7 @@ public abstract class Device implements Drawable, IDevice {
      * @noreference This method is not intended to be referenced by clients.
      */
     @Override
-    public abstract long internal_new_GC(GCData data);
+    public abstract long internal_new_GC(org.eclipse.swt.graphics.GCData data);
 
     /**
      * Invokes platform specific functionality to dispose a GC handle.
@@ -691,7 +686,7 @@ public abstract class Device implements Drawable, IDevice {
      * @noreference This method is not intended to be referenced by clients.
      */
     @Override
-    public abstract void internal_dispose_GC(long hDC, GCData data);
+    public abstract void internal_dispose_GC(long hDC, org.eclipse.swt.graphics.GCData data);
 
     /**
      * Returns <code>true</code> if the device has been disposed,

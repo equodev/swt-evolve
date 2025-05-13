@@ -20,10 +20,9 @@ import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
 import nat.org.eclipse.swt.widgets.Display.*;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.IText;
+import org.eclipse.swt.graphics.IPoint;
 
 /**
  * Instances of this class are selectable user interface
@@ -2254,7 +2253,8 @@ public class Text extends Scrollable implements IText {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setSelection(Point selection) {
+    public void setSelection(IPoint iselection) {
+        Point selection = (Point) iselection;
         checkWidget();
         if (selection == null)
             error(SWT.ERROR_NULL_ARGUMENT);

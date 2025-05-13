@@ -152,7 +152,7 @@ public class Path extends Resource {
      * @since 3.4
      */
     public Path(Device device, PathData data) {
-        this(new nat.org.eclipse.swt.graphics.Path((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), data));
+        this(new nat.org.eclipse.swt.graphics.Path((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), (nat.org.eclipse.swt.graphics.PathData) data.getDelegate()));
     }
 
     /**
@@ -349,7 +349,7 @@ public class Path extends Resource {
      * @see PathData
      */
     public PathData getPathData() {
-        return getDelegate().getPathData();
+        return getDelegate().getPathData().getApi();
     }
 
     /**
@@ -362,7 +362,6 @@ public class Path extends Resource {
      *
      * @return <code>true</code> when the Path is disposed, and <code>false</code> otherwise
      */
-    @Override
     public boolean isDisposed() {
         return getDelegate().isDisposed();
     }
@@ -420,7 +419,6 @@ public class Path extends Resource {
      *
      * @return a string representation of the receiver
      */
-    @Override
     public String toString() {
         return getDelegate().toString();
     }

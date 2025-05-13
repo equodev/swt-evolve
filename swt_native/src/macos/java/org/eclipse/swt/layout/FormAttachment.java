@@ -146,6 +146,7 @@ public final class FormAttachment {
      * @since 3.2
      */
     public FormAttachment() {
+        this(new nat.org.eclipse.swt.layout.FormAttachment());
     }
 
     /**
@@ -159,7 +160,7 @@ public final class FormAttachment {
      * @since 3.0
      */
     public FormAttachment(int numerator) {
-        this(numerator, 100, 0);
+        this(new nat.org.eclipse.swt.layout.FormAttachment(numerator));
     }
 
     /**
@@ -172,7 +173,7 @@ public final class FormAttachment {
      * @param offset the offset of the side from the position
      */
     public FormAttachment(int numerator, int offset) {
-        this(numerator, 100, offset);
+        this(new nat.org.eclipse.swt.layout.FormAttachment(numerator, offset));
     }
 
     /**
@@ -186,11 +187,7 @@ public final class FormAttachment {
      * @param offset the offset of the side from the position
      */
     public FormAttachment(int numerator, int denominator, int offset) {
-        if (denominator == 0)
-            SWT.error(SWT.ERROR_CANNOT_BE_ZERO);
-        this.numerator = numerator;
-        this.denominator = denominator;
-        this.offset = offset;
+        this(new nat.org.eclipse.swt.layout.FormAttachment(numerator, denominator, offset));
     }
 
     /**
@@ -203,7 +200,7 @@ public final class FormAttachment {
      * @param control the control the side is attached to
      */
     public FormAttachment(Control control) {
-        this(control, 0, SWT.DEFAULT);
+        this(new nat.org.eclipse.swt.layout.FormAttachment((nat.org.eclipse.swt.widgets.Control) control.getDelegate()));
     }
 
     /**
@@ -216,7 +213,7 @@ public final class FormAttachment {
      * @param offset the offset of the side from the control
      */
     public FormAttachment(Control control, int offset) {
-        this(control, offset, SWT.DEFAULT);
+        this(new nat.org.eclipse.swt.layout.FormAttachment((nat.org.eclipse.swt.widgets.Control) control.getDelegate(), offset));
     }
 
     /**
@@ -243,72 +240,7 @@ public final class FormAttachment {
      * 		one of TOP, BOTTOM, LEFT, RIGHT, CENTER, or DEFAULT
      */
     public FormAttachment(Control control, int offset, int alignment) {
-        this.control = control;
-        this.offset = offset;
-        this.alignment = alignment;
-    }
-
-    FormAttachment divide(int value) {
-        return new FormAttachment(numerator, denominator * value, offset / value);
-    }
-
-    int gcd(int m, int n) {
-        int temp;
-        m = Math.abs(m);
-        n = Math.abs(n);
-        if (m < n) {
-            temp = m;
-            m = n;
-            n = temp;
-        }
-        while (n != 0) {
-            temp = m;
-            m = n;
-            n = temp % n;
-        }
-        return m;
-    }
-
-    FormAttachment minus(FormAttachment attachment) {
-        FormAttachment solution = new FormAttachment();
-        solution.numerator = numerator * attachment.denominator - denominator * attachment.numerator;
-        solution.denominator = denominator * attachment.denominator;
-        int gcd = gcd(solution.denominator, solution.numerator);
-        solution.numerator = solution.numerator / gcd;
-        solution.denominator = solution.denominator / gcd;
-        solution.offset = offset - attachment.offset;
-        return solution;
-    }
-
-    FormAttachment minus(int value) {
-        return new FormAttachment(numerator, denominator, offset - value);
-    }
-
-    FormAttachment plus(FormAttachment attachment) {
-        FormAttachment solution = new FormAttachment();
-        solution.numerator = numerator * attachment.denominator + denominator * attachment.numerator;
-        solution.denominator = denominator * attachment.denominator;
-        int gcd = gcd(solution.denominator, solution.numerator);
-        solution.numerator = solution.numerator / gcd;
-        solution.denominator = solution.denominator / gcd;
-        solution.offset = offset + attachment.offset;
-        return solution;
-    }
-
-    FormAttachment plus(int value) {
-        return new FormAttachment(numerator, denominator, offset + value);
-    }
-
-    int solveX(int value) {
-        if (denominator == 0)
-            SWT.error(SWT.ERROR_CANNOT_BE_ZERO);
-        return ((numerator * value) / denominator) + offset;
-    }
-
-    int solveY(int value) {
-        if (numerator == 0)
-            SWT.error(SWT.ERROR_CANNOT_BE_ZERO);
-        return (value - offset) * denominator / numerator;
+        this(new nat.org.eclipse.swt.layout.FormAttachment((nat.org.eclipse.swt.widgets.Control) control.getDelegate(), offset, alignment));
     }
 
     /**
@@ -317,9 +249,18 @@ public final class FormAttachment {
      *
      * @return a string representation of the FormAttachment
      */
-    @Override
     public String toString() {
-        String string = control != null ? control.toString() : numerator + "/" + denominator;
-        return "{y = (" + string + (offset >= 0 ? ")x + " + offset : ")x - " + (-offset)) + "}";
+        return getDelegate().toString();
+    }
+
+    IFormAttachment delegate;
+
+    protected FormAttachment(IFormAttachment delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IFormAttachment getDelegate() {
+        return delegate;
     }
 }

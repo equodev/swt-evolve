@@ -69,7 +69,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Rectangle getBounds();
+    IRectangle getBounds();
 
     /**
      * Returns the control that is used to fill the bounds of

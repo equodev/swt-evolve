@@ -252,7 +252,6 @@ public final class Color extends Resource {
      * Colors do not need to be disposed, however to maintain compatibility
      * with older code, disposing a Color is not an error.
      */
-    @Override
     public void dispose() {
         getDelegate().dispose();
         // Does as below to maintain API contract with Resource. Does
@@ -273,7 +272,6 @@ public final class Color extends Resource {
      * @return <code>Device</code> the device of the receiver
      * @since 3.2
      */
-    @Override
     public Device getDevice() {
         return getDelegate().getDevice().getApi();
         // Fall back on Device.getDevice only if we haven't been disposed
@@ -289,7 +287,6 @@ public final class Color extends Resource {
      *
      * @see #hashCode
      */
-    @Override
     public boolean equals(Object object) {
         return getDelegate().equals(object);
     }
@@ -357,7 +354,6 @@ public final class Color extends Resource {
      *
      * @see #equals
      */
-    @Override
     public int hashCode() {
         return getDelegate().hashCode();
     }
@@ -399,7 +395,6 @@ public final class Color extends Resource {
      *
      * @return <code>true</code> when the color is disposed and <code>false</code> otherwise
      */
-    @Override
     public boolean isDisposed() {
         return getDelegate().isDisposed();
     }
@@ -410,7 +405,6 @@ public final class Color extends Resource {
      *
      * @return a string representation of the receiver
      */
-    @Override
     public String toString() {
         return getDelegate().toString();
     }

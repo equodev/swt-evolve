@@ -170,10 +170,9 @@ public class CoolItem extends Item {
      * @see Scrollable#getClientArea
      */
     public Point computeSize(int wHint, int hHint) {
-        return getDelegate().computeSize(wHint, hHint);
+        return getDelegate().computeSize(wHint, hHint).getApi();
     }
 
-    @Override
     public void dispose() {
         getDelegate().dispose();
     }
@@ -190,7 +189,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
     }
 
     /**
@@ -221,7 +220,7 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public Point getMinimumSize() {
-        return getDelegate().getMinimumSize();
+        return getDelegate().getMinimumSize().getApi();
     }
 
     /**
@@ -251,7 +250,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Point getPreferredSize() {
-        return getDelegate().getPreferredSize();
+        return getDelegate().getPreferredSize().getApi();
     }
 
     /**
@@ -268,7 +267,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Point getSize() {
-        return getDelegate().getSize();
+        return getDelegate().getSize().getApi();
     }
 
     /**
@@ -348,7 +347,7 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void setMinimumSize(Point size) {
-        getDelegate().setMinimumSize(size);
+        getDelegate().setMinimumSize(size.getDelegate());
     }
 
     /**
@@ -380,7 +379,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setPreferredSize(Point size) {
-        getDelegate().setPreferredSize(size);
+        getDelegate().setPreferredSize(size.getDelegate());
     }
 
     /**
@@ -422,7 +421,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setSize(Point size) {
-        getDelegate().setSize(size);
+        getDelegate().setSize(size.getDelegate());
     }
 
     protected CoolItem(ICoolItem delegate) {

@@ -53,9 +53,9 @@ public interface ISpinner extends IComposite {
      */
     void addSelectionListener(SelectionListener listener);
 
-    Point computeSize(int wHint, int hHint, boolean changed);
+    IPoint computeSize(int wHint, int hHint, boolean changed);
 
-    Rectangle computeTrim(int x, int y, int width, int height);
+    IRectangle computeTrim(int x, int y, int width, int height);
 
     /**
      * Copies the selected text.

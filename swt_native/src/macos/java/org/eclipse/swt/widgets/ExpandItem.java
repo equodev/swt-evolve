@@ -104,7 +104,6 @@ public class ExpandItem extends Item {
         this(new nat.org.eclipse.swt.widgets.ExpandItem((nat.org.eclipse.swt.widgets.ExpandBar) parent.getDelegate(), style, index));
     }
 
-    @Override
     public void dispose() {
         getDelegate().dispose();
     }
@@ -213,7 +212,6 @@ public class ExpandItem extends Item {
         getDelegate().setExpanded(expanded);
     }
 
-    @Override
     public void setImage(Image image) {
         getDelegate().setImage(image.getDelegate());
     }
@@ -233,7 +231,6 @@ public class ExpandItem extends Item {
         getDelegate().setHeight(height);
     }
 
-    @Override
     public void setText(String string) {
         getDelegate().setText(string);
     }

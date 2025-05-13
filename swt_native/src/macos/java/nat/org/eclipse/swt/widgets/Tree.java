@@ -19,13 +19,11 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.widgets.ITree;
 import org.eclipse.swt.widgets.ITreeItem;
+import org.eclipse.swt.graphics.IPoint;
 import org.eclipse.swt.widgets.ITreeColumn;
 import org.eclipse.swt.graphics.IColor;
 
@@ -1782,7 +1780,8 @@ public class Tree extends Composite implements ITree {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public TreeItem getItem(Point point) {
+    public TreeItem getItem(IPoint ipoint) {
+        Point point = (Point) ipoint;
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);

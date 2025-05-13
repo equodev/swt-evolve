@@ -61,7 +61,7 @@ public final class TouchSource {
      * @return the bounding rectangle of the input source
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds();
+        return getDelegate().getBounds().getApi();
     }
 
     /**
@@ -70,7 +70,6 @@ public final class TouchSource {
      *
      * @return a string representation of the event
      */
-    @Override
     public String toString() {
         return getDelegate().toString();
     }

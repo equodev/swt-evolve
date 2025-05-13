@@ -371,7 +371,7 @@ public interface IControl extends IWidget {
      * @see #pack(boolean)
      * @see "computeTrim, getClientArea for controls that implement them"
      */
-    Point computeSize(int wHint, int hHint);
+    IPoint computeSize(int wHint, int hHint);
 
     /**
      * Returns the preferred size (in points) of the receiver.
@@ -407,7 +407,7 @@ public interface IControl extends IWidget {
      * @see #pack(boolean)
      * @see "computeTrim, getClientArea for controls that implement them"
      */
-    Point computeSize(int wHint, int hHint, boolean changed);
+    IPoint computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Detects a drag and drop gesture.  This method is used
@@ -520,7 +520,7 @@ public interface IControl extends IWidget {
      *
      * @since 2.0
      */
-    Accessible getAccessible();
+    IAccessible getAccessible();
 
     /**
      * Returns the receiver's background color.
@@ -577,7 +577,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Rectangle getBounds();
+    IRectangle getBounds();
 
     /**
      * Returns <code>true</code> if the receiver is detecting
@@ -678,7 +678,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point getLocation();
+    IPoint getLocation();
 
     /**
      * Returns the receiver's pop up menu if it has one, or null
@@ -785,7 +785,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point getSize();
+    IPoint getSize();
 
     /**
      * Returns the text direction of the receiver, which will be one of the
@@ -871,7 +871,7 @@ public interface IControl extends IWidget {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    long internal_new_GC(GCData data);
+    long internal_new_GC(org.eclipse.swt.graphics.GCData data);
 
     /**
      * Invokes platform specific functionality to dispose a GC handle.
@@ -888,7 +888,7 @@ public interface IControl extends IWidget {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    void internal_dispose_GC(long hDC, GCData data);
+    void internal_dispose_GC(long hDC, org.eclipse.swt.graphics.GCData data);
 
     /**
      * Returns <code>true</code> if the receiver is enabled and all
@@ -1507,7 +1507,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setBounds(Rectangle rect);
+    void setBounds(IRectangle rect);
 
     /**
      * If the argument is <code>true</code>, causes the receiver to have
@@ -1671,7 +1671,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setLocation(Point location);
+    void setLocation(IPoint location);
 
     /**
      * Sets the receiver's pop up menu to the argument.
@@ -1823,7 +1823,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSize(Point size);
+    void setSize(IPoint size);
 
     /**
      * Sets the base text direction (a.k.a. "paragraph direction") of the receiver,
@@ -1938,7 +1938,7 @@ public interface IControl extends IWidget {
      *
      * @since 2.1
      */
-    Point toControl(int x, int y);
+    IPoint toControl(int x, int y);
 
     /**
      * Returns a point which is the result of converting the
@@ -1960,7 +1960,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point toControl(Point point);
+    IPoint toControl(IPoint point);
 
     /**
      * Returns a point which is the result of converting the
@@ -1982,7 +1982,7 @@ public interface IControl extends IWidget {
      *
      * @since 2.1
      */
-    Point toDisplay(int x, int y);
+    IPoint toDisplay(int x, int y);
 
     /**
      * Returns a point which is the result of converting the
@@ -2004,7 +2004,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point toDisplay(Point point);
+    IPoint toDisplay(IPoint point);
 
     /**
      * Performs a platform traversal action corresponding to a <code>KeyDown</code> event.

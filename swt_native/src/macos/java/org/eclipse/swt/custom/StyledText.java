@@ -30,6 +30,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.printing.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Convert;
 
 /**
  * A StyledText is an editable user interface object that displays lines
@@ -369,9 +370,8 @@ public class StyledText extends Canvas {
         getDelegate().append(string);
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed);
+        return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
     /**
@@ -484,7 +484,6 @@ public class StyledText extends Canvas {
         // Abort cut operation if copy to clipboard fails.
     }
 
-    @Override
     public Color getBackground() {
         return getDelegate().getBackground().getApi();
     }
@@ -577,7 +576,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public Rectangle getBlockSelectionBounds() {
-        return getDelegate().getBlockSelectionBounds();
+        return getDelegate().getBlockSelectionBounds().getApi();
     }
 
     /**
@@ -623,7 +622,6 @@ public class StyledText extends Canvas {
         return getDelegate().getContent();
     }
 
-    @Override
     public boolean getDragDetect() {
         return getDelegate().getDragDetect();
     }
@@ -655,7 +653,6 @@ public class StyledText extends Canvas {
         return getDelegate().getEditable();
     }
 
-    @Override
     public Color getForeground() {
         return getDelegate().getForeground().getApi();
     }
@@ -1123,7 +1120,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public Point getLocationAtOffset(int offset) {
-        return getDelegate().getLocationAtOffset(offset);
+        return getDelegate().getLocationAtOffset(offset).getApi();
     }
 
     /**
@@ -1195,7 +1192,7 @@ public class StyledText extends Canvas {
      */
     @Deprecated
     public int getOffsetAtLocation(Point point) {
-        return getDelegate().getOffsetAtLocation(point);
+        return getDelegate().getOffsetAtLocation(point.getDelegate());
     }
 
     /**
@@ -1226,7 +1223,7 @@ public class StyledText extends Canvas {
      * @since 3.107
      */
     public int getOffsetAtPoint(Point point) {
-        return getDelegate().getOffsetAtPoint(point);
+        return getDelegate().getOffsetAtPoint(point.getDelegate());
     }
 
     /**
@@ -1241,7 +1238,6 @@ public class StyledText extends Canvas {
      *
      * @since 2.1.2
      */
-    @Override
     public int getOrientation() {
         return getDelegate().getOrientation();
     }
@@ -1346,7 +1342,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public Point getSelection() {
-        return getDelegate().getSelection();
+        return getDelegate().getSelection().getApi();
     }
 
     /**
@@ -1370,7 +1366,7 @@ public class StyledText extends Canvas {
      * @see #getSelectionRanges
      */
     public Point getSelectionRange() {
-        return getDelegate().getSelectionRange();
+        return getDelegate().getSelectionRange().getApi();
     }
 
     /**
@@ -1476,7 +1472,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public StyleRange getStyleRangeAtOffset(int offset) {
-        return getDelegate().getStyleRangeAtOffset(offset);
+        return getDelegate().getStyleRangeAtOffset(offset).getApi();
     }
 
     /**
@@ -1503,7 +1499,7 @@ public class StyledText extends Canvas {
      * @see #getStyleRanges(boolean)
      */
     public StyleRange[] getStyleRanges() {
-        return getDelegate().getStyleRanges();
+        return Convert.array(getDelegate().getStyleRanges(), IStyleRange::getApi, StyleRange[]::new);
     }
 
     /**
@@ -1535,7 +1531,7 @@ public class StyledText extends Canvas {
      * @see #setStyleRanges(int[], StyleRange[])
      */
     public StyleRange[] getStyleRanges(boolean includeRanges) {
-        return getDelegate().getStyleRanges(includeRanges);
+        return Convert.array(getDelegate().getStyleRanges(includeRanges), IStyleRange::getApi, StyleRange[]::new);
     }
 
     /**
@@ -1573,7 +1569,7 @@ public class StyledText extends Canvas {
      * @since 3.0
      */
     public StyleRange[] getStyleRanges(int start, int length) {
-        return getDelegate().getStyleRanges(start, length);
+        return Convert.array(getDelegate().getStyleRanges(start, length), IStyleRange::getApi, StyleRange[]::new);
     }
 
     /**
@@ -1614,7 +1610,7 @@ public class StyledText extends Canvas {
      * @see #setStyleRanges(int[], StyleRange[])
      */
     public StyleRange[] getStyleRanges(int start, int length, boolean includeRanges) {
-        return getDelegate().getStyleRanges(start, length, includeRanges);
+        return Convert.array(getDelegate().getStyleRanges(start, length, includeRanges), IStyleRange::getApi, StyleRange[]::new);
     }
 
     /**
@@ -1695,7 +1691,7 @@ public class StyledText extends Canvas {
      * @since 3.1
      */
     public Rectangle getTextBounds(int start, int end) {
-        return getDelegate().getTextBounds(start, end);
+        return getDelegate().getTextBounds(start, end).getApi();
     }
 
     /**
@@ -1901,7 +1897,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public Runnable print(Printer printer) {
-        return getDelegate().print(printer);
+        return getDelegate().print(printer.getDelegate());
     }
 
     /**
@@ -1926,7 +1922,7 @@ public class StyledText extends Canvas {
      * @since 2.1
      */
     public Runnable print(Printer printer, StyledTextPrintOptions options) {
-        return getDelegate().print(printer, options);
+        return getDelegate().print(printer.getDelegate(), options.getDelegate());
     }
 
     /**
@@ -1947,7 +1943,6 @@ public class StyledText extends Canvas {
      *
      * @see Control#update()
      */
-    @Override
     public void redraw() {
         getDelegate().redraw();
     }
@@ -1982,7 +1977,6 @@ public class StyledText extends Canvas {
      *
      * @see Control#update()
      */
-    @Override
     public void redraw(int x, int y, int width, int height, boolean all) {
         getDelegate().redraw(x, y, width, height, all);
     }
@@ -2252,7 +2246,7 @@ public class StyledText extends Canvas {
      * @see #setStyleRanges(int, int, int[], StyleRange[])
      */
     public void replaceStyleRanges(int start, int length, StyleRange[] ranges) {
-        getDelegate().replaceStyleRanges(start, length, ranges);
+        getDelegate().replaceStyleRanges(start, length, Convert.array(ranges, StyleRange::getDelegate, IStyleRange[]::new));
     }
 
     /**
@@ -2292,7 +2286,6 @@ public class StyledText extends Canvas {
         getDelegate().replaceTextRange(start, length, text);
     }
 
-    @Override
     public void scroll(int destX, int destY, int x, int y, int width, int height, boolean all) {
         getDelegate().scroll(destX, destY, x, y, width, height, all);
     }
@@ -2355,7 +2348,6 @@ public class StyledText extends Canvas {
     /**
      * @see Control#setBackground(Color)
      */
-    @Override
     public void setBackground(Color color) {
         getDelegate().setBackground(color.getDelegate());
     }
@@ -2389,7 +2381,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public void setBlockSelectionBounds(Rectangle rect) {
-        getDelegate().setBlockSelectionBounds(rect);
+        getDelegate().setBlockSelectionBounds(rect.getDelegate());
     }
 
     /**
@@ -2422,7 +2414,6 @@ public class StyledText extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setCaret(Caret caret) {
         getDelegate().setCaret(caret.getDelegate());
     }
@@ -2500,7 +2491,6 @@ public class StyledText extends Canvas {
      *
      * @see Control#setCursor(Cursor)
      */
-    @Override
     public void setCursor(Cursor cursor) {
         getDelegate().setCursor(cursor.getDelegate());
     }
@@ -2519,7 +2509,6 @@ public class StyledText extends Canvas {
         getDelegate().setDoubleClickEnabled(enable);
     }
 
-    @Override
     public void setDragDetect(boolean dragDetect) {
         getDelegate().setDragDetect(dragDetect);
     }
@@ -2538,12 +2527,10 @@ public class StyledText extends Canvas {
         getDelegate().setEditable(editable);
     }
 
-    @Override
     public void setEnabled(boolean enabled) {
         getDelegate().setEnabled(enabled);
     }
 
-    @Override
     public boolean setFocus() {
         return getDelegate().setFocus();
     }
@@ -2554,7 +2541,7 @@ public class StyledText extends Canvas {
      * @since 3.125
      */
     public void setFixedLineMetrics(FontMetrics metrics) {
-        getDelegate().setFixedLineMetrics(metrics);
+        getDelegate().setFixedLineMetrics(metrics.getDelegate());
     }
 
     /**
@@ -2570,12 +2557,10 @@ public class StyledText extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setFont(Font font) {
         getDelegate().setFont(font.getDelegate());
     }
 
-    @Override
     public void setForeground(Color color) {
         getDelegate().setForeground(color.getDelegate());
     }
@@ -3102,7 +3087,6 @@ public class StyledText extends Canvas {
      *
      * @since 2.1.2
      */
-    @Override
     public void setOrientation(int orientation) {
         getDelegate().setOrientation(orientation);
     }
@@ -3162,7 +3146,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setSelection(Point point) {
-        getDelegate().setSelection(point);
+        getDelegate().setSelection(point.getDelegate());
     }
 
     /**
@@ -3304,7 +3288,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setStyleRange(StyleRange range) {
-        getDelegate().setStyleRange(range);
+        getDelegate().setStyleRange(range.getDelegate());
     }
 
     /**
@@ -3343,7 +3327,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public void setStyleRanges(int start, int length, int[] ranges, StyleRange[] styles) {
-        getDelegate().setStyleRanges(start, length, ranges, styles);
+        getDelegate().setStyleRanges(start, length, ranges, Convert.array(styles, StyleRange::getDelegate, IStyleRange[]::new));
     }
 
     /**
@@ -3380,7 +3364,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public void setStyleRanges(int[] ranges, StyleRange[] styles) {
-        getDelegate().setStyleRanges(ranges, styles);
+        getDelegate().setStyleRanges(ranges, Convert.array(styles, StyleRange::getDelegate, IStyleRange[]::new));
     }
 
     /**
@@ -3412,7 +3396,7 @@ public class StyledText extends Canvas {
      * @see #setStyleRanges(int[], StyleRange[])
      */
     public void setStyleRanges(StyleRange[] ranges) {
-        getDelegate().setStyleRanges(ranges);
+        getDelegate().setStyleRanges(Convert.array(ranges, StyleRange::getDelegate, IStyleRange[]::new));
     }
 
     /**
@@ -3501,7 +3485,6 @@ public class StyledText extends Canvas {
      *
      * @see SWT#FLIP_TEXT_DIRECTION
      */
-    @Override
     public void setTextDirection(int textDirection) {
         getDelegate().setTextDirection(textDirection);
     }

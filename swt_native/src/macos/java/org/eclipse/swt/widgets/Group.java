@@ -81,14 +81,12 @@ public class Group extends Composite {
         this(new nat.org.eclipse.swt.widgets.Group((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
     }
 
-    @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getDelegate().computeTrim(x, y, width, height);
+        return getDelegate().computeTrim(x, y, width, height).getApi();
     }
 
-    @Override
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea();
+        return getDelegate().getClientArea().getApi();
     }
 
     /**

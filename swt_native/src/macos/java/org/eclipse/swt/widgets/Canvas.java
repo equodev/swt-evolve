@@ -188,7 +188,6 @@ public class Canvas extends Composite {
         getDelegate().setCaret(caret.getDelegate());
     }
 
-    @Override
     public void setFont(Font font) {
         getDelegate().setFont(font.getDelegate());
     }

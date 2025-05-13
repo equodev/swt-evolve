@@ -20,12 +20,11 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.IShell;
 import org.eclipse.swt.graphics.IGC;
 import org.eclipse.swt.widgets.IMenu;
+import org.eclipse.swt.graphics.IPoint;
 import org.eclipse.swt.graphics.IRegion;
 
 /**
@@ -1979,7 +1978,8 @@ public class Shell extends Decorations implements IShell {
      *
      * @since 3.116
      */
-    public void setMaximumSize(Point size) {
+    public void setMaximumSize(IPoint isize) {
+        Point size = (Point) isize;
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -2049,7 +2049,8 @@ public class Shell extends Decorations implements IShell {
      *
      * @since 3.1
      */
-    public void setMinimumSize(Point size) {
+    public void setMinimumSize(IPoint isize) {
+        Point size = (Point) isize;
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);

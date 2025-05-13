@@ -22,6 +22,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Convert;
 
 /**
  * Instances of this class represent programs and
@@ -32,23 +33,6 @@ import org.eclipse.swt.widgets.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 public final class Program {
-
-    String name, fullPath, identifier;
-
-    //$NON-NLS-1$
-    static final String PREFIX_FILE = "file:/";
-
-    //$NON-NLS-1$
-    static final String PREFIX_HTTP = "http://";
-
-    //$NON-NLS-1$
-    static final String PREFIX_HTTPS = "https://";
-
-    /**
-     * Prevents uninitialized instances from being created outside the package.
-     */
-    Program() {
-    }
 
     /**
      *  Finds the program that is associated with an extension.
@@ -64,39 +48,7 @@ public final class Program {
      * 	</ul>
      */
     public static Program findProgram(String extension) {
-        NSAutoreleasePool pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            if (extension == null)
-                SWT.error(SWT.ERROR_NULL_ARGUMENT);
-            if (extension.length() == 0)
-                return null;
-            Program program = null;
-            char[] chars;
-            if (extension.charAt(0) != '.') {
-                chars = new char[extension.length()];
-                extension.getChars(0, chars.length, chars, 0);
-            } else {
-                chars = new char[extension.length() - 1];
-                extension.getChars(1, extension.length(), chars, 0);
-            }
-            NSString ext = NSString.stringWithCharacters(chars, chars.length);
-            if (ext != null) {
-                byte[] fsRef = new byte[80];
-                if (OS.LSGetApplicationForInfo(OS.kLSUnknownType, OS.kLSUnknownCreator, ext.id, OS.kLSRolesAll, fsRef, null) == OS.noErr) {
-                    long url = OS.CFURLCreateFromFSRef(OS.kCFAllocatorDefault(), fsRef);
-                    if (url != 0) {
-                        NSString bundlePath = new NSURL(url).path();
-                        NSBundle bundle = NSBundle.bundleWithPath(bundlePath);
-                        if (bundle != null)
-                            program = getProgram(bundle);
-                        OS.CFRelease(url);
-                    }
-                }
-            }
-            return program;
-        } finally {
-            pool.release();
-        }
+        return nat.org.eclipse.swt.program.Program.findProgram(extension).getApi();
     }
 
     /**
@@ -107,83 +59,7 @@ public final class Program {
      * @return an array of extensions
      */
     public static String[] getExtensions() {
-        NSAutoreleasePool pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            NSMutableSet supportedDocumentTypes = (NSMutableSet) NSMutableSet.set();
-            NSWorkspace workspace = NSWorkspace.sharedWorkspace();
-            NSString CFBundleDocumentTypes = NSString.stringWith("CFBundleDocumentTypes");
-            NSString CFBundleTypeExtensions = NSString.stringWith("CFBundleTypeExtensions");
-            NSArray array = new NSArray(OS.NSSearchPathForDirectoriesInDomains(OS.NSAllApplicationsDirectory, OS.NSAllDomainsMask, true));
-            int count = (int) array.count();
-            for (int i = 0; i < count; i++) {
-                NSString path = new NSString(array.objectAtIndex(i));
-                NSFileManager fileManager = NSFileManager.defaultManager();
-                NSDirectoryEnumerator enumerator = fileManager.enumeratorAtPath(path);
-                if (enumerator != null) {
-                    id id;
-                    while ((id = enumerator.nextObject()) != null) {
-                        enumerator.skipDescendents();
-                        NSString filePath = new NSString(id.id);
-                        NSString fullPath = path.stringByAppendingPathComponent(filePath);
-                        if (workspace.isFilePackageAtPath(fullPath)) {
-                            NSBundle bundle = NSBundle.bundleWithPath(fullPath);
-                            id = bundle != null ? bundle.infoDictionary().objectForKey(CFBundleDocumentTypes) : null;
-                            if (id != null) {
-                                NSDictionary documentTypes = new NSDictionary(id.id);
-                                NSEnumerator documentTypesEnumerator = documentTypes.objectEnumerator();
-                                while ((id = documentTypesEnumerator.nextObject()) != null) {
-                                    NSDictionary documentType = new NSDictionary(id.id);
-                                    id = documentType.objectForKey(CFBundleTypeExtensions);
-                                    if (id != null) {
-                                        supportedDocumentTypes.addObjectsFromArray(new NSArray(id.id));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            int i = 0;
-            String[] exts = new String[(int) supportedDocumentTypes.count()];
-            NSEnumerator enumerator = supportedDocumentTypes.objectEnumerator();
-            id id;
-            while ((id = enumerator.nextObject()) != null) {
-                String ext = new NSString(id.id).getString();
-                if (!ext.equals("*"))
-                    exts[i++] = "." + ext;
-            }
-            if (i != exts.length) {
-                String[] temp = new String[i];
-                System.arraycopy(exts, 0, temp, 0, i);
-                exts = temp;
-            }
-            return exts;
-        } finally {
-            pool.release();
-        }
-    }
-
-    static Program getProgram(NSBundle bundle) {
-        NSString CFBundleName = NSString.stringWith("CFBundleName");
-        NSString CFBundleDisplayName = NSString.stringWith("CFBundleDisplayName");
-        NSString fullPath = bundle.bundlePath();
-        NSString identifier = bundle.bundleIdentifier();
-        id bundleName = bundle.objectForInfoDictionaryKey(CFBundleDisplayName);
-        if (bundleName == null) {
-            bundleName = bundle.objectForInfoDictionaryKey(CFBundleName);
-        }
-        if (bundleName == null) {
-            if (fullPath == null)
-                return null;
-            bundleName = fullPath.lastPathComponent().stringByDeletingPathExtension();
-        }
-        NSString name = new NSString(bundleName.id);
-        Program program = new Program();
-        program.name = name.getString();
-        if (fullPath != null)
-            program.fullPath = fullPath.getString();
-        program.identifier = identifier != null ? identifier.getString() : "";
-        return program;
+        return nat.org.eclipse.swt.program.Program.getExtensions();
     }
 
     /**
@@ -194,77 +70,7 @@ public final class Program {
      * @return an array of programs
      */
     public static Program[] getPrograms() {
-        NSAutoreleasePool pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            LinkedHashSet<Program> programs = new LinkedHashSet<>();
-            NSWorkspace workspace = NSWorkspace.sharedWorkspace();
-            NSArray array = new NSArray(OS.NSSearchPathForDirectoriesInDomains(OS.NSAllApplicationsDirectory, OS.NSAllDomainsMask, true));
-            int count = (int) array.count();
-            for (int i = 0; i < count; i++) {
-                NSString path = new NSString(array.objectAtIndex(i));
-                NSFileManager fileManager = NSFileManager.defaultManager();
-                NSDirectoryEnumerator enumerator = fileManager.enumeratorAtPath(path);
-                if (enumerator != null) {
-                    id id;
-                    while ((id = enumerator.nextObject()) != null) {
-                        enumerator.skipDescendents();
-                        NSString fullPath = path.stringByAppendingPathComponent(new NSString(id.id));
-                        if (workspace.isFilePackageAtPath(fullPath)) {
-                            NSBundle bundle = NSBundle.bundleWithPath(fullPath);
-                            if (bundle != null) {
-                                Program program = getProgram(bundle);
-                                if (program != null)
-                                    programs.add(program);
-                            }
-                        }
-                    }
-                }
-            }
-            return programs.toArray(new Program[programs.size()]);
-        } finally {
-            pool.release();
-        }
-    }
-
-    static NSURL getURL(String fileName) {
-        NSString unescapedStr;
-        String lowercaseName = fileName.toLowerCase();
-        if (lowercaseName.startsWith(PREFIX_HTTP) || lowercaseName.startsWith(PREFIX_HTTPS) || lowercaseName.startsWith(PREFIX_FILE)) {
-            //$NON-NLS-1$
-            unescapedStr = NSString.stringWith("%#");
-        } else {
-            //$NON-NLS-1$
-            unescapedStr = NSString.stringWith("%");
-        }
-        NSString fullPath = NSString.stringWith(fileName);
-        if (NSFileManager.defaultManager().fileExistsAtPath(fullPath)) {
-            fullPath = NSURL.fileURLWithPath(fullPath).absoluteString();
-        }
-        long ptr = OS.CFURLCreateStringByAddingPercentEscapes(0, fullPath.id, unescapedStr.id, 0, OS.kCFStringEncodingUTF8);
-        NSString escapedString = new NSString(ptr);
-        NSURL url = NSURL.URLWithString(escapedString);
-        OS.CFRelease(ptr);
-        return url;
-    }
-
-    static boolean isExecutable(String fileName) {
-        long ptr = C.malloc(1);
-        NSString path = NSString.stringWith(fileName);
-        boolean result = false;
-        NSFileManager manager = NSFileManager.defaultManager();
-        if (manager.fileExistsAtPath(path, ptr)) {
-            byte[] isDirectory = new byte[1];
-            C.memmove(isDirectory, ptr, 1);
-            if (isDirectory[0] == 0 && manager.isExecutableFileAtPath(path)) {
-                NSWorkspace ws = NSWorkspace.sharedWorkspace();
-                NSString type = ws.typeOfFile(path, 0);
-                result = type != null && (//$NON-NLS-1$
-                ws.type(type, NSString.stringWith("public.unix-executable")) || //$NON-NLS-1$
-                OS.UTTypeEqual(type.id, NSString.stringWith("public.shell-script").id));
-            }
-        }
-        C.free(ptr);
-        return result;
+        return Convert.array(nat.org.eclipse.swt.program.Program.getPrograms(), IProgram::getApi, Program[]::new);
     }
 
     /**
@@ -281,7 +87,7 @@ public final class Program {
      * </ul>
      */
     public static boolean launch(String fileName) {
-        return launch(fileName, null);
+        return nat.org.eclipse.swt.program.Program.launch(fileName);
     }
 
     /**
@@ -304,24 +110,7 @@ public final class Program {
      * @since 3.6
      */
     public static boolean launch(String fileName, String workingDir) {
-        if (fileName == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        NSAutoreleasePool pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            if (workingDir != null && isExecutable(fileName)) {
-                try {
-                    Compatibility.exec(new String[] { fileName }, null, workingDir);
-                    return true;
-                } catch (IOException e) {
-                    return false;
-                }
-            }
-            NSURL url = getURL(fileName);
-            NSWorkspace workspace = NSWorkspace.sharedWorkspace();
-            return workspace.openURL(url);
-        } finally {
-            pool.release();
-        }
+        return nat.org.eclipse.swt.program.Program.launch(fileName, workingDir);
     }
 
     /**
@@ -338,17 +127,7 @@ public final class Program {
      * </ul>
      */
     public boolean execute(String fileName) {
-        if (fileName == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        NSAutoreleasePool pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            NSWorkspace workspace = NSWorkspace.sharedWorkspace();
-            NSURL url = getURL(fileName);
-            NSArray urls = NSArray.arrayWithObject(url);
-            return workspace.openURLs(urls, NSString.stringWith(identifier), 0, null, 0);
-        } finally {
-            pool.release();
-        }
+        return getDelegate().execute(fileName);
     }
 
     /**
@@ -359,7 +138,7 @@ public final class Program {
      * @return the image data for the program, may be null
      */
     public ImageData getImageData() {
-        return getImageData(100);
+        return getDelegate().getImageData();
     }
 
     /**
@@ -374,32 +153,7 @@ public final class Program {
      * @since 3.125
      */
     public ImageData getImageData(int zoom) {
-        NSAutoreleasePool pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            NSWorkspace workspace = NSWorkspace.sharedWorkspace();
-            NSString fullPath;
-            if (this.fullPath != null) {
-                fullPath = NSString.stringWith(this.fullPath);
-            } else {
-                fullPath = workspace.fullPathForApplication(NSString.stringWith(name));
-            }
-            if (fullPath != null) {
-                NSImage nsImage = workspace.iconForFile(fullPath);
-                if (nsImage != null) {
-                    NSSize size = new NSSize();
-                    size.width = size.height = 16;
-                    nsImage.setSize(size);
-                    nsImage.retain();
-                    Image image = Image.cocoa_new(Display.getCurrent(), SWT.BITMAP, nsImage);
-                    ImageData imageData = image.getImageData(zoom);
-                    image.dispose();
-                    return imageData;
-                }
-            }
-            return null;
-        } finally {
-            pool.release();
-        }
+        return getDelegate().getImageData(zoom);
     }
 
     /**
@@ -411,7 +165,7 @@ public final class Program {
      * @return the name of the program
      */
     public String getName() {
-        return name;
+        return getDelegate().getName();
     }
 
     /**
@@ -424,14 +178,8 @@ public final class Program {
      *
      * @see #hashCode()
      */
-    @Override
     public boolean equals(Object other) {
-        if (this == other)
-            return true;
-        if (other instanceof final Program program) {
-            return name.equals(program.name) && identifier.equals(program.identifier);
-        }
-        return false;
+        return getDelegate().equals(other);
     }
 
     /**
@@ -444,9 +192,8 @@ public final class Program {
      *
      * @see #equals(Object)
      */
-    @Override
     public int hashCode() {
-        return name.hashCode() ^ identifier.hashCode();
+        return getDelegate().hashCode();
     }
 
     /**
@@ -455,8 +202,18 @@ public final class Program {
      *
      * @return a string representation of the program
      */
-    @Override
     public String toString() {
-        return "Program {" + name + "}";
+        return getDelegate().toString();
+    }
+
+    IProgram delegate;
+
+    protected Program(IProgram delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IProgram getDelegate() {
+        return delegate;
     }
 }

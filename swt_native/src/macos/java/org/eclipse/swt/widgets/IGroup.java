@@ -5,9 +5,9 @@ import org.eclipse.swt.graphics.*;
 
 public interface IGroup extends IComposite {
 
-    Rectangle computeTrim(int x, int y, int width, int height);
+    IRectangle computeTrim(int x, int y, int width, int height);
 
-    Rectangle getClientArea();
+    IRectangle getClientArea();
 
     /**
      * Returns the receiver's text, which is the string that the

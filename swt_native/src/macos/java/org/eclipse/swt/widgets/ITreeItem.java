@@ -91,7 +91,7 @@ public interface ITreeItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Rectangle getBounds();
+    IRectangle getBounds();
 
     /**
      * Returns a rectangle describing the receiver's size and location
@@ -107,7 +107,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.1
      */
-    Rectangle getBounds(int index);
+    IRectangle getBounds(int index);
 
     /**
      * Returns <code>true</code> if the receiver is checked,
@@ -242,7 +242,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.1
      */
-    Rectangle getImageBounds(int index);
+    IRectangle getImageBounds(int index);
 
     /**
      * Returns the item at the given, zero-relative index in the
@@ -353,7 +353,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.3
      */
-    Rectangle getTextBounds(int index);
+    IRectangle getTextBounds(int index);
 
     /**
      * Searches the receiver's list starting at the first item

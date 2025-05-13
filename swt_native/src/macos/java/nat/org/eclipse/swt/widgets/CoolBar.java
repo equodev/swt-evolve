@@ -18,13 +18,12 @@ package nat.org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ICoolBar;
 import org.eclipse.swt.widgets.ICoolItem;
 import org.eclipse.swt.graphics.IColor;
 import org.eclipse.swt.graphics.ICursor;
+import org.eclipse.swt.graphics.IPoint;
 
 /**
  * Instances of this class provide an area for dynamically
@@ -1260,7 +1259,8 @@ public class CoolBar extends Composite implements ICoolBar {
      *    <li>ERROR_INVALID_ARGUMENT - if item order or sizes is not the same length as the number of items</li>
      * </ul>
      */
-    public void setItemLayout(int[] itemOrder, int[] wrapIndices, Point[] sizes) {
+    public void setItemLayout(int[] itemOrder, int[] wrapIndices, IPoint[] isizes) {
+        Point[] sizes = (Point[]) isizes;
         checkWidget();
         setItemOrder(itemOrder);
         setWrapIndices(wrapIndices);

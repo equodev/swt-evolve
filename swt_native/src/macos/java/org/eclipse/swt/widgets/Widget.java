@@ -485,7 +485,6 @@ public abstract class Widget {
      *
      * @return a string representation of the receiver
      */
-    @Override
     public String toString() {
         return getDelegate().toString();
     }

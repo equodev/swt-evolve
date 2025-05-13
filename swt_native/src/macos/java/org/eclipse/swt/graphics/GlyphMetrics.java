@@ -67,12 +67,7 @@ public final class GlyphMetrics {
      * </ul>
      */
     public GlyphMetrics(int ascent, int descent, int width) {
-        if (ascent < 0 || descent < 0 || width < 0) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        this.ascent = ascent;
-        this.descent = descent;
-        this.width = width;
+        this(new nat.org.eclipse.swt.graphics.GlyphMetrics(ascent, descent, width));
     }
 
     /**
@@ -85,13 +80,8 @@ public final class GlyphMetrics {
      *
      * @see #hashCode()
      */
-    @Override
     public boolean equals(Object object) {
-        if (object == this)
-            return true;
-        if (!(object instanceof GlyphMetrics metrics))
-            return false;
-        return metrics.ascent == ascent && metrics.descent == descent && metrics.width == width;
+        return getDelegate().equals(object);
     }
 
     /**
@@ -104,9 +94,8 @@ public final class GlyphMetrics {
      *
      * @see #equals(Object)
      */
-    @Override
     public int hashCode() {
-        return ascent ^ descent ^ width;
+        return getDelegate().hashCode();
     }
 
     /**
@@ -115,9 +104,18 @@ public final class GlyphMetrics {
      *
      * @return a string representation of the <code>GlyphMetrics</code>
      */
-    @Override
     public String toString() {
-        //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-        return "GlyphMetrics {" + ascent + ", " + descent + ", " + width + "}";
+        return getDelegate().toString();
+    }
+
+    IGlyphMetrics delegate;
+
+    protected GlyphMetrics(IGlyphMetrics delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IGlyphMetrics getDelegate() {
+        return delegate;
     }
 }

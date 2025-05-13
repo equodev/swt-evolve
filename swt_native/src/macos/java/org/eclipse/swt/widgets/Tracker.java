@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Convert;
 
 /**
  *  Instances of this class implement rubber banding rectangles that are
@@ -194,7 +195,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public Rectangle[] getRectangles() {
-        return getDelegate().getRectangles();
+        return Convert.array(getDelegate().getRectangles(), IRectangle::getApi, Rectangle[]::new);
     }
 
     /**
@@ -299,7 +300,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public void setRectangles(Rectangle[] rectangles) {
-        getDelegate().setRectangles(rectangles);
+        getDelegate().setRectangles(Convert.array(rectangles, Rectangle::getDelegate, IRectangle[]::new));
     }
 
     /**

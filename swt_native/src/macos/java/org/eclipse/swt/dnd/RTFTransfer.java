@@ -33,22 +33,13 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class RTFTransfer extends ByteArrayTransfer {
 
-    static RTFTransfer _instance = new RTFTransfer();
-
-    static final String RTF = OS.NSPasteboardTypeRTF.getString();
-
-    static final int RTFID = registerType(RTF);
-
-    RTFTransfer() {
-    }
-
     /**
      * Returns the singleton instance of the RTFTransfer class.
      *
      * @return the singleton instance of the RTFTransfer class
      */
     public static RTFTransfer getInstance() {
-        return _instance;
+        return nat.org.eclipse.swt.dnd.RTFTransfer.getInstance().getApi();
     }
 
     /**
@@ -61,12 +52,8 @@ public class RTFTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#nativeToJava
      */
-    @Override
     public void javaToNative(Object object, TransferData transferData) {
-        if (!checkRTF(object) || !isSupportedType(transferData)) {
-            DND.error(DND.ERROR_INVALID_DATA);
-        }
-        transferData.data = NSString.stringWith((String) object);
+        getDelegate().javaToNative(object, transferData.getDelegate());
     }
 
     /**
@@ -79,30 +66,15 @@ public class RTFTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#javaToNative
      */
-    @Override
     public Object nativeToJava(TransferData transferData) {
-        if (!isSupportedType(transferData) || transferData.data == null)
-            return null;
-        NSString string = (NSString) transferData.data;
-        return string.getString();
+        return getDelegate().nativeToJava(transferData.getDelegate());
     }
 
-    @Override
-    protected int[] getTypeIds() {
-        return new int[] { RTFID };
+    protected RTFTransfer(IRTFTransfer delegate) {
+        super(delegate);
     }
 
-    @Override
-    protected String[] getTypeNames() {
-        return new String[] { RTF };
-    }
-
-    boolean checkRTF(Object object) {
-        return (object != null && object instanceof String && ((String) object).length() > 0);
-    }
-
-    @Override
-    protected boolean validate(Object object) {
-        return checkRTF(object);
+    public IRTFTransfer getDelegate() {
+        return (IRTFTransfer) super.getDelegate();
     }
 }

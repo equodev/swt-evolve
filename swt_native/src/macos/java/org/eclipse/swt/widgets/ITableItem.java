@@ -47,7 +47,7 @@ public interface ITableItem extends IItem {
      *
      * @since 3.2
      */
-    Rectangle getBounds();
+    IRectangle getBounds();
 
     /**
      * Returns a rectangle describing the receiver's size and location
@@ -61,7 +61,7 @@ public interface ITableItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Rectangle getBounds(int index);
+    IRectangle getBounds(int index);
 
     /**
      * Returns <code>true</code> if the receiver is checked,
@@ -180,7 +180,7 @@ public interface ITableItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Rectangle getImageBounds(int index);
+    IRectangle getImageBounds(int index);
 
     /**
      * Gets the image indent.
@@ -238,7 +238,7 @@ public interface ITableItem extends IItem {
      *
      * @since 3.3
      */
-    Rectangle getTextBounds(int index);
+    IRectangle getTextBounds(int index);
 
     /**
      * Sets the receiver's background color to the color specified

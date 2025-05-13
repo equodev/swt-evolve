@@ -19,7 +19,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.IButton;
 import org.eclipse.swt.graphics.IImage;
 
