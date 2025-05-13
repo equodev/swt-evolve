@@ -80,7 +80,7 @@ public class BidiSegmentEvent extends SegmentEvent {
 
     static final long serialVersionUID = -3712986188155944253L;
 
-    BidiSegmentEvent(StyledTextEvent e) {
+    public BidiSegmentEvent(StyledTextEvent e) {
         super(e);
     }
 }

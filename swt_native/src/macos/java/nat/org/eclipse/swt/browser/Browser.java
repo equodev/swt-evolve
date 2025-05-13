@@ -112,8 +112,8 @@ public class Browser extends Composite implements IBrowser {
         style = getStyle();
         webBrowser = new BrowserFactory().createWebBrowser(style);
         if (webBrowser != null) {
-            webBrowser.setBrowser(this.getApi());
-            webBrowser.create(parent.getApi(), style);
+            webBrowser.setBrowser(this);
+            webBrowser.create(parent, style);
             return;
         }
         dispose();

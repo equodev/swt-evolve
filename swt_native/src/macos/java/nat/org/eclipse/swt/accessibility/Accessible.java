@@ -141,7 +141,7 @@ public class Accessible implements IAccessible {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.parent = parent;
         this.control = parent.control;
-        delegate = new SWTAccessibleDelegate(this.getApi(), ACC.CHILDID_SELF);
+        delegate = new SWTAccessibleDelegate(this, ACC.CHILDID_SELF);
     }
 
     /**
@@ -518,9 +518,9 @@ public class Accessible implements IAccessible {
         if (target == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (relations[type] == null) {
-            relations[type] = new Relation(this.getApi(), type);
+            relations[type] = new Relation(this, type);
         }
-        relations[type].addTarget(target.getApi());
+        relations[type].addTarget(target);
     }
 
     int accessibleListenersSize() {
@@ -589,7 +589,7 @@ public class Accessible implements IAccessible {
 
     void createTableDelegate() {
         if (tableDelegate == null) {
-            tableDelegate = new TableAccessibleDelegate(this.getApi());
+            tableDelegate = new TableAccessibleDelegate(this);
         }
     }
 
@@ -3156,7 +3156,7 @@ public class Accessible implements IAccessible {
         if (target == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (relations[type] != null) {
-            relations[type].removeTarget(target.getApi());
+            relations[type].removeTarget(target);
         }
     }
 
@@ -3521,7 +3521,7 @@ public class Accessible implements IAccessible {
         /* Check cache for childID, if found, return corresponding osChildID. */
         SWTAccessibleDelegate childRef = (SWTAccessibleDelegate) childToIdMap.get(Integer.valueOf(childID));
         if (childRef == null) {
-            childRef = new SWTAccessibleDelegate(this.getApi(), childID);
+            childRef = new SWTAccessibleDelegate(this, childID);
             childToIdMap.put(Integer.valueOf(childID), childRef);
         }
         return childRef;

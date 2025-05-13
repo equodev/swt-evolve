@@ -22,8 +22,10 @@ import java.util.List;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
+import dev.equo.swt.Convert;
 import org.eclipse.swt.custom.StyledTextContent;
 import org.eclipse.swt.custom.StyledTextLineSpacingProvider;
+import org.eclipse.swt.custom.StyledTextEvent;
 import org.eclipse.swt.custom.TextChangingEvent;
 
 /**
@@ -466,7 +468,7 @@ class StyledTextRenderer {
             System.arraycopy(ranges, 0, newRanges, 0, newRanges.length);
         }
         if (styles != null) {
-            StyleRange[] newStyles = renderer.styles = new StyleRange[styleCount];
+            StyleRange[] newStyles = renderer.styles = Convert.array(new StyleRange[styleCount], org.eclipse.swt.custom.IStyleRange::getApi, org.eclipse.swt.custom.StyleRange[]::new);
             for (int i = 0; i < newStyles.length; i++) {
                 newStyles[i] = (StyleRange) styles[i].clone();
             }
@@ -1696,7 +1698,7 @@ class StyledTextRenderer {
                 lines[i] = new LineInfo();
             }
             lines[i].flags |= BACKGROUND;
-            lines[i].background = background;
+            lines[i].background = background.getApi();
         }
     }
 

@@ -16,6 +16,7 @@
 package nat.org.eclipse.swt.accessibility;
 
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Convert;
 import org.eclipse.swt.accessibility.AccessibleControlAdapter;
 import org.eclipse.swt.accessibility.AccessibleControlEvent;
 import org.eclipse.swt.accessibility.AccessibleControlListener;
@@ -86,13 +87,13 @@ class AccessibleTableColumn extends Accessible {
                 Accessible[] children = getColumnCells();
                 int count = children.length;
                 if (0 <= index && index < count) {
-                    e.accessible = children[index];
+                    e.accessible = children[index].getApi();
                 }
             }
 
             @Override
             public void getRows(AccessibleTableEvent e) {
-                e.accessibles = getColumnCells();
+                e.accessibles = Convert.array(getColumnCells(), org.eclipse.swt.accessibility.IAccessible::getApi, org.eclipse.swt.accessibility.Accessible[]::new);
             }
         });
     }

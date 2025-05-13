@@ -39,6 +39,7 @@ import org.eclipse.swt.accessibility.AccessibleAttributeAdapter;
 import org.eclipse.swt.accessibility.AccessibleEditableTextListener;
 import org.eclipse.swt.accessibility.AccessibleTextExtendedAdapter;
 import org.eclipse.swt.accessibility.AccessibleAdapter;
+import org.eclipse.swt.custom.StyledTextEvent;
 import org.eclipse.swt.custom.ExtendedModifyListener;
 import org.eclipse.swt.custom.BidiSegmentListener;
 import org.eclipse.swt.custom.CaretListener;
@@ -470,9 +471,9 @@ public class StyledText extends Canvas implements IStyledText {
             } else if (scope == PrinterData.SELECTION) {
                 selection = Arrays.copyOf(styledText.selection, styledText.selection.length);
             }
-            printerRenderer = new StyledTextRenderer(printer.getApi(), null);
+            printerRenderer = new StyledTextRenderer(printer, null);
             printerRenderer.setContent(copyContent(styledText.getContent()));
-            cacheLineData(styledText.getApi());
+            cacheLineData(styledText);
         }
 
         /**
@@ -526,7 +527,7 @@ public class StyledText extends Canvas implements IStyledText {
                             printerColor = new Color(color.getRGB());
                             resources.put(color, printerColor);
                         }
-                        printerRenderer.setLineBackground(i, 1, printerColor.getApi());
+                        printerRenderer.setLineBackground(i, 1, printerColor);
                     } else {
                         printerRenderer.setLineBackground(i, 1, null);
                     }
@@ -650,7 +651,7 @@ public class StyledText extends Canvas implements IStyledText {
             int style = mirrored ? SWT.RIGHT_TO_LEFT : SWT.LEFT_TO_RIGHT;
             gc = new GC(printer, style);
             gc.setFont(printerFont);
-            printerRenderer.setFont(printerFont.getApi(), tabLength);
+            printerRenderer.setFont(printerFont, tabLength);
             int lineHeight = printerRenderer.getLineHeight();
             if (printOptions.header != null) {
                 clientArea.y += lineHeight * 2;
@@ -721,14 +722,14 @@ public class StyledText extends Canvas implements IStyledText {
             for (int i = startLine; i <= endLine && page <= endPage; i++) {
                 if (paintY == clientArea.y) {
                     printer.startPage();
-                    printDecoration(page, true, printLayout.getApi());
+                    printDecoration(page, true, printLayout);
                 }
                 TextLayout layout = printerRenderer.getTextLayout(i, orientation, width, lineSpacing);
-                Color lineBackground = printerRenderer.getLineBackground(i, background.getApi());
+                Color lineBackground = printerRenderer.getLineBackground(i, background);
                 int paragraphBottom = paintY + layout.getBounds().height;
                 if (paragraphBottom <= pageBottom) {
                     //normal case, the whole paragraph fits in the current page
-                    printLine(paintX, paintY, gc.getApi(), foreground.getApi(), lineBackground.getApi(), layout.getApi(), printLayout.getApi(), i);
+                    printLine(paintX, paintY, gc, foreground, lineBackground, layout, printLayout, i);
                     paintY = paragraphBottom;
                 } else {
                     int lineCount = layout.getLineCount();
@@ -738,42 +739,42 @@ public class StyledText extends Canvas implements IStyledText {
                     }
                     if (lineCount == 0) {
                         //the whole paragraph goes to the next page
-                        printDecoration(page, false, printLayout.getApi());
+                        printDecoration(page, false, printLayout);
                         printer.endPage();
                         page++;
                         if (page <= endPage) {
                             printer.startPage();
-                            printDecoration(page, true, printLayout.getApi());
+                            printDecoration(page, true, printLayout);
                             paintY = clientArea.y;
-                            printLine(paintX, paintY, gc.getApi(), foreground.getApi(), lineBackground.getApi(), layout.getApi(), printLayout.getApi(), i);
+                            printLine(paintX, paintY, gc, foreground, lineBackground, layout, printLayout, i);
                             paintY += layout.getBounds().height;
                         }
                     } else {
                         //draw paragraph top in the current page and paragraph bottom in the next
                         int height = paragraphBottom - paintY;
                         gc.setClipping(clientArea.x, paintY, clientArea.width, height);
-                        printLine(paintX, paintY, gc.getApi(), foreground.getApi(), lineBackground.getApi(), layout.getApi(), printLayout.getApi(), i);
+                        printLine(paintX, paintY, gc, foreground, lineBackground, layout, printLayout, i);
                         gc.setClipping((Rectangle) null);
-                        printDecoration(page, false, printLayout.getApi());
+                        printDecoration(page, false, printLayout);
                         printer.endPage();
                         page++;
                         if (page <= endPage) {
                             printer.startPage();
-                            printDecoration(page, true, printLayout.getApi());
+                            printDecoration(page, true, printLayout);
                             paintY = clientArea.y - height;
                             int layoutHeight = layout.getBounds().height;
                             gc.setClipping(clientArea.x, clientArea.y, clientArea.width, layoutHeight - height);
-                            printLine(paintX, paintY, gc.getApi(), foreground.getApi(), lineBackground.getApi(), layout.getApi(), printLayout.getApi(), i);
+                            printLine(paintX, paintY, gc, foreground, lineBackground, layout, printLayout, i);
                             gc.setClipping((Rectangle) null);
                             paintY += layoutHeight;
                         }
                     }
                 }
-                printerRenderer.disposeTextLayout(layout.getApi());
+                printerRenderer.disposeTextLayout(layout);
             }
             if (page <= endPage && paintY > clientArea.y) {
                 // close partial page
-                printDecoration(page, false, printLayout.getApi());
+                printDecoration(page, false, printLayout);
                 printer.endPage();
             }
             if (printLayout != null)
@@ -796,11 +797,11 @@ public class StyledText extends Canvas implements IStyledText {
                 String segment;
                 if (segmentIndex == -1) {
                     segment = text.substring(lastSegmentIndex);
-                    printDecorationSegment(segment, i, page, header, layout.getApi());
+                    printDecorationSegment(segment, i, page, header, layout);
                     break;
                 } else {
                     segment = text.substring(lastSegmentIndex, segmentIndex);
-                    printDecorationSegment(segment, i, page, header, layout.getApi());
+                    printDecorationSegment(segment, i, page, header, layout);
                     lastSegmentIndex = segmentIndex + StyledTextPrintOptions.SEPARATOR.length();
                 }
             }
@@ -950,7 +951,7 @@ public class StyledText extends Canvas implements IStyledText {
             alignment = SWT.LEFT;
         clipboard = new Clipboard(display);
         installDefaultContent();
-        renderer = new StyledTextRenderer(getDisplay(), this.getApi());
+        renderer = new StyledTextRenderer(getDisplay(), this);
         renderer.setContent(content);
         renderer.setFont(getFont(), tabLength);
         ime = new IME(this, SWT.NONE);
@@ -1475,7 +1476,7 @@ public class StyledText extends Canvas implements IStyledText {
                 height += rect.height;
                 width = Math.max(width, rect.width);
                 layout.setWidth(wrapWidth);
-                renderer.disposeTextLayout(layout.getApi());
+                renderer.disposeTextLayout(layout);
                 if (isFixedLineHeight() && height > maxHeight)
                     break;
             }
@@ -2101,7 +2102,7 @@ public class StyledText extends Canvas implements IStyledText {
                         }
                         TextLayout layout = renderer.getTextLayout(lineIndex);
                         int start = layout.getPreviousOffset(caretOffset - lineOffset, isSurrogate ? SWT.MOVEMENT_CLUSTER : SWT.MOVEMENT_CHAR);
-                        renderer.disposeTextLayout(layout.getApi());
+                        renderer.disposeTextLayout(layout);
                         event.start = start + lineOffset;
                         event.end = caretOffset;
                     }
@@ -2479,7 +2480,7 @@ public class StyledText extends Canvas implements IStyledText {
                     // bug 485722: workaround for fractional line heights
                     y++;
                 }
-                renderer.disposeTextLayout(layout.getApi());
+                renderer.disposeTextLayout(layout);
             } else {
                 lastLine = caretLine == lineCount - 1;
                 caretLine++;
@@ -2521,7 +2522,7 @@ public class StyledText extends Canvas implements IStyledText {
                 int lineIndex = getVisualLineIndex(layout, offsetInLine);
                 int[] offsets = layout.getLineOffsets();
                 lineEndOffset = lineOffset + offsets[lineIndex + 1];
-                renderer.disposeTextLayout(layout.getApi());
+                renderer.disposeTextLayout(layout);
             } else {
                 int lineLength = content.getLine(caretLine).length();
                 lineEndOffset = lineOffset + lineLength;
@@ -2547,7 +2548,7 @@ public class StyledText extends Canvas implements IStyledText {
                 int lineIndex = getVisualLineIndex(layout, offsetInLine);
                 int[] offsets = layout.getLineOffsets();
                 lineOffset += offsets[lineIndex];
-                renderer.disposeTextLayout(layout.getApi());
+                renderer.disposeTextLayout(layout);
             }
             newCaretOffsets[i] = lineOffset;
         }
@@ -2588,7 +2589,7 @@ public class StyledText extends Canvas implements IStyledText {
                     // bug 485722: workaround for fractional line heights
                     y++;
                 }
-                renderer.disposeTextLayout(layout.getApi());
+                renderer.disposeTextLayout(layout);
             } else {
                 firstLine = caretLine == 0;
                 caretLine--;
@@ -2851,7 +2852,7 @@ public class StyledText extends Canvas implements IStyledText {
                                 break;
                             }
                         }
-                        renderer.disposeTextLayout(layout.getApi());
+                        renderer.disposeTextLayout(layout);
                     }
                 }
             } else {
@@ -2867,7 +2868,7 @@ public class StyledText extends Canvas implements IStyledText {
                             break;
                         }
                     }
-                    renderer.disposeTextLayout(layout.getApi());
+                    renderer.disposeTextLayout(layout);
                 } else {
                     height = topLineY + renderer.getLineHeight(lineIndex);
                 }
@@ -2880,7 +2881,7 @@ public class StyledText extends Canvas implements IStyledText {
                     int offsetInLine = caretOffset - content.getOffsetAtLine(caretLine);
                     lineIndex = getVisualLineIndex(layout, offsetInLine);
                     caretHeight += layout.getLineBounds(lineIndex).y;
-                    renderer.disposeTextLayout(layout.getApi());
+                    renderer.disposeTextLayout(layout);
                 }
             }
             lineIndex = getFirstCaretLine();
@@ -2930,7 +2931,7 @@ public class StyledText extends Canvas implements IStyledText {
                 } else {
                     bottomOffset = content.getOffsetAtLine(lineIndex) + Math.max(0, layout.getLineOffsets()[index + 1] - 1);
                 }
-                renderer.disposeTextLayout(layout.getApi());
+                renderer.disposeTextLayout(layout);
             } else {
                 int lineIndex = getBottomIndex();
                 bottomOffset = content.getOffsetAtLine(lineIndex) + content.getLine(lineIndex).length();
@@ -2970,7 +2971,7 @@ public class StyledText extends Canvas implements IStyledText {
             } else {
                 topOffset = content.getOffsetAtLine(lineIndex) + layout.getLineOffsets()[index];
             }
-            renderer.disposeTextLayout(layout.getApi());
+            renderer.disposeTextLayout(layout);
         } else {
             topOffset = content.getOffsetAtLine(topIndex);
         }
@@ -3039,7 +3040,7 @@ public class StyledText extends Canvas implements IStyledText {
                                 break;
                             }
                         }
-                        renderer.disposeTextLayout(layout.getApi());
+                        renderer.disposeTextLayout(layout);
                     }
                 }
             } else {
@@ -3055,7 +3056,7 @@ public class StyledText extends Canvas implements IStyledText {
                             break;
                         }
                     }
-                    renderer.disposeTextLayout(layout.getApi());
+                    renderer.disposeTextLayout(layout);
                 } else {
                     height = clientAreaHeight - topLineY;
                 }
@@ -3068,7 +3069,7 @@ public class StyledText extends Canvas implements IStyledText {
                     int offsetInLine = caretOffset - content.getOffsetAtLine(caretLine);
                     lineIndex = getVisualLineIndex(layout, offsetInLine);
                     caretHeight += layout.getBounds().height - layout.getLineBounds(lineIndex).y;
-                    renderer.disposeTextLayout(layout.getApi());
+                    renderer.disposeTextLayout(layout);
                 }
             }
             lineIndex = getFirstCaretLine();
@@ -3193,7 +3194,7 @@ public class StyledText extends Canvas implements IStyledText {
                 TextLayout layout = renderer.getTextLayout(caretLine);
                 offsetInLine = layout.getNextOffset(offsetInLine, SWT.MOVEMENT_CLUSTER);
                 int lineStart = layout.getLineOffsets()[layout.getLineIndex(offsetInLine)];
-                renderer.disposeTextLayout(layout.getApi());
+                renderer.disposeTextLayout(layout);
                 offset = offsetInLine + lineOffset;
                 newAlignment = offsetInLine == lineStart ? OFFSET_LEADING : PREVIOUS_OFFSET_TRAILING;
                 newCarets[i] = offset;
@@ -3457,7 +3458,7 @@ public class StyledText extends Canvas implements IStyledText {
         TextLayout layout = renderer.getTextLayout(lineIndex);
         int lineInParagraph = layout.getLineIndex(Math.min(offset - lineOffset, layout.getText().length()));
         FontMetrics metrics = layout.getLineMetrics(lineInParagraph);
-        renderer.disposeTextLayout(layout.getApi());
+        renderer.disposeTextLayout(layout);
         return metrics.getAscent() + metrics.getLeading();
     }
 
@@ -3638,7 +3639,7 @@ public class StyledText extends Canvas implements IStyledText {
                 Point point = layout.getLocation(offsetInLine, true);
                 bounds = new Rectangle(point.x, point.y, 0, bounds.height);
             }
-            renderer.disposeTextLayout(layout.getApi());
+            renderer.disposeTextLayout(layout);
         } else {
             bounds = new Rectangle(0, 0, 0, renderer.getLineHeight());
         }
@@ -3690,7 +3691,7 @@ public class StyledText extends Canvas implements IStyledText {
         offset -= lineOffset;
         offset = layout.getNextOffset(offset, SWT.MOVEMENT_CLUSTER);
         offset += lineOffset;
-        renderer.disposeTextLayout(layout.getApi());
+        renderer.disposeTextLayout(layout);
         return offset;
     }
 
@@ -3700,7 +3701,7 @@ public class StyledText extends Canvas implements IStyledText {
         offset -= lineOffset;
         offset = layout.getPreviousOffset(offset, SWT.MOVEMENT_CLUSTER);
         offset += lineOffset;
-        renderer.disposeTextLayout(layout.getApi());
+        renderer.disposeTextLayout(layout);
         return offset;
     }
 
@@ -4111,7 +4112,7 @@ public class StyledText extends Canvas implements IStyledText {
         TextLayout layout = renderer.getTextLayout(lineIndex);
         int lineInParagraph = layout.getLineIndex(Math.min(offset - lineOffset, layout.getText().length()));
         int height = layout.getLineBounds(lineInParagraph).height;
-        renderer.disposeTextLayout(layout.getApi());
+        renderer.disposeTextLayout(layout);
         return height;
     }
 
@@ -4575,7 +4576,7 @@ public class StyledText extends Canvas implements IStyledText {
                 }
             }
         }
-        renderer.disposeTextLayout(layout.getApi());
+        renderer.disposeTextLayout(layout);
         return offsetInLine + content.getOffsetAtLine(lineIndex);
     }
 
@@ -4595,7 +4596,7 @@ public class StyledText extends Canvas implements IStyledText {
         y -= getLinePixel(lineIndex);
         int offset = layout.getOffset(x, y, trailing);
         Rectangle rect = layout.getLineBounds(layout.getLineIndex(offset));
-        renderer.disposeTextLayout(layout.getApi());
+        renderer.disposeTextLayout(layout);
         if (inTextOnly && !(rect.x <= x && x <= rect.x + rect.width)) {
             return -1;
         }
@@ -5340,7 +5341,7 @@ public class StyledText extends Canvas implements IStyledText {
             } else {
                 height += renderer.getLineHeight();
             }
-            renderer.disposeTextLayout(layout.getApi());
+            renderer.disposeTextLayout(layout);
         }
         if (left == Integer.MAX_VALUE) {
             left = 0;
@@ -5506,7 +5507,7 @@ public class StyledText extends Canvas implements IStyledText {
         }
         TextLayout layout = renderer.getTextLayout(caretLine);
         int level = layout.getLevel(offset);
-        renderer.disposeTextLayout(layout.getApi());
+        renderer.disposeTextLayout(layout);
         return ((level & 1) != 0) ? SWT.RIGHT : SWT.LEFT;
     }
 
@@ -5547,7 +5548,7 @@ public class StyledText extends Canvas implements IStyledText {
             } else {
                 TextLayout layout = renderer.getTextLayout(lineIndex);
                 newOffset = lineOffset + layout.getNextOffset(offset - lineOffset, movement);
-                renderer.disposeTextLayout(layout.getApi());
+                renderer.disposeTextLayout(layout);
             }
         }
         if (ignoreListener)
@@ -5579,7 +5580,7 @@ public class StyledText extends Canvas implements IStyledText {
                 int layoutOffset = Math.min(offset - lineOffset, lineText.length());
                 TextLayout layout = renderer.getTextLayout(lineIndex);
                 newOffset = lineOffset + layout.getPreviousOffset(layoutOffset, movement);
-                renderer.disposeTextLayout(layout.getApi());
+                renderer.disposeTextLayout(layout);
             }
         }
         if (ignoreListener)
@@ -5678,7 +5679,7 @@ public class StyledText extends Canvas implements IStyledText {
         } else {
             point = new Point(layout.getIndent(), layout.getVerticalIndent());
         }
-        renderer.disposeTextLayout(layout.getApi());
+        renderer.disposeTextLayout(layout);
         point.x += leftMargin - horizontalScrollOffset;
         point.y += getLinePixel(lineIndex);
         return point;
@@ -5997,7 +5998,7 @@ public class StyledText extends Canvas implements IStyledText {
                 rect.x += lineX;
                 rect.y += startLineY;
                 super.redraw(rect.x, rect.y, rect.width, rect.height, false);
-                renderer.disposeTextLayout(layout.getApi());
+                renderer.disposeTextLayout(layout);
                 return;
             }
         }
@@ -6015,7 +6016,7 @@ public class StyledText extends Canvas implements IStyledText {
         super.redraw(startRect.x, startRect.y, startRect.width, startRect.height, false);
         /* Redraw end line from the beginning of the line to the end offset */
         if (startLine != endLine) {
-            renderer.disposeTextLayout(layout.getApi());
+            renderer.disposeTextLayout(layout);
             layout = renderer.getTextLayout(endLine);
             offsets = layout.getLineOffsets();
         }
@@ -6029,7 +6030,7 @@ public class StyledText extends Canvas implements IStyledText {
         endRect.x += lineX;
         endRect.y += getLinePixel(endLine);
         super.redraw(endRect.x, endRect.y, endRect.width, endRect.height, false);
-        renderer.disposeTextLayout(layout.getApi());
+        renderer.disposeTextLayout(layout);
         /* Redraw all lines in between start and end line */
         int y = startRect.y + startRect.height;
         if (endRect.y > y) {
@@ -6083,7 +6084,7 @@ public class StyledText extends Canvas implements IStyledText {
                     int lineOffset = content.getOffsetAtLine(lineIndex);
                     TextLayout layout = renderer.getTextLayout(lineIndex);
                     caretWidth = layout.getBounds(start - lineOffset, start + length - 1 - lineOffset).width;
-                    renderer.disposeTextLayout(layout.getApi());
+                    renderer.disposeTextLayout(layout);
                 }
                 alignment = OFFSET_LEADING;
             }
@@ -6419,7 +6420,7 @@ public class StyledText extends Canvas implements IStyledText {
             final int endLine = isSingleLine() ? 1 : content.getLineCount();
             final int x = leftMargin - horizontalScrollOffset;
             int y = getLinePixel(startLine);
-            y += renderer.drawLines(startLine, endLine, x, y, endY, gc.getApi(), background.getApi(), foreground.getApi());
+            y += renderer.drawLines(startLine, endLine, x, y, endY, gc, background, foreground);
             if (y < endY) {
                 gc.setBackground(background);
                 drawBackground(gc, 0, y, clientAreaWidth, endY - y);
@@ -6866,7 +6867,7 @@ public class StyledText extends Canvas implements IStyledText {
                     } else {
                         TextLayout layout = st.renderer.getTextLayout(lineIndex);
                         rect.width = layout.getBounds().width - rect.x;
-                        st.renderer.disposeTextLayout(layout.getApi());
+                        st.renderer.disposeTextLayout(layout);
                     }
                     rects[index++] = rect = display.map(st, null, rect);
                     if (bounds == null) {
@@ -7195,7 +7196,7 @@ public class StyledText extends Canvas implements IStyledText {
                     return;
                 }
                 int[] ranges = layout.getRanges();
-                st.renderer.disposeTextLayout(layout.getApi());
+                st.renderer.disposeTextLayout(layout);
                 int index = 0;
                 int end = 0;
                 while (index < ranges.length) {
@@ -7667,12 +7668,12 @@ public class StyledText extends Canvas implements IStyledText {
                     int levelStart = layout.getLevel(event.start - lineOffset);
                     int lineIndexEnd = content.getLineAtOffset(event.end);
                     if (lineIndex != lineIndexEnd) {
-                        renderer.disposeTextLayout(layout.getApi());
+                        renderer.disposeTextLayout(layout);
                         lineOffset = content.getOffsetAtLine(lineIndexEnd);
                         layout = renderer.getTextLayout(lineIndexEnd);
                     }
                     int levelEnd = layout.getLevel(event.end - lineOffset);
-                    renderer.disposeTextLayout(layout.getApi());
+                    renderer.disposeTextLayout(layout);
                     if (levelStart != levelEnd) {
                         caretAlignment = PREVIOUS_OFFSET_TRAILING;
                     } else {
@@ -7807,7 +7808,7 @@ public class StyledText extends Canvas implements IStyledText {
         options.printTextBackground = true;
         options.printTextFontStyle = true;
         options.printLineBackground = true;
-        new Printing(this.getApi(), printer.getApi(), options.getApi()).run();
+        new Printing(this.getApi(), printer, options).run();
         printer.dispose();
     }
 
@@ -7872,7 +7873,7 @@ public class StyledText extends Canvas implements IStyledText {
         if (printer == null || options == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
-        return new Printing(this.getApi(), printer.getApi(), options.getApi());
+        return new Printing(this.getApi(), printer, options);
     }
 
     /**
@@ -8700,7 +8701,7 @@ public class StyledText extends Canvas implements IStyledText {
                 if (fillWithSpaces) {
                     TextLayout layout = renderer.getTextLayout(lineIndex);
                     lineWidth = layout.getBounds().width;
-                    renderer.disposeTextLayout(layout.getApi());
+                    renderer.disposeTextLayout(layout);
                 }
             } else {
                 start += trailing[0];
@@ -9268,10 +9269,10 @@ public class StyledText extends Canvas implements IStyledText {
         } else {
             try {
                 RTFTransfer rtfTransfer = RTFTransfer.getInstance();
-                RTFWriter rtfWriter = new RTFWriter(this.getApi(), start, length);
+                RTFWriter rtfWriter = new RTFWriter(this, start, length);
                 String rtfText = getPlatformDelimitedText(rtfWriter);
                 HTMLTransfer htmlTransfer = HTMLTransfer.getInstance();
-                HTMLWriter htmlWriter = new HTMLWriter(this.getApi(), start, length, content);
+                HTMLWriter htmlWriter = new HTMLWriter(this, start, length, content);
                 String htmlText = getPlatformDelimitedText(htmlWriter);
                 //cause extra memory pressure to fail fast instead of failing in HTMLTransfer.javaToNative()
                 htmlText = "" + htmlText;
@@ -9425,7 +9426,7 @@ public class StyledText extends Canvas implements IStyledText {
      */
     public void setFixedLineMetrics(IFontMetrics imetrics) {
         FontMetrics metrics = (FontMetrics) imetrics;
-        renderer.setFixedLineMetrics(metrics.getApi());
+        renderer.setFixedLineMetrics(metrics);
     }
 
     /**
@@ -9790,7 +9791,7 @@ public class StyledText extends Canvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (background != null) {
-            renderer.setLineBackground(startLine, lineCount, background.getApi());
+            renderer.setLineBackground(startLine, lineCount, background);
         } else {
             renderer.clearLineBackground(startLine, lineCount);
         }
@@ -9838,7 +9839,7 @@ public class StyledText extends Canvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         int oldBottom = getLinePixel(startLine + lineCount);
-        renderer.setLineBullet(startLine, lineCount, bullet.getApi());
+        renderer.setLineBullet(startLine, lineCount, bullet);
         resetCache(startLine, lineCount);
         int newBottom = getLinePixel(startLine + lineCount);
         redrawLines(startLine, lineCount, oldBottom != newBottom);
@@ -10289,7 +10290,7 @@ public class StyledText extends Canvas implements IStyledText {
             return;
         }
         if (enabled) {
-            mouseNavigator = new MouseNavigator(this.getApi());
+            mouseNavigator = new MouseNavigator(this);
         } else {
             mouseNavigator.dispose();
             mouseNavigator = null;

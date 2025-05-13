@@ -171,7 +171,7 @@ class AccessibleTableRow extends Accessible {
             NSSize size = sizeObj.sizeValue();
             if (position.x <= e.x && e.x <= position.x + size.width) {
                 children[j].parent = this;
-                e.accessible = children[j];
+                e.accessible = children[j].getApi();
                 break;
             }
         }

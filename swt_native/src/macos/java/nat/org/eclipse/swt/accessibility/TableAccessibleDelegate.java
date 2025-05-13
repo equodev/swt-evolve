@@ -18,6 +18,7 @@ package nat.org.eclipse.swt.accessibility;
 import java.util.*;
 import org.eclipse.swt.internal.cocoa.*;
 import nat.org.eclipse.swt.widgets.*;
+import dev.equo.swt.Convert;
 import org.eclipse.swt.accessibility.AccessibleControlAdapter;
 import org.eclipse.swt.accessibility.AccessibleControlEvent;
 import org.eclipse.swt.accessibility.AccessibleTableEvent;
@@ -143,7 +144,7 @@ class TableAccessibleDelegate {
             public void getColumn(AccessibleTableEvent e) {
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
                 getColumns(event);
-                e.accessible = event.accessibles[e.column];
+                e.accessible = event.accessibles[e.column].getApi();
             }
 
             @Override
@@ -165,12 +166,12 @@ class TableAccessibleDelegate {
                 for (int i = 0; i < columnCount; i++) {
                     accessibles[i] = childColumnToIdMap.get(i);
                 }
-                e.accessibles = accessibles;
+                e.accessibles = Convert.array(accessibles, org.eclipse.swt.accessibility.IAccessible::getApi, org.eclipse.swt.accessibility.Accessible[]::new);
             }
 
             @Override
             public void getColumnHeader(AccessibleTableEvent e) {
-                e.accessible = (childColumnToIdMap.size() > 1 ? headerAccessible() : null);
+                e.accessible = (childColumnToIdMap.size() > 1 ? headerAccessible() : null).getApi();
             }
 
             @Override
@@ -188,7 +189,7 @@ class TableAccessibleDelegate {
             public void getRow(AccessibleTableEvent e) {
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
                 getRows(event);
-                e.accessible = event.accessibles[e.row];
+                e.accessible = event.accessibles[e.row].getApi();
             }
 
             @Override
@@ -210,7 +211,7 @@ class TableAccessibleDelegate {
                 for (int i = 0; i < columnCount; i++) {
                     accessibles[i] = childRowToIdMap.get(i);
                 }
-                e.accessibles = accessibles;
+                e.accessibles = Convert.array(accessibles, org.eclipse.swt.accessibility.IAccessible::getApi, org.eclipse.swt.accessibility.Accessible[]::new);
             }
         });
     }

@@ -159,7 +159,7 @@ public class BrowserFunction implements IBrowserFunction {
         }
         token = buffer.toString();
         if (create)
-            browser.webBrowser.createFunction(this.getApi());
+            browser.webBrowser.createFunction(this);
     }
 
     /**
@@ -178,7 +178,7 @@ public class BrowserFunction implements IBrowserFunction {
         if (index < 0)
             return;
         if (remove)
-            browser.webBrowser.destroyFunction(this.getApi());
+            browser.webBrowser.destroyFunction(this);
         browser = null;
         name = functionString = null;
         index = -1;

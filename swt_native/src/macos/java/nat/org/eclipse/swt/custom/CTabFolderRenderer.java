@@ -1814,7 +1814,7 @@ public class CTabFolderRenderer implements ICTabFolderRenderer {
 
     void updateCurves() {
         //Temp fix for Bug 384743
-        if (this.getApi().getClass().getName().equals("org.eclipse.e4.ui.workbench.renderers.swt.CTabRendering"))
+        if (this.getClass().getName().equals("org.eclipse.e4.ui.workbench.renderers.swt.CTabRendering"))
             return;
         int tabHeight = parent.tabHeight;
         if (tabHeight == lastTabHeight)

@@ -17,6 +17,7 @@ package nat.org.eclipse.swt.custom;
 
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
+import org.eclipse.swt.custom.StyledTextEvent;
 
 /**
  * The base class encapsulating the logic used to write styled content as

@@ -33,7 +33,7 @@ public class CaretEvent extends TypedEvent {
 
     static final long serialVersionUID = 3257846571587545489L;
 
-    CaretEvent(StyledTextEvent e) {
+    public CaretEvent(StyledTextEvent e) {
         super(e);
         caretOffset = e.end;
     }

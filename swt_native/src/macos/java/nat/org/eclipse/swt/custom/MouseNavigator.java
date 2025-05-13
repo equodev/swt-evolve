@@ -173,8 +173,8 @@ class MouseNavigator {
 
     private void fireSelectionEvent(final Event e, final ScrollBar bar) {
         final Event event = new Event();
-        event.widget = bar;
-        event.display = parent.getDisplay();
+        event.widget = bar.getApi();
+        event.display = parent.getDisplay().getApi();
         event.type = SWT.Selection;
         event.time = e.time;
         for (final Listener selectionListener : bar.getListeners(SWT.Selection)) {

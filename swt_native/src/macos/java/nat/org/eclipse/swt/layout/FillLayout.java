@@ -166,7 +166,7 @@ public final class FillLayout extends Layout implements IFillLayout {
         }
         Point size = null;
         if (wHint == SWT.DEFAULT && hHint == SWT.DEFAULT) {
-            size = fillData.computeSize(control.getApi(), wHint, hHint, flushCache);
+            size = fillData.computeSize(control, wHint, hHint, flushCache);
         } else {
             // TEMPORARY CODE
             int trimX, trimY;
@@ -179,7 +179,7 @@ public final class FillLayout extends Layout implements IFillLayout {
             }
             int w = wHint == SWT.DEFAULT ? wHint : Math.max(0, wHint - trimX);
             int h = hHint == SWT.DEFAULT ? hHint : Math.max(0, hHint - trimY);
-            size = fillData.computeSize(control.getApi(), w, h, flushCache);
+            size = fillData.computeSize(control, w, h, flushCache);
         }
         return size;
     }

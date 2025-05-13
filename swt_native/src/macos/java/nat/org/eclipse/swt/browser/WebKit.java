@@ -774,17 +774,17 @@ class WebKit extends WebBrowser {
         final Display display = browser.getDisplay();
         boolean top = frameID == webView.mainFrame().id;
         if (top) {
-            StatusTextEvent statusText = new StatusTextEvent(browser);
-            statusText.display = display;
-            statusText.widget = browser;
+            StatusTextEvent statusText = new StatusTextEvent(browser.getApi());
+            statusText.display = display.getApi();
+            statusText.widget = browser.getApi();
             statusText.text = url2;
             for (int i = 0; i < statusTextListeners.length; i++) {
                 statusTextListeners[i].changed(statusText);
             }
         }
-        LocationEvent location = new LocationEvent(browser);
-        location.display = display;
-        location.widget = browser;
+        LocationEvent location = new LocationEvent(browser.getApi());
+        location.display = display.getApi();
+        location.widget = browser.getApi();
         location.location = url2;
         location.top = top;
         for (int i = 0; i < locationListeners.length; i++) {
@@ -929,9 +929,9 @@ class WebKit extends WebBrowser {
                     NSString title = dataSource.pageTitle();
                     if (title == null) {
                         /* page has no title */
-                        TitleEvent newEvent = new TitleEvent(browser);
-                        newEvent.display = display;
-                        newEvent.widget = browser;
+                        TitleEvent newEvent = new TitleEvent(browser.getApi());
+                        newEvent.display = display.getApi();
+                        newEvent.widget = browser.getApi();
                         newEvent.title = getUrl();
                         for (int i = 0; i < titleListeners.length; i++) {
                             titleListeners[i].changed(newEvent);
@@ -940,9 +940,9 @@ class WebKit extends WebBrowser {
                             return;
                     }
                 }
-                ProgressEvent progress = new ProgressEvent(browser);
-                progress.display = display;
-                progress.widget = browser;
+                ProgressEvent progress = new ProgressEvent(browser.getApi());
+                progress.display = display.getApi();
+                progress.widget = browser.getApi();
                 progress.current = MAX_PROGRESS;
                 progress.total = MAX_PROGRESS;
                 for (int i = 0; i < progressListeners.length; i++) {
@@ -999,9 +999,9 @@ class WebKit extends WebBrowser {
         if (frameID == webView.mainFrame().id) {
             NSString title = new NSString(titleID);
             String newTitle = title.getString();
-            TitleEvent newEvent = new TitleEvent(browser);
-            newEvent.display = browser.getDisplay();
-            newEvent.widget = browser;
+            TitleEvent newEvent = new TitleEvent(browser.getApi());
+            newEvent.display = browser.getDisplay().getApi();
+            newEvent.widget = browser.getApi();
             newEvent.title = newTitle;
             for (int i = 0; i < titleListeners.length; i++) {
                 titleListeners[i].changed(newEvent);
@@ -1065,9 +1065,9 @@ class WebKit extends WebBrowser {
                 BrowserFunction function = elements.next();
                 execute(function.functionString);
             }
-            ProgressEvent progress = new ProgressEvent(browser);
-            progress.display = display;
-            progress.widget = browser;
+            ProgressEvent progress = new ProgressEvent(browser.getApi());
+            progress.display = display.getApi();
+            progress.widget = browser.getApi();
             progress.current = 1;
             progress.total = MAX_PROGRESS;
             for (int i = 0; i < progressListeners.length; i++) {
@@ -1075,9 +1075,9 @@ class WebKit extends WebBrowser {
             }
             if (browser.isDisposed())
                 return;
-            StatusTextEvent statusText = new StatusTextEvent(browser);
-            statusText.display = display;
-            statusText.widget = browser;
+            StatusTextEvent statusText = new StatusTextEvent(browser.getApi());
+            statusText.display = display.getApi();
+            statusText.widget = browser.getApi();
             statusText.text = url2;
             for (int i = 0; i < statusTextListeners.length; i++) {
                 statusTextListeners[i].changed(statusText);
@@ -1087,9 +1087,9 @@ class WebKit extends WebBrowser {
             hookDOMKeyListeners(frameID);
         }
         hookDOMMouseListeners(frameID);
-        LocationEvent location = new LocationEvent(browser);
-        location.display = display;
-        location.widget = browser;
+        LocationEvent location = new LocationEvent(browser.getApi());
+        location.display = display.getApi();
+        location.widget = browser.getApi();
         location.location = url2;
         location.top = top;
         for (int i = 0; i < locationListeners.length; i++) {
@@ -1150,7 +1150,7 @@ class WebKit extends WebBrowser {
 	 */
         if (nsChallenge.previousFailureCount() < 3) {
             for (int i = 0; i < authenticationListeners.length; i++) {
-                AuthenticationEvent event = new AuthenticationEvent(browser);
+                AuthenticationEvent event = new AuthenticationEvent(browser.getApi());
                 event.location = lastNavigateURL;
                 authenticationListeners[i].authenticate(event);
                 if (!event.doit) {
@@ -1277,9 +1277,9 @@ class WebKit extends WebBrowser {
     }
 
     long webView_identifierForInitialRequest_fromDataSource(long sender, long request, long dataSourceID) {
-        ProgressEvent progress = new ProgressEvent(browser);
-        progress.display = browser.getDisplay();
-        progress.widget = browser;
+        ProgressEvent progress = new ProgressEvent(browser.getApi());
+        progress.display = browser.getDisplay().getApi();
+        progress.widget = browser.getApi();
         progress.current = resourceCount;
         progress.total = Math.max(resourceCount, MAX_PROGRESS);
         for (int i = 0; i < progressListeners.length; i++) {
@@ -1311,9 +1311,9 @@ class WebKit extends WebBrowser {
 
     /* UIDelegate */
     long webView_createWebViewWithRequest(long sender, long request) {
-        WindowEvent newEvent = new WindowEvent(browser);
-        newEvent.display = browser.getDisplay();
-        newEvent.widget = browser;
+        WindowEvent newEvent = new WindowEvent(browser.getApi());
+        newEvent.display = browser.getDisplay().getApi();
+        newEvent.widget = browser.getApi();
         newEvent.required = true;
         if (openWindowListeners != null) {
             for (int i = 0; i < openWindowListeners.length; i++) {
@@ -1350,13 +1350,13 @@ class WebKit extends WebBrowser {
         Point pt = parent.getSize();
         parent.setSize(pt.x + 1, pt.y);
         parent.setSize(pt.x, pt.y);
-        WindowEvent newEvent = new WindowEvent(browser);
-        newEvent.display = browser.getDisplay();
-        newEvent.widget = browser;
+        WindowEvent newEvent = new WindowEvent(browser.getApi());
+        newEvent.display = browser.getDisplay().getApi();
+        newEvent.widget = browser.getApi();
         if (location != null)
-            newEvent.location = location;
+            newEvent.location = location.getApi();
         if (size != null)
-            newEvent.size = size;
+            newEvent.size = size.getApi();
         /*
 	* Feature in WebKit.  WebKit's tool bar contains
 	* the address bar.  The address bar is displayed
@@ -1446,9 +1446,9 @@ class WebKit extends WebBrowser {
 
     void webViewClose(long sender) {
         Shell parent = browser.getShell();
-        WindowEvent newEvent = new WindowEvent(browser);
-        newEvent.display = browser.getDisplay();
-        newEvent.widget = browser;
+        WindowEvent newEvent = new WindowEvent(browser.getApi());
+        newEvent.display = browser.getDisplay().getApi();
+        newEvent.widget = browser.getApi();
         for (int i = 0; i < closeWindowListeners.length; i++) {
             closeWindowListeners[i].close(newEvent);
         }
@@ -1499,9 +1499,9 @@ class WebKit extends WebBrowser {
         int length = (int) text.length();
         if (length == 0)
             return;
-        StatusTextEvent statusText = new StatusTextEvent(browser);
-        statusText.display = browser.getDisplay();
-        statusText.widget = browser;
+        StatusTextEvent statusText = new StatusTextEvent(browser.getApi());
+        statusText.display = browser.getDisplay().getApi();
+        statusText.widget = browser.getApi();
         statusText.text = text.getString();
         for (int i = 0; i < statusTextListeners.length; i++) {
             statusTextListeners[i].changed(statusText);
@@ -1527,9 +1527,9 @@ class WebKit extends WebBrowser {
             if (lastHoveredLinkURL == null)
                 return;
             lastHoveredLinkURL = null;
-            StatusTextEvent statusText = new StatusTextEvent(browser);
-            statusText.display = browser.getDisplay();
-            statusText.widget = browser;
+            StatusTextEvent statusText = new StatusTextEvent(browser.getApi());
+            statusText.display = browser.getDisplay().getApi();
+            statusText.widget = browser.getApi();
             //$NON-NLS-1$
             statusText.text = "";
             for (int i = 0; i < statusTextListeners.length; i++) {
@@ -1549,9 +1549,9 @@ class WebKit extends WebBrowser {
         if (urlString.equals(lastHoveredLinkURL))
             return;
         lastHoveredLinkURL = urlString;
-        StatusTextEvent statusText = new StatusTextEvent(browser);
-        statusText.display = browser.getDisplay();
-        statusText.widget = browser;
+        StatusTextEvent statusText = new StatusTextEvent(browser.getApi());
+        statusText.display = browser.getDisplay().getApi();
+        statusText.widget = browser.getApi();
         statusText.text = urlString;
         for (int i = 0; i < statusTextListeners.length; i++) {
             statusTextListeners[i].changed(statusText);
@@ -1618,9 +1618,9 @@ class WebKit extends WebBrowser {
                 url2 = ABOUT_BLANK + url2.substring(length);
             }
         }
-        LocationEvent newEvent = new LocationEvent(browser);
-        newEvent.display = browser.getDisplay();
-        newEvent.widget = browser;
+        LocationEvent newEvent = new LocationEvent(browser.getApi());
+        newEvent.display = browser.getDisplay().getApi();
+        newEvent.widget = browser.getApi();
         newEvent.location = url2;
         newEvent.doit = true;
         if (locationListeners != null) {
@@ -1683,7 +1683,7 @@ class WebKit extends WebBrowser {
             int keyCode = event.keyCode();
             int charCode = event.charCode();
             Event keyEvent = new Event();
-            keyEvent.widget = browser;
+            keyEvent.widget = browser.getApi();
             int eventType = DOMEVENT_KEYDOWN.equals(type) ? SWT.KeyDown : SWT.KeyUp;
             keyEvent.type = eventType;
             int translatedKey = translateKey(keyCode);
@@ -1735,7 +1735,7 @@ class WebKit extends WebBrowser {
             boolean meta = event.metaKey();
             Event mouseEvent = new Event();
             mouseEvent.type = SWT.MouseWheel;
-            mouseEvent.widget = browser;
+            mouseEvent.widget = browser.getApi();
             mouseEvent.x = position.x;
             mouseEvent.y = position.y;
             mouseEvent.count = delta / 120;
@@ -1762,7 +1762,7 @@ class WebKit extends WebBrowser {
         boolean alt = event.altKey();
         boolean meta = event.metaKey();
         Event mouseEvent = new Event();
-        mouseEvent.widget = browser;
+        mouseEvent.widget = browser.getApi();
         mouseEvent.x = position.x;
         mouseEvent.y = position.y;
         mouseEvent.stateMask = (alt ? SWT.ALT : 0) | (ctrl ? SWT.CTRL : 0) | (shift ? SWT.SHIFT : 0) | (meta ? SWT.COMMAND : 0);
@@ -1806,7 +1806,7 @@ class WebKit extends WebBrowser {
         browser.notifyListeners(mouseEvent.type, mouseEvent);
         if (detail == 2 && DOMEVENT_MOUSEDOWN.equals(type)) {
             mouseEvent = new Event();
-            mouseEvent.widget = browser;
+            mouseEvent.widget = browser.getApi();
             mouseEvent.x = position.x;
             mouseEvent.y = position.y;
             mouseEvent.stateMask = (alt ? SWT.ALT : 0) | (ctrl ? SWT.CTRL : 0) | (shift ? SWT.SHIFT : 0) | (meta ? SWT.COMMAND : 0);

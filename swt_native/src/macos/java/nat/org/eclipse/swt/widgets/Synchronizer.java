@@ -138,7 +138,7 @@ public class Synchronizer implements ISynchronizer {
                 syncThread = lock.thread;
                 display.sendPreEvent(SWT.None);
                 try {
-                    lock.run(display.getApi());
+                    lock.run(display);
                 } catch (Throwable t) {
                     lock.throwable = t;
                     SWT.error(SWT.ERROR_FAILED_EXEC, t);
