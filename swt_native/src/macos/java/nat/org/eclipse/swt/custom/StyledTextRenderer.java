@@ -1698,7 +1698,7 @@ class StyledTextRenderer {
                 lines[i] = new LineInfo();
             }
             lines[i].flags |= BACKGROUND;
-            lines[i].background = background.getApi();
+            lines[i].background = background;
         }
     }
 

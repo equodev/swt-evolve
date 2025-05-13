@@ -2350,7 +2350,7 @@ public final class TextLayout extends Resource implements ITextLayout {
                 int styleStart = styles[modifyStart].start;
                 int styleEnd = styles[modifyEnd + 1].start - 1;
                 if (styleStart == start && styleEnd == end) {
-                    styles[modifyStart].style = style.getApi();
+                    styles[modifyStart].style = style;
                     return;
                 }
                 if (styleStart != start && styleEnd != end) {
@@ -2364,11 +2364,11 @@ public final class TextLayout extends Resource implements ITextLayout {
                     System.arraycopy(styles, modifyEnd + 1, styles, modifyEnd + 3, stylesCount - modifyEnd - 1);
                     StyleItem item = new StyleItem();
                     item.start = start;
-                    item.style = style.getApi();
+                    item.style = style;
                     styles[modifyStart + 1] = item;
                     item = new StyleItem();
                     item.start = end + 1;
-                    item.style = styles[modifyStart].style.getApi();
+                    item.style = styles[modifyStart].style;
                     styles[modifyStart + 2] = item;
                     stylesCount = newLength;
                     return;
@@ -2388,7 +2388,7 @@ public final class TextLayout extends Resource implements ITextLayout {
             System.arraycopy(styles, modifyEnd, styles, modifyStart + 2, stylesCount - modifyEnd);
             StyleItem item = new StyleItem();
             item.start = start;
-            item.style = style.getApi();
+            item.style = style;
             styles[modifyStart + 1] = item;
             styles[modifyStart + 2].start = end + 1;
             stylesCount = newLength;
