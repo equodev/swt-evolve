@@ -61,7 +61,7 @@ public final class Region extends Resource {
      * @see #dispose()
      */
     public Region() {
-        this(null);
+        this(new nat.org.eclipse.swt.graphics.Region());
     }
 
     /**
@@ -84,122 +84,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public Region(Device device) {
-        super(device);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            handle = OS.NewRgn();
-            if (handle == 0)
-                SWT.error(SWT.ERROR_NO_HANDLES);
-            init();
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
-    }
-
-    Region(Device device, long handle) {
-        super(device);
-        this.handle = handle;
-        /*
-	 * When created this way, Font doesn't own its .handle, and
-	 * for this reason it can't be disposed. Tell leak detector
-	 * to just ignore it.
-	 */
-        this.ignoreNonDisposed();
-    }
-
-    /**
-     * Invokes platform specific functionality to allocate a new region.
-     * <p>
-     * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
-     * API for <code>Region</code>. It is marked public only so that it
-     * can be shared within the packages provided by SWT. It is not
-     * available on all platforms, and should never be called from
-     * application code.
-     * </p>
-     *
-     * @param device the device on which to allocate the region
-     * @param handle the handle for the region
-     * @return a new region object containing the specified device and handle
-     *
-     * @noreference This method is not intended to be referenced by clients.
-     */
-    public static Region cocoa_new(Device device, long handle) {
-        return new Region(device, handle);
-    }
-
-    static long polyToRgn(int[] poly, int length) {
-        short[] r = new short[4];
-        long polyRgn = OS.NewRgn(), rectRgn = OS.NewRgn();
-        int minY = poly[1], maxY = poly[1];
-        for (int y = 3; y < length; y += 2) {
-            if (poly[y] < minY)
-                minY = poly[y];
-            if (poly[y] > maxY)
-                maxY = poly[y];
-        }
-        int[] inter = new int[length + 1];
-        for (int y = minY; y <= maxY; y++) {
-            int count = 0;
-            int x1 = poly[0], y1 = poly[1];
-            for (int p = 2; p < length; p += 2) {
-                int x2 = poly[p], y2 = poly[p + 1];
-                if (y1 != y2 && ((y1 <= y && y < y2) || (y2 <= y && y < y1))) {
-                    inter[count++] = (int) ((((y - y1) / (float) (y2 - y1)) * (x2 - x1)) + x1 + 0.5f);
-                }
-                x1 = x2;
-                y1 = y2;
-            }
-            int x2 = poly[0], y2 = poly[1];
-            if (y1 != y2 && ((y1 <= y && y < y2) || (y2 <= y && y < y1))) {
-                inter[count++] = (int) ((((y - y1) / (float) (y2 - y1)) * (x2 - x1)) + x1 + 0.5f);
-            }
-            for (int gap = count / 2; gap > 0; gap /= 2) {
-                for (int i = gap; i < count; i++) {
-                    for (int j = i - gap; j >= 0; j -= gap) {
-                        if ((inter[j] - inter[j + gap]) <= 0)
-                            break;
-                        int temp = inter[j];
-                        inter[j] = inter[j + gap];
-                        inter[j + gap] = temp;
-                    }
-                }
-            }
-            for (int i = 0; i < count; i += 2) {
-                OS.SetRect(r, (short) inter[i], (short) y, (short) (inter[i + 1]), (short) (y + 1));
-                OS.RectRgn(rectRgn, r);
-                OS.UnionRgn(polyRgn, rectRgn, polyRgn);
-            }
-        }
-        OS.DisposeRgn(rectRgn);
-        return polyRgn;
-    }
-
-    static long polyRgn(int[] pointArray, int count) {
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            long polyRgn;
-            if (C.PTR_SIZEOF == 4) {
-                polyRgn = OS.NewRgn();
-                OS.OpenRgn();
-                OS.MoveTo((short) pointArray[0], (short) pointArray[1]);
-                for (int i = 1; i < count / 2; i++) {
-                    OS.LineTo((short) pointArray[2 * i], (short) pointArray[2 * i + 1]);
-                }
-                OS.LineTo((short) pointArray[0], (short) pointArray[1]);
-                OS.CloseRgn(polyRgn);
-            } else {
-                polyRgn = polyToRgn(pointArray, count);
-            }
-            return polyRgn;
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        this(new nat.org.eclipse.swt.graphics.Region((nat.org.eclipse.swt.graphics.Device) device.getDelegate()));
     }
 
     /**
@@ -218,36 +103,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void add(int[] pointArray) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (pointArray == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            add(pointArray, pointArray.length);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
-    }
-
-    void add(int[] pointArray, int count) {
-        count = count / 2 * 2;
-        if (count <= 2)
-            return;
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            long polyRgn = polyRgn(pointArray, count);
-            OS.UnionRgn(handle, polyRgn, handle);
-            OS.DisposeRgn(polyRgn);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        getDelegate().add(pointArray);
     }
 
     /**
@@ -265,21 +121,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public void add(Rectangle rect) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (rect == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (rect.width < 0 || rect.height < 0)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            add(rect.x, rect.y, rect.width, rect.height);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        getDelegate().add(rect);
     }
 
     /**
@@ -301,24 +143,7 @@ public final class Region extends Resource {
      * @since 3.1
      */
     public void add(int x, int y, int width, int height) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (width < 0 || height < 0)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            long rectRgn = OS.NewRgn();
-            short[] r = new short[4];
-            OS.SetRect(r, (short) x, (short) y, (short) (x + width), (short) (y + height));
-            OS.RectRgn(rectRgn, r);
-            OS.UnionRgn(handle, rectRgn, handle);
-            OS.DisposeRgn(rectRgn);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        getDelegate().add(x, y, width, height);
     }
 
     /**
@@ -337,21 +162,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public void add(Region region) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (region == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (region.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            OS.UnionRgn(handle, region.handle, handle);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        getDelegate().add(region.getDelegate());
     }
 
     /**
@@ -368,18 +179,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public boolean contains(int x, int y) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            short[] point = new short[] { (short) y, (short) x };
-            return OS.PtInRgn(point, handle);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        return getDelegate().contains(x, y);
     }
 
     /**
@@ -398,65 +198,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public boolean contains(Point pt) {
-        if (pt == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return contains(pt.x, pt.y);
-    }
-
-    NSAffineTransform transform;
-
-    void convertRgn(NSAffineTransform transform) {
-        long newRgn = OS.NewRgn();
-        Callback callback = new Callback(this, "convertRgn", 4);
-        this.transform = transform;
-        OS.QDRegionToRects(handle, OS.kQDParseRegionFromTopLeft, callback.getAddress(), newRgn);
-        this.transform = null;
-        callback.dispose();
-        OS.CopyRgn(newRgn, handle);
-        OS.DisposeRgn(newRgn);
-    }
-
-    long convertRgn(long message, long rgn, long r, long newRgn) {
-        if (message == OS.kQDRegionToRectsMsgParse) {
-            short[] rect = new short[4];
-            C.memmove(rect, r, rect.length * 2);
-            int i = 0;
-            NSPoint point = new NSPoint();
-            int[] points = new int[10];
-            point.x = rect[1];
-            point.y = rect[0];
-            point = transform.transformPoint(point);
-            short startX, startY;
-            points[i++] = startX = (short) point.x;
-            points[i++] = startY = (short) point.y;
-            point.x = rect[3];
-            point.y = rect[0];
-            point = transform.transformPoint(point);
-            points[i++] = (short) Math.round(point.x);
-            points[i++] = (short) point.y;
-            point.x = rect[3];
-            point.y = rect[2];
-            point = transform.transformPoint(point);
-            points[i++] = (short) Math.round(point.x);
-            points[i++] = (short) Math.round(point.y);
-            point.x = rect[1];
-            point.y = rect[2];
-            point = transform.transformPoint(point);
-            points[i++] = (short) point.x;
-            points[i++] = (short) Math.round(point.y);
-            points[i++] = startX;
-            points[i++] = startY;
-            long polyRgn = polyRgn(points, points.length);
-            OS.UnionRgn(newRgn, polyRgn, newRgn);
-            OS.DisposeRgn(polyRgn);
-        }
-        return 0;
-    }
-
-    @Override
-    void destroy() {
-        OS.DisposeRgn(handle);
-        handle = 0;
+        return getDelegate().contains(pt);
     }
 
     /**
@@ -471,11 +213,7 @@ public final class Region extends Resource {
      */
     @Override
     public boolean equals(Object object) {
-        if (this == object)
-            return true;
-        if (!(object instanceof Region region))
-            return false;
-        return handle == region.handle;
+        return getDelegate().equals(object);
     }
 
     /**
@@ -492,54 +230,7 @@ public final class Region extends Resource {
      * @see Rectangle#union
      */
     public Rectangle getBounds() {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            short[] bounds = new short[4];
-            OS.GetRegionBounds(handle, bounds);
-            int width = bounds[3] - bounds[1];
-            int height = bounds[2] - bounds[0];
-            return new Rectangle(bounds[1], bounds[0], width, height);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
-    }
-
-    NSBezierPath getPath() {
-        Callback callback = new Callback(this, "regionToRects", 4);
-        NSBezierPath path = NSBezierPath.bezierPath();
-        path.retain();
-        OS.QDRegionToRects(handle, OS.kQDParseRegionFromTopLeft, callback.getAddress(), path.id);
-        callback.dispose();
-        if (path.isEmpty())
-            path.appendBezierPathWithRect(new NSRect());
-        return path;
-    }
-
-    NSPoint pt = new NSPoint();
-
-    short[] rect = new short[4];
-
-    long regionToRects(long message, long rgn, long r, long path) {
-        if (message == OS.kQDRegionToRectsMsgParse) {
-            C.memmove(rect, r, rect.length * 2);
-            pt.x = rect[1];
-            pt.y = rect[0];
-            OS.objc_msgSend(path, OS.sel_moveToPoint_, pt);
-            pt.x = rect[3];
-            OS.objc_msgSend(path, OS.sel_lineToPoint_, pt);
-            pt.x = rect[3];
-            pt.y = rect[2];
-            OS.objc_msgSend(path, OS.sel_lineToPoint_, pt);
-            pt.x = rect[1];
-            OS.objc_msgSend(path, OS.sel_lineToPoint_, pt);
-            OS.objc_msgSend(path, OS.sel_closePath);
-        }
-        return 0;
+        return getDelegate().getBounds();
     }
 
     /**
@@ -554,7 +245,7 @@ public final class Region extends Resource {
      */
     @Override
     public int hashCode() {
-        return (int) handle;
+        return getDelegate().hashCode();
     }
 
     /**
@@ -574,11 +265,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void intersect(Rectangle rect) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (rect == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        intersect(rect.x, rect.y, rect.width, rect.height);
+        getDelegate().intersect(rect);
     }
 
     /**
@@ -600,24 +287,7 @@ public final class Region extends Resource {
      * @since 3.1
      */
     public void intersect(int x, int y, int width, int height) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (width < 0 || height < 0)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            long rectRgn = OS.NewRgn();
-            short[] r = new short[4];
-            OS.SetRect(r, (short) x, (short) y, (short) (x + width), (short) (y + height));
-            OS.RectRgn(rectRgn, r);
-            OS.SectRgn(handle, rectRgn, handle);
-            OS.DisposeRgn(rectRgn);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        getDelegate().intersect(x, y, width, height);
     }
 
     /**
@@ -638,21 +308,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void intersect(Region region) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (region == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (region.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            OS.SectRgn(handle, region.handle, handle);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        getDelegate().intersect(region.getDelegate());
     }
 
     /**
@@ -673,19 +329,7 @@ public final class Region extends Resource {
      * @see Rectangle#intersects(Rectangle)
      */
     public boolean intersects(int x, int y, int width, int height) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            short[] r = new short[4];
-            OS.SetRect(r, (short) x, (short) y, (short) (x + width), (short) (y + height));
-            return OS.RectInRgn(r, handle);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        return getDelegate().intersects(x, y, width, height);
     }
 
     /**
@@ -706,9 +350,7 @@ public final class Region extends Resource {
      * @see Rectangle#intersects(Rectangle)
      */
     public boolean intersects(Rectangle rect) {
-        if (rect == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return intersects(rect.x, rect.y, rect.width, rect.height);
+        return getDelegate().intersects(rect);
     }
 
     /**
@@ -723,7 +365,7 @@ public final class Region extends Resource {
      */
     @Override
     public boolean isDisposed() {
-        return handle == 0;
+        return getDelegate().isDisposed();
     }
 
     /**
@@ -738,17 +380,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public boolean isEmpty() {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            return OS.EmptyRgn(handle);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        return getDelegate().isEmpty();
     }
 
     /**
@@ -767,23 +399,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void subtract(int[] pointArray) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (pointArray == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (pointArray.length < 2)
-            return;
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            long polyRgn = polyRgn(pointArray, pointArray.length);
-            OS.DiffRgn(handle, polyRgn, handle);
-            OS.DisposeRgn(polyRgn);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        getDelegate().subtract(pointArray);
     }
 
     /**
@@ -803,11 +419,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void subtract(Rectangle rect) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (rect == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        subtract(rect.x, rect.y, rect.width, rect.height);
+        getDelegate().subtract(rect);
     }
 
     /**
@@ -829,24 +441,7 @@ public final class Region extends Resource {
      * @since 3.1
      */
     public void subtract(int x, int y, int width, int height) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (width < 0 || height < 0)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            long rectRgn = OS.NewRgn();
-            short[] r = new short[4];
-            OS.SetRect(r, (short) x, (short) y, (short) (x + width), (short) (y + height));
-            OS.RectRgn(rectRgn, r);
-            OS.DiffRgn(handle, rectRgn, handle);
-            OS.DisposeRgn(rectRgn);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        getDelegate().subtract(x, y, width, height);
     }
 
     /**
@@ -867,21 +462,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void subtract(Region region) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (region == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (region.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            OS.DiffRgn(handle, region.handle, handle);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        getDelegate().subtract(region.getDelegate());
     }
 
     /**
@@ -898,17 +479,7 @@ public final class Region extends Resource {
      * @since 3.1
      */
     public void translate(int x, int y) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            OS.OffsetRgn(handle, (short) x, (short) y);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        getDelegate().translate(x, y);
     }
 
     /**
@@ -927,19 +498,7 @@ public final class Region extends Resource {
      * @since 3.1
      */
     public void translate(Point pt) {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (pt == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            translate(pt.x, pt.y);
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        getDelegate().translate(pt);
     }
 
     /**
@@ -950,8 +509,14 @@ public final class Region extends Resource {
      */
     @Override
     public String toString() {
-        if (isDisposed())
-            return "Region {*DISPOSED*}";
-        return "Region {" + handle + "}";
+        return getDelegate().toString();
+    }
+
+    protected Region(IRegion delegate) {
+        super(delegate);
+    }
+
+    public IRegion getDelegate() {
+        return (IRegion) super.getDelegate();
     }
 }

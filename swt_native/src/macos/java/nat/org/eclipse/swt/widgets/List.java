@@ -20,9 +20,7 @@ import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.IList;
 
 /**

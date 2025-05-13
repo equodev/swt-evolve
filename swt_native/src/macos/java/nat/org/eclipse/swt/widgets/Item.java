@@ -18,8 +18,8 @@ package nat.org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.IItem;
+import org.eclipse.swt.graphics.IImage;
 
 /**
  * This class is the abstract superclass of all non-windowed
@@ -177,7 +177,8 @@ public abstract class Item extends Widget implements IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setImage(Image image) {
+    public void setImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         if (this.image == image)
             return;

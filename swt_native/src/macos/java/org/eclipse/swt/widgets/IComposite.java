@@ -56,7 +56,7 @@ public interface IComposite extends IScrollable {
      *
      * @since 3.6
      */
-    void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY);
+    void drawBackground(IGC gc, int x, int y, int width, int height, int offsetX, int offsetY);
 
     /**
      * Returns the receiver's background drawing mode. This

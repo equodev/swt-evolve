@@ -46,7 +46,7 @@ public interface ILink extends IControl {
      * </ul>
      * @since 3.105
      */
-    Color getLinkForeground();
+    IColor getLinkForeground();
 
     /**
      * Returns the receiver's text, which will be an empty
@@ -98,7 +98,7 @@ public interface ILink extends IControl {
      * </ul>
      * @since 3.105
      */
-    void setLinkForeground(Color color);
+    void setLinkForeground(IColor color);
 
     /**
      * Sets the receiver's text.

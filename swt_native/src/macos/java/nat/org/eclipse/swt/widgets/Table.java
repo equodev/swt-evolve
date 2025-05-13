@@ -21,16 +21,13 @@ import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.widgets.ITable;
 import org.eclipse.swt.widgets.ITableColumn;
 import org.eclipse.swt.widgets.ITableItem;
+import org.eclipse.swt.graphics.IColor;
 
 /**
  * Instances of this class implement a selectable user interface
@@ -515,7 +512,7 @@ public class Table extends Composite implements ITable {
                     width += columns[i].getWidth();
                 }
             } else {
-                GC gc = new GC(this.getApi());
+                GC gc = new GC(this);
                 width += calculateWidth(items, 0, gc) + CELL_GAP;
                 gc.dispose();
             }
@@ -1040,8 +1037,8 @@ public class Table extends Composite implements ITable {
         boolean hasFocus = hasFocus();
         Color selectionBackground = null, selectionForeground = null;
         if (isSelected && (hooksErase || hooksPaint)) {
-            selectionForeground = Color.cocoa_new(display.getApi(), (hasFocus || Display.APPEARANCE.Dark == display.appAppearance) ? display.alternateSelectedControlTextColor : display.selectedControlTextColor);
-            selectionBackground = Color.cocoa_new(display.getApi(), hasFocus ? display.getAlternateSelectedControlColor() : display.getSecondarySelectedControlColor());
+            selectionForeground = Color.cocoa_new(display, (hasFocus || Display.APPEARANCE.Dark == display.appAppearance) ? display.alternateSelectedControlTextColor : display.selectedControlTextColor);
+            selectionBackground = Color.cocoa_new(display, hasFocus ? display.getAlternateSelectedControlColor() : display.getSecondarySelectedControlColor());
         }
         NSSize contentSize = super.cellSize(id, OS.sel_cellSize);
         NSImage image = cell.image();
@@ -1080,7 +1077,7 @@ public class Table extends Composite implements ITable {
             transform.concat();
             GCData data = new GCData();
             data.paintRect = cellRect;
-            GC gc = GC.cocoa_new(this.getApi(), data);
+            GC gc = GC.cocoa_new(this, data);
             gc.setFont(item.getFont(columnIndex));
             Color fg;
             if (isSelected && ((style & SWT.HIDE_SELECTION) == 0 || hasFocus)) {
@@ -1096,7 +1093,7 @@ public class Table extends Composite implements ITable {
             }
             Event event = new Event();
             event.item = item.getApi();
-            event.gc = gc;
+            event.gc = gc.getApi();
             event.index = columnIndex;
             event.detail = SWT.FOREGROUND;
             if (drawBackground)
@@ -1116,7 +1113,7 @@ public class Table extends Composite implements ITable {
                 drawSelection = drawSelection && (event.detail & SWT.SELECTED) != 0;
             }
             if (!drawSelection && isSelected) {
-                userForeground = Color.cocoa_new(display.getApi(), gc.getForeground().handle);
+                userForeground = Color.cocoa_new(display, gc.getForeground().handle);
             }
             if (isDisposed() || item.isDisposed()) {
                 gc.dispose();
@@ -1235,7 +1232,7 @@ public class Table extends Composite implements ITable {
             transform.concat();
             GCData data = new GCData();
             data.paintRect = cellRect;
-            GC gc = GC.cocoa_new(this.getApi(), data);
+            GC gc = GC.cocoa_new(this, data);
             gc.setFont(item.getFont(columnIndex));
             if (drawSelection) {
                 gc.setForeground(selectionForeground);
@@ -1253,7 +1250,7 @@ public class Table extends Composite implements ITable {
             item.width = -1;
             Event event = new Event();
             event.item = item.getApi();
-            event.gc = gc;
+            event.gc = gc.getApi();
             event.index = columnIndex;
             if (drawForeground)
                 event.detail |= SWT.FOREGROUND;
@@ -1574,7 +1571,7 @@ public class Table extends Composite implements ITable {
     }
 
     private Color getHeaderBackgroundColor() {
-        return headerBackground != null ? Color.cocoa_new(display.getApi(), headerBackground) : defaultBackground();
+        return headerBackground != null ? Color.cocoa_new(display, headerBackground) : defaultBackground();
     }
 
     /**
@@ -1594,7 +1591,7 @@ public class Table extends Composite implements ITable {
     }
 
     Color getHeaderForegroundColor() {
-        return headerForeground != null ? Color.cocoa_new(display.getApi(), headerForeground) : defaultForeground();
+        return headerForeground != null ? Color.cocoa_new(display, headerForeground) : defaultForeground();
     }
 
     /**
@@ -2803,7 +2800,8 @@ public class Table extends Composite implements ITable {
      * </ul>
      * @since 3.106
      */
-    public void setHeaderBackground(Color color) {
+    public void setHeaderBackground(IColor icolor) {
+        Color color = (Color) icolor;
         checkWidget();
         if (color != null) {
             if (color.isDisposed())
@@ -2837,7 +2835,8 @@ public class Table extends Composite implements ITable {
      * </ul>
      * @since 3.106
      */
-    public void setHeaderForeground(Color color) {
+    public void setHeaderForeground(IColor icolor) {
+        Color color = (Color) icolor;
         checkWidget();
         if (color != null) {
             if (color.isDisposed())
@@ -3015,7 +3014,7 @@ public class Table extends Composite implements ITable {
                 fixScrollWidth = true;
             return false;
         }
-        GC gc = new GC(this.getApi());
+        GC gc = new GC(this);
         int newWidth = item.calculateWidth(0, gc, isSelected(indexOf(item)));
         gc.dispose();
         int oldWidth = (int) firstColumn.width();
@@ -3039,7 +3038,7 @@ public class Table extends Composite implements ITable {
             fixScrollWidth = true;
             return false;
         }
-        GC gc = new GC(this.getApi());
+        GC gc = new GC(this);
         int newWidth = 0;
         for (int i = 0; i < items.length; i++) {
             TableItem item = items[i];
@@ -3527,11 +3526,11 @@ public class Table extends Composite implements ITable {
         int itemHeight = (int) Math.ceil(widget.rowHeight() + spacing.height);
         GCData data = new GCData();
         data.paintRect = widget.frame();
-        GC gc = GC.cocoa_new(this.getApi(), data);
+        GC gc = GC.cocoa_new(this, data);
         gc.setFont(item.getFont(columnIndex));
         Event event = new Event();
         event.item = item.getApi();
-        event.gc = gc;
+        event.gc = gc.getApi();
         event.index = columnIndex;
         event.width = contentWidth;
         event.height = itemHeight;

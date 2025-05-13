@@ -148,7 +148,7 @@ public interface ITracker extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setCursor(Cursor newCursor);
+    void setCursor(ICursor newCursor);
 
     /**
      * Specifies the rectangles that should be drawn, expressed relative to the parent

@@ -192,7 +192,7 @@ public class CoolBar extends Composite {
 
     @Override
     public void setBackground(Color color) {
-        getDelegate().setBackground(color);
+        getDelegate().setBackground(color.getDelegate());
     }
 
     /**
@@ -283,7 +283,7 @@ public class CoolBar extends Composite {
 
     @Override
     public void setCursor(Cursor cursor) {
-        getDelegate().setCursor(cursor);
+        getDelegate().setCursor(cursor.getDelegate());
     }
 
     /**

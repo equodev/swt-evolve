@@ -173,7 +173,7 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public Color getBackground() {
-        return getDelegate().getBackground();
+        return getDelegate().getBackground().getApi();
     }
 
     /**
@@ -221,7 +221,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Image getDisabledImage() {
-        return getDelegate().getDisabledImage();
+        return getDelegate().getDisabledImage().getApi();
     }
 
     /**
@@ -256,7 +256,7 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public Color getForeground() {
-        return getDelegate().getForeground();
+        return getDelegate().getForeground().getApi();
     }
 
     /**
@@ -274,7 +274,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Image getHotImage() {
-        return getDelegate().getHotImage();
+        return getDelegate().getHotImage().getApi();
     }
 
     /**
@@ -290,7 +290,7 @@ public class ToolItem extends Item {
      */
     @Override
     public Image getImage() {
-        return getDelegate().getImage();
+        return getDelegate().getImage().getApi();
     }
 
     /**
@@ -416,7 +416,7 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground(color);
+        getDelegate().setBackground(color.getDelegate());
     }
 
     /**
@@ -476,7 +476,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setDisabledImage(Image image) {
-        getDelegate().setDisabledImage(image);
+        getDelegate().setDisabledImage(image.getDelegate());
     }
 
     /**
@@ -499,7 +499,7 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground(color);
+        getDelegate().setForeground(color.getDelegate());
     }
 
     /**
@@ -520,12 +520,12 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setHotImage(Image image) {
-        getDelegate().setHotImage(image);
+        getDelegate().setHotImage(image.getDelegate());
     }
 
     @Override
     public void setImage(Image image) {
-        getDelegate().setImage(image);
+        getDelegate().setImage(image.getDelegate());
     }
 
     /**

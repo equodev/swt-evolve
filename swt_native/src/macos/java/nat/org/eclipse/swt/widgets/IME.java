@@ -21,8 +21,6 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.graphics.TextStyle;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.IIME;
 
 /**
@@ -288,13 +286,13 @@ public class IME extends Widget implements IIME {
             NSString key = new NSString(keys.objectAtIndex(j));
             if (key.isEqual(OS.NSBackgroundColorAttributeName)) {
                 NSColor color = new NSColor(attribs.objectForKey(key));
-                style.background = Color.cocoa_new(display.getApi(), display.getNSColorRGB(color));
+                style.background = Color.cocoa_new(display, display.getNSColorRGB(color)).getApi();
             } else if (key.isEqual(OS.NSForegroundColorAttributeName)) {
                 NSColor color = new NSColor(attribs.objectForKey(key));
-                style.foreground = Color.cocoa_new(display.getApi(), display.getNSColorRGB(color));
+                style.foreground = Color.cocoa_new(display, display.getNSColorRGB(color)).getApi();
             } else if (key.isEqual(OS.NSUnderlineColorAttributeName)) {
                 NSColor color = new NSColor(attribs.objectForKey(key));
-                style.underlineColor = Color.cocoa_new(display.getApi(), display.getNSColorRGB(color));
+                style.underlineColor = Color.cocoa_new(display, display.getNSColorRGB(color)).getApi();
             } else if (key.isEqual(OS.NSUnderlineStyleAttributeName)) {
                 NSNumber value = new NSNumber(attribs.objectForKey(key));
                 switch(value.intValue()) {
@@ -311,14 +309,14 @@ public class IME extends Widget implements IIME {
                 style.underline = value.intValue() != OS.NSUnderlineStyleNone;
             } else if (key.isEqual(OS.NSStrikethroughColorAttributeName)) {
                 NSColor color = new NSColor(attribs.objectForKey(key));
-                style.strikeoutColor = Color.cocoa_new(display.getApi(), display.getNSColorRGB(color));
+                style.strikeoutColor = Color.cocoa_new(display, display.getNSColorRGB(color)).getApi();
             } else if (key.isEqual(OS.NSStrikethroughStyleAttributeName)) {
                 NSNumber value = new NSNumber(attribs.objectForKey(key));
                 style.strikeout = value.intValue() != OS.NSUnderlineStyleNone;
             } else if (key.isEqual(OS.NSFontAttributeName)) {
                 NSFont font = new NSFont(attribs.objectForKey(key));
                 font.retain();
-                style.font = Font.cocoa_new(display.getApi(), font);
+                style.font = Font.cocoa_new(display, font).getApi();
             }
         }
         return style;

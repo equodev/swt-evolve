@@ -18,11 +18,11 @@ package nat.org.eclipse.swt.widgets;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.ICaret;
+import org.eclipse.swt.graphics.IFont;
+import org.eclipse.swt.graphics.IImage;
 
 /**
  * Instances of this class provide an i-beam that is typically used
@@ -400,7 +400,8 @@ public class Caret extends Widget implements ICaret {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setFont(Font font) {
+    public void setFont(IFont ifont) {
+        Font font = (Font) ifont;
         checkWidget();
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -423,7 +424,8 @@ public class Caret extends Widget implements ICaret {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setImage(Image image) {
+    public void setImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);

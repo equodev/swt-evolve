@@ -554,7 +554,7 @@ public interface IDisplay extends IDevice {
      *
      * @see SWT
      */
-    Color getSystemColor(int id);
+    IColor getSystemColor(int id);
 
     /**
      * Returns the matching standard platform cursor for the given
@@ -598,7 +598,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.0
      */
-    Cursor getSystemCursor(int id);
+    ICursor getSystemCursor(int id);
 
     /**
      * Returns the matching standard platform image for the given
@@ -626,7 +626,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.0
      */
-    Image getSystemImage(int id);
+    IImage getSystemImage(int id);
 
     /**
      * Returns the single instance of the application menu bar, or

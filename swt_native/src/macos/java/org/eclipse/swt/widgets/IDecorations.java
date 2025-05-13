@@ -41,7 +41,7 @@ public interface IDecorations extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Image getImage();
+    IImage getImage();
 
     /**
      * Returns the receiver's images if they had previously been
@@ -70,7 +70,7 @@ public interface IDecorations extends ICanvas {
      *
      * @since 3.0
      */
-    Image[] getImages();
+    IImage[] getImages();
 
     /**
      * Returns <code>true</code> if the receiver is currently
@@ -176,7 +176,7 @@ public interface IDecorations extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setImage(Image image);
+    void setImage(IImage image);
 
     /**
      * Sets the receiver's images to the argument, which may
@@ -202,7 +202,7 @@ public interface IDecorations extends ICanvas {
      *
      * @since 3.0
      */
-    void setImages(Image[] images);
+    void setImages(IImage[] images);
 
     /**
      * Sets the maximized state of the receiver.

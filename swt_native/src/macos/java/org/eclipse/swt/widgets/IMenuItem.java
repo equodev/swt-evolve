@@ -322,7 +322,7 @@ public interface IMenuItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setImage(Image image);
+    void setImage(IImage image);
 
     /**
      * Sets the receiver's pull down menu to the argument.

@@ -22,10 +22,6 @@ import org.eclipse.swt.internal.cocoa.*;
 import nat.org.eclipse.swt.widgets.Display.*;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Cursor;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.IText;
 

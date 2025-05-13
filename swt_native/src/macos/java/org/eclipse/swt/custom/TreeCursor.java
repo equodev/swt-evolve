@@ -105,7 +105,7 @@ public class TreeCursor extends Canvas {
      */
     @Override
     public Color getBackground() {
-        return getDelegate().getBackground();
+        return getDelegate().getBackground().getApi();
     }
 
     /**
@@ -129,7 +129,7 @@ public class TreeCursor extends Canvas {
      */
     @Override
     public Color getForeground() {
-        return getDelegate().getForeground();
+        return getDelegate().getForeground().getApi();
     }
 
     /**
@@ -187,7 +187,7 @@ public class TreeCursor extends Canvas {
      */
     @Override
     public void setBackground(Color color) {
-        getDelegate().setBackground(color);
+        getDelegate().setBackground(color.getDelegate());
     }
 
     /**
@@ -209,7 +209,7 @@ public class TreeCursor extends Canvas {
      */
     @Override
     public void setForeground(Color color) {
-        getDelegate().setForeground(color);
+        getDelegate().setForeground(color.getDelegate());
     }
 
     /**

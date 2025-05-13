@@ -19,10 +19,8 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.ITreeColumn;
+import org.eclipse.swt.graphics.IImage;
 
 /**
  * Instances of this class represent a column in a tree widget.
@@ -254,7 +252,7 @@ public class TreeColumn extends Item implements ITreeColumn {
         NSAttributedString attrString = null;
         NSTableHeaderCell headerCell = nsColumn.headerCell();
         if (displayText != null) {
-            Font font = Font.cocoa_new(display.getApi(), headerCell.font());
+            Font font = Font.cocoa_new(display, headerCell.font());
             attrString = parent.createString(displayText, font, parent.getHeaderForegroundColor().handle, SWT.LEFT, false, (parent.state & DISABLED) == 0, false);
             stringSize = attrString.size();
             contentWidth += Math.ceil(stringSize.width);
@@ -659,7 +657,8 @@ public class TreeColumn extends Item implements ITreeColumn {
     }
 
     @Override
-    public void setImage(Image image) {
+    public void setImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);

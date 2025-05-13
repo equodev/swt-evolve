@@ -17,15 +17,14 @@ package nat.org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
-import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.ICoolBar;
 import org.eclipse.swt.widgets.ICoolItem;
+import org.eclipse.swt.graphics.IColor;
+import org.eclipse.swt.graphics.ICursor;
 
 /**
  * Instances of this class provide an area for dynamically
@@ -114,12 +113,12 @@ public class CoolBar extends Composite implements ICoolBar {
         super(parent, checkStyle(style));
         if ((style & SWT.VERTICAL) != 0) {
             this.style |= SWT.VERTICAL;
-            hoverCursor = new Cursor(display.getApi(), SWT.CURSOR_SIZENS);
+            hoverCursor = new Cursor(display, SWT.CURSOR_SIZENS);
         } else {
             this.style |= SWT.HORIZONTAL;
-            hoverCursor = new Cursor(display.getApi(), SWT.CURSOR_SIZEWE);
+            hoverCursor = new Cursor(display, SWT.CURSOR_SIZEWE);
         }
-        dragCursor = new Cursor(display.getApi(), SWT.CURSOR_SIZEALL);
+        dragCursor = new Cursor(display, SWT.CURSOR_SIZEALL);
         Listener listener = event -> {
             switch(event.type) {
                 case SWT.Dispose:
@@ -1020,7 +1019,8 @@ public class CoolBar extends Composite implements ICoolBar {
     }
 
     @Override
-    public void setBackground(Color color) {
+    public void setBackground(IColor icolor) {
+        Color color = (Color) icolor;
         for (CoolItem ci : originalItems) {
             Control ctrl = ci.getControl();
             if (ctrl != null) {
@@ -1221,7 +1221,8 @@ public class CoolBar extends Composite implements ICoolBar {
     }
 
     @Override
-    public void setCursor(Cursor cursor) {
+    public void setCursor(ICursor icursor) {
+        Cursor cursor = (Cursor) icursor;
         checkWidget();
         super.setCursor(this.cursor = cursor);
     }

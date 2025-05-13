@@ -19,11 +19,11 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ITracker;
+import org.eclipse.swt.graphics.ICursor;
 
 /**
  *  Instances of this class implement rubber banding rectangles that are
@@ -1166,7 +1166,8 @@ public class Tracker extends Widget implements ITracker {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setCursor(Cursor newCursor) {
+    public void setCursor(ICursor inewCursor) {
+        Cursor newCursor = (Cursor) inewCursor;
         checkWidget();
         clientCursor = newCursor;
         if (newCursor != null) {

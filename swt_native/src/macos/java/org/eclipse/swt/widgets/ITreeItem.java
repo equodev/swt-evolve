@@ -63,7 +63,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 2.0
      */
-    Color getBackground();
+    IColor getBackground();
 
     /**
      * Returns the background color at the given column index in the receiver.
@@ -78,7 +78,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.1
      */
-    Color getBackground(int index);
+    IColor getBackground(int index);
 
     /**
      * Returns a rectangle describing the size and location of the receiver's
@@ -148,7 +148,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.0
      */
-    Font getFont();
+    IFont getFont();
 
     /**
      * Returns the font that the receiver will use to paint textual information
@@ -164,7 +164,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.1
      */
-    Font getFont(int index);
+    IFont getFont(int index);
 
     /**
      * Returns the foreground color that the receiver will use to draw.
@@ -178,7 +178,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 2.0
      */
-    Color getForeground();
+    IColor getForeground();
 
     /**
      * Returns the foreground color at the given column index in the receiver.
@@ -193,7 +193,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.1
      */
-    Color getForeground(int index);
+    IColor getForeground(int index);
 
     /**
      * Returns <code>true</code> if the receiver is grayed,
@@ -209,7 +209,7 @@ public interface ITreeItem extends IItem {
      */
     boolean getGrayed();
 
-    Image getImage();
+    IImage getImage();
 
     /**
      * Returns the image stored at the given column index in the receiver,
@@ -225,7 +225,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.1
      */
-    Image getImage(int index);
+    IImage getImage(int index);
 
     /**
      * Returns a rectangle describing the size and location
@@ -406,7 +406,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 2.0
      */
-    void setBackground(Color color);
+    void setBackground(IColor color);
 
     /**
      * Sets the background color at the given column index in the receiver
@@ -426,7 +426,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.1
      */
-    void setBackground(int index, Color color);
+    void setBackground(int index, IColor color);
 
     /**
      * Sets the checked state of the receiver.
@@ -469,7 +469,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.0
      */
-    void setFont(Font font);
+    void setFont(IFont font);
 
     /**
      * Sets the font that the receiver will use to paint textual information
@@ -490,7 +490,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.1
      */
-    void setFont(int index, Font font);
+    void setFont(int index, IFont font);
 
     /**
      * Sets the receiver's foreground color to the color specified
@@ -509,7 +509,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 2.0
      */
-    void setForeground(Color color);
+    void setForeground(IColor color);
 
     /**
      * Sets the foreground color at the given column index in the receiver
@@ -529,7 +529,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.1
      */
-    void setForeground(int index, Color color);
+    void setForeground(int index, IColor color);
 
     /**
      * Sets the grayed state of the checkbox for this item.  This state change
@@ -560,7 +560,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.1
      */
-    void setImage(Image[] images);
+    void setImage(IImage[] images);
 
     /**
      * Sets the receiver's image at a column.
@@ -578,9 +578,9 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.1
      */
-    void setImage(int index, Image image);
+    void setImage(int index, IImage image);
 
-    void setImage(Image image);
+    void setImage(IImage image);
 
     /**
      * Sets the number of child items contained in the receiver.

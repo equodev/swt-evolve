@@ -209,7 +209,7 @@ public interface ITreeColumn extends IItem {
      */
     void setAlignment(int alignment);
 
-    void setImage(Image image);
+    void setImage(IImage image);
 
     /**
      * Sets the moveable attribute.  A column that is

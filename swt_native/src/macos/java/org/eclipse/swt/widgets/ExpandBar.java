@@ -112,7 +112,7 @@ public class ExpandBar extends Composite {
 
     @Override
     public Color getForeground() {
-        return getDelegate().getForeground();
+        return getDelegate().getForeground().getApi();
     }
 
     /**
@@ -227,12 +227,12 @@ public class ExpandBar extends Composite {
 
     @Override
     public void setFont(Font font) {
-        getDelegate().setFont(font);
+        getDelegate().setFont(font.getDelegate());
     }
 
     @Override
     public void setForeground(Color color) {
-        getDelegate().setForeground(color);
+        getDelegate().setForeground(color.getDelegate());
     }
 
     /**

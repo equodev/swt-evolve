@@ -11,11 +11,15 @@
  * Contributors:
  * Laurent CARON (laurent.caron at gmail dot com) - initial API and implementation (bug 542777)
  */
-package org.eclipse.swt.custom;
+package nat.org.eclipse.swt.custom;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.widgets.*;
+import nat.org.eclipse.swt.graphics.*;
+import nat.org.eclipse.swt.widgets.*;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.graphics.Rectangle;
 
 /**
  * This class add the following behaviour to <code>StyledText</code> widgets:

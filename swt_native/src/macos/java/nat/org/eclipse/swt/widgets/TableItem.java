@@ -18,13 +18,12 @@ package nat.org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.ITableItem;
+import org.eclipse.swt.graphics.IColor;
+import org.eclipse.swt.graphics.IFont;
+import org.eclipse.swt.graphics.IImage;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -195,7 +194,7 @@ public class TableItem extends Item implements ITableItem {
             Event event = new Event();
             event.item = this.getApi();
             event.index = index;
-            event.gc = gc;
+            event.gc = gc.getApi();
             NSTableView widget = (NSTableView) parent.view;
             int height = (int) widget.rowHeight();
             event.width = width;
@@ -769,7 +768,8 @@ public class TableItem extends Item implements ITableItem {
      *
      * @since 2.0
      */
-    public void setBackground(Color color) {
+    public void setBackground(IColor icolor) {
+        Color color = (Color) icolor;
         checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -802,7 +802,8 @@ public class TableItem extends Item implements ITableItem {
      *
      * @since 3.0
      */
-    public void setBackground(int index, Color color) {
+    public void setBackground(int index, IColor icolor) {
+        Color color = (Color) icolor;
         checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -864,7 +865,8 @@ public class TableItem extends Item implements ITableItem {
      *
      * @since 3.0
      */
-    public void setFont(Font font) {
+    public void setFont(IFont ifont) {
+        Font font = (Font) ifont;
         checkWidget();
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -899,7 +901,8 @@ public class TableItem extends Item implements ITableItem {
      *
      * @since 3.0
      */
-    public void setFont(int index, Font font) {
+    public void setFont(int index, IFont ifont) {
+        Font font = (Font) ifont;
         checkWidget();
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -940,7 +943,8 @@ public class TableItem extends Item implements ITableItem {
      *
      * @since 2.0
      */
-    public void setForeground(Color color) {
+    public void setForeground(IColor icolor) {
+        Color color = (Color) icolor;
         checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -973,7 +977,8 @@ public class TableItem extends Item implements ITableItem {
      *
      * @since 3.0
      */
-    public void setForeground(int index, Color color) {
+    public void setForeground(int index, IColor icolor) {
+        Color color = (Color) icolor;
         checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1032,7 +1037,8 @@ public class TableItem extends Item implements ITableItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setImage(Image[] images) {
+    public void setImage(IImage[] iimages) {
+        Image[] images = (Image[]) iimages;
         checkWidget();
         if (images == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1055,7 +1061,8 @@ public class TableItem extends Item implements ITableItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setImage(int index, Image image) {
+    public void setImage(int index, IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1091,7 +1098,8 @@ public class TableItem extends Item implements ITableItem {
     }
 
     @Override
-    public void setImage(Image image) {
+    public void setImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         setImage(0, image);
     }

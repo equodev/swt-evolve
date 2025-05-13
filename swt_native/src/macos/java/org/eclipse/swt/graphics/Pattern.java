@@ -39,18 +39,6 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class Pattern extends Resource {
 
-    NSColor color;
-
-    NSGradient gradient;
-
-    NSPoint pt1, pt2;
-
-    Image image;
-
-    double[] color1, color2;
-
-    int alpha1, alpha2;
-
     /**
      * Constructs a new Pattern given an image. Drawing with the resulting
      * pattern will cause the image to be tiled over the resulting area.
@@ -80,23 +68,7 @@ public class Pattern extends Resource {
      * @see #dispose()
      */
     public Pattern(Device device, Image image) {
-        super(device);
-        if (image == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (image.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            this.image = image;
-            color = NSColor.colorWithPatternImage(image.handle);
-            color.retain();
-            init();
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        this(new nat.org.eclipse.swt.graphics.Pattern((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), (nat.org.eclipse.swt.graphics.Image) image.getDelegate()));
     }
 
     /**
@@ -135,7 +107,7 @@ public class Pattern extends Resource {
      * @see #dispose()
      */
     public Pattern(Device device, float x1, float y1, float x2, float y2, Color color1, Color color2) {
-        this(device, x1, y1, x2, y2, color1, 0xFF, color2, 0xFF);
+        this(new nat.org.eclipse.swt.graphics.Pattern((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), x1, y1, x2, y2, (nat.org.eclipse.swt.graphics.Color) color1.getDelegate(), (nat.org.eclipse.swt.graphics.Color) color2.getDelegate()));
     }
 
     /**
@@ -178,49 +150,7 @@ public class Pattern extends Resource {
      * @since 3.2
      */
     public Pattern(Device device, float x1, float y1, float x2, float y2, Color color1, int alpha1, Color color2, int alpha2) {
-        super(device);
-        if (color1 == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (color1.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (color2 == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (color2.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            pt1 = new NSPoint();
-            pt2 = new NSPoint();
-            pt1.x = x1;
-            pt1.y = y1;
-            pt2.x = x2;
-            pt2.y = y2;
-            this.color1 = color1.handle;
-            this.color2 = color2.handle;
-            this.alpha1 = alpha1;
-            this.alpha2 = alpha2;
-            NSColor start = NSColor.colorWithDeviceRed(color1.handle[0], color1.handle[1], color1.handle[2], alpha1 / 255f);
-            NSColor end = NSColor.colorWithDeviceRed(color2.handle[0], color2.handle[1], color2.handle[2], alpha2 / 255f);
-            gradient = ((NSGradient) new NSGradient().alloc()).initWithStartingColor(start, end);
-            init();
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
-    }
-
-    @Override
-    void destroy() {
-        if (color != null)
-            color.release();
-        color = null;
-        if (gradient != null)
-            gradient.release();
-        gradient = null;
-        image = null;
-        color1 = color2 = null;
+        this(new nat.org.eclipse.swt.graphics.Pattern((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), x1, y1, x2, y2, (nat.org.eclipse.swt.graphics.Color) color1.getDelegate(), alpha1, (nat.org.eclipse.swt.graphics.Color) color2.getDelegate(), alpha2));
     }
 
     /**
@@ -235,7 +165,7 @@ public class Pattern extends Resource {
      */
     @Override
     public boolean isDisposed() {
-        return device == null;
+        return getDelegate().isDisposed();
     }
 
     /**
@@ -246,8 +176,14 @@ public class Pattern extends Resource {
      */
     @Override
     public String toString() {
-        if (isDisposed())
-            return "Pattern {*DISPOSED*}";
-        return "Pattern {" + (color != null ? color.id : gradient.id) + "}";
+        return getDelegate().toString();
+    }
+
+    protected Pattern(IPattern delegate) {
+        super(delegate);
+    }
+
+    public IPattern getDelegate() {
+        return (IPattern) super.getDelegate();
     }
 }

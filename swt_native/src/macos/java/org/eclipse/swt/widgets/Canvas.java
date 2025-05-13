@@ -97,7 +97,7 @@ public class Canvas extends Composite {
      * @since 3.2
      */
     public void drawBackground(GC gc, int x, int y, int width, int height) {
-        getDelegate().drawBackground(gc, x, y, width, height);
+        getDelegate().drawBackground(gc.getDelegate(), x, y, width, height);
     }
 
     /**
@@ -190,7 +190,7 @@ public class Canvas extends Composite {
 
     @Override
     public void setFont(Font font) {
-        getDelegate().setFont(font);
+        getDelegate().setFont(font.getDelegate());
     }
 
     /**

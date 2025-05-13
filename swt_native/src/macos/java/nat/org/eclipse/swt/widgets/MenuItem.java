@@ -20,8 +20,8 @@ import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.IMenuItem;
+import org.eclipse.swt.graphics.IImage;
 import org.eclipse.swt.widgets.IMenu;
 
 /**
@@ -748,7 +748,8 @@ public class MenuItem extends Item implements IMenuItem {
      * </ul>
      */
     @Override
-    public void setImage(Image image) {
+    public void setImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         if (this.image == image)
             return;

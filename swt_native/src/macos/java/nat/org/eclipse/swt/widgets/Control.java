@@ -24,20 +24,20 @@ import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import dev.equo.swt.Convert;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.Cursor;
-import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.widgets.IControl;
+import org.eclipse.swt.graphics.IGC;
+import org.eclipse.swt.graphics.IColor;
+import org.eclipse.swt.graphics.IImage;
+import org.eclipse.swt.graphics.ICursor;
+import org.eclipse.swt.graphics.IFont;
 import org.eclipse.swt.widgets.IMenu;
 import org.eclipse.swt.widgets.IComposite;
+import org.eclipse.swt.graphics.IRegion;
 
 /**
  * Control is the abstract superclass of all windowed user interface classes.
@@ -1039,7 +1039,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
     Font defaultFont() {
         if (display.smallFonts)
             return display.getSystemFont();
-        return Font.cocoa_new(display.getApi(), defaultNSFont());
+        return Font.cocoa_new(display, defaultNSFont());
     }
 
     Color defaultForeground() {
@@ -1267,9 +1267,9 @@ public abstract class Control extends Widget implements Drawable, IControl {
         /* Send paint event */
         GCData data = new GCData();
         data.paintRect = rect;
-        GC gc = GC.cocoa_new(this.getApi(), data);
+        GC gc = GC.cocoa_new(this, data);
         Event event = new Event();
-        event.gc = gc;
+        event.gc = gc.getApi();
         event.x = (int) rect.x;
         event.y = (int) rect.y;
         event.width = (int) rect.width;
@@ -1617,7 +1617,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
     public Color getBackground() {
         checkWidget();
         if (backgroundAlpha == 0) {
-            Color color = Color.cocoa_new(display.getApi(), background, 0);
+            Color color = Color.cocoa_new(display, background, 0);
             return color;
         } else {
             Control control = findBackgroundControl();
@@ -1628,7 +1628,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
     }
 
     Color getBackgroundColor() {
-        return background != null ? Color.cocoa_new(display.getApi(), background, backgroundAlpha) : defaultBackground();
+        return background != null ? Color.cocoa_new(display, background, backgroundAlpha) : defaultBackground();
     }
 
     /**
@@ -1780,7 +1780,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
     }
 
     Color getForegroundColor() {
-        return foreground != null ? Color.cocoa_new(display.getApi(), foreground) : defaultForeground();
+        return foreground != null ? Color.cocoa_new(display, foreground) : defaultForeground();
     }
 
     /**
@@ -2257,7 +2257,7 @@ public abstract class Control extends Widget implements Drawable, IControl {
             if (control == null)
                 control = this;
             data.background = control.getBackgroundColor().handle;
-            data.font = font != null ? font : defaultFont();
+            data.font = font != null ? font : defaultFont().getApi();
         }
         if (graphicsContext != null) {
             return graphicsContext.id;
@@ -2899,7 +2899,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      *
      * @since 3.4
      */
-    public boolean print(GC gc) {
+    public boolean print(IGC igc) {
+        GC gc = (GC) igc;
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -3733,7 +3734,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setBackground(Color color) {
+    public void setBackground(IColor icolor) {
+        Color color = (Color) icolor;
         checkWidget();
         _setBackground(color);
         if (color != null) {
@@ -3778,7 +3780,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      *
      * @since 3.2
      */
-    public void setBackgroundImage(Image image) {
+    public void setBackgroundImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -3942,7 +3945,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setCursor(Cursor cursor) {
+    public void setCursor(ICursor icursor) {
+        Cursor cursor = (Cursor) icursor;
         checkWidget();
         if (cursor != null && cursor.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -4055,7 +4059,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setFont(Font font) {
+    public void setFont(IFont ifont) {
+        Font font = (Font) ifont;
         checkWidget();
         if (font != null) {
             if (font.isDisposed())
@@ -4088,7 +4093,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setForeground(Color color) {
+    public void setForeground(IColor icolor) {
+        Color color = (Color) icolor;
         checkWidget();
         if (color != null) {
             if (color.isDisposed())
@@ -4372,7 +4378,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
      *
      * @since 3.4
      */
-    public void setRegion(Region region) {
+    public void setRegion(IRegion iregion) {
+        Region region = (Region) iregion;
         checkWidget();
         if (region != null && region.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);

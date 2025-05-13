@@ -10,10 +10,13 @@
  *  SPDX-License-Identifier: EPL-2.0
  * *****************************************************************************
  */
-package org.eclipse.swt.custom;
+package nat.org.eclipse.swt.custom;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
+import nat.org.eclipse.swt.graphics.*;
+import org.eclipse.swt.custom.StyledTextContent;
+import org.eclipse.swt.custom.StyleRange;
+import org.eclipse.swt.graphics.FontData;
 
 /**
  * The <code>HTMLWriter</code> class is used to write styled content as HTML.

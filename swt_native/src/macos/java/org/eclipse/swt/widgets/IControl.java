@@ -536,7 +536,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Color getBackground();
+    IColor getBackground();
 
     /**
      * Returns the receiver's background image.
@@ -550,7 +550,7 @@ public interface IControl extends IWidget {
      *
      * @since 3.2
      */
-    Image getBackgroundImage();
+    IImage getBackgroundImage();
 
     /**
      * Returns the receiver's border width in points.
@@ -610,7 +610,7 @@ public interface IControl extends IWidget {
      *
      * @since 3.3
      */
-    Cursor getCursor();
+    ICursor getCursor();
 
     /**
      * Returns <code>true</code> if the receiver is enabled, and
@@ -639,7 +639,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Font getFont();
+    IFont getFont();
 
     /**
      * Returns the foreground color that the receiver will use to draw.
@@ -651,7 +651,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Color getForeground();
+    IColor getForeground();
 
     /**
      * Returns layout data which is associated with the receiver.
@@ -753,7 +753,7 @@ public interface IControl extends IWidget {
      *
      * @since 3.4
      */
-    Region getRegion();
+    IRegion getRegion();
 
     /**
      * Returns the receiver's shell. For all controls other than
@@ -1048,7 +1048,7 @@ public interface IControl extends IWidget {
      *
      * @since 3.4
      */
-    boolean print(GC gc);
+    boolean print(IGC gc);
 
     /**
      * Requests that this control and all of its ancestors be repositioned by
@@ -1428,7 +1428,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setBackground(Color color);
+    void setBackground(IColor color);
 
     /**
      * Sets the receiver's background image to the image specified
@@ -1452,7 +1452,7 @@ public interface IControl extends IWidget {
      *
      * @since 3.2
      */
-    void setBackgroundImage(Image image);
+    void setBackgroundImage(IImage image);
 
     /**
      * Sets the receiver's size and location in points to the rectangular
@@ -1543,7 +1543,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setCursor(Cursor cursor);
+    void setCursor(ICursor cursor);
 
     /**
      * Sets the receiver's drag detect state. If the argument is
@@ -1607,7 +1607,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setFont(Font font);
+    void setFont(IFont font);
 
     /**
      * Sets the receiver's foreground color to the color specified
@@ -1626,7 +1626,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setForeground(Color color);
+    void setForeground(IColor color);
 
     /**
      * Sets the layout data associated with the receiver to the argument.
@@ -1775,7 +1775,7 @@ public interface IControl extends IWidget {
      *
      * @since 3.4
      */
-    void setRegion(Region region);
+    void setRegion(IRegion region);
 
     /**
      * Sets the receiver's size to the point specified by the arguments.

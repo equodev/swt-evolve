@@ -20,10 +20,7 @@ import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ISpinner;
 
@@ -228,7 +225,7 @@ public class Spinner extends Composite implements ISpinner {
         checkWidget();
         double width = 0, height = 0;
         String string = Double.toString(buttonView.maxValue());
-        Font font = Font.cocoa_new(display.getApi(), textView.font());
+        Font font = Font.cocoa_new(display, textView.font());
         NSAttributedString str = parent.createString(string, font, null, 0, false, true, false);
         NSSize size = str.size();
         str.release();

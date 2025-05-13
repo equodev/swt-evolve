@@ -18,16 +18,15 @@ package nat.org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.FontMetrics;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.IExpandBar;
 import org.eclipse.swt.widgets.IExpandItem;
+import org.eclipse.swt.graphics.IFont;
+import org.eclipse.swt.graphics.IColor;
 
 /**
  * Instances of this class support the layout of selectable
@@ -194,7 +193,7 @@ public class ExpandBar extends Composite implements IExpandBar {
         if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
             if (itemCount > 0) {
                 height += spacing;
-                GC gc = new GC(this.getApi());
+                GC gc = new GC(this);
                 for (int i = 0; i < itemCount; i++) {
                     ExpandItem item = items[i];
                     height += item.getHeaderHeight();
@@ -264,7 +263,7 @@ public class ExpandBar extends Composite implements IExpandBar {
     int getBandHeight() {
         if (font == null)
             return ExpandItem.CHEVRON_SIZE;
-        GC gc = new GC(this.getApi());
+        GC gc = new GC(this);
         FontMetrics metrics = gc.getFontMetrics();
         gc.dispose();
         return Math.max(ExpandItem.CHEVRON_SIZE, metrics.getHeight());
@@ -446,14 +445,16 @@ public class ExpandBar extends Composite implements IExpandBar {
     }
 
     @Override
-    public void setFont(Font font) {
+    public void setFont(IFont ifont) {
+        Font font = (Font) ifont;
         super.setFont(font);
         this.font = font;
         layoutItems(0, true);
     }
 
     @Override
-    public void setForeground(Color color) {
+    public void setForeground(IColor icolor) {
+        Color color = (Color) icolor;
         super.setForeground(color);
         foreground = color;
     }

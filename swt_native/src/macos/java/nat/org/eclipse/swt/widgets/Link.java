@@ -23,10 +23,9 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import nat.org.eclipse.swt.widgets.Display.*;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Cursor;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ILink;
+import org.eclipse.swt.graphics.IColor;
 
 /**
  * Instances of this class represent a selectable
@@ -303,7 +302,7 @@ public class Link extends Control implements ILink {
      */
     public Color getLinkForeground() {
         checkWidget();
-        return Color.cocoa_new(display.getApi(), display.getNSColorRGB(getLinkForegroundColor()));
+        return Color.cocoa_new(display, display.getNSColorRGB(getLinkForegroundColor()));
     }
 
     NSColor getLinkForegroundColor() {
@@ -734,7 +733,8 @@ public class Link extends Control implements ILink {
      * </ul>
      * @since 3.105
      */
-    public void setLinkForeground(Color color) {
+    public void setLinkForeground(IColor icolor) {
+        Color color = (Color) icolor;
         checkWidget();
         if (color != null) {
             if (color.isDisposed())

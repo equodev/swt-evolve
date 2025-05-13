@@ -129,7 +129,7 @@ public class Label extends Control {
      * </ul>
      */
     public Image getImage() {
-        return getDelegate().getImage();
+        return getDelegate().getImage().getApi();
     }
 
     /**
@@ -180,7 +180,7 @@ public class Label extends Control {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage(image);
+        getDelegate().setImage(image.getDelegate());
     }
 
     /**

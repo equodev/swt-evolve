@@ -147,7 +147,7 @@ public class Composite extends Scrollable {
      * @since 3.6
      */
     public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
-        getDelegate().drawBackground(gc, x, y, width, height, offsetX, offsetY);
+        getDelegate().drawBackground(gc.getDelegate(), x, y, width, height, offsetX, offsetY);
     }
 
     /**

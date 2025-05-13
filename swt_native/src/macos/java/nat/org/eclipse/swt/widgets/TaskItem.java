@@ -18,9 +18,9 @@ package nat.org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.ITaskItem;
 import org.eclipse.swt.widgets.IMenu;
+import org.eclipse.swt.graphics.IImage;
 
 /**
  * Instances of this class represent a task item.
@@ -297,7 +297,8 @@ public class TaskItem extends Item implements ITaskItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setOverlayImage(Image overlayImage) {
+    public void setOverlayImage(IImage ioverlayImage) {
+        Image overlayImage = (Image) ioverlayImage;
         checkWidget();
         if (overlayImage != null && overlayImage.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);

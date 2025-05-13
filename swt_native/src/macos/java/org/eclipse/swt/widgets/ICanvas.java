@@ -27,7 +27,7 @@ public interface ICanvas extends IComposite {
      *
      * @since 3.2
      */
-    void drawBackground(GC gc, int x, int y, int width, int height);
+    void drawBackground(IGC gc, int x, int y, int width, int height);
 
     /**
      * Returns the caret.
@@ -109,7 +109,7 @@ public interface ICanvas extends IComposite {
      */
     void setCaret(ICaret caret);
 
-    void setFont(Font font);
+    void setFont(IFont font);
 
     /**
      * Sets the receiver's IME.

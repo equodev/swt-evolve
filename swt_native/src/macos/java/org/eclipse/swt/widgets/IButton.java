@@ -85,7 +85,7 @@ public interface IButton extends IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Image getImage();
+    IImage getImage();
 
     /**
      * Returns <code>true</code> if the receiver is selected,
@@ -188,7 +188,7 @@ public interface IButton extends IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setImage(Image image);
+    void setImage(IImage image);
 
     /**
      * Sets the selection state of the receiver, if it is of type <code>CHECK</code>,

@@ -20,12 +20,11 @@ import org.eclipse.swt.accessibility.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.internal.graphics.*;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.ICanvas;
+import org.eclipse.swt.graphics.IGC;
 import org.eclipse.swt.widgets.ICaret;
+import org.eclipse.swt.graphics.IFont;
 import org.eclipse.swt.widgets.IIME;
 
 /**
@@ -151,7 +150,8 @@ public class Canvas extends Composite implements ICanvas {
      *
      * @since 3.2
      */
-    public void drawBackground(GC gc, int x, int y, int width, int height) {
+    public void drawBackground(IGC igc, int x, int y, int width, int height) {
+        GC gc = (GC) igc;
         drawBackground(gc, x, y, width, height, 0, 0);
     }
 
@@ -199,7 +199,7 @@ public class Canvas extends Composite implements ICanvas {
             if (image != null) {
                 NSImage imageHandle = image.handle;
                 NSSize size = imageHandle.size();
-                NSImageRep imageRep = ImageUtil.createImageRep(image, size);
+                NSImageRep imageRep = ImageUtil.createImageRep(image.getApi(), size);
                 if (!imageRep.isKindOfClass(OS.class_NSBitmapImageRep))
                     return;
                 NSBitmapImageRep rep = new NSBitmapImageRep(imageRep);
@@ -590,7 +590,8 @@ public class Canvas extends Composite implements ICanvas {
     }
 
     @Override
-    public void setFont(Font font) {
+    public void setFont(IFont ifont) {
+        Font font = (Font) ifont;
         checkWidget();
         if (caret != null)
             caret.setFont(font);

@@ -13,7 +13,7 @@
  *      IBM Corporation - initial API and implementation
  * *****************************************************************************
  */
-package org.eclipse.swt.custom;
+package nat.org.eclipse.swt.custom;
 
 import org.eclipse.swt.*;
 

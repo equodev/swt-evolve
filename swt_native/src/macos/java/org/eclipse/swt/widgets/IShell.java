@@ -192,7 +192,7 @@ public interface IShell extends IDecorations {
      *
      * @since 3.0
      */
-    Region getRegion();
+    IRegion getRegion();
 
     IShell getShell();
 
@@ -255,7 +255,7 @@ public interface IShell extends IDecorations {
      */
     void open();
 
-    boolean print(GC gc);
+    boolean print(IGC gc);
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -492,7 +492,7 @@ public interface IShell extends IDecorations {
      *
      * @since 3.0
      */
-    void setRegion(Region region);
+    void setRegion(IRegion region);
 
     void setText(String string);
 

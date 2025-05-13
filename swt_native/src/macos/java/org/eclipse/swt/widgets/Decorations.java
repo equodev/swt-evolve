@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Convert;
 
 /**
  * Instances of this class provide the appearance and
@@ -182,7 +183,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public Image getImage() {
-        return getDelegate().getImage();
+        return getDelegate().getImage().getApi();
     }
 
     /**
@@ -213,7 +214,7 @@ public class Decorations extends Canvas {
      * @since 3.0
      */
     public Image[] getImages() {
-        return getDelegate().getImages();
+        return Convert.array(getDelegate().getImages(), IImage::getApi, Image[]::new);
     }
 
     /**
@@ -334,7 +335,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage(image);
+        getDelegate().setImage(image.getDelegate());
     }
 
     /**
@@ -362,7 +363,7 @@ public class Decorations extends Canvas {
      * @since 3.0
      */
     public void setImages(Image[] images) {
-        getDelegate().setImages(images);
+        getDelegate().setImages(Convert.array(images, Image::getDelegate, IImage[]::new));
     }
 
     /**

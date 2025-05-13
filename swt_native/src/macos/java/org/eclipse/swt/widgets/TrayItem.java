@@ -142,7 +142,7 @@ public class TrayItem extends Item {
      * @since 3.8
      */
     public Image getHighlightImage() {
-        return getDelegate().getHighlightImage();
+        return getDelegate().getHighlightImage().getApi();
     }
 
     /**
@@ -268,7 +268,7 @@ public class TrayItem extends Item {
      */
     @Override
     public void setImage(Image image) {
-        getDelegate().setImage(image);
+        getDelegate().setImage(image.getDelegate());
     }
 
     /**
@@ -287,7 +287,7 @@ public class TrayItem extends Item {
      * @since 3.8
      */
     public void setHighlightImage(Image image) {
-        getDelegate().setHighlightImage(image);
+        getDelegate().setHighlightImage(image.getDelegate());
     }
 
     /**

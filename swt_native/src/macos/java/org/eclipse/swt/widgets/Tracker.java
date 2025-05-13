@@ -281,7 +281,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public void setCursor(Cursor newCursor) {
-        getDelegate().setCursor(newCursor);
+        getDelegate().setCursor(newCursor.getDelegate());
     }
 
     /**

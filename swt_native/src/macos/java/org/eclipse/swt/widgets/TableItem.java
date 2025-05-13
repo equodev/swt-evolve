@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Convert;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -121,7 +122,7 @@ public class TableItem extends Item {
      * @since 2.0
      */
     public Color getBackground() {
-        return getDelegate().getBackground();
+        return getDelegate().getBackground().getApi();
     }
 
     /**
@@ -138,7 +139,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Color getBackground(int index) {
-        return getDelegate().getBackground(index);
+        return getDelegate().getBackground(index).getApi();
     }
 
     /**
@@ -204,7 +205,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Font getFont() {
-        return getDelegate().getFont();
+        return getDelegate().getFont().getApi();
     }
 
     /**
@@ -222,7 +223,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Font getFont(int index) {
-        return getDelegate().getFont(index);
+        return getDelegate().getFont(index).getApi();
     }
 
     /**
@@ -238,7 +239,7 @@ public class TableItem extends Item {
      * @since 2.0
      */
     public Color getForeground() {
-        return getDelegate().getForeground();
+        return getDelegate().getForeground().getApi();
     }
 
     /**
@@ -255,7 +256,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Color getForeground(int index) {
-        return getDelegate().getForeground(index);
+        return getDelegate().getForeground(index).getApi();
     }
 
     /**
@@ -276,7 +277,7 @@ public class TableItem extends Item {
 
     @Override
     public Image getImage() {
-        return getDelegate().getImage();
+        return getDelegate().getImage().getApi();
     }
 
     /**
@@ -292,7 +293,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public Image getImage(int index) {
-        return getDelegate().getImage(index);
+        return getDelegate().getImage(index).getApi();
     }
 
     /**
@@ -400,7 +401,7 @@ public class TableItem extends Item {
      * @since 2.0
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground(color);
+        getDelegate().setBackground(color.getDelegate());
     }
 
     /**
@@ -422,7 +423,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public void setBackground(int index, Color color) {
-        getDelegate().setBackground(index, color);
+        getDelegate().setBackground(index, color.getDelegate());
     }
 
     /**
@@ -458,7 +459,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public void setFont(Font font) {
-        getDelegate().setFont(font);
+        getDelegate().setFont(font.getDelegate());
     }
 
     /**
@@ -481,7 +482,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public void setFont(int index, Font font) {
-        getDelegate().setFont(index, font);
+        getDelegate().setFont(index, font.getDelegate());
     }
 
     /**
@@ -502,7 +503,7 @@ public class TableItem extends Item {
      * @since 2.0
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground(color);
+        getDelegate().setForeground(color.getDelegate());
     }
 
     /**
@@ -524,7 +525,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public void setForeground(int index, Color color) {
-        getDelegate().setForeground(index, color);
+        getDelegate().setForeground(index, color.getDelegate());
     }
 
     /**
@@ -557,7 +558,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public void setImage(Image[] images) {
-        getDelegate().setImage(images);
+        getDelegate().setImage(Convert.array(images, Image::getDelegate, IImage[]::new));
     }
 
     /**
@@ -575,12 +576,12 @@ public class TableItem extends Item {
      * </ul>
      */
     public void setImage(int index, Image image) {
-        getDelegate().setImage(index, image);
+        getDelegate().setImage(index, image.getDelegate());
     }
 
     @Override
     public void setImage(Image image) {
-        getDelegate().setImage(image);
+        getDelegate().setImage(image.getDelegate());
     }
 
     /**

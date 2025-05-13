@@ -18,10 +18,10 @@ package nat.org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.IDecorations;
 import org.eclipse.swt.widgets.IButton;
+import org.eclipse.swt.graphics.IImage;
 import org.eclipse.swt.widgets.IMenu;
 
 /**
@@ -546,7 +546,8 @@ public class Decorations extends Canvas implements IDecorations {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setImage(Image image) {
+    public void setImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -582,7 +583,8 @@ public class Decorations extends Canvas implements IDecorations {
      *
      * @since 3.0
      */
-    public void setImages(Image[] images) {
+    public void setImages(IImage[] iimages) {
+        Image[] images = (Image[]) iimages;
         checkWidget();
         if (images == null)
             error(SWT.ERROR_INVALID_ARGUMENT);

@@ -270,7 +270,7 @@ public interface ITree extends IComposite {
      * </ul>
      * @since 3.106
      */
-    Color getHeaderBackground();
+    IColor getHeaderBackground();
 
     /**
      * Returns the header foreground color.
@@ -283,7 +283,7 @@ public interface ITree extends IComposite {
      * </ul>
      * @since 3.106
      */
-    Color getHeaderForeground();
+    IColor getHeaderForeground();
 
     /**
      * Returns the height of the receiver's header
@@ -716,7 +716,7 @@ public interface ITree extends IComposite {
      * </ul>
      * @since 3.106
      */
-    void setHeaderBackground(Color color);
+    void setHeaderBackground(IColor color);
 
     /**
      * Sets the header foreground color to the color specified
@@ -737,7 +737,7 @@ public interface ITree extends IComposite {
      * </ul>
      * @since 3.106
      */
-    void setHeaderForeground(Color color);
+    void setHeaderForeground(IColor color);
 
     /**
      * Marks the receiver's header as visible if the argument is <code>true</code>,

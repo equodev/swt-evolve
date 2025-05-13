@@ -28,13 +28,10 @@ import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.EventTable;
 import org.eclipse.swt.graphics.GCData;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.graphics.DeviceData;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.IDisplay;
 import org.eclipse.swt.widgets.IWidget;
 import org.eclipse.swt.widgets.IControl;
@@ -2024,7 +2021,7 @@ public class Display extends Device implements Executor, IDisplay {
 
     Color getWidgetColor(int id) {
         if (0 <= id && id < colors.length && colors[id] != null) {
-            return Color.cocoa_new(this.getApi(), colors[id]);
+            return Color.cocoa_new(this, colors[id]);
         }
         return null;
     }
@@ -2174,7 +2171,7 @@ public class Display extends Device implements Executor, IDisplay {
         if (!(0 <= id && id < cursors.length))
             return null;
         if (cursors[id] == null) {
-            cursors[id] = new Cursor(this.getApi(), id);
+            cursors[id] = new Cursor(this, id);
         }
         return cursors[id];
     }
@@ -2235,7 +2232,7 @@ public class Display extends Device implements Executor, IDisplay {
                     if (errorImage != null)
                         return errorImage;
                     NSImage img = getSystemImageForID(OS.kAlertStopIcon);
-                    return errorImage = Image.cocoa_new(this.getApi(), SWT.ICON, img);
+                    return errorImage = Image.cocoa_new(this, SWT.ICON, img);
                 }
             case SWT.ICON_INFORMATION:
             case SWT.ICON_QUESTION:
@@ -2254,7 +2251,7 @@ public class Display extends Device implements Executor, IDisplay {
                     } else {
                         img = getSystemImageForID(OS.kAlertNoteIcon);
                     }
-                    return infoImage = Image.cocoa_new(this.getApi(), SWT.ICON, img);
+                    return infoImage = Image.cocoa_new(this, SWT.ICON, img);
                 }
             case SWT.ICON_WARNING:
                 {
@@ -2271,7 +2268,7 @@ public class Display extends Device implements Executor, IDisplay {
                     } else {
                         img = getSystemImageForID(OS.kAlertCautionIcon);
                     }
-                    return warningImage = Image.cocoa_new(this.getApi(), SWT.ICON, img);
+                    return warningImage = Image.cocoa_new(this, SWT.ICON, img);
                 }
         }
         return null;
@@ -3442,7 +3439,7 @@ public class Display extends Device implements Executor, IDisplay {
             data.device = this.getApi();
             data.background = getSystemColor(SWT.COLOR_WHITE).handle;
             data.foreground = getSystemColor(SWT.COLOR_BLACK).handle;
-            data.font = getSystemFont();
+            data.font = getSystemFont().getApi();
         }
         return context.id;
     }

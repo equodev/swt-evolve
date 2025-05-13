@@ -582,7 +582,7 @@ public class Shell extends Decorations {
      */
     @Override
     public Region getRegion() {
-        return getDelegate().getRegion();
+        return getDelegate().getRegion().getApi();
     }
 
     @Override
@@ -666,7 +666,7 @@ public class Shell extends Decorations {
 
     @Override
     public boolean print(GC gc) {
-        return getDelegate().print(gc);
+        return getDelegate().print(gc.getDelegate());
     }
 
     /**
@@ -941,7 +941,7 @@ public class Shell extends Decorations {
      */
     @Override
     public void setRegion(Region region) {
-        getDelegate().setRegion(region);
+        getDelegate().setRegion(region.getDelegate());
     }
 
     @Override

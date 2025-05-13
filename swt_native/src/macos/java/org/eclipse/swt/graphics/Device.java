@@ -192,7 +192,7 @@ public abstract class Device implements Drawable {
      * @see SWT
      */
     public Color getSystemColor(int id) {
-        return getDelegate().getSystemColor(id);
+        return getDelegate().getSystemColor(id).getApi();
     }
 
     /**
@@ -216,7 +216,7 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     public Font getSystemFont() {
-        return getDelegate().getSystemFont();
+        return getDelegate().getSystemFont().getApi();
     }
 
     /**

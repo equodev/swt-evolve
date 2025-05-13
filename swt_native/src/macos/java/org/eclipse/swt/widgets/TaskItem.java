@@ -64,7 +64,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public Image getOverlayImage() {
-        return getDelegate().getOverlayImage();
+        return getDelegate().getOverlayImage().getApi();
     }
 
     /**
@@ -187,7 +187,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public void setOverlayImage(Image overlayImage) {
-        getDelegate().setOverlayImage(overlayImage);
+        getDelegate().setOverlayImage(overlayImage.getDelegate());
     }
 
     /**

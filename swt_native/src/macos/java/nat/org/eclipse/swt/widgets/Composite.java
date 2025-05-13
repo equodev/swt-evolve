@@ -23,11 +23,11 @@ import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.IComposite;
 import org.eclipse.swt.widgets.IControl;
+import org.eclipse.swt.graphics.IGC;
 
 /**
  * Instances of this class are controls which are capable
@@ -348,7 +348,8 @@ public class Composite extends Scrollable implements IComposite {
      *
      * @since 3.6
      */
-    public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
+    public void drawBackground(IGC igc, int x, int y, int width, int height, int offsetX, int offsetY) {
+        GC gc = (GC) igc;
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);

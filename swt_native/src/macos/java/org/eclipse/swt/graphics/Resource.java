@@ -45,118 +45,13 @@ import org.eclipse.swt.*;
 public abstract class Resource {
 
     /**
-     * Used to track not disposed SWT resource. A separate class allows
-     * not to have the {@link #finalize} when tracking is disabled, avoiding
-     * possible performance issues in GC.
-     */
-    private static class ResourceTracker {
-
-        /**
-         * Resource that is tracked here
-         */
-        private Resource resource;
-
-        /**
-         * Recorded at Resource creation if {@link #setNonDisposeHandler} was
-         * enabled, used to track resource disposal
-         */
-        private Error allocationStack;
-
-        /**
-         * Allows to ignore specific Resources even if they are not disposed
-         * properly, used for example for Fonts that SWT doesn't own.
-         */
-        boolean ignoreMe;
-
-        ResourceTracker(Resource resource, Error allocationStack) {
-            this.resource = resource;
-            this.allocationStack = allocationStack;
-        }
-
-        @Override
-        protected void finalize() {
-            if (ignoreMe)
-                return;
-            if (nonDisposedReporter == null)
-                return;
-            // If the Resource is GC'ed before it was disposed, this is a leak.
-            if (!resource.isDisposed())
-                nonDisposedReporter.accept(allocationStack);
-        }
-    }
-
-    /**
-     * the device where this resource was created
-     */
-    Device device;
-
-    /**
-     * Used to report not disposed SWT resources, null by default
-     */
-    private static Consumer<Error> nonDisposedReporter;
-
-    /**
-     * Used to track not disposed SWT resource
-     */
-    private ResourceTracker tracker;
-
-    static {
-        //$NON-NLS-1$
-        boolean trackingEnabled = Boolean.getBoolean("org.eclipse.swt.graphics.Resource.reportNonDisposed");
-        if (trackingEnabled) {
-            setNonDisposeHandler(exception -> {
-                if (exception != null) {
-                    exception.printStackTrace();
-                } else {
-                    //$NON-NLS-1$
-                    System.err.println("SWT Resource was not properly disposed");
-                }
-            });
-        }
-    }
-
-    public Resource() {
-        initNonDisposeTracking();
-    }
-
-    Resource(Device device) {
-        if (device == null)
-            device = Device.getDevice();
-        if (device == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.device = device;
-        initNonDisposeTracking();
-    }
-
-    void destroy() {
-    }
-
-    /**
-     * Destroy all handles of the resource which are not necessary for the given
-     * zoom levels. This method is supposed to be overridden by sub-classes that
-     * retain handles for different zoom levels.
-     *
-     * @param zoomLevels The zoom levels for which the handles are supposed to be
-     *                   retained.
-     */
-    void destroyHandlesExcept(Set<Integer> zoomLevels) {
-    }
-
-    /**
      * Disposes of the operating system resources associated with
      * this resource. Applications must dispose of all resources
      * which they allocate.
      * This method does nothing if the resource is already disposed.
      */
     public void dispose() {
-        if (device == null)
-            return;
-        if (device.isDisposed())
-            return;
-        destroy();
-        if (device.tracking)
-            device.dispose_Object(this);
-        device = null;
+        getDelegate().dispose();
     }
 
     /**
@@ -168,38 +63,7 @@ public abstract class Resource {
      * @since 3.2
      */
     public Device getDevice() {
-        Device device = this.device;
-        if (device == null || isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return device;
-    }
-
-    void ignoreNonDisposed() {
-        if (tracker != null) {
-            tracker.ignoreMe = true;
-        }
-    }
-
-    void init() {
-        if (device.tracking)
-            device.new_Object(this);
-    }
-
-    void initNonDisposeTracking() {
-        // Color doesn't really have any resource to be leaked, ignore.
-        if (this instanceof Color)
-            return;
-        // Avoid performance costs of having '.finalize()' when not tracking.
-        if (nonDisposedReporter == null)
-            return;
-        // Capture a stack trace to help investigating the leak
-        //$NON-NLS-1$
-        Error error = new Error("SWT Resource was not properly disposed");
-        // Allocate a helper class with '.finalize()' in it, it will do the actual
-        // work of detecting and reporting errors. This works because Resource
-        // holds the only reference to 'ResourceTracker' and therefore the tracker
-        // is only GC'ed when Resource itself is ready to be GC'ed.
-        tracker = new ResourceTracker(this, error);
+        return getDelegate().getDevice().getApi();
     }
 
     /**
@@ -229,6 +93,17 @@ public abstract class Resource {
      * @since 3.116
      */
     public static void setNonDisposeHandler(Consumer<Error> reporter) {
-        nonDisposedReporter = reporter;
+        nat.org.eclipse.swt.graphics.Resource.setNonDisposeHandler(reporter);
+    }
+
+    IResource delegate;
+
+    protected Resource(IResource delegate) {
+        this.delegate = delegate;
+        delegate.setApi(this);
+    }
+
+    public IResource getDelegate() {
+        return delegate;
     }
 }

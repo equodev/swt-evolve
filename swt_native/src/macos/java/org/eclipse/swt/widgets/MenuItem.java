@@ -471,7 +471,7 @@ public class MenuItem extends Item {
      */
     @Override
     public void setImage(Image image) {
-        getDelegate().setImage(image);
+        getDelegate().setImage(image.getDelegate());
     }
 
     /**

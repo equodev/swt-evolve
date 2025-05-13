@@ -56,7 +56,7 @@ public interface IToolItem extends IItem {
      *
      * @since 3.120
      */
-    Color getBackground();
+    IColor getBackground();
 
     /**
      * Returns a rectangle describing the receiver's size and location
@@ -98,7 +98,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Image getDisabledImage();
+    IImage getDisabledImage();
 
     /**
      * Returns <code>true</code> if the receiver is enabled, and
@@ -129,7 +129,7 @@ public interface IToolItem extends IItem {
      *
      * @since 3.120
      */
-    Color getForeground();
+    IColor getForeground();
 
     /**
      * Returns the receiver's hot image if it has one, or null
@@ -145,7 +145,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Image getHotImage();
+    IImage getHotImage();
 
     /**
      * Returns the receiver's enabled image if it has one, or null
@@ -158,7 +158,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Image getImage();
+    IImage getImage();
 
     /**
      * Returns the receiver's parent, which must be a <code>ToolBar</code>.
@@ -270,7 +270,7 @@ public interface IToolItem extends IItem {
      *
      * @since 3.120
      */
-    void setBackground(Color color);
+    void setBackground(IColor color);
 
     /**
      * Sets the control that is used to fill the bounds of
@@ -324,7 +324,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setDisabledImage(Image image);
+    void setDisabledImage(IImage image);
 
     /**
      * Sets the receiver's foreground color to the color specified
@@ -345,7 +345,7 @@ public interface IToolItem extends IItem {
      *
      * @since 3.120
      */
-    void setForeground(Color color);
+    void setForeground(IColor color);
 
     /**
      * Sets the receiver's hot image to the argument, which may be
@@ -364,9 +364,9 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setHotImage(Image image);
+    void setHotImage(IImage image);
 
-    void setImage(Image image);
+    void setImage(IImage image);
 
     /**
      * Sets the selection state of the receiver.

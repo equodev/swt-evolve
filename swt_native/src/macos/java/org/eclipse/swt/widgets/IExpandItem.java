@@ -97,7 +97,7 @@ public interface IExpandItem extends IItem {
      */
     void setExpanded(boolean expanded);
 
-    void setImage(Image image);
+    void setImage(IImage image);
 
     /**
      * Sets the height of the receiver. This is height of the item when it is expanded,

@@ -97,7 +97,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public Font getFont() {
-        return getDelegate().getFont();
+        return getDelegate().getFont().getApi();
     }
 
     /**
@@ -111,7 +111,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public Image getImage() {
-        return getDelegate().getImage();
+        return getDelegate().getImage().getApi();
     }
 
     /**
@@ -249,7 +249,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setFont(Font font) {
-        getDelegate().setFont(font);
+        getDelegate().setFont(font.getDelegate());
     }
 
     /**
@@ -268,7 +268,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage(image);
+        getDelegate().setImage(image.getDelegate());
     }
 
     /**

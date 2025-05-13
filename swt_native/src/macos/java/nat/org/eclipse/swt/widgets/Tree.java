@@ -21,16 +21,13 @@ import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.widgets.ITree;
 import org.eclipse.swt.widgets.ITreeItem;
 import org.eclipse.swt.widgets.ITreeColumn;
+import org.eclipse.swt.graphics.IColor;
 
 /**
  * Instances of this class provide a selectable user interface object
@@ -547,7 +544,7 @@ public class Tree extends Composite implements ITree {
                     width += columns[i].getWidth();
                 }
             } else {
-                GC gc = new GC(this.getApi());
+                GC gc = new GC(this);
                 width = calculateWidth(items, 0, gc, true) + CELL_GAP;
                 gc.dispose();
             }
@@ -1120,8 +1117,8 @@ public class Tree extends Composite implements ITree {
         boolean hasFocus = hasFocus();
         Color selectionBackground = null, selectionForeground = null;
         if (isSelected && (hooksErase || hooksPaint)) {
-            selectionForeground = Color.cocoa_new(display.getApi(), (hasFocus || Display.APPEARANCE.Dark == display.appAppearance) ? display.alternateSelectedControlTextColor : display.selectedControlTextColor);
-            selectionBackground = Color.cocoa_new(display.getApi(), hasFocus ? display.getAlternateSelectedControlColor() : display.getSecondarySelectedControlColor());
+            selectionForeground = Color.cocoa_new(display, (hasFocus || Display.APPEARANCE.Dark == display.appAppearance) ? display.alternateSelectedControlTextColor : display.selectedControlTextColor);
+            selectionBackground = Color.cocoa_new(display, hasFocus ? display.getAlternateSelectedControlColor() : display.getSecondarySelectedControlColor());
         }
         NSSize contentSize = super.cellSize(id, OS.sel_cellSize);
         NSImage image = cell.image();
@@ -1160,7 +1157,7 @@ public class Tree extends Composite implements ITree {
             transform.concat();
             GCData data = new GCData();
             data.paintRect = cellRect;
-            GC gc = GC.cocoa_new(this.getApi(), data);
+            GC gc = GC.cocoa_new(this, data);
             gc.setFont(item.getFont(columnIndex));
             Color fg;
             if (isSelected && ((style & SWT.HIDE_SELECTION) == 0 || hasFocus)) {
@@ -1176,7 +1173,7 @@ public class Tree extends Composite implements ITree {
             }
             Event event = new Event();
             event.item = item.getApi();
-            event.gc = gc;
+            event.gc = gc.getApi();
             event.index = columnIndex;
             event.detail = SWT.FOREGROUND;
             if (drawBackground)
@@ -1196,7 +1193,7 @@ public class Tree extends Composite implements ITree {
                 drawSelection = drawSelection && (event.detail & SWT.SELECTED) != 0;
             }
             if (!drawSelection && isSelected) {
-                userForeground = Color.cocoa_new(display.getApi(), gc.getForeground().handle);
+                userForeground = Color.cocoa_new(display, gc.getForeground().handle);
             }
             if (isDisposed() || item.isDisposed()) {
                 gc.dispose();
@@ -1238,7 +1235,7 @@ public class Tree extends Composite implements ITree {
             NSRect contentRect = cell.titleRectForBounds(rect);
             GCData data = new GCData();
             data.paintRect = contentRect;
-            GC gc = GC.cocoa_new(this.getApi(), data);
+            GC gc = GC.cocoa_new(this, data);
             gc.setClipping((int) (contentRect.x - offsetX), (int) (contentRect.y - offsetY), (int) contentRect.width, (int) contentRect.height);
             Rectangle itemRect = insertItem.getImageBounds(0).union(insertItem.getBounds());
             Rectangle clientRect = getClientArea();
@@ -1334,7 +1331,7 @@ public class Tree extends Composite implements ITree {
             transform.concat();
             GCData data = new GCData();
             data.paintRect = cellRect;
-            GC gc = GC.cocoa_new(this.getApi(), data);
+            GC gc = GC.cocoa_new(this, data);
             gc.setFont(item.getFont(columnIndex));
             if (drawSelection) {
                 gc.setForeground(selectionForeground);
@@ -1352,7 +1349,7 @@ public class Tree extends Composite implements ITree {
             item.width = -1;
             Event event = new Event();
             event.item = item.getApi();
-            event.gc = gc;
+            event.gc = gc.getApi();
             event.index = columnIndex;
             if (drawForeground)
                 event.detail |= SWT.FOREGROUND;
@@ -1670,7 +1667,7 @@ public class Tree extends Composite implements ITree {
     }
 
     private Color getHeaderBackgroundColor() {
-        return headerBackground != null ? Color.cocoa_new(display.getApi(), headerBackground) : defaultBackground();
+        return headerBackground != null ? Color.cocoa_new(display, headerBackground) : defaultBackground();
     }
 
     /**
@@ -1690,7 +1687,7 @@ public class Tree extends Composite implements ITree {
     }
 
     Color getHeaderForegroundColor() {
-        return headerForeground != null ? Color.cocoa_new(display.getApi(), headerForeground) : defaultForeground();
+        return headerForeground != null ? Color.cocoa_new(display, headerForeground) : defaultForeground();
     }
 
     /**
@@ -2911,11 +2908,11 @@ public class Tree extends Composite implements ITree {
         int itemHeight = (int) Math.ceil(widget.rowHeight() + spacing.height);
         GCData data = new GCData();
         data.paintRect = widget.frame();
-        GC gc = GC.cocoa_new(this.getApi(), data);
+        GC gc = GC.cocoa_new(this, data);
         gc.setFont(item.getFont(columnIndex));
         Event event = new Event();
         event.item = item.getApi();
-        event.gc = gc;
+        event.gc = gc.getApi();
         event.index = columnIndex;
         event.width = contentWidth;
         event.height = itemHeight;
@@ -3146,7 +3143,8 @@ public class Tree extends Composite implements ITree {
      * </ul>
      * @since 3.106
      */
-    public void setHeaderBackground(Color color) {
+    public void setHeaderBackground(IColor icolor) {
+        Color color = (Color) icolor;
         checkWidget();
         if (color != null) {
             if (color.isDisposed())
@@ -3180,7 +3178,8 @@ public class Tree extends Composite implements ITree {
      * </ul>
      * @since 3.106
      */
-    public void setHeaderForeground(Color color) {
+    public void setHeaderForeground(IColor icolor) {
+        Color color = (Color) icolor;
         checkWidget();
         if (color != null) {
             if (color.isDisposed())
@@ -3392,7 +3391,7 @@ public class Tree extends Composite implements ITree {
             return false;
         if (columnCount != 0)
             return false;
-        GC gc = new GC(this.getApi());
+        GC gc = new GC(this);
         int newWidth = calculateWidth(items, 0, gc, recurse);
         gc.dispose();
         if (!set) {
@@ -3414,7 +3413,7 @@ public class Tree extends Composite implements ITree {
         TreeItem parentItem = item.parentItem;
         if (parentItem != null && !parentItem.getExpanded())
             return false;
-        GC gc = new GC(this.getApi());
+        GC gc = new GC(this);
         int newWidth = item.calculateWidth(0, gc);
         gc.dispose();
         int oldWidth = (int) firstColumn.width();

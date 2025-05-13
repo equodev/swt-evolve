@@ -65,20 +65,6 @@ public final class Font extends Resource {
     public int extraTraits;
 
     /**
-     * FontMetrics of this font. This has to be calculated by GC, so it's more
-     * efficient to do it once and store it with the Font.
-     */
-    FontMetrics metrics = null;
-
-    static final double SYNTHETIC_BOLD = -2.5;
-
-    static final double SYNTHETIC_ITALIC = 0.2;
-
-    Font(Device device) {
-        super(device);
-    }
-
-    /**
      * Constructs a new font given a device and font data
      * which describes the desired font's appearance.
      * <p>
@@ -99,19 +85,7 @@ public final class Font extends Resource {
      * @see #dispose()
      */
     public Font(Device device, FontData fd) {
-        super(device);
-        if (fd == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            init(fd.getName(), fd.getHeightF(), fd.getStyle(), fd.nsName);
-            init();
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), fd));
     }
 
     /**
@@ -140,26 +114,7 @@ public final class Font extends Resource {
      * @since 2.1
      */
     public Font(Device device, FontData[] fds) {
-        super(device);
-        if (fds == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (fds.length == 0)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        for (int i = 0; i < fds.length; i++) {
-            if (fds[i] == null)
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            FontData fd = fds[0];
-            init(fd.getName(), fd.getHeightF(), fd.getStyle(), fd.nsName);
-            init();
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
+        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), fds));
     }
 
     /**
@@ -187,49 +142,7 @@ public final class Font extends Resource {
      * @see #dispose()
      */
     public Font(Device device, String name, int height, int style) {
-        super(device);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            init(name, height, style, null);
-            init();
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
-    }
-
-    /*public*/
-    Font(Device device, String name, float height, int style) {
-        super(device);
-        init(name, height, style, null);
-        init();
-    }
-
-    void addTraits(NSMutableAttributedString attrStr, NSRange range) {
-        if ((extraTraits & OS.NSBoldFontMask) != 0) {
-            attrStr.addAttribute(OS.NSStrokeWidthAttributeName, NSNumber.numberWithDouble(SYNTHETIC_BOLD), range);
-        }
-        if ((extraTraits & OS.NSItalicFontMask) != 0) {
-            attrStr.addAttribute(OS.NSObliquenessAttributeName, NSNumber.numberWithDouble(SYNTHETIC_ITALIC), range);
-        }
-    }
-
-    void addTraits(NSMutableDictionary dict) {
-        if ((extraTraits & OS.NSBoldFontMask) != 0) {
-            dict.setObject(NSNumber.numberWithDouble(SYNTHETIC_BOLD), OS.NSStrokeWidthAttributeName);
-        }
-        if ((extraTraits & OS.NSItalicFontMask) != 0) {
-            dict.setObject(NSNumber.numberWithDouble(SYNTHETIC_ITALIC), OS.NSObliquenessAttributeName);
-        }
-    }
-
-    @Override
-    void destroy() {
-        handle.release();
-        handle = null;
-        metrics = null;
+        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), name, height, style));
     }
 
     /**
@@ -244,11 +157,7 @@ public final class Font extends Resource {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
-            return true;
-        if (!(object instanceof Font font))
-            return false;
-        return handle == font.handle;
+        return getDelegate().equals(object);
     }
 
     /**
@@ -264,62 +173,7 @@ public final class Font extends Resource {
      * </ul>
      */
     public FontData[] getFontData() {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        NSAutoreleasePool pool = null;
-        if (!NSThread.isMainThread())
-            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-        try {
-            NSString family = handle.familyName();
-            String name = family.getString();
-            NSString str = handle.fontName();
-            String nsName = str.getString();
-            NSFontManager manager = NSFontManager.sharedFontManager();
-            long traits = manager.traitsOfFont(handle);
-            int style = SWT.NORMAL;
-            if ((traits & OS.NSItalicFontMask) != 0)
-                style |= SWT.ITALIC;
-            if ((traits & OS.NSBoldFontMask) != 0)
-                style |= SWT.BOLD;
-            if ((extraTraits & OS.NSItalicFontMask) != 0)
-                style |= SWT.ITALIC;
-            if ((extraTraits & OS.NSBoldFontMask) != 0)
-                style |= SWT.BOLD;
-            Point dpi = device.dpi, screenDPI = device.getScreenDPI();
-            FontData data = new FontData(name, (float) handle.pointSize() * screenDPI.y / dpi.y, style);
-            data.nsName = nsName;
-            return new FontData[] { data };
-        } finally {
-            if (pool != null)
-                pool.release();
-        }
-    }
-
-    /**
-     * Invokes platform specific functionality to allocate a new font.
-     * <p>
-     * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
-     * API for <code>Font</code>. It is marked public only so that it
-     * can be shared within the packages provided by SWT. It is not
-     * available on all platforms, and should never be called from
-     * application code.
-     * </p>
-     *
-     * @param device the device on which to allocate the color
-     * @param handle the handle for the font
-     *
-     * @noreference This method is not intended to be referenced by clients.
-     */
-    public static Font cocoa_new(Device device, NSFont handle) {
-        Font font = new Font(device);
-        font.handle = handle;
-        /*
-	 * When created this way, Font doesn't own its .handle, and
-	 * for this reason it can't be disposed. Tell leak detector
-	 * to just ignore it.
-	 */
-        font.ignoreNonDisposed();
-        return font;
+        return getDelegate().getFontData();
     }
 
     /**
@@ -334,50 +188,7 @@ public final class Font extends Resource {
      */
     @Override
     public int hashCode() {
-        return handle != null ? (int) handle.id : 0;
-    }
-
-    void init(String name, float height, int style, String nsName) {
-        if (name == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (height < 0)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        Point dpi = device.dpi, screenDPI = device.getScreenDPI();
-        float size = height * dpi.y / screenDPI.y;
-        NSFont systemFont = NSFont.systemFontOfSize(size);
-        NSFont boldSystemFont = NSFont.boldSystemFontOfSize(size);
-        String systemFontName = systemFont.familyName().getString();
-        String boldSystemFontName = boldSystemFont.familyName().getString();
-        if (systemFontName.equals(name) || boldSystemFontName.equals(name)) {
-            // Use system font to prevent baseline problems with bold text
-            handle = ((style & SWT.BOLD) == 0 ? systemFont : boldSystemFont);
-        } else if (nsName != null) {
-            handle = NSFont.fontWithName(NSString.stringWith(nsName), size);
-        } else {
-            NSString family = NSString.stringWith(name);
-            handle = NSFont.fontWithName(family, size);
-        }
-        initTraits(style, systemFont);
-        handle.retain();
-    }
-
-    private void initTraits(int style, NSFont systemFont) {
-        NSFontManager manager = NSFontManager.sharedFontManager();
-        if (handle != null && (manager.traitsOfFont(handle) & OS.NSBoldFontMask) == 0 && ((style & SWT.BOLD) != 0)) {
-            handle = manager.convertFont(handle, OS.NSBoldFontMask);
-        }
-        if (handle != null && (manager.traitsOfFont(handle) & OS.NSItalicFontMask) == 0 && ((style & SWT.ITALIC) != 0)) {
-            handle = manager.convertFont(handle, OS.NSItalicFontMask);
-        }
-        if (handle == null) {
-            handle = systemFont;
-        }
-        if ((style & SWT.ITALIC) != 0 && (manager.traitsOfFont(handle) & OS.NSItalicFontMask) == 0) {
-            extraTraits |= OS.NSItalicFontMask;
-        }
-        if ((style & SWT.BOLD) != 0 && (manager.traitsOfFont(handle) & OS.NSBoldFontMask) == 0) {
-            extraTraits |= OS.NSBoldFontMask;
-        }
+        return getDelegate().hashCode();
     }
 
     /**
@@ -392,7 +203,7 @@ public final class Font extends Resource {
      */
     @Override
     public boolean isDisposed() {
-        return handle == null;
+        return getDelegate().isDisposed();
     }
 
     /**
@@ -403,8 +214,14 @@ public final class Font extends Resource {
      */
     @Override
     public String toString() {
-        if (isDisposed())
-            return "Font {*DISPOSED*}";
-        return "Font {" + handle + "}";
+        return getDelegate().toString();
+    }
+
+    protected Font(IFont delegate) {
+        super(delegate);
+    }
+
+    public IFont getDelegate() {
+        return (IFont) super.getDelegate();
     }
 }

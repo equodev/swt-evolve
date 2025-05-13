@@ -19,10 +19,9 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.IButton;
+import org.eclipse.swt.graphics.IImage;
 
 /**
  * Instances of this class represent a selectable user interface object that
@@ -304,7 +303,7 @@ public class Button extends Control implements IButton {
 
     @Override
     Font defaultFont() {
-        return Font.cocoa_new(display.getApi(), defaultNSFont());
+        return Font.cocoa_new(display, defaultNSFont());
     }
 
     @Override
@@ -917,7 +916,8 @@ public class Button extends Control implements IButton {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setImage(Image image) {
+    public void setImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);

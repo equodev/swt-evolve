@@ -632,7 +632,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Color getBackground() {
-        return getDelegate().getBackground();
+        return getDelegate().getBackground().getApi();
     }
 
     /**
@@ -648,7 +648,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.2
      */
     public Image getBackgroundImage() {
-        return getDelegate().getBackgroundImage();
+        return getDelegate().getBackgroundImage().getApi();
     }
 
     /**
@@ -716,7 +716,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.3
      */
     public Cursor getCursor() {
-        return getDelegate().getCursor();
+        return getDelegate().getCursor().getApi();
     }
 
     /**
@@ -749,7 +749,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Font getFont() {
-        return getDelegate().getFont();
+        return getDelegate().getFont().getApi();
     }
 
     /**
@@ -763,7 +763,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Color getForeground() {
-        return getDelegate().getForeground();
+        return getDelegate().getForeground().getApi();
     }
 
     /**
@@ -879,7 +879,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.4
      */
     public Region getRegion() {
-        return getDelegate().getRegion();
+        return getDelegate().getRegion().getApi();
     }
 
     /**
@@ -1210,7 +1210,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.4
      */
     public boolean print(GC gc) {
-        return getDelegate().print(gc);
+        return getDelegate().print(gc.getDelegate());
     }
 
     /**
@@ -1626,7 +1626,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground(color);
+        getDelegate().setBackground(color.getDelegate());
     }
 
     /**
@@ -1652,7 +1652,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.2
      */
     public void setBackgroundImage(Image image) {
-        getDelegate().setBackgroundImage(image);
+        getDelegate().setBackgroundImage(image.getDelegate());
     }
 
     /**
@@ -1751,7 +1751,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setCursor(Cursor cursor) {
-        getDelegate().setCursor(cursor);
+        getDelegate().setCursor(cursor.getDelegate());
     }
 
     /**
@@ -1823,7 +1823,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setFont(Font font) {
-        getDelegate().setFont(font);
+        getDelegate().setFont(font.getDelegate());
     }
 
     /**
@@ -1844,7 +1844,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground(color);
+        getDelegate().setForeground(color.getDelegate());
     }
 
     /**
@@ -2009,7 +2009,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.4
      */
     public void setRegion(Region region) {
-        getDelegate().setRegion(region);
+        getDelegate().setRegion(region.getDelegate());
     }
 
     /**

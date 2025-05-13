@@ -17,12 +17,11 @@ package nat.org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.IExpandItem;
 import org.eclipse.swt.widgets.IControl;
+import org.eclipse.swt.graphics.IImage;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -368,7 +367,8 @@ public class ExpandItem extends Item implements IExpandItem {
     }
 
     @Override
-    public void setImage(Image image) {
+    public void setImage(IImage iimage) {
+        Image image = (Image) iimage;
         super.setImage(image);
         int oldImageHeight = imageHeight;
         if (image != null) {

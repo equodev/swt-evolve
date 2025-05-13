@@ -19,9 +19,9 @@ import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.ITabItem;
 import org.eclipse.swt.widgets.IControl;
+import org.eclipse.swt.graphics.IImage;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -378,7 +378,8 @@ public class TabItem extends Item implements ITabItem {
     }
 
     @Override
-    public void setImage(Image image) {
+    public void setImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         int index = parent.indexOf(this);
         if (index == -1)

@@ -19,15 +19,9 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.graphics.TextLayout;
-import org.eclipse.swt.graphics.Region;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.TextStyle;
 import org.eclipse.swt.widgets.IToolTip;
@@ -232,7 +226,7 @@ public class ToolTip extends Widget implements IToolTip {
         if ((style & SWT.BALLOON) != 0) {
             if (region != null)
                 region.dispose();
-            region = new Region(display.getApi());
+            region = new Region(display);
             region.add(polyline);
             tip.setRegion(region);
         }
@@ -560,7 +554,7 @@ public class ToolTip extends Widget implements IToolTip {
         layoutMessage = null;
         if (string.length() != 0) {
             Display display = getDisplay();
-            layoutMessage = new TextLayout(display.getApi());
+            layoutMessage = new TextLayout(display);
             layoutMessage.setText(string);
         }
         if (tip.getVisible())
@@ -592,12 +586,12 @@ public class ToolTip extends Widget implements IToolTip {
         boldFont = null;
         if (string.length() != 0) {
             Display display = getDisplay();
-            layoutText = new TextLayout(display.getApi());
+            layoutText = new TextLayout(display);
             layoutText.setText(string);
             Font font = display.getSystemFont();
             FontData data = font.getFontData()[0];
-            boldFont = new Font(display.getApi(), data.getName(), data.getHeight(), SWT.BOLD);
-            TextStyle style = new TextStyle(boldFont, null, null);
+            boldFont = new Font(display, data.getName(), data.getHeight(), SWT.BOLD);
+            TextStyle style = new TextStyle(boldFont.getApi(), null, null);
             layoutText.setStyle(style, 0, string.length());
         }
         if (tip.getVisible())

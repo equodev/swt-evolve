@@ -23,11 +23,10 @@ import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Cursor;
-import org.eclipse.swt.graphics.Region;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.IShell;
+import org.eclipse.swt.graphics.IGC;
 import org.eclipse.swt.widgets.IMenu;
+import org.eclipse.swt.graphics.IRegion;
 
 /**
  * Instances of this class represent the "windows"
@@ -1468,7 +1467,8 @@ public class Shell extends Decorations implements IShell {
     }
 
     @Override
-    public boolean print(GC gc) {
+    public boolean print(IGC igc) {
+        GC gc = (GC) igc;
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -2098,7 +2098,8 @@ public class Shell extends Decorations implements IShell {
      * @since 3.0
      */
     @Override
-    public void setRegion(Region region) {
+    public void setRegion(IRegion iregion) {
+        Region region = (Region) iregion;
         checkWidget();
         if ((style & SWT.NO_TRIM) == 0)
             return;

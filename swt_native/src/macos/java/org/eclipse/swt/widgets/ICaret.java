@@ -28,7 +28,7 @@ public interface ICaret extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Font getFont();
+    IFont getFont();
 
     /**
      * Returns the image that the receiver will use to paint the caret.
@@ -40,7 +40,7 @@ public interface ICaret extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Image getImage();
+    IImage getImage();
 
     /**
      * Returns a point describing the receiver's location relative
@@ -162,7 +162,7 @@ public interface ICaret extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setFont(Font font);
+    void setFont(IFont font);
 
     /**
      * Sets the image that the receiver will use to paint the caret
@@ -179,7 +179,7 @@ public interface ICaret extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setImage(Image image);
+    void setImage(IImage image);
 
     /**
      * Sets the receiver's location to the point specified by

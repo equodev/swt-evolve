@@ -29,7 +29,7 @@ public interface ITaskItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Image getOverlayImage();
+    IImage getOverlayImage();
 
     /**
      * Returns the receiver's overlay text, which will be an empty
@@ -140,7 +140,7 @@ public interface ITaskItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setOverlayImage(Image overlayImage);
+    void setOverlayImage(IImage overlayImage);
 
     /**
      * Sets the receiver's overlay text. The space available to display the

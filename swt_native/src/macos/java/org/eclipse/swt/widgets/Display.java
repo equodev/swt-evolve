@@ -813,7 +813,7 @@ public class Display extends Device implements Executor {
      */
     @Override
     public Color getSystemColor(int id) {
-        return getDelegate().getSystemColor(id);
+        return getDelegate().getSystemColor(id).getApi();
     }
 
     /**
@@ -859,7 +859,7 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Cursor getSystemCursor(int id) {
-        return getDelegate().getSystemCursor(id);
+        return getDelegate().getSystemCursor(id).getApi();
     }
 
     /**
@@ -889,7 +889,7 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Image getSystemImage(int id) {
-        return getDelegate().getSystemImage(id);
+        return getDelegate().getSystemImage(id).getApi();
     }
 
     /**

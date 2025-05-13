@@ -122,7 +122,7 @@ public class Link extends Control {
      * @since 3.105
      */
     public Color getLinkForeground() {
-        return getDelegate().getLinkForeground();
+        return getDelegate().getLinkForeground().getApi();
     }
 
     /**
@@ -180,7 +180,7 @@ public class Link extends Control {
      * @since 3.105
      */
     public void setLinkForeground(Color color) {
-        getDelegate().setLinkForeground(color);
+        getDelegate().setLinkForeground(color.getDelegate());
     }
 
     /**

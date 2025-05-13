@@ -13,11 +13,13 @@
  *      IBM Corporation - initial API and implementation
  * *****************************************************************************
  */
-package org.eclipse.swt.custom;
+package nat.org.eclipse.swt.custom;
 
 import java.util.*;
 import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
+import nat.org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.custom.StyleRange;
 
 /**
  * The {@code RTFWriter} class is used to write styled content as rich text.

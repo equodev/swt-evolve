@@ -21,13 +21,11 @@ import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.custom.ITreeCursor;
+import org.eclipse.swt.graphics.IColor;
 import org.eclipse.swt.widgets.ITreeItem;
 
 /**
@@ -771,7 +769,8 @@ public class TreeCursor extends Canvas implements ITreeCursor {
      * </ul>
      */
     @Override
-    public void setBackground(Color color) {
+    public void setBackground(IColor icolor) {
+        Color color = (Color) icolor;
         background = color;
         super.setBackground(getBackground());
         redraw();
@@ -795,7 +794,8 @@ public class TreeCursor extends Canvas implements ITreeCursor {
      * </ul>
      */
     @Override
-    public void setForeground(Color color) {
+    public void setForeground(IColor icolor) {
+        Color color = (Color) icolor;
         foreground = color;
         super.setForeground(getForeground());
         redraw();

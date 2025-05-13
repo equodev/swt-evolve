@@ -50,14 +50,6 @@ public final class Color extends Resource {
      */
     public double[] handle;
 
-    Color() {
-        super();
-    }
-
-    Color(Device device) {
-        super(device);
-    }
-
     /**
      * Constructs a new instance of this class given a device and the
      * desired red, green and blue values expressed as ints in the range
@@ -76,9 +68,7 @@ public final class Color extends Resource {
      * @see #Color(int, int, int) The equivalent constructor not requiring a Device
      */
     public Color(Device device, int red, int green, int blue) {
-        super(device);
-        init(red, green, blue, 255);
-        init();
+        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), red, green, blue));
     }
 
     /**
@@ -96,8 +86,7 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(int red, int green, int blue) {
-        super();
-        init(red, green, blue, 255);
+        this(new nat.org.eclipse.swt.graphics.Color(red, green, blue));
     }
 
     /**
@@ -121,9 +110,7 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public Color(Device device, int red, int green, int blue, int alpha) {
-        super(device);
-        init(red, green, blue, alpha);
-        init();
+        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), red, green, blue, alpha));
     }
 
     /**
@@ -143,8 +130,7 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(int red, int green, int blue, int alpha) {
-        super();
-        init(red, green, blue, alpha);
+        this(new nat.org.eclipse.swt.graphics.Color(red, green, blue, alpha));
     }
 
     /**
@@ -163,11 +149,7 @@ public final class Color extends Resource {
      * @see #Color(RGB) The equivalent constructor not requiring a Device
      */
     public Color(Device device, RGB rgb) {
-        super(device);
-        if (rgb == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        init(rgb.red, rgb.green, rgb.blue, 255);
-        init();
+        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), rgb));
     }
 
     /**
@@ -183,10 +165,7 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(RGB rgb) {
-        super();
-        if (rgb == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        init(rgb.red, rgb.green, rgb.blue, 255);
+        this(new nat.org.eclipse.swt.graphics.Color(rgb));
     }
 
     /**
@@ -207,11 +186,7 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public Color(Device device, RGBA rgba) {
-        super(device);
-        if (rgba == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        init(rgba.rgb.red, rgba.rgb.green, rgba.rgb.blue, rgba.alpha);
-        init();
+        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), rgba));
     }
 
     /**
@@ -228,10 +203,7 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(RGBA rgba) {
-        super();
-        if (rgba == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        init(rgba.rgb.red, rgba.rgb.green, rgba.rgb.blue, rgba.alpha);
+        this(new nat.org.eclipse.swt.graphics.Color(rgba));
     }
 
     /**
@@ -254,11 +226,7 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public Color(Device device, RGB rgb, int alpha) {
-        super(device);
-        if (rgb == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        init(rgb.red, rgb.green, rgb.blue, alpha);
-        init();
+        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), rgb, alpha));
     }
 
     /**
@@ -277,15 +245,7 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(RGB rgb, int alpha) {
-        super();
-        if (rgb == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        init(rgb.red, rgb.green, rgb.blue, alpha);
-    }
-
-    @Override
-    void destroy() {
-        handle = null;
+        this(new nat.org.eclipse.swt.graphics.Color(rgb, alpha));
     }
 
     /**
@@ -294,12 +254,10 @@ public final class Color extends Resource {
      */
     @Override
     public void dispose() {
+        getDelegate().dispose();
         // Does as below to maintain API contract with Resource. Does
         // not use super.dispose() because that untracks the Color
         // from the Device tracking, however init() is overridden
-        // to prevent the tracking in the first place.
-        destroy();
-        device = null;
     }
 
     /**
@@ -317,11 +275,8 @@ public final class Color extends Resource {
      */
     @Override
     public Device getDevice() {
+        return getDelegate().getDevice().getApi();
         // Fall back on Device.getDevice only if we haven't been disposed
-        // already.
-        if (this.device == null && this.handle != null)
-            return Device.getDevice();
-        return super.getDevice();
     }
 
     /**
@@ -336,16 +291,7 @@ public final class Color extends Resource {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
-            return true;
-        if (!(object instanceof Color color))
-            return false;
-        if (isDisposed() || color.isDisposed())
-            return false;
-        double[] rgbColor = color.handle;
-        if (handle == rgbColor)
-            return true;
-        return (int) (handle[0] * 255) == (int) (rgbColor[0] * 255) && (int) (handle[1] * 255) == (int) (rgbColor[1] * 255) && (int) (handle[2] * 255) == (int) (rgbColor[2] * 255) && (int) (handle[3] * 255) == (int) (rgbColor[3] * 255);
+        return getDelegate().equals(object);
     }
 
     /**
@@ -359,9 +305,7 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public int getAlpha() {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return (int) (handle[3] * 255);
+        return getDelegate().getAlpha();
     }
 
     /**
@@ -374,9 +318,7 @@ public final class Color extends Resource {
      * </ul>
      */
     public int getBlue() {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return (int) (handle[2] * 255);
+        return getDelegate().getBlue();
     }
 
     /**
@@ -389,9 +331,7 @@ public final class Color extends Resource {
      * </ul>
      */
     public int getGreen() {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return (int) (handle[1] * 255);
+        return getDelegate().getGreen();
     }
 
     /**
@@ -404,9 +344,7 @@ public final class Color extends Resource {
      * </ul>
      */
     public int getRed() {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return (int) (handle[0] * 255);
+        return getDelegate().getRed();
     }
 
     /**
@@ -421,9 +359,7 @@ public final class Color extends Resource {
      */
     @Override
     public int hashCode() {
-        if (isDisposed())
-            return 0;
-        return (int) (handle[0] * 255) ^ (int) (handle[1] * 255) ^ (int) (handle[2] * 255) ^ (int) (handle[3] * 255);
+        return getDelegate().hashCode();
     }
 
     /**
@@ -436,9 +372,7 @@ public final class Color extends Resource {
      * </ul>
      */
     public RGB getRGB() {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return new RGB(getRed(), getGreen(), getBlue());
+        return getDelegate().getRGB();
     }
 
     /**
@@ -452,89 +386,7 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public RGBA getRGBA() {
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return new RGBA(getRed(), getGreen(), getBlue(), getAlpha());
-    }
-
-    /**
-     * Invokes platform specific functionality to allocate a new color.
-     * <p>
-     * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
-     * API for <code>Color</code>. It is marked public only so that it
-     * can be shared within the packages provided by SWT. It is not
-     * available on all platforms, and should never be called from
-     * application code.
-     * </p>
-     *
-     * @param device the device on which to allocate the color
-     * @param handle the handle for the color
-     *
-     * @noreference This method is not intended to be referenced by clients.
-     */
-    public static Color cocoa_new(Device device, double[] handle) {
-        double[] rgbColor = handle;
-        Color color = new Color(device);
-        color.handle = rgbColor;
-        return color;
-    }
-
-    /**
-     * Invokes platform specific functionality to allocate a new color.
-     * <p>
-     * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
-     * API for <code>Color</code>. It is marked public only so that it
-     * can be shared within the packages provided by SWT. It is not
-     * available on all platforms, and should never be called from
-     * application code.
-     * </p>
-     *
-     * @param device the device on which to allocate the color
-     * @param handle the handle for the color
-     * @param alpha the int for the alpha content in the color(Currently SWT honors extreme values for alpha ie. 0 or 255)
-     *
-     * @noreference This method is not intended to be referenced by clients.
-     */
-    public static Color cocoa_new(Device device, double[] handle, int alpha) {
-        double[] rgbColor = handle;
-        Color color = new Color(device);
-        color.handle = rgbColor;
-        color.handle[3] = alpha / 255f;
-        return color;
-    }
-
-    /**
-     * Allocates the operating system resources associated
-     * with the receiver.
-     *
-     * @param device the device on which to allocate the color
-     * @param red the amount of red in the color
-     * @param green the amount of green in the color
-     * @param blue the amount of blue in the color
-     * @param alpha the amount of alpha in the color
-     *
-     * @exception IllegalArgumentException <ul>
-     *    <li>ERROR_INVALID_ARGUMENT - if the red, green, blue or alpha argument is not between 0 and 255</li>
-     * </ul>
-     */
-    void init(int red, int green, int blue, int alpha) {
-        if ((red > 255) || (red < 0) || (green > 255) || (green < 0) || (blue > 255) || (blue < 0) || (alpha > 255) || (alpha < 0)) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        double[] rgbColor = new double[4];
-        rgbColor[0] = red / 255f;
-        rgbColor[1] = green / 255f;
-        rgbColor[2] = blue / 255f;
-        rgbColor[3] = alpha / 255f;
-        handle = rgbColor;
-    }
-
-    @Override
-    void init() {
-        // Resource init simply tracks this resource in the Device
-        // if DEBUG is on. Since Colors don't require disposal,
-        // the tracking would be a memory leak and a misreport
-        // on what resources are in use.
+        return getDelegate().getRGBA();
     }
 
     /**
@@ -549,7 +401,7 @@ public final class Color extends Resource {
      */
     @Override
     public boolean isDisposed() {
-        return handle == null;
+        return getDelegate().isDisposed();
     }
 
     /**
@@ -560,8 +412,14 @@ public final class Color extends Resource {
      */
     @Override
     public String toString() {
-        if (isDisposed())
-            return "Color {*DISPOSED*}";
-        return "Color {" + getRed() + ", " + getGreen() + ", " + getBlue() + ", " + getAlpha() + "}";
+        return getDelegate().toString();
+    }
+
+    protected Color(IColor delegate) {
+        super(delegate);
+    }
+
+    public IColor getDelegate() {
+        return (IColor) super.getDelegate();
     }
 }

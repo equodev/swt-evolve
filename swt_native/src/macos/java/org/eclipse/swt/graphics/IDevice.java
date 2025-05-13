@@ -134,7 +134,7 @@ public interface IDevice {
      *
      * @see SWT
      */
-    Color getSystemColor(int id);
+    IColor getSystemColor(int id);
 
     /**
      * Returns a reasonable font for applications to use.
@@ -156,7 +156,7 @@ public interface IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    Font getSystemFont();
+    IFont getSystemFont();
 
     /**
      * Returns <code>true</code> if the underlying window system prints out

@@ -76,7 +76,7 @@ public interface ITabItem extends IItem {
      */
     void setControl(IControl control);
 
-    void setImage(Image image);
+    void setImage(IImage image);
 
     /**
      * Sets the receiver's text.  The string may include

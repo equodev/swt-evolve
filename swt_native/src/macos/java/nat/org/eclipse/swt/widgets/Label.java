@@ -18,9 +18,9 @@ package nat.org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.ILabel;
+import org.eclipse.swt.graphics.IImage;
 
 /**
  * Instances of this class represent a non-selectable
@@ -508,7 +508,8 @@ public class Label extends Control implements ILabel {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setImage(Image image) {
+    public void setImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         if ((style & SWT.SEPARATOR) != 0)
             return;

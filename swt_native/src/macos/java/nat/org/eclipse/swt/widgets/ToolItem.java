@@ -20,14 +20,13 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.IToolItem;
+import org.eclipse.swt.graphics.IColor;
 import org.eclipse.swt.widgets.IControl;
+import org.eclipse.swt.graphics.IImage;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -1072,7 +1071,8 @@ public class ToolItem extends Item implements IToolItem {
      *
      * @since 3.120
      */
-    public void setBackground(Color color) {
+    public void setBackground(IColor icolor) {
+        Color color = (Color) icolor;
         checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1175,7 +1175,8 @@ public class ToolItem extends Item implements IToolItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setDisabledImage(Image image) {
+    public void setDisabledImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         if (this.disabledImage == image)
             return;
@@ -1218,7 +1219,8 @@ public class ToolItem extends Item implements IToolItem {
      *
      * @since 3.120
      */
-    public void setForeground(Color color) {
+    public void setForeground(IColor icolor) {
+        Color color = (Color) icolor;
         checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1247,7 +1249,8 @@ public class ToolItem extends Item implements IToolItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    public void setHotImage(Image image) {
+    public void setHotImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         if (this.hotImage == image)
             return;
@@ -1260,7 +1263,8 @@ public class ToolItem extends Item implements IToolItem {
     }
 
     @Override
-    public void setImage(Image image) {
+    public void setImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         if (this.image == image)
             return;

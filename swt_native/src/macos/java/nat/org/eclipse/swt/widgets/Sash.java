@@ -20,7 +20,6 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
@@ -94,7 +93,7 @@ public class Sash extends Control implements ISash {
     public Sash(Composite parent, int style) {
         super(parent, checkStyle(style));
         int cursorStyle = (style & SWT.VERTICAL) != 0 ? SWT.CURSOR_SIZEWE : SWT.CURSOR_SIZENS;
-        sizeCursor = new Cursor(display.getApi(), cursorStyle);
+        sizeCursor = new Cursor(display, cursorStyle);
     }
 
     @Override

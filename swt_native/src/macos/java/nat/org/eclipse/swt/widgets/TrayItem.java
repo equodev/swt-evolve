@@ -19,9 +19,9 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.ITrayItem;
+import org.eclipse.swt.graphics.IImage;
 import org.eclipse.swt.widgets.IToolTip;
 
 /**
@@ -379,7 +379,8 @@ public class TrayItem extends Item implements ITrayItem {
      * </ul>
      */
     @Override
-    public void setImage(Image image) {
+    public void setImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -402,7 +403,8 @@ public class TrayItem extends Item implements ITrayItem {
      *
      * @since 3.8
      */
-    public void setHighlightImage(Image image) {
+    public void setHighlightImage(IImage iimage) {
+        Image image = (Image) iimage;
         checkWidget();
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);

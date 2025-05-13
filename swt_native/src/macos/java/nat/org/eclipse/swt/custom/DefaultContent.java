@@ -13,13 +13,18 @@
  *      IBM Corporation - initial API and implementation
  * *****************************************************************************
  */
-package org.eclipse.swt.custom;
+package nat.org.eclipse.swt.custom;
 
 import java.util.*;
 import java.util.List;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.widgets.*;
+import nat.org.eclipse.swt.widgets.*;
+import org.eclipse.swt.custom.TextChangeListener;
+import org.eclipse.swt.widgets.TypedListener;
+import org.eclipse.swt.custom.StyledTextEvent;
+import org.eclipse.swt.custom.StyledTextContent;
+import org.eclipse.swt.custom.ST;
 
 class DefaultContent implements StyledTextContent {
 

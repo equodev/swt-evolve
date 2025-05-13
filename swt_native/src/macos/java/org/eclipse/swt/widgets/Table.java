@@ -456,7 +456,7 @@ public class Table extends Composite {
      * @since 3.106
      */
     public Color getHeaderBackground() {
-        return getDelegate().getHeaderBackground();
+        return getDelegate().getHeaderBackground().getApi();
     }
 
     /**
@@ -471,7 +471,7 @@ public class Table extends Composite {
      * @since 3.106
      */
     public Color getHeaderForeground() {
-        return getDelegate().getHeaderForeground();
+        return getDelegate().getHeaderForeground().getApi();
     }
 
     /**
@@ -1035,7 +1035,7 @@ public class Table extends Composite {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
-        getDelegate().setHeaderBackground(color);
+        getDelegate().setHeaderBackground(color.getDelegate());
     }
 
     /**
@@ -1058,7 +1058,7 @@ public class Table extends Composite {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
-        getDelegate().setHeaderForeground(color);
+        getDelegate().setHeaderForeground(color.getDelegate());
     }
 
     /**

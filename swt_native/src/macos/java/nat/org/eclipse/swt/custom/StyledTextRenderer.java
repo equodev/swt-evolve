@@ -15,13 +15,25 @@
  *      Angelo Zerr <angelo.zerr@gmail.com> - Customize different line spacing of StyledText - Bug 522020
  * *****************************************************************************
  */
-package org.eclipse.swt.custom;
+package nat.org.eclipse.swt.custom;
 
 import java.util.*;
 import java.util.List;
 import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.widgets.*;
+import nat.org.eclipse.swt.graphics.*;
+import nat.org.eclipse.swt.widgets.*;
+import org.eclipse.swt.custom.StyledTextContent;
+import org.eclipse.swt.custom.StyledTextLineSpacingProvider;
+import org.eclipse.swt.graphics.FontMetrics;
+import org.eclipse.swt.custom.StyleRange;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.GlyphMetrics;
+import org.eclipse.swt.custom.StyledTextEvent;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.TextStyle;
+import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.custom.TextChangingEvent;
+import org.eclipse.swt.custom.ST;
 
 /**
  * A StyledTextRenderer renders the content of a StyledText widget.

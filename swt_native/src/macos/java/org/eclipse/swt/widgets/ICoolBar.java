@@ -98,7 +98,7 @@ public interface ICoolBar extends IComposite {
      */
     int[] getItemOrder();
 
-    void setBackground(Color color);
+    void setBackground(IColor color);
 
     /**
      * Returns an array of points whose x and y coordinates describe
@@ -176,7 +176,7 @@ public interface ICoolBar extends IComposite {
      */
     void setWrapIndices(int[] indices);
 
-    void setCursor(Cursor cursor);
+    void setCursor(ICursor cursor);
 
     /**
      * Sets the receiver's item order, wrap indices, and item sizes

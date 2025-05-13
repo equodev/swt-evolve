@@ -68,7 +68,7 @@ public interface ITrayItem extends IItem {
      *
      * @since 3.8
      */
-    Image getHighlightImage();
+    IImage getHighlightImage();
 
     /**
      * Returns the receiver's parent, which must be a <code>Tray</code>.
@@ -179,7 +179,7 @@ public interface ITrayItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setImage(Image image);
+    void setImage(IImage image);
 
     /**
      * Sets the receiver's highlight image.
@@ -196,7 +196,7 @@ public interface ITrayItem extends IItem {
      *
      * @since 3.8
      */
-    void setHighlightImage(Image image);
+    void setHighlightImage(IImage image);
 
     /**
      * Sets the receiver's tool tip to the argument, which

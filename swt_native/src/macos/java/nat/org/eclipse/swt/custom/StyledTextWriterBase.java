@@ -13,10 +13,12 @@
  *      IBM Corporation - initial API and implementation
  * *****************************************************************************
  */
-package org.eclipse.swt.custom;
+package nat.org.eclipse.swt.custom;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
+import nat.org.eclipse.swt.graphics.*;
+import org.eclipse.swt.custom.StyleRange;
+import org.eclipse.swt.custom.StyledTextEvent;
 
 /**
  * The base class encapsulating the logic used to write styled content as

@@ -137,7 +137,7 @@ public class StyleRange extends TextStyle implements Cloneable {
         return super.hashCode() ^ fontStyle;
     }
 
-    boolean isVariableHeight() {
+    public boolean isVariableHeight() {
         return font != null || (metrics != null && (metrics.ascent != 0 || metrics.descent != 0)) || rise != 0;
     }
 

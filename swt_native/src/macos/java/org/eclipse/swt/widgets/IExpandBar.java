@@ -29,7 +29,7 @@ public interface IExpandBar extends IComposite {
 
     Point computeSize(int wHint, int hHint, boolean changed);
 
-    Color getForeground();
+    IColor getForeground();
 
     /**
      * Returns the item at the given, zero-relative index in the
@@ -129,9 +129,9 @@ public interface IExpandBar extends IComposite {
      */
     void removeExpandListener(ExpandListener listener);
 
-    void setFont(Font font);
+    void setFont(IFont font);
 
-    void setForeground(Color color);
+    void setForeground(IColor color);
 
     /**
      * Sets the receiver's spacing. Spacing specifies the number of points allocated around
