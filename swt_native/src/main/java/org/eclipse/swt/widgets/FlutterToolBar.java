@@ -4,6 +4,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.custom.ICTabItem;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.internal.ToolbarSwtSizingConstants;
 import org.eclipse.swt.values.ToolBarValue;
 
 /**
@@ -230,5 +231,51 @@ public class FlutterToolBar extends FlutterComposite implements IToolBar {
         if (builder == null)
             builder = ToolBarValue.builder().setId(handle).setStyle(style);
         return (ToolBarValue.Builder) builder;
+    }
+
+    @Override
+    public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
+        int width = 0;
+        int height = 0;
+
+        // --- Layout-specific calculations for Toolbar ---
+        // This part would be custom for Toolbar and not fully auto-generated beyond a template
+        double accumulatedWidth = 0;
+        double maxChildHeight = 0;
+        int visibleItemCount = 0;
+
+        IToolItem [] items = getItems();
+
+        for (IToolItem item : items) {
+//            if (!item.getControl().getVisible()) continue; // Or however visibility is handled
+
+            Point itemSize = item.computeSize(); // Get preferred size of child
+
+            if (visibleItemCount > 0) {
+                accumulatedWidth += ToolbarSwtSizingConstants.TOOLBAR_HORIZONTAL_PADDING; // Constant for spacing
+            }
+            accumulatedWidth += itemSize.x;
+            maxChildHeight = Math.max(maxChildHeight, itemSize.y);
+            visibleItemCount++;
+        }
+
+        // Add Toolbar's own padding
+        width = (int) (accumulatedWidth + (2 * ToolbarSwtSizingConstants.TOOLBAR_HORIZONTAL_PADDING));
+        height = (int) (maxChildHeight + (2 * ToolbarSwtSizingConstants.TOOLBAR_VERTICAL_PADDING));
+
+        // --- Apply hints and border (standard part from your generator) ---
+        if (wHint != SWT.DEFAULT) width = wHint;
+        if (hHint != SWT.DEFAULT) height = hHint;
+
+        int borderWidth = getBorderWidth(); // Assuming this method exists
+        width += borderWidth * 2;
+        height += borderWidth * 2;
+
+        // Ensure minimum dimensions if any (e.g. if toolbar is empty but should still show)
+        // width = Math.max(width, ToolbarSwtSizingConstants.MINIMUM_TOOLBAR_WIDTH);
+        // height = Math.max(height, ToolbarSwtSizingConstants.MINIMUM_TOOLBAR_HEIGHT);
+
+        return new Point(width, height);
     }
 }

@@ -1569,6 +1569,11 @@ public class SWTToolItem extends SWTItem implements IToolItem {
         setWidthInPixels(DPIUtil.autoScaleUp(width));
     }
 
+    @Override
+    public Point computeSize() {
+        return null;
+    }
+
     void setWidthInPixels(int width) {
         checkWidget();
         if ((style & SWT.SEPARATOR) == 0)
