@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../swt/treecolumn.dart';
-import '../swt/widget.dart';
 import '../impl/item_impl.dart';
 import '../impl/widget_config.dart';
 
@@ -17,44 +16,47 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends TreeColumnValue>
 
     final Color textColor = useDarkTheme ? Colors.white70 : Colors.black87;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-      decoration: BoxDecoration(
-        color: useDarkTheme ? const Color(0xFF333333) : Colors.grey.shade200,
-        border: Border(
-          bottom: BorderSide(
-            color: useDarkTheme ? Colors.black38 : Colors.grey.shade400,
-            width: 1.0,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+        decoration: BoxDecoration(
+          color: useDarkTheme ? const Color(0xFF333333) : Colors.grey.shade200,
+          border: Border(
+            bottom: BorderSide(
+              color: useDarkTheme ? Colors.black38 : Colors.grey.shade400,
+              width: 1.0,
+            ),
           ),
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            text,
-            style: TextStyle(
-              color: textColor,
-              fontWeight: FontWeight.w500,
-              fontSize: 14,
-            ),
-          ),
-          if (resizable)
-            MouseRegion(
-              cursor: SystemMouseCursors.resizeLeftRight,
-              child: GestureDetector(
-                onHorizontalDragUpdate: (details) {
-                  // Here would go the resize logic
-                  widget.sendControlResize(state, null);
-                },
-                child: Container(
-                  width: 4,
-                  height: 20,
-                  color: Colors.transparent,
-                ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              text,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
               ),
             ),
-        ],
+            if (resizable)
+              MouseRegion(
+                cursor: SystemMouseCursors.resizeLeftRight,
+                child: GestureDetector(
+                  onHorizontalDragUpdate: (details) {
+                    // Resize logic
+                    widget.sendControlResize(state, null);
+                  },
+                  child: Container(
+                    width: 4,
+                    height: 20,
+                    color: Colors.transparent,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
