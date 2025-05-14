@@ -286,7 +286,7 @@ class _PushButtonState extends State<PushButton> {
     final Color lightSelectedColor = const Color(0xFF6366F1);
     final Color lightUnselectedColor = const Color(0xFF6366F1);
     final Color lightSelectedTextColor = const Color(0xFFFFFFFF);
-    final Color lightUnselectedTextColor = const Color(0xFF595858);
+    final Color lightUnselectedTextColor = const Color(0xFFFFFFFF);
 
     final Color selectedColor = widget.useDarkTheme ? darkSelectedColor : lightSelectedColor;
     final Color unselectedColor = widget.useDarkTheme ? darkUnselectedColor : lightUnselectedColor;
