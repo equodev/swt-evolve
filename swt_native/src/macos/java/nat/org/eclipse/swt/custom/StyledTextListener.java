@@ -18,7 +18,6 @@ package nat.org.eclipse.swt.custom;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.internal.*;
 import nat.org.eclipse.swt.widgets.*;
-import dev.equo.swt.Convert;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.custom.ExtendedModifyEvent;
 import org.eclipse.swt.custom.StyledTextEvent;
@@ -63,7 +62,7 @@ class StyledTextListener extends TypedListener {
             case ST.LineGetBackground:
                 LineBackgroundEvent lineBgEvent = new LineBackgroundEvent((StyledTextEvent) e);
                 ((LineBackgroundListener) eventListener).lineGetBackground(lineBgEvent);
-                ((StyledTextEvent) e).lineBackground = lineBgEvent.lineBackground.getApi();
+                ((StyledTextEvent) e).lineBackground = lineBgEvent.lineBackground;
                 break;
             case ST.LineGetSegments:
                 BidiSegmentEvent segmentEvent = new BidiSegmentEvent((StyledTextEvent) e);
@@ -75,13 +74,13 @@ class StyledTextListener extends TypedListener {
                 LineStyleEvent lineStyleEvent = new LineStyleEvent((StyledTextEvent) e);
                 ((LineStyleListener) eventListener).lineGetStyle(lineStyleEvent);
                 ((StyledTextEvent) e).ranges = lineStyleEvent.ranges;
-                ((StyledTextEvent) e).styles = Convert.array(lineStyleEvent.styles, org.eclipse.swt.custom.IStyleRange::getApi, org.eclipse.swt.custom.StyleRange[]::new);
+                ((StyledTextEvent) e).styles = lineStyleEvent.styles;
                 ((StyledTextEvent) e).alignment = lineStyleEvent.alignment;
                 ((StyledTextEvent) e).indent = lineStyleEvent.indent;
                 ((StyledTextEvent) e).verticalIndent = lineStyleEvent.verticalIndent;
                 ((StyledTextEvent) e).wrapIndent = lineStyleEvent.wrapIndent;
                 ((StyledTextEvent) e).justify = lineStyleEvent.justify;
-                ((StyledTextEvent) e).bullet = lineStyleEvent.bullet.getApi();
+                ((StyledTextEvent) e).bullet = lineStyleEvent.bullet;
                 ((StyledTextEvent) e).bulletIndex = lineStyleEvent.bulletIndex;
                 ((StyledTextEvent) e).tabStops = lineStyleEvent.tabStops;
                 break;

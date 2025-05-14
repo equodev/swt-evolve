@@ -2026,7 +2026,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
                                                     reschedule = true;
                                                 } else {
                                                     temp = temp.getParent();
-                                                    if (temp == null || temp.equals(this.getApi()))
+                                                    if (temp == null || temp.equals(CTabFolder.this))
                                                         break;
                                                 }
                                             } while (!reschedule);

@@ -71,7 +71,7 @@ public class LineStyleEvent extends TypedEvent {
      *
      * @since 3.109
      */
-    int verticalIndent;
+    public int verticalIndent;
 
     /**
      * line wrap indent (input, output)
