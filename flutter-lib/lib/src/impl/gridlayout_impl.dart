@@ -25,7 +25,7 @@ class GridLayoutImpl extends GridLayoutSwt {
   Widget build(BuildContext context) {
     return Table(
       // defaultColumnWidth: const FlexColumnWidth(),
-      // defaultColumnWidth: const IntrinsicColumnWidth(),
+      defaultColumnWidth: const IntrinsicColumnWidth(),
       children: _buildTableRows(children, value.numColumns)
     );
   }
