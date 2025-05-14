@@ -237,7 +237,7 @@ public class DropTarget extends Widget implements IDropTarget {
         if (listener == null)
             DND.error(SWT.ERROR_NULL_ARGUMENT);
         DNDListener typedListener = new DNDListener(listener);
-        typedListener.dndWidget = this.getApi();
+        typedListener.dndWidget = this;
         addListener(DND.DragEnter, typedListener);
         addListener(DND.DragLeave, typedListener);
         addListener(DND.DragOver, typedListener);

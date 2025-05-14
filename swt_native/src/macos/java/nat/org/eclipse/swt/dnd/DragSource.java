@@ -299,7 +299,7 @@ public class DragSource extends Widget implements IDragSource {
         if (listener == null)
             DND.error(SWT.ERROR_NULL_ARGUMENT);
         DNDListener typedListener = new DNDListener(listener);
-        typedListener.dndWidget = this.getApi();
+        typedListener.dndWidget = this;
         addListener(DND.DragStart, typedListener);
         addListener(DND.DragSetData, typedListener);
         addListener(DND.DragEnd, typedListener);
