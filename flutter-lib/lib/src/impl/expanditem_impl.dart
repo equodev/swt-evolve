@@ -1,47 +1,48 @@
-import 'package:fluent_ui/fluent_ui.dart';
-import 'package:swtflutter/src/swt/expandbar.dart';
-import 'package:swtflutter/src/widgets.dart';
-
+import 'package:swtflutter/src/impl/widget_config.dart';
+import 'package:flutter/material.dart';
 import '../swt/expanditem.dart';
-
 import '../impl/item_impl.dart';
+import '../widgets.dart';
 
 class ExpandItemImpl<T extends ExpandItemSwt, V extends ExpandItemValue>
     extends ItemImpl<T, V> {
+  final bool useDarkTheme = getCurrentTheme();
+
   @override
   Widget build(BuildContext context) {
-    var parent = context.findAncestorWidgetOfExactType<ExpandBarSwt>();
-    var height = state.height?.toDouble();
+    final textColor = useDarkTheme ? Colors.white : Color(0xFF595858);
 
-    List<Widget> children = [];
-    if (state.children != null) {
-      children =
-          state.children!.map((widget) => mapWidgetFromValue(widget)).toList();
+    Widget? content;
+    if (state.children != null && state.children!.isNotEmpty) {
+      content = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: state.children!.map((child) => mapWidgetFromValue(child)).toList(),
+      );
     }
 
-    Widget content = Column(
-      children: children,
+    return Container(
+      height: (state.height != null && state.height! > 0)
+          ? state.height!.toDouble()
+          : null, // Si es null o -1, dejamos que el contenido determine la altura
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, // Para que solo tome el espacio necesario
+        children: [
+          if (state.text != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text(
+                state.text!,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: textColor,
+                ),
+              ),
+            ),
+          if (content != null) content,
+        ],
+      ),
     );
-
-    if (height != null && height > 0) {
-      content = SizedBox(
-          height: height,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            child: content,
-          ));
-    }
-
-    return Expander(
-        header: Text(state.text ?? ""),
-        initiallyExpanded: state.expanded ?? false,
-        onStateChanged: (expanded) {
-          if (expanded) {
-            parent?.sendExpandExpand(parent.value, null);
-          } else {
-            parent?.sendExpandCollapse(parent.value, null);
-          }
-        },
-        content: content);
   }
 }
