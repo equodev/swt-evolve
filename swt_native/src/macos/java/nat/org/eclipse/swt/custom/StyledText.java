@@ -7808,7 +7808,7 @@ public class StyledText extends Canvas implements IStyledText {
         options.printTextBackground = true;
         options.printTextFontStyle = true;
         options.printLineBackground = true;
-        new Printing(this.getApi(), printer, options).run();
+        new Printing(this, printer, options).run();
         printer.dispose();
     }
 
@@ -7873,7 +7873,7 @@ public class StyledText extends Canvas implements IStyledText {
         if (printer == null || options == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
-        return new Printing(this.getApi(), printer, options);
+        return new Printing(this, printer, options);
     }
 
     /**
