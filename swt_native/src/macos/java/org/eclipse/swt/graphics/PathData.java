@@ -35,6 +35,10 @@ public final class PathData {
      */
     public float[] points;
 
+    public PathData() {
+        this(new nat.org.eclipse.swt.graphics.PathData());
+    }
+
     IPathData delegate;
 
     protected PathData(IPathData delegate) {

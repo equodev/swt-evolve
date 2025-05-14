@@ -103,6 +103,10 @@ public class StackLayout extends Layout {
         return getDelegate().toString();
     }
 
+    public StackLayout() {
+        this(new nat.org.eclipse.swt.custom.StackLayout());
+    }
+
     protected StackLayout(IStackLayout delegate) {
         super(delegate);
     }

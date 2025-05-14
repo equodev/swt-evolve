@@ -145,6 +145,10 @@ public class GLData {
         return getDelegate().toString();
     }
 
+    public GLData() {
+        this(new nat.org.eclipse.swt.opengl.GLData());
+    }
+
     IGLData delegate;
 
     protected GLData(IGLData delegate) {

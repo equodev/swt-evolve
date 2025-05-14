@@ -130,6 +130,10 @@ public class BorderLayout extends Layout {
         return getDelegate().toString();
     }
 
+    public BorderLayout() {
+        this(new nat.org.eclipse.swt.layout.BorderLayout());
+    }
+
     protected BorderLayout(IBorderLayout delegate) {
         super(delegate);
     }

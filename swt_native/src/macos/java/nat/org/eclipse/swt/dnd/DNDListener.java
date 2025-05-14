@@ -24,6 +24,7 @@ import org.eclipse.swt.dnd.DragSourceListener;
 import org.eclipse.swt.dnd.DropTargetEvent;
 import org.eclipse.swt.dnd.DropTargetListener;
 import org.eclipse.swt.widgets.TypedListener;
+import org.eclipse.swt.dnd.DND;
 
 class DNDListener extends TypedListener {
 

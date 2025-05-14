@@ -24,6 +24,7 @@ import org.eclipse.swt.custom.TextChangeListener;
 import org.eclipse.swt.widgets.TypedListener;
 import org.eclipse.swt.custom.StyledTextEvent;
 import org.eclipse.swt.custom.StyledTextContent;
+import org.eclipse.swt.custom.ST;
 
 class DefaultContent implements StyledTextContent {
 

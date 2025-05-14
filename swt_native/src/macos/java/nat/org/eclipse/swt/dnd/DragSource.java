@@ -26,6 +26,7 @@ import org.eclipse.swt.dnd.DragSourceListener;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.dnd.DNDEvent;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.IDragSource;
 import org.eclipse.swt.dnd.IDragSourceEffect;
 import org.eclipse.swt.dnd.ITransfer;

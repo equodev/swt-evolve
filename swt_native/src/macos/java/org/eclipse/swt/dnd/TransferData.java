@@ -64,6 +64,10 @@ public class TransferData {
      */
     public NSObject data;
 
+    public TransferData() {
+        this(new nat.org.eclipse.swt.dnd.TransferData());
+    }
+
     ITransferData delegate;
 
     protected TransferData(ITransferData delegate) {

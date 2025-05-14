@@ -133,6 +133,10 @@ public final class GCData {
 
     public boolean restoreContext;
 
+    public GCData() {
+        this(new nat.org.eclipse.swt.graphics.GCData());
+    }
+
     IGCData delegate;
 
     protected GCData(IGCData delegate) {

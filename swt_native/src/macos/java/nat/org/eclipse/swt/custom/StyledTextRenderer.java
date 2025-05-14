@@ -27,6 +27,7 @@ import org.eclipse.swt.custom.StyledTextContent;
 import org.eclipse.swt.custom.StyledTextLineSpacingProvider;
 import org.eclipse.swt.custom.StyledTextEvent;
 import org.eclipse.swt.custom.TextChangingEvent;
+import org.eclipse.swt.custom.ST;
 
 /**
  * A StyledTextRenderer renders the content of a StyledText widget.

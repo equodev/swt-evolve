@@ -21,6 +21,7 @@ import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.dnd.DropTargetEvent;
+import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.custom.IStyledTextDropTargetEffect;
 
 /**

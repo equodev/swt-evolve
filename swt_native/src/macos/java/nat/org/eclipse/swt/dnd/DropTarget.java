@@ -26,6 +26,7 @@ import dev.equo.swt.Convert;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.dnd.DropTargetListener;
 import org.eclipse.swt.dnd.DNDEvent;
+import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.IDropTarget;
 import org.eclipse.swt.dnd.IDropTargetEffect;
 import org.eclipse.swt.dnd.ITransfer;

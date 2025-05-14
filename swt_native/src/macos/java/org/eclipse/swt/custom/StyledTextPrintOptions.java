@@ -114,6 +114,10 @@ public class StyledTextPrintOptions {
      */
     public String[] lineLabels = null;
 
+    public StyledTextPrintOptions() {
+        this(new nat.org.eclipse.swt.custom.StyledTextPrintOptions());
+    }
+
     IStyledTextPrintOptions delegate;
 
     protected StyledTextPrintOptions(IStyledTextPrintOptions delegate) {

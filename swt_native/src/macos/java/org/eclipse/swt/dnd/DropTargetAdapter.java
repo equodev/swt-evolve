@@ -108,6 +108,10 @@ public class DropTargetAdapter implements DropTargetListener {
         getDelegate().dropAccept(event);
     }
 
+    public DropTargetAdapter() {
+        this(new nat.org.eclipse.swt.dnd.DropTargetAdapter());
+    }
+
     IDropTargetAdapter delegate;
 
     protected DropTargetAdapter(IDropTargetAdapter delegate) {

@@ -29,6 +29,10 @@ import org.eclipse.swt.widgets.*;
  */
 public class TabFolderLayout extends Layout {
 
+    public TabFolderLayout() {
+        this(new nat.org.eclipse.swt.layout.TabFolderLayout());
+    }
+
     protected TabFolderLayout(ITabFolderLayout delegate) {
         super(delegate);
     }

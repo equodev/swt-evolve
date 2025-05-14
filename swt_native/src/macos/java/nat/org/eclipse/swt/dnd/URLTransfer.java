@@ -16,6 +16,7 @@
 package nat.org.eclipse.swt.dnd;
 
 import org.eclipse.swt.internal.cocoa.*;
+import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.IURLTransfer;
 import org.eclipse.swt.dnd.ITransferData;
 

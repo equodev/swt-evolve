@@ -152,6 +152,10 @@ public class BusyIndicator {
         return nat.org.eclipse.swt.custom.BusyIndicator.compute(action, executor);
     }
 
+    public BusyIndicator() {
+        this(new nat.org.eclipse.swt.custom.BusyIndicator());
+    }
+
     IBusyIndicator delegate;
 
     protected BusyIndicator(IBusyIndicator delegate) {

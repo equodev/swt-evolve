@@ -59,6 +59,10 @@ public class DragSourceAdapter implements DragSourceListener {
         getDelegate().dragSetData(event);
     }
 
+    public DragSourceAdapter() {
+        this(new nat.org.eclipse.swt.dnd.DragSourceAdapter());
+    }
+
     IDragSourceAdapter delegate;
 
     protected DragSourceAdapter(IDragSourceAdapter delegate) {

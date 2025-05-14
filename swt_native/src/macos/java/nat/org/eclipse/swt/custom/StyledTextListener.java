@@ -40,6 +40,7 @@ import org.eclipse.swt.custom.MovementListener;
 import org.eclipse.swt.custom.CaretEvent;
 import org.eclipse.swt.custom.CaretListener;
 import org.eclipse.swt.widgets.TypedListener;
+import org.eclipse.swt.custom.ST;
 
 class StyledTextListener extends TypedListener {
 

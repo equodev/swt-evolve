@@ -21,6 +21,7 @@ import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
 import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.IImageTransfer;
 import org.eclipse.swt.dnd.ITransferData;
 

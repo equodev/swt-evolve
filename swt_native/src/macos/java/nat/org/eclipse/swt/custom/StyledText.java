@@ -58,6 +58,8 @@ import org.eclipse.swt.accessibility.AccessibleEditableTextEvent;
 import org.eclipse.swt.accessibility.AccessibleAttributeEvent;
 import org.eclipse.swt.accessibility.AccessibleControlEvent;
 import org.eclipse.swt.custom.StyledTextLineSpacingProvider;
+import org.eclipse.swt.custom.ST;
+import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.accessibility.ACC;
 import org.eclipse.swt.custom.IStyledText;
 import org.eclipse.swt.graphics.IPoint;

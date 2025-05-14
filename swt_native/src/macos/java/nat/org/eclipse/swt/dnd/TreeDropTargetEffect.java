@@ -18,6 +18,7 @@ package nat.org.eclipse.swt.dnd;
 import org.eclipse.swt.internal.cocoa.*;
 import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.dnd.DropTargetEvent;
+import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.ITreeDropTargetEffect;
 
 /**

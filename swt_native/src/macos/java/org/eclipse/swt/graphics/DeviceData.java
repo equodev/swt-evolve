@@ -29,6 +29,10 @@ public class DeviceData {
 
     public Object[] objects;
 
+    public DeviceData() {
+        this(new nat.org.eclipse.swt.graphics.DeviceData());
+    }
+
     IDeviceData delegate;
 
     protected DeviceData(IDeviceData delegate) {
