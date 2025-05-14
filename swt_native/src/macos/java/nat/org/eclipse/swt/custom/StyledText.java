@@ -508,7 +508,7 @@ public class StyledText extends Canvas implements IStyledText {
                         printerRenderer.setLineAlignment(i, 1, event.alignment);
                         printerRenderer.setLineJustify(i, 1, event.justify);
                         printerRenderer.setLineBullet(i, 1, event.bullet);
-                        StyleRange[] styles = event.styles;
+                        StyleRange[] styles = Convert.array(event.styles, api -> (StyleRange) api.getDelegate(), StyleRange[]::new);
                         if (styles != null && styles.length > 0) {
                             printerRenderer.setStyleRanges(event.ranges, styles);
                         }
@@ -4988,7 +4988,7 @@ public class StyledText extends Canvas implements IStyledText {
         StyleRange[] styles = null;
         StyledTextEvent event = getLineStyleData(lineOffset, line);
         if (event != null) {
-            styles = event.styles;
+            styles = Convert.array(event.styles, api -> (StyleRange) api.getDelegate(), StyleRange[]::new);
         } else {
             styles = renderer.getStyleRanges(lineOffset, lineLength, true);
         }

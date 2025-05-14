@@ -468,7 +468,7 @@ class StyledTextRenderer {
             System.arraycopy(ranges, 0, newRanges, 0, newRanges.length);
         }
         if (styles != null) {
-            StyleRange[] newStyles = renderer.styles = Convert.array(new StyleRange[styleCount], org.eclipse.swt.custom.IStyleRange::getApi, org.eclipse.swt.custom.StyleRange[]::new);
+            StyleRange[] newStyles = renderer.styles = new StyleRange[styleCount];
             for (int i = 0; i < newStyles.length; i++) {
                 newStyles[i] = (StyleRange) styles[i].clone();
             }
@@ -780,7 +780,7 @@ class StyledTextRenderer {
         String line = content.getLine(lineIndex);
         StyledTextEvent event = styledText.getLineStyleData(lineOffset, line);
         if (event != null) {
-            StyleRange[] styles = event.styles;
+            StyleRange[] styles = Convert.array(event.styles, api -> (StyleRange) api.getDelegate(), StyleRange[]::new);
             if (styles != null) {
                 int[] ranges = event.ranges;
                 if (ranges != null) {
@@ -1285,7 +1285,7 @@ class StyledTextRenderer {
             justify = event.justify;
             bullet = ((nat.org.eclipse.swt.custom.Bullet) event.bullet.getDelegate());
             ranges = event.ranges;
-            styles = event.styles;
+            styles = Convert.array(event.styles, api -> (StyleRange) api.getDelegate(), StyleRange[]::new);
             if (event.tabStops != null)
                 tabs = event.tabStops;
             if (styles != null) {

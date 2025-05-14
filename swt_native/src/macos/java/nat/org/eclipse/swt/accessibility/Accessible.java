@@ -662,7 +662,7 @@ public class Accessible implements IAccessible {
         }
         if (event.accessibles != null) {
             NSMutableArray array = NSMutableArray.arrayWithCapacity(event.accessibles.length);
-            Accessible[] accessibles = event.accessibles;
+            Accessible[] accessibles = Convert.array(event.accessibles, api -> (Accessible) api.getDelegate(), Accessible[]::new);
             for (int i = 0; i < accessibles.length; i++) {
                 Accessible acc = accessibles[i];
                 array.addObject(acc.delegate);
@@ -683,7 +683,7 @@ public class Accessible implements IAccessible {
         }
         if (event.accessibles != null) {
             NSMutableArray array = NSMutableArray.arrayWithCapacity(event.accessibles.length);
-            Accessible[] accessibles = event.accessibles;
+            Accessible[] accessibles = Convert.array(event.accessibles, api -> (Accessible) api.getDelegate(), Accessible[]::new);
             for (int i = 0; i < accessibles.length; i++) {
                 Accessible acc = accessibles[i];
                 array.addObject(acc.delegate);
@@ -749,7 +749,7 @@ public class Accessible implements IAccessible {
             }
         }
         NSMutableArray array = NSMutableArray.arrayWithCapacity(event.accessibles.length);
-        Object[] rows = event.accessibles;
+        Object[] rows = Convert.array(event.accessibles, api -> (Accessible) api.getDelegate(), Accessible[]::new);
         for (int i = 0; i < rows.length; i++) {
             Accessible acc = (Accessible) rows[i];
             acc.index = i;
@@ -814,7 +814,7 @@ public class Accessible implements IAccessible {
             }
         }
         NSMutableArray array = NSMutableArray.arrayWithCapacity(event.accessibles.length);
-        Accessible[] accessibles = event.accessibles;
+        Accessible[] accessibles = Convert.array(event.accessibles, api -> (Accessible) api.getDelegate(), Accessible[]::new);
         for (int i = 0; i < accessibles.length; i++) {
             Accessible acc = accessibles[i];
             acc.index = i;

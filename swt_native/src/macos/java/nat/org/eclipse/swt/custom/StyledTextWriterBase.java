@@ -17,6 +17,7 @@ package nat.org.eclipse.swt.custom;
 
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
+import dev.equo.swt.Convert;
 import org.eclipse.swt.custom.StyledTextEvent;
 
 /**
@@ -97,7 +98,7 @@ abstract class StyledTextWriterBase extends TextWriter {
             lineIndent = event.indent;
             lineJustify = event.justify;
             ranges = event.ranges;
-            styles = event.styles;
+            styles = Convert.array(event.styles, api -> (StyleRange) api.getDelegate(), StyleRange[]::new);
         } else {
             verticalIndent = styledText.renderer.getLineVerticalIndent(lineIndex);
             lineAlignment = styledText.renderer.getLineAlignment(lineIndex, styledText.alignment);
