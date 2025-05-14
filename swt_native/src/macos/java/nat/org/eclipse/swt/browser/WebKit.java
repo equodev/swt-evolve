@@ -332,7 +332,7 @@ class WebKit extends WebBrowser {
                             if (!browser.isClosing) {
                                 close(false);
                             }
-                            e.display.setData(ADD_WIDGET_KEY, new Object[] { delegate, null });
+                            ((nat.org.eclipse.swt.widgets.Display) e.display.getDelegate()).setData(ADD_WIDGET_KEY, new Object[] { delegate, null });
                         }
                         WebKit.this.webView.setFrameLoadDelegate(null);
                         WebKit.this.webView.setResourceLoadDelegate(null);

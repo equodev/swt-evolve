@@ -149,7 +149,7 @@ public class CBanner extends Composite implements ICBanner {
                     onMouseUp();
                     break;
                 case SWT.Paint:
-                    onPaint(e.gc);
+                    onPaint(((nat.org.eclipse.swt.graphics.GC) e.gc.getDelegate()));
                     break;
                 case SWT.Resize:
                     onResize();

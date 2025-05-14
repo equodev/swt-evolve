@@ -619,7 +619,7 @@ public class ExpandBar extends Composite implements IExpandBar {
         boolean hasFocus = isFocusControl();
         for (int i = 0; i < itemCount; i++) {
             ExpandItem item = items[i];
-            item.drawItem(event.gc, hasFocus && item == focusItem);
+            item.drawItem(((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate()), hasFocus && item == focusItem);
         }
     }
 

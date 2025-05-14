@@ -144,7 +144,7 @@ class TableAccessibleDelegate {
             public void getColumn(AccessibleTableEvent e) {
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
                 getColumns(event);
-                e.accessible = event.accessibles[e.column].getApi();
+                e.accessible = event.accessibles[e.column];
             }
 
             @Override
@@ -189,7 +189,7 @@ class TableAccessibleDelegate {
             public void getRow(AccessibleTableEvent e) {
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
                 getRows(event);
-                e.accessible = event.accessibles[e.row].getApi();
+                e.accessible = event.accessibles[e.row];
             }
 
             @Override

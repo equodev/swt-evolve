@@ -1451,8 +1451,8 @@ public class CCombo extends Composite implements ICCombo {
                 // draw black rectangle around list
                 Rectangle listRect = list.getBounds();
                 Color black = getDisplay().getSystemColor(SWT.COLOR_BLACK);
-                event.gc.setForeground(black);
-                event.gc.drawRectangle(0, 0, listRect.width + 1, listRect.height + 1);
+                ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate()).setForeground(black);
+                ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate()).drawRectangle(0, 0, listRect.width + 1, listRect.height + 1);
                 break;
             case SWT.Close:
                 event.doit = false;

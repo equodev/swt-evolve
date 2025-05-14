@@ -123,7 +123,7 @@ class AccessibleTableRow extends Accessible {
                     listener.getCell(event);
                 }
                 if (((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()) != null) {
-                    NSNumber focusedObj = (NSNumber) event.accessible.getFocusedAttribute(ACC.CHILDID_SELF);
+                    NSNumber focusedObj = (NSNumber) ((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()).getFocusedAttribute(ACC.CHILDID_SELF);
                     e.childID = focusedObj.boolValue() ? ACC.CHILDID_SELF : ACC.CHILDID_NONE;
                 } else {
                     e.childID = ACC.CHILDID_NONE;

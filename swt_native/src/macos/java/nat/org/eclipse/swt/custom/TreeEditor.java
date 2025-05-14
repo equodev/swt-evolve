@@ -130,7 +130,7 @@ public class TreeEditor extends ControlEditor implements ITreeEditor {
                 if (editor == null || editor.isDisposed())
                     return;
                 editor.setVisible(false);
-                e.display.asyncExec(runnable);
+                ((nat.org.eclipse.swt.widgets.Display) e.display.getDelegate()).asyncExec(runnable);
             }
 
             @Override
@@ -138,7 +138,7 @@ public class TreeEditor extends ControlEditor implements ITreeEditor {
                 if (editor == null || editor.isDisposed())
                     return;
                 editor.setVisible(false);
-                e.display.asyncExec(runnable);
+                ((nat.org.eclipse.swt.widgets.Display) e.display.getDelegate()).asyncExec(runnable);
             }
         };
         tree.addTreeListener(treeListener);

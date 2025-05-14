@@ -495,7 +495,7 @@ public class StyledText extends Canvas implements IStyledText {
                     int lineOffset = content.getOffsetAtLine(i);
                     StyledTextEvent event = styledText.getLineBackgroundData(lineOffset, line);
                     if (event != null && ((nat.org.eclipse.swt.graphics.Color) event.lineBackground.getDelegate()) != null) {
-                        printerRenderer.setLineBackground(i, 1, event.lineBackground);
+                        printerRenderer.setLineBackground(i, 1, ((nat.org.eclipse.swt.graphics.Color) event.lineBackground.getDelegate()));
                     }
                     event = styledText.getBidiSegments(lineOffset, line);
                     if (event != null) {
@@ -507,7 +507,7 @@ public class StyledText extends Canvas implements IStyledText {
                         printerRenderer.setLineIndent(i, 1, event.indent);
                         printerRenderer.setLineAlignment(i, 1, event.alignment);
                         printerRenderer.setLineJustify(i, 1, event.justify);
-                        printerRenderer.setLineBullet(i, 1, event.bullet);
+                        printerRenderer.setLineBullet(i, 1, ((nat.org.eclipse.swt.custom.Bullet) event.bullet.getDelegate()));
                         StyleRange[] styles = Convert.array(event.styles, api -> (StyleRange) api.getDelegate(), StyleRange[]::new);
                         if (styles != null && styles.length > 0) {
                             printerRenderer.setStyleRanges(event.ranges, styles);

@@ -190,7 +190,7 @@ public class ViewForm extends Composite implements IViewForm {
                     onDispose(e);
                     break;
                 case SWT.Paint:
-                    onPaint(e.gc);
+                    onPaint(((nat.org.eclipse.swt.graphics.GC) e.gc.getDelegate()));
                     break;
                 case SWT.Resize:
                     onResize();

@@ -83,8 +83,8 @@ public class StyledTextDropTargetEffect extends DropTargetEffect implements ISty
                 StyledText text = (StyledText) getControl();
                 Point position = text.getLocationAtOffset(currentOffset);
                 int height = text.getLineHeight(currentOffset);
-                event.gc.setBackground(event.display.getSystemColor(SWT.COLOR_BLACK));
-                event.gc.fillRectangle(position.x, position.y, CARET_WIDTH, height);
+                ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate()).setBackground(((nat.org.eclipse.swt.widgets.Display) event.display.getDelegate()).getSystemColor(SWT.COLOR_BLACK));
+                ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate()).fillRectangle(position.x, position.y, CARET_WIDTH, height);
             }
         };
     }
