@@ -218,7 +218,7 @@ public class DragSource extends Widget implements IDragSource {
             }
             if (event.type == SWT.DragDetect) {
                 if (!DragSource.this.isDisposed()) {
-                    if (event.widget instanceof Table || event.widget instanceof Tree) {
+                    if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) instanceof Table || ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) instanceof Tree) {
                         DragSource.this.dragOutlineViewStart(event);
                     } else {
                         DragSource.this.drag(event);
@@ -353,7 +353,7 @@ public class DragSource extends Widget implements IDragSource {
         NSImage dragImage = null;
         Image defaultDragImage = null;
         try {
-            Image image = (Image) event.image.getDelegate();
+            Image image = ((nat.org.eclipse.swt.graphics.Image) event.image.getDelegate());
             // If no image was provided, just create a trivial image. dragImage requires a non-null image.
             if (image == null) {
                 int width = 20, height = 20;
@@ -397,7 +397,7 @@ public class DragSource extends Widget implements IDragSource {
             return;
         }
         // Save off the custom image, if any.
-        dragImageFromListener = event.image;
+        dragImageFromListener = ((nat.org.eclipse.swt.graphics.Image) event.image.getDelegate());
         // Save the computed offset for the image.  This needs to be passed back in dragImageForRowsWithIndexes
         // so the proxy image originates from the selection and not centered under the mouse.
         dragOffset = new Point(event.offsetX, event.offsetY);

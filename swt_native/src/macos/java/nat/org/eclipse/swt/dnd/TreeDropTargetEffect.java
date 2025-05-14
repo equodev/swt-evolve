@@ -138,7 +138,7 @@ public class TreeDropTargetEffect extends DropTargetEffect implements ITreeDropT
     @Override
     public void dragOver(DropTargetEvent event) {
         int effect = checkEffect(event.feedback);
-        ((DropTarget) event.widget).feedback = effect;
+        ((DropTarget) event.widget.getDelegate()).feedback = effect;
         OS.objc_msgSend(control.view.id, OS.sel_setShouldExpandItem_, (effect & DND.FEEDBACK_EXPAND) == 0 ? 0 : 1);
         if ((effect & DND.FEEDBACK_SCROLL) == 0) {
             shouldEnableScrolling = true;

@@ -1966,7 +1966,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
             return;
         Event e = new Event();
         e.item = getItem(new Point(event.x, event.y)).getApi();
-        if (e.item != null) {
+        if (((nat.org.eclipse.swt.widgets.Widget) e.item.getDelegate()) != null) {
             notifyListeners(SWT.DefaultSelection, e);
         }
     }
@@ -2249,7 +2249,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
                 return;
             }
         }
-        GC gc = (GC) event.gc.getDelegate();
+        GC gc = ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate());
         Font gcFont = gc.getFont();
         Color gcBackground = gc.getBackground();
         Color gcForeground = gc.getForeground();
@@ -2347,7 +2347,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
             hovering = false;
             updateItems();
         }
-        if (event.widget == maxItem) {
+        if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) == maxItem) {
             CTabFolderEvent e = new CTabFolderEvent(this.getApi());
             e.time = event.time;
             for (CTabFolder2Listener folderListener : folderListeners) {
@@ -2357,7 +2357,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
                     folderListener.maximize(e);
                 }
             }
-        } else if (event.widget == minItem) {
+        } else if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) == minItem) {
             CTabFolderEvent e = new CTabFolderEvent(this.getApi());
             e.time = event.time;
             for (CTabFolder2Listener folderListener : folderListeners) {
@@ -2367,7 +2367,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
                     folderListener.minimize(e);
                 }
             }
-        } else if (event.widget == chevronItem) {
+        } else if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) == chevronItem) {
             Rectangle chevronRect = chevronItem.getBounds();
             chevronRect = event.display.map(chevronTb, this, chevronRect);
             CTabFolderEvent e = new CTabFolderEvent(this.getApi());

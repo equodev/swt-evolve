@@ -1247,7 +1247,7 @@ class WebKit extends WebBrowser {
         Listener listener = event -> {
             user[0] = userText.getText();
             password[0] = passwordText.getText();
-            result[0] = event.widget == buttons[1];
+            result[0] = ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) == buttons[1];
             shell.close();
         };
         Composite composite = new Composite(shell, SWT.NONE);
@@ -1322,8 +1322,8 @@ class WebKit extends WebBrowser {
         }
         WebView result = null;
         Browser browser = null;
-        if (newEvent.browser != null && newEvent.browser.webBrowser instanceof WebKit) {
-            browser = newEvent.browser;
+        if (((nat.org.eclipse.swt.browser.Browser) newEvent.browser.getDelegate()) != null && ((nat.org.eclipse.swt.browser.Browser) newEvent.browser.getDelegate()).webBrowser instanceof WebKit) {
+            browser = ((nat.org.eclipse.swt.browser.Browser) newEvent.browser.getDelegate());
         }
         if (browser != null && !browser.isDisposed()) {
             result = ((WebKit) browser.webBrowser).webView;

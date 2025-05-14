@@ -182,12 +182,12 @@ public class ScrolledComposite extends Composite implements IScrolledComposite {
             if (event.type == SWT.FocusIn) {
                 if (!showNextFocusedControl) {
                     showNextFocusedControl = true;
-                } else if (event.widget instanceof Control control) {
+                } else if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) instanceof Control control) {
                     if (contains(control))
                         showControl(control);
                 }
             } else {
-                Widget w = (Widget) event.widget.getDelegate();
+                Widget w = ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate());
                 if (w instanceof Control) {
                     showNextFocusedControl = w.getDisplay().getActiveShell() == ((Control) w).getShell();
                 }

@@ -4518,9 +4518,9 @@ public class Display extends Device implements Executor, IDisplay {
             System.arraycopy(eventQueue, 1, eventQueue, 0, --length);
             eventQueue[length] = null;
             /* Run the event */
-            Widget widget = (Widget) event.widget.getDelegate();
+            Widget widget = ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate());
             if (widget != null && !widget.isDisposed()) {
-                Widget item = (Widget) event.item.getDelegate();
+                Widget item = ((nat.org.eclipse.swt.widgets.Widget) event.item.getDelegate());
                 if (item == null || !item.isDisposed()) {
                     run = true;
                     widget.notifyListeners(event.type, event);

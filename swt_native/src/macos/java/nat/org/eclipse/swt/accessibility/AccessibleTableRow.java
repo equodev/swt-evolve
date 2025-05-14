@@ -56,10 +56,10 @@ class AccessibleTableRow extends Accessible {
                         AccessibleTableListener listener = parent.accessibleTableListeners.get(j);
                         listener.getCell(event);
                     }
-                    if (event.accessible != null) {
-                        event.accessible.parent = AccessibleTableRow.this;
+                    if (((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()) != null) {
+                        ((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()).parent = AccessibleTableRow.this;
                     }
-                    children[i] = event.accessible;
+                    children[i] = ((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate());
                 }
                 e.children = children;
             }
@@ -76,7 +76,7 @@ class AccessibleTableRow extends Accessible {
                         AccessibleTableListener listener = parent.accessibleTableListeners.get(j);
                         listener.getCell(event);
                     }
-                    children[i] = event.accessible;
+                    children[i] = ((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate());
                 }
                 // Ask first child for position.
                 NSValue positionObj = (NSValue) children[0].getPositionAttribute(ACC.CHILDID_SELF);
@@ -122,7 +122,7 @@ class AccessibleTableRow extends Accessible {
                     AccessibleTableListener listener = parent.accessibleTableListeners.get(j);
                     listener.getCell(event);
                 }
-                if (event.accessible != null) {
+                if (((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()) != null) {
                     NSNumber focusedObj = (NSNumber) event.accessible.getFocusedAttribute(ACC.CHILDID_SELF);
                     e.childID = focusedObj.boolValue() ? ACC.CHILDID_SELF : ACC.CHILDID_NONE;
                 } else {
@@ -162,7 +162,7 @@ class AccessibleTableRow extends Accessible {
                 AccessibleTableListener listener = parent.accessibleTableListeners.get(j);
                 listener.getCell(event);
             }
-            children[i] = event.accessible;
+            children[i] = ((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate());
         }
         for (int j = 0; j < children.length; j++) {
             NSValue positionObj = (NSValue) children[j].getPositionAttribute(index);

@@ -286,9 +286,9 @@ public class DropTarget extends Widget implements IDropTarget {
         if (event.detail == DND.DROP_DEFAULT) {
             event.detail = (allowedOperations & DND.DROP_MOVE) != 0 ? DND.DROP_MOVE : DND.DROP_NONE;
         }
-        if (event.dataType != null) {
+        if (((nat.org.eclipse.swt.dnd.TransferData) event.dataType.getDelegate()) != null) {
             for (int i = 0; i < allowedDataTypes.length; i++) {
-                if (allowedDataTypes[i].type == event.dataType.type) {
+                if (allowedDataTypes[i].type == ((nat.org.eclipse.swt.dnd.TransferData) event.dataType.getDelegate()).type) {
                     selectedDataType = allowedDataTypes[i];
                     break;
                 }
@@ -354,9 +354,9 @@ public class DropTarget extends Widget implements IDropTarget {
         if (event.detail == DND.DROP_DEFAULT) {
             event.detail = (allowedOperations & DND.DROP_MOVE) != 0 ? DND.DROP_MOVE : DND.DROP_NONE;
         }
-        if (event.dataType != null) {
+        if (((nat.org.eclipse.swt.dnd.TransferData) event.dataType.getDelegate()) != null) {
             for (int i = 0; i < allowedDataTypes.length; i++) {
-                if (allowedDataTypes[i].type == event.dataType.type) {
+                if (allowedDataTypes[i].type == ((nat.org.eclipse.swt.dnd.TransferData) event.dataType.getDelegate()).type) {
                     selectedDataType = allowedDataTypes[i];
                     break;
                 }
@@ -666,9 +666,9 @@ public class DropTarget extends Widget implements IDropTarget {
         event.detail = selectedOperation;
         notifyListeners(DND.DropAccept, event);
         selectedDataType = null;
-        if (event.dataType != null) {
+        if (((nat.org.eclipse.swt.dnd.TransferData) event.dataType.getDelegate()) != null) {
             for (int i = 0; i < allowedDataTypes.length; i++) {
-                if (allowedDataTypes[i].type == event.dataType.type) {
+                if (allowedDataTypes[i].type == ((nat.org.eclipse.swt.dnd.TransferData) event.dataType.getDelegate()).type) {
                     selectedDataType = allowedDataTypes[i];
                     break;
                 }
@@ -756,7 +756,7 @@ public class DropTarget extends Widget implements IDropTarget {
         NSPoint pt = sender.draggingLocation();
         pt = widget.convertPoint_fromView_(pt, null);
         Tree tree = (Tree) getControl();
-        TreeItem childItem = tree.getItem(new Point((int) pt.x, (int) pt.y)).getDelegate();
+        TreeItem childItem = tree.getItem(new Point((int) pt.x, (int) pt.y));
         if (feedback == 0 || childItem == null) {
             widget.setDropItem(null, -1);
         } else {

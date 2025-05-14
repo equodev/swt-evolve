@@ -494,7 +494,7 @@ public class StyledText extends Canvas implements IStyledText {
                     String line = content.getLine(i);
                     int lineOffset = content.getOffsetAtLine(i);
                     StyledTextEvent event = styledText.getLineBackgroundData(lineOffset, line);
-                    if (event != null && event.lineBackground != null) {
+                    if (event != null && ((nat.org.eclipse.swt.graphics.Color) event.lineBackground.getDelegate()) != null) {
                         printerRenderer.setLineBackground(i, 1, event.lineBackground);
                     }
                     event = styledText.getBidiSegments(lineOffset, line);
@@ -6412,7 +6412,7 @@ public class StyledText extends Canvas implements IStyledText {
         if (clientAreaWidth == 0 || clientAreaHeight == 0)
             return;
         final int endY = event.y + event.height;
-        GC gc = (GC) event.gc.getDelegate();
+        GC gc = ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate());
         Color background = getBackground();
         Color foreground = getForeground();
         if (endY > 0) {
@@ -7171,11 +7171,11 @@ public class StyledText extends Canvas implements IStyledText {
                     e.textStyle = layout.getStyle(Math.max(0, Math.min(offset, lineLength - 1))).getApi();
                 }
                 // If no override info available, use defaults. Don't supply default colors, though.
-                if (e.textStyle == null) {
+                if (((nat.org.eclipse.swt.graphics.TextStyle) e.textStyle.getDelegate()) == null) {
                     e.textStyle = new TextStyle(st.getFont(), st.foreground, st.background).getApi();
                 } else {
-                    if (e.textStyle.foreground == null || e.textStyle.background == null || e.textStyle.font == null) {
-                        TextStyle textStyle = new TextStyle(e.textStyle);
+                    if (((nat.org.eclipse.swt.graphics.TextStyle) e.textStyle.getDelegate()).foreground == null || ((nat.org.eclipse.swt.graphics.TextStyle) e.textStyle.getDelegate()).background == null || ((nat.org.eclipse.swt.graphics.TextStyle) e.textStyle.getDelegate()).font == null) {
+                        TextStyle textStyle = new TextStyle(((nat.org.eclipse.swt.graphics.TextStyle) e.textStyle.getDelegate()));
                         if (textStyle.foreground == null)
                             textStyle.foreground = st.foreground;
                         if (textStyle.background == null)

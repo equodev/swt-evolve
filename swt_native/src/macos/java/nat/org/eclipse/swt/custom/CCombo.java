@@ -130,27 +130,27 @@ public class CCombo extends Composite implements ICCombo {
         listener = event -> {
             if (isDisposed())
                 return;
-            if (popup == event.widget) {
+            if (popup == ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate())) {
                 popupEvent(event);
                 return;
             }
-            if (text == event.widget) {
+            if (text == ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate())) {
                 textEvent(event);
                 return;
             }
-            if (list == event.widget) {
+            if (list == ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate())) {
                 listEvent(event);
                 return;
             }
-            if (arrow == event.widget) {
+            if (arrow == ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate())) {
                 arrowEvent(event);
                 return;
             }
-            if (CCombo.this == event.widget) {
+            if (CCombo.this == ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate())) {
                 comboEvent(event);
                 return;
             }
-            if (getShell() == event.widget) {
+            if (getShell() == ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate())) {
                 getDisplay().asyncExec(() -> {
                     if (isDisposed())
                         return;
@@ -167,13 +167,13 @@ public class CCombo extends Composite implements ICCombo {
             if (isDisposed())
                 return;
             if (event.type == SWT.Selection) {
-                if (event.widget instanceof ScrollBar) {
+                if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) instanceof ScrollBar) {
                     handleScroll(event);
                 }
                 return;
             }
-            if (event.widget instanceof Control) {
-                Shell shell = ((Control) event.widget).getShell().getDelegate();
+            if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) instanceof Control) {
+                Shell shell = ((Control) event.widget.getDelegate()).getShell();
                 if (shell == CCombo.this.getShell()) {
                     handleFocus(SWT.FocusOut);
                 }

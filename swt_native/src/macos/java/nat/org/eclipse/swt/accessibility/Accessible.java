@@ -646,8 +646,8 @@ public class Accessible implements IAccessible {
             AccessibleTableListener listener = accessibleTableListeners.get(i);
             listener.getColumnHeader(tableEvent);
         }
-        if (tableEvent.accessible != null)
-            returnValue = tableEvent.accessible.delegate;
+        if (((nat.org.eclipse.swt.accessibility.Accessible) tableEvent.accessible.getDelegate()) != null)
+            returnValue = ((nat.org.eclipse.swt.accessibility.Accessible) tableEvent.accessible.getDelegate()).delegate;
         return returnValue;
     }
 
@@ -711,8 +711,8 @@ public class Accessible implements IAccessible {
                     AccessibleTableListener listener = accessibleTableListeners.get(j);
                     listener.getRow(event);
                 }
-                if (event.accessible != null)
-                    array.addObject(event.accessible.delegate);
+                if (((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()) != null)
+                    array.addObject(((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()).delegate);
             }
             returnValue = array;
         }
@@ -776,8 +776,8 @@ public class Accessible implements IAccessible {
                     AccessibleTableListener listener = accessibleTableListeners.get(j);
                     listener.getColumn(event);
                 }
-                if (event.accessible != null)
-                    array.addObject(event.accessible.delegate);
+                if (((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()) != null)
+                    array.addObject(((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()).delegate);
             }
             returnValue = array;
         }
@@ -1414,8 +1414,8 @@ public class Accessible implements IAccessible {
         if (event.childID == ACC.CHILDID_MULTIPLE)
             return null;
         /* The application can optionally answer an accessible. */
-        if (event.accessible != null) {
-            return new id(OS.NSAccessibilityUnignoredAncestor(event.accessible.control.view.id));
+        if (((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()) != null) {
+            return new id(OS.NSAccessibilityUnignoredAncestor(((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()).control.view.id));
         }
         /* Or the application can answer a valid child ID, including CHILDID_SELF and CHILDID_NONE. */
         if (event.childID == ACC.CHILDID_SELF || event.childID == ACC.CHILDID_NONE) {
@@ -1451,10 +1451,10 @@ public class Accessible implements IAccessible {
             listener.getChildAtPoint(event);
         }
         // The listener did not respond, so let Cocoa figure it out.
-        if (event.childID == ACC.CHILDID_MULTIPLE && event.accessible == null)
+        if (event.childID == ACC.CHILDID_MULTIPLE && ((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()) == null)
             return null;
-        if (event.accessible != null) {
-            return new id(OS.NSAccessibilityUnignoredAncestor(event.accessible.delegate.id));
+        if (((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()) != null) {
+            return new id(OS.NSAccessibilityUnignoredAncestor(((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()).delegate.id));
         }
         if (event.childID == ACC.CHILDID_SELF || event.childID == ACC.CHILDID_NONE) {
             return new id(OS.NSAccessibilityUnignoredAncestor(control.view.id));
@@ -1707,8 +1707,8 @@ public class Accessible implements IAccessible {
             }
             // Reset the offset so we pick up the next set of attributes that change.
             event.offset = event.end;
-            if (event.textStyle != null) {
-                TextStyle ts = (TextStyle) event.textStyle.getDelegate();
+            if (((nat.org.eclipse.swt.graphics.TextStyle) event.textStyle.getDelegate()) != null) {
+                TextStyle ts = ((nat.org.eclipse.swt.graphics.TextStyle) event.textStyle.getDelegate());
                 if (ts.font != null) {
                     NSMutableDictionary fontInfoDict = NSMutableDictionary.dictionaryWithCapacity(4);
                     NSFont fontUsed = ts.font.handle;
@@ -2107,8 +2107,8 @@ public class Accessible implements IAccessible {
             listener.getFocus(event);
         }
         /* The application can optionally answer an accessible. */
-        if (event.accessible != null) {
-            boolean hasFocus = (event.accessible.index == childID) && (event.accessible.control == this.control);
+        if (((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()) != null) {
+            boolean hasFocus = (((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()).index == childID) && (((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()).control == this.control);
             return NSNumber.numberWithBool(hasFocus);
         }
         /* Or the application can answer a valid child ID, including CHILDID_SELF and CHILDID_NONE. */
@@ -2326,7 +2326,7 @@ public class Accessible implements IAccessible {
             for (int i = 0; i < accessibleTableListenersSize(); i++) {
                 AccessibleTableListener listener = accessibleTableListeners.get(i);
                 listener.getCell(event);
-                returnValue = event.accessible.delegate;
+                returnValue = ((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()).delegate;
             }
         }
         return returnValue;

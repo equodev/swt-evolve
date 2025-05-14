@@ -138,7 +138,7 @@ public class AnimatedProgress extends Canvas implements IAnimatedProgress {
     }
 
     void paint(PaintEvent event) {
-        GC gc = (GC) event.gc.getDelegate();
+        GC gc = ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate());
         Display disp = getDisplay();
         Rectangle rect = getClientArea();
         gc.fillRectangle(rect);

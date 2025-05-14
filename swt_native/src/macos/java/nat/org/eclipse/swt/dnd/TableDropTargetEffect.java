@@ -132,7 +132,7 @@ public class TableDropTargetEffect extends DropTargetEffect implements ITableDro
     @Override
     public void dragOver(DropTargetEvent event) {
         int effect = checkEffect(event.feedback);
-        ((DropTarget) event.widget).feedback = effect;
+        ((DropTarget) event.widget.getDelegate()).feedback = effect;
         if ((effect & DND.FEEDBACK_SCROLL) == 0) {
             shouldEnableScrolling = true;
             OS.objc_msgSend(control.view.id, OS.sel_setShouldScrollClipView_, 0);

@@ -109,7 +109,7 @@ class AccessibleTableColumn extends Accessible {
                 AccessibleTableListener listener = parent.accessibleTableListeners.get(j);
                 listener.getCell(event);
             }
-            cells[i] = event.accessible;
+            cells[i] = ((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate());
         }
         return cells;
     }

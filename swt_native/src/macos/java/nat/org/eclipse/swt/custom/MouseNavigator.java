@@ -196,7 +196,7 @@ class MouseNavigator {
         if (rect.width == 0 || rect.height == 0) {
             return;
         }
-        gc = e.gc;
+        gc = ((nat.org.eclipse.swt.graphics.GC) e.gc.getDelegate());
         gc.setAntialias(SWT.ON);
         gc.setAdvanced(true);
         final Color oldForegroundColor = gc.getForeground();

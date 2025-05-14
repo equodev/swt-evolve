@@ -240,7 +240,7 @@ public class DateTime extends Composite implements IDateTime {
             popupCalendar.setFont(font);
         if (clickListener == null) {
             clickListener = event -> {
-                if (event.widget instanceof Control c && event.widget != DateTime.this) {
+                if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) instanceof Control c && ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) != DateTime.this) {
                     if (c.getShell() != popupShell) {
                         hideCalendar();
                     }

@@ -501,7 +501,7 @@ public class CLabel extends Canvas implements ICLabel {
                 shortenText = true;
             }
         }
-        GC gc = (GC) event.gc.getDelegate();
+        GC gc = ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate());
         String[] lines = text == null ? null : splitString(text);
         // shorten the text
         if (shortenText) {
