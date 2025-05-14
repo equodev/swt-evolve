@@ -36,6 +36,35 @@ public abstract class Device implements Drawable {
     boolean tracking = DEBUG;
 
     /**
+     * Constructs a new instance of this class.
+     * <p>
+     * You must dispose the device when it is no longer required.
+     * </p>
+     *
+     * @see #create
+     * @see #init
+     *
+     * @since 3.1
+     */
+    public Device() {
+    }
+
+    /**
+     * Constructs a new instance of this class.
+     * <p>
+     * You must dispose the device when it is no longer required.
+     * </p>
+     *
+     * @param data the DeviceData which describes the receiver
+     *
+     * @see #create
+     * @see #init
+     * @see DeviceData
+     */
+    public Device(DeviceData data) {
+    }
+
+    /**
      * @exception SWTException <ul>
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>

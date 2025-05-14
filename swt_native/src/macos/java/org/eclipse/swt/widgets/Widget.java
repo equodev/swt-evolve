@@ -52,6 +52,38 @@ import org.eclipse.swt.internal.cocoa.*;
 public abstract class Widget {
 
     /**
+     * Constructs a new instance of this class given its parent
+     * and a style value describing its behavior and appearance.
+     * <p>
+     * The style value is either one of the style constants defined in
+     * class <code>SWT</code> which is applicable to instances of this
+     * class, or must be built by <em>bitwise OR</em>'ing together
+     * (that is, using the <code>int</code> "|" operator) two or more
+     * of those <code>SWT</code> style constants. The class description
+     * lists the style constants that are applicable to the class.
+     * Style bits are also inherited from superclasses.
+     * </p>
+     *
+     * @param parent a widget which will be the parent of the new instance (cannot be null)
+     * @param style the style of widget to construct
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
+     *    <li>ERROR_INVALID_ARGUMENT - if the parent is disposed</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the parent</li>
+     *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
+     * </ul>
+     *
+     * @see SWT
+     * @see #checkSubclass
+     * @see #getStyle
+     */
+    public Widget(Widget parent, int style) {
+    }
+
+    /**
      * Marks the widget to be skinned.
      * <p>
      * The skin event is sent to the receiver's display when appropriate (usually before the next event

@@ -74,6 +74,9 @@ public abstract class Transfer {
         return nat.org.eclipse.swt.dnd.Transfer.registerType(formatName);
     }
 
+    public Transfer() {
+    }
+
     ITransfer delegate;
 
     protected Transfer(ITransfer delegate) {

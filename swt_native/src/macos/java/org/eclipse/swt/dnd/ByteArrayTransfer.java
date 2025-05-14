@@ -133,6 +133,9 @@ public abstract class ByteArrayTransfer extends Transfer {
         return getDelegate().isSupportedType(transferData.getDelegate());
     }
 
+    public ByteArrayTransfer() {
+    }
+
     protected ByteArrayTransfer(IByteArrayTransfer delegate) {
         super(delegate);
     }

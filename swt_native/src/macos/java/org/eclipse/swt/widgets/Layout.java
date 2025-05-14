@@ -28,6 +28,9 @@ import org.eclipse.swt.graphics.*;
  */
 public abstract class Layout {
 
+    public Layout() {
+    }
+
     ILayout delegate;
 
     protected Layout(ILayout delegate) {
