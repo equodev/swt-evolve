@@ -787,7 +787,7 @@ public class DragSource extends Widget implements IDragSource {
      * dragged from this source
      */
     public void setTransfer(ITransfer... itransferAgents) {
-        Transfer transferAgents = (Transfer) itransferAgents;
+        Transfer[] transferAgents = (Transfer[]) itransferAgents;
         this.transferAgents = transferAgents;
     }
 

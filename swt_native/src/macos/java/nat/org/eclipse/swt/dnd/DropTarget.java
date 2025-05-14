@@ -911,7 +911,7 @@ public class DropTarget extends Widget implements IDropTarget {
      *  </ul>
      */
     public void setTransfer(ITransfer... itransferAgents) {
-        Transfer transferAgents = (Transfer) itransferAgents;
+        Transfer[] transferAgents = (Transfer[]) itransferAgents;
         if (transferAgents == null)
             DND.error(SWT.ERROR_NULL_ARGUMENT);
         this.transferAgents = transferAgents;
