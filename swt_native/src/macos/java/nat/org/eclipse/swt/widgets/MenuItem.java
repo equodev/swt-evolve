@@ -227,7 +227,7 @@ public class MenuItem extends Item implements IMenuItem {
     }
 
     @Override
-    protected void checkSubclass() {
+    public void checkSubclass() {
         if (!isValidSubclass())
             error(SWT.ERROR_INVALID_SUBCLASS);
     }

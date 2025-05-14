@@ -19,6 +19,8 @@ import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.custom.IStackLayout;
+import org.eclipse.swt.widgets.IComposite;
+import org.eclipse.swt.widgets.IControl;
 
 /**
  * This Layout stacks all the controls one on top of the other and resizes all controls
@@ -95,7 +97,8 @@ public class StackLayout extends Layout implements IStackLayout {
     public Control topControl;
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(IComposite icomposite, int wHint, int hHint, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         int maxWidth = 0;
         int maxHeight = 0;
         for (Control element : composite.getChildren()) {
@@ -113,12 +116,14 @@ public class StackLayout extends Layout implements IStackLayout {
     }
 
     @Override
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(IControl icontrol) {
+        Control control = (Control) icontrol;
         return true;
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(IComposite icomposite, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         Rectangle rect = composite.getClientArea();
         rect.x += marginWidth;
         rect.y += marginHeight;

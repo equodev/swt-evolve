@@ -5,6 +5,8 @@ import org.eclipse.swt.graphics.*;
 
 public interface ITreeItem extends IItem {
 
+    void checkSubclass();
+
     /**
      * Clears the item at the given zero-relative index in the receiver.
      * The text, icon and other attributes of the item are set to the default

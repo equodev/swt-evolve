@@ -156,6 +156,10 @@ public class ToolItem extends Item {
         getDelegate().addSelectionListener(listener);
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     /**
      * Returns the receiver's background color.
      * <p>

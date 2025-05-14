@@ -31,6 +31,7 @@ import org.eclipse.swt.browser.ProgressEvent;
 import org.eclipse.swt.browser.AuthenticationEvent;
 import org.eclipse.swt.browser.WindowEvent;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.IComposite;
 
 class WebKit extends WebBrowser {
 
@@ -178,7 +179,8 @@ class WebKit extends WebBrowser {
     }
 
     @Override
-    public void create(Composite parent, int style) {
+    public void create(IComposite iparent, int style) {
+        Composite parent = (Composite) iparent;
         if (delegateClass == 0) {
             Class<?> webKitClass = this.getClass();
             //$NON-NLS-1$

@@ -261,7 +261,7 @@ public class DropTarget extends Widget implements IDropTarget {
     }
 
     @Override
-    protected void checkSubclass() {
+    public void checkSubclass() {
         String name = getClass().getName();
         String validName = DropTarget.class.getName();
         if (!validName.equals(name)) {

@@ -20,6 +20,8 @@ import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.layout.IFillLayout;
+import org.eclipse.swt.widgets.IComposite;
+import org.eclipse.swt.widgets.IControl;
 
 /**
  * <code>FillLayout</code> is the simplest layout class. It lays out
@@ -113,7 +115,8 @@ public final class FillLayout extends Layout implements IFillLayout {
     }
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(IComposite icomposite, int wHint, int hHint, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         Control[] children = composite.getChildren();
         int count = children.length;
         int maxWidth = 0, maxHeight = 0;
@@ -185,7 +188,8 @@ public final class FillLayout extends Layout implements IFillLayout {
     }
 
     @Override
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(IControl icontrol) {
+        Control control = (Control) icontrol;
         Object data = control.getLayoutData();
         if (data instanceof FillData) {
             ((FillData) data).flushCache();
@@ -203,7 +207,8 @@ public final class FillLayout extends Layout implements IFillLayout {
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(IComposite icomposite, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         Rectangle rect = composite.getClientArea();
         Control[] children = composite.getChildren();
         int count = children.length;

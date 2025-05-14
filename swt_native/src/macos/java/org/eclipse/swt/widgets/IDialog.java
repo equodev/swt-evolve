@@ -5,6 +5,20 @@ import org.eclipse.swt.*;
 public interface IDialog {
 
     /**
+     * Checks that this class can be subclassed.
+     * <p>
+     * IMPORTANT: See the comment in <code>Widget.checkSubclass()</code>.
+     * </p>
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
+     * </ul>
+     *
+     * @see Widget#checkSubclass
+     */
+    void checkSubclass();
+
+    /**
      * Returns the receiver's parent, which must be a <code>Shell</code>
      * or null.
      *

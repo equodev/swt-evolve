@@ -17,6 +17,8 @@ package nat.org.eclipse.swt.widgets;
 
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.ILayout;
+import org.eclipse.swt.widgets.IComposite;
+import org.eclipse.swt.widgets.IControl;
 
 /**
  * A layout controls the position and size
@@ -61,7 +63,7 @@ public abstract class Layout implements ILayout {
      * @see Control#pack(boolean)
      * @see "computeTrim, getClientArea for controls that implement them"
      */
-    protected abstract Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache);
+    abstract public Point computeSize(IComposite composite, int wHint, int hHint, boolean flushCache);
 
     /**
      * Instruct the layout to flush any cached values
@@ -73,7 +75,8 @@ public abstract class Layout implements ILayout {
      *
      * @since 3.1
      */
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(IControl icontrol) {
+        Control control = (Control) icontrol;
         return false;
     }
 
@@ -105,7 +108,7 @@ public abstract class Layout implements ILayout {
      * @param composite a composite widget using this layout
      * @param flushCache <code>true</code> means flush cached layout values
      */
-    protected abstract void layout(Composite composite, boolean flushCache);
+    abstract public void layout(IComposite composite, boolean flushCache);
 
     public org.eclipse.swt.widgets.Layout getApi() {
         return (org.eclipse.swt.widgets.Layout) api;

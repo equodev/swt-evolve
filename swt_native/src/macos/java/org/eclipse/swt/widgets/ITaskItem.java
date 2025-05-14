@@ -5,6 +5,8 @@ import org.eclipse.swt.graphics.*;
 
 public interface ITaskItem extends IItem {
 
+    void checkSubclass();
+
     /**
      * Returns the receiver's pop up menu if it has one, or null
      * if it does not.

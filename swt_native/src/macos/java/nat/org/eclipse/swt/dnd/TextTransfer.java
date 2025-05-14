@@ -98,12 +98,12 @@ public class TextTransfer extends ByteArrayTransfer implements ITextTransfer {
     }
 
     @Override
-    protected int[] getTypeIds() {
+    public int[] getTypeIds() {
         return new int[] { ID };
     }
 
     @Override
-    protected String[] getTypeNames() {
+    public String[] getTypeNames() {
         return new String[] { ID_NAME };
     }
 
@@ -112,7 +112,7 @@ public class TextTransfer extends ByteArrayTransfer implements ITextTransfer {
     }
 
     @Override
-    protected boolean validate(Object object) {
+    public boolean validate(Object object) {
         return checkText(object);
     }
 

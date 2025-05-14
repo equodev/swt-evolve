@@ -68,7 +68,7 @@ public abstract class Transfer implements ITransfer {
      * @return the platform specific ids of the data types that can be converted using
      * this transfer agent
      */
-    abstract protected int[] getTypeIds();
+    abstract public int[] getTypeIds();
 
     /**
      * Returns the platform specific names of the  data types that can be converted
@@ -77,7 +77,7 @@ public abstract class Transfer implements ITransfer {
      * @return the platform specific names of the data types that can be converted
      * using this transfer agent.
      */
-    abstract protected String[] getTypeNames();
+    abstract public String[] getTypeNames();
 
     /**
      * Converts a java representation of data to a platform specific representation of
@@ -106,7 +106,7 @@ public abstract class Transfer implements ITransfer {
      *    <li>ERROR_INVALID_DATA - if object does not contain data in a valid format or is <code>null</code></li>
      * </ul>
      */
-    abstract protected void javaToNative(Object object, TransferData transferData);
+    abstract public void javaToNative(Object object, ITransferData transferData);
 
     /**
      * Converts a platform specific representation of data to a java representation.
@@ -119,7 +119,7 @@ public abstract class Transfer implements ITransfer {
      * <code>null</code> is returned.  The type of Object that is returned is
      * dependent on the <code>Transfer</code> subclass.
      */
-    abstract protected Object nativeToJava(TransferData transferData);
+    abstract public Object nativeToJava(ITransferData transferData);
 
     /**
      * Registers a name for a data type and returns the associated unique identifier.
@@ -163,7 +163,7 @@ public abstract class Transfer implements ITransfer {
      *
      * @since 3.1
      */
-    protected boolean validate(Object object) {
+    public boolean validate(Object object) {
         return true;
     }
 

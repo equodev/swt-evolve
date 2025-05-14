@@ -109,6 +109,10 @@ public class TableItem extends Item {
         this(new nat.org.eclipse.swt.widgets.TableItem((nat.org.eclipse.swt.widgets.Table) parent.getDelegate(), style, index));
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     /**
      * Returns the receiver's background color.
      *

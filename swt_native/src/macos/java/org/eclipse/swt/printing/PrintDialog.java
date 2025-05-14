@@ -246,6 +246,10 @@ public class PrintDialog extends Dialog {
         getDelegate().setPrintToFile(printToFile);
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     protected PrintDialog(IPrintDialog delegate) {
         super(delegate);
     }

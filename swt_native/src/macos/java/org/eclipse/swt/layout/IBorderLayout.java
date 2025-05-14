@@ -13,6 +13,10 @@ import org.eclipse.swt.widgets.*;
 
 public interface IBorderLayout extends ILayout {
 
+    IPoint computeSize(IComposite composite, int wHint, int hHint, boolean flushCache);
+
+    void layout(IComposite composite, boolean flushCache);
+
     String toString();
 
     BorderLayout getApi();

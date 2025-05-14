@@ -530,7 +530,7 @@ public abstract class Widget implements IWidget {
      * @see #notifyListeners
      * @since 3.126
      */
-    protected void addTypedListener(EventListener listener, int... eventTypes) {
+    public void addTypedListener(EventListener listener, int... eventTypes) {
         checkWidget();
         if (listener == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -648,7 +648,7 @@ public abstract class Widget implements IWidget {
      *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
      * </ul>
      */
-    protected void checkSubclass() {
+    public void checkSubclass() {
         if (!isValidSubclass())
             error(SWT.ERROR_INVALID_SUBCLASS);
     }
@@ -675,7 +675,7 @@ public abstract class Widget implements IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    protected void checkWidget() {
+    public void checkWidget() {
         Display display = this.display;
         if (display == null)
             error(SWT.ERROR_WIDGET_DISPOSED);
@@ -1624,7 +1624,7 @@ public abstract class Widget implements IWidget {
      * @noreference This method is not intended to be referenced by clients.
      * @nooverride This method is not intended to be re-implemented or extended by clients.
      */
-    protected void removeTypedListener(int eventType, EventListener listener) {
+    public void removeTypedListener(int eventType, EventListener listener) {
         checkWidget();
         if (listener == null)
             error(SWT.ERROR_NULL_ARGUMENT);

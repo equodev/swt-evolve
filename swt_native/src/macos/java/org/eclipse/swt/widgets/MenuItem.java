@@ -199,6 +199,10 @@ public class MenuItem extends Item {
         getDelegate().addSelectionListener(listener);
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     /**
      * Returns the widget accelerator.  An accelerator is the bit-wise
      * OR of zero or more modifier masks and a key. Examples:

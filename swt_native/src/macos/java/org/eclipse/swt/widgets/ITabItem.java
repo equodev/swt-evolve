@@ -5,6 +5,8 @@ import org.eclipse.swt.graphics.*;
 
 public interface ITabItem extends IItem {
 
+    void checkSubclass();
+
     /**
      * Returns a rectangle describing the receiver's size and location
      * relative to its parent.

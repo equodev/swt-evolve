@@ -126,7 +126,7 @@ public class DateTime extends Composite implements IDateTime {
     }
 
     @Override
-    protected void checkSubclass() {
+    public void checkSubclass() {
         if (!isValidSubclass())
             error(SWT.ERROR_INVALID_SUBCLASS);
     }

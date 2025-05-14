@@ -70,6 +70,18 @@ public class HTMLTransfer extends ByteArrayTransfer {
         return getDelegate().nativeToJava(transferData.getDelegate());
     }
 
+    protected int[] getTypeIds() {
+        return getDelegate().getTypeIds();
+    }
+
+    protected String[] getTypeNames() {
+        return getDelegate().getTypeNames();
+    }
+
+    protected boolean validate(Object object) {
+        return getDelegate().validate(object);
+    }
+
     protected HTMLTransfer(IHTMLTransfer delegate) {
         super(delegate);
     }

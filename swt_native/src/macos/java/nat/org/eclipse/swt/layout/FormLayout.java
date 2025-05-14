@@ -19,6 +19,8 @@ import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.layout.IFormLayout;
+import org.eclipse.swt.widgets.IComposite;
+import org.eclipse.swt.widgets.IControl;
 
 /**
  *  Instances of this class control the position and size of the
@@ -245,7 +247,8 @@ public final class FormLayout extends Layout implements IFormLayout {
     }
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(IComposite icomposite, int wHint, int hHint, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         Point size = layout(composite, false, 0, 0, wHint, hHint, flushCache);
         if (wHint != SWT.DEFAULT)
             size.x = wHint;
@@ -255,7 +258,8 @@ public final class FormLayout extends Layout implements IFormLayout {
     }
 
     @Override
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(IControl icontrol) {
+        Control control = (Control) icontrol;
         Object data = control.getLayoutData();
         if (data != null)
             ((FormData) data).flushCache();
@@ -293,7 +297,8 @@ public final class FormLayout extends Layout implements IFormLayout {
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(IComposite icomposite, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         Rectangle rect = composite.getClientArea();
         int x = rect.x + marginLeft + marginWidth;
         int y = rect.y + marginTop + marginHeight;

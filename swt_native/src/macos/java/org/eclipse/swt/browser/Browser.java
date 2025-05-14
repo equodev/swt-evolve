@@ -79,6 +79,10 @@ public class Browser extends Composite {
         this(new nat.org.eclipse.swt.browser.Browser((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
     }
 
+    protected void checkWidget() {
+        getDelegate().checkWidget();
+    }
+
     /**
      * Clears all session cookies from all current Browser instances.
      *
@@ -343,6 +347,10 @@ public class Browser extends Composite {
      */
     public boolean back() {
         return getDelegate().back();
+    }
+
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
     }
 
     /**

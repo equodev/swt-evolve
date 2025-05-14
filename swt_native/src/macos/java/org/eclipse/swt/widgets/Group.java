@@ -81,6 +81,10 @@ public class Group extends Composite {
         this(new nat.org.eclipse.swt.widgets.Group((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     public Rectangle computeTrim(int x, int y, int width, int height) {
         return getDelegate().computeTrim(x, y, width, height).getApi();
     }

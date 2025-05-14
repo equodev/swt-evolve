@@ -93,7 +93,7 @@ public class Clipboard implements IClipboard {
      *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
      * </ul>
      */
-    protected void checkSubclass() {
+    public void checkSubclass() {
         String name = getClass().getName();
         String validName = Clipboard.class.getName();
         if (!validName.equals(name)) {
@@ -123,7 +123,7 @@ public class Clipboard implements IClipboard {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    protected void checkWidget() {
+    public void checkWidget() {
         Display display = this.display;
         if (display == null)
             DND.error(SWT.ERROR_WIDGET_DISPOSED);

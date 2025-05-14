@@ -328,7 +328,7 @@ public class DragSource extends Widget implements IDragSource {
     }
 
     @Override
-    protected void checkSubclass() {
+    public void checkSubclass() {
         String name = getClass().getName();
         String validName = DragSource.class.getName();
         if (!validName.equals(name)) {

@@ -5,6 +5,8 @@ import org.eclipse.swt.graphics.*;
 
 public interface IDecorations extends ICanvas {
 
+    void checkSubclass();
+
     /**
      * Returns the receiver's default button if one had
      * previously been set, otherwise returns null.

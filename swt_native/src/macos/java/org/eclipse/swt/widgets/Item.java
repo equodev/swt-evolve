@@ -99,6 +99,11 @@ public abstract class Item extends Widget {
         this(parent, style);
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+        /* Do Nothing - Subclassing is allowed */
+    }
+
     /**
      * Returns the receiver's image if it has one, or null
      * if it does not.

@@ -168,6 +168,10 @@ public class TreeItem extends Item {
         this(new nat.org.eclipse.swt.widgets.TreeItem((nat.org.eclipse.swt.widgets.TreeItem) parentItem.getDelegate(), style, index));
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     /**
      * Clears the item at the given zero-relative index in the receiver.
      * The text, icon and other attributes of the item are set to the default

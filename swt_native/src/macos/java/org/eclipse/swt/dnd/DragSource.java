@@ -171,6 +171,10 @@ public class DragSource extends Widget {
         getDelegate().addDragListener(listener);
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     /**
      * Returns the Control which is registered for this DragSource.  This is the control that the
      * user clicks in to initiate dragging.

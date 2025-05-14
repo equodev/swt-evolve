@@ -162,7 +162,8 @@ public abstract class ByteArrayTransfer extends Transfer implements IByteArrayTr
      * @see Transfer#nativeToJava
      */
     @Override
-    protected void javaToNative(Object object, TransferData transferData) {
+    public void javaToNative(Object object, ITransferData itransferData) {
+        TransferData transferData = (TransferData) itransferData;
         if (!checkByteArray(object) && !isSupportedType(transferData)) {
             DND.error(DND.ERROR_INVALID_DATA);
         }
@@ -182,7 +183,8 @@ public abstract class ByteArrayTransfer extends Transfer implements IByteArrayTr
      * @see Transfer#javaToNative
      */
     @Override
-    protected Object nativeToJava(TransferData transferData) {
+    public Object nativeToJava(ITransferData itransferData) {
+        TransferData transferData = (TransferData) itransferData;
         if (!isSupportedType(transferData) || transferData.data == null)
             return null;
         if (transferData.data == null)

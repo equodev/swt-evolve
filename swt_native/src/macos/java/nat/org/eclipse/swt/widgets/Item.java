@@ -115,7 +115,7 @@ public abstract class Item extends Widget implements IItem {
     }
 
     @Override
-    protected void checkSubclass() {
+    public void checkSubclass() {
         /* Do Nothing - Subclassing is allowed */
     }
 

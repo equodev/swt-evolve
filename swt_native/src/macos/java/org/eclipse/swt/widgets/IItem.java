@@ -5,6 +5,8 @@ import org.eclipse.swt.graphics.*;
 
 public interface IItem extends IWidget {
 
+    void checkSubclass();
+
     /**
      * Returns the receiver's image if it has one, or null
      * if it does not.

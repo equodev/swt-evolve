@@ -141,6 +141,22 @@ public interface IDisplay extends IDevice {
      */
     void beep();
 
+    void checkDevice();
+
+    /**
+     * Checks that this class can be subclassed.
+     * <p>
+     * IMPORTANT: See the comment in <code>Widget.checkSubclass()</code>.
+     * </p>
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
+     * </ul>
+     *
+     * @see Widget#checkSubclass
+     */
+    void checkSubclass();
+
     /**
      * Requests that the connection between SWT and the underlying
      * operating system be closed.
@@ -155,6 +171,32 @@ public interface IDisplay extends IDevice {
      * @since 2.0
      */
     void close();
+
+    /**
+     * Creates the device in the operating system.  If the device
+     * does not have a handle, this method may do nothing depending
+     * on the device.
+     * <p>
+     * This method is called before <code>init</code>.
+     * </p>
+     *
+     * @param data the DeviceData which describes the receiver
+     *
+     * @see #init
+     */
+    void create(IDeviceData data);
+
+    /**
+     * Destroys the device in the operating system and releases
+     * the device's handle.  If the device does not have a handle,
+     * this method may do nothing depending on the device.
+     * <p>
+     * This method is called after <code>release</code>.
+     * </p>
+     * @see Device#dispose
+     * @see #release
+     */
+    void destroy();
 
     /**
      * Causes the <code>run()</code> method of the runnable to
@@ -712,6 +754,17 @@ public interface IDisplay extends IDevice {
     boolean getTouchEnabled();
 
     /**
+     * Initializes any internal resources needed by the
+     * device.
+     * <p>
+     * This method is called after <code>create</code>.
+     * </p>
+     *
+     * @see #create
+     */
+    void init();
+
+    /**
      * Invokes platform specific functionality to allocate a new GC handle.
      * <p>
      * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
@@ -995,6 +1048,32 @@ public interface IDisplay extends IDevice {
      * @see #wake
      */
     boolean readAndDispatch();
+
+    /**
+     * Releases any internal resources back to the operating
+     * system and clears all fields except the device handle.
+     * <p>
+     * Disposes all shells which are currently open on the display.
+     * After this method has been invoked, all related related shells
+     * will answer <code>true</code> when sent the message
+     * <code>isDisposed()</code>.
+     * </p><p>
+     * When a device is destroyed, resources that were acquired
+     * on behalf of the programmer need to be returned to the
+     * operating system.  For example, if the device allocated a
+     * font to be used as the system font, this font would be
+     * freed in <code>release</code>.  Also,to assist the garbage
+     * collector and minimize the amount of memory that is not
+     * reclaimed when the programmer keeps a reference to a
+     * disposed device, all fields except the handle are zero'd.
+     * The handle is needed by <code>destroy</code>.
+     * </p>
+     * This method is called before <code>destroy</code>.
+     *
+     * @see Device#dispose
+     * @see #destroy
+     */
+    void release();
 
     /**
      * Removes the listener from the collection of listeners who will

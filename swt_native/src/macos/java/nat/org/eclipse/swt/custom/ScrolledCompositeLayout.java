@@ -18,6 +18,8 @@ package nat.org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
+import org.eclipse.swt.widgets.IComposite;
+import org.eclipse.swt.widgets.IControl;
 
 /**
  * This class provides the layout for ScrolledComposite
@@ -33,7 +35,8 @@ class ScrolledCompositeLayout extends Layout {
     static final int DEFAULT_HEIGHT = 64;
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(IComposite icomposite, int wHint, int hHint, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         ScrolledComposite sc = (ScrolledComposite) composite;
         Point size = new Point(DEFAULT_WIDTH, DEFAULT_HEIGHT);
         if (sc.content != null) {
@@ -52,12 +55,14 @@ class ScrolledCompositeLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(IControl icontrol) {
+        Control control = (Control) icontrol;
         return true;
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(IComposite icomposite, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         if (inLayout)
             return;
         ScrolledComposite sc = (ScrolledComposite) composite;

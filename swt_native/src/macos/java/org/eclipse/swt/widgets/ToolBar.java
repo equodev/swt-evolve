@@ -88,6 +88,10 @@ public class ToolBar extends Composite {
         this(new nat.org.eclipse.swt.widgets.ToolBar((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     public Point computeSize(int wHint, int hHint, boolean changed) {
         return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }

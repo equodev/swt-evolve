@@ -20,6 +20,7 @@ import org.eclipse.swt.internal.ExceptionStash;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.IDevice;
+import org.eclipse.swt.graphics.IDeviceData;
 
 /**
  * This class is the abstract superclass of all device objects,
@@ -213,7 +214,7 @@ public abstract class Device implements Drawable, IDevice {
      *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    protected void checkDevice() {
+    public void checkDevice() {
         if (disposed)
             SWT.error(SWT.ERROR_DEVICE_DISPOSED);
     }
@@ -233,7 +234,8 @@ public abstract class Device implements Drawable, IDevice {
      *
      * @see #init
      */
-    protected void create(DeviceData data) {
+    public void create(IDeviceData idata) {
+        DeviceData data = (DeviceData) idata;
     }
 
     /**
@@ -297,7 +299,7 @@ public abstract class Device implements Drawable, IDevice {
      * @see #dispose
      * @see #release
      */
-    protected void destroy() {
+    public void destroy() {
     }
 
     /**
@@ -618,7 +620,7 @@ public abstract class Device implements Drawable, IDevice {
      *
      * @see #create
      */
-    protected void init() {
+    public void init() {
         /* Create the standard colors */
         COLOR_TRANSPARENT = new Color(this, 0xFF, 0xFF, 0xFF, 0);
         COLOR_BLACK = new Color(this, 0, 0, 0);
@@ -843,7 +845,7 @@ public abstract class Device implements Drawable, IDevice {
      * @see #dispose
      * @see #destroy
      */
-    protected void release() {
+    public void release() {
         if (paragraphStyle != null)
             paragraphStyle.release();
         paragraphStyle = null;
@@ -878,7 +880,7 @@ public abstract class Device implements Drawable, IDevice {
      * @nooverride This method is not intended to be re-implemented or extended by clients.
      * @since 3.105
      */
-    protected int getDeviceZoom() {
+    public int getDeviceZoom() {
         NSScreen mainScreen = NSScreen.mainScreen();
         int scaleFactor = mainScreen != null ? (int) mainScreen.backingScaleFactor() : 1;
         return scaleFactor * 100;

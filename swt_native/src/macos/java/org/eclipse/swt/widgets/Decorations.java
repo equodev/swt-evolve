@@ -144,6 +144,10 @@ public class Decorations extends Canvas {
         this(new nat.org.eclipse.swt.widgets.Decorations((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     /**
      * Returns the receiver's default button if one had
      * previously been set, otherwise returns null.

@@ -53,6 +53,63 @@ public class Clipboard {
     }
 
     /**
+     * Checks that this class can be subclassed.
+     * <p>
+     * The SWT class library is intended to be subclassed
+     * only at specific, controlled points. This method enforces this
+     * rule unless it is overridden.
+     * </p><p>
+     * <em>IMPORTANT:</em> By providing an implementation of this
+     * method that allows a subclass of a class which does not
+     * normally allow subclassing to be created, the implementer
+     * agrees to be fully responsible for the fact that any such
+     * subclass will likely fail between SWT releases and will be
+     * strongly platform specific. No support is provided for
+     * user-written classes which are implemented in this fashion.
+     * </p><p>
+     * The ability to subclass outside of the allowed SWT classes
+     * is intended purely to enable those not on the SWT development
+     * team to implement patches in order to get around specific
+     * limitations in advance of when those limitations can be
+     * addressed by the team. Subclassing should not be attempted
+     * without an intimate and detailed understanding of the hierarchy.
+     * </p>
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
+     * </ul>
+     */
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
+    /**
+     * Throws an <code>SWTException</code> if the receiver can not
+     * be accessed by the caller. This may include both checks on
+     * the state of the receiver and more generally on the entire
+     * execution context. This method <em>should</em> be called by
+     * widget implementors to enforce the standard SWT invariants.
+     * <p>
+     * Currently, it is an error to invoke any method (other than
+     * <code>isDisposed()</code>) on a widget that has had its
+     * <code>dispose()</code> method called. It is also an error
+     * to call widget methods from any thread that is different
+     * from the thread that created the widget.
+     * </p><p>
+     * In future releases of SWT, there may be more or fewer error
+     * checks and exceptions may be thrown for different reasons.
+     * </p>
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     */
+    protected void checkWidget() {
+        getDelegate().checkWidget();
+    }
+
+    /**
      * If this clipboard is currently the owner of the data on the system clipboard,
      * clear the contents.  If this clipboard is not the owner, then nothing is done.
      * Note that there are clipboard assistant applications that take ownership of

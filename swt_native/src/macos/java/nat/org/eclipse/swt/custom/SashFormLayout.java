@@ -18,6 +18,8 @@ package nat.org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
+import org.eclipse.swt.widgets.IComposite;
+import org.eclipse.swt.widgets.IControl;
 
 /**
  * This class provides the layout for SashForm
@@ -27,7 +29,8 @@ import nat.org.eclipse.swt.widgets.*;
 class SashFormLayout extends Layout {
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(IComposite icomposite, int wHint, int hHint, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         SashForm sashForm = (SashForm) composite;
         Control[] cArray = sashForm.getControls(true);
         int width = 0;
@@ -92,12 +95,14 @@ class SashFormLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(IControl icontrol) {
+        Control control = (Control) icontrol;
         return true;
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(IComposite icomposite, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         SashForm sashForm = (SashForm) composite;
         Rectangle area = sashForm.getClientArea();
         if (area.width <= 1 || area.height <= 1)

@@ -91,6 +91,10 @@ public class DateTime extends Composite {
         this(new nat.org.eclipse.swt.widgets.DateTime((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     /**
      * Adds the listener to the collection of listeners who will
      * be notified when the control is selected by the user, by sending

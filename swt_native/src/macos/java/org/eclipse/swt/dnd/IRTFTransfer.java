@@ -26,5 +26,11 @@ public interface IRTFTransfer extends IByteArrayTransfer {
      */
     Object nativeToJava(ITransferData transferData);
 
+    int[] getTypeIds();
+
+    String[] getTypeNames();
+
+    boolean validate(Object object);
+
     RTFTransfer getApi();
 }

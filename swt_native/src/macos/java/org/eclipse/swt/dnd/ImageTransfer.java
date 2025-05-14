@@ -76,6 +76,18 @@ public class ImageTransfer extends ByteArrayTransfer {
         return getDelegate().nativeToJava(transferData.getDelegate());
     }
 
+    protected int[] getTypeIds() {
+        return getDelegate().getTypeIds();
+    }
+
+    protected String[] getTypeNames() {
+        return getDelegate().getTypeNames();
+    }
+
+    protected boolean validate(Object object) {
+        return getDelegate().validate(object);
+    }
+
     protected ImageTransfer(IImageTransfer delegate) {
         super(delegate);
     }

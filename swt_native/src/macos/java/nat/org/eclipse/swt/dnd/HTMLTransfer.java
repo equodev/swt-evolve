@@ -93,12 +93,12 @@ public class HTMLTransfer extends ByteArrayTransfer implements IHTMLTransfer {
     }
 
     @Override
-    protected int[] getTypeIds() {
+    public int[] getTypeIds() {
         return new int[] { HTMLID };
     }
 
     @Override
-    protected String[] getTypeNames() {
+    public String[] getTypeNames() {
         return new String[] { HTML };
     }
 
@@ -107,7 +107,7 @@ public class HTMLTransfer extends ByteArrayTransfer implements IHTMLTransfer {
     }
 
     @Override
-    protected boolean validate(Object object) {
+    public boolean validate(Object object) {
         return checkHTML(object);
     }
 

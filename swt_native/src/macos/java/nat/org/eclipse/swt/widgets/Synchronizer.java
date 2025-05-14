@@ -98,7 +98,7 @@ public class Synchronizer implements ISynchronizer {
      *
      * @see #syncExec
      */
-    protected void asyncExec(Runnable runnable) {
+    public void asyncExec(Runnable runnable) {
         if (runnable == null) {
             //TEMPORARY CODE
             if (!(IS_GTK || IS_COCOA)) {
@@ -168,7 +168,7 @@ public class Synchronizer implements ISynchronizer {
      *
      * @see #asyncExec
      */
-    protected void syncExec(Runnable runnable) {
+    public void syncExec(Runnable runnable) {
         RunnableLock lock = null;
         synchronized (Device.class) {
             if (display == null || display.isDisposed())

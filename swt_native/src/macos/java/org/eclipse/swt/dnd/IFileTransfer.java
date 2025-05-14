@@ -29,5 +29,11 @@ public interface IFileTransfer extends IByteArrayTransfer {
      */
     Object nativeToJava(ITransferData transferData);
 
+    int[] getTypeIds();
+
+    String[] getTypeNames();
+
+    boolean validate(Object object);
+
     FileTransfer getApi();
 }

@@ -170,6 +170,10 @@ public class TreeColumn extends Item {
         getDelegate().addSelectionListener(listener);
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     /**
      * Returns a value which describes the position of the
      * text or image in the receiver. The value will be one of

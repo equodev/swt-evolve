@@ -108,6 +108,10 @@ public class TabItem extends Item {
         this(new nat.org.eclipse.swt.widgets.TabItem((nat.org.eclipse.swt.widgets.TabFolder) parent.getDelegate(), style, index));
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     /**
      * Returns a rectangle describing the receiver's size and location
      * relative to its parent.

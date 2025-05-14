@@ -142,6 +142,10 @@ public class CoolItem extends Item {
         getDelegate().addSelectionListener(listener);
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     /**
      * Returns the preferred size of the receiver.
      * <p>

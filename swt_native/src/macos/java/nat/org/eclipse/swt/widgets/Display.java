@@ -28,6 +28,7 @@ import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.IDisplay;
+import org.eclipse.swt.graphics.IDeviceData;
 import org.eclipse.swt.widgets.IWidget;
 import org.eclipse.swt.widgets.IControl;
 import org.eclipse.swt.graphics.IPoint;
@@ -729,7 +730,7 @@ public class Display extends Device implements Executor, IDisplay {
     }
 
     @Override
-    protected void checkDevice() {
+    public void checkDevice() {
         if (thread == null)
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (thread != Thread.currentThread())
@@ -792,7 +793,7 @@ public class Display extends Device implements Executor, IDisplay {
      *
      * @see Widget#checkSubclass
      */
-    protected void checkSubclass() {
+    public void checkSubclass() {
         if (!Display.isValidClass(getClass()))
             error(SWT.ERROR_INVALID_SUBCLASS);
     }
@@ -978,7 +979,8 @@ public class Display extends Device implements Executor, IDisplay {
      * @see #init
      */
     @Override
-    protected void create(DeviceData data) {
+    public void create(IDeviceData idata) {
+        DeviceData data = (DeviceData) idata;
         checkSubclass();
         checkDisplay(thread = Thread.currentThread(), false);
         createDisplay(data);
@@ -1189,7 +1191,7 @@ public class Display extends Device implements Executor, IDisplay {
      * @see #release
      */
     @Override
-    protected void destroy() {
+    public void destroy() {
         if (this == Default)
             Default = null;
         deregister(this);
@@ -2473,7 +2475,7 @@ public class Display extends Device implements Executor, IDisplay {
      * @see #create
      */
     @Override
-    protected void init() {
+    public void init() {
         super.init();
         if ("true".equalsIgnoreCase(System.getProperty(USE_SYSTEM_THEME))) {
             if (OS.isSystemDarkAppearance()) {
@@ -4130,7 +4132,7 @@ public class Display extends Device implements Executor, IDisplay {
      * @see #destroy
      */
     @Override
-    protected void release() {
+    public void release() {
         try (ExceptionStash exceptions = new ExceptionStash()) {
             disposing = true;
             try {

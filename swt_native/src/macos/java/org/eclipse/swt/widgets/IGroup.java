@@ -5,6 +5,8 @@ import org.eclipse.swt.graphics.*;
 
 public interface IGroup extends IComposite {
 
+    void checkSubclass();
+
     IRectangle computeTrim(int x, int y, int width, int height);
 
     IRectangle getClientArea();

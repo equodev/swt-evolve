@@ -30,6 +30,7 @@ import org.eclipse.swt.custom.ICLabel;
 import org.eclipse.swt.graphics.IColor;
 import org.eclipse.swt.graphics.IImage;
 import org.eclipse.swt.graphics.IFont;
+import org.eclipse.swt.graphics.IGC;
 
 /**
  *  A Label which supports aligned text and/or an image and different border styles.
@@ -1052,7 +1053,8 @@ public class CLabel extends Canvas implements ICLabel {
      * @param width the width to shorten the text to, in points
      * @return the shortened text
      */
-    protected String shortenText(GC gc, String t, int width) {
+    public String shortenText(IGC igc, String t, int width) {
+        GC gc = (GC) igc;
         if (t == null)
             return null;
         int w = gc.textExtent(ELLIPSIS, DRAW_FLAGS).x;

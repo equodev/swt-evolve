@@ -307,7 +307,7 @@ public class ToolItem extends Item implements IToolItem {
     }
 
     @Override
-    protected void checkSubclass() {
+    public void checkSubclass() {
         if (!isValidSubclass())
             error(SWT.ERROR_INVALID_SUBCLASS);
     }

@@ -127,12 +127,12 @@ public class ImageTransfer extends ByteArrayTransfer implements IImageTransfer {
     }
 
     @Override
-    protected int[] getTypeIds() {
+    public int[] getTypeIds() {
         return new int[] { TIFFID };
     }
 
     @Override
-    protected String[] getTypeNames() {
+    public String[] getTypeNames() {
         return new String[] { TIFF };
     }
 
@@ -143,7 +143,7 @@ public class ImageTransfer extends ByteArrayTransfer implements IImageTransfer {
     }
 
     @Override
-    protected boolean validate(Object object) {
+    public boolean validate(Object object) {
         return checkImage(object);
     }
 

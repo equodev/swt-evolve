@@ -19,6 +19,8 @@ import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.layout.IRowLayout;
+import org.eclipse.swt.widgets.IComposite;
+import org.eclipse.swt.widgets.IControl;
 
 /**
  * Instances of this class determine the size and position of the
@@ -204,7 +206,8 @@ public final class RowLayout extends Layout implements IRowLayout {
     }
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(IComposite icomposite, int wHint, int hHint, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         Point extent;
         if (type == SWT.HORIZONTAL) {
             extent = layoutHorizontal(composite, false, (wHint != SWT.DEFAULT) && wrap, wHint, flushCache);
@@ -229,7 +232,8 @@ public final class RowLayout extends Layout implements IRowLayout {
     }
 
     @Override
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(IControl icontrol) {
+        Control control = (Control) icontrol;
         return true;
     }
 
@@ -242,7 +246,8 @@ public final class RowLayout extends Layout implements IRowLayout {
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(IComposite icomposite, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         Rectangle clientArea = composite.getClientArea();
         if (type == SWT.HORIZONTAL) {
             layoutHorizontal(composite, true, wrap, clientArea.width, flushCache);

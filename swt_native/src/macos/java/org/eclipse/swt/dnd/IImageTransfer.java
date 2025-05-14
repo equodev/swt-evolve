@@ -30,5 +30,11 @@ public interface IImageTransfer extends IByteArrayTransfer {
      */
     Object nativeToJava(ITransferData transferData);
 
+    int[] getTypeIds();
+
+    String[] getTypeNames();
+
+    boolean validate(Object object);
+
     ImageTransfer getApi();
 }

@@ -166,6 +166,18 @@ public final class FormLayout extends Layout {
         this(new nat.org.eclipse.swt.layout.FormLayout());
     }
 
+    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+        return getDelegate().computeSize(composite.getDelegate(), wHint, hHint, flushCache).getApi();
+    }
+
+    protected boolean flushCache(Control control) {
+        return getDelegate().flushCache(control.getDelegate());
+    }
+
+    protected void layout(Composite composite, boolean flushCache) {
+        getDelegate().layout(composite.getDelegate(), flushCache);
+    }
+
     /**
      * Returns a string containing a concise, human-readable
      * description of the receiver.

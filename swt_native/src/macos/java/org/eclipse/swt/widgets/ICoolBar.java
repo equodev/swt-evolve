@@ -5,6 +5,8 @@ import org.eclipse.swt.graphics.*;
 
 public interface ICoolBar extends IComposite {
 
+    void checkSubclass();
+
     IPoint computeSize(int wHint, int hHint, boolean changed);
 
     /**

@@ -6,6 +6,8 @@ import org.eclipse.swt.graphics.*;
 
 public interface IToolBar extends IComposite {
 
+    void checkSubclass();
+
     IPoint computeSize(int wHint, int hHint, boolean changed);
 
     IRectangle computeTrim(int x, int y, int width, int height);

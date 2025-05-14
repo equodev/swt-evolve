@@ -38,6 +38,8 @@ public interface IDragSource extends IWidget {
      */
     void addDragListener(DragSourceListener listener);
 
+    void checkSubclass();
+
     /**
      * Returns the Control which is registered for this DragSource.  This is the control that the
      * user clicks in to initiate dragging.

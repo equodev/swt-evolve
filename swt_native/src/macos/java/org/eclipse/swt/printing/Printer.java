@@ -147,6 +147,25 @@ public final class Printer extends Device {
     }
 
     /**
+     * Creates the printer handle.
+     * This method is called internally by the instance creation
+     * mechanism of the <code>Device</code> class.
+     * @param deviceData the device data
+     */
+    protected void create(DeviceData deviceData) {
+        getDelegate().create(deviceData.getDelegate());
+    }
+
+    /**
+     * Destroys the printer handle.
+     * This method is called internally by the dispose
+     * mechanism of the <code>Device</code> class.
+     */
+    protected void destroy() {
+        getDelegate().destroy();
+    }
+
+    /**
      * Invokes platform specific functionality to allocate a new GC handle.
      * <p>
      * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
@@ -163,6 +182,22 @@ public final class Printer extends Device {
      */
     public long internal_new_GC(GCData data) {
         return getDelegate().internal_new_GC(data);
+    }
+
+    /**
+     * Initializes any internal resources needed by the
+     * device.
+     * <p>
+     * This method is called after <code>create</code>.
+     * </p><p>
+     * If subclasses reimplement this method, they must
+     * call the <code>super</code> implementation.
+     * </p>
+     *
+     * @see #create
+     */
+    protected void init() {
+        getDelegate().init();
     }
 
     /**
@@ -189,6 +224,15 @@ public final class Printer extends Device {
      */
     public boolean isAutoScalable() {
         return getDelegate().isAutoScalable();
+    }
+
+    /**
+     * Releases any internal state prior to destroying this printer.
+     * This method is called internally by the dispose
+     * mechanism of the <code>Device</code> class.
+     */
+    protected void release() {
+        getDelegate().release();
     }
 
     /**

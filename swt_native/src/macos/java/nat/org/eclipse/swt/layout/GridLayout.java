@@ -19,6 +19,8 @@ import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.layout.IGridLayout;
+import org.eclipse.swt.widgets.IComposite;
+import org.eclipse.swt.widgets.IControl;
 
 /**
  * Instances of this class lay out the control children of a
@@ -168,7 +170,8 @@ public final class GridLayout extends Layout implements IGridLayout {
     }
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(IComposite icomposite, int wHint, int hHint, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         Point size = layout(composite, false, 0, 0, wHint, hHint, flushCache);
         if (wHint != SWT.DEFAULT)
             size.x = wHint;
@@ -178,7 +181,8 @@ public final class GridLayout extends Layout implements IGridLayout {
     }
 
     @Override
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(IControl icontrol) {
+        Control control = (Control) icontrol;
         Object data = control.getLayoutData();
         if (data != null)
             ((GridData) data).flushCache();
@@ -204,7 +208,8 @@ public final class GridLayout extends Layout implements IGridLayout {
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(IComposite icomposite, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         Rectangle rect = composite.getClientArea();
         layout(composite, true, rect.x, rect.y, rect.width, rect.height, flushCache);
     }

@@ -5,6 +5,8 @@ import org.eclipse.swt.graphics.*;
 
 public interface ITableItem extends IItem {
 
+    void checkSubclass();
+
     /**
      * Returns the receiver's background color.
      *

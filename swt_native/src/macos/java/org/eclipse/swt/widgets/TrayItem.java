@@ -128,6 +128,10 @@ public class TrayItem extends Item {
         getDelegate().addSelectionListener(listener);
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     /**
      * Returns the receiver's highlight image if it has one, or null
      * if it does not.

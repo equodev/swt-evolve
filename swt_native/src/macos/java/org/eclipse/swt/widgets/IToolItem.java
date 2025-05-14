@@ -40,6 +40,8 @@ public interface IToolItem extends IItem {
      */
     void addSelectionListener(SelectionListener listener);
 
+    void checkSubclass();
+
     /**
      * Returns the receiver's background color.
      * <p>

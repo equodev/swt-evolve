@@ -267,7 +267,7 @@ public class Composite extends Scrollable implements IComposite {
     }
 
     @Override
-    protected void checkSubclass() {
+    public void checkSubclass() {
         /* Do nothing - Subclassing is allowed */
     }
 

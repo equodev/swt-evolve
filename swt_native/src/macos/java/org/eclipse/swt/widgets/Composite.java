@@ -118,6 +118,11 @@ public class Composite extends Scrollable {
         return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+        /* Do nothing - Subclassing is allowed */
+    }
+
     /**
      * Fills the interior of the rectangle specified by the arguments,
      * with the receiver's background.

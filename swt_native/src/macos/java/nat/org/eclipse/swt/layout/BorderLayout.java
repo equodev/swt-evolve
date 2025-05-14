@@ -28,6 +28,7 @@ import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.internal.C;
 import org.eclipse.swt.layout.IBorderLayout;
+import org.eclipse.swt.widgets.IComposite;
 
 /**
  * {@link BorderLayout} places controls in five regions
@@ -135,7 +136,8 @@ public class BorderLayout extends Layout implements IBorderLayout {
     public double heightDistributionFactor = 0.5;
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(IComposite icomposite, int wHint, int hHint, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         if (hHint > SWT.DEFAULT && wHint > SWT.DEFAULT) {
             return new Point(wHint, hHint);
         }
@@ -254,7 +256,8 @@ public class BorderLayout extends Layout implements IBorderLayout {
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(IComposite icomposite, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         Rectangle clientArea = composite.getClientArea();
         int clientX = clientArea.x + marginWidth;
         int clientY = clientArea.y + marginHeight;

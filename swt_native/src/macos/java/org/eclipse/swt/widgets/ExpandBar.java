@@ -105,6 +105,10 @@ public class ExpandBar extends Composite {
         getDelegate().addExpandListener(listener);
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     public Point computeSize(int wHint, int hHint, boolean changed) {
         return getDelegate().computeSize(wHint, hHint, changed).getApi();
     }

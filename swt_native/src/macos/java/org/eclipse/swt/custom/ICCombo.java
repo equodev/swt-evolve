@@ -127,6 +127,8 @@ public interface ICCombo extends IComposite {
      */
     void addVerifyListener(VerifyListener listener);
 
+    void checkSubclass();
+
     /**
      * Sets the selection in the receiver's text field to an empty
      * selection starting just before the first character. If the

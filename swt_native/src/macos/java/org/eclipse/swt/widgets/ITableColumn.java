@@ -53,6 +53,8 @@ public interface ITableColumn extends IItem {
      */
     void addSelectionListener(SelectionListener listener);
 
+    void checkSubclass();
+
     /**
      * Returns a value which describes the position of the
      * text or image in the receiver. The value will be one of

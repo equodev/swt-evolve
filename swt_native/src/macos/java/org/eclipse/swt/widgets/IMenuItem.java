@@ -80,6 +80,8 @@ public interface IMenuItem extends IItem {
      */
     void addSelectionListener(SelectionListener listener);
 
+    void checkSubclass();
+
     /**
      * Returns the widget accelerator.  An accelerator is the bit-wise
      * OR of zero or more modifier masks and a key. Examples:

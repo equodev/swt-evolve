@@ -80,6 +80,18 @@ public class FileTransfer extends ByteArrayTransfer {
         return getDelegate().nativeToJava(transferData.getDelegate());
     }
 
+    protected int[] getTypeIds() {
+        return getDelegate().getTypeIds();
+    }
+
+    protected String[] getTypeNames() {
+        return getDelegate().getTypeNames();
+    }
+
+    protected boolean validate(Object object) {
+        return getDelegate().validate(object);
+    }
+
     protected FileTransfer(IFileTransfer delegate) {
         super(delegate);
     }

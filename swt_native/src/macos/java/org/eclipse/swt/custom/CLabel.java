@@ -435,6 +435,21 @@ public class CLabel extends Canvas {
         getDelegate().setTopMargin(topMargin);
     }
 
+    /**
+     * Shorten the given text <code>t</code> so that its length doesn't exceed
+     * the given width. The default implementation replaces characters in the
+     * center of the original string with an ellipsis ("...").
+     * Override if you need a different strategy.
+     *
+     * @param gc the gc to use for text measurement
+     * @param t the text to shorten
+     * @param width the width to shorten the text to, in points
+     * @return the shortened text
+     */
+    protected String shortenText(GC gc, String t, int width) {
+        return getDelegate().shortenText(gc.getDelegate(), t, width);
+    }
+
     protected CLabel(ICLabel delegate) {
         super(delegate);
     }

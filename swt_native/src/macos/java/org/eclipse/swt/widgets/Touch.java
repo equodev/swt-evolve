@@ -79,7 +79,7 @@ public final class Touch {
 
     ITouch delegate;
 
-    public Touch(ITouch delegate) {
+    protected Touch(ITouch delegate) {
         this.delegate = delegate;
         delegate.setApi(this);
     }

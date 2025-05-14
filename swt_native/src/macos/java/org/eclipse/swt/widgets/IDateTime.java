@@ -6,6 +6,8 @@ import org.eclipse.swt.graphics.*;
 
 public interface IDateTime extends IComposite {
 
+    void checkSubclass();
+
     /**
      * Adds the listener to the collection of listeners who will
      * be notified when the control is selected by the user, by sending

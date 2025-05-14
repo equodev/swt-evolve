@@ -38,6 +38,8 @@ public interface ICoolItem extends IItem {
      */
     void addSelectionListener(SelectionListener listener);
 
+    void checkSubclass();
+
     /**
      * Returns the preferred size of the receiver.
      * <p>

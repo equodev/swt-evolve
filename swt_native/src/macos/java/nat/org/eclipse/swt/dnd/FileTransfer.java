@@ -123,12 +123,12 @@ public class FileTransfer extends ByteArrayTransfer implements IFileTransfer {
     }
 
     @Override
-    protected int[] getTypeIds() {
+    public int[] getTypeIds() {
         return new int[] { ID, ID1 };
     }
 
     @Override
-    protected String[] getTypeNames() {
+    public String[] getTypeNames() {
         return new String[] { ID_NAME, ID1_NAME };
     }
 
@@ -143,7 +143,7 @@ public class FileTransfer extends ByteArrayTransfer implements IFileTransfer {
     }
 
     @Override
-    protected boolean validate(Object object) {
+    public boolean validate(Object object) {
         return checkFile(object);
     }
 

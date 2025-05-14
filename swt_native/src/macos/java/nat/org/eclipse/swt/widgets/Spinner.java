@@ -213,7 +213,7 @@ public class Spinner extends Composite implements ISpinner {
     }
 
     @Override
-    protected void checkSubclass() {
+    public void checkSubclass() {
         if (!isValidSubclass())
             error(SWT.ERROR_INVALID_SUBCLASS);
     }

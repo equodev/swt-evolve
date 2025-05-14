@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.layout.ITabFolderLayout;
+import org.eclipse.swt.widgets.IComposite;
 
 /**
  * This layout controls the position and size of the children of a tab folder.
@@ -31,7 +32,8 @@ import org.eclipse.swt.layout.ITabFolderLayout;
 public class TabFolderLayout extends Layout implements ITabFolderLayout {
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(IComposite icomposite, int wHint, int hHint, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         if (wHint != SWT.DEFAULT && hHint != SWT.DEFAULT)
             return new Point(wHint, hHint);
         Control[] children = composite.getChildren();
@@ -51,7 +53,8 @@ public class TabFolderLayout extends Layout implements ITabFolderLayout {
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(IComposite icomposite, boolean flushCache) {
+        Composite composite = (Composite) icomposite;
         Rectangle rect = composite.getClientArea();
         Control[] children = composite.getChildren();
         for (Control c : children) {

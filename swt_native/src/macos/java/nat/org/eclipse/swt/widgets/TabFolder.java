@@ -137,7 +137,7 @@ public class TabFolder extends Composite implements ITabFolder {
     }
 
     @Override
-    protected void checkSubclass() {
+    public void checkSubclass() {
         if (!isValidSubclass())
             error(SWT.ERROR_INVALID_SUBCLASS);
     }

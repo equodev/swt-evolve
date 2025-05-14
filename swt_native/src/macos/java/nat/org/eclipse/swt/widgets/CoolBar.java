@@ -164,7 +164,7 @@ public class CoolBar extends Composite implements ICoolBar {
     }
 
     @Override
-    protected void checkSubclass() {
+    public void checkSubclass() {
         if (!isValidSubclass())
             error(SWT.ERROR_INVALID_SUBCLASS);
     }

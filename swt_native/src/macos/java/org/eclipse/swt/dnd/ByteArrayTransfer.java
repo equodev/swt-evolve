@@ -133,6 +133,34 @@ public abstract class ByteArrayTransfer extends Transfer {
         return getDelegate().isSupportedType(transferData.getDelegate());
     }
 
+    /**
+     * This implementation of <code>javaToNative</code> converts a java
+     * <code>byte[]</code> to a platform specific representation.
+     *
+     * @param object a java <code>byte[]</code> containing the data to be converted
+     * @param transferData an empty <code>TransferData</code> object that will
+     *  	be filled in on return with the platform specific format of the data
+     *
+     * @see Transfer#nativeToJava
+     */
+    protected void javaToNative(Object object, TransferData transferData) {
+        getDelegate().javaToNative(object, transferData.getDelegate());
+    }
+
+    /**
+     * This implementation of <code>nativeToJava</code> converts a platform specific
+     * representation of a byte array to a java <code>byte[]</code>.
+     *
+     * @param transferData the platform specific representation of the data to be converted
+     * @return a java <code>byte[]</code> containing the converted data if the conversion was
+     * 		successful; otherwise null
+     *
+     * @see Transfer#javaToNative
+     */
+    protected Object nativeToJava(TransferData transferData) {
+        return getDelegate().nativeToJava(transferData.getDelegate());
+    }
+
     public ByteArrayTransfer() {
     }
 

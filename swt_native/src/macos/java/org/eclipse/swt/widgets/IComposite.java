@@ -29,6 +29,8 @@ public interface IComposite extends IScrollable {
 
     IPoint computeSize(int wHint, int hHint, boolean changed);
 
+    void checkSubclass();
+
     /**
      * Fills the interior of the rectangle specified by the arguments,
      * with the receiver's background.

@@ -103,12 +103,12 @@ public class URLTransfer extends ByteArrayTransfer implements IURLTransfer {
     }
 
     @Override
-    protected int[] getTypeIds() {
+    public int[] getTypeIds() {
         return new int[] { URL_ID, URL_ID1 };
     }
 
     @Override
-    protected String[] getTypeNames() {
+    public String[] getTypeNames() {
         return new String[] { URL, URL1 };
     }
 
@@ -117,7 +117,7 @@ public class URLTransfer extends ByteArrayTransfer implements IURLTransfer {
     }
 
     @Override
-    protected boolean validate(Object object) {
+    public boolean validate(Object object) {
         return checkURL(object);
     }
 

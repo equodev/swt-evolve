@@ -27,6 +27,8 @@ public interface IExpandBar extends IComposite {
      */
     void addExpandListener(ExpandListener listener);
 
+    void checkSubclass();
+
     IPoint computeSize(int wHint, int hHint, boolean changed);
 
     IColor getForeground();

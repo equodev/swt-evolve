@@ -412,7 +412,7 @@ public class PrintDialog extends Dialog implements IPrintDialog {
     }
 
     @Override
-    protected void checkSubclass() {
+    public void checkSubclass() {
         String name = getClass().getName();
         String validName = PrintDialog.class.getName();
         if (!validName.equals(name)) {

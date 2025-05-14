@@ -93,12 +93,12 @@ public class RTFTransfer extends ByteArrayTransfer implements IRTFTransfer {
     }
 
     @Override
-    protected int[] getTypeIds() {
+    public int[] getTypeIds() {
         return new int[] { RTFID };
     }
 
     @Override
-    protected String[] getTypeNames() {
+    public String[] getTypeNames() {
         return new String[] { RTF };
     }
 
@@ -107,7 +107,7 @@ public class RTFTransfer extends ByteArrayTransfer implements IRTFTransfer {
     }
 
     @Override
-    protected boolean validate(Object object) {
+    public boolean validate(Object object) {
         return checkRTF(object);
     }
 

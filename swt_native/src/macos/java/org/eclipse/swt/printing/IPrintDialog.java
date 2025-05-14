@@ -141,5 +141,7 @@ public interface IPrintDialog extends IDialog {
      */
     void setPrintToFile(boolean printToFile);
 
+    void checkSubclass();
+
     PrintDialog getApi();
 }

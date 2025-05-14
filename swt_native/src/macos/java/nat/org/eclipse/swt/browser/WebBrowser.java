@@ -28,6 +28,9 @@ import org.eclipse.swt.browser.StatusTextListener;
 import org.eclipse.swt.browser.TitleListener;
 import org.eclipse.swt.browser.VisibilityWindowListener;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.IComposite;
+import org.eclipse.swt.browser.IBrowserFunction;
+import org.eclipse.swt.browser.IBrowser;
 
 abstract class WebBrowser {
 
@@ -205,7 +208,7 @@ abstract class WebBrowser {
         }
     }
 
-    public abstract void create(Composite parent, int style);
+    public abstract void create(IComposite parent, int style);
 
     static String CreateErrorString(String error) {
         return ERROR_ID + error;
@@ -219,7 +222,8 @@ abstract class WebBrowser {
         return true;
     }
 
-    public void createFunction(BrowserFunction function) {
+    public void createFunction(IBrowserFunction ifunction) {
+        BrowserFunction function = (BrowserFunction) ifunction;
         /*
 	 * If an existing function with the same name is found then
 	 * remove it so that it is not recreated on subsequent pages
@@ -297,7 +301,8 @@ abstract class WebBrowser {
         functions.remove(function.index);
     }
 
-    public void destroyFunction(BrowserFunction function) {
+    public void destroyFunction(IBrowserFunction ifunction) {
+        BrowserFunction function = (BrowserFunction) ifunction;
         String deleteString = getDeleteFunctionString(function.name);
         //$NON-NLS-1$
         StringBuilder buffer = new StringBuilder("for (var i = 0; i < frames.length; i++) {try {frames[i].eval(\"");
@@ -675,7 +680,8 @@ abstract class WebBrowser {
         return doit;
     }
 
-    public void setBrowser(Browser browser) {
+    public void setBrowser(IBrowser ibrowser) {
+        Browser browser = (Browser) ibrowser;
         this.browser = browser;
     }
 

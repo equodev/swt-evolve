@@ -118,6 +118,10 @@ public class DropTarget extends Widget {
         getDelegate().addDropListener(listener);
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     /**
      *  Creates a new <code>DropTarget</code> to allow data to be dropped on the specified
      *  <code>Control</code>.

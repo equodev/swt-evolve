@@ -55,6 +55,8 @@ public interface ITrayItem extends IItem {
      */
     void addSelectionListener(SelectionListener listener);
 
+    void checkSubclass();
+
     /**
      * Returns the receiver's highlight image if it has one, or null
      * if it does not.

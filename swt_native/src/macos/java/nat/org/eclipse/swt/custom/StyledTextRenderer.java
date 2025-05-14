@@ -28,6 +28,7 @@ import org.eclipse.swt.custom.StyledTextLineSpacingProvider;
 import org.eclipse.swt.custom.StyledTextEvent;
 import org.eclipse.swt.custom.TextChangingEvent;
 import org.eclipse.swt.custom.ST;
+import org.eclipse.swt.graphics.IFontMetrics;
 
 /**
  * A StyledTextRenderer renders the content of a StyledText widget.
@@ -1629,7 +1630,8 @@ class StyledTextRenderer {
      *
      * @since 3.125
      */
-    public void setFixedLineMetrics(FontMetrics metrics) {
+    public void setFixedLineMetrics(IFontMetrics imetrics) {
+        FontMetrics metrics = (FontMetrics) imetrics;
         fixedLineMetrics = metrics;
     }
 

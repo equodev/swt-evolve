@@ -150,7 +150,7 @@ public abstract class Dialog implements IDialog {
      *
      * @see Widget#checkSubclass
      */
-    protected void checkSubclass() {
+    public void checkSubclass() {
         if (!Display.isValidClass(getClass())) {
             error(SWT.ERROR_INVALID_SUBCLASS);
         }

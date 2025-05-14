@@ -42,6 +42,8 @@ public interface IDropTarget extends IWidget {
      */
     void addDropListener(DropTargetListener listener);
 
+    void checkSubclass();
+
     /**
      * Returns the Control which is registered for this DropTarget.  This is the control over which the
      * user positions the cursor to drop the data.

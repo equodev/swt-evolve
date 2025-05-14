@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import nat.org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.printing.IPrinter;
+import org.eclipse.swt.graphics.IDeviceData;
 
 /**
  * Instances of this class are used to print to a printer.
@@ -213,7 +214,8 @@ public final class Printer extends Device implements IPrinter {
      * @param deviceData the device data
      */
     @Override
-    protected void create(DeviceData deviceData) {
+    public void create(IDeviceData ideviceData) {
+        DeviceData deviceData = (DeviceData) ideviceData;
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
@@ -287,7 +289,7 @@ public final class Printer extends Device implements IPrinter {
      * mechanism of the <code>Device</code> class.
      */
     @Override
-    protected void destroy() {
+    public void destroy() {
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
@@ -373,7 +375,7 @@ public final class Printer extends Device implements IPrinter {
      * @see #create
      */
     @Override
-    protected void init() {
+    public void init() {
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
@@ -421,7 +423,7 @@ public final class Printer extends Device implements IPrinter {
      * mechanism of the <code>Device</code> class.
      */
     @Override
-    protected void release() {
+    public void release() {
         super.release();
     }
 

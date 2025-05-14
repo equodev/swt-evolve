@@ -56,6 +56,8 @@ public interface ITree extends IComposite {
      */
     void addTreeListener(TreeListener listener);
 
+    void checkSubclass();
+
     /**
      * Clears the item at the given zero-relative index in the receiver.
      * The text, icon and other attributes of the item are set to the default

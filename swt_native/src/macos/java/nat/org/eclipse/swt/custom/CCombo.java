@@ -448,7 +448,7 @@ public class CCombo extends Composite implements ICCombo {
     }
 
     @Override
-    protected void checkSubclass() {
+    public void checkSubclass() {
         String name = getClass().getName();
         int index = name.lastIndexOf('.');
         if (!name.substring(0, index + 1).equals(PACKAGE_PREFIX)) {

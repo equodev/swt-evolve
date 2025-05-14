@@ -37,6 +37,10 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class TaskItem extends Item {
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     /**
      * Returns the receiver's pop up menu if it has one, or null
      * if it does not.

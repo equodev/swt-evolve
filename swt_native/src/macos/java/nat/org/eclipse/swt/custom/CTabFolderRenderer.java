@@ -21,6 +21,8 @@ import nat.org.eclipse.swt.graphics.*;
 import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.custom.ICTabFolderRenderer;
+import org.eclipse.swt.graphics.IGC;
+import org.eclipse.swt.graphics.IRectangle;
 
 /**
  * Instances of this class provide all of the measuring and drawing functionality
@@ -337,7 +339,8 @@ public class CTabFolderRenderer implements ICTabFolderRenderer {
      *
      * @since 3.6
      */
-    protected Point computeSize(int part, int state, GC gc, int wHint, int hHint) {
+    public Point computeSize(int part, int state, IGC igc, int wHint, int hHint) {
+        GC gc = (GC) igc;
         int width = 0, height = 0;
         switch(part) {
             case PART_HEADER:
@@ -484,7 +487,7 @@ public class CTabFolderRenderer implements ICTabFolderRenderer {
      *
      * @since 3.6
      */
-    protected Rectangle computeTrim(int part, int state, int x, int y, int width, int height) {
+    public Rectangle computeTrim(int part, int state, int x, int y, int width, int height) {
         int borderLeft = parent.borderVisible ? 1 : 0;
         int borderRight = borderLeft;
         int borderTop = parent.onBottom ? borderLeft : 0;
@@ -624,7 +627,7 @@ public class CTabFolderRenderer implements ICTabFolderRenderer {
      *
      * @since 3.6
      */
-    protected void dispose() {
+    public void dispose() {
         disposeAntialiasColors();
         disposeSelectionHighlightGradientColors();
         fillColor = null;
@@ -674,7 +677,9 @@ public class CTabFolderRenderer implements ICTabFolderRenderer {
      *
      * @since 3.6
      */
-    protected void draw(int part, int state, Rectangle bounds, GC gc) {
+    public void draw(int part, int state, IRectangle ibounds, IGC igc) {
+        GC gc = (GC) igc;
+        Rectangle bounds = (Rectangle) ibounds;
         switch(part) {
             case PART_BACKGROUND:
                 this.drawBackground(gc, bounds, state);

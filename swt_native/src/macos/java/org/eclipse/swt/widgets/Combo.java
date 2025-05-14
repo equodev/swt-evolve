@@ -277,6 +277,10 @@ public class Combo extends Composite {
         getDelegate().addVerifyListener(listener);
     }
 
+    protected void checkSubclass() {
+        getDelegate().checkSubclass();
+    }
+
     /**
      * Sets the selection in the receiver's text field to an empty
      * selection starting just before the first character. If the

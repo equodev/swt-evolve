@@ -187,7 +187,7 @@ public class CoolItem extends Item implements ICoolItem {
     }
 
     @Override
-    protected void checkSubclass() {
+    public void checkSubclass() {
         if (!isValidSubclass())
             error(SWT.ERROR_INVALID_SUBCLASS);
     }

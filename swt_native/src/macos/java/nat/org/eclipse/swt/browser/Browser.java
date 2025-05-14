@@ -227,7 +227,7 @@ public class Browser extends Composite implements IBrowser {
     }
 
     @Override
-    protected void checkWidget() {
+    public void checkWidget() {
         super.checkWidget();
     }
 
@@ -531,7 +531,7 @@ public class Browser extends Composite implements IBrowser {
     }
 
     @Override
-    protected void checkSubclass() {
+    public void checkSubclass() {
         String name = getClass().getName();
         int index = name.lastIndexOf('.');
         if (!name.substring(0, index + 1).equals(PACKAGE_PREFIX)) {
