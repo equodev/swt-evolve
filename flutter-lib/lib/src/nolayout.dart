@@ -1,5 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:swtflutter/src/swt/caret.dart';
 import 'package:swtflutter/src/swt/composite.dart';
 import 'package:swtflutter/src/swt/control.dart';
 import 'package:swtflutter/src/swt/widget.dart';
@@ -48,6 +49,15 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
       var y = child.bounds?.y ?? 0;
       layoutChild(child.id, BoxConstraints.tightFor(width: w, height: h));
       positionChild(child.id, Offset(x.toDouble(), y.toDouble()));
+    }
+    for (var child in children.whereType<CaretValue>()){
+      var bounds = child.bounds;
+      double x = bounds?.x.toDouble() ?? 0;
+      double y = bounds?.y.toDouble() ?? 0;
+      double width = bounds?.width.toDouble() ?? 2;
+      double height = bounds?.height.toDouble() ?? 20;
+      layoutChild(child.id, BoxConstraints.tightFor(width: width, height: height));
+      positionChild(child.id, Offset(x, y));
     }
   }
 
