@@ -127,4 +127,8 @@ public class StyledTextPrintOptions implements IStyledTextPrintOptions {
     public void setApi(org.eclipse.swt.custom.StyledTextPrintOptions api) {
         this.api = api;
     }
+
+    public static StyledTextPrintOptions safeDelegate(org.eclipse.swt.custom.StyledTextPrintOptions api) {
+        return (api != null) ? (StyledTextPrintOptions) api.getDelegate() : null;
+    }
 }

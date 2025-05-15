@@ -218,4 +218,8 @@ public class TaskBar extends Widget implements ITaskBar {
             api = org.eclipse.swt.widgets.TaskBar.createApi(this);
         return (org.eclipse.swt.widgets.TaskBar) api;
     }
+
+    public static TaskBar safeDelegate(org.eclipse.swt.widgets.TaskBar api) {
+        return (api != null) ? (TaskBar) api.getDelegate() : null;
+    }
 }

@@ -1816,7 +1816,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
                     } else {
                         if (showChevron) {
                             Rectangle chevronRect = chevronItem.getBounds();
-                            chevronRect = ((nat.org.eclipse.swt.widgets.Display) event.display.getDelegate()).map(chevronTb, this, chevronRect);
+                            chevronRect = Display.safeDelegate(event.display).map(chevronTb, this, chevronRect);
                             CTabFolderEvent e = new CTabFolderEvent(this.getApi());
                             e.time = event.time;
                             e.x = chevronRect.x;
@@ -1967,7 +1967,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
             return;
         Event e = new Event();
         e.item = getItem(new Point(event.x, event.y)).getApi();
-        if (((nat.org.eclipse.swt.widgets.Widget) e.item.getDelegate()) != null) {
+        if (Widget.safeDelegate(e.item) != null) {
             notifyListeners(SWT.DefaultSelection, e);
         }
     }
@@ -2009,7 +2009,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
                         hovering = true;
                         updateItems();
                         hoverTimerRunning = true;
-                        ((nat.org.eclipse.swt.widgets.Display) event.display.getDelegate()).timerExec(2000, new Runnable() {
+                        Display.safeDelegate(event.display).timerExec(2000, new Runnable() {
 
                             @Override
                             public void run() {
@@ -2216,7 +2216,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
                 } else {
                     if (showChevron) {
                         Rectangle chevronRect = chevronItem.getBounds();
-                        chevronRect = ((nat.org.eclipse.swt.widgets.Display) event.display.getDelegate()).map(chevronTb, this, chevronRect);
+                        chevronRect = Display.safeDelegate(event.display).map(chevronTb, this, chevronRect);
                         CTabFolderEvent e = new CTabFolderEvent(this.getApi());
                         e.time = event.time;
                         e.x = chevronRect.x;
@@ -2250,7 +2250,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
                 return;
             }
         }
-        GC gc = ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate());
+        GC gc = GC.safeDelegate(event.gc);
         Font gcFont = gc.getFont();
         Color gcBackground = gc.getBackground();
         Color gcForeground = gc.getForeground();
@@ -2273,7 +2273,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
         if (!single) {
             for (int i = 0; i < items.length; i++) {
                 Rectangle itemBounds = items[i].getBounds();
-                if (i != selectedIndex && event.getBounds().getDelegate().intersects(itemBounds)) {
+                if (i != selectedIndex && Rectangle.safeDelegate(event.getBounds()).intersects(itemBounds)) {
                     renderer.draw(i, SWT.BACKGROUND | SWT.FOREGROUND | items[i].state, itemBounds, gc);
                 }
             }
@@ -2348,7 +2348,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
             hovering = false;
             updateItems();
         }
-        if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) == maxItem) {
+        if (Widget.safeDelegate(event.widget) == maxItem) {
             CTabFolderEvent e = new CTabFolderEvent(this.getApi());
             e.time = event.time;
             for (CTabFolder2Listener folderListener : folderListeners) {
@@ -2358,7 +2358,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
                     folderListener.maximize(e);
                 }
             }
-        } else if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) == minItem) {
+        } else if (Widget.safeDelegate(event.widget) == minItem) {
             CTabFolderEvent e = new CTabFolderEvent(this.getApi());
             e.time = event.time;
             for (CTabFolder2Listener folderListener : folderListeners) {
@@ -2368,9 +2368,9 @@ public class CTabFolder extends Composite implements ICTabFolder {
                     folderListener.minimize(e);
                 }
             }
-        } else if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) == chevronItem) {
+        } else if (Widget.safeDelegate(event.widget) == chevronItem) {
             Rectangle chevronRect = chevronItem.getBounds();
-            chevronRect = ((nat.org.eclipse.swt.widgets.Display) event.display.getDelegate()).map(chevronTb, this, chevronRect);
+            chevronRect = Display.safeDelegate(event.display).map(chevronTb, this, chevronRect);
             CTabFolderEvent e = new CTabFolderEvent(this.getApi());
             e.time = event.time;
             e.x = chevronRect.x;
@@ -4110,7 +4110,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
 
                 @Override
                 public void widgetSelected(SelectionEvent e) {
-                    MenuItem menuItem = (MenuItem) e.widget.getDelegate();
+                    MenuItem menuItem = (MenuItem) Widget.safeDelegate(e.widget);
                     int index = indexOf((CTabItem) menuItem.getData(id));
                     CTabFolder.this.setSelection(index, true);
                 }
@@ -4635,5 +4635,9 @@ public class CTabFolder extends Composite implements ICTabFolder {
         if (api == null)
             api = org.eclipse.swt.custom.CTabFolder.createApi(this);
         return (org.eclipse.swt.custom.CTabFolder) api;
+    }
+
+    public static CTabFolder safeDelegate(org.eclipse.swt.custom.CTabFolder api) {
+        return (api != null) ? (CTabFolder) api.getDelegate() : null;
     }
 }

@@ -486,4 +486,8 @@ public final class FontData implements IFontData {
     public void setApi(org.eclipse.swt.graphics.FontData api) {
         this.api = api;
     }
+
+    public static FontData safeDelegate(org.eclipse.swt.graphics.FontData api) {
+        return (api != null) ? (FontData) api.getDelegate() : null;
+    }
 }

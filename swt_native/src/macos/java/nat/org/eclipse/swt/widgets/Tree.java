@@ -3771,4 +3771,8 @@ public class Tree extends Composite implements ITree {
             api = org.eclipse.swt.widgets.Tree.createApi(this);
         return (org.eclipse.swt.widgets.Tree) api;
     }
+
+    public static Tree safeDelegate(org.eclipse.swt.widgets.Tree api) {
+        return (api != null) ? (Tree) api.getDelegate() : null;
+    }
 }

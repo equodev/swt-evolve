@@ -617,8 +617,8 @@ class StyledTextRenderer {
         Rectangle client = styledText.getClientArea();
         Color lineBackground = getLineBackground(lineInfo.index, null);
         StyledTextEvent event = styledText.getLineBackgroundData(lineInfo.offset, lineInfo.text);
-        if (event != null && ((nat.org.eclipse.swt.graphics.Color) event.lineBackground.getDelegate()) != null)
-            lineBackground = ((nat.org.eclipse.swt.graphics.Color) event.lineBackground.getDelegate());
+        if (event != null && Color.safeDelegate(event.lineBackground) != null)
+            lineBackground = Color.safeDelegate(event.lineBackground);
         int verticalIndent = lineInfo.layout.getVerticalIndent();
         if (lineBackground != null) {
             if (verticalIndent > 0) {
@@ -1285,7 +1285,7 @@ class StyledTextRenderer {
             wrapIndent = event.wrapIndent;
             alignment = event.alignment;
             justify = event.justify;
-            bullet = ((nat.org.eclipse.swt.custom.Bullet) event.bullet.getDelegate());
+            bullet = Bullet.safeDelegate(event.bullet);
             ranges = event.ranges;
             styles = Convert.array(event.styles, api -> (StyleRange) api.getDelegate(), StyleRange[]::new);
             if (event.tabStops != null)

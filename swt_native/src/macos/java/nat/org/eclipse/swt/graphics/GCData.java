@@ -145,4 +145,8 @@ public final class GCData implements IGCData {
     public void setApi(org.eclipse.swt.graphics.GCData api) {
         this.api = api;
     }
+
+    public static GCData safeDelegate(org.eclipse.swt.graphics.GCData api) {
+        return (api != null) ? (GCData) api.getDelegate() : null;
+    }
 }

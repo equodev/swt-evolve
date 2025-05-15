@@ -149,7 +149,7 @@ public class CBanner extends Composite implements ICBanner {
                     onMouseUp();
                     break;
                 case SWT.Paint:
-                    onPaint(((nat.org.eclipse.swt.graphics.GC) e.gc.getDelegate()));
+                    onPaint(GC.safeDelegate(e.gc));
                     break;
                 case SWT.Resize:
                     onResize();
@@ -615,5 +615,9 @@ public class CBanner extends Composite implements ICBanner {
         if (api == null)
             api = org.eclipse.swt.custom.CBanner.createApi(this);
         return (org.eclipse.swt.custom.CBanner) api;
+    }
+
+    public static CBanner safeDelegate(org.eclipse.swt.custom.CBanner api) {
+        return (api != null) ? (CBanner) api.getDelegate() : null;
     }
 }

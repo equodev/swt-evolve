@@ -134,4 +134,8 @@ public final class Monitor implements IMonitor {
     public void setApi(org.eclipse.swt.widgets.Monitor api) {
         this.api = api;
     }
+
+    public static Monitor safeDelegate(org.eclipse.swt.widgets.Monitor api) {
+        return (api != null) ? (Monitor) api.getDelegate() : null;
+    }
 }

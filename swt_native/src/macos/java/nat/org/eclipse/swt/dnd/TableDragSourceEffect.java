@@ -115,4 +115,8 @@ public class TableDragSourceEffect extends DragSourceEffect implements ITableDra
             api = org.eclipse.swt.dnd.TableDragSourceEffect.createApi(this);
         return (org.eclipse.swt.dnd.TableDragSourceEffect) api;
     }
+
+    public static TableDragSourceEffect safeDelegate(org.eclipse.swt.dnd.TableDragSourceEffect api) {
+        return (api != null) ? (TableDragSourceEffect) api.getDelegate() : null;
+    }
 }

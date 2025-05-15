@@ -1088,4 +1088,8 @@ public class Button extends Control implements IButton {
             api = org.eclipse.swt.widgets.Button.createApi(this);
         return (org.eclipse.swt.widgets.Button) api;
     }
+
+    public static Button safeDelegate(org.eclipse.swt.widgets.Button api) {
+        return (api != null) ? (Button) api.getDelegate() : null;
+    }
 }

@@ -312,4 +312,8 @@ public class BusyIndicator implements IBusyIndicator {
     public void setApi(org.eclipse.swt.custom.BusyIndicator api) {
         this.api = api;
     }
+
+    public static BusyIndicator safeDelegate(org.eclipse.swt.custom.BusyIndicator api) {
+        return (api != null) ? (BusyIndicator) api.getDelegate() : null;
+    }
 }

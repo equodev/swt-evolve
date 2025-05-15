@@ -972,4 +972,8 @@ public final class Region extends Resource implements IRegion {
             api = org.eclipse.swt.graphics.Region.createApi(this);
         return (org.eclipse.swt.graphics.Region) api;
     }
+
+    public static Region safeDelegate(org.eclipse.swt.graphics.Region api) {
+        return (api != null) ? (Region) api.getDelegate() : null;
+    }
 }

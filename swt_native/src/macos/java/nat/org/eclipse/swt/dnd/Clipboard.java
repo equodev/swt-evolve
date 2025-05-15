@@ -598,4 +598,8 @@ public class Clipboard implements IClipboard {
     public void setApi(org.eclipse.swt.dnd.Clipboard api) {
         this.api = api;
     }
+
+    public static Clipboard safeDelegate(org.eclipse.swt.dnd.Clipboard api) {
+        return (api != null) ? (Clipboard) api.getDelegate() : null;
+    }
 }

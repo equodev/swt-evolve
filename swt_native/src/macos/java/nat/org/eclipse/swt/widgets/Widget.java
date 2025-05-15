@@ -2568,4 +2568,8 @@ public abstract class Widget implements IWidget {
     public void setApi(org.eclipse.swt.widgets.Widget api) {
         this.api = api;
     }
+
+    public static Widget safeDelegate(org.eclipse.swt.widgets.Widget api) {
+        return (api != null) ? (Widget) api.getDelegate() : null;
+    }
 }

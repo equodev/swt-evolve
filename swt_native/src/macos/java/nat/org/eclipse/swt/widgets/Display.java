@@ -4520,9 +4520,9 @@ public class Display extends Device implements Executor, IDisplay {
             System.arraycopy(eventQueue, 1, eventQueue, 0, --length);
             eventQueue[length] = null;
             /* Run the event */
-            Widget widget = ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate());
+            Widget widget = Widget.safeDelegate(event.widget);
             if (widget != null && !widget.isDisposed()) {
-                Widget item = ((nat.org.eclipse.swt.widgets.Widget) event.item.getDelegate());
+                Widget item = Widget.safeDelegate(event.item);
                 if (item == null || !item.isDisposed()) {
                     run = true;
                     widget.notifyListeners(event.type, event);
@@ -7237,5 +7237,9 @@ public class Display extends Device implements Executor, IDisplay {
         if (api == null)
             api = org.eclipse.swt.widgets.Display.createApi(this);
         return (org.eclipse.swt.widgets.Display) api;
+    }
+
+    public static Display safeDelegate(org.eclipse.swt.widgets.Display api) {
+        return (api != null) ? (Display) api.getDelegate() : null;
     }
 }

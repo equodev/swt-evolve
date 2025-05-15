@@ -758,4 +758,8 @@ public final class Printer extends Device implements IPrinter {
             api = org.eclipse.swt.printing.Printer.createApi(this);
         return (org.eclipse.swt.printing.Printer) api;
     }
+
+    public static Printer safeDelegate(org.eclipse.swt.printing.Printer api) {
+        return (api != null) ? (Printer) api.getDelegate() : null;
+    }
 }

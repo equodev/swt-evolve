@@ -277,4 +277,8 @@ public final class FillLayout extends Layout implements IFillLayout {
             api = org.eclipse.swt.layout.FillLayout.createApi(this);
         return (org.eclipse.swt.layout.FillLayout) api;
     }
+
+    public static FillLayout safeDelegate(org.eclipse.swt.layout.FillLayout api) {
+        return (api != null) ? (FillLayout) api.getDelegate() : null;
+    }
 }

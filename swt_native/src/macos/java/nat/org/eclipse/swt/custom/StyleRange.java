@@ -242,4 +242,8 @@ public class StyleRange extends TextStyle implements Cloneable, IStyleRange {
             api = org.eclipse.swt.custom.StyleRange.createApi(this);
         return (org.eclipse.swt.custom.StyleRange) api;
     }
+
+    public static StyleRange safeDelegate(org.eclipse.swt.custom.StyleRange api) {
+        return (api != null) ? (StyleRange) api.getDelegate() : null;
+    }
 }

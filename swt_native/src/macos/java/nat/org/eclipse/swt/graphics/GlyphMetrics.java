@@ -133,4 +133,8 @@ public final class GlyphMetrics implements IGlyphMetrics {
     public void setApi(org.eclipse.swt.graphics.GlyphMetrics api) {
         this.api = api;
     }
+
+    public static GlyphMetrics safeDelegate(org.eclipse.swt.graphics.GlyphMetrics api) {
+        return (api != null) ? (GlyphMetrics) api.getDelegate() : null;
+    }
 }

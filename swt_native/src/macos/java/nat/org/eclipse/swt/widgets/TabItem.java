@@ -501,4 +501,8 @@ public class TabItem extends Item implements ITabItem {
             api = org.eclipse.swt.widgets.TabItem.createApi(this);
         return (org.eclipse.swt.widgets.TabItem) api;
     }
+
+    public static TabItem safeDelegate(org.eclipse.swt.widgets.TabItem api) {
+        return (api != null) ? (TabItem) api.getDelegate() : null;
+    }
 }

@@ -147,4 +147,8 @@ public final class RowData implements IRowData {
     public void setApi(org.eclipse.swt.layout.RowData api) {
         this.api = api;
     }
+
+    public static RowData safeDelegate(org.eclipse.swt.layout.RowData api) {
+        return (api != null) ? (RowData) api.getDelegate() : null;
+    }
 }

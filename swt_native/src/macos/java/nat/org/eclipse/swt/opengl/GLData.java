@@ -159,4 +159,8 @@ public class GLData implements IGLData {
     public void setApi(org.eclipse.swt.opengl.GLData api) {
         this.api = api;
     }
+
+    public static GLData safeDelegate(org.eclipse.swt.opengl.GLData api) {
+        return (api != null) ? (GLData) api.getDelegate() : null;
+    }
 }

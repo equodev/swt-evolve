@@ -138,7 +138,7 @@ public class AnimatedProgress extends Canvas implements IAnimatedProgress {
     }
 
     void paint(PaintEvent event) {
-        GC gc = ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate());
+        GC gc = GC.safeDelegate(event.gc);
         Display disp = getDisplay();
         Rectangle rect = getClientArea();
         gc.fillRectangle(rect);
@@ -223,5 +223,9 @@ public class AnimatedProgress extends Canvas implements IAnimatedProgress {
         if (api == null)
             api = org.eclipse.swt.custom.AnimatedProgress.createApi(this);
         return (org.eclipse.swt.custom.AnimatedProgress) api;
+    }
+
+    public static AnimatedProgress safeDelegate(org.eclipse.swt.custom.AnimatedProgress api) {
+        return (api != null) ? (AnimatedProgress) api.getDelegate() : null;
     }
 }

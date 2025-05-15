@@ -496,8 +496,8 @@ public class StyledText extends Canvas implements IStyledText {
                     String line = content.getLine(i);
                     int lineOffset = content.getOffsetAtLine(i);
                     StyledTextEvent event = styledText.getLineBackgroundData(lineOffset, line);
-                    if (event != null && ((nat.org.eclipse.swt.graphics.Color) event.lineBackground.getDelegate()) != null) {
-                        printerRenderer.setLineBackground(i, 1, ((nat.org.eclipse.swt.graphics.Color) event.lineBackground.getDelegate()));
+                    if (event != null && Color.safeDelegate(event.lineBackground) != null) {
+                        printerRenderer.setLineBackground(i, 1, Color.safeDelegate(event.lineBackground));
                     }
                     event = styledText.getBidiSegments(lineOffset, line);
                     if (event != null) {
@@ -509,7 +509,7 @@ public class StyledText extends Canvas implements IStyledText {
                         printerRenderer.setLineIndent(i, 1, event.indent);
                         printerRenderer.setLineAlignment(i, 1, event.alignment);
                         printerRenderer.setLineJustify(i, 1, event.justify);
-                        printerRenderer.setLineBullet(i, 1, ((nat.org.eclipse.swt.custom.Bullet) event.bullet.getDelegate()));
+                        printerRenderer.setLineBullet(i, 1, Bullet.safeDelegate(event.bullet));
                         StyleRange[] styles = Convert.array(event.styles, api -> (StyleRange) api.getDelegate(), StyleRange[]::new);
                         if (styles != null && styles.length > 0) {
                             printerRenderer.setStyleRanges(event.ranges, styles);
@@ -6414,7 +6414,7 @@ public class StyledText extends Canvas implements IStyledText {
         if (clientAreaWidth == 0 || clientAreaHeight == 0)
             return;
         final int endY = event.y + event.height;
-        GC gc = ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate());
+        GC gc = GC.safeDelegate(event.gc);
         Color background = getBackground();
         Color foreground = getForeground();
         if (endY > 0) {
@@ -7173,11 +7173,11 @@ public class StyledText extends Canvas implements IStyledText {
                     e.textStyle = layout.getStyle(Math.max(0, Math.min(offset, lineLength - 1))).getApi();
                 }
                 // If no override info available, use defaults. Don't supply default colors, though.
-                if (((nat.org.eclipse.swt.graphics.TextStyle) e.textStyle.getDelegate()) == null) {
+                if (TextStyle.safeDelegate(e.textStyle) == null) {
                     e.textStyle = new TextStyle(st.getFont(), st.foreground, st.background).getApi();
                 } else {
-                    if (((nat.org.eclipse.swt.graphics.TextStyle) e.textStyle.getDelegate()).foreground == null || ((nat.org.eclipse.swt.graphics.TextStyle) e.textStyle.getDelegate()).background == null || ((nat.org.eclipse.swt.graphics.TextStyle) e.textStyle.getDelegate()).font == null) {
-                        TextStyle textStyle = new TextStyle(((nat.org.eclipse.swt.graphics.TextStyle) e.textStyle.getDelegate()));
+                    if (TextStyle.safeDelegate(e.textStyle).foreground == null || TextStyle.safeDelegate(e.textStyle).background == null || TextStyle.safeDelegate(e.textStyle).font == null) {
+                        TextStyle textStyle = new TextStyle(TextStyle.safeDelegate(e.textStyle));
                         if (textStyle.foreground == null)
                             textStyle.foreground = st.foreground;
                         if (textStyle.background == null)
@@ -11624,5 +11624,9 @@ public class StyledText extends Canvas implements IStyledText {
         if (api == null)
             api = org.eclipse.swt.custom.StyledText.createApi(this);
         return (org.eclipse.swt.custom.StyledText) api;
+    }
+
+    public static StyledText safeDelegate(org.eclipse.swt.custom.StyledText api) {
+        return (api != null) ? (StyledText) api.getDelegate() : null;
     }
 }

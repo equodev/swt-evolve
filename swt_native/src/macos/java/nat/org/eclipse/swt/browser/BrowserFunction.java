@@ -284,4 +284,8 @@ public class BrowserFunction implements IBrowserFunction {
     public void setApi(org.eclipse.swt.browser.BrowserFunction api) {
         this.api = api;
     }
+
+    public static BrowserFunction safeDelegate(org.eclipse.swt.browser.BrowserFunction api) {
+        return (api != null) ? (BrowserFunction) api.getDelegate() : null;
+    }
 }

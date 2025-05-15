@@ -631,4 +631,8 @@ public final class GridData implements IGridData {
     public void setApi(org.eclipse.swt.layout.GridData api) {
         this.api = api;
     }
+
+    public static GridData safeDelegate(org.eclipse.swt.layout.GridData api) {
+        return (api != null) ? (GridData) api.getDelegate() : null;
+    }
 }

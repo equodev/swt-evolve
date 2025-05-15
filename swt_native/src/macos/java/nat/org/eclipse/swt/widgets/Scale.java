@@ -379,4 +379,8 @@ public class Scale extends Control implements IScale {
             api = org.eclipse.swt.widgets.Scale.createApi(this);
         return (org.eclipse.swt.widgets.Scale) api;
     }
+
+    public static Scale safeDelegate(org.eclipse.swt.widgets.Scale api) {
+        return (api != null) ? (Scale) api.getDelegate() : null;
+    }
 }

@@ -2041,4 +2041,8 @@ public class Combo extends Composite implements ICombo {
             api = org.eclipse.swt.widgets.Combo.createApi(this);
         return (org.eclipse.swt.widgets.Combo) api;
     }
+
+    public static Combo safeDelegate(org.eclipse.swt.widgets.Combo api) {
+        return (api != null) ? (Combo) api.getDelegate() : null;
+    }
 }

@@ -797,4 +797,8 @@ public class TreeColumn extends Item implements ITreeColumn {
             api = org.eclipse.swt.widgets.TreeColumn.createApi(this);
         return (org.eclipse.swt.widgets.TreeColumn) api;
     }
+
+    public static TreeColumn safeDelegate(org.eclipse.swt.widgets.TreeColumn api) {
+        return (api != null) ? (TreeColumn) api.getDelegate() : null;
+    }
 }

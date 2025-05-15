@@ -271,4 +271,8 @@ public class ControlEditor implements IControlEditor {
     public void setApi(org.eclipse.swt.custom.ControlEditor api) {
         this.api = api;
     }
+
+    public static ControlEditor safeDelegate(org.eclipse.swt.custom.ControlEditor api) {
+        return (api != null) ? (ControlEditor) api.getDelegate() : null;
+    }
 }

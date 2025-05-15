@@ -508,4 +508,8 @@ public class TaskItem extends Item implements ITaskItem {
             api = org.eclipse.swt.widgets.TaskItem.createApi(this);
         return (org.eclipse.swt.widgets.TaskItem) api;
     }
+
+    public static TaskItem safeDelegate(org.eclipse.swt.widgets.TaskItem api) {
+        return (api != null) ? (TaskItem) api.getDelegate() : null;
+    }
 }

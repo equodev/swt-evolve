@@ -573,4 +573,8 @@ public final class Color extends Resource implements IColor {
             api = org.eclipse.swt.graphics.Color.createApi(this);
         return (org.eclipse.swt.graphics.Color) api;
     }
+
+    public static Color safeDelegate(org.eclipse.swt.graphics.Color api) {
+        return (api != null) ? (Color) api.getDelegate() : null;
+    }
 }

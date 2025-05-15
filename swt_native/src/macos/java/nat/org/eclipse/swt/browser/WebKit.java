@@ -334,7 +334,7 @@ class WebKit extends WebBrowser {
                             if (!browser.isClosing) {
                                 close(false);
                             }
-                            ((nat.org.eclipse.swt.widgets.Display) e.display.getDelegate()).setData(ADD_WIDGET_KEY, new Object[] { delegate, null });
+                            Display.safeDelegate(e.display).setData(ADD_WIDGET_KEY, new Object[] { delegate, null });
                         }
                         WebKit.this.webView.setFrameLoadDelegate(null);
                         WebKit.this.webView.setResourceLoadDelegate(null);
@@ -1249,7 +1249,7 @@ class WebKit extends WebBrowser {
         Listener listener = event -> {
             user[0] = userText.getText();
             password[0] = passwordText.getText();
-            result[0] = ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) == buttons[1];
+            result[0] = Widget.safeDelegate(event.widget) == buttons[1];
             shell.close();
         };
         Composite composite = new Composite(shell, SWT.NONE);
@@ -1324,8 +1324,8 @@ class WebKit extends WebBrowser {
         }
         WebView result = null;
         Browser browser = null;
-        if (((nat.org.eclipse.swt.browser.Browser) newEvent.browser.getDelegate()) != null && ((nat.org.eclipse.swt.browser.Browser) newEvent.browser.getDelegate()).webBrowser instanceof WebKit) {
-            browser = ((nat.org.eclipse.swt.browser.Browser) newEvent.browser.getDelegate());
+        if (Browser.safeDelegate(newEvent.browser) != null && Browser.safeDelegate(newEvent.browser).webBrowser instanceof WebKit) {
+            browser = Browser.safeDelegate(newEvent.browser);
         }
         if (browser != null && !browser.isDisposed()) {
             result = ((WebKit) browser.webBrowser).webView;

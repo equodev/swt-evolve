@@ -558,4 +558,8 @@ public final class Cursor extends Resource implements ICursor {
             api = org.eclipse.swt.graphics.Cursor.createApi(this);
         return (org.eclipse.swt.graphics.Cursor) api;
     }
+
+    public static Cursor safeDelegate(org.eclipse.swt.graphics.Cursor api) {
+        return (api != null) ? (Cursor) api.getDelegate() : null;
+    }
 }

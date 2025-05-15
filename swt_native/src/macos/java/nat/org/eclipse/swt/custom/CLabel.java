@@ -503,7 +503,7 @@ public class CLabel extends Canvas implements ICLabel {
                 shortenText = true;
             }
         }
-        GC gc = ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate());
+        GC gc = GC.safeDelegate(event.gc);
         String[] lines = text == null ? null : splitString(text);
         // shorten the text
         if (shortenText) {
@@ -1120,5 +1120,9 @@ public class CLabel extends Canvas implements ICLabel {
         if (api == null)
             api = org.eclipse.swt.custom.CLabel.createApi(this);
         return (org.eclipse.swt.custom.CLabel) api;
+    }
+
+    public static CLabel safeDelegate(org.eclipse.swt.custom.CLabel api) {
+        return (api != null) ? (CLabel) api.getDelegate() : null;
     }
 }

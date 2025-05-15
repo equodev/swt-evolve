@@ -189,4 +189,8 @@ public class DropTargetEffect extends DropTargetAdapter implements IDropTargetEf
             api = org.eclipse.swt.dnd.DropTargetEffect.createApi(this);
         return (org.eclipse.swt.dnd.DropTargetEffect) api;
     }
+
+    public static DropTargetEffect safeDelegate(org.eclipse.swt.dnd.DropTargetEffect api) {
+        return (api != null) ? (DropTargetEffect) api.getDelegate() : null;
+    }
 }

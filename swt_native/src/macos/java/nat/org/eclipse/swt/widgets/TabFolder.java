@@ -748,4 +748,8 @@ public class TabFolder extends Composite implements ITabFolder {
             api = org.eclipse.swt.widgets.TabFolder.createApi(this);
         return (org.eclipse.swt.widgets.TabFolder) api;
     }
+
+    public static TabFolder safeDelegate(org.eclipse.swt.widgets.TabFolder api) {
+        return (api != null) ? (TabFolder) api.getDelegate() : null;
+    }
 }

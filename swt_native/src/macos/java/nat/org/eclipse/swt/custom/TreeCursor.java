@@ -176,7 +176,7 @@ public class TreeCursor extends Canvas implements ITreeCursor {
                 currentItem.removeListener(SWT.Dispose, disposeItemListener);
                 currentItem = currentItem.getParentItem();
             }
-            TreeItem disposedItem = (TreeItem) event.widget.getDelegate();
+            TreeItem disposedItem = (TreeItem) Widget.safeDelegate(event.widget);
             TreeItem parentItem = disposedItem.getParentItem();
             if (parentItem != null) {
                 setRowColumn(parentItem, column, true);
@@ -642,7 +642,7 @@ public class TreeCursor extends Canvas implements ITreeCursor {
                 break;
             }
         }
-        GC gc = ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate());
+        GC gc = GC.safeDelegate(event.gc);
         gc.setBackground(getBackground());
         gc.setForeground(getForeground());
         gc.fillRectangle(event.x, event.y, event.width, event.height);
@@ -906,7 +906,7 @@ public class TreeCursor extends Canvas implements ITreeCursor {
     void treeCollapse(Event event) {
         if (row == null)
             return;
-        TreeItem root = (TreeItem) event.item.getDelegate();
+        TreeItem root = (TreeItem) Widget.safeDelegate(event.item);
         TreeItem parentItem = row.getParentItem();
         while (parentItem != null) {
             if (parentItem == root) {
@@ -1002,5 +1002,9 @@ public class TreeCursor extends Canvas implements ITreeCursor {
         if (api == null)
             api = org.eclipse.swt.custom.TreeCursor.createApi(this);
         return (org.eclipse.swt.custom.TreeCursor) api;
+    }
+
+    public static TreeCursor safeDelegate(org.eclipse.swt.custom.TreeCursor api) {
+        return (api != null) ? (TreeCursor) api.getDelegate() : null;
     }
 }

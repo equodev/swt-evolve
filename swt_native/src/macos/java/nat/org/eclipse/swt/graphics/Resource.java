@@ -242,4 +242,8 @@ public abstract class Resource implements IResource {
     public void setApi(org.eclipse.swt.graphics.Resource api) {
         this.api = api;
     }
+
+    public static Resource safeDelegate(org.eclipse.swt.graphics.Resource api) {
+        return (api != null) ? (Resource) api.getDelegate() : null;
+    }
 }

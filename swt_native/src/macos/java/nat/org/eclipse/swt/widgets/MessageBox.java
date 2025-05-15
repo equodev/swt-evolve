@@ -422,4 +422,8 @@ public class MessageBox extends Dialog implements IMessageBox {
             api = org.eclipse.swt.widgets.MessageBox.createApi(this);
         return (org.eclipse.swt.widgets.MessageBox) api;
     }
+
+    public static MessageBox safeDelegate(org.eclipse.swt.widgets.MessageBox api) {
+        return (api != null) ? (MessageBox) api.getDelegate() : null;
+    }
 }

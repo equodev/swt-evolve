@@ -597,4 +597,8 @@ public class CTabItem extends Item implements ICTabItem {
             api = org.eclipse.swt.custom.CTabItem.createApi(this);
         return (org.eclipse.swt.custom.CTabItem) api;
     }
+
+    public static CTabItem safeDelegate(org.eclipse.swt.custom.CTabItem api) {
+        return (api != null) ? (CTabItem) api.getDelegate() : null;
+    }
 }

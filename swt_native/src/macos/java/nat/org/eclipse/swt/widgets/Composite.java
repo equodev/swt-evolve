@@ -1402,4 +1402,8 @@ public class Composite extends Scrollable implements IComposite {
             api = org.eclipse.swt.widgets.Composite.createApi(this);
         return (org.eclipse.swt.widgets.Composite) api;
     }
+
+    public static Composite safeDelegate(org.eclipse.swt.widgets.Composite api) {
+        return (api != null) ? (Composite) api.getDelegate() : null;
+    }
 }

@@ -739,4 +739,8 @@ public class Canvas extends Composite implements ICanvas {
             api = org.eclipse.swt.widgets.Canvas.createApi(this);
         return (org.eclipse.swt.widgets.Canvas) api;
     }
+
+    public static Canvas safeDelegate(org.eclipse.swt.widgets.Canvas api) {
+        return (api != null) ? (Canvas) api.getDelegate() : null;
+    }
 }

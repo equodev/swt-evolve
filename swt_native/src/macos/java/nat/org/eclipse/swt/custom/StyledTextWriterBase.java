@@ -111,7 +111,7 @@ abstract class StyledTextWriterBase extends TextWriter {
             styles = new StyleRange[0];
         }
         event = styledText.getLineBackgroundData(lineOffset, line);
-        Color lineBackground = (event != null && ((nat.org.eclipse.swt.graphics.Color) event.lineBackground.getDelegate()) != null) ? ((nat.org.eclipse.swt.graphics.Color) event.lineBackground.getDelegate()) : styledText.renderer.getLineBackground(lineIndex, null);
+        Color lineBackground = (event != null && Color.safeDelegate(event.lineBackground) != null) ? Color.safeDelegate(event.lineBackground) : styledText.renderer.getLineBackground(lineIndex, null);
         writeStyledLine(line, lineOffset, ranges, styles, lineBackground, lineIndent, verticalIndent, lineAlignment, lineJustify);
     }
 

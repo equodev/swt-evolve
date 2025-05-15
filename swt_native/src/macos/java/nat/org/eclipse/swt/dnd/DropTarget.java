@@ -287,9 +287,9 @@ public class DropTarget extends Widget implements IDropTarget {
         if (event.detail == DND.DROP_DEFAULT) {
             event.detail = (allowedOperations & DND.DROP_MOVE) != 0 ? DND.DROP_MOVE : DND.DROP_NONE;
         }
-        if (((nat.org.eclipse.swt.dnd.TransferData) event.dataType.getDelegate()) != null) {
+        if (TransferData.safeDelegate(event.dataType) != null) {
             for (int i = 0; i < allowedDataTypes.length; i++) {
-                if (allowedDataTypes[i].type == ((nat.org.eclipse.swt.dnd.TransferData) event.dataType.getDelegate()).type) {
+                if (allowedDataTypes[i].type == TransferData.safeDelegate(event.dataType).type) {
                     selectedDataType = allowedDataTypes[i];
                     break;
                 }
@@ -355,9 +355,9 @@ public class DropTarget extends Widget implements IDropTarget {
         if (event.detail == DND.DROP_DEFAULT) {
             event.detail = (allowedOperations & DND.DROP_MOVE) != 0 ? DND.DROP_MOVE : DND.DROP_NONE;
         }
-        if (((nat.org.eclipse.swt.dnd.TransferData) event.dataType.getDelegate()) != null) {
+        if (TransferData.safeDelegate(event.dataType) != null) {
             for (int i = 0; i < allowedDataTypes.length; i++) {
-                if (allowedDataTypes[i].type == ((nat.org.eclipse.swt.dnd.TransferData) event.dataType.getDelegate()).type) {
+                if (allowedDataTypes[i].type == TransferData.safeDelegate(event.dataType).type) {
                     selectedDataType = allowedDataTypes[i];
                     break;
                 }
@@ -667,9 +667,9 @@ public class DropTarget extends Widget implements IDropTarget {
         event.detail = selectedOperation;
         notifyListeners(DND.DropAccept, event);
         selectedDataType = null;
-        if (((nat.org.eclipse.swt.dnd.TransferData) event.dataType.getDelegate()) != null) {
+        if (TransferData.safeDelegate(event.dataType) != null) {
             for (int i = 0; i < allowedDataTypes.length; i++) {
-                if (allowedDataTypes[i].type == ((nat.org.eclipse.swt.dnd.TransferData) event.dataType.getDelegate()).type) {
+                if (allowedDataTypes[i].type == TransferData.safeDelegate(event.dataType).type) {
                     selectedDataType = allowedDataTypes[i];
                     break;
                 }
@@ -994,5 +994,9 @@ public class DropTarget extends Widget implements IDropTarget {
         if (api == null)
             api = org.eclipse.swt.dnd.DropTarget.createApi(this);
         return (org.eclipse.swt.dnd.DropTarget) api;
+    }
+
+    public static DropTarget safeDelegate(org.eclipse.swt.dnd.DropTarget api) {
+        return (api != null) ? (DropTarget) api.getDelegate() : null;
     }
 }

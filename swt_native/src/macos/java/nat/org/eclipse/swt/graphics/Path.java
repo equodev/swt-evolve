@@ -926,4 +926,8 @@ public class Path extends Resource implements IPath {
             api = org.eclipse.swt.graphics.Path.createApi(this);
         return (org.eclipse.swt.graphics.Path) api;
     }
+
+    public static Path safeDelegate(org.eclipse.swt.graphics.Path api) {
+        return (api != null) ? (Path) api.getDelegate() : null;
+    }
 }

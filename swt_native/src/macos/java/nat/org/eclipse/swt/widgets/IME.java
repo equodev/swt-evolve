@@ -562,4 +562,8 @@ public class IME extends Widget implements IIME {
             api = org.eclipse.swt.widgets.IME.createApi(this);
         return (org.eclipse.swt.widgets.IME) api;
     }
+
+    public static IME safeDelegate(org.eclipse.swt.widgets.IME api) {
+        return (api != null) ? (IME) api.getDelegate() : null;
+    }
 }

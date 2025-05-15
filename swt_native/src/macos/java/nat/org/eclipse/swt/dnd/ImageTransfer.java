@@ -152,4 +152,8 @@ public class ImageTransfer extends ByteArrayTransfer implements IImageTransfer {
             api = org.eclipse.swt.dnd.ImageTransfer.createApi(this);
         return (org.eclipse.swt.dnd.ImageTransfer) api;
     }
+
+    public static ImageTransfer safeDelegate(org.eclipse.swt.dnd.ImageTransfer api) {
+        return (api != null) ? (ImageTransfer) api.getDelegate() : null;
+    }
 }

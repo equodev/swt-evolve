@@ -464,4 +464,8 @@ public abstract class Scrollable extends Control implements IScrollable {
     public org.eclipse.swt.widgets.Scrollable getApi() {
         return (org.eclipse.swt.widgets.Scrollable) api;
     }
+
+    public static Scrollable safeDelegate(org.eclipse.swt.widgets.Scrollable api) {
+        return (api != null) ? (Scrollable) api.getDelegate() : null;
+    }
 }

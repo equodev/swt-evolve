@@ -48,4 +48,8 @@ public final class PathData implements IPathData {
     public void setApi(org.eclipse.swt.graphics.PathData api) {
         this.api = api;
     }
+
+    public static PathData safeDelegate(org.eclipse.swt.graphics.PathData api) {
+        return (api != null) ? (PathData) api.getDelegate() : null;
+    }
 }

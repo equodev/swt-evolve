@@ -171,4 +171,8 @@ public class Tray extends Widget implements ITray {
             api = org.eclipse.swt.widgets.Tray.createApi(this);
         return (org.eclipse.swt.widgets.Tray) api;
     }
+
+    public static Tray safeDelegate(org.eclipse.swt.widgets.Tray api) {
+        return (api != null) ? (Tray) api.getDelegate() : null;
+    }
 }

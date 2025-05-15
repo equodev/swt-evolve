@@ -205,4 +205,8 @@ public class LineAttributes implements ILineAttributes {
     public void setApi(org.eclipse.swt.graphics.LineAttributes api) {
         this.api = api;
     }
+
+    public static LineAttributes safeDelegate(org.eclipse.swt.graphics.LineAttributes api) {
+        return (api != null) ? (LineAttributes) api.getDelegate() : null;
+    }
 }

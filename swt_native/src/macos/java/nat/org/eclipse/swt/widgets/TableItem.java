@@ -1204,4 +1204,8 @@ public class TableItem extends Item implements ITableItem {
             api = org.eclipse.swt.widgets.TableItem.createApi(this);
         return (org.eclipse.swt.widgets.TableItem) api;
     }
+
+    public static TableItem safeDelegate(org.eclipse.swt.widgets.TableItem api) {
+        return (api != null) ? (TableItem) api.getDelegate() : null;
+    }
 }

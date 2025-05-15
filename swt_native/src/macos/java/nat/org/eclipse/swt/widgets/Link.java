@@ -909,4 +909,8 @@ public class Link extends Control implements ILink {
             api = org.eclipse.swt.widgets.Link.createApi(this);
         return (org.eclipse.swt.widgets.Link) api;
     }
+
+    public static Link safeDelegate(org.eclipse.swt.widgets.Link api) {
+        return (api != null) ? (Link) api.getDelegate() : null;
+    }
 }

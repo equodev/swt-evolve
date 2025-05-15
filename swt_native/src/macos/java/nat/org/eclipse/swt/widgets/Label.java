@@ -594,4 +594,8 @@ public class Label extends Control implements ILabel {
             api = org.eclipse.swt.widgets.Label.createApi(this);
         return (org.eclipse.swt.widgets.Label) api;
     }
+
+    public static Label safeDelegate(org.eclipse.swt.widgets.Label api) {
+        return (api != null) ? (Label) api.getDelegate() : null;
+    }
 }

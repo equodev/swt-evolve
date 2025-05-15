@@ -138,4 +138,8 @@ public final class BorderData implements IBorderData {
     public void setApi(org.eclipse.swt.layout.BorderData api) {
         this.api = api;
     }
+
+    public static BorderData safeDelegate(org.eclipse.swt.layout.BorderData api) {
+        return (api != null) ? (BorderData) api.getDelegate() : null;
+    }
 }

@@ -257,4 +257,8 @@ public class Pattern extends Resource implements IPattern {
             api = org.eclipse.swt.graphics.Pattern.createApi(this);
         return (org.eclipse.swt.graphics.Pattern) api;
     }
+
+    public static Pattern safeDelegate(org.eclipse.swt.graphics.Pattern api) {
+        return (api != null) ? (Pattern) api.getDelegate() : null;
+    }
 }

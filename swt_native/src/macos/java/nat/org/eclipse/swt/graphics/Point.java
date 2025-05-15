@@ -124,4 +124,8 @@ public final class Point implements Serializable, IPoint {
     public void setApi(org.eclipse.swt.graphics.Point api) {
         this.api = api;
     }
+
+    public static Point safeDelegate(org.eclipse.swt.graphics.Point api) {
+        return (api != null) ? (Point) api.getDelegate() : null;
+    }
 }

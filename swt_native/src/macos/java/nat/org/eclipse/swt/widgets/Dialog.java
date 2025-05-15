@@ -290,4 +290,8 @@ public abstract class Dialog implements IDialog {
     public void setApi(org.eclipse.swt.widgets.Dialog api) {
         this.api = api;
     }
+
+    public static Dialog safeDelegate(org.eclipse.swt.widgets.Dialog api) {
+        return (api != null) ? (Dialog) api.getDelegate() : null;
+    }
 }

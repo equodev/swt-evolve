@@ -5550,4 +5550,8 @@ public abstract class Control extends Widget implements Drawable, IControl {
     public org.eclipse.swt.widgets.Control getApi() {
         return (org.eclipse.swt.widgets.Control) api;
     }
+
+    public static Control safeDelegate(org.eclipse.swt.widgets.Control api) {
+        return (api != null) ? (Control) api.getDelegate() : null;
+    }
 }

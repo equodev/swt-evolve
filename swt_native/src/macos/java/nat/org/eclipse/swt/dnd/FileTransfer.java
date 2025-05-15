@@ -152,4 +152,8 @@ public class FileTransfer extends ByteArrayTransfer implements IFileTransfer {
             api = org.eclipse.swt.dnd.FileTransfer.createApi(this);
         return (org.eclipse.swt.dnd.FileTransfer) api;
     }
+
+    public static FileTransfer safeDelegate(org.eclipse.swt.dnd.FileTransfer api) {
+        return (api != null) ? (FileTransfer) api.getDelegate() : null;
+    }
 }

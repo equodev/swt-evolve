@@ -116,4 +116,8 @@ public class HTMLTransfer extends ByteArrayTransfer implements IHTMLTransfer {
             api = org.eclipse.swt.dnd.HTMLTransfer.createApi(this);
         return (org.eclipse.swt.dnd.HTMLTransfer) api;
     }
+
+    public static HTMLTransfer safeDelegate(org.eclipse.swt.dnd.HTMLTransfer api) {
+        return (api != null) ? (HTMLTransfer) api.getDelegate() : null;
+    }
 }

@@ -189,4 +189,8 @@ public class Bullet implements IBullet {
     public void setApi(org.eclipse.swt.custom.Bullet api) {
         this.api = api;
     }
+
+    public static Bullet safeDelegate(org.eclipse.swt.custom.Bullet api) {
+        return (api != null) ? (Bullet) api.getDelegate() : null;
+    }
 }

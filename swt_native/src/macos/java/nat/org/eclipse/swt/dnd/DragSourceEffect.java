@@ -76,4 +76,8 @@ public class DragSourceEffect extends DragSourceAdapter implements IDragSourceEf
             api = org.eclipse.swt.dnd.DragSourceEffect.createApi(this);
         return (org.eclipse.swt.dnd.DragSourceEffect) api;
     }
+
+    public static DragSourceEffect safeDelegate(org.eclipse.swt.dnd.DragSourceEffect api) {
+        return (api != null) ? (DragSourceEffect) api.getDelegate() : null;
+    }
 }

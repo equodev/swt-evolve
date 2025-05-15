@@ -42,4 +42,8 @@ public class DeviceData implements IDeviceData {
     public void setApi(org.eclipse.swt.graphics.DeviceData api) {
         this.api = api;
     }
+
+    public static DeviceData safeDelegate(org.eclipse.swt.graphics.DeviceData api) {
+        return (api != null) ? (DeviceData) api.getDelegate() : null;
+    }
 }

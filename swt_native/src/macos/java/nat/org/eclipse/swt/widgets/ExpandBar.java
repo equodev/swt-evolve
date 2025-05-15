@@ -619,7 +619,7 @@ public class ExpandBar extends Composite implements IExpandBar {
         boolean hasFocus = isFocusControl();
         for (int i = 0; i < itemCount; i++) {
             ExpandItem item = items[i];
-            item.drawItem(((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate()), hasFocus && item == focusItem);
+            item.drawItem(GC.safeDelegate(event.gc), hasFocus && item == focusItem);
         }
     }
 
@@ -654,5 +654,9 @@ public class ExpandBar extends Composite implements IExpandBar {
         if (api == null)
             api = org.eclipse.swt.widgets.ExpandBar.createApi(this);
         return (org.eclipse.swt.widgets.ExpandBar) api;
+    }
+
+    public static ExpandBar safeDelegate(org.eclipse.swt.widgets.ExpandBar api) {
+        return (api != null) ? (ExpandBar) api.getDelegate() : null;
     }
 }

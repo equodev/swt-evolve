@@ -1764,4 +1764,8 @@ public final class Image extends Resource implements Drawable, IImage {
             api = org.eclipse.swt.graphics.Image.createApi(this);
         return (org.eclipse.swt.graphics.Image) api;
     }
+
+    public static Image safeDelegate(org.eclipse.swt.graphics.Image api) {
+        return (api != null) ? (Image) api.getDelegate() : null;
+    }
 }

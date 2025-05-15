@@ -182,12 +182,12 @@ public class ScrolledComposite extends Composite implements IScrolledComposite {
             if (event.type == SWT.FocusIn) {
                 if (!showNextFocusedControl) {
                     showNextFocusedControl = true;
-                } else if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) instanceof Control control) {
+                } else if (Widget.safeDelegate(event.widget) instanceof Control control) {
                     if (contains(control))
                         showControl(control);
                 }
             } else {
-                Widget w = ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate());
+                Widget w = Widget.safeDelegate(event.widget);
                 if (w instanceof Control) {
                     showNextFocusedControl = w.getDisplay().getActiveShell() == ((Control) w).getShell();
                 }
@@ -764,5 +764,9 @@ public class ScrolledComposite extends Composite implements IScrolledComposite {
         if (api == null)
             api = org.eclipse.swt.custom.ScrolledComposite.createApi(this);
         return (org.eclipse.swt.custom.ScrolledComposite) api;
+    }
+
+    public static ScrolledComposite safeDelegate(org.eclipse.swt.custom.ScrolledComposite api) {
+        return (api != null) ? (ScrolledComposite) api.getDelegate() : null;
     }
 }

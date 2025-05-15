@@ -323,7 +323,7 @@ public class TableCursor extends Canvas implements ITableCursor {
         if (row == null)
             return;
         int columnIndex = column == null ? 0 : table.indexOf(column);
-        GC gc = ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate());
+        GC gc = GC.safeDelegate(event.gc);
         gc.setBackground(getBackground());
         gc.setForeground(getForeground());
         gc.fillRectangle(event.x, event.y, event.width, event.height);
@@ -711,5 +711,9 @@ public class TableCursor extends Canvas implements ITableCursor {
         if (api == null)
             api = org.eclipse.swt.custom.TableCursor.createApi(this);
         return (org.eclipse.swt.custom.TableCursor) api;
+    }
+
+    public static TableCursor safeDelegate(org.eclipse.swt.custom.TableCursor api) {
+        return (api != null) ? (TableCursor) api.getDelegate() : null;
     }
 }

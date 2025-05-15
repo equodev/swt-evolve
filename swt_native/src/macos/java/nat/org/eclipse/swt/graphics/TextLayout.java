@@ -2685,4 +2685,8 @@ public final class TextLayout extends Resource implements ITextLayout {
             api = org.eclipse.swt.graphics.TextLayout.createApi(this);
         return (org.eclipse.swt.graphics.TextLayout) api;
     }
+
+    public static TextLayout safeDelegate(org.eclipse.swt.graphics.TextLayout api) {
+        return (api != null) ? (TextLayout) api.getDelegate() : null;
+    }
 }

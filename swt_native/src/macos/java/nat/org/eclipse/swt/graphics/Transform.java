@@ -545,4 +545,8 @@ public class Transform extends Resource implements ITransform {
             api = org.eclipse.swt.graphics.Transform.createApi(this);
         return (org.eclipse.swt.graphics.Transform) api;
     }
+
+    public static Transform safeDelegate(org.eclipse.swt.graphics.Transform api) {
+        return (api != null) ? (Transform) api.getDelegate() : null;
+    }
 }

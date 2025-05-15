@@ -572,4 +572,8 @@ public class Slider extends Control implements ISlider {
             api = org.eclipse.swt.widgets.Slider.createApi(this);
         return (org.eclipse.swt.widgets.Slider) api;
     }
+
+    public static Slider safeDelegate(org.eclipse.swt.widgets.Slider api) {
+        return (api != null) ? (Slider) api.getDelegate() : null;
+    }
 }

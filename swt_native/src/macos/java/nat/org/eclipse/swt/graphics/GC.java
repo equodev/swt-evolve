@@ -4540,4 +4540,8 @@ public final class GC extends Resource implements IGC {
             api = org.eclipse.swt.graphics.GC.createApi(this);
         return (org.eclipse.swt.graphics.GC) api;
     }
+
+    public static GC safeDelegate(org.eclipse.swt.graphics.GC api) {
+        return (api != null) ? (GC) api.getDelegate() : null;
+    }
 }

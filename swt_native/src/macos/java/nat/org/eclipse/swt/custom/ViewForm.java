@@ -190,7 +190,7 @@ public class ViewForm extends Composite implements IViewForm {
                     onDispose(e);
                     break;
                 case SWT.Paint:
-                    onPaint(((nat.org.eclipse.swt.graphics.GC) e.gc.getDelegate()));
+                    onPaint(GC.safeDelegate(e.gc));
                     break;
                 case SWT.Resize:
                     onResize();
@@ -547,5 +547,9 @@ public class ViewForm extends Composite implements IViewForm {
         if (api == null)
             api = org.eclipse.swt.custom.ViewForm.createApi(this);
         return (org.eclipse.swt.custom.ViewForm) api;
+    }
+
+    public static ViewForm safeDelegate(org.eclipse.swt.custom.ViewForm api) {
+        return (api != null) ? (ViewForm) api.getDelegate() : null;
     }
 }

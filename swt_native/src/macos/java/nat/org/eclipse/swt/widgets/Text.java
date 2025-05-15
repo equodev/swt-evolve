@@ -2630,4 +2630,8 @@ public class Text extends Scrollable implements IText {
             api = org.eclipse.swt.widgets.Text.createApi(this);
         return (org.eclipse.swt.widgets.Text) api;
     }
+
+    public static Text safeDelegate(org.eclipse.swt.widgets.Text api) {
+        return (api != null) ? (Text) api.getDelegate() : null;
+    }
 }

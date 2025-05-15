@@ -554,4 +554,8 @@ public final class RowLayout extends Layout implements IRowLayout {
             api = org.eclipse.swt.layout.RowLayout.createApi(this);
         return (org.eclipse.swt.layout.RowLayout) api;
     }
+
+    public static RowLayout safeDelegate(org.eclipse.swt.layout.RowLayout api) {
+        return (api != null) ? (RowLayout) api.getDelegate() : null;
+    }
 }

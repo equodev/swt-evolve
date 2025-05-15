@@ -74,4 +74,8 @@ public class DragSourceAdapter implements DragSourceListener, IDragSourceAdapter
     public void setApi(org.eclipse.swt.dnd.DragSourceAdapter api) {
         this.api = api;
     }
+
+    public static DragSourceAdapter safeDelegate(org.eclipse.swt.dnd.DragSourceAdapter api) {
+        return (api != null) ? (DragSourceAdapter) api.getDelegate() : null;
+    }
 }

@@ -1252,4 +1252,8 @@ public class Browser extends Composite implements IBrowser {
             api = org.eclipse.swt.browser.Browser.createApi(this);
         return (org.eclipse.swt.browser.Browser) api;
     }
+
+    public static Browser safeDelegate(org.eclipse.swt.browser.Browser api) {
+        return (api != null) ? (Browser) api.getDelegate() : null;
+    }
 }

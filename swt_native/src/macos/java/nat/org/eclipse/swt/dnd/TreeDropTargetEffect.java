@@ -139,7 +139,7 @@ public class TreeDropTargetEffect extends DropTargetEffect implements ITreeDropT
     @Override
     public void dragOver(DropTargetEvent event) {
         int effect = checkEffect(event.feedback);
-        ((DropTarget) event.widget.getDelegate()).feedback = effect;
+        ((DropTarget) Widget.safeDelegate(event.widget)).feedback = effect;
         OS.objc_msgSend(control.view.id, OS.sel_setShouldExpandItem_, (effect & DND.FEEDBACK_EXPAND) == 0 ? 0 : 1);
         if ((effect & DND.FEEDBACK_SCROLL) == 0) {
             shouldEnableScrolling = true;
@@ -153,5 +153,9 @@ public class TreeDropTargetEffect extends DropTargetEffect implements ITreeDropT
         if (api == null)
             api = org.eclipse.swt.dnd.TreeDropTargetEffect.createApi(this);
         return (org.eclipse.swt.dnd.TreeDropTargetEffect) api;
+    }
+
+    public static TreeDropTargetEffect safeDelegate(org.eclipse.swt.dnd.TreeDropTargetEffect api) {
+        return (api != null) ? (TreeDropTargetEffect) api.getDelegate() : null;
     }
 }

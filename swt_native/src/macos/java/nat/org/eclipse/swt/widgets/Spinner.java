@@ -1217,4 +1217,8 @@ public class Spinner extends Composite implements ISpinner {
             api = org.eclipse.swt.widgets.Spinner.createApi(this);
         return (org.eclipse.swt.widgets.Spinner) api;
     }
+
+    public static Spinner safeDelegate(org.eclipse.swt.widgets.Spinner api) {
+        return (api != null) ? (Spinner) api.getDelegate() : null;
+    }
 }

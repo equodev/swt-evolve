@@ -770,7 +770,7 @@ public class CoolBar extends Composite implements ICoolBar {
     }
 
     void onPaint(Event event) {
-        GC gc = ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate());
+        GC gc = GC.safeDelegate(event.gc);
         if (items.length == 0)
             return;
         Color shadowColor = display.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);
@@ -1337,5 +1337,9 @@ public class CoolBar extends Composite implements ICoolBar {
         if (api == null)
             api = org.eclipse.swt.widgets.CoolBar.createApi(this);
         return (org.eclipse.swt.widgets.CoolBar) api;
+    }
+
+    public static CoolBar safeDelegate(org.eclipse.swt.widgets.CoolBar api) {
+        return (api != null) ? (CoolBar) api.getDelegate() : null;
     }
 }

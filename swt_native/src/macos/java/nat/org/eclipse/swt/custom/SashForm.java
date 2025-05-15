@@ -227,7 +227,7 @@ public class SashForm extends Composite implements ISashForm {
     }
 
     void onDragSash(Event event) {
-        Sash sash = (Sash) event.widget.getDelegate();
+        Sash sash = (Sash) Widget.safeDelegate(event.widget);
         int sashIndex = -1;
         for (int i = 0; i < sashes.length; i++) {
             if (sashes[i] == sash) {
@@ -510,5 +510,9 @@ public class SashForm extends Composite implements ISashForm {
         if (api == null)
             api = org.eclipse.swt.custom.SashForm.createApi(this);
         return (org.eclipse.swt.custom.SashForm) api;
+    }
+
+    public static SashForm safeDelegate(org.eclipse.swt.custom.SashForm api) {
+        return (api != null) ? (SashForm) api.getDelegate() : null;
     }
 }

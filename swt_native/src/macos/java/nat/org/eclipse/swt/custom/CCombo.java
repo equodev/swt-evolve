@@ -130,27 +130,27 @@ public class CCombo extends Composite implements ICCombo {
         listener = event -> {
             if (isDisposed())
                 return;
-            if (popup == ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate())) {
+            if (popup == Widget.safeDelegate(event.widget)) {
                 popupEvent(event);
                 return;
             }
-            if (text == ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate())) {
+            if (text == Widget.safeDelegate(event.widget)) {
                 textEvent(event);
                 return;
             }
-            if (list == ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate())) {
+            if (list == Widget.safeDelegate(event.widget)) {
                 listEvent(event);
                 return;
             }
-            if (arrow == ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate())) {
+            if (arrow == Widget.safeDelegate(event.widget)) {
                 arrowEvent(event);
                 return;
             }
-            if (CCombo.this == ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate())) {
+            if (CCombo.this == Widget.safeDelegate(event.widget)) {
                 comboEvent(event);
                 return;
             }
-            if (getShell() == ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate())) {
+            if (getShell() == Widget.safeDelegate(event.widget)) {
                 getDisplay().asyncExec(() -> {
                     if (isDisposed())
                         return;
@@ -167,13 +167,13 @@ public class CCombo extends Composite implements ICCombo {
             if (isDisposed())
                 return;
             if (event.type == SWT.Selection) {
-                if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) instanceof ScrollBar) {
+                if (Widget.safeDelegate(event.widget) instanceof ScrollBar) {
                     handleScroll(event);
                 }
                 return;
             }
-            if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) instanceof Control) {
-                Shell shell = ((Control) event.widget.getDelegate()).getShell();
+            if (Widget.safeDelegate(event.widget) instanceof Control) {
+                Shell shell = ((Control) Widget.safeDelegate(event.widget)).getShell();
                 if (shell == CCombo.this.getShell()) {
                     handleFocus(SWT.FocusOut);
                 }
@@ -1069,7 +1069,7 @@ public class CCombo extends Composite implements ICCombo {
     }
 
     void handleScroll(Event event) {
-        ScrollBar scrollBar = (ScrollBar) event.widget.getDelegate();
+        ScrollBar scrollBar = (ScrollBar) Widget.safeDelegate(event.widget);
         Control scrollableParent = scrollBar.getParent();
         if (scrollableParent.equals(list))
             return;
@@ -1451,8 +1451,8 @@ public class CCombo extends Composite implements ICCombo {
                 // draw black rectangle around list
                 Rectangle listRect = list.getBounds();
                 Color black = getDisplay().getSystemColor(SWT.COLOR_BLACK);
-                ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate()).setForeground(black);
-                ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate()).drawRectangle(0, 0, listRect.width + 1, listRect.height + 1);
+                GC.safeDelegate(event.gc).setForeground(black);
+                GC.safeDelegate(event.gc).drawRectangle(0, 0, listRect.width + 1, listRect.height + 1);
                 break;
             case SWT.Close:
                 event.doit = false;
@@ -2262,5 +2262,9 @@ public class CCombo extends Composite implements ICCombo {
         if (api == null)
             api = org.eclipse.swt.custom.CCombo.createApi(this);
         return (org.eclipse.swt.custom.CCombo) api;
+    }
+
+    public static CCombo safeDelegate(org.eclipse.swt.custom.CCombo api) {
+        return (api != null) ? (CCombo) api.getDelegate() : null;
     }
 }

@@ -1623,4 +1623,8 @@ public class TreeItem extends Item implements ITreeItem {
             api = org.eclipse.swt.widgets.TreeItem.createApi(this);
         return (org.eclipse.swt.widgets.TreeItem) api;
     }
+
+    public static TreeItem safeDelegate(org.eclipse.swt.widgets.TreeItem api) {
+        return (api != null) ? (TreeItem) api.getDelegate() : null;
+    }
 }

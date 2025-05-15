@@ -84,8 +84,8 @@ public class StyledTextDropTargetEffect extends DropTargetEffect implements ISty
                 StyledText text = (StyledText) getControl();
                 Point position = text.getLocationAtOffset(currentOffset);
                 int height = text.getLineHeight(currentOffset);
-                ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate()).setBackground(((nat.org.eclipse.swt.widgets.Display) event.display.getDelegate()).getSystemColor(SWT.COLOR_BLACK));
-                ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate()).fillRectangle(position.x, position.y, CARET_WIDTH, height);
+                GC.safeDelegate(event.gc).setBackground(Display.safeDelegate(event.display).getSystemColor(SWT.COLOR_BLACK));
+                GC.safeDelegate(event.gc).fillRectangle(position.x, position.y, CARET_WIDTH, height);
             }
         };
     }
@@ -257,5 +257,9 @@ public class StyledTextDropTargetEffect extends DropTargetEffect implements ISty
         if (api == null)
             api = org.eclipse.swt.custom.StyledTextDropTargetEffect.createApi(this);
         return (org.eclipse.swt.custom.StyledTextDropTargetEffect) api;
+    }
+
+    public static StyledTextDropTargetEffect safeDelegate(org.eclipse.swt.custom.StyledTextDropTargetEffect api) {
+        return (api != null) ? (StyledTextDropTargetEffect) api.getDelegate() : null;
     }
 }

@@ -219,7 +219,7 @@ public class DragSource extends Widget implements IDragSource {
             }
             if (event.type == SWT.DragDetect) {
                 if (!DragSource.this.isDisposed()) {
-                    if (((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) instanceof Table || ((nat.org.eclipse.swt.widgets.Widget) event.widget.getDelegate()) instanceof Tree) {
+                    if (Widget.safeDelegate(event.widget) instanceof Table || Widget.safeDelegate(event.widget) instanceof Tree) {
                         DragSource.this.dragOutlineViewStart(event);
                     } else {
                         DragSource.this.drag(event);
@@ -354,7 +354,7 @@ public class DragSource extends Widget implements IDragSource {
         NSImage dragImage = null;
         Image defaultDragImage = null;
         try {
-            Image image = ((nat.org.eclipse.swt.graphics.Image) event.image.getDelegate());
+            Image image = Image.safeDelegate(event.image);
             // If no image was provided, just create a trivial image. dragImage requires a non-null image.
             if (image == null) {
                 int width = 20, height = 20;
@@ -398,7 +398,7 @@ public class DragSource extends Widget implements IDragSource {
             return;
         }
         // Save off the custom image, if any.
-        dragImageFromListener = ((nat.org.eclipse.swt.graphics.Image) event.image.getDelegate());
+        dragImageFromListener = Image.safeDelegate(event.image);
         // Save the computed offset for the image.  This needs to be passed back in dragImageForRowsWithIndexes
         // so the proxy image originates from the selection and not centered under the mouse.
         dragOffset = new Point(event.offsetX, event.offsetY);
@@ -829,5 +829,9 @@ public class DragSource extends Widget implements IDragSource {
         if (api == null)
             api = org.eclipse.swt.dnd.DragSource.createApi(this);
         return (org.eclipse.swt.dnd.DragSource) api;
+    }
+
+    public static DragSource safeDelegate(org.eclipse.swt.dnd.DragSource api) {
+        return (api != null) ? (DragSource) api.getDelegate() : null;
     }
 }

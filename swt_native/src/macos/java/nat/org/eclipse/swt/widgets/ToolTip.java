@@ -396,7 +396,7 @@ public class ToolTip extends Widget implements IToolTip {
     }
 
     void onPaint(Event event) {
-        GC gc = ((nat.org.eclipse.swt.graphics.GC) event.gc.getDelegate());
+        GC gc = GC.safeDelegate(event.gc);
         int x = BORDER + PADDING;
         int y = BORDER + PADDING;
         if ((style & SWT.BALLOON) != 0) {
@@ -634,5 +634,9 @@ public class ToolTip extends Widget implements IToolTip {
         if (api == null)
             api = org.eclipse.swt.widgets.ToolTip.createApi(this);
         return (org.eclipse.swt.widgets.ToolTip) api;
+    }
+
+    public static ToolTip safeDelegate(org.eclipse.swt.widgets.ToolTip api) {
+        return (api != null) ? (ToolTip) api.getDelegate() : null;
     }
 }

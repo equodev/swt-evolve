@@ -400,4 +400,8 @@ public final class FormData implements IFormData {
     public void setApi(org.eclipse.swt.layout.FormData api) {
         this.api = api;
     }
+
+    public static FormData safeDelegate(org.eclipse.swt.layout.FormData api) {
+        return (api != null) ? (FormData) api.getDelegate() : null;
+    }
 }

@@ -1131,4 +1131,8 @@ public class MenuItem extends Item implements IMenuItem {
             api = org.eclipse.swt.widgets.MenuItem.createApi(this);
         return (org.eclipse.swt.widgets.MenuItem) api;
     }
+
+    public static MenuItem safeDelegate(org.eclipse.swt.widgets.MenuItem api) {
+        return (api != null) ? (MenuItem) api.getDelegate() : null;
+    }
 }

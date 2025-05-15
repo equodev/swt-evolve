@@ -521,4 +521,8 @@ public class TextStyle implements ITextStyle {
     public void setApi(org.eclipse.swt.graphics.TextStyle api) {
         this.api = api;
     }
+
+    public static TextStyle safeDelegate(org.eclipse.swt.graphics.TextStyle api) {
+        return (api != null) ? (TextStyle) api.getDelegate() : null;
+    }
 }

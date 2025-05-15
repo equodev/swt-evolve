@@ -130,7 +130,7 @@ public class TreeEditor extends ControlEditor implements ITreeEditor {
                 if (editor == null || editor.isDisposed())
                     return;
                 editor.setVisible(false);
-                ((nat.org.eclipse.swt.widgets.Display) e.display.getDelegate()).asyncExec(runnable);
+                Display.safeDelegate(e.display).asyncExec(runnable);
             }
 
             @Override
@@ -138,7 +138,7 @@ public class TreeEditor extends ControlEditor implements ITreeEditor {
                 if (editor == null || editor.isDisposed())
                     return;
                 editor.setVisible(false);
-                ((nat.org.eclipse.swt.widgets.Display) e.display.getDelegate()).asyncExec(runnable);
+                Display.safeDelegate(e.display).asyncExec(runnable);
             }
         };
         tree.addTreeListener(treeListener);
@@ -352,5 +352,9 @@ public class TreeEditor extends ControlEditor implements ITreeEditor {
         if (api == null)
             api = org.eclipse.swt.custom.TreeEditor.createApi(this);
         return (org.eclipse.swt.custom.TreeEditor) api;
+    }
+
+    public static TreeEditor safeDelegate(org.eclipse.swt.custom.TreeEditor api) {
+        return (api != null) ? (TreeEditor) api.getDelegate() : null;
     }
 }

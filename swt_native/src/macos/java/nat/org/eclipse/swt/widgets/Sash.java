@@ -526,4 +526,8 @@ public class Sash extends Control implements ISash {
             api = org.eclipse.swt.widgets.Sash.createApi(this);
         return (org.eclipse.swt.widgets.Sash) api;
     }
+
+    public static Sash safeDelegate(org.eclipse.swt.widgets.Sash api) {
+        return (api != null) ? (Sash) api.getDelegate() : null;
+    }
 }

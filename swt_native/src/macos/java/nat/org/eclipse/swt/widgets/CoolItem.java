@@ -715,4 +715,8 @@ public class CoolItem extends Item implements ICoolItem {
             api = org.eclipse.swt.widgets.CoolItem.createApi(this);
         return (org.eclipse.swt.widgets.CoolItem) api;
     }
+
+    public static CoolItem safeDelegate(org.eclipse.swt.widgets.CoolItem api) {
+        return (api != null) ? (CoolItem) api.getDelegate() : null;
+    }
 }

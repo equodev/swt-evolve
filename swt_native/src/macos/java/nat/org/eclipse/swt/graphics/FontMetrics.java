@@ -212,4 +212,8 @@ public final class FontMetrics implements IFontMetrics {
     public void setApi(org.eclipse.swt.graphics.FontMetrics api) {
         this.api = api;
     }
+
+    public static FontMetrics safeDelegate(org.eclipse.swt.graphics.FontMetrics api) {
+        return (api != null) ? (FontMetrics) api.getDelegate() : null;
+    }
 }

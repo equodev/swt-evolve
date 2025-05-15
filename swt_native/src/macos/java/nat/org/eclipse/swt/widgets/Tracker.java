@@ -1228,4 +1228,8 @@ public class Tracker extends Widget implements ITracker {
             api = org.eclipse.swt.widgets.Tracker.createApi(this);
         return (org.eclipse.swt.widgets.Tracker) api;
     }
+
+    public static Tracker safeDelegate(org.eclipse.swt.widgets.Tracker api) {
+        return (api != null) ? (Tracker) api.getDelegate() : null;
+    }
 }

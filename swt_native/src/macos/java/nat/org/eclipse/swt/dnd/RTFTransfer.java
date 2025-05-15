@@ -116,4 +116,8 @@ public class RTFTransfer extends ByteArrayTransfer implements IRTFTransfer {
             api = org.eclipse.swt.dnd.RTFTransfer.createApi(this);
         return (org.eclipse.swt.dnd.RTFTransfer) api;
     }
+
+    public static RTFTransfer safeDelegate(org.eclipse.swt.dnd.RTFTransfer api) {
+        return (api != null) ? (RTFTransfer) api.getDelegate() : null;
+    }
 }

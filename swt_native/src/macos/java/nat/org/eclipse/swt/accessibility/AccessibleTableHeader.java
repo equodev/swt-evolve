@@ -51,8 +51,8 @@ class AccessibleTableHeader extends Accessible {
                         AccessibleControlListener listener = parent.accessibleControlListeners.get(j);
                         listener.getChild(event);
                     }
-                    ((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()).parent = AccessibleTableHeader.this;
-                    children[i] = ((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate());
+                    Accessible.safeDelegate(event.accessible).parent = AccessibleTableHeader.this;
+                    children[i] = Accessible.safeDelegate(event.accessible);
                 }
                 e.children = children;
             }
@@ -74,8 +74,8 @@ class AccessibleTableHeader extends Accessible {
                         AccessibleControlListener listener = parent.accessibleControlListeners.get(j);
                         listener.getChild(event);
                     }
-                    ((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate()).parent = AccessibleTableHeader.this;
-                    children[i] = ((nat.org.eclipse.swt.accessibility.Accessible) event.accessible.getDelegate());
+                    Accessible.safeDelegate(event.accessible).parent = AccessibleTableHeader.this;
+                    children[i] = Accessible.safeDelegate(event.accessible);
                 }
                 // Ask first child for position.
                 NSValue positionObj = (NSValue) children[0].getPositionAttribute(ACC.CHILDID_SELF);

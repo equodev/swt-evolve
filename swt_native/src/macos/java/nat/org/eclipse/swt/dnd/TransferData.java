@@ -76,4 +76,8 @@ public class TransferData implements ITransferData {
     public void setApi(org.eclipse.swt.dnd.TransferData api) {
         this.api = api;
     }
+
+    public static TransferData safeDelegate(org.eclipse.swt.dnd.TransferData api) {
+        return (api != null) ? (TransferData) api.getDelegate() : null;
+    }
 }

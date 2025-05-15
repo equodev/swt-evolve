@@ -133,7 +133,7 @@ public class TableDropTargetEffect extends DropTargetEffect implements ITableDro
     @Override
     public void dragOver(DropTargetEvent event) {
         int effect = checkEffect(event.feedback);
-        ((DropTarget) event.widget.getDelegate()).feedback = effect;
+        ((DropTarget) Widget.safeDelegate(event.widget)).feedback = effect;
         if ((effect & DND.FEEDBACK_SCROLL) == 0) {
             shouldEnableScrolling = true;
             OS.objc_msgSend(control.view.id, OS.sel_setShouldScrollClipView_, 0);
@@ -146,5 +146,9 @@ public class TableDropTargetEffect extends DropTargetEffect implements ITableDro
         if (api == null)
             api = org.eclipse.swt.dnd.TableDropTargetEffect.createApi(this);
         return (org.eclipse.swt.dnd.TableDropTargetEffect) api;
+    }
+
+    public static TableDropTargetEffect safeDelegate(org.eclipse.swt.dnd.TableDropTargetEffect api) {
+        return (api != null) ? (TableDropTargetEffect) api.getDelegate() : null;
     }
 }

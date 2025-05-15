@@ -1511,4 +1511,8 @@ public class ToolItem extends Item implements IToolItem {
             api = org.eclipse.swt.widgets.ToolItem.createApi(this);
         return (org.eclipse.swt.widgets.ToolItem) api;
     }
+
+    public static ToolItem safeDelegate(org.eclipse.swt.widgets.ToolItem api) {
+        return (api != null) ? (ToolItem) api.getDelegate() : null;
+    }
 }

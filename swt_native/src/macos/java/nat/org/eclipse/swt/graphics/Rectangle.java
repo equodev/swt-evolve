@@ -376,4 +376,8 @@ public final class Rectangle implements Serializable, IRectangle {
     public void setApi(org.eclipse.swt.graphics.Rectangle api) {
         this.api = api;
     }
+
+    public static Rectangle safeDelegate(org.eclipse.swt.graphics.Rectangle api) {
+        return (api != null) ? (Rectangle) api.getDelegate() : null;
+    }
 }

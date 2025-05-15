@@ -773,4 +773,8 @@ public class Decorations extends Canvas implements IDecorations {
             api = org.eclipse.swt.widgets.Decorations.createApi(this);
         return (org.eclipse.swt.widgets.Decorations) api;
     }
+
+    public static Decorations safeDelegate(org.eclipse.swt.widgets.Decorations api) {
+        return (api != null) ? (Decorations) api.getDelegate() : null;
+    }
 }

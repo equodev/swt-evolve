@@ -204,4 +204,8 @@ public abstract class ByteArrayTransfer extends Transfer implements IByteArrayTr
     public org.eclipse.swt.dnd.ByteArrayTransfer getApi() {
         return (org.eclipse.swt.dnd.ByteArrayTransfer) api;
     }
+
+    public static ByteArrayTransfer safeDelegate(org.eclipse.swt.dnd.ByteArrayTransfer api) {
+        return (api != null) ? (ByteArrayTransfer) api.getDelegate() : null;
+    }
 }

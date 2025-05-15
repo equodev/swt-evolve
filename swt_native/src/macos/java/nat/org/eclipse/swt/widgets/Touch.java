@@ -110,4 +110,8 @@ public final class Touch implements ITouch {
     public void setApi(org.eclipse.swt.widgets.Touch api) {
         this.api = api;
     }
+
+    public static Touch safeDelegate(org.eclipse.swt.widgets.Touch api) {
+        return (api != null) ? (Touch) api.getDelegate() : null;
+    }
 }

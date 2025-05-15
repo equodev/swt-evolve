@@ -473,4 +473,8 @@ public final class Program implements IProgram {
     public void setApi(org.eclipse.swt.program.Program api) {
         this.api = api;
     }
+
+    public static Program safeDelegate(org.eclipse.swt.program.Program api) {
+        return (api != null) ? (Program) api.getDelegate() : null;
+    }
 }

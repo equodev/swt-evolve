@@ -119,4 +119,8 @@ public abstract class Layout implements ILayout {
     public void setApi(org.eclipse.swt.widgets.Layout api) {
         this.api = api;
     }
+
+    public static Layout safeDelegate(org.eclipse.swt.widgets.Layout api) {
+        return (api != null) ? (Layout) api.getDelegate() : null;
+    }
 }

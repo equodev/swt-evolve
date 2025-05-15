@@ -3921,4 +3921,8 @@ public class Table extends Composite implements ITable {
             api = org.eclipse.swt.widgets.Table.createApi(this);
         return (org.eclipse.swt.widgets.Table) api;
     }
+
+    public static Table safeDelegate(org.eclipse.swt.widgets.Table api) {
+        return (api != null) ? (Table) api.getDelegate() : null;
+    }
 }
