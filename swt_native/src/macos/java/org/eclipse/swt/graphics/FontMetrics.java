@@ -38,7 +38,7 @@ public final class FontMetrics {
      * @see #hashCode
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object);
+        return getDelegate().equals(object instanceof FontMetrics ? ((FontMetrics) object).getDelegate() : object);
     }
 
     /**

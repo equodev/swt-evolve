@@ -157,7 +157,7 @@ public final class Font extends Resource {
      * @see #hashCode
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object);
+        return getDelegate().equals(object instanceof Font ? ((Font) object).getDelegate() : object);
     }
 
     /**

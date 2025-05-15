@@ -107,7 +107,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @see #hashCode()
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object);
+        return getDelegate().equals(object instanceof StyleRange ? ((StyleRange) object).getDelegate() : object);
     }
 
     /**

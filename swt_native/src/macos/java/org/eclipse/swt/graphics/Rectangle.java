@@ -139,7 +139,7 @@ public final class Rectangle implements Serializable {
      * @see #hashCode()
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object);
+        return getDelegate().equals(object instanceof Rectangle ? ((Rectangle) object).getDelegate() : object);
     }
 
     /**

@@ -671,7 +671,7 @@ public final class GC extends Resource {
      * @see #hashCode
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object);
+        return getDelegate().equals(object instanceof GC ? ((GC) object).getDelegate() : object);
     }
 
     /**

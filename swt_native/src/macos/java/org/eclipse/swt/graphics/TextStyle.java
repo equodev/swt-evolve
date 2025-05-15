@@ -194,7 +194,7 @@ public class TextStyle {
      * @see #hashCode()
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object);
+        return getDelegate().equals(object instanceof TextStyle ? ((TextStyle) object).getDelegate() : object);
     }
 
     /**

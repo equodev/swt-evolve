@@ -179,7 +179,7 @@ public final class Program {
      * @see #hashCode()
      */
     public boolean equals(Object other) {
-        return getDelegate().equals(other);
+        return getDelegate().equals(other instanceof Program ? ((Program) other).getDelegate() : other);
     }
 
     /**

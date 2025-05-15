@@ -130,7 +130,7 @@ public class LineAttributes {
      * @see #hashCode()
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object);
+        return getDelegate().equals(object instanceof LineAttributes ? ((LineAttributes) object).getDelegate() : object);
     }
 
     /**

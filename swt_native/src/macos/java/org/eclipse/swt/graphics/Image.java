@@ -453,7 +453,7 @@ public final class Image extends Resource implements Drawable {
      * @see #hashCode
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object);
+        return getDelegate().equals(object instanceof Image ? ((Image) object).getDelegate() : object);
     }
 
     /**

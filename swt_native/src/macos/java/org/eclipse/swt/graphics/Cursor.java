@@ -194,7 +194,7 @@ public final class Cursor extends Resource {
      * @see #hashCode
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object);
+        return getDelegate().equals(object instanceof Cursor ? ((Cursor) object).getDelegate() : object);
     }
 
     /**

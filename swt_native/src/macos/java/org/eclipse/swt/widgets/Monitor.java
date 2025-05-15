@@ -39,7 +39,7 @@ public final class Monitor {
      * @see #hashCode()
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object);
+        return getDelegate().equals(object instanceof Monitor ? ((Monitor) object).getDelegate() : object);
     }
 
     /**
