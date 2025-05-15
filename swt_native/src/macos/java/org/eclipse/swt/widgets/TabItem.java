@@ -258,6 +258,10 @@ public class TabItem extends Item {
         super(delegate);
     }
 
+    public static TabItem createApi(ITabItem delegate) {
+        return new TabItem(delegate);
+    }
+
     public ITabItem getDelegate() {
         return (ITabItem) super.getDelegate();
     }

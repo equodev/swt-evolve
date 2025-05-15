@@ -139,6 +139,10 @@ public final class FontMetrics {
         delegate.setApi(this);
     }
 
+    public static FontMetrics createApi(IFontMetrics delegate) {
+        return new FontMetrics(delegate);
+    }
+
     public IFontMetrics getDelegate() {
         return delegate;
     }

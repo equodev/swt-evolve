@@ -252,6 +252,10 @@ public final class PrinterData extends DeviceData {
         super(delegate);
     }
 
+    public static PrinterData createApi(IPrinterData delegate) {
+        return new PrinterData(delegate);
+    }
+
     public IPrinterData getDelegate() {
         return (IPrinterData) super.getDelegate();
     }

@@ -114,7 +114,7 @@ public abstract class Layout implements ILayout {
         return (org.eclipse.swt.widgets.Layout) api;
     }
 
-    org.eclipse.swt.widgets.Layout api;
+    protected org.eclipse.swt.widgets.Layout api;
 
     public void setApi(org.eclipse.swt.widgets.Layout api) {
         this.api = api;

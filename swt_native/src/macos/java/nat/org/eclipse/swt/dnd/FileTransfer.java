@@ -148,6 +148,8 @@ public class FileTransfer extends ByteArrayTransfer implements IFileTransfer {
     }
 
     public org.eclipse.swt.dnd.FileTransfer getApi() {
-        return (org.eclipse.swt.dnd.FileTransfer) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.dnd.FileTransfer.createApi(this);
+        return (org.eclipse.swt.dnd.FileTransfer) api;
     }
 }

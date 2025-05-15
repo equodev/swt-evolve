@@ -1180,6 +1180,10 @@ public class Tree extends Composite {
         super(delegate);
     }
 
+    public static Tree createApi(ITree delegate) {
+        return new Tree(delegate);
+    }
+
     public ITree getDelegate() {
         return (ITree) super.getDelegate();
     }

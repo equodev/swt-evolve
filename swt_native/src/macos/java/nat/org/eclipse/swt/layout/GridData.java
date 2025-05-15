@@ -621,10 +621,12 @@ public final class GridData implements IGridData {
     }
 
     public org.eclipse.swt.layout.GridData getApi() {
+        if (api == null)
+            api = org.eclipse.swt.layout.GridData.createApi(this);
         return (org.eclipse.swt.layout.GridData) api;
     }
 
-    org.eclipse.swt.layout.GridData api;
+    protected org.eclipse.swt.layout.GridData api;
 
     public void setApi(org.eclipse.swt.layout.GridData api) {
         this.api = api;

@@ -84,6 +84,10 @@ public final class Touch {
         delegate.setApi(this);
     }
 
+    public static Touch createApi(ITouch delegate) {
+        return new Touch(delegate);
+    }
+
     public ITouch getDelegate() {
         return delegate;
     }

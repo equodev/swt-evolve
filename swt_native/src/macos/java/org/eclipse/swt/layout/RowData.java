@@ -124,6 +124,10 @@ public final class RowData {
         delegate.setApi(this);
     }
 
+    public static RowData createApi(IRowData delegate) {
+        return new RowData(delegate);
+    }
+
     public IRowData getDelegate() {
         return delegate;
     }

@@ -195,10 +195,12 @@ public class LineAttributes implements ILineAttributes {
     }
 
     public org.eclipse.swt.graphics.LineAttributes getApi() {
+        if (api == null)
+            api = org.eclipse.swt.graphics.LineAttributes.createApi(this);
         return (org.eclipse.swt.graphics.LineAttributes) api;
     }
 
-    org.eclipse.swt.graphics.LineAttributes api;
+    protected org.eclipse.swt.graphics.LineAttributes api;
 
     public void setApi(org.eclipse.swt.graphics.LineAttributes api) {
         this.api = api;

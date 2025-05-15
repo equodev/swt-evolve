@@ -427,6 +427,10 @@ public class Path extends Resource {
         super(delegate);
     }
 
+    public static Path createApi(IPath delegate) {
+        return new Path(delegate);
+    }
+
     public IPath getDelegate() {
         return (IPath) super.getDelegate();
     }

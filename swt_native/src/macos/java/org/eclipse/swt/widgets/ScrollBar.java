@@ -550,6 +550,10 @@ public class ScrollBar extends Widget {
         super(delegate);
     }
 
+    public static ScrollBar createApi(IScrollBar delegate) {
+        return new ScrollBar(delegate);
+    }
+
     public IScrollBar getDelegate() {
         return (IScrollBar) super.getDelegate();
     }

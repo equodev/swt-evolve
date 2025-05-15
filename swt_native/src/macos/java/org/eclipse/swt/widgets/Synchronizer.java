@@ -89,6 +89,10 @@ public class Synchronizer {
         delegate.setApi(this);
     }
 
+    public static Synchronizer createApi(ISynchronizer delegate) {
+        return new Synchronizer(delegate);
+    }
+
     public ISynchronizer getDelegate() {
         return delegate;
     }

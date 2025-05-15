@@ -87,6 +87,10 @@ public class URLTransfer extends ByteArrayTransfer {
         super(delegate);
     }
 
+    public static URLTransfer createApi(IURLTransfer delegate) {
+        return new URLTransfer(delegate);
+    }
+
     public IURLTransfer getDelegate() {
         return (IURLTransfer) super.getDelegate();
     }

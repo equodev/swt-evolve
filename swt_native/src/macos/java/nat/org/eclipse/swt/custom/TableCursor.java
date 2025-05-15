@@ -708,6 +708,8 @@ public class TableCursor extends Canvas implements ITableCursor {
     }
 
     public org.eclipse.swt.custom.TableCursor getApi() {
-        return (org.eclipse.swt.custom.TableCursor) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.TableCursor.createApi(this);
+        return (org.eclipse.swt.custom.TableCursor) api;
     }
 }

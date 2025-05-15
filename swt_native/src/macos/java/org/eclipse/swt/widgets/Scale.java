@@ -290,6 +290,10 @@ public class Scale extends Control {
         super(delegate);
     }
 
+    public static Scale createApi(IScale delegate) {
+        return new Scale(delegate);
+    }
+
     public IScale getDelegate() {
         return (IScale) super.getDelegate();
     }

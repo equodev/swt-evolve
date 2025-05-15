@@ -1213,6 +1213,8 @@ public class Spinner extends Composite implements ISpinner {
     }
 
     public org.eclipse.swt.widgets.Spinner getApi() {
-        return (org.eclipse.swt.widgets.Spinner) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.Spinner.createApi(this);
+        return (org.eclipse.swt.widgets.Spinner) api;
     }
 }

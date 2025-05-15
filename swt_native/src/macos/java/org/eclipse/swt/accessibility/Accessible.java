@@ -865,6 +865,10 @@ public class Accessible {
         delegate.setApi(this);
     }
 
+    public static Accessible createApi(IAccessible delegate) {
+        return new Accessible(delegate);
+    }
+
     public IAccessible getDelegate() {
         return delegate;
     }

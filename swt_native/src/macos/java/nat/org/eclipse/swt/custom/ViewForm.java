@@ -544,6 +544,8 @@ public class ViewForm extends Composite implements IViewForm {
     }
 
     public org.eclipse.swt.custom.ViewForm getApi() {
-        return (org.eclipse.swt.custom.ViewForm) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.ViewForm.createApi(this);
+        return (org.eclipse.swt.custom.ViewForm) api;
     }
 }

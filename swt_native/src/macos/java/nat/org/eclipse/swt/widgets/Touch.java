@@ -100,10 +100,12 @@ public final class Touch implements ITouch {
     }
 
     public org.eclipse.swt.widgets.Touch getApi() {
+        if (api == null)
+            api = org.eclipse.swt.widgets.Touch.createApi(this);
         return (org.eclipse.swt.widgets.Touch) api;
     }
 
-    org.eclipse.swt.widgets.Touch api;
+    protected org.eclipse.swt.widgets.Touch api;
 
     public void setApi(org.eclipse.swt.widgets.Touch api) {
         this.api = api;

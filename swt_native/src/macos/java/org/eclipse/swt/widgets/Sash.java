@@ -136,6 +136,10 @@ public class Sash extends Control {
         super(delegate);
     }
 
+    public static Sash createApi(ISash delegate) {
+        return new Sash(delegate);
+    }
+
     public ISash getDelegate() {
         return (ISash) super.getDelegate();
     }

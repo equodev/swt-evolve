@@ -448,6 +448,10 @@ public class TableColumn extends Item {
         super(delegate);
     }
 
+    public static TableColumn createApi(ITableColumn delegate) {
+        return new TableColumn(delegate);
+    }
+
     public ITableColumn getDelegate() {
         return (ITableColumn) super.getDelegate();
     }

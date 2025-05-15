@@ -143,6 +143,8 @@ public class TableDropTargetEffect extends DropTargetEffect implements ITableDro
     }
 
     public org.eclipse.swt.dnd.TableDropTargetEffect getApi() {
-        return (org.eclipse.swt.dnd.TableDropTargetEffect) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.dnd.TableDropTargetEffect.createApi(this);
+        return (org.eclipse.swt.dnd.TableDropTargetEffect) api;
     }
 }

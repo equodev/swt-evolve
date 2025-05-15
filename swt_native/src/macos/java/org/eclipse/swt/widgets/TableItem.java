@@ -652,6 +652,10 @@ public class TableItem extends Item {
         super(delegate);
     }
 
+    public static TableItem createApi(ITableItem delegate) {
+        return new TableItem(delegate);
+    }
+
     public ITableItem getDelegate() {
         return (ITableItem) super.getDelegate();
     }

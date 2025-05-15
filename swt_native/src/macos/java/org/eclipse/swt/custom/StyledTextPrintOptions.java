@@ -125,6 +125,10 @@ public class StyledTextPrintOptions {
         delegate.setApi(this);
     }
 
+    public static StyledTextPrintOptions createApi(IStyledTextPrintOptions delegate) {
+        return new StyledTextPrintOptions(delegate);
+    }
+
     public IStyledTextPrintOptions getDelegate() {
         return delegate;
     }

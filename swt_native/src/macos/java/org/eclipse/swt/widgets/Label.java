@@ -221,6 +221,10 @@ public class Label extends Control {
         super(delegate);
     }
 
+    public static Label createApi(ILabel delegate) {
+        return new Label(delegate);
+    }
+
     public ILabel getDelegate() {
         return (ILabel) super.getDelegate();
     }

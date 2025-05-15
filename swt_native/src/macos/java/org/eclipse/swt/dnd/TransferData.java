@@ -75,6 +75,10 @@ public class TransferData {
         delegate.setApi(this);
     }
 
+    public static TransferData createApi(ITransferData delegate) {
+        return new TransferData(delegate);
+    }
+
     public ITransferData getDelegate() {
         return delegate;
     }

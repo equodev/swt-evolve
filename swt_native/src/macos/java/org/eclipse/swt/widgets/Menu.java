@@ -637,6 +637,10 @@ public class Menu extends Widget {
         super(delegate);
     }
 
+    public static Menu createApi(IMenu delegate) {
+        return new Menu(delegate);
+    }
+
     public IMenu getDelegate() {
         return (IMenu) super.getDelegate();
     }

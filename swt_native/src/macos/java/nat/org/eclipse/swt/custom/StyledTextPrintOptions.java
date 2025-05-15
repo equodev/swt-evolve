@@ -117,10 +117,12 @@ public class StyledTextPrintOptions implements IStyledTextPrintOptions {
     public String[] lineLabels = null;
 
     public org.eclipse.swt.custom.StyledTextPrintOptions getApi() {
+        if (api == null)
+            api = org.eclipse.swt.custom.StyledTextPrintOptions.createApi(this);
         return (org.eclipse.swt.custom.StyledTextPrintOptions) api;
     }
 
-    org.eclipse.swt.custom.StyledTextPrintOptions api;
+    protected org.eclipse.swt.custom.StyledTextPrintOptions api;
 
     public void setApi(org.eclipse.swt.custom.StyledTextPrintOptions api) {
         this.api = api;

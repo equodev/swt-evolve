@@ -229,6 +229,10 @@ public final class RowLayout extends Layout {
         super(delegate);
     }
 
+    public static RowLayout createApi(IRowLayout delegate) {
+        return new RowLayout(delegate);
+    }
+
     public IRowLayout getDelegate() {
         return (IRowLayout) super.getDelegate();
     }

@@ -123,10 +123,12 @@ public final class GlyphMetrics implements IGlyphMetrics {
     }
 
     public org.eclipse.swt.graphics.GlyphMetrics getApi() {
+        if (api == null)
+            api = org.eclipse.swt.graphics.GlyphMetrics.createApi(this);
         return (org.eclipse.swt.graphics.GlyphMetrics) api;
     }
 
-    org.eclipse.swt.graphics.GlyphMetrics api;
+    protected org.eclipse.swt.graphics.GlyphMetrics api;
 
     public void setApi(org.eclipse.swt.graphics.GlyphMetrics api) {
         this.api = api;

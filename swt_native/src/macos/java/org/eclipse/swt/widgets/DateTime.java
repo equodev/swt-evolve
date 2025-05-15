@@ -409,6 +409,10 @@ public class DateTime extends Composite {
         super(delegate);
     }
 
+    public static DateTime createApi(IDateTime delegate) {
+        return new DateTime(delegate);
+    }
+
     public IDateTime getDelegate() {
         return (IDateTime) super.getDelegate();
     }

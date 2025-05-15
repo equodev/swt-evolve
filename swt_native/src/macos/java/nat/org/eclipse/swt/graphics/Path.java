@@ -922,6 +922,8 @@ public class Path extends Resource implements IPath {
     }
 
     public org.eclipse.swt.graphics.Path getApi() {
-        return (org.eclipse.swt.graphics.Path) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.graphics.Path.createApi(this);
+        return (org.eclipse.swt.graphics.Path) api;
     }
 }

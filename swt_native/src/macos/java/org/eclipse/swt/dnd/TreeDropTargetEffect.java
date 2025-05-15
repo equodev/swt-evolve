@@ -124,6 +124,10 @@ public class TreeDropTargetEffect extends DropTargetEffect {
         super(delegate);
     }
 
+    public static TreeDropTargetEffect createApi(ITreeDropTargetEffect delegate) {
+        return new TreeDropTargetEffect(delegate);
+    }
+
     public ITreeDropTargetEffect getDelegate() {
         return (ITreeDropTargetEffect) super.getDelegate();
     }

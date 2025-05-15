@@ -228,6 +228,10 @@ public class ToolBar extends Composite {
         super(delegate);
     }
 
+    public static ToolBar createApi(IToolBar delegate) {
+        return new ToolBar(delegate);
+    }
+
     public IToolBar getDelegate() {
         return (IToolBar) super.getDelegate();
     }

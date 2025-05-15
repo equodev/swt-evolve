@@ -154,6 +154,10 @@ public class LineAttributes {
         delegate.setApi(this);
     }
 
+    public static LineAttributes createApi(ILineAttributes delegate) {
+        return new LineAttributes(delegate);
+    }
+
     public ILineAttributes getDelegate() {
         return delegate;
     }

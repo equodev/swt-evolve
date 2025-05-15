@@ -96,6 +96,10 @@ public class FileTransfer extends ByteArrayTransfer {
         super(delegate);
     }
 
+    public static FileTransfer createApi(IFileTransfer delegate) {
+        return new FileTransfer(delegate);
+    }
+
     public IFileTransfer getDelegate() {
         return (IFileTransfer) super.getDelegate();
     }

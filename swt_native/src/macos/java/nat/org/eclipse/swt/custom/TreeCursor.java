@@ -999,6 +999,8 @@ public class TreeCursor extends Canvas implements ITreeCursor {
     }
 
     public org.eclipse.swt.custom.TreeCursor getApi() {
-        return (org.eclipse.swt.custom.TreeCursor) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.TreeCursor.createApi(this);
+        return (org.eclipse.swt.custom.TreeCursor) api;
     }
 }

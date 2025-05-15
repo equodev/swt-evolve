@@ -158,6 +158,10 @@ public class TableEditor extends ControlEditor {
         super(delegate);
     }
 
+    public static TableEditor createApi(ITableEditor delegate) {
+        return new TableEditor(delegate);
+    }
+
     public ITableEditor getDelegate() {
         return (ITableEditor) super.getDelegate();
     }

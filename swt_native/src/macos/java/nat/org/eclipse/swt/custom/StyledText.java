@@ -11621,6 +11621,8 @@ public class StyledText extends Canvas implements IStyledText {
     }
 
     public org.eclipse.swt.custom.StyledText getApi() {
-        return (org.eclipse.swt.custom.StyledText) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.StyledText.createApi(this);
+        return (org.eclipse.swt.custom.StyledText) api;
     }
 }

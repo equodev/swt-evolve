@@ -1127,6 +1127,8 @@ public class MenuItem extends Item implements IMenuItem {
     }
 
     public org.eclipse.swt.widgets.MenuItem getApi() {
-        return (org.eclipse.swt.widgets.MenuItem) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.MenuItem.createApi(this);
+        return (org.eclipse.swt.widgets.MenuItem) api;
     }
 }

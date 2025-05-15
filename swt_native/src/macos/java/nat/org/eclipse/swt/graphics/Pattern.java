@@ -253,6 +253,8 @@ public class Pattern extends Resource implements IPattern {
     }
 
     public org.eclipse.swt.graphics.Pattern getApi() {
-        return (org.eclipse.swt.graphics.Pattern) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.graphics.Pattern.createApi(this);
+        return (org.eclipse.swt.graphics.Pattern) api;
     }
 }

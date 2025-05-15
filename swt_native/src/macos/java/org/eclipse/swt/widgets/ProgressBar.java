@@ -224,6 +224,10 @@ public class ProgressBar extends Control {
         super(delegate);
     }
 
+    public static ProgressBar createApi(IProgressBar delegate) {
+        return new ProgressBar(delegate);
+    }
+
     public IProgressBar getDelegate() {
         return (IProgressBar) super.getDelegate();
     }

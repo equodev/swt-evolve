@@ -1183,6 +1183,10 @@ public class Text extends Scrollable {
         super(delegate);
     }
 
+    public static Text createApi(IText delegate) {
+        return new Text(delegate);
+    }
+
     public IText getDelegate() {
         return (IText) super.getDelegate();
     }

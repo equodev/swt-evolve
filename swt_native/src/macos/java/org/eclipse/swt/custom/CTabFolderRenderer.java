@@ -250,6 +250,10 @@ public class CTabFolderRenderer {
         delegate.setApi(this);
     }
 
+    public static CTabFolderRenderer createApi(ICTabFolderRenderer delegate) {
+        return new CTabFolderRenderer(delegate);
+    }
+
     public ICTabFolderRenderer getDelegate() {
         return delegate;
     }

@@ -1084,6 +1084,10 @@ public final class TextLayout extends Resource {
         super(delegate);
     }
 
+    public static TextLayout createApi(ITextLayout delegate) {
+        return new TextLayout(delegate);
+    }
+
     public ITextLayout getDelegate() {
         return (ITextLayout) super.getDelegate();
     }

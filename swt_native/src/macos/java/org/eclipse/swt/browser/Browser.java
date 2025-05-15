@@ -999,6 +999,10 @@ public class Browser extends Composite {
         super(delegate);
     }
 
+    public static Browser createApi(IBrowser delegate) {
+        return new Browser(delegate);
+    }
+
     public IBrowser getDelegate() {
         return (IBrowser) super.getDelegate();
     }

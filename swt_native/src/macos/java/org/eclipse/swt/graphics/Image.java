@@ -708,6 +708,10 @@ public final class Image extends Resource implements Drawable {
         super(delegate);
     }
 
+    public static Image createApi(IImage delegate) {
+        return new Image(delegate);
+    }
+
     public IImage getDelegate() {
         return (IImage) super.getDelegate();
     }

@@ -254,6 +254,10 @@ public class ExpandBar extends Composite {
         super(delegate);
     }
 
+    public static ExpandBar createApi(IExpandBar delegate) {
+        return new ExpandBar(delegate);
+    }
+
     public IExpandBar getDelegate() {
         return (IExpandBar) super.getDelegate();
     }

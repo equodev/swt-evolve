@@ -237,7 +237,7 @@ public abstract class Resource implements IResource {
         return (org.eclipse.swt.graphics.Resource) api;
     }
 
-    org.eclipse.swt.graphics.Resource api;
+    protected org.eclipse.swt.graphics.Resource api;
 
     public void setApi(org.eclipse.swt.graphics.Resource api) {
         this.api = api;

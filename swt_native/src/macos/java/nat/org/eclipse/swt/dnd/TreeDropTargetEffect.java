@@ -150,6 +150,8 @@ public class TreeDropTargetEffect extends DropTargetEffect implements ITreeDropT
     }
 
     public org.eclipse.swt.dnd.TreeDropTargetEffect getApi() {
-        return (org.eclipse.swt.dnd.TreeDropTargetEffect) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.dnd.TreeDropTargetEffect.createApi(this);
+        return (org.eclipse.swt.dnd.TreeDropTargetEffect) api;
     }
 }

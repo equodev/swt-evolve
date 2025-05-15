@@ -325,10 +325,12 @@ public final class FormAttachment implements IFormAttachment {
     }
 
     public org.eclipse.swt.layout.FormAttachment getApi() {
+        if (api == null)
+            api = org.eclipse.swt.layout.FormAttachment.createApi(this);
         return (org.eclipse.swt.layout.FormAttachment) api;
     }
 
-    org.eclipse.swt.layout.FormAttachment api;
+    protected org.eclipse.swt.layout.FormAttachment api;
 
     public void setApi(org.eclipse.swt.layout.FormAttachment api) {
         this.api = api;

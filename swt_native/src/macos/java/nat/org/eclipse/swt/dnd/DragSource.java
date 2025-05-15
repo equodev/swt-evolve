@@ -826,6 +826,8 @@ public class DragSource extends Widget implements IDragSource {
     }
 
     public org.eclipse.swt.dnd.DragSource getApi() {
-        return (org.eclipse.swt.dnd.DragSource) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.dnd.DragSource.createApi(this);
+        return (org.eclipse.swt.dnd.DragSource) api;
     }
 }

@@ -246,6 +246,10 @@ public class TreeCursor extends Canvas {
         super(delegate);
     }
 
+    public static TreeCursor createApi(ITreeCursor delegate) {
+        return new TreeCursor(delegate);
+    }
+
     public ITreeCursor getDelegate() {
         return (ITreeCursor) super.getDelegate();
     }

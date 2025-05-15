@@ -239,6 +239,10 @@ public final class Cursor extends Resource {
         super(delegate);
     }
 
+    public static Cursor createApi(ICursor delegate) {
+        return new Cursor(delegate);
+    }
+
     public ICursor getDelegate() {
         return (ICursor) super.getDelegate();
     }

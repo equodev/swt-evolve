@@ -117,6 +117,8 @@ public class TextTransfer extends ByteArrayTransfer implements ITextTransfer {
     }
 
     public org.eclipse.swt.dnd.TextTransfer getApi() {
-        return (org.eclipse.swt.dnd.TextTransfer) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.dnd.TextTransfer.createApi(this);
+        return (org.eclipse.swt.dnd.TextTransfer) api;
     }
 }

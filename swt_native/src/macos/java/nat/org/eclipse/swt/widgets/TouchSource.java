@@ -96,10 +96,12 @@ public final class TouchSource implements ITouchSource {
     }
 
     public org.eclipse.swt.widgets.TouchSource getApi() {
+        if (api == null)
+            api = org.eclipse.swt.widgets.TouchSource.createApi(this);
         return (org.eclipse.swt.widgets.TouchSource) api;
     }
 
-    org.eclipse.swt.widgets.TouchSource api;
+    protected org.eclipse.swt.widgets.TouchSource api;
 
     public void setApi(org.eclipse.swt.widgets.TouchSource api) {
         this.api = api;

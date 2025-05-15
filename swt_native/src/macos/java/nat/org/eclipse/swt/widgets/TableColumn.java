@@ -795,6 +795,8 @@ public class TableColumn extends Item implements ITableColumn {
     }
 
     public org.eclipse.swt.widgets.TableColumn getApi() {
-        return (org.eclipse.swt.widgets.TableColumn) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.TableColumn.createApi(this);
+        return (org.eclipse.swt.widgets.TableColumn) api;
     }
 }

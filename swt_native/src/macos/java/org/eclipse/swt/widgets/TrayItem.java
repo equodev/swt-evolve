@@ -358,6 +358,10 @@ public class TrayItem extends Item {
         super(delegate);
     }
 
+    public static TrayItem createApi(ITrayItem delegate) {
+        return new TrayItem(delegate);
+    }
+
     public ITrayItem getDelegate() {
         return (ITrayItem) super.getDelegate();
     }

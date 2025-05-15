@@ -260,6 +260,10 @@ public class SashForm extends Composite {
         super(delegate);
     }
 
+    public static SashForm createApi(ISashForm delegate) {
+        return new SashForm(delegate);
+    }
+
     public ISashForm getDelegate() {
         return (ISashForm) super.getDelegate();
     }

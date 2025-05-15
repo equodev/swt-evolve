@@ -45,6 +45,10 @@ public class TabFolderLayout extends Layout {
         super(delegate);
     }
 
+    public static TabFolderLayout createApi(ITabFolderLayout delegate) {
+        return new TabFolderLayout(delegate);
+    }
+
     public ITabFolderLayout getDelegate() {
         return (ITabFolderLayout) super.getDelegate();
     }

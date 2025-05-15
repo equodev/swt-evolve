@@ -1369,6 +1369,10 @@ public class Table extends Composite {
         super(delegate);
     }
 
+    public static Table createApi(ITable delegate) {
+        return new Table(delegate);
+    }
+
     public ITable getDelegate() {
         return (ITable) super.getDelegate();
     }

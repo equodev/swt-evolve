@@ -417,6 +417,8 @@ public final class FormLayout extends Layout implements IFormLayout {
     }
 
     public org.eclipse.swt.layout.FormLayout getApi() {
-        return (org.eclipse.swt.layout.FormLayout) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.layout.FormLayout.createApi(this);
+        return (org.eclipse.swt.layout.FormLayout) api;
     }
 }

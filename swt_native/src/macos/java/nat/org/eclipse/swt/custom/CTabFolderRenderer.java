@@ -1850,10 +1850,12 @@ public class CTabFolderRenderer implements ICTabFolderRenderer {
     }
 
     public org.eclipse.swt.custom.CTabFolderRenderer getApi() {
+        if (api == null)
+            api = org.eclipse.swt.custom.CTabFolderRenderer.createApi(this);
         return (org.eclipse.swt.custom.CTabFolderRenderer) api;
     }
 
-    org.eclipse.swt.custom.CTabFolderRenderer api;
+    protected org.eclipse.swt.custom.CTabFolderRenderer api;
 
     public void setApi(org.eclipse.swt.custom.CTabFolderRenderer api) {
         this.api = api;

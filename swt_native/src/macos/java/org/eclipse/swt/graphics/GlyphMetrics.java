@@ -115,6 +115,10 @@ public final class GlyphMetrics {
         delegate.setApi(this);
     }
 
+    public static GlyphMetrics createApi(IGlyphMetrics delegate) {
+        return new GlyphMetrics(delegate);
+    }
+
     public IGlyphMetrics getDelegate() {
         return delegate;
     }

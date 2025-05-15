@@ -113,10 +113,12 @@ public class DropTargetAdapter implements DropTargetListener, IDropTargetAdapter
     }
 
     public org.eclipse.swt.dnd.DropTargetAdapter getApi() {
+        if (api == null)
+            api = org.eclipse.swt.dnd.DropTargetAdapter.createApi(this);
         return (org.eclipse.swt.dnd.DropTargetAdapter) api;
     }
 
-    org.eclipse.swt.dnd.DropTargetAdapter api;
+    protected org.eclipse.swt.dnd.DropTargetAdapter api;
 
     public void setApi(org.eclipse.swt.dnd.DropTargetAdapter api) {
         this.api = api;

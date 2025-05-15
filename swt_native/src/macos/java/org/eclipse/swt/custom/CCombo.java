@@ -1024,6 +1024,10 @@ public class CCombo extends Composite {
         super(delegate);
     }
 
+    public static CCombo createApi(ICCombo delegate) {
+        return new CCombo(delegate);
+    }
+
     public ICCombo getDelegate() {
         return (ICCombo) super.getDelegate();
     }

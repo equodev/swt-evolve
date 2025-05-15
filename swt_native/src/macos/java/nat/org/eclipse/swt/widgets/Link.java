@@ -905,6 +905,8 @@ public class Link extends Control implements ILink {
     }
 
     public org.eclipse.swt.widgets.Link getApi() {
-        return (org.eclipse.swt.widgets.Link) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.Link.createApi(this);
+        return (org.eclipse.swt.widgets.Link) api;
     }
 }

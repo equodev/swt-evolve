@@ -232,6 +232,10 @@ public class IME extends Widget {
         super(delegate);
     }
 
+    public static IME createApi(IIME delegate) {
+        return new IME(delegate);
+    }
+
     public IIME getDelegate() {
         return (IIME) super.getDelegate();
     }

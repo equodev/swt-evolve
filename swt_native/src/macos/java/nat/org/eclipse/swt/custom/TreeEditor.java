@@ -349,6 +349,8 @@ public class TreeEditor extends ControlEditor implements ITreeEditor {
     }
 
     public org.eclipse.swt.custom.TreeEditor getApi() {
-        return (org.eclipse.swt.custom.TreeEditor) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.TreeEditor.createApi(this);
+        return (org.eclipse.swt.custom.TreeEditor) api;
     }
 }

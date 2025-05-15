@@ -339,6 +339,10 @@ public class FileDialog extends Dialog {
         super(delegate);
     }
 
+    public static FileDialog createApi(IFileDialog delegate) {
+        return new FileDialog(delegate);
+    }
+
     public IFileDialog getDelegate() {
         return (IFileDialog) super.getDelegate();
     }

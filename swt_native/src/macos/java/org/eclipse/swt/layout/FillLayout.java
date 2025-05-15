@@ -138,6 +138,10 @@ public final class FillLayout extends Layout {
         super(delegate);
     }
 
+    public static FillLayout createApi(IFillLayout delegate) {
+        return new FillLayout(delegate);
+    }
+
     public IFillLayout getDelegate() {
         return (IFillLayout) super.getDelegate();
     }

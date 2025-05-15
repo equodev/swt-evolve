@@ -175,6 +175,10 @@ public class TreeEditor extends ControlEditor {
         super(delegate);
     }
 
+    public static TreeEditor createApi(ITreeEditor delegate) {
+        return new TreeEditor(delegate);
+    }
+
     public ITreeEditor getDelegate() {
         return (ITreeEditor) super.getDelegate();
     }

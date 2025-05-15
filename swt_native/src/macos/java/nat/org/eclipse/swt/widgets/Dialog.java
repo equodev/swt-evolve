@@ -285,7 +285,7 @@ public abstract class Dialog implements IDialog {
         return (org.eclipse.swt.widgets.Dialog) api;
     }
 
-    org.eclipse.swt.widgets.Dialog api;
+    protected org.eclipse.swt.widgets.Dialog api;
 
     public void setApi(org.eclipse.swt.widgets.Dialog api) {
         this.api = api;

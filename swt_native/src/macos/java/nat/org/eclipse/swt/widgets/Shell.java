@@ -2682,6 +2682,8 @@ public class Shell extends Decorations implements IShell {
     }
 
     public org.eclipse.swt.widgets.Shell getApi() {
-        return (org.eclipse.swt.widgets.Shell) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.Shell.createApi(this);
+        return (org.eclipse.swt.widgets.Shell) api;
     }
 }

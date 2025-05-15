@@ -228,6 +228,10 @@ public class Link extends Control {
         super(delegate);
     }
 
+    public static Link createApi(ILink delegate) {
+        return new Link(delegate);
+    }
+
     public ILink getDelegate() {
         return (ILink) super.getDelegate();
     }

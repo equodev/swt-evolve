@@ -184,6 +184,10 @@ public class PopupList {
         delegate.setApi(this);
     }
 
+    public static PopupList createApi(IPopupList delegate) {
+        return new PopupList(delegate);
+    }
+
     public IPopupList getDelegate() {
         return delegate;
     }

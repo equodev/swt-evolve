@@ -144,6 +144,10 @@ public class Group extends Composite {
         super(delegate);
     }
 
+    public static Group createApi(IGroup delegate) {
+        return new Group(delegate);
+    }
+
     public IGroup getDelegate() {
         return (IGroup) super.getDelegate();
     }

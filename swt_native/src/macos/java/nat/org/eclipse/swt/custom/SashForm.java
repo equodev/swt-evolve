@@ -507,6 +507,8 @@ public class SashForm extends Composite implements ISashForm {
     }
 
     public org.eclipse.swt.custom.SashForm getApi() {
-        return (org.eclipse.swt.custom.SashForm) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.SashForm.createApi(this);
+        return (org.eclipse.swt.custom.SashForm) api;
     }
 }

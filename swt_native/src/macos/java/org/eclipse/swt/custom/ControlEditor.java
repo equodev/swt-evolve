@@ -165,6 +165,10 @@ public class ControlEditor {
         delegate.setApi(this);
     }
 
+    public static ControlEditor createApi(IControlEditor delegate) {
+        return new ControlEditor(delegate);
+    }
+
     public IControlEditor getDelegate() {
         return delegate;
     }

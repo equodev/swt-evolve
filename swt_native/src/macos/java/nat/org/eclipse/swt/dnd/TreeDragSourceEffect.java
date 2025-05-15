@@ -108,6 +108,8 @@ public class TreeDragSourceEffect extends DragSourceEffect implements ITreeDragS
     }
 
     public org.eclipse.swt.dnd.TreeDragSourceEffect getApi() {
-        return (org.eclipse.swt.dnd.TreeDragSourceEffect) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.dnd.TreeDragSourceEffect.createApi(this);
+        return (org.eclipse.swt.dnd.TreeDragSourceEffect) api;
     }
 }

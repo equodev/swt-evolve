@@ -351,6 +351,8 @@ public class ProgressBar extends Control implements IProgressBar {
     }
 
     public org.eclipse.swt.widgets.ProgressBar getApi() {
-        return (org.eclipse.swt.widgets.ProgressBar) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.ProgressBar.createApi(this);
+        return (org.eclipse.swt.widgets.ProgressBar) api;
     }
 }

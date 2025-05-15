@@ -295,6 +295,8 @@ public class FontDialog extends Dialog implements IFontDialog {
     }
 
     public org.eclipse.swt.widgets.FontDialog getApi() {
-        return (org.eclipse.swt.widgets.FontDialog) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.FontDialog.createApi(this);
+        return (org.eclipse.swt.widgets.FontDialog) api;
     }
 }

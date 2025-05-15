@@ -302,10 +302,12 @@ public class BusyIndicator implements IBusyIndicator {
     }
 
     public org.eclipse.swt.custom.BusyIndicator getApi() {
+        if (api == null)
+            api = org.eclipse.swt.custom.BusyIndicator.createApi(this);
         return (org.eclipse.swt.custom.BusyIndicator) api;
     }
 
-    org.eclipse.swt.custom.BusyIndicator api;
+    protected org.eclipse.swt.custom.BusyIndicator api;
 
     public void setApi(org.eclipse.swt.custom.BusyIndicator api) {
         this.api = api;

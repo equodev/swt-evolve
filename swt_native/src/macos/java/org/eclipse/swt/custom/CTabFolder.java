@@ -1535,6 +1535,10 @@ public class CTabFolder extends Composite {
         super(delegate);
     }
 
+    public static CTabFolder createApi(ICTabFolder delegate) {
+        return new CTabFolder(delegate);
+    }
+
     public ICTabFolder getDelegate() {
         return (ICTabFolder) super.getDelegate();
     }

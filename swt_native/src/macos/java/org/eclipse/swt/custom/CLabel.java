@@ -454,6 +454,10 @@ public class CLabel extends Canvas {
         super(delegate);
     }
 
+    public static CLabel createApi(ICLabel delegate) {
+        return new CLabel(delegate);
+    }
+
     public ICLabel getDelegate() {
         return (ICLabel) super.getDelegate();
     }

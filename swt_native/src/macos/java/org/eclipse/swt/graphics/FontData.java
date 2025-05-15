@@ -336,6 +336,10 @@ public final class FontData {
         delegate.setApi(this);
     }
 
+    public static FontData createApi(IFontData delegate) {
+        return new FontData(delegate);
+    }
+
     public IFontData getDelegate() {
         return delegate;
     }

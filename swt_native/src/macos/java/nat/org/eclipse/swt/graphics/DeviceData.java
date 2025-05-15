@@ -32,10 +32,12 @@ public class DeviceData implements IDeviceData {
     public Object[] objects;
 
     public org.eclipse.swt.graphics.DeviceData getApi() {
+        if (api == null)
+            api = org.eclipse.swt.graphics.DeviceData.createApi(this);
         return (org.eclipse.swt.graphics.DeviceData) api;
     }
 
-    org.eclipse.swt.graphics.DeviceData api;
+    protected org.eclipse.swt.graphics.DeviceData api;
 
     public void setApi(org.eclipse.swt.graphics.DeviceData api) {
         this.api = api;

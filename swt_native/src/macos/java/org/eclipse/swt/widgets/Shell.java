@@ -937,6 +937,10 @@ public class Shell extends Decorations {
         super(delegate);
     }
 
+    public static Shell createApi(IShell delegate) {
+        return new Shell(delegate);
+    }
+
     public IShell getDelegate() {
         return (IShell) super.getDelegate();
     }

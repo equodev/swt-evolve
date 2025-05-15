@@ -137,10 +137,12 @@ public final class RowData implements IRowData {
     }
 
     public org.eclipse.swt.layout.RowData getApi() {
+        if (api == null)
+            api = org.eclipse.swt.layout.RowData.createApi(this);
         return (org.eclipse.swt.layout.RowData) api;
     }
 
-    org.eclipse.swt.layout.RowData api;
+    protected org.eclipse.swt.layout.RowData api;
 
     public void setApi(org.eclipse.swt.layout.RowData api) {
         this.api = api;

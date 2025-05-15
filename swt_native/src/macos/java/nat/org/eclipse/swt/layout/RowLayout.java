@@ -550,6 +550,8 @@ public final class RowLayout extends Layout implements IRowLayout {
     }
 
     public org.eclipse.swt.layout.RowLayout getApi() {
-        return (org.eclipse.swt.layout.RowLayout) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.layout.RowLayout.createApi(this);
+        return (org.eclipse.swt.layout.RowLayout) api;
     }
 }

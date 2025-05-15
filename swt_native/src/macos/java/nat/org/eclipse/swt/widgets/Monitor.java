@@ -124,10 +124,12 @@ public final class Monitor implements IMonitor {
     }
 
     public org.eclipse.swt.widgets.Monitor getApi() {
+        if (api == null)
+            api = org.eclipse.swt.widgets.Monitor.createApi(this);
         return (org.eclipse.swt.widgets.Monitor) api;
     }
 
-    org.eclipse.swt.widgets.Monitor api;
+    protected org.eclipse.swt.widgets.Monitor api;
 
     public void setApi(org.eclipse.swt.widgets.Monitor api) {
         this.api = api;

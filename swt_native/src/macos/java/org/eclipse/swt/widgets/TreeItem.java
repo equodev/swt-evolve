@@ -901,6 +901,10 @@ public class TreeItem extends Item {
         super(delegate);
     }
 
+    public static TreeItem createApi(ITreeItem delegate) {
+        return new TreeItem(delegate);
+    }
+
     public ITreeItem getDelegate() {
         return (ITreeItem) super.getDelegate();
     }

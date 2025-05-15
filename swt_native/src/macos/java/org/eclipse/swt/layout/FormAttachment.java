@@ -260,6 +260,10 @@ public final class FormAttachment {
         delegate.setApi(this);
     }
 
+    public static FormAttachment createApi(IFormAttachment delegate) {
+        return new FormAttachment(delegate);
+    }
+
     public IFormAttachment getDelegate() {
         return delegate;
     }

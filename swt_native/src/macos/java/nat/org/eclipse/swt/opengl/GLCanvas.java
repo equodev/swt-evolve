@@ -234,6 +234,8 @@ public class GLCanvas extends Canvas implements IGLCanvas {
     }
 
     public org.eclipse.swt.opengl.GLCanvas getApi() {
-        return (org.eclipse.swt.opengl.GLCanvas) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.opengl.GLCanvas.createApi(this);
+        return (org.eclipse.swt.opengl.GLCanvas) api;
     }
 }

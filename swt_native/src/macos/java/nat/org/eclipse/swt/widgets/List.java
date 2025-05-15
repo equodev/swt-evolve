@@ -1607,6 +1607,8 @@ public class List extends Scrollable implements IList {
     }
 
     public org.eclipse.swt.widgets.List getApi() {
-        return (org.eclipse.swt.widgets.List) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.List.createApi(this);
+        return (org.eclipse.swt.widgets.List) api;
     }
 }

@@ -165,6 +165,10 @@ public class ColorDialog extends Dialog {
         super(delegate);
     }
 
+    public static ColorDialog createApi(IColorDialog delegate) {
+        return new ColorDialog(delegate);
+    }
+
     public IColorDialog getDelegate() {
         return (IColorDialog) super.getDelegate();
     }

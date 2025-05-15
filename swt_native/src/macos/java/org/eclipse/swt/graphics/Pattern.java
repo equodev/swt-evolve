@@ -181,6 +181,10 @@ public class Pattern extends Resource {
         super(delegate);
     }
 
+    public static Pattern createApi(IPattern delegate) {
+        return new Pattern(delegate);
+    }
+
     public IPattern getDelegate() {
         return (IPattern) super.getDelegate();
     }

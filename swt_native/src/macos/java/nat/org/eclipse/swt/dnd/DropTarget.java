@@ -991,6 +991,8 @@ public class DropTarget extends Widget implements IDropTarget {
     }
 
     public org.eclipse.swt.dnd.DropTarget getApi() {
-        return (org.eclipse.swt.dnd.DropTarget) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.dnd.DropTarget.createApi(this);
+        return (org.eclipse.swt.dnd.DropTarget) api;
     }
 }

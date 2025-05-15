@@ -890,7 +890,7 @@ public abstract class Device implements Drawable, IDevice {
         return (org.eclipse.swt.graphics.Device) api;
     }
 
-    org.eclipse.swt.graphics.Device api;
+    protected org.eclipse.swt.graphics.Device api;
 
     public void setApi(org.eclipse.swt.graphics.Device api) {
         this.api = api;

@@ -82,6 +82,10 @@ public class TreeDragSourceEffect extends DragSourceEffect {
         super(delegate);
     }
 
+    public static TreeDragSourceEffect createApi(ITreeDragSourceEffect delegate) {
+        return new TreeDragSourceEffect(delegate);
+    }
+
     public ITreeDragSourceEffect getDelegate() {
         return (ITreeDragSourceEffect) super.getDelegate();
     }

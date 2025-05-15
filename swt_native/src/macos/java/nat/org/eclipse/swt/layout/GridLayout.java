@@ -789,6 +789,8 @@ public final class GridLayout extends Layout implements IGridLayout {
     }
 
     public org.eclipse.swt.layout.GridLayout getApi() {
-        return (org.eclipse.swt.layout.GridLayout) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.layout.GridLayout.createApi(this);
+        return (org.eclipse.swt.layout.GridLayout) api;
     }
 }

@@ -215,6 +215,10 @@ public class Canvas extends Composite {
         super(delegate);
     }
 
+    public static Canvas createApi(ICanvas delegate) {
+        return new Canvas(delegate);
+    }
+
     public ICanvas getDelegate() {
         return (ICanvas) super.getDelegate();
     }

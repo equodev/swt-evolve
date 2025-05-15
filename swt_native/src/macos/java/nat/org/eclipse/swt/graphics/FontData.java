@@ -476,10 +476,12 @@ public final class FontData implements IFontData {
     }
 
     public org.eclipse.swt.graphics.FontData getApi() {
+        if (api == null)
+            api = org.eclipse.swt.graphics.FontData.createApi(this);
         return (org.eclipse.swt.graphics.FontData) api;
     }
 
-    org.eclipse.swt.graphics.FontData api;
+    protected org.eclipse.swt.graphics.FontData api;
 
     public void setApi(org.eclipse.swt.graphics.FontData api) {
         this.api = api;

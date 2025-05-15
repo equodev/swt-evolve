@@ -213,6 +213,10 @@ public final class Program {
         delegate.setApi(this);
     }
 
+    public static Program createApi(IProgram delegate) {
+        return new Program(delegate);
+    }
+
     public IProgram getDelegate() {
         return delegate;
     }

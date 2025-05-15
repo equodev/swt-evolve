@@ -86,6 +86,10 @@ public class RTFTransfer extends ByteArrayTransfer {
         super(delegate);
     }
 
+    public static RTFTransfer createApi(IRTFTransfer delegate) {
+        return new RTFTransfer(delegate);
+    }
+
     public IRTFTransfer getDelegate() {
         return (IRTFTransfer) super.getDelegate();
     }

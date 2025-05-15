@@ -179,10 +179,12 @@ public class Bullet implements IBullet {
     }
 
     public org.eclipse.swt.custom.Bullet getApi() {
+        if (api == null)
+            api = org.eclipse.swt.custom.Bullet.createApi(this);
         return (org.eclipse.swt.custom.Bullet) api;
     }
 
-    org.eclipse.swt.custom.Bullet api;
+    protected org.eclipse.swt.custom.Bullet api;
 
     public void setApi(org.eclipse.swt.custom.Bullet api) {
         this.api = api;

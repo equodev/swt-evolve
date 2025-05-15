@@ -164,6 +164,8 @@ public class StackLayout extends Layout implements IStackLayout {
     }
 
     public org.eclipse.swt.custom.StackLayout getApi() {
-        return (org.eclipse.swt.custom.StackLayout) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.StackLayout.createApi(this);
+        return (org.eclipse.swt.custom.StackLayout) api;
     }
 }

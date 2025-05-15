@@ -108,6 +108,10 @@ public final class Point implements Serializable {
         delegate.setApi(this);
     }
 
+    public static Point createApi(IPoint delegate) {
+        return new Point(delegate);
+    }
+
     public IPoint getDelegate() {
         return delegate;
     }

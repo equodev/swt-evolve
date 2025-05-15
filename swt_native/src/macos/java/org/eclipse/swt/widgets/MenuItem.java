@@ -602,6 +602,10 @@ public class MenuItem extends Item {
         super(delegate);
     }
 
+    public static MenuItem createApi(IMenuItem delegate) {
+        return new MenuItem(delegate);
+    }
+
     public IMenuItem getDelegate() {
         return (IMenuItem) super.getDelegate();
     }

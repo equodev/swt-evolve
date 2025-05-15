@@ -122,6 +122,8 @@ public class URLTransfer extends ByteArrayTransfer implements IURLTransfer {
     }
 
     public org.eclipse.swt.dnd.URLTransfer getApi() {
-        return (org.eclipse.swt.dnd.URLTransfer) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.dnd.URLTransfer.createApi(this);
+        return (org.eclipse.swt.dnd.URLTransfer) api;
     }
 }

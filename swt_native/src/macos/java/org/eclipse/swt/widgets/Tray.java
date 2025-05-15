@@ -98,6 +98,10 @@ public class Tray extends Widget {
         super(delegate);
     }
 
+    public static Tray createApi(ITray delegate) {
+        return new Tray(delegate);
+    }
+
     public ITray getDelegate() {
         return (ITray) super.getDelegate();
     }

@@ -344,6 +344,10 @@ public class TabFolder extends Composite {
         super(delegate);
     }
 
+    public static TabFolder createApi(ITabFolder delegate) {
+        return new TabFolder(delegate);
+    }
+
     public ITabFolder getDelegate() {
         return (ITabFolder) super.getDelegate();
     }

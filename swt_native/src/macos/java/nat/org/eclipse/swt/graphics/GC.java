@@ -4536,6 +4536,8 @@ public final class GC extends Resource implements IGC {
     }
 
     public org.eclipse.swt.graphics.GC getApi() {
-        return (org.eclipse.swt.graphics.GC) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.graphics.GC.createApi(this);
+        return (org.eclipse.swt.graphics.GC) api;
     }
 }

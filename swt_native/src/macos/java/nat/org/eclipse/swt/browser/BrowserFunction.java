@@ -274,10 +274,12 @@ public class BrowserFunction implements IBrowserFunction {
     }
 
     public org.eclipse.swt.browser.BrowserFunction getApi() {
+        if (api == null)
+            api = org.eclipse.swt.browser.BrowserFunction.createApi(this);
         return (org.eclipse.swt.browser.BrowserFunction) api;
     }
 
-    org.eclipse.swt.browser.BrowserFunction api;
+    protected org.eclipse.swt.browser.BrowserFunction api;
 
     public void setApi(org.eclipse.swt.browser.BrowserFunction api) {
         this.api = api;

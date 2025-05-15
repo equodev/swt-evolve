@@ -293,6 +293,8 @@ public class DirectoryDialog extends Dialog implements IDirectoryDialog {
     }
 
     public org.eclipse.swt.widgets.DirectoryDialog getApi() {
-        return (org.eclipse.swt.widgets.DirectoryDialog) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.DirectoryDialog.createApi(this);
+        return (org.eclipse.swt.widgets.DirectoryDialog) api;
     }
 }

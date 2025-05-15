@@ -1223,6 +1223,8 @@ public class Tracker extends Widget implements ITracker {
     }
 
     public org.eclipse.swt.widgets.Tracker getApi() {
-        return (org.eclipse.swt.widgets.Tracker) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.Tracker.createApi(this);
+        return (org.eclipse.swt.widgets.Tracker) api;
     }
 }

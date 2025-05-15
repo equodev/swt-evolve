@@ -270,6 +270,10 @@ public class DropTarget extends Widget {
         super(delegate);
     }
 
+    public static DropTarget createApi(IDropTarget delegate) {
+        return new DropTarget(delegate);
+    }
+
     public IDropTarget getDelegate() {
         return (IDropTarget) super.getDelegate();
     }

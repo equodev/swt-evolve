@@ -79,6 +79,10 @@ public final class BorderData {
         delegate.setApi(this);
     }
 
+    public static BorderData createApi(IBorderData delegate) {
+        return new BorderData(delegate);
+    }
+
     public IBorderData getDelegate() {
         return delegate;
     }

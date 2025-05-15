@@ -144,6 +144,10 @@ public final class GCData {
         delegate.setApi(this);
     }
 
+    public static GCData createApi(IGCData delegate) {
+        return new GCData(delegate);
+    }
+
     public IGCData getDelegate() {
         return delegate;
     }

@@ -188,6 +188,10 @@ public class DirectoryDialog extends Dialog {
         super(delegate);
     }
 
+    public static DirectoryDialog createApi(IDirectoryDialog delegate) {
+        return new DirectoryDialog(delegate);
+    }
+
     public IDirectoryDialog getDelegate() {
         return (IDirectoryDialog) super.getDelegate();
     }

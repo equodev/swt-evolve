@@ -261,10 +261,12 @@ public class ControlEditor implements IControlEditor {
     }
 
     public org.eclipse.swt.custom.ControlEditor getApi() {
+        if (api == null)
+            api = org.eclipse.swt.custom.ControlEditor.createApi(this);
         return (org.eclipse.swt.custom.ControlEditor) api;
     }
 
-    org.eclipse.swt.custom.ControlEditor api;
+    protected org.eclipse.swt.custom.ControlEditor api;
 
     public void setApi(org.eclipse.swt.custom.ControlEditor api) {
         this.api = api;

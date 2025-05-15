@@ -511,10 +511,12 @@ public class TextStyle implements ITextStyle {
     }
 
     public org.eclipse.swt.graphics.TextStyle getApi() {
+        if (api == null)
+            api = org.eclipse.swt.graphics.TextStyle.createApi(this);
         return (org.eclipse.swt.graphics.TextStyle) api;
     }
 
-    org.eclipse.swt.graphics.TextStyle api;
+    protected org.eclipse.swt.graphics.TextStyle api;
 
     public void setApi(org.eclipse.swt.graphics.TextStyle api) {
         this.api = api;

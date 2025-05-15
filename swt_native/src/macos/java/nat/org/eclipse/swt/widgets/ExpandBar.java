@@ -651,6 +651,8 @@ public class ExpandBar extends Composite implements IExpandBar {
     }
 
     public org.eclipse.swt.widgets.ExpandBar getApi() {
-        return (org.eclipse.swt.widgets.ExpandBar) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.ExpandBar.createApi(this);
+        return (org.eclipse.swt.widgets.ExpandBar) api;
     }
 }

@@ -359,6 +359,10 @@ public class Button extends Control {
         super(delegate);
     }
 
+    public static Button createApi(IButton delegate) {
+        return new Button(delegate);
+    }
+
     public IButton getDelegate() {
         return (IButton) super.getDelegate();
     }

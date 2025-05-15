@@ -432,6 +432,10 @@ public class CoolItem extends Item {
         super(delegate);
     }
 
+    public static CoolItem createApi(ICoolItem delegate) {
+        return new CoolItem(delegate);
+    }
+
     public ICoolItem getDelegate() {
         return (ICoolItem) super.getDelegate();
     }

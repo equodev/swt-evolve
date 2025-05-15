@@ -254,6 +254,8 @@ public class StyledTextDropTargetEffect extends DropTargetEffect implements ISty
     }
 
     public org.eclipse.swt.custom.StyledTextDropTargetEffect getApi() {
-        return (org.eclipse.swt.custom.StyledTextDropTargetEffect) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.StyledTextDropTargetEffect.createApi(this);
+        return (org.eclipse.swt.custom.StyledTextDropTargetEffect) api;
     }
 }

@@ -2259,6 +2259,8 @@ public class CCombo extends Composite implements ICCombo {
     }
 
     public org.eclipse.swt.custom.CCombo getApi() {
-        return (org.eclipse.swt.custom.CCombo) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.CCombo.createApi(this);
+        return (org.eclipse.swt.custom.CCombo) api;
     }
 }

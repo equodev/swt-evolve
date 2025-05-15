@@ -86,6 +86,10 @@ public class HTMLTransfer extends ByteArrayTransfer {
         super(delegate);
     }
 
+    public static HTMLTransfer createApi(IHTMLTransfer delegate) {
+        return new HTMLTransfer(delegate);
+    }
+
     public IHTMLTransfer getDelegate() {
         return (IHTMLTransfer) super.getDelegate();
     }

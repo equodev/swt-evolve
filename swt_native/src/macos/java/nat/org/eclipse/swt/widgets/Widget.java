@@ -2563,7 +2563,7 @@ public abstract class Widget implements IWidget {
         return (org.eclipse.swt.widgets.Widget) api;
     }
 
-    org.eclipse.swt.widgets.Widget api;
+    protected org.eclipse.swt.widgets.Widget api;
 
     public void setApi(org.eclipse.swt.widgets.Widget api) {
         this.api = api;

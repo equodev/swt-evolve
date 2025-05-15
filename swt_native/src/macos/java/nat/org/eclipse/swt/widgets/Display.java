@@ -348,7 +348,7 @@ public class Display extends Device implements Executor, IDisplay {
     int skinCount;
 
     /* Package Name */
-    static final String PACKAGE_PREFIX = "org.eclipse.swt.widgets.";
+    static final String PACKAGE_PREFIX = "nat.org.eclipse.swt.widgets.";
 
     /* Timer */
     Runnable[] timerList;
@@ -7234,6 +7234,8 @@ public class Display extends Device implements Executor, IDisplay {
     }
 
     public org.eclipse.swt.widgets.Display getApi() {
-        return (org.eclipse.swt.widgets.Display) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.Display.createApi(this);
+        return (org.eclipse.swt.widgets.Display) api;
     }
 }

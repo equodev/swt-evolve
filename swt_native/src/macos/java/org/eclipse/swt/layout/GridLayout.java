@@ -192,6 +192,10 @@ public final class GridLayout extends Layout {
         super(delegate);
     }
 
+    public static GridLayout createApi(IGridLayout delegate) {
+        return new GridLayout(delegate);
+    }
+
     public IGridLayout getDelegate() {
         return (IGridLayout) super.getDelegate();
     }

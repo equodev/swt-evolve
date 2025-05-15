@@ -3739,10 +3739,12 @@ public class Accessible implements IAccessible {
     }
 
     public org.eclipse.swt.accessibility.Accessible getApi() {
+        if (api == null)
+            api = org.eclipse.swt.accessibility.Accessible.createApi(this);
         return (org.eclipse.swt.accessibility.Accessible) api;
     }
 
-    org.eclipse.swt.accessibility.Accessible api;
+    protected org.eclipse.swt.accessibility.Accessible api;
 
     public void setApi(org.eclipse.swt.accessibility.Accessible api) {
         this.api = api;

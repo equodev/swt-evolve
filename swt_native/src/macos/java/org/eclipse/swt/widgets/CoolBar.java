@@ -332,6 +332,10 @@ public class CoolBar extends Composite {
         super(delegate);
     }
 
+    public static CoolBar createApi(ICoolBar delegate) {
+        return new CoolBar(delegate);
+    }
+
     public ICoolBar getDelegate() {
         return (ICoolBar) super.getDelegate();
     }

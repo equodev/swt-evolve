@@ -590,6 +590,10 @@ public class Composite extends Scrollable {
         super(delegate);
     }
 
+    public static Composite createApi(IComposite delegate) {
+        return new Composite(delegate);
+    }
+
     public IComposite getDelegate() {
         return (IComposite) super.getDelegate();
     }

@@ -3916,6 +3916,8 @@ public class Table extends Composite implements ITable {
     }
 
     public org.eclipse.swt.widgets.Table getApi() {
-        return (org.eclipse.swt.widgets.Table) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.Table.createApi(this);
+        return (org.eclipse.swt.widgets.Table) api;
     }
 }

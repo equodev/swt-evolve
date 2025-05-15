@@ -135,10 +135,12 @@ public final class GCData implements IGCData {
     public boolean restoreContext;
 
     public org.eclipse.swt.graphics.GCData getApi() {
+        if (api == null)
+            api = org.eclipse.swt.graphics.GCData.createApi(this);
         return (org.eclipse.swt.graphics.GCData) api;
     }
 
-    org.eclipse.swt.graphics.GCData api;
+    protected org.eclipse.swt.graphics.GCData api;
 
     public void setApi(org.eclipse.swt.graphics.GCData api) {
         this.api = api;

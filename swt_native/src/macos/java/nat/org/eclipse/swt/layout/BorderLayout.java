@@ -431,6 +431,8 @@ public class BorderLayout extends Layout implements IBorderLayout {
     }
 
     public org.eclipse.swt.layout.BorderLayout getApi() {
-        return (org.eclipse.swt.layout.BorderLayout) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.layout.BorderLayout.createApi(this);
+        return (org.eclipse.swt.layout.BorderLayout) api;
     }
 }

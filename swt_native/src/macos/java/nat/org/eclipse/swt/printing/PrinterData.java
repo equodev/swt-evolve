@@ -264,6 +264,8 @@ public final class PrinterData extends DeviceData implements IPrinterData {
     }
 
     public org.eclipse.swt.printing.PrinterData getApi() {
-        return (org.eclipse.swt.printing.PrinterData) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.printing.PrinterData.createApi(this);
+        return (org.eclipse.swt.printing.PrinterData) api;
     }
 }

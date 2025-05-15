@@ -192,6 +192,10 @@ public final class FormLayout extends Layout {
         super(delegate);
     }
 
+    public static FormLayout createApi(IFormLayout delegate) {
+        return new FormLayout(delegate);
+    }
+
     public IFormLayout getDelegate() {
         return (IFormLayout) super.getDelegate();
     }

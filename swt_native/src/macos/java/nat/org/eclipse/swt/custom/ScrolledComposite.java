@@ -761,6 +761,8 @@ public class ScrolledComposite extends Composite implements IScrolledComposite {
     }
 
     public org.eclipse.swt.custom.ScrolledComposite getApi() {
-        return (org.eclipse.swt.custom.ScrolledComposite) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.ScrolledComposite.createApi(this);
+        return (org.eclipse.swt.custom.ScrolledComposite) api;
     }
 }

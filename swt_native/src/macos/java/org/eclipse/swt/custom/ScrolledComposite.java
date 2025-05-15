@@ -511,6 +511,10 @@ public class ScrolledComposite extends Composite {
         super(delegate);
     }
 
+    public static ScrolledComposite createApi(IScrolledComposite delegate) {
+        return new ScrolledComposite(delegate);
+    }
+
     public IScrolledComposite getDelegate() {
         return (IScrolledComposite) super.getDelegate();
     }

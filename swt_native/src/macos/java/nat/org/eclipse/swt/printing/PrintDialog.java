@@ -421,6 +421,8 @@ public class PrintDialog extends Dialog implements IPrintDialog {
     }
 
     public org.eclipse.swt.printing.PrintDialog getApi() {
-        return (org.eclipse.swt.printing.PrintDialog) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.printing.PrintDialog.createApi(this);
+        return (org.eclipse.swt.printing.PrintDialog) api;
     }
 }

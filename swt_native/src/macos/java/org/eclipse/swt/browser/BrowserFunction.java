@@ -221,6 +221,10 @@ public class BrowserFunction {
         delegate.setApi(this);
     }
 
+    public static BrowserFunction createApi(IBrowserFunction delegate) {
+        return new BrowserFunction(delegate);
+    }
+
     public IBrowserFunction getDelegate() {
         return delegate;
     }

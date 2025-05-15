@@ -218,6 +218,10 @@ public class FontDialog extends Dialog {
         super(delegate);
     }
 
+    public static FontDialog createApi(IFontDialog delegate) {
+        return new FontDialog(delegate);
+    }
+
     public IFontDialog getDelegate() {
         return (IFontDialog) super.getDelegate();
     }

@@ -390,10 +390,12 @@ public final class FormData implements IFormData {
     }
 
     public org.eclipse.swt.layout.FormData getApi() {
+        if (api == null)
+            api = org.eclipse.swt.layout.FormData.createApi(this);
         return (org.eclipse.swt.layout.FormData) api;
     }
 
-    org.eclipse.swt.layout.FormData api;
+    protected org.eclipse.swt.layout.FormData api;
 
     public void setApi(org.eclipse.swt.layout.FormData api) {
         this.api = api;

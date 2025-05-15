@@ -63,6 +63,8 @@ public class TabFolderLayout extends Layout implements ITabFolderLayout {
     }
 
     public org.eclipse.swt.layout.TabFolderLayout getApi() {
-        return (org.eclipse.swt.layout.TabFolderLayout) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.layout.TabFolderLayout.createApi(this);
+        return (org.eclipse.swt.layout.TabFolderLayout) api;
     }
 }

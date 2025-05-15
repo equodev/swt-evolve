@@ -170,6 +170,10 @@ public class MessageBox extends Dialog {
         super(delegate);
     }
 
+    public static MessageBox createApi(IMessageBox delegate) {
+        return new MessageBox(delegate);
+    }
+
     public IMessageBox getDelegate() {
         return (IMessageBox) super.getDelegate();
     }

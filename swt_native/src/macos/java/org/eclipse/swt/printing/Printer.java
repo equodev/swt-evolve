@@ -392,6 +392,10 @@ public final class Printer extends Device {
         super(delegate);
     }
 
+    public static Printer createApi(IPrinter delegate) {
+        return new Printer(delegate);
+    }
+
     public IPrinter getDelegate() {
         return (IPrinter) super.getDelegate();
     }

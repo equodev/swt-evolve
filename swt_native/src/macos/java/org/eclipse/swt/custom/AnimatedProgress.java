@@ -106,6 +106,10 @@ public class AnimatedProgress extends Canvas {
         super(delegate);
     }
 
+    public static AnimatedProgress createApi(IAnimatedProgress delegate) {
+        return new AnimatedProgress(delegate);
+    }
+
     public IAnimatedProgress getDelegate() {
         return (IAnimatedProgress) super.getDelegate();
     }

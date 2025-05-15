@@ -350,6 +350,10 @@ public class ToolTip extends Widget {
         super(delegate);
     }
 
+    public static ToolTip createApi(IToolTip delegate) {
+        return new ToolTip(delegate);
+    }
+
     public IToolTip getDelegate() {
         return (IToolTip) super.getDelegate();
     }

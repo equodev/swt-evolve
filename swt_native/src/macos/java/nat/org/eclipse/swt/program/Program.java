@@ -463,10 +463,12 @@ public final class Program implements IProgram {
     }
 
     public org.eclipse.swt.program.Program getApi() {
+        if (api == null)
+            api = org.eclipse.swt.program.Program.createApi(this);
         return (org.eclipse.swt.program.Program) api;
     }
 
-    org.eclipse.swt.program.Program api;
+    protected org.eclipse.swt.program.Program api;
 
     public void setApi(org.eclipse.swt.program.Program api) {
         this.api = api;

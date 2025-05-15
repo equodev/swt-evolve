@@ -410,6 +410,8 @@ public final class Font extends Resource implements IFont {
     }
 
     public org.eclipse.swt.graphics.Font getApi() {
-        return (org.eclipse.swt.graphics.Font) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.graphics.Font.createApi(this);
+        return (org.eclipse.swt.graphics.Font) api;
     }
 }

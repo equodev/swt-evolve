@@ -218,6 +218,10 @@ public final class Font extends Resource {
         super(delegate);
     }
 
+    public static Font createApi(IFont delegate) {
+        return new Font(delegate);
+    }
+
     public IFont getDelegate() {
         return (IFont) super.getDelegate();
     }

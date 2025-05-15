@@ -4631,6 +4631,8 @@ public class CTabFolder extends Composite implements ICTabFolder {
     }
 
     public org.eclipse.swt.custom.CTabFolder getApi() {
-        return (org.eclipse.swt.custom.CTabFolder) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.CTabFolder.createApi(this);
+        return (org.eclipse.swt.custom.CTabFolder) api;
     }
 }

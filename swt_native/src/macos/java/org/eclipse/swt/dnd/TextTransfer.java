@@ -91,6 +91,10 @@ public class TextTransfer extends ByteArrayTransfer {
         super(delegate);
     }
 
+    public static TextTransfer createApi(ITextTransfer delegate) {
+        return new TextTransfer(delegate);
+    }
+
     public ITextTransfer getDelegate() {
         return (ITextTransfer) super.getDelegate();
     }

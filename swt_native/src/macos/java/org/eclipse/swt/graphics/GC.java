@@ -2037,6 +2037,10 @@ public final class GC extends Resource {
         super(delegate);
     }
 
+    public static GC createApi(IGC delegate) {
+        return new GC(delegate);
+    }
+
     public IGC getDelegate() {
         return (IGC) super.getDelegate();
     }

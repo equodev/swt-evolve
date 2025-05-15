@@ -484,6 +484,10 @@ public final class GridData {
         delegate.setApi(this);
     }
 
+    public static GridData createApi(IGridData delegate) {
+        return new GridData(delegate);
+    }
+
     public IGridData getDelegate() {
         return delegate;
     }

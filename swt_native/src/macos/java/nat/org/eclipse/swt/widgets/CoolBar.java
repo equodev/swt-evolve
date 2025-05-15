@@ -1333,6 +1333,8 @@ public class CoolBar extends Composite implements ICoolBar {
     }
 
     public org.eclipse.swt.widgets.CoolBar getApi() {
-        return (org.eclipse.swt.widgets.CoolBar) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.CoolBar.createApi(this);
+        return (org.eclipse.swt.widgets.CoolBar) api;
     }
 }

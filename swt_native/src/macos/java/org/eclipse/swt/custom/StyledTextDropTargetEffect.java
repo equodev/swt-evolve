@@ -139,6 +139,10 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
         super(delegate);
     }
 
+    public static StyledTextDropTargetEffect createApi(IStyledTextDropTargetEffect delegate) {
+        return new StyledTextDropTargetEffect(delegate);
+    }
+
     public IStyledTextDropTargetEffect getDelegate() {
         return (IStyledTextDropTargetEffect) super.getDelegate();
     }

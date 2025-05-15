@@ -297,6 +297,10 @@ public final class Rectangle implements Serializable {
         delegate.setApi(this);
     }
 
+    public static Rectangle createApi(IRectangle delegate) {
+        return new Rectangle(delegate);
+    }
+
     public IRectangle getDelegate() {
         return delegate;
     }

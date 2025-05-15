@@ -92,6 +92,10 @@ public class ImageTransfer extends ByteArrayTransfer {
         super(delegate);
     }
 
+    public static ImageTransfer createApi(IImageTransfer delegate) {
+        return new ImageTransfer(delegate);
+    }
+
     public IImageTransfer getDelegate() {
         return (IImageTransfer) super.getDelegate();
     }

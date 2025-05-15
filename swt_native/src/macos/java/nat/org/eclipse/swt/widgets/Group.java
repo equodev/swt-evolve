@@ -306,6 +306,8 @@ public class Group extends Composite implements IGroup {
     }
 
     public org.eclipse.swt.widgets.Group getApi() {
-        return (org.eclipse.swt.widgets.Group) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.Group.createApi(this);
+        return (org.eclipse.swt.widgets.Group) api;
     }
 }

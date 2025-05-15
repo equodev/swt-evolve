@@ -147,6 +147,10 @@ public class BorderLayout extends Layout {
         super(delegate);
     }
 
+    public static BorderLayout createApi(IBorderLayout delegate) {
+        return new BorderLayout(delegate);
+    }
+
     public IBorderLayout getDelegate() {
         return (IBorderLayout) super.getDelegate();
     }

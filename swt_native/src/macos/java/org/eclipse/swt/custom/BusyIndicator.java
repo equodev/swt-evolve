@@ -163,6 +163,10 @@ public class BusyIndicator {
         delegate.setApi(this);
     }
 
+    public static BusyIndicator createApi(IBusyIndicator delegate) {
+        return new BusyIndicator(delegate);
+    }
+
     public IBusyIndicator getDelegate() {
         return delegate;
     }

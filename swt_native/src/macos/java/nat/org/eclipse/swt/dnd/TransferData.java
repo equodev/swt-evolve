@@ -66,10 +66,12 @@ public class TransferData implements ITransferData {
     public NSObject data;
 
     public org.eclipse.swt.dnd.TransferData getApi() {
+        if (api == null)
+            api = org.eclipse.swt.dnd.TransferData.createApi(this);
         return (org.eclipse.swt.dnd.TransferData) api;
     }
 
-    org.eclipse.swt.dnd.TransferData api;
+    protected org.eclipse.swt.dnd.TransferData api;
 
     public void setApi(org.eclipse.swt.dnd.TransferData api) {
         this.api = api;

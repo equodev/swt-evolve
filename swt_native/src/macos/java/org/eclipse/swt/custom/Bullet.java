@@ -101,6 +101,10 @@ public class Bullet {
         delegate.setApi(this);
     }
 
+    public static Bullet createApi(IBullet delegate) {
+        return new Bullet(delegate);
+    }
+
     public IBullet getDelegate() {
         return delegate;
     }

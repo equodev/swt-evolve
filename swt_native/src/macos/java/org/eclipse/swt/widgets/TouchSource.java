@@ -81,6 +81,10 @@ public final class TouchSource {
         delegate.setApi(this);
     }
 
+    public static TouchSource createApi(ITouchSource delegate) {
+        return new TouchSource(delegate);
+    }
+
     public ITouchSource getDelegate() {
         return delegate;
     }

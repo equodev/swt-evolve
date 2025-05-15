@@ -612,6 +612,8 @@ public class CBanner extends Composite implements ICBanner {
     }
 
     public org.eclipse.swt.custom.CBanner getApi() {
-        return (org.eclipse.swt.custom.CBanner) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.CBanner.createApi(this);
+        return (org.eclipse.swt.custom.CBanner) api;
     }
 }

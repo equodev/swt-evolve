@@ -171,7 +171,7 @@ public abstract class Transfer implements ITransfer {
         return (org.eclipse.swt.dnd.Transfer) api;
     }
 
-    org.eclipse.swt.dnd.Transfer api;
+    protected org.eclipse.swt.dnd.Transfer api;
 
     public void setApi(org.eclipse.swt.dnd.Transfer api) {
         this.api = api;

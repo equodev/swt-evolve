@@ -131,6 +131,10 @@ public final class FormData {
         delegate.setApi(this);
     }
 
+    public static FormData createApi(IFormData delegate) {
+        return new FormData(delegate);
+    }
+
     public IFormData getDelegate() {
         return delegate;
     }

@@ -321,6 +321,10 @@ public class Tracker extends Widget {
         super(delegate);
     }
 
+    public static Tracker createApi(ITracker delegate) {
+        return new Tracker(delegate);
+    }
+
     public ITracker getDelegate() {
         return (ITracker) super.getDelegate();
     }

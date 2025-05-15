@@ -538,6 +538,10 @@ public class Spinner extends Composite {
         super(delegate);
     }
 
+    public static Spinner createApi(ISpinner delegate) {
+        return new Spinner(delegate);
+    }
+
     public ISpinner getDelegate() {
         return (ISpinner) super.getDelegate();
     }

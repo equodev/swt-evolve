@@ -83,6 +83,10 @@ public class TableDragSourceEffect extends DragSourceEffect {
         super(delegate);
     }
 
+    public static TableDragSourceEffect createApi(ITableDragSourceEffect delegate) {
+        return new TableDragSourceEffect(delegate);
+    }
+
     public ITableDragSourceEffect getDelegate() {
         return (ITableDragSourceEffect) super.getDelegate();
     }

@@ -95,6 +95,10 @@ public final class Monitor {
         delegate.setApi(this);
     }
 
+    public static Monitor createApi(IMonitor delegate) {
+        return new Monitor(delegate);
+    }
+
     public IMonitor getDelegate() {
         return delegate;
     }

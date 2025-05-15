@@ -156,6 +156,10 @@ public class GLData {
         delegate.setApi(this);
     }
 
+    public static GLData createApi(IGLData delegate) {
+        return new GLData(delegate);
+    }
+
     public IGLData getDelegate() {
         return delegate;
     }

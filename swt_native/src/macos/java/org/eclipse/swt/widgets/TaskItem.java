@@ -296,6 +296,10 @@ public class TaskItem extends Item {
         super(delegate);
     }
 
+    public static TaskItem createApi(ITaskItem delegate) {
+        return new TaskItem(delegate);
+    }
+
     public ITaskItem getDelegate() {
         return (ITaskItem) super.getDelegate();
     }

@@ -40,6 +40,10 @@ public class DeviceData {
         delegate.setApi(this);
     }
 
+    public static DeviceData createApi(IDeviceData delegate) {
+        return new DeviceData(delegate);
+    }
+
     public IDeviceData getDelegate() {
         return delegate;
     }

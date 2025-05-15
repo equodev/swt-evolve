@@ -435,6 +435,10 @@ public class CTabItem extends Item {
         super(delegate);
     }
 
+    public static CTabItem createApi(ICTabItem delegate) {
+        return new CTabItem(delegate);
+    }
+
     public ICTabItem getDelegate() {
         return (ICTabItem) super.getDelegate();
     }

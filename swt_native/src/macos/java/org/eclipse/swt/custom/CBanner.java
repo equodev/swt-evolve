@@ -301,6 +301,10 @@ public class CBanner extends Composite {
         super(delegate);
     }
 
+    public static CBanner createApi(ICBanner delegate) {
+        return new CBanner(delegate);
+    }
+
     public ICBanner getDelegate() {
         return (ICBanner) super.getDelegate();
     }

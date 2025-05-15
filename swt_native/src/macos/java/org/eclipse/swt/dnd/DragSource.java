@@ -280,6 +280,10 @@ public class DragSource extends Widget {
         super(delegate);
     }
 
+    public static DragSource createApi(IDragSource delegate) {
+        return new DragSource(delegate);
+    }
+
     public IDragSource getDelegate() {
         return (IDragSource) super.getDelegate();
     }

@@ -123,6 +123,10 @@ public class StackLayout extends Layout {
         super(delegate);
     }
 
+    public static StackLayout createApi(IStackLayout delegate) {
+        return new StackLayout(delegate);
+    }
+
     public IStackLayout getDelegate() {
         return (IStackLayout) super.getDelegate();
     }

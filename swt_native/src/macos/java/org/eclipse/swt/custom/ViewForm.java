@@ -334,6 +334,10 @@ public class ViewForm extends Composite {
         super(delegate);
     }
 
+    public static ViewForm createApi(IViewForm delegate) {
+        return new ViewForm(delegate);
+    }
+
     public IViewForm getDelegate() {
         return (IViewForm) super.getDelegate();
     }

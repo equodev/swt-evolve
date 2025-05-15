@@ -460,6 +460,10 @@ public class Clipboard {
         delegate.setApi(this);
     }
 
+    public static Clipboard createApi(IClipboard delegate) {
+        return new Clipboard(delegate);
+    }
+
     public IClipboard getDelegate() {
         return delegate;
     }

@@ -3639,6 +3639,10 @@ public class StyledText extends Canvas {
         super(delegate);
     }
 
+    public static StyledText createApi(IStyledText delegate) {
+        return new StyledText(delegate);
+    }
+
     public IStyledText getDelegate() {
         return (IStyledText) super.getDelegate();
     }

@@ -392,6 +392,10 @@ public class Slider extends Control {
         super(delegate);
     }
 
+    public static Slider createApi(ISlider delegate) {
+        return new Slider(delegate);
+    }
+
     public ISlider getDelegate() {
         return (ISlider) super.getDelegate();
     }

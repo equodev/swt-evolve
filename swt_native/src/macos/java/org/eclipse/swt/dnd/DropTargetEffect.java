@@ -93,6 +93,10 @@ public class DropTargetEffect extends DropTargetAdapter {
         super(delegate);
     }
 
+    public static DropTargetEffect createApi(IDropTargetEffect delegate) {
+        return new DropTargetEffect(delegate);
+    }
+
     public IDropTargetEffect getDelegate() {
         return (IDropTargetEffect) super.getDelegate();
     }

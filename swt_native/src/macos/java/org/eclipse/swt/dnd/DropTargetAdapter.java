@@ -119,6 +119,10 @@ public class DropTargetAdapter implements DropTargetListener {
         delegate.setApi(this);
     }
 
+    public static DropTargetAdapter createApi(IDropTargetAdapter delegate) {
+        return new DropTargetAdapter(delegate);
+    }
+
     public IDropTargetAdapter getDelegate() {
         return delegate;
     }

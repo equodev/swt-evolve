@@ -239,6 +239,10 @@ public class ExpandItem extends Item {
         super(delegate);
     }
 
+    public static ExpandItem createApi(IExpandItem delegate) {
+        return new ExpandItem(delegate);
+    }
+
     public IExpandItem getDelegate() {
         return (IExpandItem) super.getDelegate();
     }

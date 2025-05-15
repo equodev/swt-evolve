@@ -1848,6 +1848,10 @@ public class Display extends Device implements Executor {
         super(delegate);
     }
 
+    public static Display createApi(IDisplay delegate) {
+        return new Display(delegate);
+    }
+
     public IDisplay getDelegate() {
         return (IDisplay) super.getDelegate();
     }

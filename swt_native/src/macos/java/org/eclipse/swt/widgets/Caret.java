@@ -360,6 +360,10 @@ public class Caret extends Widget {
         super(delegate);
     }
 
+    public static Caret createApi(ICaret delegate) {
+        return new Caret(delegate);
+    }
+
     public ICaret getDelegate() {
         return (ICaret) super.getDelegate();
     }

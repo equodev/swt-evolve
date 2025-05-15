@@ -119,6 +119,10 @@ public class TableDropTargetEffect extends DropTargetEffect {
         super(delegate);
     }
 
+    public static TableDropTargetEffect createApi(ITableDropTargetEffect delegate) {
+        return new TableDropTargetEffect(delegate);
+    }
+
     public ITableDropTargetEffect getDelegate() {
         return (ITableDropTargetEffect) super.getDelegate();
     }

@@ -413,6 +413,10 @@ public final class Color extends Resource {
         super(delegate);
     }
 
+    public static Color createApi(IColor delegate) {
+        return new Color(delegate);
+    }
+
     public IColor getDelegate() {
         return (IColor) super.getDelegate();
     }

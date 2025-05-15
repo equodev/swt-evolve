@@ -512,6 +512,10 @@ public final class Region extends Resource {
         super(delegate);
     }
 
+    public static Region createApi(IRegion delegate) {
+        return new Region(delegate);
+    }
+
     public IRegion getDelegate() {
         return (IRegion) super.getDelegate();
     }

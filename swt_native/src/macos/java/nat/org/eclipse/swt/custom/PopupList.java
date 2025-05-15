@@ -291,10 +291,12 @@ public class PopupList implements IPopupList {
     }
 
     public org.eclipse.swt.custom.PopupList getApi() {
+        if (api == null)
+            api = org.eclipse.swt.custom.PopupList.createApi(this);
         return (org.eclipse.swt.custom.PopupList) api;
     }
 
-    org.eclipse.swt.custom.PopupList api;
+    protected org.eclipse.swt.custom.PopupList api;
 
     public void setApi(org.eclipse.swt.custom.PopupList api) {
         this.api = api;

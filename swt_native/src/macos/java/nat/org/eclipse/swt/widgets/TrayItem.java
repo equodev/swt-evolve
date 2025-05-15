@@ -643,6 +643,8 @@ public class TrayItem extends Item implements ITrayItem {
     }
 
     public org.eclipse.swt.widgets.TrayItem getApi() {
-        return (org.eclipse.swt.widgets.TrayItem) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.TrayItem.createApi(this);
+        return (org.eclipse.swt.widgets.TrayItem) api;
     }
 }

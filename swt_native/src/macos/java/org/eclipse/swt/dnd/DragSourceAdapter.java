@@ -70,6 +70,10 @@ public class DragSourceAdapter implements DragSourceListener {
         delegate.setApi(this);
     }
 
+    public static DragSourceAdapter createApi(IDragSourceAdapter delegate) {
+        return new DragSourceAdapter(delegate);
+    }
+
     public IDragSourceAdapter getDelegate() {
         return delegate;
     }

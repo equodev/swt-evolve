@@ -633,6 +633,10 @@ public class ToolItem extends Item {
         super(delegate);
     }
 
+    public static ToolItem createApi(IToolItem delegate) {
+        return new ToolItem(delegate);
+    }
+
     public IToolItem getDelegate() {
         return (IToolItem) super.getDelegate();
     }

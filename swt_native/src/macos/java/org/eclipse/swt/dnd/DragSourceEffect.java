@@ -70,6 +70,10 @@ public class DragSourceEffect extends DragSourceAdapter {
         super(delegate);
     }
 
+    public static DragSourceEffect createApi(IDragSourceEffect delegate) {
+        return new DragSourceEffect(delegate);
+    }
+
     public IDragSourceEffect getDelegate() {
         return (IDragSourceEffect) super.getDelegate();
     }

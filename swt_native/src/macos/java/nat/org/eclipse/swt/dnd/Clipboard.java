@@ -587,10 +587,12 @@ public class Clipboard implements IClipboard {
     }
 
     public org.eclipse.swt.dnd.Clipboard getApi() {
+        if (api == null)
+            api = org.eclipse.swt.dnd.Clipboard.createApi(this);
         return (org.eclipse.swt.dnd.Clipboard) api;
     }
 
-    org.eclipse.swt.dnd.Clipboard api;
+    protected org.eclipse.swt.dnd.Clipboard api;
 
     public void setApi(org.eclipse.swt.dnd.Clipboard api) {
         this.api = api;

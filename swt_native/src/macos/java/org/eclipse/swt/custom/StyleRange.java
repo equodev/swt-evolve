@@ -169,6 +169,10 @@ public class StyleRange extends TextStyle implements Cloneable {
         super(delegate);
     }
 
+    public static StyleRange createApi(IStyleRange delegate) {
+        return new StyleRange(delegate);
+    }
+
     public IStyleRange getDelegate() {
         return (IStyleRange) super.getDelegate();
     }

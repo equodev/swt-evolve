@@ -754,6 +754,8 @@ public final class Printer extends Device implements IPrinter {
     }
 
     public org.eclipse.swt.printing.Printer getApi() {
-        return (org.eclipse.swt.printing.Printer) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.printing.Printer.createApi(this);
+        return (org.eclipse.swt.printing.Printer) api;
     }
 }

@@ -469,6 +469,10 @@ public class Decorations extends Canvas {
         super(delegate);
     }
 
+    public static Decorations createApi(IDecorations delegate) {
+        return new Decorations(delegate);
+    }
+
     public IDecorations getDelegate() {
         return (IDecorations) super.getDelegate();
     }

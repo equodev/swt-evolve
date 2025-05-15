@@ -46,6 +46,10 @@ public final class PathData {
         delegate.setApi(this);
     }
 
+    public static PathData createApi(IPathData delegate) {
+        return new PathData(delegate);
+    }
+
     public IPathData getDelegate() {
         return delegate;
     }

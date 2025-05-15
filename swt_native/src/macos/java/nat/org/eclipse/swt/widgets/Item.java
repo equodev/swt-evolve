@@ -232,6 +232,6 @@ public abstract class Item extends Widget implements IItem {
     }
 
     public org.eclipse.swt.widgets.Item getApi() {
-        return (org.eclipse.swt.widgets.Item) super.getApi();
+        return (org.eclipse.swt.widgets.Item) api;
     }
 }

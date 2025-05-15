@@ -1189,6 +1189,8 @@ public class Menu extends Widget implements IMenu {
     }
 
     public org.eclipse.swt.widgets.Menu getApi() {
-        return (org.eclipse.swt.widgets.Menu) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.Menu.createApi(this);
+        return (org.eclipse.swt.widgets.Menu) api;
     }
 }

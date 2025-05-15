@@ -822,6 +822,10 @@ public class List extends Scrollable {
         super(delegate);
     }
 
+    public static List createApi(IList delegate) {
+        return new List(delegate);
+    }
+
     public IList getDelegate() {
         return (IList) super.getDelegate();
     }

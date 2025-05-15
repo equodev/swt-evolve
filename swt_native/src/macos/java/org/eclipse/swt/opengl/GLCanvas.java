@@ -104,6 +104,10 @@ public class GLCanvas extends Canvas {
         super(delegate);
     }
 
+    public static GLCanvas createApi(IGLCanvas delegate) {
+        return new GLCanvas(delegate);
+    }
+
     public IGLCanvas getDelegate() {
         return (IGLCanvas) super.getDelegate();
     }

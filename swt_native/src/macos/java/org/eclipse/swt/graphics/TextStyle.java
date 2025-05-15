@@ -228,6 +228,10 @@ public class TextStyle {
         delegate.setApi(this);
     }
 
+    public static TextStyle createApi(ITextStyle delegate) {
+        return new TextStyle(delegate);
+    }
+
     public ITextStyle getDelegate() {
         return delegate;
     }

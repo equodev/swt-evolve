@@ -38,10 +38,12 @@ public final class PathData implements IPathData {
     public float[] points;
 
     public org.eclipse.swt.graphics.PathData getApi() {
+        if (api == null)
+            api = org.eclipse.swt.graphics.PathData.createApi(this);
         return (org.eclipse.swt.graphics.PathData) api;
     }
 
-    org.eclipse.swt.graphics.PathData api;
+    protected org.eclipse.swt.graphics.PathData api;
 
     public void setApi(org.eclipse.swt.graphics.PathData api) {
         this.api = api;

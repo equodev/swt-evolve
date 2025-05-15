@@ -220,6 +220,8 @@ public class AnimatedProgress extends Canvas implements IAnimatedProgress {
     }
 
     public org.eclipse.swt.custom.AnimatedProgress getApi() {
-        return (org.eclipse.swt.custom.AnimatedProgress) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.AnimatedProgress.createApi(this);
+        return (org.eclipse.swt.custom.AnimatedProgress) api;
     }
 }

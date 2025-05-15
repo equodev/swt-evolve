@@ -111,6 +111,10 @@ public class TaskBar extends Widget {
         super(delegate);
     }
 
+    public static TaskBar createApi(ITaskBar delegate) {
+        return new TaskBar(delegate);
+    }
+
     public ITaskBar getDelegate() {
         return (ITaskBar) super.getDelegate();
     }

@@ -255,6 +255,10 @@ public class TableCursor extends Canvas {
         super(delegate);
     }
 
+    public static TableCursor createApi(ITableCursor delegate) {
+        return new TableCursor(delegate);
+    }
+
     public ITableCursor getDelegate() {
         return (ITableCursor) super.getDelegate();
     }

@@ -254,6 +254,10 @@ public class PrintDialog extends Dialog {
         super(delegate);
     }
 
+    public static PrintDialog createApi(IPrintDialog delegate) {
+        return new PrintDialog(delegate);
+    }
+
     public IPrintDialog getDelegate() {
         return (IPrintDialog) super.getDelegate();
     }

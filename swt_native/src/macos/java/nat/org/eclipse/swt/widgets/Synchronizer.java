@@ -222,10 +222,12 @@ public class Synchronizer implements ISynchronizer {
     }
 
     public org.eclipse.swt.widgets.Synchronizer getApi() {
+        if (api == null)
+            api = org.eclipse.swt.widgets.Synchronizer.createApi(this);
         return (org.eclipse.swt.widgets.Synchronizer) api;
     }
 
-    org.eclipse.swt.widgets.Synchronizer api;
+    protected org.eclipse.swt.widgets.Synchronizer api;
 
     public void setApi(org.eclipse.swt.widgets.Synchronizer api) {
         this.api = api;

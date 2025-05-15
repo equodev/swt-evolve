@@ -1116,6 +1116,8 @@ public class CLabel extends Canvas implements ICLabel {
     }
 
     public org.eclipse.swt.custom.CLabel getApi() {
-        return (org.eclipse.swt.custom.CLabel) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.CLabel.createApi(this);
+        return (org.eclipse.swt.custom.CLabel) api;
     }
 }

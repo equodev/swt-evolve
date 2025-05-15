@@ -1042,6 +1042,10 @@ public class Combo extends Composite {
         super(delegate);
     }
 
+    public static Combo createApi(ICombo delegate) {
+        return new Combo(delegate);
+    }
+
     public ICombo getDelegate() {
         return (ICombo) super.getDelegate();
     }

@@ -292,6 +292,8 @@ public class TableEditor extends ControlEditor implements ITableEditor {
     }
 
     public org.eclipse.swt.custom.TableEditor getApi() {
-        return (org.eclipse.swt.custom.TableEditor) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.custom.TableEditor.createApi(this);
+        return (org.eclipse.swt.custom.TableEditor) api;
     }
 }

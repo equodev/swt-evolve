@@ -504,6 +504,8 @@ public class TaskItem extends Item implements ITaskItem {
     }
 
     public org.eclipse.swt.widgets.TaskItem getApi() {
-        return (org.eclipse.swt.widgets.TaskItem) super.getApi();
+        if (api == null)
+            api = org.eclipse.swt.widgets.TaskItem.createApi(this);
+        return (org.eclipse.swt.widgets.TaskItem) api;
     }
 }

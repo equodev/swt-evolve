@@ -352,6 +352,10 @@ public class Transform extends Resource {
         super(delegate);
     }
 
+    public static Transform createApi(ITransform delegate) {
+        return new Transform(delegate);
+    }
+
     public ITransform getDelegate() {
         return (ITransform) super.getDelegate();
     }
