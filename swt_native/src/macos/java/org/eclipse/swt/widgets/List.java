@@ -73,7 +73,7 @@ public class List extends Scrollable {
      * @see Widget#getStyle
      */
     public List(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.List((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.List((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**

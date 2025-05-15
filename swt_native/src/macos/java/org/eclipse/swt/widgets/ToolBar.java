@@ -85,7 +85,7 @@ public class ToolBar extends Composite {
      * @see Widget#getStyle()
      */
     public ToolBar(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.ToolBar((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.ToolBar((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     protected void checkSubclass() {
@@ -140,7 +140,7 @@ public class ToolBar extends Composite {
      * </ul>
      */
     public ToolItem getItem(Point point) {
-        return getDelegate().getItem(point.getDelegate()).getApi();
+        return getDelegate().getItem((point != null ? point.getDelegate() : null)).getApi();
     }
 
     /**
@@ -213,7 +213,7 @@ public class ToolBar extends Composite {
      * </ul>
      */
     public int indexOf(ToolItem item) {
-        return getDelegate().indexOf(item.getDelegate());
+        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
     }
 
     public void setRedraw(boolean redraw) {

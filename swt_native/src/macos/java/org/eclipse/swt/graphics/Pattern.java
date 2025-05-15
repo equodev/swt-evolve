@@ -68,7 +68,7 @@ public class Pattern extends Resource {
      * @see #dispose()
      */
     public Pattern(Device device, Image image) {
-        this(new nat.org.eclipse.swt.graphics.Pattern((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), (nat.org.eclipse.swt.graphics.Image) image.getDelegate()));
+        this(new nat.org.eclipse.swt.graphics.Pattern((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), (nat.org.eclipse.swt.graphics.Image) (image != null ? image.getDelegate() : null)));
     }
 
     /**
@@ -107,7 +107,7 @@ public class Pattern extends Resource {
      * @see #dispose()
      */
     public Pattern(Device device, float x1, float y1, float x2, float y2, Color color1, Color color2) {
-        this(new nat.org.eclipse.swt.graphics.Pattern((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), x1, y1, x2, y2, (nat.org.eclipse.swt.graphics.Color) color1.getDelegate(), (nat.org.eclipse.swt.graphics.Color) color2.getDelegate()));
+        this(new nat.org.eclipse.swt.graphics.Pattern((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), x1, y1, x2, y2, (nat.org.eclipse.swt.graphics.Color) (color1 != null ? color1.getDelegate() : null), (nat.org.eclipse.swt.graphics.Color) (color2 != null ? color2.getDelegate() : null)));
     }
 
     /**
@@ -150,7 +150,7 @@ public class Pattern extends Resource {
      * @since 3.2
      */
     public Pattern(Device device, float x1, float y1, float x2, float y2, Color color1, int alpha1, Color color2, int alpha2) {
-        this(new nat.org.eclipse.swt.graphics.Pattern((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), x1, y1, x2, y2, (nat.org.eclipse.swt.graphics.Color) color1.getDelegate(), alpha1, (nat.org.eclipse.swt.graphics.Color) color2.getDelegate(), alpha2));
+        this(new nat.org.eclipse.swt.graphics.Pattern((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), x1, y1, x2, y2, (nat.org.eclipse.swt.graphics.Color) (color1 != null ? color1.getDelegate() : null), alpha1, (nat.org.eclipse.swt.graphics.Color) (color2 != null ? color2.getDelegate() : null), alpha2));
     }
 
     /**

@@ -72,7 +72,7 @@ public class TableCursor extends Canvas {
      * @see Widget#getStyle()
      */
     public TableCursor(Table parent, int style) {
-        this(new nat.org.eclipse.swt.custom.TableCursor((nat.org.eclipse.swt.widgets.Table) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.custom.TableCursor((nat.org.eclipse.swt.widgets.Table) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -197,7 +197,7 @@ public class TableCursor extends Canvas {
      * </ul>
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground(color.getDelegate());
+        getDelegate().setBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -218,7 +218,7 @@ public class TableCursor extends Canvas {
      * </ul>
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground(color.getDelegate());
+        getDelegate().setForeground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -248,7 +248,7 @@ public class TableCursor extends Canvas {
      * </ul>
      */
     public void setSelection(TableItem row, int column) {
-        getDelegate().setSelection(row.getDelegate(), column);
+        getDelegate().setSelection((row != null ? row.getDelegate() : null), column);
     }
 
     protected TableCursor(ITableCursor delegate) {

@@ -63,7 +63,7 @@ public class Accessible {
      * @since 3.6
      */
     public Accessible(Accessible parent) {
-        this(new nat.org.eclipse.swt.accessibility.Accessible((nat.org.eclipse.swt.accessibility.Accessible) parent.getDelegate()));
+        this(new nat.org.eclipse.swt.accessibility.Accessible((nat.org.eclipse.swt.accessibility.Accessible) (parent != null ? parent.getDelegate() : null)));
     }
 
     /**
@@ -82,7 +82,7 @@ public class Accessible {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static Accessible internal_new_Accessible(Control control) {
-        return nat.org.eclipse.swt.accessibility.Accessible.internal_new_Accessible((nat.org.eclipse.swt.widgets.Control) control.getDelegate()).getApi();
+        return nat.org.eclipse.swt.accessibility.Accessible.internal_new_Accessible((nat.org.eclipse.swt.widgets.Control) (control != null ? control.getDelegate() : null)).getApi();
     }
 
     /**
@@ -348,7 +348,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addRelation(int type, Accessible target) {
-        getDelegate().addRelation(type, target.getDelegate());
+        getDelegate().addRelation(type, (target != null ? target.getDelegate() : null));
     }
 
     /**
@@ -671,7 +671,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeRelation(int type, Accessible target) {
-        getDelegate().removeRelation(type, target.getDelegate());
+        getDelegate().removeRelation(type, (target != null ? target.getDelegate() : null));
     }
 
     /**

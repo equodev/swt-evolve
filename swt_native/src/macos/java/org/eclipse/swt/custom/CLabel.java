@@ -90,7 +90,7 @@ public class CLabel extends Canvas {
      * @see #getStyle()
      */
     public CLabel(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.custom.CLabel((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.custom.CLabel((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
@@ -222,7 +222,7 @@ public class CLabel extends Canvas {
     }
 
     public void setBackground(Color color) {
-        getDelegate().setBackground(color.getDelegate());
+        getDelegate().setBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -299,7 +299,7 @@ public class CLabel extends Canvas {
      * </ul>
      */
     public void setBackground(Image image) {
-        getDelegate().setBackground(image.getDelegate());
+        getDelegate().setBackground((image != null ? image.getDelegate() : null));
     }
 
     /**
@@ -319,7 +319,7 @@ public class CLabel extends Canvas {
     }
 
     public void setFont(Font font) {
-        getDelegate().setFont(font.getDelegate());
+        getDelegate().setFont((font != null ? font.getDelegate() : null));
     }
 
     /**
@@ -334,7 +334,7 @@ public class CLabel extends Canvas {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage(image.getDelegate());
+        getDelegate().setImage((image != null ? image.getDelegate() : null));
     }
 
     /**
@@ -447,7 +447,7 @@ public class CLabel extends Canvas {
      * @return the shortened text
      */
     protected String shortenText(GC gc, String t, int width) {
-        return getDelegate().shortenText(gc.getDelegate(), t, width);
+        return getDelegate().shortenText((gc != null ? gc.getDelegate() : null), t, width);
     }
 
     protected CLabel(ICLabel delegate) {

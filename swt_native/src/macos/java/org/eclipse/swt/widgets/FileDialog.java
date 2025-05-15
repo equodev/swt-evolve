@@ -56,7 +56,7 @@ public class FileDialog extends Dialog {
      * </ul>
      */
     public FileDialog(Shell parent) {
-        this(new nat.org.eclipse.swt.widgets.FileDialog((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate()));
+        this(new nat.org.eclipse.swt.widgets.FileDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
     }
 
     /**
@@ -88,7 +88,7 @@ public class FileDialog extends Dialog {
      * @see SWT#MULTI
      */
     public FileDialog(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.FileDialog((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.FileDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**

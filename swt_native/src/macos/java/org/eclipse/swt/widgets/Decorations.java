@@ -141,7 +141,7 @@ public class Decorations extends Canvas {
      * @see Widget#getStyle
      */
     public Decorations(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Decorations((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Decorations((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     protected void checkSubclass() {
@@ -317,7 +317,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public void setDefaultButton(Button button) {
-        getDelegate().setDefaultButton(button.getDelegate());
+        getDelegate().setDefaultButton((button != null ? button.getDelegate() : null));
     }
 
     /**
@@ -338,7 +338,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage(image.getDelegate());
+        getDelegate().setImage((image != null ? image.getDelegate() : null));
     }
 
     /**
@@ -412,7 +412,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public void setMenuBar(Menu menu) {
-        getDelegate().setMenuBar(menu.getDelegate());
+        getDelegate().setMenuBar((menu != null ? menu.getDelegate() : null));
     }
 
     /**

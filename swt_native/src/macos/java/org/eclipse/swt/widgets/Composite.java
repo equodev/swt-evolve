@@ -87,7 +87,7 @@ public class Composite extends Scrollable {
      * @see Widget#getStyle
      */
     public Composite(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Composite((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Composite((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -151,7 +151,7 @@ public class Composite extends Scrollable {
      * @since 3.6
      */
     public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
-        getDelegate().drawBackground(gc.getDelegate(), x, y, width, height, offsetX, offsetY);
+        getDelegate().drawBackground((gc != null ? gc.getDelegate() : null), x, y, width, height, offsetX, offsetY);
     }
 
     /**
@@ -534,7 +534,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void setLayout(Layout layout) {
-        getDelegate().setLayout(layout.getDelegate());
+        getDelegate().setLayout((layout != null ? layout.getDelegate() : null));
     }
 
     /**

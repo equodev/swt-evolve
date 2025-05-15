@@ -73,7 +73,7 @@ public abstract class Layout {
      * @since 3.1
      */
     protected boolean flushCache(Control control) {
-        return getDelegate().flushCache(control.getDelegate());
+        return getDelegate().flushCache((control != null ? control.getDelegate() : null));
     }
 
     /**

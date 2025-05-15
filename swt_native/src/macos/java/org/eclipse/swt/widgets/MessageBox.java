@@ -59,7 +59,7 @@ public class MessageBox extends Dialog {
      * </ul>
      */
     public MessageBox(Shell parent) {
-        this(new nat.org.eclipse.swt.widgets.MessageBox((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate()));
+        this(new nat.org.eclipse.swt.widgets.MessageBox((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
     }
 
     /**
@@ -99,7 +99,7 @@ public class MessageBox extends Dialog {
      * @see SWT#IGNORE
      */
     public MessageBox(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.MessageBox((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.MessageBox((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**

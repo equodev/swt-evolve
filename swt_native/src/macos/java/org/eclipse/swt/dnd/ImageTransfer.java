@@ -59,7 +59,7 @@ public class ImageTransfer extends ByteArrayTransfer {
      * @see Transfer#nativeToJava
      */
     public void javaToNative(Object object, TransferData transferData) {
-        getDelegate().javaToNative(object, transferData.getDelegate());
+        getDelegate().javaToNative(object, (transferData != null ? transferData.getDelegate() : null));
     }
 
     /**
@@ -73,7 +73,7 @@ public class ImageTransfer extends ByteArrayTransfer {
      * @see Transfer#javaToNative
      */
     public Object nativeToJava(TransferData transferData) {
-        return getDelegate().nativeToJava(transferData.getDelegate());
+        return getDelegate().nativeToJava((transferData != null ? transferData.getDelegate() : null));
     }
 
     protected int[] getTypeIds() {

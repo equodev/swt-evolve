@@ -70,7 +70,7 @@ public class Menu extends Widget {
      * @see Widget#getStyle
      */
     public Menu(Control parent) {
-        this(new nat.org.eclipse.swt.widgets.Menu((nat.org.eclipse.swt.widgets.Control) parent.getDelegate()));
+        this(new nat.org.eclipse.swt.widgets.Menu((nat.org.eclipse.swt.widgets.Control) (parent != null ? parent.getDelegate() : null)));
     }
 
     /**
@@ -111,7 +111,7 @@ public class Menu extends Widget {
      * @see Widget#getStyle
      */
     public Menu(Decorations parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Menu((nat.org.eclipse.swt.widgets.Decorations) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Menu((nat.org.eclipse.swt.widgets.Decorations) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -139,7 +139,7 @@ public class Menu extends Widget {
      * @see Widget#getStyle
      */
     public Menu(Menu parentMenu) {
-        this(new nat.org.eclipse.swt.widgets.Menu((nat.org.eclipse.swt.widgets.Menu) parentMenu.getDelegate()));
+        this(new nat.org.eclipse.swt.widgets.Menu((nat.org.eclipse.swt.widgets.Menu) (parentMenu != null ? parentMenu.getDelegate() : null)));
     }
 
     /**
@@ -167,7 +167,7 @@ public class Menu extends Widget {
      * @see Widget#getStyle
      */
     public Menu(MenuItem parentItem) {
-        this(new nat.org.eclipse.swt.widgets.Menu((nat.org.eclipse.swt.widgets.MenuItem) parentItem.getDelegate()));
+        this(new nat.org.eclipse.swt.widgets.Menu((nat.org.eclipse.swt.widgets.MenuItem) (parentItem != null ? parentItem.getDelegate() : null)));
     }
 
     /**
@@ -425,7 +425,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public int indexOf(MenuItem item) {
-        return getDelegate().indexOf(item.getDelegate());
+        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -522,7 +522,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public void setDefaultItem(MenuItem item) {
-        getDelegate().setDefaultItem(item.getDelegate());
+        getDelegate().setDefaultItem((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -593,7 +593,7 @@ public class Menu extends Widget {
      * @since 2.1
      */
     public void setLocation(Point location) {
-        getDelegate().setLocation(location.getDelegate());
+        getDelegate().setLocation((location != null ? location.getDelegate() : null));
     }
 
     /**

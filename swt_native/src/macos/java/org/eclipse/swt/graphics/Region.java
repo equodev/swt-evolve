@@ -84,7 +84,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public Region(Device device) {
-        this(new nat.org.eclipse.swt.graphics.Region((nat.org.eclipse.swt.graphics.Device) device.getDelegate()));
+        this(new nat.org.eclipse.swt.graphics.Region((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null)));
     }
 
     /**
@@ -121,7 +121,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public void add(Rectangle rect) {
-        getDelegate().add(rect.getDelegate());
+        getDelegate().add((rect != null ? rect.getDelegate() : null));
     }
 
     /**
@@ -162,7 +162,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public void add(Region region) {
-        getDelegate().add(region.getDelegate());
+        getDelegate().add((region != null ? region.getDelegate() : null));
     }
 
     /**
@@ -198,7 +198,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public boolean contains(Point pt) {
-        return getDelegate().contains(pt.getDelegate());
+        return getDelegate().contains((pt != null ? pt.getDelegate() : null));
     }
 
     /**
@@ -263,7 +263,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void intersect(Rectangle rect) {
-        getDelegate().intersect(rect.getDelegate());
+        getDelegate().intersect((rect != null ? rect.getDelegate() : null));
     }
 
     /**
@@ -306,7 +306,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void intersect(Region region) {
-        getDelegate().intersect(region.getDelegate());
+        getDelegate().intersect((region != null ? region.getDelegate() : null));
     }
 
     /**
@@ -348,7 +348,7 @@ public final class Region extends Resource {
      * @see Rectangle#intersects(Rectangle)
      */
     public boolean intersects(Rectangle rect) {
-        return getDelegate().intersects(rect.getDelegate());
+        return getDelegate().intersects((rect != null ? rect.getDelegate() : null));
     }
 
     /**
@@ -416,7 +416,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void subtract(Rectangle rect) {
-        getDelegate().subtract(rect.getDelegate());
+        getDelegate().subtract((rect != null ? rect.getDelegate() : null));
     }
 
     /**
@@ -459,7 +459,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void subtract(Region region) {
-        getDelegate().subtract(region.getDelegate());
+        getDelegate().subtract((region != null ? region.getDelegate() : null));
     }
 
     /**
@@ -495,7 +495,7 @@ public final class Region extends Resource {
      * @since 3.1
      */
     public void translate(Point pt) {
-        getDelegate().translate(pt.getDelegate());
+        getDelegate().translate((pt != null ? pt.getDelegate() : null));
     }
 
     /**

@@ -76,7 +76,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public Browser(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.browser.Browser((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.browser.Browser((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     protected void checkWidget() {

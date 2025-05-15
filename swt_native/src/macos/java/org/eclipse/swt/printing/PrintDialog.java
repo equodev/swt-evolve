@@ -53,7 +53,7 @@ public class PrintDialog extends Dialog {
      * @see Widget#getStyle
      */
     public PrintDialog(Shell parent) {
-        this(new nat.org.eclipse.swt.printing.PrintDialog((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate()));
+        this(new nat.org.eclipse.swt.printing.PrintDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
     }
 
     /**
@@ -85,7 +85,7 @@ public class PrintDialog extends Dialog {
      * @see Widget#getStyle
      */
     public PrintDialog(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.printing.PrintDialog((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.printing.PrintDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -101,7 +101,7 @@ public class PrintDialog extends Dialog {
      * @since 3.4
      */
     public void setPrinterData(PrinterData data) {
-        getDelegate().setPrinterData(data.getDelegate());
+        getDelegate().setPrinterData((data != null ? data.getDelegate() : null));
     }
 
     /**

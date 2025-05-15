@@ -86,7 +86,7 @@ public final class Font extends Resource {
      * @see #dispose()
      */
     public Font(Device device, FontData fd) {
-        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), (nat.org.eclipse.swt.graphics.FontData) fd.getDelegate()));
+        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), (nat.org.eclipse.swt.graphics.FontData) (fd != null ? fd.getDelegate() : null)));
     }
 
     /**
@@ -115,7 +115,7 @@ public final class Font extends Resource {
      * @since 2.1
      */
     public Font(Device device, FontData[] fds) {
-        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), (nat.org.eclipse.swt.graphics.FontData[]) Convert.array(fds, FontData::getDelegate, nat.org.eclipse.swt.graphics.FontData[][]::new)));
+        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), (nat.org.eclipse.swt.graphics.FontData[]) Convert.array(fds, FontData::getDelegate, nat.org.eclipse.swt.graphics.FontData[][]::new)));
     }
 
     /**
@@ -143,7 +143,7 @@ public final class Font extends Resource {
      * @see #dispose()
      */
     public Font(Device device, String name, int height, int style) {
-        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), name, height, style));
+        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), name, height, style));
     }
 
     /**

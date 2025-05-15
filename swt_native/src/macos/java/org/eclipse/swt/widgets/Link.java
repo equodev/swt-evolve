@@ -74,7 +74,7 @@ public class Link extends Control {
      * @see Widget#getStyle
      */
     public Link(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Link((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Link((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -179,7 +179,7 @@ public class Link extends Control {
      * @since 3.105
      */
     public void setLinkForeground(Color color) {
-        getDelegate().setLinkForeground(color.getDelegate());
+        getDelegate().setLinkForeground((color != null ? color.getDelegate() : null));
     }
 
     /**

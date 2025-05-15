@@ -130,7 +130,7 @@ public abstract class ByteArrayTransfer extends Transfer {
     }
 
     public boolean isSupportedType(TransferData transferData) {
-        return getDelegate().isSupportedType(transferData.getDelegate());
+        return getDelegate().isSupportedType((transferData != null ? transferData.getDelegate() : null));
     }
 
     /**
@@ -144,7 +144,7 @@ public abstract class ByteArrayTransfer extends Transfer {
      * @see Transfer#nativeToJava
      */
     protected void javaToNative(Object object, TransferData transferData) {
-        getDelegate().javaToNative(object, transferData.getDelegate());
+        getDelegate().javaToNative(object, (transferData != null ? transferData.getDelegate() : null));
     }
 
     /**
@@ -158,7 +158,7 @@ public abstract class ByteArrayTransfer extends Transfer {
      * @see Transfer#javaToNative
      */
     protected Object nativeToJava(TransferData transferData) {
-        return getDelegate().nativeToJava(transferData.getDelegate());
+        return getDelegate().nativeToJava((transferData != null ? transferData.getDelegate() : null));
     }
 
     public ByteArrayTransfer() {

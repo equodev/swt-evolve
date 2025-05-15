@@ -48,7 +48,7 @@ public class TableDragSourceEffect extends DragSourceEffect {
      * @param table the <code>Table</code> that the user clicks on to initiate the drag
      */
     public TableDragSourceEffect(Table table) {
-        this(new nat.org.eclipse.swt.dnd.TableDragSourceEffect((nat.org.eclipse.swt.widgets.Table) table.getDelegate()));
+        this(new nat.org.eclipse.swt.dnd.TableDragSourceEffect((nat.org.eclipse.swt.widgets.Table) (table != null ? table.getDelegate() : null)));
     }
 
     /**

@@ -114,7 +114,7 @@ public class Tree extends Composite {
      * @see Widget#getStyle
      */
     public Tree(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Tree((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Tree((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -259,7 +259,7 @@ public class Tree extends Composite {
      * @since 3.4
      */
     public void deselect(TreeItem item) {
-        getDelegate().deselect(item.getDelegate());
+        getDelegate().deselect((item != null ? item.getDelegate() : null));
     }
 
     public Rectangle getClientArea() {
@@ -514,7 +514,7 @@ public class Tree extends Composite {
      * </ul>
      */
     public TreeItem getItem(Point point) {
-        return getDelegate().getItem(point.getDelegate()).getApi();
+        return getDelegate().getItem((point != null ? point.getDelegate() : null)).getApi();
     }
 
     /**
@@ -722,7 +722,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public int indexOf(TreeColumn column) {
-        return getDelegate().indexOf(column.getDelegate());
+        return getDelegate().indexOf((column != null ? column.getDelegate() : null));
     }
 
     /**
@@ -746,7 +746,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public int indexOf(TreeItem item) {
-        return getDelegate().indexOf(item.getDelegate());
+        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -821,7 +821,7 @@ public class Tree extends Composite {
      *  </ul>
      */
     public void setInsertMark(TreeItem item, boolean before) {
-        getDelegate().setInsertMark(item.getDelegate(), before);
+        getDelegate().setInsertMark((item != null ? item.getDelegate() : null), before);
     }
 
     /**
@@ -857,7 +857,7 @@ public class Tree extends Composite {
      * @since 3.4
      */
     public void select(TreeItem item) {
-        getDelegate().select(item.getDelegate());
+        getDelegate().select((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -908,7 +908,7 @@ public class Tree extends Composite {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
-        getDelegate().setHeaderBackground(color.getDelegate());
+        getDelegate().setHeaderBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -931,7 +931,7 @@ public class Tree extends Composite {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
-        getDelegate().setHeaderForeground(color.getDelegate());
+        getDelegate().setHeaderForeground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -1024,7 +1024,7 @@ public class Tree extends Composite {
      * @since 3.2
      */
     public void setSelection(TreeItem item) {
-        getDelegate().setSelection(item.getDelegate());
+        getDelegate().setSelection((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -1072,7 +1072,7 @@ public class Tree extends Composite {
      * @since 3.2
      */
     public void setSortColumn(TreeColumn column) {
-        getDelegate().setSortColumn(column.getDelegate());
+        getDelegate().setSortColumn((column != null ? column.getDelegate() : null));
     }
 
     /**
@@ -1113,7 +1113,7 @@ public class Tree extends Composite {
      * @since 2.1
      */
     public void setTopItem(TreeItem item) {
-        getDelegate().setTopItem(item.getDelegate());
+        getDelegate().setTopItem((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -1135,7 +1135,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public void showColumn(TreeColumn column) {
-        getDelegate().showColumn(column.getDelegate());
+        getDelegate().showColumn((column != null ? column.getDelegate() : null));
     }
 
     /**
@@ -1157,7 +1157,7 @@ public class Tree extends Composite {
      * @see Tree#showSelection()
      */
     public void showItem(TreeItem item) {
-        getDelegate().showItem(item.getDelegate());
+        getDelegate().showItem((item != null ? item.getDelegate() : null));
     }
 
     /**

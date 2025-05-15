@@ -47,7 +47,7 @@ public class BusyIndicator {
      * </ul>
      */
     public static void showWhile(Display display, Runnable runnable) {
-        nat.org.eclipse.swt.custom.BusyIndicator.showWhile((nat.org.eclipse.swt.widgets.Display) display.getDelegate(), runnable);
+        nat.org.eclipse.swt.custom.BusyIndicator.showWhile((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null), runnable);
     }
 
     /**

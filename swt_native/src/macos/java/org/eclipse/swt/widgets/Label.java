@@ -91,7 +91,7 @@ public class Label extends Control {
      * @see Widget#getStyle
      */
     public Label(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Label((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Label((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
@@ -179,7 +179,7 @@ public class Label extends Control {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage(image.getDelegate());
+        getDelegate().setImage((image != null ? image.getDelegate() : null));
     }
 
     /**

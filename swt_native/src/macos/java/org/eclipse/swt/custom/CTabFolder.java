@@ -150,7 +150,7 @@ public class CTabFolder extends Composite {
      * @see #getStyle()
      */
     public CTabFolder(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.custom.CTabFolder((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.custom.CTabFolder((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -311,7 +311,7 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public CTabItem getItem(Point pt) {
-        return getDelegate().getItem(pt.getDelegate()).getApi();
+        return getDelegate().getItem((pt != null ? pt.getDelegate() : null)).getApi();
         /*
 	 * This call is intentionally commented out, to allow this getter method to be
 	 * called from a thread which is different from one that created the widget.
@@ -693,7 +693,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public int indexOf(CTabItem item) {
-        return getDelegate().indexOf(item.getDelegate());
+        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -765,7 +765,7 @@ public class CTabFolder extends Composite {
     }
 
     public void setBackground(Color color) {
-        getDelegate().setBackground(color.getDelegate());
+        getDelegate().setBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -833,7 +833,7 @@ public class CTabFolder extends Composite {
     }
 
     public void setBackgroundImage(Image image) {
-        getDelegate().setBackgroundImage(image.getDelegate());
+        getDelegate().setBackgroundImage((image != null ? image.getDelegate() : null));
     }
 
     /**
@@ -855,14 +855,14 @@ public class CTabFolder extends Composite {
     }
 
     public void setFont(Font font) {
-        getDelegate().setFont(font.getDelegate());
+        getDelegate().setFont((font != null ? font.getDelegate() : null));
         // Chevron painting is cached as image and only recreated if number of hidden tabs changed.
         // To apply the new font the cached image must be recreated with new font.
         // Redraw request alone would only redraw the cached image with old font.
     }
 
     public void setForeground(Color color) {
-        getDelegate().setForeground(color.getDelegate());
+        getDelegate().setForeground((color != null ? color.getDelegate() : null));
         // Chevron painting is cached as image and only recreated if number of hidden tabs changed.
         // To apply the new foreground color the image must be recreated with new foreground color.
     }
@@ -882,7 +882,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setInsertMark(CTabItem item, boolean after) {
-        getDelegate().setInsertMark(item.getDelegate(), after);
+        getDelegate().setInsertMark((item != null ? item.getDelegate() : null), after);
     }
 
     /**
@@ -955,7 +955,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setLayout(Layout layout) {
-        getDelegate().setLayout(layout.getDelegate());
+        getDelegate().setLayout((layout != null ? layout.getDelegate() : null));
     }
 
     /**
@@ -1072,7 +1072,7 @@ public class CTabFolder extends Composite {
      *  @since 3.6
      */
     public void setRenderer(CTabFolderRenderer renderer) {
-        getDelegate().setRenderer(renderer.getDelegate());
+        getDelegate().setRenderer((renderer != null ? renderer.getDelegate() : null));
     }
 
     /**
@@ -1090,7 +1090,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setSelection(CTabItem item) {
-        getDelegate().setSelection(item.getDelegate());
+        getDelegate().setSelection((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -1125,7 +1125,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setSelectionBackground(Color color) {
-        getDelegate().setSelectionBackground(color.getDelegate());
+        getDelegate().setSelectionBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -1202,7 +1202,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setSelectionBackground(Image image) {
-        getDelegate().setSelectionBackground(image.getDelegate());
+        getDelegate().setSelectionBackground((image != null ? image.getDelegate() : null));
     }
 
     /**
@@ -1216,7 +1216,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setSelectionForeground(Color color) {
-        getDelegate().setSelectionForeground(color.getDelegate());
+        getDelegate().setSelectionForeground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -1320,7 +1320,7 @@ public class CTabFolder extends Composite {
      * @since 2.1
      */
     public void setTopRight(Control control) {
-        getDelegate().setTopRight(control.getDelegate());
+        getDelegate().setTopRight((control != null ? control.getDelegate() : null));
     }
 
     /**
@@ -1350,7 +1350,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setTopRight(Control control, int alignment) {
-        getDelegate().setTopRight(control.getDelegate(), alignment);
+        getDelegate().setTopRight((control != null ? control.getDelegate() : null), alignment);
     }
 
     /**
@@ -1423,7 +1423,7 @@ public class CTabFolder extends Composite {
      * @since 2.0
      */
     public void showItem(CTabItem item) {
-        getDelegate().showItem(item.getDelegate());
+        getDelegate().showItem((item != null ? item.getDelegate() : null));
     }
 
     /**

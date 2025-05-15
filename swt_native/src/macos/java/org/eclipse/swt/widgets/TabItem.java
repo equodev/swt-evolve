@@ -69,7 +69,7 @@ public class TabItem extends Item {
      * @see Widget#getStyle
      */
     public TabItem(TabFolder parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.TabItem((nat.org.eclipse.swt.widgets.TabFolder) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.TabItem((nat.org.eclipse.swt.widgets.TabFolder) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -105,7 +105,7 @@ public class TabItem extends Item {
      * @see Widget#getStyle
      */
     public TabItem(TabFolder parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.TabItem((nat.org.eclipse.swt.widgets.TabFolder) parent.getDelegate(), style, index));
+        this(new nat.org.eclipse.swt.widgets.TabItem((nat.org.eclipse.swt.widgets.TabFolder) (parent != null ? parent.getDelegate() : null), style, index));
     }
 
     protected void checkSubclass() {
@@ -190,11 +190,11 @@ public class TabItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        getDelegate().setControl(control.getDelegate());
+        getDelegate().setControl((control != null ? control.getDelegate() : null));
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage(image.getDelegate());
+        getDelegate().setImage((image != null ? image.getDelegate() : null));
     }
 
     /**

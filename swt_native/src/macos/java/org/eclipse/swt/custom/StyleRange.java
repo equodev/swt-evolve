@@ -68,7 +68,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @since 3.4
      */
     public StyleRange(TextStyle style) {
-        this(new nat.org.eclipse.swt.custom.StyleRange((nat.org.eclipse.swt.graphics.TextStyle) style.getDelegate()));
+        this(new nat.org.eclipse.swt.custom.StyleRange((nat.org.eclipse.swt.graphics.TextStyle) (style != null ? style.getDelegate() : null)));
     }
 
     /**
@@ -80,7 +80,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @param background background color of the style, null if none
      */
     public StyleRange(int start, int length, Color foreground, Color background) {
-        this(new nat.org.eclipse.swt.custom.StyleRange(start, length, (nat.org.eclipse.swt.graphics.Color) foreground.getDelegate(), (nat.org.eclipse.swt.graphics.Color) background.getDelegate()));
+        this(new nat.org.eclipse.swt.custom.StyleRange(start, length, (nat.org.eclipse.swt.graphics.Color) (foreground != null ? foreground.getDelegate() : null), (nat.org.eclipse.swt.graphics.Color) (background != null ? background.getDelegate() : null)));
     }
 
     /**
@@ -93,7 +93,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @param fontStyle font style of the style, may be SWT.NORMAL, SWT.ITALIC or SWT.BOLD
      */
     public StyleRange(int start, int length, Color foreground, Color background, int fontStyle) {
-        this(new nat.org.eclipse.swt.custom.StyleRange(start, length, (nat.org.eclipse.swt.graphics.Color) foreground.getDelegate(), (nat.org.eclipse.swt.graphics.Color) background.getDelegate(), fontStyle));
+        this(new nat.org.eclipse.swt.custom.StyleRange(start, length, (nat.org.eclipse.swt.graphics.Color) (foreground != null ? foreground.getDelegate() : null), (nat.org.eclipse.swt.graphics.Color) (background != null ? background.getDelegate() : null), fontStyle));
     }
 
     /**
@@ -143,7 +143,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @return true if the objects are similar, false otherwise
      */
     public boolean similarTo(StyleRange style) {
-        return getDelegate().similarTo(style.getDelegate());
+        return getDelegate().similarTo((style != null ? style.getDelegate() : null));
     }
 
     /**

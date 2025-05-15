@@ -72,7 +72,7 @@ public class TrayItem extends Item {
      * @see Widget#getStyle
      */
     public TrayItem(Tray parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.TrayItem((nat.org.eclipse.swt.widgets.Tray) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.TrayItem((nat.org.eclipse.swt.widgets.Tray) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -271,7 +271,7 @@ public class TrayItem extends Item {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage(image.getDelegate());
+        getDelegate().setImage((image != null ? image.getDelegate() : null));
     }
 
     /**
@@ -290,7 +290,7 @@ public class TrayItem extends Item {
      * @since 3.8
      */
     public void setHighlightImage(Image image) {
-        getDelegate().setHighlightImage(image.getDelegate());
+        getDelegate().setHighlightImage((image != null ? image.getDelegate() : null));
     }
 
     /**
@@ -307,7 +307,7 @@ public class TrayItem extends Item {
      * @since 3.2
      */
     public void setToolTip(ToolTip toolTip) {
-        getDelegate().setToolTip(toolTip.getDelegate());
+        getDelegate().setToolTip((toolTip != null ? toolTip.getDelegate() : null));
     }
 
     /**

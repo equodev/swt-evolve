@@ -81,7 +81,7 @@ public class CoolBar extends Composite {
      * @see Widget#getStyle
      */
     public CoolBar(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.CoolBar((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.CoolBar((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     protected void checkSubclass() {
@@ -165,7 +165,7 @@ public class CoolBar extends Composite {
      * </ul>
      */
     public int indexOf(CoolItem item) {
-        return getDelegate().indexOf(item.getDelegate());
+        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -194,7 +194,7 @@ public class CoolBar extends Composite {
     }
 
     public void setBackground(Color color) {
-        getDelegate().setBackground(color.getDelegate());
+        getDelegate().setBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -284,7 +284,7 @@ public class CoolBar extends Composite {
     }
 
     public void setCursor(Cursor cursor) {
-        getDelegate().setCursor(cursor.getDelegate());
+        getDelegate().setCursor((cursor != null ? cursor.getDelegate() : null));
     }
 
     /**

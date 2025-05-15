@@ -63,7 +63,7 @@ public class AnimatedProgress extends Canvas {
      * @see #getStyle()
      */
     public AnimatedProgress(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.custom.AnimatedProgress((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.custom.AnimatedProgress((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**

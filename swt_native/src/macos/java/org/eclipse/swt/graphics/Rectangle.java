@@ -96,7 +96,7 @@ public final class Rectangle implements Serializable {
      * </ul>
      */
     public void add(Rectangle rect) {
-        getDelegate().add(rect.getDelegate());
+        getDelegate().add((rect != null ? rect.getDelegate() : null));
     }
 
     /**
@@ -125,7 +125,7 @@ public final class Rectangle implements Serializable {
      * </ul>
      */
     public boolean contains(Point pt) {
-        return getDelegate().contains(pt.getDelegate());
+        return getDelegate().contains((pt != null ? pt.getDelegate() : null));
     }
 
     /**
@@ -170,7 +170,7 @@ public final class Rectangle implements Serializable {
      * since 3.0
      */
     public void intersect(Rectangle rect) {
-        getDelegate().intersect(rect.getDelegate());
+        getDelegate().intersect((rect != null ? rect.getDelegate() : null));
     }
 
     /**
@@ -189,7 +189,7 @@ public final class Rectangle implements Serializable {
      * </ul>
      */
     public Rectangle intersection(Rectangle rect) {
-        return getDelegate().intersection(rect.getDelegate()).getApi();
+        return getDelegate().intersection((rect != null ? rect.getDelegate() : null)).getApi();
     }
 
     /**
@@ -239,7 +239,7 @@ public final class Rectangle implements Serializable {
      * @see #isEmpty()
      */
     public boolean intersects(Rectangle rect) {
-        return getDelegate().intersects(rect.getDelegate());
+        return getDelegate().intersects((rect != null ? rect.getDelegate() : null));
     }
 
     /**
@@ -287,7 +287,7 @@ public final class Rectangle implements Serializable {
      * @see #add(Rectangle)
      */
     public Rectangle union(Rectangle rect) {
-        return getDelegate().union(rect.getDelegate()).getApi();
+        return getDelegate().union((rect != null ? rect.getDelegate() : null)).getApi();
     }
 
     IRectangle delegate;

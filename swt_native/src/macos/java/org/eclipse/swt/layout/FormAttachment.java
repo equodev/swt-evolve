@@ -200,7 +200,7 @@ public final class FormAttachment {
      * @param control the control the side is attached to
      */
     public FormAttachment(Control control) {
-        this(new nat.org.eclipse.swt.layout.FormAttachment((nat.org.eclipse.swt.widgets.Control) control.getDelegate()));
+        this(new nat.org.eclipse.swt.layout.FormAttachment((nat.org.eclipse.swt.widgets.Control) (control != null ? control.getDelegate() : null)));
     }
 
     /**
@@ -213,7 +213,7 @@ public final class FormAttachment {
      * @param offset the offset of the side from the control
      */
     public FormAttachment(Control control, int offset) {
-        this(new nat.org.eclipse.swt.layout.FormAttachment((nat.org.eclipse.swt.widgets.Control) control.getDelegate(), offset));
+        this(new nat.org.eclipse.swt.layout.FormAttachment((nat.org.eclipse.swt.widgets.Control) (control != null ? control.getDelegate() : null), offset));
     }
 
     /**
@@ -240,7 +240,7 @@ public final class FormAttachment {
      * 		one of TOP, BOTTOM, LEFT, RIGHT, CENTER, or DEFAULT
      */
     public FormAttachment(Control control, int offset, int alignment) {
-        this(new nat.org.eclipse.swt.layout.FormAttachment((nat.org.eclipse.swt.widgets.Control) control.getDelegate(), offset, alignment));
+        this(new nat.org.eclipse.swt.layout.FormAttachment((nat.org.eclipse.swt.widgets.Control) (control != null ? control.getDelegate() : null), offset, alignment));
     }
 
     /**

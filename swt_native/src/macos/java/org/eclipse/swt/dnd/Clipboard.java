@@ -49,7 +49,7 @@ public class Clipboard {
      * @see Clipboard#checkSubclass
      */
     public Clipboard(Display display) {
-        this(new nat.org.eclipse.swt.dnd.Clipboard((nat.org.eclipse.swt.widgets.Display) display.getDelegate()));
+        this(new nat.org.eclipse.swt.dnd.Clipboard((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null)));
     }
 
     /**
@@ -206,7 +206,7 @@ public class Clipboard {
      * @see Transfer
      */
     public Object getContents(Transfer transfer) {
-        return getDelegate().getContents(transfer.getDelegate());
+        return getDelegate().getContents((transfer != null ? transfer.getDelegate() : null));
     }
 
     /**
@@ -253,7 +253,7 @@ public class Clipboard {
      * @since 3.1
      */
     public Object getContents(Transfer transfer, int clipboards) {
-        return getDelegate().getContents(transfer.getDelegate(), clipboards);
+        return getDelegate().getContents((transfer != null ? transfer.getDelegate() : null), clipboards);
     }
 
     /**

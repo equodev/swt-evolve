@@ -67,7 +67,7 @@ public class ExpandItem extends Item {
      * @see Widget#getStyle
      */
     public ExpandItem(ExpandBar parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.ExpandItem((nat.org.eclipse.swt.widgets.ExpandBar) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.ExpandItem((nat.org.eclipse.swt.widgets.ExpandBar) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -101,7 +101,7 @@ public class ExpandItem extends Item {
      * @see Widget#getStyle
      */
     public ExpandItem(ExpandBar parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.ExpandItem((nat.org.eclipse.swt.widgets.ExpandBar) parent.getDelegate(), style, index));
+        this(new nat.org.eclipse.swt.widgets.ExpandItem((nat.org.eclipse.swt.widgets.ExpandBar) (parent != null ? parent.getDelegate() : null), style, index));
     }
 
     public void dispose() {
@@ -195,7 +195,7 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        getDelegate().setControl(control.getDelegate());
+        getDelegate().setControl((control != null ? control.getDelegate() : null));
     }
 
     /**
@@ -213,7 +213,7 @@ public class ExpandItem extends Item {
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage(image.getDelegate());
+        getDelegate().setImage((image != null ? image.getDelegate() : null));
     }
 
     /**

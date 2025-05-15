@@ -74,7 +74,7 @@ public class Scale extends Control {
      * @see Widget#getStyle
      */
     public Scale(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Scale((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Scale((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**

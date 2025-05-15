@@ -55,7 +55,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
      * @param table the <code>Table</code> over which the user positions the cursor to drop the data
      */
     public TableDropTargetEffect(Table table) {
-        this(new nat.org.eclipse.swt.dnd.TableDropTargetEffect((nat.org.eclipse.swt.widgets.Table) table.getDelegate()));
+        this(new nat.org.eclipse.swt.dnd.TableDropTargetEffect((nat.org.eclipse.swt.widgets.Table) (table != null ? table.getDelegate() : null)));
     }
 
     /**

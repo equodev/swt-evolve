@@ -53,7 +53,7 @@ public class DragSourceEffect extends DragSourceAdapter {
      * </ul>
      */
     public DragSourceEffect(Control control) {
-        this(new nat.org.eclipse.swt.dnd.DragSourceEffect((nat.org.eclipse.swt.widgets.Control) control.getDelegate()));
+        this(new nat.org.eclipse.swt.dnd.DragSourceEffect((nat.org.eclipse.swt.widgets.Control) (control != null ? control.getDelegate() : null)));
     }
 
     /**

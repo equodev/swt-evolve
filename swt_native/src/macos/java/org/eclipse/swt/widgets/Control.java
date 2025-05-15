@@ -1156,7 +1156,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see Composite#getChildren
      */
     public void moveAbove(Control control) {
-        getDelegate().moveAbove(control.getDelegate());
+        getDelegate().moveAbove((control != null ? control.getDelegate() : null));
     }
 
     /**
@@ -1180,7 +1180,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see Composite#getChildren
      */
     public void moveBelow(Control control) {
-        getDelegate().moveBelow(control.getDelegate());
+        getDelegate().moveBelow((control != null ? control.getDelegate() : null));
     }
 
     /**
@@ -1242,7 +1242,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.4
      */
     public boolean print(GC gc) {
-        return getDelegate().print(gc.getDelegate());
+        return getDelegate().print((gc != null ? gc.getDelegate() : null));
     }
 
     /**
@@ -1658,7 +1658,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground(color.getDelegate());
+        getDelegate().setBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -1684,7 +1684,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.2
      */
     public void setBackgroundImage(Image image) {
-        getDelegate().setBackgroundImage(image.getDelegate());
+        getDelegate().setBackgroundImage((image != null ? image.getDelegate() : null));
     }
 
     /**
@@ -1743,7 +1743,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setBounds(Rectangle rect) {
-        getDelegate().setBounds(rect.getDelegate());
+        getDelegate().setBounds((rect != null ? rect.getDelegate() : null));
     }
 
     /**
@@ -1783,7 +1783,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setCursor(Cursor cursor) {
-        getDelegate().setCursor(cursor.getDelegate());
+        getDelegate().setCursor((cursor != null ? cursor.getDelegate() : null));
     }
 
     /**
@@ -1855,7 +1855,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setFont(Font font) {
-        getDelegate().setFont(font.getDelegate());
+        getDelegate().setFont((font != null ? font.getDelegate() : null));
     }
 
     /**
@@ -1876,7 +1876,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground(color.getDelegate());
+        getDelegate().setForeground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -1927,7 +1927,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setLocation(Point location) {
-        getDelegate().setLocation(location.getDelegate());
+        getDelegate().setLocation((location != null ? location.getDelegate() : null));
     }
 
     /**
@@ -1956,7 +1956,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setMenu(Menu menu) {
-        getDelegate().setMenu(menu.getDelegate());
+        getDelegate().setMenu((menu != null ? menu.getDelegate() : null));
     }
 
     /**
@@ -1993,7 +1993,7 @@ public abstract class Control extends Widget implements Drawable {
      * 	</ul>
      */
     public boolean setParent(Composite parent) {
-        return getDelegate().setParent(parent.getDelegate());
+        return getDelegate().setParent((parent != null ? parent.getDelegate() : null));
     }
 
     /**
@@ -2041,7 +2041,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.4
      */
     public void setRegion(Region region) {
-        getDelegate().setRegion(region.getDelegate());
+        getDelegate().setRegion((region != null ? region.getDelegate() : null));
     }
 
     /**
@@ -2093,7 +2093,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setSize(Point size) {
-        getDelegate().setSize(size.getDelegate());
+        getDelegate().setSize((size != null ? size.getDelegate() : null));
     }
 
     /**
@@ -2242,7 +2242,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Point toControl(Point point) {
-        return getDelegate().toControl(point.getDelegate()).getApi();
+        return getDelegate().toControl((point != null ? point.getDelegate() : null)).getApi();
     }
 
     /**
@@ -2290,7 +2290,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Point toDisplay(Point point) {
-        return getDelegate().toDisplay(point.getDelegate()).getApi();
+        return getDelegate().toDisplay((point != null ? point.getDelegate() : null)).getApi();
     }
 
     /**

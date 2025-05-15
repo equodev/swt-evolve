@@ -137,7 +137,7 @@ public class ViewForm extends Composite {
      * @see #getStyle()
      */
     public ViewForm(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.custom.ViewForm((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.custom.ViewForm((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     //protected void checkSubclass () {
@@ -224,7 +224,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setContent(Control content) {
-        getDelegate().setContent(content.getDelegate());
+        getDelegate().setContent((content != null ? content.getDelegate() : null));
     }
 
     /**
@@ -243,7 +243,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setLayout(Layout layout) {
-        getDelegate().setLayout(layout.getDelegate());
+        getDelegate().setLayout((layout != null ? layout.getDelegate() : null));
     }
 
     /**
@@ -261,7 +261,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopCenter(Control topCenter) {
-        getDelegate().setTopCenter(topCenter.getDelegate());
+        getDelegate().setTopCenter((topCenter != null ? topCenter.getDelegate() : null));
     }
 
     /**
@@ -279,7 +279,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopLeft(Control c) {
-        getDelegate().setTopLeft(c.getDelegate());
+        getDelegate().setTopLeft((c != null ? c.getDelegate() : null));
     }
 
     /**
@@ -297,7 +297,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopRight(Control c) {
-        getDelegate().setTopRight(c.getDelegate());
+        getDelegate().setTopRight((c != null ? c.getDelegate() : null));
     }
 
     /**

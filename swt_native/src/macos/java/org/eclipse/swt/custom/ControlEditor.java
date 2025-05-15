@@ -113,7 +113,7 @@ public class ControlEditor {
      * @param parent the Composite above which this editor will be displayed
      */
     public ControlEditor(Composite parent) {
-        this(new nat.org.eclipse.swt.custom.ControlEditor((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate()));
+        this(new nat.org.eclipse.swt.custom.ControlEditor((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null)));
     }
 
     /**
@@ -155,7 +155,7 @@ public class ControlEditor {
      * @param editor the Control that is displayed above the composite being edited
      */
     public void setEditor(Control editor) {
-        getDelegate().setEditor(editor.getDelegate());
+        getDelegate().setEditor((editor != null ? editor.getDelegate() : null));
     }
 
     IControlEditor delegate;

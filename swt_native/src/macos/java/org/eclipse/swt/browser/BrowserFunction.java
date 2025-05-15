@@ -78,7 +78,7 @@ public class BrowserFunction {
      * @see org.eclipse.swt.browser.LocationListener#changed(LocationEvent)
      */
     public BrowserFunction(Browser browser, String name) {
-        this(new nat.org.eclipse.swt.browser.BrowserFunction((nat.org.eclipse.swt.browser.Browser) browser.getDelegate(), name));
+        this(new nat.org.eclipse.swt.browser.BrowserFunction((nat.org.eclipse.swt.browser.Browser) (browser != null ? browser.getDelegate() : null), name));
     }
 
     /**
@@ -119,7 +119,7 @@ public class BrowserFunction {
      * @since 3.8
      */
     public BrowserFunction(Browser browser, String name, boolean top, String[] frameNames) {
-        this(new nat.org.eclipse.swt.browser.BrowserFunction((nat.org.eclipse.swt.browser.Browser) browser.getDelegate(), name, top, frameNames));
+        this(new nat.org.eclipse.swt.browser.BrowserFunction((nat.org.eclipse.swt.browser.Browser) (browser != null ? browser.getDelegate() : null), name, top, frameNames));
     }
 
     /**

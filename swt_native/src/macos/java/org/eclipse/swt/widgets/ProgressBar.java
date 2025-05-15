@@ -74,7 +74,7 @@ public class ProgressBar extends Control {
      * @see Widget#getStyle
      */
     public ProgressBar(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.ProgressBar((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.ProgressBar((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {

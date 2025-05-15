@@ -77,7 +77,7 @@ public class TreeItem extends Item {
      * @see Widget#getStyle
      */
     public TreeItem(Tree parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.TreeItem((nat.org.eclipse.swt.widgets.Tree) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.TreeItem((nat.org.eclipse.swt.widgets.Tree) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -110,7 +110,7 @@ public class TreeItem extends Item {
      * @see Tree#setRedraw
      */
     public TreeItem(Tree parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.TreeItem((nat.org.eclipse.swt.widgets.Tree) parent.getDelegate(), style, index));
+        this(new nat.org.eclipse.swt.widgets.TreeItem((nat.org.eclipse.swt.widgets.Tree) (parent != null ? parent.getDelegate() : null), style, index));
     }
 
     /**
@@ -136,7 +136,7 @@ public class TreeItem extends Item {
      * @see Widget#getStyle
      */
     public TreeItem(TreeItem parentItem, int style) {
-        this(new nat.org.eclipse.swt.widgets.TreeItem((nat.org.eclipse.swt.widgets.TreeItem) parentItem.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.TreeItem((nat.org.eclipse.swt.widgets.TreeItem) (parentItem != null ? parentItem.getDelegate() : null), style));
     }
 
     /**
@@ -165,7 +165,7 @@ public class TreeItem extends Item {
      * @see Tree#setRedraw
      */
     public TreeItem(TreeItem parentItem, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.TreeItem((nat.org.eclipse.swt.widgets.TreeItem) parentItem.getDelegate(), style, index));
+        this(new nat.org.eclipse.swt.widgets.TreeItem((nat.org.eclipse.swt.widgets.TreeItem) (parentItem != null ? parentItem.getDelegate() : null), style, index));
     }
 
     protected void checkSubclass() {
@@ -592,7 +592,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public int indexOf(TreeItem item) {
-        return getDelegate().indexOf(item.getDelegate());
+        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -627,7 +627,7 @@ public class TreeItem extends Item {
      * @since 2.0
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground(color.getDelegate());
+        getDelegate().setBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -649,7 +649,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setBackground(int index, Color color) {
-        getDelegate().setBackground(index, color.getDelegate());
+        getDelegate().setBackground(index, (color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -698,7 +698,7 @@ public class TreeItem extends Item {
      * @since 3.0
      */
     public void setFont(Font font) {
-        getDelegate().setFont(font.getDelegate());
+        getDelegate().setFont((font != null ? font.getDelegate() : null));
     }
 
     /**
@@ -721,7 +721,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setFont(int index, Font font) {
-        getDelegate().setFont(index, font.getDelegate());
+        getDelegate().setFont(index, (font != null ? font.getDelegate() : null));
     }
 
     /**
@@ -742,7 +742,7 @@ public class TreeItem extends Item {
      * @since 2.0
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground(color.getDelegate());
+        getDelegate().setForeground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -764,7 +764,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setForeground(int index, Color color) {
-        getDelegate().setForeground(index, color.getDelegate());
+        getDelegate().setForeground(index, (color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -819,11 +819,11 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setImage(int index, Image image) {
-        getDelegate().setImage(index, image.getDelegate());
+        getDelegate().setImage(index, (image != null ? image.getDelegate() : null));
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage(image.getDelegate());
+        getDelegate().setImage((image != null ? image.getDelegate() : null));
     }
 
     /**

@@ -75,7 +75,7 @@ public class TreeColumn extends Item {
      * @see Widget#getStyle
      */
     public TreeColumn(Tree parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.TreeColumn((nat.org.eclipse.swt.widgets.Tree) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.TreeColumn((nat.org.eclipse.swt.widgets.Tree) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -116,7 +116,7 @@ public class TreeColumn extends Item {
      * @see Widget#getStyle
      */
     public TreeColumn(Tree parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.TreeColumn((nat.org.eclipse.swt.widgets.Tree) parent.getDelegate(), style, index));
+        this(new nat.org.eclipse.swt.widgets.TreeColumn((nat.org.eclipse.swt.widgets.Tree) (parent != null ? parent.getDelegate() : null), style, index));
     }
 
     /**
@@ -351,7 +351,7 @@ public class TreeColumn extends Item {
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage(image.getDelegate());
+        getDelegate().setImage((image != null ? image.getDelegate() : null));
     }
 
     /**

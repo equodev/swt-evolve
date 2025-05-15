@@ -30,11 +30,11 @@ import org.eclipse.swt.widgets.*;
 public class TabFolderLayout extends Layout {
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-        return getDelegate().computeSize(composite.getDelegate(), wHint, hHint, flushCache).getApi();
+        return getDelegate().computeSize((composite != null ? composite.getDelegate() : null), wHint, hHint, flushCache).getApi();
     }
 
     protected void layout(Composite composite, boolean flushCache) {
-        getDelegate().layout(composite.getDelegate(), flushCache);
+        getDelegate().layout((composite != null ? composite.getDelegate() : null), flushCache);
     }
 
     public TabFolderLayout() {

@@ -94,7 +94,7 @@ public class Spinner extends Composite {
      * @see Widget#getStyle
      */
     public Spinner(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Spinner((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Spinner((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**

@@ -122,7 +122,7 @@ public class StyledText extends Canvas {
      * @see #getStyle
      */
     public StyledText(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.custom.StyledText((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.custom.StyledText((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -1192,7 +1192,7 @@ public class StyledText extends Canvas {
      */
     @Deprecated
     public int getOffsetAtLocation(Point point) {
-        return getDelegate().getOffsetAtLocation(point.getDelegate());
+        return getDelegate().getOffsetAtLocation((point != null ? point.getDelegate() : null));
     }
 
     /**
@@ -1223,7 +1223,7 @@ public class StyledText extends Canvas {
      * @since 3.107
      */
     public int getOffsetAtPoint(Point point) {
-        return getDelegate().getOffsetAtPoint(point.getDelegate());
+        return getDelegate().getOffsetAtPoint((point != null ? point.getDelegate() : null));
     }
 
     /**
@@ -1897,7 +1897,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public Runnable print(Printer printer) {
-        return getDelegate().print(printer.getDelegate());
+        return getDelegate().print((printer != null ? printer.getDelegate() : null));
     }
 
     /**
@@ -1922,7 +1922,7 @@ public class StyledText extends Canvas {
      * @since 2.1
      */
     public Runnable print(Printer printer, StyledTextPrintOptions options) {
-        return getDelegate().print(printer.getDelegate(), options.getDelegate());
+        return getDelegate().print((printer != null ? printer.getDelegate() : null), (options != null ? options.getDelegate() : null));
     }
 
     /**
@@ -2349,7 +2349,7 @@ public class StyledText extends Canvas {
      * @see Control#setBackground(Color)
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground(color.getDelegate());
+        getDelegate().setBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -2381,7 +2381,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public void setBlockSelectionBounds(Rectangle rect) {
-        getDelegate().setBlockSelectionBounds(rect.getDelegate());
+        getDelegate().setBlockSelectionBounds((rect != null ? rect.getDelegate() : null));
     }
 
     /**
@@ -2415,7 +2415,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setCaret(Caret caret) {
-        getDelegate().setCaret(caret.getDelegate());
+        getDelegate().setCaret((caret != null ? caret.getDelegate() : null));
     }
 
     /**
@@ -2492,7 +2492,7 @@ public class StyledText extends Canvas {
      * @see Control#setCursor(Cursor)
      */
     public void setCursor(Cursor cursor) {
-        getDelegate().setCursor(cursor.getDelegate());
+        getDelegate().setCursor((cursor != null ? cursor.getDelegate() : null));
     }
 
     /**
@@ -2541,7 +2541,7 @@ public class StyledText extends Canvas {
      * @since 3.125
      */
     public void setFixedLineMetrics(FontMetrics metrics) {
-        getDelegate().setFixedLineMetrics(metrics.getDelegate());
+        getDelegate().setFixedLineMetrics((metrics != null ? metrics.getDelegate() : null));
     }
 
     /**
@@ -2558,11 +2558,11 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setFont(Font font) {
-        getDelegate().setFont(font.getDelegate());
+        getDelegate().setFont((font != null ? font.getDelegate() : null));
     }
 
     public void setForeground(Color color) {
-        getDelegate().setForeground(color.getDelegate());
+        getDelegate().setForeground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -2765,7 +2765,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setLineBackground(int startLine, int lineCount, Color background) {
-        getDelegate().setLineBackground(startLine, lineCount, background.getDelegate());
+        getDelegate().setLineBackground(startLine, lineCount, (background != null ? background.getDelegate() : null));
     }
 
     /**
@@ -2801,7 +2801,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public void setLineBullet(int startLine, int lineCount, Bullet bullet) {
-        getDelegate().setLineBullet(startLine, lineCount, bullet.getDelegate());
+        getDelegate().setLineBullet(startLine, lineCount, (bullet != null ? bullet.getDelegate() : null));
     }
 
     /**
@@ -3038,7 +3038,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public void setMarginColor(Color color) {
-        getDelegate().setMarginColor(color.getDelegate());
+        getDelegate().setMarginColor((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -3146,7 +3146,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setSelection(Point point) {
-        getDelegate().setSelection(point.getDelegate());
+        getDelegate().setSelection((point != null ? point.getDelegate() : null));
     }
 
     /**
@@ -3166,7 +3166,7 @@ public class StyledText extends Canvas {
      * @since 2.1
      */
     public void setSelectionBackground(Color color) {
-        getDelegate().setSelectionBackground(color.getDelegate());
+        getDelegate().setSelectionBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -3189,7 +3189,7 @@ public class StyledText extends Canvas {
      * @since 2.1
      */
     public void setSelectionForeground(Color color) {
-        getDelegate().setSelectionForeground(color.getDelegate());
+        getDelegate().setSelectionForeground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -3288,7 +3288,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setStyleRange(StyleRange range) {
-        getDelegate().setStyleRange(range.getDelegate());
+        getDelegate().setStyleRange((range != null ? range.getDelegate() : null));
     }
 
     /**
@@ -3632,7 +3632,7 @@ public class StyledText extends Canvas {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static void updateAndRefreshCarets(StyledText styledText, Consumer<Caret> caretUpdater) {
-        nat.org.eclipse.swt.custom.StyledText.updateAndRefreshCarets((nat.org.eclipse.swt.custom.StyledText) styledText.getDelegate(), arg -> caretUpdater.accept(arg.getApi()));
+        nat.org.eclipse.swt.custom.StyledText.updateAndRefreshCarets((nat.org.eclipse.swt.custom.StyledText) (styledText != null ? styledText.getDelegate() : null), arg -> caretUpdater.accept(arg.getApi()));
     }
 
     protected StyledText(IStyledText delegate) {

@@ -76,7 +76,7 @@ public class ToolTip extends Widget {
      * @see Widget#getStyle
      */
     public ToolTip(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.ToolTip((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.ToolTip((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -289,7 +289,7 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public void setLocation(Point location) {
-        getDelegate().setLocation(location.getDelegate());
+        getDelegate().setLocation((location != null ? location.getDelegate() : null));
     }
 
     /**

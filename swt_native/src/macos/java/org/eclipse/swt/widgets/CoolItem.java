@@ -69,7 +69,7 @@ public class CoolItem extends Item {
      * @see Widget#getStyle
      */
     public CoolItem(CoolBar parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.CoolItem((nat.org.eclipse.swt.widgets.CoolBar) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.CoolItem((nat.org.eclipse.swt.widgets.CoolBar) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -105,7 +105,7 @@ public class CoolItem extends Item {
      * @see Widget#getStyle
      */
     public CoolItem(CoolBar parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.CoolItem((nat.org.eclipse.swt.widgets.CoolBar) parent.getDelegate(), style, index));
+        this(new nat.org.eclipse.swt.widgets.CoolItem((nat.org.eclipse.swt.widgets.CoolBar) (parent != null ? parent.getDelegate() : null), style, index));
     }
 
     /**
@@ -313,7 +313,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        getDelegate().setControl(control.getDelegate());
+        getDelegate().setControl((control != null ? control.getDelegate() : null));
     }
 
     /**
@@ -351,7 +351,7 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void setMinimumSize(Point size) {
-        getDelegate().setMinimumSize(size.getDelegate());
+        getDelegate().setMinimumSize((size != null ? size.getDelegate() : null));
     }
 
     /**
@@ -383,7 +383,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setPreferredSize(Point size) {
-        getDelegate().setPreferredSize(size.getDelegate());
+        getDelegate().setPreferredSize((size != null ? size.getDelegate() : null));
     }
 
     /**
@@ -425,7 +425,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setSize(Point size) {
-        getDelegate().setSize(size.getDelegate());
+        getDelegate().setSize((size != null ? size.getDelegate() : null));
     }
 
     protected CoolItem(ICoolItem delegate) {

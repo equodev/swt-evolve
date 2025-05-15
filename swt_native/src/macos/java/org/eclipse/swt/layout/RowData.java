@@ -104,7 +104,7 @@ public final class RowData {
      * and y coordinate specifies a minimum height for the control
      */
     public RowData(Point point) {
-        this(new nat.org.eclipse.swt.layout.RowData((nat.org.eclipse.swt.graphics.Point) point.getDelegate()));
+        this(new nat.org.eclipse.swt.layout.RowData((nat.org.eclipse.swt.graphics.Point) (point != null ? point.getDelegate() : null)));
     }
 
     /**

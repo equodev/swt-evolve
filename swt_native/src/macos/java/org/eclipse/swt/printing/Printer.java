@@ -104,7 +104,7 @@ public final class Printer extends Device {
      * @see Device#dispose
      */
     public Printer(PrinterData data) {
-        this(new nat.org.eclipse.swt.printing.Printer((nat.org.eclipse.swt.printing.PrinterData) data.getDelegate()));
+        this(new nat.org.eclipse.swt.printing.Printer((nat.org.eclipse.swt.printing.PrinterData) (data != null ? data.getDelegate() : null)));
     }
 
     /**
@@ -153,7 +153,7 @@ public final class Printer extends Device {
      * @param deviceData the device data
      */
     protected void create(DeviceData deviceData) {
-        getDelegate().create(deviceData.getDelegate());
+        getDelegate().create((deviceData != null ? deviceData.getDelegate() : null));
     }
 
     /**

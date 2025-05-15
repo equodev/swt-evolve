@@ -58,7 +58,7 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
      * @param styledText the <code>StyledText</code> over which the user positions the cursor to drop the data
      */
     public StyledTextDropTargetEffect(StyledText styledText) {
-        this(new nat.org.eclipse.swt.custom.StyledTextDropTargetEffect((nat.org.eclipse.swt.custom.StyledText) styledText.getDelegate()));
+        this(new nat.org.eclipse.swt.custom.StyledTextDropTargetEffect((nat.org.eclipse.swt.custom.StyledText) (styledText != null ? styledText.getDelegate() : null)));
     }
 
     /**

@@ -88,7 +88,7 @@ public class Button extends Control {
      * @see Widget#getStyle
      */
     public Button(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Button((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Button((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -294,7 +294,7 @@ public class Button extends Control {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage(image.getDelegate());
+        getDelegate().setImage((image != null ? image.getDelegate() : null));
     }
 
     /**

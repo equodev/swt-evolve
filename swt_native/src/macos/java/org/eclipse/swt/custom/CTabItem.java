@@ -68,7 +68,7 @@ public class CTabItem extends Item {
      * @see Widget#getStyle()
      */
     public CTabItem(CTabFolder parent, int style) {
-        this(new nat.org.eclipse.swt.custom.CTabItem((nat.org.eclipse.swt.custom.CTabFolder) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.custom.CTabItem((nat.org.eclipse.swt.custom.CTabFolder) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -102,7 +102,7 @@ public class CTabItem extends Item {
      * @see Widget#getStyle()
      */
     public CTabItem(CTabFolder parent, int style, int index) {
-        this(new nat.org.eclipse.swt.custom.CTabItem((nat.org.eclipse.swt.custom.CTabFolder) parent.getDelegate(), style, index));
+        this(new nat.org.eclipse.swt.custom.CTabItem((nat.org.eclipse.swt.custom.CTabFolder) (parent != null ? parent.getDelegate() : null), style, index));
     }
 
     public void dispose() {
@@ -288,7 +288,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        getDelegate().setControl(control.getDelegate());
+        getDelegate().setControl((control != null ? control.getDelegate() : null));
     }
 
     /**
@@ -306,7 +306,7 @@ public class CTabItem extends Item {
      */
     @Deprecated
     public void setDisabledImage(Image image) {
-        getDelegate().setDisabledImage(image.getDelegate());
+        getDelegate().setDisabledImage((image != null ? image.getDelegate() : null));
     }
 
     /**
@@ -327,7 +327,7 @@ public class CTabItem extends Item {
      * @since 3.0
      */
     public void setFont(Font font) {
-        getDelegate().setFont(font.getDelegate());
+        getDelegate().setFont((font != null ? font.getDelegate() : null));
     }
 
     /**
@@ -347,7 +347,7 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground(color.getDelegate());
+        getDelegate().setForeground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -367,11 +367,11 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public void setSelectionForeground(Color color) {
-        getDelegate().setSelectionForeground(color.getDelegate());
+        getDelegate().setSelectionForeground((color != null ? color.getDelegate() : null));
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage(image.getDelegate());
+        getDelegate().setImage((image != null ? image.getDelegate() : null));
     }
 
     /**

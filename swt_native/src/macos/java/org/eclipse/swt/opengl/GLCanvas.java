@@ -44,7 +44,7 @@ public class GLCanvas extends Canvas {
      * </ul>
      */
     public GLCanvas(Composite parent, int style, GLData data) {
-        this(new nat.org.eclipse.swt.opengl.GLCanvas((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style, (nat.org.eclipse.swt.opengl.GLData) data.getDelegate()));
+        this(new nat.org.eclipse.swt.opengl.GLCanvas((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style, (nat.org.eclipse.swt.opengl.GLData) (data != null ? data.getDelegate() : null)));
     }
 
     /**

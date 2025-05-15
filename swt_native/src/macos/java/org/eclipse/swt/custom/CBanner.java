@@ -71,7 +71,7 @@ public class CBanner extends Composite {
      * </ul>
      */
     public CBanner(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.custom.CBanner((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.custom.CBanner((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /*
@@ -187,7 +187,7 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public void setBottom(Control control) {
-        getDelegate().setBottom(control.getDelegate());
+        getDelegate().setBottom((control != null ? control.getDelegate() : null));
     }
 
     /**
@@ -206,7 +206,7 @@ public class CBanner extends Composite {
      * </ul>
      */
     public void setLayout(Layout layout) {
-        getDelegate().setLayout(layout.getDelegate());
+        getDelegate().setLayout((layout != null ? layout.getDelegate() : null));
     }
 
     /**
@@ -225,7 +225,7 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public void setLeft(Control control) {
-        getDelegate().setLeft(control.getDelegate());
+        getDelegate().setLeft((control != null ? control.getDelegate() : null));
     }
 
     /**
@@ -244,7 +244,7 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public void setRight(Control control) {
-        getDelegate().setRight(control.getDelegate());
+        getDelegate().setRight((control != null ? control.getDelegate() : null));
     }
 
     /**
@@ -261,7 +261,7 @@ public class CBanner extends Composite {
      * @since 3.1
      */
     public void setRightMinimumSize(Point size) {
-        getDelegate().setRightMinimumSize(size.getDelegate());
+        getDelegate().setRightMinimumSize((size != null ? size.getDelegate() : null));
     }
 
     /**

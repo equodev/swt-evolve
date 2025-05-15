@@ -53,7 +53,7 @@ public class FontDialog extends Dialog {
      * </ul>
      */
     public FontDialog(Shell parent) {
-        this(new nat.org.eclipse.swt.widgets.FontDialog((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate()));
+        this(new nat.org.eclipse.swt.widgets.FontDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
     }
 
     /**
@@ -81,7 +81,7 @@ public class FontDialog extends Dialog {
      * </ul>
      */
     public FontDialog(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.FontDialog((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.FontDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -180,7 +180,7 @@ public class FontDialog extends Dialog {
      */
     @Deprecated
     public void setFontData(FontData fontData) {
-        getDelegate().setFontData(fontData.getDelegate());
+        getDelegate().setFontData((fontData != null ? fontData.getDelegate() : null));
     }
 
     /**

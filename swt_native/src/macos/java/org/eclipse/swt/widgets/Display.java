@@ -305,7 +305,7 @@ public class Display extends Device implements Executor {
      * @param data the device data
      */
     public Display(DeviceData data) {
-        this(new nat.org.eclipse.swt.widgets.Display((nat.org.eclipse.swt.graphics.DeviceData) data.getDelegate()));
+        this(new nat.org.eclipse.swt.widgets.Display((nat.org.eclipse.swt.graphics.DeviceData) (data != null ? data.getDelegate() : null)));
     }
 
     /**
@@ -338,7 +338,7 @@ public class Display extends Device implements Executor {
      * @see #init
      */
     protected void create(DeviceData data) {
-        getDelegate().create(data.getDelegate());
+        getDelegate().create((data != null ? data.getDelegate() : null));
     }
 
     /**
@@ -444,7 +444,7 @@ public class Display extends Device implements Executor {
      * @since 3.3
      */
     public Widget findWidget(Widget widget, long id) {
-        return getDelegate().findWidget(widget.getDelegate(), id).getApi();
+        return getDelegate().findWidget((widget != null ? widget.getDelegate() : null), id).getApi();
     }
 
     /**
@@ -1198,7 +1198,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Point map(Control from, Control to, Point point) {
-        return getDelegate().map(from.getDelegate(), to.getDelegate(), point.getDelegate()).getApi();
+        return getDelegate().map((from != null ? from.getDelegate() : null), (to != null ? to.getDelegate() : null), (point != null ? point.getDelegate() : null)).getApi();
     }
 
     /**
@@ -1238,7 +1238,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Point map(Control from, Control to, int x, int y) {
-        return getDelegate().map(from.getDelegate(), to.getDelegate(), x, y).getApi();
+        return getDelegate().map((from != null ? from.getDelegate() : null), (to != null ? to.getDelegate() : null), x, y).getApi();
     }
 
     /**
@@ -1278,7 +1278,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Rectangle map(Control from, Control to, Rectangle rectangle) {
-        return getDelegate().map(from.getDelegate(), to.getDelegate(), rectangle.getDelegate()).getApi();
+        return getDelegate().map((from != null ? from.getDelegate() : null), (to != null ? to.getDelegate() : null), (rectangle != null ? rectangle.getDelegate() : null)).getApi();
     }
 
     /**
@@ -1320,7 +1320,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Rectangle map(Control from, Control to, int x, int y, int width, int height) {
-        return getDelegate().map(from.getDelegate(), to.getDelegate(), x, y, width, height).getApi();
+        return getDelegate().map((from != null ? from.getDelegate() : null), (to != null ? to.getDelegate() : null), x, y, width, height).getApi();
     }
 
     /**
@@ -1545,7 +1545,7 @@ public class Display extends Device implements Executor {
      * @since 2.0
      */
     public void setCursorLocation(Point point) {
-        getDelegate().setCursorLocation(point.getDelegate());
+        getDelegate().setCursorLocation((point != null ? point.getDelegate() : null));
     }
 
     /**
@@ -1620,7 +1620,7 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public void setSynchronizer(Synchronizer synchronizer) {
-        getDelegate().setSynchronizer(synchronizer.getDelegate());
+        getDelegate().setSynchronizer((synchronizer != null ? synchronizer.getDelegate() : null));
     }
 
     /**

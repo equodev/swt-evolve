@@ -72,7 +72,7 @@ public class Canvas extends Composite {
      * @see Widget#getStyle
      */
     public Canvas(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Canvas((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Canvas((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -97,7 +97,7 @@ public class Canvas extends Composite {
      * @since 3.2
      */
     public void drawBackground(GC gc, int x, int y, int width, int height) {
-        getDelegate().drawBackground(gc.getDelegate(), x, y, width, height);
+        getDelegate().drawBackground((gc != null ? gc.getDelegate() : null), x, y, width, height);
     }
 
     /**
@@ -185,11 +185,11 @@ public class Canvas extends Composite {
      * </ul>
      */
     public void setCaret(Caret caret) {
-        getDelegate().setCaret(caret.getDelegate());
+        getDelegate().setCaret((caret != null ? caret.getDelegate() : null));
     }
 
     public void setFont(Font font) {
-        getDelegate().setFont(font.getDelegate());
+        getDelegate().setFont((font != null ? font.getDelegate() : null));
     }
 
     /**
@@ -208,7 +208,7 @@ public class Canvas extends Composite {
      * @since 3.4
      */
     public void setIME(IME ime) {
-        getDelegate().setIME(ime.getDelegate());
+        getDelegate().setIME((ime != null ? ime.getDelegate() : null));
     }
 
     protected Canvas(ICanvas delegate) {

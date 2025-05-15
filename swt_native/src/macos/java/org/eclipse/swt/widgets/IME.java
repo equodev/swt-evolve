@@ -72,7 +72,7 @@ public class IME extends Widget {
      * @see Widget#getStyle
      */
     public IME(Canvas parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.IME((nat.org.eclipse.swt.widgets.Canvas) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.IME((nat.org.eclipse.swt.widgets.Canvas) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**

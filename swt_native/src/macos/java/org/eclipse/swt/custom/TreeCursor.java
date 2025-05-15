@@ -66,7 +66,7 @@ public class TreeCursor extends Canvas {
      * @see Widget#getStyle()
      */
     public TreeCursor(Tree parent, int style) {
-        this(new nat.org.eclipse.swt.custom.TreeCursor((nat.org.eclipse.swt.widgets.Tree) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.custom.TreeCursor((nat.org.eclipse.swt.widgets.Tree) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -184,7 +184,7 @@ public class TreeCursor extends Canvas {
      * </ul>
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground(color.getDelegate());
+        getDelegate().setBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -205,7 +205,7 @@ public class TreeCursor extends Canvas {
      * </ul>
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground(color.getDelegate());
+        getDelegate().setForeground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -235,7 +235,7 @@ public class TreeCursor extends Canvas {
      * </ul>
      */
     public void setSelection(TreeItem row, int column) {
-        getDelegate().setSelection(row.getDelegate(), column);
+        getDelegate().setSelection((row != null ? row.getDelegate() : null), column);
     }
 
     public void setVisible(boolean visible) {

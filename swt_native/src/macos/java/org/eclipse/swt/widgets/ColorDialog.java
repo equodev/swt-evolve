@@ -56,7 +56,7 @@ public class ColorDialog extends Dialog {
      * @see Widget#getStyle
      */
     public ColorDialog(Shell parent) {
-        this(new nat.org.eclipse.swt.widgets.ColorDialog((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate()));
+        this(new nat.org.eclipse.swt.widgets.ColorDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
     }
 
     /**
@@ -88,7 +88,7 @@ public class ColorDialog extends Dialog {
      * @see Widget#getStyle
      */
     public ColorDialog(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.ColorDialog((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.ColorDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**

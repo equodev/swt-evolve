@@ -82,7 +82,7 @@ public class TreeEditor extends ControlEditor {
      * @param tree the Tree Control above which this editor will be displayed
      */
     public TreeEditor(Tree tree) {
-        this(new nat.org.eclipse.swt.custom.TreeEditor((nat.org.eclipse.swt.widgets.Tree) tree.getDelegate()));
+        this(new nat.org.eclipse.swt.custom.TreeEditor((nat.org.eclipse.swt.widgets.Tree) (tree != null ? tree.getDelegate() : null)));
     }
 
     /**
@@ -131,7 +131,7 @@ public class TreeEditor extends ControlEditor {
      * @param item the item to be edited
      */
     public void setItem(TreeItem item) {
-        getDelegate().setItem(item.getDelegate());
+        getDelegate().setItem((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -147,11 +147,11 @@ public class TreeEditor extends ControlEditor {
      * @since 3.1
      */
     public void setEditor(Control editor, TreeItem item, int column) {
-        getDelegate().setEditor(editor.getDelegate(), item.getDelegate(), column);
+        getDelegate().setEditor((editor != null ? editor.getDelegate() : null), (item != null ? item.getDelegate() : null), column);
     }
 
     public void setEditor(Control editor) {
-        getDelegate().setEditor(editor.getDelegate());
+        getDelegate().setEditor((editor != null ? editor.getDelegate() : null));
     }
 
     /**
@@ -164,7 +164,7 @@ public class TreeEditor extends ControlEditor {
      * @param item the TreeItem for the row of the cell being tracked by this editor
      */
     public void setEditor(Control editor, TreeItem item) {
-        getDelegate().setEditor(editor.getDelegate(), item.getDelegate());
+        getDelegate().setEditor((editor != null ? editor.getDelegate() : null), (item != null ? item.getDelegate() : null));
     }
 
     public void layout() {

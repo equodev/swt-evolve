@@ -82,7 +82,7 @@ public class Path extends Resource {
      * @see #dispose()
      */
     public Path(Device device) {
-        this(new nat.org.eclipse.swt.graphics.Path((nat.org.eclipse.swt.graphics.Device) device.getDelegate()));
+        this(new nat.org.eclipse.swt.graphics.Path((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null)));
     }
 
     /**
@@ -120,7 +120,7 @@ public class Path extends Resource {
      * @since 3.4
      */
     public Path(Device device, Path path, float flatness) {
-        this(new nat.org.eclipse.swt.graphics.Path((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), (nat.org.eclipse.swt.graphics.Path) path.getDelegate(), flatness));
+        this(new nat.org.eclipse.swt.graphics.Path((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), (nat.org.eclipse.swt.graphics.Path) (path != null ? path.getDelegate() : null), flatness));
     }
 
     /**
@@ -152,7 +152,7 @@ public class Path extends Resource {
      * @since 3.4
      */
     public Path(Device device, PathData data) {
-        this(new nat.org.eclipse.swt.graphics.Path((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), (nat.org.eclipse.swt.graphics.PathData) data.getDelegate()));
+        this(new nat.org.eclipse.swt.graphics.Path((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), (nat.org.eclipse.swt.graphics.PathData) (data != null ? data.getDelegate() : null)));
     }
 
     /**
@@ -202,7 +202,7 @@ public class Path extends Resource {
      * </ul>
      */
     public void addPath(Path path) {
-        getDelegate().addPath(path.getDelegate());
+        getDelegate().addPath((path != null ? path.getDelegate() : null));
     }
 
     /**
@@ -239,7 +239,7 @@ public class Path extends Resource {
      * </ul>
      */
     public void addString(String string, float x, float y, Font font) {
-        getDelegate().addString(string, x, y, font.getDelegate());
+        getDelegate().addString(string, x, y, (font != null ? font.getDelegate() : null));
     }
 
     /**
@@ -279,7 +279,7 @@ public class Path extends Resource {
      * </ul>
      */
     public boolean contains(float x, float y, GC gc, boolean outline) {
-        return getDelegate().contains(x, y, gc.getDelegate(), outline);
+        return getDelegate().contains(x, y, (gc != null ? gc.getDelegate() : null), outline);
     }
 
     /**

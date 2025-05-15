@@ -81,7 +81,7 @@ public class Tracker extends Widget {
      * @see Widget#getStyle
      */
     public Tracker(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Tracker((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Tracker((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -120,7 +120,7 @@ public class Tracker extends Widget {
      * @see SWT#RESIZE
      */
     public Tracker(Display display, int style) {
-        this(new nat.org.eclipse.swt.widgets.Tracker((nat.org.eclipse.swt.widgets.Display) display.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Tracker((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null), style));
     }
 
     /**
@@ -282,7 +282,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public void setCursor(Cursor newCursor) {
-        getDelegate().setCursor(newCursor.getDelegate());
+        getDelegate().setCursor((newCursor != null ? newCursor.getDelegate() : null));
     }
 
     /**

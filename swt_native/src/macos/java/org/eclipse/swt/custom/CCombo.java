@@ -88,7 +88,7 @@ public class CCombo extends Composite {
      * @see Widget#getStyle()
      */
     public CCombo(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.custom.CCombo((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.custom.CCombo((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -792,7 +792,7 @@ public class CCombo extends Composite {
     }
 
     public void setBackground(Color color) {
-        getDelegate().setBackground(color.getDelegate());
+        getDelegate().setBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -820,11 +820,11 @@ public class CCombo extends Composite {
     }
 
     public void setFont(Font font) {
-        getDelegate().setFont(font.getDelegate());
+        getDelegate().setFont((font != null ? font.getDelegate() : null));
     }
 
     public void setForeground(Color color) {
-        getDelegate().setForeground(color.getDelegate());
+        getDelegate().setForeground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -883,7 +883,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public void setLayout(Layout layout) {
-        getDelegate().setLayout(layout.getDelegate());
+        getDelegate().setLayout((layout != null ? layout.getDelegate() : null));
     }
 
     /**
@@ -909,7 +909,7 @@ public class CCombo extends Composite {
     }
 
     public void setMenu(Menu menu) {
-        getDelegate().setMenu(menu.getDelegate());
+        getDelegate().setMenu((menu != null ? menu.getDelegate() : null));
     }
 
     /**
@@ -929,7 +929,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public void setSelection(Point selection) {
-        getDelegate().setSelection(selection.getDelegate());
+        getDelegate().setSelection((selection != null ? selection.getDelegate() : null));
     }
 
     /**
@@ -1017,7 +1017,7 @@ public class CCombo extends Composite {
      * @param childUpdater the callback which works with the child widgets
      */
     public static void updateAndRefreshChildren(CCombo combo, Consumer<Widget> childUpdater) {
-        nat.org.eclipse.swt.custom.CCombo.updateAndRefreshChildren((nat.org.eclipse.swt.custom.CCombo) combo.getDelegate(), arg -> childUpdater.accept(arg.getApi()));
+        nat.org.eclipse.swt.custom.CCombo.updateAndRefreshChildren((nat.org.eclipse.swt.custom.CCombo) (combo != null ? combo.getDelegate() : null), arg -> childUpdater.accept(arg.getApi()));
     }
 
     protected CCombo(ICCombo delegate) {

@@ -59,7 +59,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
      * @param tree the <code>Tree</code> over which the user positions the cursor to drop the data
      */
     public TreeDropTargetEffect(Tree tree) {
-        this(new nat.org.eclipse.swt.dnd.TreeDropTargetEffect((nat.org.eclipse.swt.widgets.Tree) tree.getDelegate()));
+        this(new nat.org.eclipse.swt.dnd.TreeDropTargetEffect((nat.org.eclipse.swt.widgets.Tree) (tree != null ? tree.getDelegate() : null)));
     }
 
     /**

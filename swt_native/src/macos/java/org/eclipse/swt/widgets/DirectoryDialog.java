@@ -54,7 +54,7 @@ public class DirectoryDialog extends Dialog {
      * </ul>
      */
     public DirectoryDialog(Shell parent) {
-        this(new nat.org.eclipse.swt.widgets.DirectoryDialog((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate()));
+        this(new nat.org.eclipse.swt.widgets.DirectoryDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
     }
 
     /**
@@ -82,7 +82,7 @@ public class DirectoryDialog extends Dialog {
      * </ul>
      */
     public DirectoryDialog(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.DirectoryDialog((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.DirectoryDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**

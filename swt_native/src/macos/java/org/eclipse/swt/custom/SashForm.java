@@ -72,7 +72,7 @@ public class SashForm extends Composite {
      * @see #getStyle()
      */
     public SashForm(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.custom.SashForm((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.custom.SashForm((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -172,11 +172,11 @@ public class SashForm extends Composite {
     }
 
     public void setBackground(Color color) {
-        getDelegate().setBackground(color.getDelegate());
+        getDelegate().setBackground((color != null ? color.getDelegate() : null));
     }
 
     public void setForeground(Color color) {
-        getDelegate().setForeground(color.getDelegate());
+        getDelegate().setForeground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -195,7 +195,7 @@ public class SashForm extends Composite {
      * </ul>
      */
     public void setLayout(Layout layout) {
-        getDelegate().setLayout(layout.getDelegate());
+        getDelegate().setLayout((layout != null ? layout.getDelegate() : null));
     }
 
     /**
@@ -213,7 +213,7 @@ public class SashForm extends Composite {
      * </ul>
      */
     public void setMaximizedControl(Control control) {
-        getDelegate().setMaximizedControl(control.getDelegate());
+        getDelegate().setMaximizedControl((control != null ? control.getDelegate() : null));
     }
 
     /**

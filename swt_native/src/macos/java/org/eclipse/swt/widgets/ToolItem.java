@@ -78,7 +78,7 @@ public class ToolItem extends Item {
      * @see Widget#getStyle
      */
     public ToolItem(ToolBar parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.ToolItem((nat.org.eclipse.swt.widgets.ToolBar) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.ToolItem((nat.org.eclipse.swt.widgets.ToolBar) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -118,7 +118,7 @@ public class ToolItem extends Item {
      * @see Widget#getStyle
      */
     public ToolItem(ToolBar parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.ToolItem((nat.org.eclipse.swt.widgets.ToolBar) parent.getDelegate(), style, index));
+        this(new nat.org.eclipse.swt.widgets.ToolItem((nat.org.eclipse.swt.widgets.ToolBar) (parent != null ? parent.getDelegate() : null), style, index));
     }
 
     /**
@@ -419,7 +419,7 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground(color.getDelegate());
+        getDelegate().setBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -438,7 +438,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        getDelegate().setControl(control.getDelegate());
+        getDelegate().setControl((control != null ? control.getDelegate() : null));
     }
 
     /**
@@ -479,7 +479,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setDisabledImage(Image image) {
-        getDelegate().setDisabledImage(image.getDelegate());
+        getDelegate().setDisabledImage((image != null ? image.getDelegate() : null));
     }
 
     /**
@@ -502,7 +502,7 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground(color.getDelegate());
+        getDelegate().setForeground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -523,11 +523,11 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setHotImage(Image image) {
-        getDelegate().setHotImage(image.getDelegate());
+        getDelegate().setHotImage((image != null ? image.getDelegate() : null));
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage(image.getDelegate());
+        getDelegate().setImage((image != null ? image.getDelegate() : null));
     }
 
     /**

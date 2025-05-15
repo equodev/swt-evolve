@@ -153,7 +153,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void copyArea(Image image, int x, int y) {
-        getDelegate().copyArea(image.getDelegate(), x, y);
+        getDelegate().copyArea((image != null ? image.getDelegate() : null), x, y);
     }
 
     /**
@@ -271,7 +271,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawImage(Image image, int x, int y) {
-        getDelegate().drawImage(image.getDelegate(), x, y);
+        getDelegate().drawImage((image != null ? image.getDelegate() : null), x, y);
     }
 
     /**
@@ -307,7 +307,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
-        getDelegate().drawImage(image.getDelegate(), srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
+        getDelegate().drawImage((image != null ? image.getDelegate() : null), srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
     }
 
     /**
@@ -376,7 +376,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void drawPath(Path path) {
-        getDelegate().drawPath(path.getDelegate());
+        getDelegate().drawPath((path != null ? path.getDelegate() : null));
     }
 
     /**
@@ -478,7 +478,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawRectangle(Rectangle rect) {
-        getDelegate().drawRectangle(rect.getDelegate());
+        getDelegate().drawRectangle((rect != null ? rect.getDelegate() : null));
     }
 
     /**
@@ -778,7 +778,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void fillPath(Path path) {
-        getDelegate().fillPath(path.getDelegate());
+        getDelegate().fillPath((path != null ? path.getDelegate() : null));
     }
 
     /**
@@ -839,7 +839,7 @@ public final class GC extends Resource {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(Rectangle rect) {
-        getDelegate().fillRectangle(rect.getDelegate());
+        getDelegate().fillRectangle((rect != null ? rect.getDelegate() : null));
     }
 
     /**
@@ -1029,7 +1029,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void getClipping(Region region) {
-        getDelegate().getClipping(region.getDelegate());
+        getDelegate().getClipping((region != null ? region.getDelegate() : null));
     }
 
     /**
@@ -1311,7 +1311,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void getTransform(Transform transform) {
-        getDelegate().getTransform(transform.getDelegate());
+        getDelegate().getTransform((transform != null ? transform.getDelegate() : null));
     }
 
     /**
@@ -1500,7 +1500,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground(color.getDelegate());
+        getDelegate().setBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -1528,7 +1528,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setBackgroundPattern(Pattern pattern) {
-        getDelegate().setBackgroundPattern(pattern.getDelegate());
+        getDelegate().setBackgroundPattern((pattern != null ? pattern.getDelegate() : null));
     }
 
     /**
@@ -1576,7 +1576,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setClipping(Path path) {
-        getDelegate().setClipping(path.getDelegate());
+        getDelegate().setClipping((path != null ? path.getDelegate() : null));
     }
 
     /**
@@ -1593,7 +1593,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setClipping(Rectangle rect) {
-        getDelegate().setClipping(rect.getDelegate());
+        getDelegate().setClipping((rect != null ? rect.getDelegate() : null));
     }
 
     /**
@@ -1613,7 +1613,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setClipping(Region region) {
-        getDelegate().setClipping(region.getDelegate());
+        getDelegate().setClipping((region != null ? region.getDelegate() : null));
     }
 
     /**
@@ -1652,7 +1652,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setFont(Font font) {
-        getDelegate().setFont(font.getDelegate());
+        getDelegate().setFont((font != null ? font.getDelegate() : null));
     }
 
     /**
@@ -1670,7 +1670,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground(color.getDelegate());
+        getDelegate().setForeground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -1697,7 +1697,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setForegroundPattern(Pattern pattern) {
-        getDelegate().setForegroundPattern(pattern.getDelegate());
+        getDelegate().setForegroundPattern((pattern != null ? pattern.getDelegate() : null));
     }
 
     /**
@@ -1755,7 +1755,7 @@ public final class GC extends Resource {
      * @since 3.3
      */
     public void setLineAttributes(LineAttributes attributes) {
-        getDelegate().setLineAttributes(attributes.getDelegate());
+        getDelegate().setLineAttributes((attributes != null ? attributes.getDelegate() : null));
     }
 
     /**
@@ -1939,7 +1939,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setTransform(Transform transform) {
-        getDelegate().setTransform(transform.getDelegate());
+        getDelegate().setTransform((transform != null ? transform.getDelegate() : null));
     }
 
     /**

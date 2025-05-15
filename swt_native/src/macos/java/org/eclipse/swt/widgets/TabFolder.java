@@ -84,7 +84,7 @@ public class TabFolder extends Composite {
      * @see Widget#getStyle
      */
     public TabFolder(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.TabFolder((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.TabFolder((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -169,7 +169,7 @@ public class TabFolder extends Composite {
      * @since 3.4
      */
     public TabItem getItem(Point point) {
-        return getDelegate().getItem(point.getDelegate()).getApi();
+        return getDelegate().getItem((point != null ? point.getDelegate() : null)).getApi();
     }
 
     /**
@@ -259,7 +259,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public int indexOf(TabItem item) {
-        return getDelegate().indexOf(item.getDelegate());
+        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -301,7 +301,7 @@ public class TabFolder extends Composite {
      * @since 3.2
      */
     public void setSelection(TabItem item) {
-        getDelegate().setSelection(item.getDelegate());
+        getDelegate().setSelection((item != null ? item.getDelegate() : null));
     }
 
     /**

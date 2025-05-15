@@ -39,7 +39,7 @@ public class PopupList {
      * @param parent a Shell control which will be the parent of the new instance (cannot be null)
      */
     public PopupList(Shell parent) {
-        this(new nat.org.eclipse.swt.custom.PopupList((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate()));
+        this(new nat.org.eclipse.swt.custom.PopupList((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
     }
 
     /**
@@ -51,7 +51,7 @@ public class PopupList {
      * @since 3.0
      */
     public PopupList(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.custom.PopupList((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.custom.PopupList((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -103,7 +103,7 @@ public class PopupList {
      * @return the text of the selected item or null if no item is selected
      */
     public String open(Rectangle rect) {
-        return getDelegate().open(rect.getDelegate());
+        return getDelegate().open((rect != null ? rect.getDelegate() : null));
     }
 
     /**
@@ -139,7 +139,7 @@ public class PopupList {
      * 	</ul>
      */
     public void setFont(Font font) {
-        getDelegate().setFont(font.getDelegate());
+        getDelegate().setFont((font != null ? font.getDelegate() : null));
     }
 
     /**

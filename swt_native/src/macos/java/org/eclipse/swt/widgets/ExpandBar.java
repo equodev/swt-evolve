@@ -79,7 +79,7 @@ public class ExpandBar extends Composite {
      * @see Widget#getStyle
      */
     public ExpandBar(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.ExpandBar((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.ExpandBar((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -203,7 +203,7 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public int indexOf(ExpandItem item) {
-        return getDelegate().indexOf(item.getDelegate());
+        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -228,11 +228,11 @@ public class ExpandBar extends Composite {
     }
 
     public void setFont(Font font) {
-        getDelegate().setFont(font.getDelegate());
+        getDelegate().setFont((font != null ? font.getDelegate() : null));
     }
 
     public void setForeground(Color color) {
-        getDelegate().setForeground(color.getDelegate());
+        getDelegate().setForeground((color != null ? color.getDelegate() : null));
     }
 
     /**

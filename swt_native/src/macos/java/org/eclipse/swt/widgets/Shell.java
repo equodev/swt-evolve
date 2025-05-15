@@ -200,7 +200,7 @@ public class Shell extends Decorations {
      * </ul>
      */
     public Shell(Display display) {
-        this(new nat.org.eclipse.swt.widgets.Shell((nat.org.eclipse.swt.widgets.Display) display.getDelegate()));
+        this(new nat.org.eclipse.swt.widgets.Shell((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null)));
     }
 
     /**
@@ -251,7 +251,7 @@ public class Shell extends Decorations {
      * @see SWT#SHEET
      */
     public Shell(Display display, int style) {
-        this(new nat.org.eclipse.swt.widgets.Shell((nat.org.eclipse.swt.widgets.Display) display.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Shell((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null), style));
     }
 
     /**
@@ -277,7 +277,7 @@ public class Shell extends Decorations {
      * </ul>
      */
     public Shell(Shell parent) {
-        this(new nat.org.eclipse.swt.widgets.Shell((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate()));
+        this(new nat.org.eclipse.swt.widgets.Shell((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
     }
 
     /**
@@ -330,7 +330,7 @@ public class Shell extends Decorations {
      * @see SWT#SHEET
      */
     public Shell(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Shell((nat.org.eclipse.swt.widgets.Shell) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Shell((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -353,7 +353,7 @@ public class Shell extends Decorations {
      * @since 3.3
      */
     public static Shell internal_new(Display display, long handle) {
-        return nat.org.eclipse.swt.widgets.Shell.internal_new((nat.org.eclipse.swt.widgets.Display) display.getDelegate(), handle).getApi();
+        return nat.org.eclipse.swt.widgets.Shell.internal_new((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null), handle).getApi();
     }
 
     /**
@@ -653,7 +653,7 @@ public class Shell extends Decorations {
     }
 
     public boolean print(GC gc) {
-        return getDelegate().print(gc.getDelegate());
+        return getDelegate().print((gc != null ? gc.getDelegate() : null));
     }
 
     /**
@@ -760,7 +760,7 @@ public class Shell extends Decorations {
     }
 
     public void setMenuBar(Menu menu) {
-        getDelegate().setMenuBar(menu.getDelegate());
+        getDelegate().setMenuBar((menu != null ? menu.getDelegate() : null));
     }
 
     /**
@@ -834,7 +834,7 @@ public class Shell extends Decorations {
      * @since 3.116
      */
     public void setMaximumSize(Point size) {
-        getDelegate().setMaximumSize(size.getDelegate());
+        getDelegate().setMaximumSize((size != null ? size.getDelegate() : null));
     }
 
     public void setMinimized(boolean minimized) {
@@ -878,7 +878,7 @@ public class Shell extends Decorations {
      * @since 3.1
      */
     public void setMinimumSize(Point size) {
-        getDelegate().setMinimumSize(size.getDelegate());
+        getDelegate().setMinimumSize((size != null ? size.getDelegate() : null));
     }
 
     /**
@@ -922,7 +922,7 @@ public class Shell extends Decorations {
      * @since 3.0
      */
     public void setRegion(Region region) {
-        getDelegate().setRegion(region.getDelegate());
+        getDelegate().setRegion((region != null ? region.getDelegate() : null));
     }
 
     public void setText(String string) {

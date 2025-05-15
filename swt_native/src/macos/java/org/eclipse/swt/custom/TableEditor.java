@@ -84,7 +84,7 @@ public class TableEditor extends ControlEditor {
      * @param table the Table Control above which this editor will be displayed
      */
     public TableEditor(Table table) {
-        this(new nat.org.eclipse.swt.custom.TableEditor((nat.org.eclipse.swt.widgets.Table) table.getDelegate()));
+        this(new nat.org.eclipse.swt.custom.TableEditor((nat.org.eclipse.swt.widgets.Table) (table != null ? table.getDelegate() : null)));
     }
 
     /**
@@ -129,11 +129,11 @@ public class TableEditor extends ControlEditor {
      * @param item the item to be edited
      */
     public void setItem(TableItem item) {
-        getDelegate().setItem(item.getDelegate());
+        getDelegate().setItem((item != null ? item.getDelegate() : null));
     }
 
     public void setEditor(Control editor) {
-        getDelegate().setEditor(editor.getDelegate());
+        getDelegate().setEditor((editor != null ? editor.getDelegate() : null));
     }
 
     /**
@@ -147,7 +147,7 @@ public class TableEditor extends ControlEditor {
      * @param column the zero based index of the column of the cell being tracked by this editor
      */
     public void setEditor(Control editor, TableItem item, int column) {
-        getDelegate().setEditor(editor.getDelegate(), item.getDelegate(), column);
+        getDelegate().setEditor((editor != null ? editor.getDelegate() : null), (item != null ? item.getDelegate() : null), column);
     }
 
     public void layout() {

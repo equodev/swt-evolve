@@ -108,7 +108,7 @@ public class Combo extends Composite {
      * @see Widget#getStyle
      */
     public Combo(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Combo((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Combo((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -958,7 +958,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public void setSelection(Point selection) {
-        getDelegate().setSelection(selection.getDelegate());
+        getDelegate().setSelection((selection != null ? selection.getDelegate() : null));
     }
 
     /**

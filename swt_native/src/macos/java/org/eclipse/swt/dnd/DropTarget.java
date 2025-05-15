@@ -154,7 +154,7 @@ public class DropTarget extends Widget {
      *  @see DND#DROP_LINK
      */
     public DropTarget(Control control, int style) {
-        this(new nat.org.eclipse.swt.dnd.DropTarget((nat.org.eclipse.swt.widgets.Control) control.getDelegate(), style));
+        this(new nat.org.eclipse.swt.dnd.DropTarget((nat.org.eclipse.swt.widgets.Control) (control != null ? control.getDelegate() : null), style));
     }
 
     /**
@@ -245,7 +245,7 @@ public class DropTarget extends Widget {
      * @since 3.3
      */
     public void setDropTargetEffect(DropTargetEffect effect) {
-        getDelegate().setDropTargetEffect(effect.getDelegate());
+        getDelegate().setDropTargetEffect((effect != null ? effect.getDelegate() : null));
     }
 
     /**

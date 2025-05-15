@@ -68,7 +68,7 @@ public final class Color extends Resource {
      * @see #Color(int, int, int) The equivalent constructor not requiring a Device
      */
     public Color(Device device, int red, int green, int blue) {
-        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), red, green, blue));
+        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), red, green, blue));
     }
 
     /**
@@ -110,7 +110,7 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public Color(Device device, int red, int green, int blue, int alpha) {
-        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), red, green, blue, alpha));
+        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), red, green, blue, alpha));
     }
 
     /**
@@ -149,7 +149,7 @@ public final class Color extends Resource {
      * @see #Color(RGB) The equivalent constructor not requiring a Device
      */
     public Color(Device device, RGB rgb) {
-        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), rgb));
+        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), rgb));
     }
 
     /**
@@ -186,7 +186,7 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public Color(Device device, RGBA rgba) {
-        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), rgba));
+        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), rgba));
     }
 
     /**
@@ -226,7 +226,7 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public Color(Device device, RGB rgb, int alpha) {
-        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), rgb, alpha));
+        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), rgb, alpha));
     }
 
     /**

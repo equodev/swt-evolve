@@ -136,7 +136,7 @@ public class ScrolledComposite extends Composite {
      * @see #getStyle()
      */
     public ScrolledComposite(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.custom.ScrolledComposite((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.custom.ScrolledComposite((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -288,7 +288,7 @@ public class ScrolledComposite extends Composite {
      * @since 2.0
      */
     public void setOrigin(Point origin) {
-        getDelegate().setOrigin(origin.getDelegate());
+        getDelegate().setOrigin((origin != null ? origin.getDelegate() : null));
     }
 
     /**
@@ -342,7 +342,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setContent(Control content) {
-        getDelegate().setContent(content.getDelegate());
+        getDelegate().setContent((content != null ? content.getDelegate() : null));
     }
 
     /**
@@ -399,7 +399,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setLayout(Layout layout) {
-        getDelegate().setLayout(layout.getDelegate());
+        getDelegate().setLayout((layout != null ? layout.getDelegate() : null));
     }
 
     /**
@@ -431,7 +431,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setMinSize(Point size) {
-        getDelegate().setMinSize(size.getDelegate());
+        getDelegate().setMinSize((size != null ? size.getDelegate() : null));
     }
 
     /**
@@ -504,7 +504,7 @@ public class ScrolledComposite extends Composite {
      * @since 3.4
      */
     public void showControl(Control control) {
-        getDelegate().showControl(control.getDelegate());
+        getDelegate().showControl((control != null ? control.getDelegate() : null));
     }
 
     protected ScrolledComposite(IScrolledComposite delegate) {

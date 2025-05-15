@@ -163,7 +163,7 @@ public class CTabFolderRenderer {
      * @since 3.6
      */
     protected Point computeSize(int part, int state, GC gc, int wHint, int hHint) {
-        return getDelegate().computeSize(part, state, gc.getDelegate(), wHint, hHint).getApi();
+        return getDelegate().computeSize(part, state, (gc != null ? gc.getDelegate() : null), wHint, hHint).getApi();
     }
 
     /**
@@ -240,7 +240,7 @@ public class CTabFolderRenderer {
      * @since 3.6
      */
     protected void draw(int part, int state, Rectangle bounds, GC gc) {
-        getDelegate().draw(part, state, bounds.getDelegate(), gc.getDelegate());
+        getDelegate().draw(part, state, (bounds != null ? bounds.getDelegate() : null), (gc != null ? gc.getDelegate() : null));
     }
 
     ICTabFolderRenderer delegate;

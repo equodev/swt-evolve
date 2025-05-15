@@ -47,7 +47,7 @@ public class TreeDragSourceEffect extends DragSourceEffect {
      * @param tree the <code>Tree</code> that the user clicks on to initiate the drag
      */
     public TreeDragSourceEffect(Tree tree) {
-        this(new nat.org.eclipse.swt.dnd.TreeDragSourceEffect((nat.org.eclipse.swt.widgets.Tree) tree.getDelegate()));
+        this(new nat.org.eclipse.swt.dnd.TreeDragSourceEffect((nat.org.eclipse.swt.widgets.Tree) (tree != null ? tree.getDelegate() : null)));
     }
 
     /**

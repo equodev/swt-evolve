@@ -123,7 +123,7 @@ public abstract class Device implements Drawable {
      * @see #init
      */
     protected void create(DeviceData data) {
-        getDelegate().create(data.getDelegate());
+        getDelegate().create((data != null ? data.getDelegate() : null));
     }
 
     /**

@@ -75,7 +75,7 @@ public class Sash extends Control {
      * @see Widget#getStyle
      */
     public Sash(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Sash((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Sash((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**

@@ -106,7 +106,7 @@ public class Slider extends Control {
      * @see Widget#getStyle
      */
     public Slider(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Slider((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Slider((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**

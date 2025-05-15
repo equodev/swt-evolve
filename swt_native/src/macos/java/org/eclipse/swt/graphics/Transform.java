@@ -78,7 +78,7 @@ public class Transform extends Resource {
      * @see #dispose()
      */
     public Transform(Device device) {
-        this(new nat.org.eclipse.swt.graphics.Transform((nat.org.eclipse.swt.graphics.Device) device.getDelegate()));
+        this(new nat.org.eclipse.swt.graphics.Transform((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null)));
     }
 
     /**
@@ -110,7 +110,7 @@ public class Transform extends Resource {
      * @see #dispose()
      */
     public Transform(Device device, float[] elements) {
-        this(new nat.org.eclipse.swt.graphics.Transform((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), elements));
+        this(new nat.org.eclipse.swt.graphics.Transform((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), elements));
     }
 
     /**
@@ -146,7 +146,7 @@ public class Transform extends Resource {
      * @see #dispose()
      */
     public Transform(Device device, float m11, float m12, float m21, float m22, float dx, float dy) {
-        this(new nat.org.eclipse.swt.graphics.Transform((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), m11, m12, m21, m22, dx, dy));
+        this(new nat.org.eclipse.swt.graphics.Transform((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), m11, m12, m21, m22, dx, dy));
     }
 
     /**
@@ -234,7 +234,7 @@ public class Transform extends Resource {
      * </ul>
      */
     public void multiply(Transform matrix) {
-        getDelegate().multiply(matrix.getDelegate());
+        getDelegate().multiply((matrix != null ? matrix.getDelegate() : null));
     }
 
     /**

@@ -169,7 +169,7 @@ public class TextStyle {
      * @param background the background color of the style, <code>null</code> if none
      */
     public TextStyle(Font font, Color foreground, Color background) {
-        this(new nat.org.eclipse.swt.graphics.TextStyle((nat.org.eclipse.swt.graphics.Font) font.getDelegate(), (nat.org.eclipse.swt.graphics.Color) foreground.getDelegate(), (nat.org.eclipse.swt.graphics.Color) background.getDelegate()));
+        this(new nat.org.eclipse.swt.graphics.TextStyle((nat.org.eclipse.swt.graphics.Font) (font != null ? font.getDelegate() : null), (nat.org.eclipse.swt.graphics.Color) (foreground != null ? foreground.getDelegate() : null), (nat.org.eclipse.swt.graphics.Color) (background != null ? background.getDelegate() : null)));
     }
 
     /**
@@ -180,7 +180,7 @@ public class TextStyle {
      * @since 3.4
      */
     public TextStyle(TextStyle style) {
-        this(new nat.org.eclipse.swt.graphics.TextStyle((nat.org.eclipse.swt.graphics.TextStyle) style.getDelegate()));
+        this(new nat.org.eclipse.swt.graphics.TextStyle((nat.org.eclipse.swt.graphics.TextStyle) (style != null ? style.getDelegate() : null)));
     }
 
     /**

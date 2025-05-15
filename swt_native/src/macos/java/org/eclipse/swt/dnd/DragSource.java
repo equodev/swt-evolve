@@ -134,7 +134,7 @@ public class DragSource extends Widget {
      *  @see DND#DROP_LINK
      */
     public DragSource(Control control, int style) {
-        this(new nat.org.eclipse.swt.dnd.DragSource((nat.org.eclipse.swt.widgets.Control) control.getDelegate(), style));
+        this(new nat.org.eclipse.swt.dnd.DragSource((nat.org.eclipse.swt.widgets.Control) (control != null ? control.getDelegate() : null), style));
     }
 
     /**
@@ -261,7 +261,7 @@ public class DragSource extends Widget {
      * @since 3.3
      */
     public void setDragSourceEffect(DragSourceEffect effect) {
-        getDelegate().setDragSourceEffect(effect.getDelegate());
+        getDelegate().setDragSourceEffect((effect != null ? effect.getDelegate() : null));
     }
 
     /**

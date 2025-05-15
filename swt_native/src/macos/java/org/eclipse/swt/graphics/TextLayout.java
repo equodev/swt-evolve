@@ -56,7 +56,7 @@ public final class TextLayout extends Resource {
      * @see #dispose()
      */
     public TextLayout(Device device) {
-        this(new nat.org.eclipse.swt.graphics.TextLayout((nat.org.eclipse.swt.graphics.Device) device.getDelegate()));
+        this(new nat.org.eclipse.swt.graphics.TextLayout((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null)));
     }
 
     /**
@@ -75,7 +75,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public void draw(GC gc, int x, int y) {
-        getDelegate().draw(gc.getDelegate(), x, y);
+        getDelegate().draw((gc != null ? gc.getDelegate() : null), x, y);
     }
 
     /**
@@ -98,7 +98,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground) {
-        getDelegate().draw(gc.getDelegate(), x, y, selectionStart, selectionEnd, selectionForeground.getDelegate(), selectionBackground.getDelegate());
+        getDelegate().draw((gc != null ? gc.getDelegate() : null), x, y, selectionStart, selectionEnd, (selectionForeground != null ? selectionForeground.getDelegate() : null), (selectionBackground != null ? selectionBackground.getDelegate() : null));
     }
 
     /**
@@ -129,7 +129,7 @@ public final class TextLayout extends Resource {
      * @since 3.3
      */
     public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground, int flags) {
-        getDelegate().draw(gc.getDelegate(), x, y, selectionStart, selectionEnd, selectionForeground.getDelegate(), selectionBackground.getDelegate(), flags);
+        getDelegate().draw((gc != null ? gc.getDelegate() : null), x, y, selectionStart, selectionEnd, (selectionForeground != null ? selectionForeground.getDelegate() : null), (selectionBackground != null ? selectionBackground.getDelegate() : null), flags);
     }
 
     /**
@@ -429,7 +429,7 @@ public final class TextLayout extends Resource {
      * @see #getLocation(int, boolean)
      */
     public int getOffset(Point point, int[] trailing) {
-        return getDelegate().getOffset(point.getDelegate(), trailing);
+        return getDelegate().getOffset((point != null ? point.getDelegate() : null), trailing);
     }
 
     /**
@@ -782,7 +782,7 @@ public final class TextLayout extends Resource {
      * @since 3.125
      */
     public void setFixedLineMetrics(FontMetrics metrics) {
-        getDelegate().setFixedLineMetrics(metrics.getDelegate());
+        getDelegate().setFixedLineMetrics((metrics != null ? metrics.getDelegate() : null));
     }
 
     /**
@@ -802,7 +802,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public void setFont(Font font) {
-        getDelegate().setFont(font.getDelegate());
+        getDelegate().setFont((font != null ? font.getDelegate() : null));
     }
 
     /**
@@ -969,7 +969,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public void setStyle(TextStyle style, int start, int end) {
-        getDelegate().setStyle(style.getDelegate(), start, end);
+        getDelegate().setStyle((style != null ? style.getDelegate() : null), start, end);
     }
 
     /**

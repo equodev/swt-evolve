@@ -63,7 +63,7 @@ public class DropTargetEffect extends DropTargetAdapter {
      * </ul>
      */
     public DropTargetEffect(Control control) {
-        this(new nat.org.eclipse.swt.dnd.DropTargetEffect((nat.org.eclipse.swt.widgets.Control) control.getDelegate()));
+        this(new nat.org.eclipse.swt.dnd.DropTargetEffect((nat.org.eclipse.swt.widgets.Control) (control != null ? control.getDelegate() : null)));
     }
 
     /**

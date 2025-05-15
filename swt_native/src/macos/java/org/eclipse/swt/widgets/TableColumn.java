@@ -73,7 +73,7 @@ public class TableColumn extends Item {
      * @see Widget#getStyle
      */
     public TableColumn(Table parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.TableColumn((nat.org.eclipse.swt.widgets.Table) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.TableColumn((nat.org.eclipse.swt.widgets.Table) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -114,7 +114,7 @@ public class TableColumn extends Item {
      * @see Widget#getStyle
      */
     public TableColumn(Table parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.TableColumn((nat.org.eclipse.swt.widgets.Table) parent.getDelegate(), style, index));
+        this(new nat.org.eclipse.swt.widgets.TableColumn((nat.org.eclipse.swt.widgets.Table) (parent != null ? parent.getDelegate() : null), style, index));
     }
 
     /**
@@ -349,7 +349,7 @@ public class TableColumn extends Item {
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage(image.getDelegate());
+        getDelegate().setImage((image != null ? image.getDelegate() : null));
     }
 
     /**

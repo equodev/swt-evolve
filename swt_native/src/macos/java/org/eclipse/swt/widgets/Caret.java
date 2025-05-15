@@ -68,7 +68,7 @@ public class Caret extends Widget {
      * @see Widget#getStyle
      */
     public Caret(Canvas parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Caret((nat.org.eclipse.swt.widgets.Canvas) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Caret((nat.org.eclipse.swt.widgets.Canvas) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -230,7 +230,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setBounds(Rectangle rect) {
-        getDelegate().setBounds(rect.getDelegate());
+        getDelegate().setBounds((rect != null ? rect.getDelegate() : null));
     }
 
     /**
@@ -249,7 +249,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setFont(Font font) {
-        getDelegate().setFont(font.getDelegate());
+        getDelegate().setFont((font != null ? font.getDelegate() : null));
     }
 
     /**
@@ -268,7 +268,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage(image.getDelegate());
+        getDelegate().setImage((image != null ? image.getDelegate() : null));
     }
 
     /**
@@ -301,7 +301,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setLocation(Point location) {
-        getDelegate().setLocation(location.getDelegate());
+        getDelegate().setLocation((location != null ? location.getDelegate() : null));
     }
 
     /**
@@ -333,7 +333,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setSize(Point size) {
-        getDelegate().setSize(size.getDelegate());
+        getDelegate().setSize((size != null ? size.getDelegate() : null));
     }
 
     /**

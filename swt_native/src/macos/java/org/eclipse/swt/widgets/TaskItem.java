@@ -160,7 +160,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public void setMenu(Menu menu) {
-        getDelegate().setMenu(menu.getDelegate());
+        getDelegate().setMenu((menu != null ? menu.getDelegate() : null));
     }
 
     /**
@@ -191,7 +191,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public void setOverlayImage(Image overlayImage) {
-        getDelegate().setOverlayImage(overlayImage.getDelegate());
+        getDelegate().setOverlayImage((overlayImage != null ? overlayImage.getDelegate() : null));
     }
 
     /**

@@ -46,7 +46,7 @@ public class Synchronizer {
      * @param display the display to create the synchronizer on
      */
     public Synchronizer(Display display) {
-        this(new nat.org.eclipse.swt.widgets.Synchronizer((nat.org.eclipse.swt.widgets.Display) display.getDelegate()));
+        this(new nat.org.eclipse.swt.widgets.Synchronizer((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null)));
     }
 
     /**

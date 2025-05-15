@@ -108,7 +108,7 @@ public class Table extends Composite {
      * @see Widget#getStyle
      */
     public Table(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Table((nat.org.eclipse.swt.widgets.Composite) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.Table((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -556,7 +556,7 @@ public class Table extends Composite {
      * </ul>
      */
     public TableItem getItem(Point point) {
-        return getDelegate().getItem(point.getDelegate()).getApi();
+        return getDelegate().getItem((point != null ? point.getDelegate() : null)).getApi();
     }
 
     /**
@@ -773,7 +773,7 @@ public class Table extends Composite {
      * </ul>
      */
     public int indexOf(TableColumn column) {
-        return getDelegate().indexOf(column.getDelegate());
+        return getDelegate().indexOf((column != null ? column.getDelegate() : null));
     }
 
     /**
@@ -794,7 +794,7 @@ public class Table extends Composite {
      * </ul>
      */
     public int indexOf(TableItem item) {
-        return getDelegate().indexOf(item.getDelegate());
+        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -1037,7 +1037,7 @@ public class Table extends Composite {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
-        getDelegate().setHeaderBackground(color.getDelegate());
+        getDelegate().setHeaderBackground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -1060,7 +1060,7 @@ public class Table extends Composite {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
-        getDelegate().setHeaderForeground(color.getDelegate());
+        getDelegate().setHeaderForeground((color != null ? color.getDelegate() : null));
     }
 
     /**
@@ -1219,7 +1219,7 @@ public class Table extends Composite {
      * @since 3.2
      */
     public void setSelection(TableItem item) {
-        getDelegate().setSelection(item.getDelegate());
+        getDelegate().setSelection((item != null ? item.getDelegate() : null));
     }
 
     /**
@@ -1269,7 +1269,7 @@ public class Table extends Composite {
      * @since 3.2
      */
     public void setSortColumn(TableColumn column) {
-        getDelegate().setSortColumn(column.getDelegate());
+        getDelegate().setSortColumn((column != null ? column.getDelegate() : null));
     }
 
     /**
@@ -1324,7 +1324,7 @@ public class Table extends Composite {
      * @since 3.0
      */
     public void showColumn(TableColumn column) {
-        getDelegate().showColumn(column.getDelegate());
+        getDelegate().showColumn((column != null ? column.getDelegate() : null));
     }
 
     /**
@@ -1346,7 +1346,7 @@ public class Table extends Composite {
      * @see Table#showSelection()
      */
     public void showItem(TableItem item) {
-        getDelegate().showItem(item.getDelegate());
+        getDelegate().showItem((item != null ? item.getDelegate() : null));
     }
 
     /**

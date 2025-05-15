@@ -76,7 +76,7 @@ public class MenuItem extends Item {
      * @see Widget#getStyle
      */
     public MenuItem(Menu parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.MenuItem((nat.org.eclipse.swt.widgets.Menu) parent.getDelegate(), style));
+        this(new nat.org.eclipse.swt.widgets.MenuItem((nat.org.eclipse.swt.widgets.Menu) (parent != null ? parent.getDelegate() : null), style));
     }
 
     /**
@@ -116,7 +116,7 @@ public class MenuItem extends Item {
      * @see Widget#getStyle
      */
     public MenuItem(Menu parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.MenuItem((nat.org.eclipse.swt.widgets.Menu) parent.getDelegate(), style, index));
+        this(new nat.org.eclipse.swt.widgets.MenuItem((nat.org.eclipse.swt.widgets.Menu) (parent != null ? parent.getDelegate() : null), style, index));
     }
 
     /**
@@ -474,7 +474,7 @@ public class MenuItem extends Item {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage(image.getDelegate());
+        getDelegate().setImage((image != null ? image.getDelegate() : null));
     }
 
     /**
@@ -503,7 +503,7 @@ public class MenuItem extends Item {
      * </ul>
      */
     public void setMenu(Menu menu) {
-        getDelegate().setMenu(menu.getDelegate());
+        getDelegate().setMenu((menu != null ? menu.getDelegate() : null));
     }
 
     /**

@@ -110,7 +110,7 @@ public final class Cursor extends Resource {
      * @see #dispose()
      */
     public Cursor(Device device, int style) {
-        this(new nat.org.eclipse.swt.graphics.Cursor((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), style));
+        this(new nat.org.eclipse.swt.graphics.Cursor((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), style));
     }
 
     /**
@@ -147,7 +147,7 @@ public final class Cursor extends Resource {
      * @see #dispose()
      */
     public Cursor(Device device, ImageData source, ImageData mask, int hotspotX, int hotspotY) {
-        this(new nat.org.eclipse.swt.graphics.Cursor((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), source, mask, hotspotX, hotspotY));
+        this(new nat.org.eclipse.swt.graphics.Cursor((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), source, mask, hotspotX, hotspotY));
     }
 
     /**
@@ -180,7 +180,7 @@ public final class Cursor extends Resource {
      * @since 3.0
      */
     public Cursor(Device device, ImageData source, int hotspotX, int hotspotY) {
-        this(new nat.org.eclipse.swt.graphics.Cursor((nat.org.eclipse.swt.graphics.Device) device.getDelegate(), source, hotspotX, hotspotY));
+        this(new nat.org.eclipse.swt.graphics.Cursor((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), source, hotspotX, hotspotY));
     }
 
     /**

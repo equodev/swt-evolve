@@ -72,7 +72,7 @@ public class Bullet {
      * </ul>
      */
     public Bullet(StyleRange style) {
-        this(new nat.org.eclipse.swt.custom.Bullet((nat.org.eclipse.swt.custom.StyleRange) style.getDelegate()));
+        this(new nat.org.eclipse.swt.custom.Bullet((nat.org.eclipse.swt.custom.StyleRange) (style != null ? style.getDelegate() : null)));
     }
 
     /**
@@ -87,7 +87,7 @@ public class Bullet {
      * </ul>
      */
     public Bullet(int type, StyleRange style) {
-        this(new nat.org.eclipse.swt.custom.Bullet(type, (nat.org.eclipse.swt.custom.StyleRange) style.getDelegate()));
+        this(new nat.org.eclipse.swt.custom.Bullet(type, (nat.org.eclipse.swt.custom.StyleRange) (style != null ? style.getDelegate() : null)));
     }
 
     public int hashCode() {
