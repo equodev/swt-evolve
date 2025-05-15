@@ -150,10 +150,6 @@ public class ScrolledComposite extends Composite {
      */
     public boolean getAlwaysShowScrollBars() {
         return getDelegate().getAlwaysShowScrollBars();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
     }
 
     /**
@@ -228,11 +224,8 @@ public class ScrolledComposite extends Composite {
      * @return the control displayed in the content area
      */
     public Control getContent() {
-        return getDelegate().getContent().getApi();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
+        IControl ret = getDelegate().getContent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -268,7 +261,8 @@ public class ScrolledComposite extends Composite {
      * @since 2.0
      */
     public Point getOrigin() {
-        return getDelegate().getOrigin().getApi();
+        IPoint ret = getDelegate().getOrigin();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

@@ -23,6 +23,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ITabFolder;
 import org.eclipse.swt.graphics.IPoint;
 import org.eclipse.swt.widgets.ITabItem;
+import dev.equo.swt.Convert;
 
 /**
  * Instances of this class implement the notebook user interface
@@ -594,7 +595,7 @@ public class TabFolder extends Composite implements ITabFolder {
      * </ul>
      */
     public void setSelection(ITabItem[] iitems) {
-        TabItem[] items = (TabItem[]) iitems;
+        TabItem[] items = Convert.array(iitems, TabItem.class::cast, TabItem[]::new);
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);

@@ -124,7 +124,8 @@ public class DateTime extends Composite {
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     public Control[] getChildren() {

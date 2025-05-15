@@ -21,6 +21,7 @@ import nat.org.eclipse.swt.widgets.*;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.IClipboard;
 import org.eclipse.swt.dnd.ITransfer;
+import dev.equo.swt.Convert;
 
 /**
  * The <code>Clipboard</code> provides a mechanism for transferring data from one
@@ -389,7 +390,7 @@ public class Clipboard implements IClipboard {
      *  recoverable error, but can not be changed due to backward compatibility.</p>
      */
     public void setContents(Object[] data, ITransfer[] idataTypes) {
-        Transfer[] dataTypes = (Transfer[]) idataTypes;
+        Transfer[] dataTypes = Convert.array(idataTypes, Transfer.class::cast, Transfer[]::new);
         setContents(data, dataTypes, DND.CLIPBOARD);
     }
 
@@ -453,7 +454,7 @@ public class Clipboard implements IClipboard {
      *  @since 3.1
      */
     public void setContents(Object[] data, ITransfer[] idataTypes, int clipboards) {
-        Transfer[] dataTypes = (Transfer[]) idataTypes;
+        Transfer[] dataTypes = Convert.array(idataTypes, Transfer.class::cast, Transfer[]::new);
         checkWidget();
         if (data == null || dataTypes == null || data.length != dataTypes.length || data.length == 0) {
             DND.error(SWT.ERROR_INVALID_ARGUMENT);

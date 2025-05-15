@@ -152,7 +152,8 @@ public class TableCursor extends Canvas {
      * @return the receiver's background color
      */
     public Color getBackground() {
-        return getDelegate().getBackground().getApi();
+        IColor ret = getDelegate().getBackground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -161,7 +162,8 @@ public class TableCursor extends Canvas {
      * @return the receiver's foreground color
      */
     public Color getForeground() {
-        return getDelegate().getForeground().getApi();
+        IColor ret = getDelegate().getForeground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -175,7 +177,8 @@ public class TableCursor extends Canvas {
      * </ul>
      */
     public TableItem getRow() {
-        return getDelegate().getRow().getApi();
+        ITableItem ret = getDelegate().getRow();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

@@ -148,7 +148,8 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public Shell getParent() {
-        return getDelegate().getParent().getApi();
+        IShell ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -242,7 +243,6 @@ public class ToolTip extends Widget {
      */
     public void setAutoHide(boolean autoHide) {
         getDelegate().setAutoHide(autoHide);
-        //TODO - update when visible
     }
 
     /**

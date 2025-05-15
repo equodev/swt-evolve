@@ -130,7 +130,8 @@ public class ControlEditor {
      * @return the Control that is displayed above the composite being edited
      */
     public Control getEditor() {
-        return getDelegate().getEditor().getApi();
+        IControl ret = getDelegate().getEditor();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -142,8 +143,6 @@ public class ControlEditor {
      */
     public void layout() {
         getDelegate().layout();
-        // this doesn't work because
-        // resizing the column takes the focus away
     }
 
     /**

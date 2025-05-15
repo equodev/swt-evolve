@@ -65,7 +65,8 @@ public final class Printer extends Device {
      * @since 2.1
      */
     public static PrinterData getDefaultPrinterData() {
-        return nat.org.eclipse.swt.printing.Printer.getDefaultPrinterData().getApi();
+        IPrinterData ret = nat.org.eclipse.swt.printing.Printer.getDefaultPrinterData();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -143,7 +144,8 @@ public final class Printer extends Device {
      * @see #getClientArea
      */
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getDelegate().computeTrim(x, y, width, height).getApi();
+        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -335,7 +337,8 @@ public final class Printer extends Device {
      * </ul>
      */
     public Point getDPI() {
-        return getDelegate().getDPI().getApi();
+        IPoint ret = getDelegate().getDPI();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -354,7 +357,8 @@ public final class Printer extends Device {
      * @see #computeTrim
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -375,7 +379,8 @@ public final class Printer extends Device {
      * @see #computeTrim
      */
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea().getApi();
+        IRectangle ret = getDelegate().getClientArea();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -385,7 +390,8 @@ public final class Printer extends Device {
      * @return a PrinterData object describing the receiver
      */
     public PrinterData getPrinterData() {
-        return getDelegate().getPrinterData().getApi();
+        IPrinterData ret = getDelegate().getPrinterData();
+        return ret != null ? ret.getApi() : null;
     }
 
     protected Printer(IPrinter delegate) {

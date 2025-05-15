@@ -26,6 +26,7 @@ import org.eclipse.swt.graphics.IPoint;
 import org.eclipse.swt.widgets.ITableColumn;
 import org.eclipse.swt.widgets.ITableItem;
 import org.eclipse.swt.graphics.IColor;
+import dev.equo.swt.Convert;
 
 /**
  * Instances of this class implement a selectable user interface
@@ -3210,7 +3211,7 @@ public class Table extends Composite implements ITable {
      * @see Table#setSelection(int[])
      */
     public void setSelection(ITableItem[] iitems) {
-        TableItem[] items = (TableItem[]) iitems;
+        TableItem[] items = Convert.array(iitems, TableItem.class::cast, TableItem[]::new);
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);

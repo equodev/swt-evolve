@@ -245,7 +245,8 @@ public class CCombo extends Composite {
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -441,7 +442,8 @@ public class CCombo extends Composite {
     }
 
     public Menu getMenu() {
-        return getDelegate().getMenu().getApi();
+        IMenu ret = getDelegate().getMenu();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -459,7 +461,8 @@ public class CCombo extends Composite {
      * </ul>
      */
     public Point getSelection() {
-        return getDelegate().getSelection().getApi();
+        IPoint ret = getDelegate().getSelection();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -478,7 +481,8 @@ public class CCombo extends Composite {
     }
 
     public Shell getShell() {
-        return getDelegate().getShell().getApi();
+        IShell ret = getDelegate().getShell();
+        return ret != null ? ret.getApi() : null;
     }
 
     public int getStyle() {

@@ -393,7 +393,8 @@ public class Display extends Device implements Executor {
      * @noreference This method is not intended to be referenced by clients.
      */
     public Widget findWidget(long handle) {
-        return getDelegate().findWidget(handle).getApi();
+        IWidget ret = getDelegate().findWidget(handle);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -421,7 +422,8 @@ public class Display extends Device implements Executor {
      * @since 3.1
      */
     public Widget findWidget(long handle, long id) {
-        return getDelegate().findWidget(handle, id).getApi();
+        IWidget ret = getDelegate().findWidget(handle, id);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -444,7 +446,8 @@ public class Display extends Device implements Executor {
      * @since 3.3
      */
     public Widget findWidget(Widget widget, long id) {
-        return getDelegate().findWidget((widget != null ? widget.getDelegate() : null), id).getApi();
+        IWidget ret = getDelegate().findWidget((widget != null ? widget.getDelegate() : null), id);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -458,7 +461,8 @@ public class Display extends Device implements Executor {
      * @return the display for the given thread
      */
     public static Display findDisplay(Thread thread) {
-        return nat.org.eclipse.swt.widgets.Display.findDisplay(thread).getApi();
+        IDisplay ret = nat.org.eclipse.swt.widgets.Display.findDisplay(thread);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -474,7 +478,8 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public Shell getActiveShell() {
-        return getDelegate().getActiveShell().getApi();
+        IShell ret = getDelegate().getActiveShell();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -489,7 +494,8 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -500,7 +506,8 @@ public class Display extends Device implements Executor {
      * @return the current display
      */
     public static Display getCurrent() {
-        return nat.org.eclipse.swt.widgets.Display.getCurrent().getApi();
+        IDisplay ret = nat.org.eclipse.swt.widgets.Display.getCurrent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -517,7 +524,8 @@ public class Display extends Device implements Executor {
      * @see #getBounds
      */
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea().getApi();
+        IRectangle ret = getDelegate().getClientArea();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -533,7 +541,8 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public Control getCursorControl() {
-        return getDelegate().getCursorControl().getApi();
+        IControl ret = getDelegate().getCursorControl();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -548,7 +557,8 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public Point getCursorLocation() {
-        return getDelegate().getCursorLocation().getApi();
+        IPoint ret = getDelegate().getCursorLocation();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -575,7 +585,8 @@ public class Display extends Device implements Executor {
      * @return the default display
      */
     public static Display getDefault() {
-        return nat.org.eclipse.swt.widgets.Display.getDefault().getApi();
+        IDisplay ret = nat.org.eclipse.swt.widgets.Display.getDefault();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -685,7 +696,8 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public Control getFocusControl() {
-        return getDelegate().getFocusControl().getApi();
+        IControl ret = getDelegate().getFocusControl();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -786,7 +798,8 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Monitor getPrimaryMonitor() {
-        return getDelegate().getPrimaryMonitor().getApi();
+        IMonitor ret = getDelegate().getPrimaryMonitor();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -817,7 +830,8 @@ public class Display extends Device implements Executor {
      * @since 3.4
      */
     public Synchronizer getSynchronizer() {
-        return getDelegate().getSynchronizer().getApi();
+        ISynchronizer ret = getDelegate().getSynchronizer();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -859,7 +873,8 @@ public class Display extends Device implements Executor {
      * @see SWT
      */
     public Color getSystemColor(int id) {
-        return getDelegate().getSystemColor(id).getApi();
+        IColor ret = getDelegate().getSystemColor(id);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -905,7 +920,8 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Cursor getSystemCursor(int id) {
-        return getDelegate().getSystemCursor(id).getApi();
+        ICursor ret = getDelegate().getSystemCursor(id);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -935,7 +951,8 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Image getSystemImage(int id) {
-        return getDelegate().getSystemImage(id).getApi();
+        IImage ret = getDelegate().getSystemImage(id);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -951,7 +968,8 @@ public class Display extends Device implements Executor {
      * @since 3.7
      */
     public Menu getMenuBar() {
-        return getDelegate().getMenuBar().getApi();
+        IMenu ret = getDelegate().getMenuBar();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -968,7 +986,8 @@ public class Display extends Device implements Executor {
      * @since 3.7
      */
     public Menu getSystemMenu() {
-        return getDelegate().getSystemMenu().getApi();
+        IMenu ret = getDelegate().getSystemMenu();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -984,7 +1003,8 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Tray getSystemTray() {
-        return getDelegate().getSystemTray().getApi();
+        ITray ret = getDelegate().getSystemTray();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -1000,7 +1020,8 @@ public class Display extends Device implements Executor {
      * @since 3.6
      */
     public TaskBar getSystemTaskBar() {
-        return getDelegate().getSystemTaskBar().getApi();
+        ITaskBar ret = getDelegate().getSystemTaskBar();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -1070,10 +1091,6 @@ public class Display extends Device implements Executor {
      */
     public long internal_new_GC(GCData data) {
         return getDelegate().internal_new_GC(data);
-        //	NSAffineTransform transform = NSAffineTransform.transform();
-        //	NSSize size = handle.size();
-        //	transform.translateXBy(0, size.height);
-        //	transform.scaleXBy(1, -1);
     }
 
     /**
@@ -1198,7 +1215,8 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Point map(Control from, Control to, Point point) {
-        return getDelegate().map((from != null ? from.getDelegate() : null), (to != null ? to.getDelegate() : null), (point != null ? point.getDelegate() : null)).getApi();
+        IPoint ret = getDelegate().map((from != null ? from.getDelegate() : null), (to != null ? to.getDelegate() : null), (point != null ? point.getDelegate() : null));
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -1238,7 +1256,8 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Point map(Control from, Control to, int x, int y) {
-        return getDelegate().map((from != null ? from.getDelegate() : null), (to != null ? to.getDelegate() : null), x, y).getApi();
+        IPoint ret = getDelegate().map((from != null ? from.getDelegate() : null), (to != null ? to.getDelegate() : null), x, y);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -1278,7 +1297,8 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Rectangle map(Control from, Control to, Rectangle rectangle) {
-        return getDelegate().map((from != null ? from.getDelegate() : null), (to != null ? to.getDelegate() : null), (rectangle != null ? rectangle.getDelegate() : null)).getApi();
+        IRectangle ret = getDelegate().map((from != null ? from.getDelegate() : null), (to != null ? to.getDelegate() : null), (rectangle != null ? rectangle.getDelegate() : null));
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -1320,7 +1340,8 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Rectangle map(Control from, Control to, int x, int y, int width, int height) {
-        return getDelegate().map((from != null ? from.getDelegate() : null), (to != null ? to.getDelegate() : null), x, y, width, height).getApi();
+        IRectangle ret = getDelegate().map((from != null ? from.getDelegate() : null), (to != null ? to.getDelegate() : null), x, y, width, height);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

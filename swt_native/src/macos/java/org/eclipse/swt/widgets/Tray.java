@@ -57,7 +57,8 @@ public class Tray extends Widget {
      * </ul>
      */
     public TrayItem getItem(int index) {
-        return getDelegate().getItem(index).getApi();
+        ITrayItem ret = getDelegate().getItem(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

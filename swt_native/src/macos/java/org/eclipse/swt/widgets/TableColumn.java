@@ -199,7 +199,8 @@ public class TableColumn extends Item {
      * </ul>
      */
     public Table getParent() {
-        return getDelegate().getParent().getApi();
+        ITable ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

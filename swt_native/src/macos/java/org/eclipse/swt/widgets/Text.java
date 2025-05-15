@@ -282,11 +282,13 @@ public class Text extends Scrollable {
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getDelegate().computeTrim(x, y, width, height).getApi();
+        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -349,7 +351,8 @@ public class Text extends Scrollable {
      * </ul>
      */
     public Point getCaretLocation() {
-        return getDelegate().getCaretLocation().getApi();
+        IPoint ret = getDelegate().getCaretLocation();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -537,7 +540,8 @@ public class Text extends Scrollable {
      * </ul>
      */
     public Point getSelection() {
-        return getDelegate().getSelection().getApi();
+        IPoint ret = getDelegate().getSelection();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

@@ -120,7 +120,8 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        return getDelegate().getControl().getApi();
+        IControl ret = getDelegate().getControl();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -177,7 +178,8 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public ExpandBar getParent() {
-        return getDelegate().getParent().getApi();
+        IExpandBar ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

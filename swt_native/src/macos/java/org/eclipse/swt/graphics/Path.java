@@ -349,7 +349,8 @@ public class Path extends Resource {
      * @see PathData
      */
     public PathData getPathData() {
-        return getDelegate().getPathData().getApi();
+        IPathData ret = getDelegate().getPathData();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

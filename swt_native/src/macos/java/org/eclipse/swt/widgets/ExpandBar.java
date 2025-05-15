@@ -110,11 +110,13 @@ public class ExpandBar extends Composite {
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     public Color getForeground() {
-        return getDelegate().getForeground().getApi();
+        IColor ret = getDelegate().getForeground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -133,7 +135,8 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public ExpandItem getItem(int index) {
-        return getDelegate().getItem(index).getApi();
+        IExpandItem ret = getDelegate().getItem(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

@@ -182,7 +182,8 @@ public class DragSource extends Widget {
      * @return the Control which is registered for this DragSource
      */
     public Control getControl() {
-        return getDelegate().getControl().getApi();
+        IControl ret = getDelegate().getControl();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -218,7 +219,8 @@ public class DragSource extends Widget {
      * @since 3.3
      */
     public DragSourceEffect getDragSourceEffect() {
-        return getDelegate().getDragSourceEffect().getApi();
+        IDragSourceEffect ret = getDelegate().getDragSourceEffect();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

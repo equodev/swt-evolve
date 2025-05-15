@@ -271,7 +271,8 @@ public class MenuItem extends Item {
      * </ul>
      */
     public Menu getMenu() {
-        return getDelegate().getMenu().getApi();
+        IMenu ret = getDelegate().getMenu();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -285,7 +286,8 @@ public class MenuItem extends Item {
      * </ul>
      */
     public Menu getParent() {
-        return getDelegate().getParent().getApi();
+        IMenu ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

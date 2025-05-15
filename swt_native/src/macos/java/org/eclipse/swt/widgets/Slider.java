@@ -146,7 +146,8 @@ public class Slider extends Control {
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

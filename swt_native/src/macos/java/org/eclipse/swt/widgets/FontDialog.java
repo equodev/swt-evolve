@@ -110,7 +110,8 @@ public class FontDialog extends Dialog {
      */
     @Deprecated
     public FontData getFontData() {
-        return getDelegate().getFontData().getApi();
+        IFontData ret = getDelegate().getFontData();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -151,7 +152,8 @@ public class FontDialog extends Dialog {
      * </ul>
      */
     public FontData open() {
-        return getDelegate().open().getApi();
+        IFontData ret = getDelegate().open();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

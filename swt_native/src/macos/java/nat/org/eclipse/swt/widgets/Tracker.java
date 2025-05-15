@@ -23,6 +23,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ITracker;
 import org.eclipse.swt.graphics.ICursor;
 import org.eclipse.swt.graphics.IRectangle;
+import dev.equo.swt.Convert;
 
 /**
  *  Instances of this class implement rubber banding rectangles that are
@@ -1192,7 +1193,7 @@ public class Tracker extends Widget implements ITracker {
      * </ul>
      */
     public void setRectangles(IRectangle[] irectangles) {
-        Rectangle[] rectangles = (Rectangle[]) irectangles;
+        Rectangle[] rectangles = Convert.array(irectangles, Rectangle.class::cast, Rectangle[]::new);
         checkWidget();
         if (rectangles == null)
             error(SWT.ERROR_NULL_ARGUMENT);

@@ -63,7 +63,8 @@ public class DragSourceEffect extends DragSourceAdapter {
      * @return the Control which is registered for this DragSourceEffect
      */
     public Control getControl() {
-        return getDelegate().getControl().getApi();
+        IControl ret = getDelegate().getControl();
+        return ret != null ? ret.getApi() : null;
     }
 
     protected DragSourceEffect(IDragSourceEffect delegate) {

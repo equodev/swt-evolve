@@ -73,7 +73,8 @@ public class DropTargetEffect extends DropTargetAdapter {
      * @return the Control which is registered for this DropTargetEffect
      */
     public Control getControl() {
-        return getDelegate().getControl().getApi();
+        IControl ret = getDelegate().getControl();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -86,7 +87,8 @@ public class DropTargetEffect extends DropTargetAdapter {
      * @return the item at the given x-y coordinate, or null if the coordinate is not in a selectable item
      */
     public Widget getItem(int x, int y) {
-        return getDelegate().getItem(x, y).getApi();
+        IWidget ret = getDelegate().getItem(x, y);
+        return ret != null ? ret.getApi() : null;
     }
 
     protected DropTargetEffect(IDropTargetEffect delegate) {

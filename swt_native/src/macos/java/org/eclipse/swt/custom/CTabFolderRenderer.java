@@ -163,7 +163,8 @@ public class CTabFolderRenderer {
      * @since 3.6
      */
     protected Point computeSize(int part, int state, GC gc, int wHint, int hHint) {
-        return getDelegate().computeSize(part, state, (gc != null ? gc.getDelegate() : null), wHint, hHint).getApi();
+        IPoint ret = getDelegate().computeSize(part, state, (gc != null ? gc.getDelegate() : null), wHint, hHint);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -193,7 +194,8 @@ public class CTabFolderRenderer {
      * @since 3.6
      */
     protected Rectangle computeTrim(int part, int state, int x, int y, int width, int height) {
-        return getDelegate().computeTrim(part, state, x, y, width, height).getApi();
+        IRectangle ret = getDelegate().computeTrim(part, state, x, y, width, height);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

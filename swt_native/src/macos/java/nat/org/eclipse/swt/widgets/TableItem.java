@@ -23,6 +23,7 @@ import org.eclipse.swt.widgets.ITableItem;
 import org.eclipse.swt.graphics.IColor;
 import org.eclipse.swt.graphics.IFont;
 import org.eclipse.swt.graphics.IImage;
+import dev.equo.swt.Convert;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -1037,7 +1038,7 @@ public class TableItem extends Item implements ITableItem {
      * </ul>
      */
     public void setImage(IImage[] iimages) {
-        Image[] images = (Image[]) iimages;
+        Image[] images = Convert.array(iimages, Image.class::cast, Image[]::new);
         checkWidget();
         if (images == null)
             error(SWT.ERROR_NULL_ARGUMENT);

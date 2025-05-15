@@ -126,7 +126,8 @@ public class TabItem extends Item {
      * @since 3.4
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -142,7 +143,8 @@ public class TabItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        return getDelegate().getControl().getApi();
+        IControl ret = getDelegate().getControl();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -156,7 +158,8 @@ public class TabItem extends Item {
      * </ul>
      */
     public TabFolder getParent() {
-        return getDelegate().getParent().getApi();
+        ITabFolder ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

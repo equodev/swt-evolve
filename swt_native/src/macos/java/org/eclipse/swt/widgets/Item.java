@@ -101,7 +101,6 @@ public abstract class Item extends Widget {
 
     protected void checkSubclass() {
         getDelegate().checkSubclass();
-        /* Do Nothing - Subclassing is allowed */
     }
 
     /**
@@ -116,7 +115,8 @@ public abstract class Item extends Widget {
      * </ul>
      */
     public Image getImage() {
-        return getDelegate().getImage().getApi();
+        IImage ret = getDelegate().getImage();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

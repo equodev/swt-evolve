@@ -78,7 +78,8 @@ public class ProgressBar extends Control {
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -217,7 +218,6 @@ public class ProgressBar extends Control {
      */
     public void setState(int state) {
         getDelegate().setState(state);
-        //NOT IMPLEMENTED
     }
 
     protected ProgressBar(IProgressBar delegate) {

@@ -177,7 +177,8 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public Color getBackground() {
-        return getDelegate().getBackground().getApi();
+        IColor ret = getDelegate().getBackground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -192,7 +193,8 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -207,7 +209,8 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        return getDelegate().getControl().getApi();
+        IControl ret = getDelegate().getControl();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -225,7 +228,8 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Image getDisabledImage() {
-        return getDelegate().getDisabledImage().getApi();
+        IImage ret = getDelegate().getDisabledImage();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -260,7 +264,8 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public Color getForeground() {
-        return getDelegate().getForeground().getApi();
+        IColor ret = getDelegate().getForeground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -278,7 +283,8 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Image getHotImage() {
-        return getDelegate().getHotImage().getApi();
+        IImage ret = getDelegate().getHotImage();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -293,7 +299,8 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Image getImage() {
-        return getDelegate().getImage().getApi();
+        IImage ret = getDelegate().getImage();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -307,7 +314,8 @@ public class ToolItem extends Item {
      * </ul>
      */
     public ToolBar getParent() {
-        return getDelegate().getParent().getApi();
+        IToolBar ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

@@ -113,7 +113,8 @@ public class PrintDialog extends Dialog {
      * @since 3.4
      */
     public PrinterData getPrinterData() {
-        return getDelegate().getPrinterData().getApi();
+        IPrinterData ret = getDelegate().getPrinterData();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -129,7 +130,8 @@ public class PrintDialog extends Dialog {
      * </ul>
      */
     public PrinterData open() {
-        return getDelegate().open().getApi();
+        IPrinterData ret = getDelegate().open();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

@@ -26,6 +26,7 @@ import org.eclipse.swt.widgets.ITreeItem;
 import org.eclipse.swt.graphics.IPoint;
 import org.eclipse.swt.widgets.ITreeColumn;
 import org.eclipse.swt.graphics.IColor;
+import dev.equo.swt.Convert;
 
 /**
  * Instances of this class provide a selectable user interface object
@@ -3488,7 +3489,7 @@ public class Tree extends Composite implements ITree {
      * @see Tree#deselectAll()
      */
     public void setSelection(ITreeItem[] iitems) {
-        TreeItem[] items = (TreeItem[]) iitems;
+        TreeItem[] items = Convert.array(iitems, TreeItem.class::cast, TreeItem[]::new);
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);

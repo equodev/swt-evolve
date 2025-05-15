@@ -110,7 +110,8 @@ public class TableEditor extends ControlEditor {
      * @return the TableItem for the row of the cell being tracked by this editor
      */
     public TableItem getItem() {
-        return getDelegate().getItem().getApi();
+        ITableItem ret = getDelegate().getItem();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -120,7 +121,6 @@ public class TableEditor extends ControlEditor {
      */
     public void setColumn(int column) {
         getDelegate().setColumn(column);
-        // Separately handle the case where the table has no TableColumns.
     }
 
     /**

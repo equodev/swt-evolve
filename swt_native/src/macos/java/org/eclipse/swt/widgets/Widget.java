@@ -351,7 +351,8 @@ public abstract class Widget {
      * </ul>
      */
     public Display getDisplay() {
-        return getDelegate().getDisplay().getApi();
+        IDisplay ret = getDelegate().getDisplay();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

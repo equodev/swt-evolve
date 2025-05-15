@@ -22,6 +22,7 @@ import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.IDecorations;
 import org.eclipse.swt.widgets.IButton;
 import org.eclipse.swt.graphics.IImage;
+import dev.equo.swt.Convert;
 import org.eclipse.swt.widgets.IMenu;
 
 /**
@@ -584,7 +585,7 @@ public class Decorations extends Canvas implements IDecorations {
      * @since 3.0
      */
     public void setImages(IImage[] iimages) {
-        Image[] images = (Image[]) iimages;
+        Image[] images = Convert.array(iimages, Image.class::cast, Image[]::new);
         checkWidget();
         if (images == null)
             error(SWT.ERROR_INVALID_ARGUMENT);

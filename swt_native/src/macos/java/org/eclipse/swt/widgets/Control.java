@@ -489,7 +489,8 @@ public abstract class Control extends Widget implements Drawable {
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint) {
-        return getDelegate().computeSize(wHint, hHint).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -527,7 +528,8 @@ public abstract class Control extends Widget implements Drawable {
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -648,7 +650,8 @@ public abstract class Control extends Widget implements Drawable {
      * @since 2.0
      */
     public Accessible getAccessible() {
-        return getDelegate().getAccessible().getApi();
+        IAccessible ret = getDelegate().getAccessible();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -666,7 +669,8 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Color getBackground() {
-        return getDelegate().getBackground().getApi();
+        IColor ret = getDelegate().getBackground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -682,7 +686,8 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.2
      */
     public Image getBackgroundImage() {
-        return getDelegate().getBackgroundImage().getApi();
+        IImage ret = getDelegate().getBackgroundImage();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -713,7 +718,8 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -750,7 +756,8 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.3
      */
     public Cursor getCursor() {
-        return getDelegate().getCursor().getApi();
+        ICursor ret = getDelegate().getCursor();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -783,7 +790,8 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Font getFont() {
-        return getDelegate().getFont().getApi();
+        IFont ret = getDelegate().getFont();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -797,7 +805,8 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Color getForeground() {
-        return getDelegate().getForeground().getApi();
+        IColor ret = getDelegate().getForeground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -828,7 +837,8 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Point getLocation() {
-        return getDelegate().getLocation().getApi();
+        IPoint ret = getDelegate().getLocation();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -847,7 +857,8 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Menu getMenu() {
-        return getDelegate().getMenu().getApi();
+        IMenu ret = getDelegate().getMenu();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -863,7 +874,8 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.0
      */
     public Monitor getMonitor() {
-        return getDelegate().getMonitor().getApi();
+        IMonitor ret = getDelegate().getMonitor();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -896,7 +908,8 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Composite getParent() {
-        return getDelegate().getParent().getApi();
+        IComposite ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -913,7 +926,8 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.4
      */
     public Region getRegion() {
-        return getDelegate().getRegion().getApi();
+        IRegion ret = getDelegate().getRegion();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -932,7 +946,8 @@ public abstract class Control extends Widget implements Drawable {
      * @see #getParent
      */
     public Shell getShell() {
-        return getDelegate().getShell().getApi();
+        IShell ret = getDelegate().getShell();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -949,7 +964,8 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Point getSize() {
-        return getDelegate().getSize().getApi();
+        IPoint ret = getDelegate().getSize();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -2218,7 +2234,8 @@ public abstract class Control extends Widget implements Drawable {
      * @since 2.1
      */
     public Point toControl(int x, int y) {
-        return getDelegate().toControl(x, y).getApi();
+        IPoint ret = getDelegate().toControl(x, y);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -2242,7 +2259,8 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Point toControl(Point point) {
-        return getDelegate().toControl((point != null ? point.getDelegate() : null)).getApi();
+        IPoint ret = getDelegate().toControl((point != null ? point.getDelegate() : null));
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -2266,7 +2284,8 @@ public abstract class Control extends Widget implements Drawable {
      * @since 2.1
      */
     public Point toDisplay(int x, int y) {
-        return getDelegate().toDisplay(x, y).getApi();
+        IPoint ret = getDelegate().toDisplay(x, y);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -2290,7 +2309,8 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Point toDisplay(Point point) {
-        return getDelegate().toDisplay((point != null ? point.getDelegate() : null)).getApi();
+        IPoint ret = getDelegate().toDisplay((point != null ? point.getDelegate() : null));
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

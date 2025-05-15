@@ -353,7 +353,8 @@ public class Shell extends Decorations {
      * @since 3.3
      */
     public static Shell internal_new(Display display, long handle) {
-        return nat.org.eclipse.swt.widgets.Shell.internal_new((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null), handle).getApi();
+        IShell ret = nat.org.eclipse.swt.widgets.Shell.internal_new((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null), handle);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -399,11 +400,13 @@ public class Shell extends Decorations {
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getDelegate().computeTrim(x, y, width, height).getApi();
+        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -449,11 +452,13 @@ public class Shell extends Decorations {
     }
 
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea().getApi();
+        IRectangle ret = getDelegate().getClientArea();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -495,7 +500,8 @@ public class Shell extends Decorations {
     }
 
     public Point getLocation() {
-        return getDelegate().getLocation().getApi();
+        IPoint ret = getDelegate().getLocation();
+        return ret != null ? ret.getApi() : null;
     }
 
     public boolean getMaximized() {
@@ -538,7 +544,8 @@ public class Shell extends Decorations {
      * @since 3.116
      */
     public Point getMaximumSize() {
-        return getDelegate().getMaximumSize().getApi();
+        IPoint ret = getDelegate().getMaximumSize();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -557,7 +564,8 @@ public class Shell extends Decorations {
      * @since 3.1
      */
     public Point getMinimumSize() {
-        return getDelegate().getMinimumSize().getApi();
+        IPoint ret = getDelegate().getMinimumSize();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -574,11 +582,13 @@ public class Shell extends Decorations {
      * @since 3.0
      */
     public Region getRegion() {
-        return getDelegate().getRegion().getApi();
+        IRegion ret = getDelegate().getRegion();
+        return ret != null ? ret.getApi() : null;
     }
 
     public Shell getShell() {
-        return getDelegate().getShell().getApi();
+        IShell ret = getDelegate().getShell();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -597,7 +607,8 @@ public class Shell extends Decorations {
     }
 
     public Point getSize() {
-        return getDelegate().getSize().getApi();
+        IPoint ret = getDelegate().getSize();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -616,7 +627,8 @@ public class Shell extends Decorations {
      * @since 3.7
      */
     public ToolBar getToolBar() {
-        return getDelegate().getToolBar().getApi();
+        IToolBar ret = getDelegate().getToolBar();
+        return ret != null ? ret.getApi() : null;
     }
 
     public boolean isEnabled() {

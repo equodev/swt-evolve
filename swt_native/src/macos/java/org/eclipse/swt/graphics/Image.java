@@ -475,7 +475,8 @@ public final class Image extends Resource implements Drawable {
      * </ul>
      */
     public Color getBackground() {
-        return getDelegate().getBackground().getApi();
+        IColor ret = getDelegate().getBackground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -491,7 +492,8 @@ public final class Image extends Resource implements Drawable {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -511,7 +513,8 @@ public final class Image extends Resource implements Drawable {
      */
     @Deprecated
     public Rectangle getBoundsInPixels() {
-        return getDelegate().getBoundsInPixels().getApi();
+        IRectangle ret = getDelegate().getBoundsInPixels();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

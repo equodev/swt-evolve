@@ -40,7 +40,8 @@ public class URLTransfer extends ByteArrayTransfer {
      * @return the singleton instance of the URLTransfer class
      */
     public static URLTransfer getInstance() {
-        return nat.org.eclipse.swt.dnd.URLTransfer.getInstance().getApi();
+        IURLTransfer ret = nat.org.eclipse.swt.dnd.URLTransfer.getInstance();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

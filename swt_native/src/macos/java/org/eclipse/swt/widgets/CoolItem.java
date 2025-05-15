@@ -174,7 +174,8 @@ public class CoolItem extends Item {
      * @see Scrollable#getClientArea
      */
     public Point computeSize(int wHint, int hHint) {
-        return getDelegate().computeSize(wHint, hHint).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint);
+        return ret != null ? ret.getApi() : null;
     }
 
     public void dispose() {
@@ -193,7 +194,8 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -207,7 +209,8 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        return getDelegate().getControl().getApi();
+        IControl ret = getDelegate().getControl();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -224,7 +227,8 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public Point getMinimumSize() {
-        return getDelegate().getMinimumSize().getApi();
+        IPoint ret = getDelegate().getMinimumSize();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -238,7 +242,8 @@ public class CoolItem extends Item {
      * </ul>
      */
     public CoolBar getParent() {
-        return getDelegate().getParent().getApi();
+        ICoolBar ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -254,7 +259,8 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Point getPreferredSize() {
-        return getDelegate().getPreferredSize().getApi();
+        IPoint ret = getDelegate().getPreferredSize();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -271,7 +277,8 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Point getSize() {
-        return getDelegate().getSize().getApi();
+        IPoint ret = getDelegate().getSize();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

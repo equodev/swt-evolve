@@ -243,7 +243,8 @@ public class CTabFolder extends Composite {
     //	}
     //}
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getDelegate().computeTrim(x, y, width, height).getApi();
+        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -274,7 +275,8 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea().getApi();
+        IRectangle ret = getDelegate().getClientArea();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -292,11 +294,8 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public CTabItem getItem(int index) {
-        return getDelegate().getItem(index).getApi();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
+        ICTabItem ret = getDelegate().getItem(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -311,11 +310,8 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public CTabItem getItem(Point pt) {
-        return getDelegate().getItem((pt != null ? pt.getDelegate() : null)).getApi();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
+        ICTabItem ret = getDelegate().getItem((pt != null ? pt.getDelegate() : null));
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -344,10 +340,6 @@ public class CTabFolder extends Composite {
      */
     public CTabItem[] getItems() {
         return Convert.array(getDelegate().getItems(), ICTabItem::getApi, CTabItem[]::new);
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
     }
 
     /**
@@ -477,7 +469,8 @@ public class CTabFolder extends Composite {
      *  @since 3.6
      */
     public CTabFolderRenderer getRenderer() {
-        return getDelegate().getRenderer().getApi();
+        ICTabFolderRenderer ret = getDelegate().getRenderer();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -491,11 +484,8 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public CTabItem getSelection() {
-        return getDelegate().getSelection().getApi();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
+        ICTabItem ret = getDelegate().getSelection();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -511,7 +501,8 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public Color getSelectionBackground() {
-        return getDelegate().getSelectionBackground().getApi();
+        IColor ret = getDelegate().getSelectionBackground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -527,7 +518,8 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public Color getSelectionForeground() {
-        return getDelegate().getSelectionForeground().getApi();
+        IColor ret = getDelegate().getSelectionForeground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -543,10 +535,6 @@ public class CTabFolder extends Composite {
      */
     public int getSelectionIndex() {
         return getDelegate().getSelectionIndex();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
     }
 
     /**
@@ -619,7 +607,8 @@ public class CTabFolder extends Composite {
      *  @since 2.1
      */
     public Control getTopRight() {
-        return getDelegate().getTopRight().getApi();
+        IControl ret = getDelegate().getTopRight();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -856,15 +845,10 @@ public class CTabFolder extends Composite {
 
     public void setFont(Font font) {
         getDelegate().setFont((font != null ? font.getDelegate() : null));
-        // Chevron painting is cached as image and only recreated if number of hidden tabs changed.
-        // To apply the new font the cached image must be recreated with new font.
-        // Redraw request alone would only redraw the cached image with old font.
     }
 
     public void setForeground(Color color) {
         getDelegate().setForeground((color != null ? color.getDelegate() : null));
-        // Chevron painting is cached as image and only recreated if number of hidden tabs changed.
-        // To apply the new foreground color the image must be recreated with new foreground color.
     }
 
     /**

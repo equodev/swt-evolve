@@ -53,7 +53,8 @@ public class TaskBar extends Widget {
      * </ul>
      */
     public TaskItem getItem(int index) {
-        return getDelegate().getItem(index).getApi();
+        ITaskItem ret = getDelegate().getItem(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -84,7 +85,8 @@ public class TaskBar extends Widget {
      * </ul>
      */
     public TaskItem getItem(Shell shell) {
-        return getDelegate().getItem((shell != null ? shell.getDelegate() : null)).getApi();
+        ITaskItem ret = getDelegate().getItem((shell != null ? shell.getDelegate() : null));
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

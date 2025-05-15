@@ -98,11 +98,13 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public Control getBottom() {
-        return getDelegate().getBottom().getApi();
+        IControl ret = getDelegate().getBottom();
+        return ret != null ? ret.getApi() : null;
     }
 
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea().getApi();
+        IRectangle ret = getDelegate().getClientArea();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -118,7 +120,8 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public Control getLeft() {
-        return getDelegate().getLeft().getApi();
+        IControl ret = getDelegate().getLeft();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -134,7 +137,8 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public Control getRight() {
-        return getDelegate().getRight().getApi();
+        IControl ret = getDelegate().getRight();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -145,7 +149,8 @@ public class CBanner extends Composite {
      * @since 3.1
      */
     public Point getRightMinimumSize() {
-        return getDelegate().getRightMinimumSize().getApi();
+        IPoint ret = getDelegate().getRightMinimumSize();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

@@ -179,7 +179,8 @@ public class BrowserFunction {
      * </ul>
      */
     public Browser getBrowser() {
-        return getDelegate().getBrowser().getApi();
+        IBrowser ret = getDelegate().getBrowser();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

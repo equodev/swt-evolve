@@ -215,7 +215,8 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public Scrollable getParent() {
-        return getDelegate().getParent().getApi();
+        IScrollable ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -246,7 +247,8 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public Point getSize() {
-        return getDelegate().getSize().getApi();
+        IPoint ret = getDelegate().getSize();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -279,7 +281,8 @@ public class ScrollBar extends Widget {
      * @since 3.6
      */
     public Rectangle getThumbBounds() {
-        return getDelegate().getThumbBounds().getApi();
+        IRectangle ret = getDelegate().getThumbBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -297,7 +300,8 @@ public class ScrollBar extends Widget {
      * @since 3.6
      */
     public Rectangle getThumbTrackBounds() {
-        return getDelegate().getThumbTrackBounds().getApi();
+        IRectangle ret = getDelegate().getThumbTrackBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

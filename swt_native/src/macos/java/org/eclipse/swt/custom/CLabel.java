@@ -94,7 +94,8 @@ public class CLabel extends Canvas {
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -105,10 +106,6 @@ public class CLabel extends Canvas {
      */
     public int getAlignment() {
         return getDelegate().getAlignment();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
     }
 
     /**
@@ -120,10 +117,6 @@ public class CLabel extends Canvas {
      */
     public int getBottomMargin() {
         return getDelegate().getBottomMargin();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
     }
 
     /**
@@ -132,11 +125,8 @@ public class CLabel extends Canvas {
      * @return the image of the label or null
      */
     public Image getImage() {
-        return getDelegate().getImage().getApi();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
+        IImage ret = getDelegate().getImage();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -148,10 +138,6 @@ public class CLabel extends Canvas {
      */
     public int getLeftMargin() {
         return getDelegate().getLeftMargin();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
     }
 
     /**
@@ -163,10 +149,6 @@ public class CLabel extends Canvas {
      */
     public int getRightMargin() {
         return getDelegate().getRightMargin();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
     }
 
     public int getStyle() {
@@ -180,10 +162,6 @@ public class CLabel extends Canvas {
      */
     public String getText() {
         return getDelegate().getText();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
     }
 
     public String getToolTipText() {
@@ -199,10 +177,6 @@ public class CLabel extends Canvas {
      */
     public int getTopMargin() {
         return getDelegate().getTopMargin();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
     }
 
     /**

@@ -226,7 +226,8 @@ public class Tree extends Composite {
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -263,7 +264,8 @@ public class Tree extends Composite {
     }
 
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea().getApi();
+        IRectangle ret = getDelegate().getClientArea();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -296,7 +298,8 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public TreeColumn getColumn(int index) {
-        return getDelegate().getColumn(index).getApi();
+        ITreeColumn ret = getDelegate().getColumn(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -412,7 +415,8 @@ public class Tree extends Composite {
      * @since 3.106
      */
     public Color getHeaderBackground() {
-        return getDelegate().getHeaderBackground().getApi();
+        IColor ret = getDelegate().getHeaderBackground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -427,7 +431,8 @@ public class Tree extends Composite {
      * @since 3.106
      */
     public Color getHeaderForeground() {
-        return getDelegate().getHeaderForeground().getApi();
+        IColor ret = getDelegate().getHeaderForeground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -487,7 +492,8 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public TreeItem getItem(int index) {
-        return getDelegate().getItem(index).getApi();
+        ITreeItem ret = getDelegate().getItem(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -514,7 +520,8 @@ public class Tree extends Composite {
      * </ul>
      */
     public TreeItem getItem(Point point) {
-        return getDelegate().getItem((point != null ? point.getDelegate() : null)).getApi();
+        ITreeItem ret = getDelegate().getItem((point != null ? point.getDelegate() : null));
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -607,7 +614,8 @@ public class Tree extends Composite {
      * </ul>
      */
     public TreeItem getParentItem() {
-        return getDelegate().getParentItem().getApi();
+        ITreeItem ret = getDelegate().getParentItem();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -661,7 +669,8 @@ public class Tree extends Composite {
      * @since 3.2
      */
     public TreeColumn getSortColumn() {
-        return getDelegate().getSortColumn().getApi();
+        ITreeColumn ret = getDelegate().getSortColumn();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -699,7 +708,8 @@ public class Tree extends Composite {
      * @since 2.1
      */
     public TreeItem getTopItem() {
-        return getDelegate().getTopItem().getApi();
+        ITreeItem ret = getDelegate().getTopItem();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

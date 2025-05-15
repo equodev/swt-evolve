@@ -88,10 +88,6 @@ public class SashForm extends Composite {
      */
     public int getOrientation() {
         return getDelegate().getOrientation();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
     }
 
     /**
@@ -122,11 +118,8 @@ public class SashForm extends Composite {
      * @return the control that currently is maximized or null
      */
     public Control getMaximizedControl() {
-        return getDelegate().getMaximizedControl().getApi();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
+        IControl ret = getDelegate().getMaximizedControl();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

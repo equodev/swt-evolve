@@ -254,9 +254,6 @@ public final class Color extends Resource {
      */
     public void dispose() {
         getDelegate().dispose();
-        // Does as below to maintain API contract with Resource. Does
-        // not use super.dispose() because that untracks the Color
-        // from the Device tracking, however init() is overridden
     }
 
     /**
@@ -273,8 +270,8 @@ public final class Color extends Resource {
      * @since 3.2
      */
     public Device getDevice() {
-        return getDelegate().getDevice().getApi();
-        // Fall back on Device.getDevice only if we haven't been disposed
+        IDevice ret = getDelegate().getDevice();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

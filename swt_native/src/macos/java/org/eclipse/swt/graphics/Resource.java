@@ -66,7 +66,8 @@ public abstract class Resource {
      * @since 3.2
      */
     public Device getDevice() {
-        return getDelegate().getDevice().getApi();
+        IDevice ret = getDelegate().getDevice();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

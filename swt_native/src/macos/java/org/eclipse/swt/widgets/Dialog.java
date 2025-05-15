@@ -154,7 +154,8 @@ public abstract class Dialog {
      * </ul>
      */
     public Shell getParent() {
-        return getDelegate().getParent().getApi();
+        IShell ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

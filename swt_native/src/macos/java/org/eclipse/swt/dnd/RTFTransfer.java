@@ -39,7 +39,8 @@ public class RTFTransfer extends ByteArrayTransfer {
      * @return the singleton instance of the RTFTransfer class
      */
     public static RTFTransfer getInstance() {
-        return nat.org.eclipse.swt.dnd.RTFTransfer.getInstance().getApi();
+        IRTFTransfer ret = nat.org.eclipse.swt.dnd.RTFTransfer.getInstance();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

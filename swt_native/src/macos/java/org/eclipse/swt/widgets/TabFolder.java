@@ -120,15 +120,18 @@ public class TabFolder extends Composite {
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getDelegate().computeTrim(x, y, width, height).getApi();
+        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
+        return ret != null ? ret.getApi() : null;
     }
 
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea().getApi();
+        IRectangle ret = getDelegate().getClientArea();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -147,7 +150,8 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public TabItem getItem(int index) {
-        return getDelegate().getItem(index).getApi();
+        ITabItem ret = getDelegate().getItem(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -169,7 +173,8 @@ public class TabFolder extends Composite {
      * @since 3.4
      */
     public TabItem getItem(Point point) {
-        return getDelegate().getItem((point != null ? point.getDelegate() : null)).getApi();
+        ITabItem ret = getDelegate().getItem((point != null ? point.getDelegate() : null));
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

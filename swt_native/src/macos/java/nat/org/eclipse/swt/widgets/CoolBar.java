@@ -24,6 +24,7 @@ import org.eclipse.swt.widgets.ICoolItem;
 import org.eclipse.swt.graphics.IColor;
 import org.eclipse.swt.graphics.ICursor;
 import org.eclipse.swt.graphics.IPoint;
+import dev.equo.swt.Convert;
 
 /**
  * Instances of this class provide an area for dynamically
@@ -1260,7 +1261,7 @@ public class CoolBar extends Composite implements ICoolBar {
      * </ul>
      */
     public void setItemLayout(int[] itemOrder, int[] wrapIndices, IPoint[] isizes) {
-        Point[] sizes = (Point[]) isizes;
+        Point[] sizes = Convert.array(isizes, Point.class::cast, Point[]::new);
         checkWidget();
         setItemOrder(itemOrder);
         setWrapIndices(wrapIndices);

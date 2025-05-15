@@ -141,10 +141,6 @@ public class DirectoryDialog extends Dialog {
      */
     public Optional<String> openDialog() {
         return getDelegate().openDialog();
-        /*
-	 * This line is intentionally commented. Don't show hidden files forcefully,
-	 * instead allow Directory dialog to use the system preference.
-	 */
     }
 
     /**

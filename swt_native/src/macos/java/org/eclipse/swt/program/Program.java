@@ -48,7 +48,8 @@ public final class Program {
      * 	</ul>
      */
     public static Program findProgram(String extension) {
-        return nat.org.eclipse.swt.program.Program.findProgram(extension).getApi();
+        IProgram ret = nat.org.eclipse.swt.program.Program.findProgram(extension);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

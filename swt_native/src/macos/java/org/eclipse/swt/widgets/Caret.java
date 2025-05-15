@@ -83,7 +83,8 @@ public class Caret extends Widget {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -97,7 +98,8 @@ public class Caret extends Widget {
      * </ul>
      */
     public Font getFont() {
-        return getDelegate().getFont().getApi();
+        IFont ret = getDelegate().getFont();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -111,7 +113,8 @@ public class Caret extends Widget {
      * </ul>
      */
     public Image getImage() {
-        return getDelegate().getImage().getApi();
+        IImage ret = getDelegate().getImage();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -126,7 +129,8 @@ public class Caret extends Widget {
      * </ul>
      */
     public Point getLocation() {
-        return getDelegate().getLocation().getApi();
+        IPoint ret = getDelegate().getLocation();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -140,7 +144,8 @@ public class Caret extends Widget {
      * </ul>
      */
     public Canvas getParent() {
-        return getDelegate().getParent().getApi();
+        ICanvas ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -154,7 +159,8 @@ public class Caret extends Widget {
      * </ul>
      */
     public Point getSize() {
-        return getDelegate().getSize().getApi();
+        IPoint ret = getDelegate().getSize();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

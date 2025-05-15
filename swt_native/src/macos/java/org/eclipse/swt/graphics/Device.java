@@ -172,7 +172,8 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -189,7 +190,8 @@ public abstract class Device implements Drawable {
      * @see DeviceData
      */
     public DeviceData getDeviceData() {
-        return getDelegate().getDeviceData().getApi();
+        IDeviceData ret = getDelegate().getDeviceData();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -205,7 +207,8 @@ public abstract class Device implements Drawable {
      * @see #getBounds
      */
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea().getApi();
+        IRectangle ret = getDelegate().getClientArea();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -236,7 +239,8 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     public Point getDPI() {
-        return getDelegate().getDPI().getApi();
+        IPoint ret = getDelegate().getDPI();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -275,7 +279,8 @@ public abstract class Device implements Drawable {
      * @see SWT
      */
     public Color getSystemColor(int id) {
-        return getDelegate().getSystemColor(id).getApi();
+        IColor ret = getDelegate().getSystemColor(id);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -299,7 +304,8 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     public Font getSystemFont() {
-        return getDelegate().getSystemFont().getApi();
+        IFont ret = getDelegate().getSystemFont();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

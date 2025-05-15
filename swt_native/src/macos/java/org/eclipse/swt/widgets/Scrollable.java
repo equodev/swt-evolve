@@ -99,7 +99,8 @@ public abstract class Scrollable extends Control {
      * @see #getClientArea
      */
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getDelegate().computeTrim(x, y, width, height).getApi();
+        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -117,7 +118,8 @@ public abstract class Scrollable extends Control {
      * @see #computeTrim
      */
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea().getApi();
+        IRectangle ret = getDelegate().getClientArea();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -132,7 +134,8 @@ public abstract class Scrollable extends Control {
      * </ul>
      */
     public ScrollBar getHorizontalBar() {
-        return getDelegate().getHorizontalBar().getApi();
+        IScrollBar ret = getDelegate().getHorizontalBar();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -199,7 +202,8 @@ public abstract class Scrollable extends Control {
      * </ul>
      */
     public ScrollBar getVerticalBar() {
-        return getDelegate().getVerticalBar().getApi();
+        IScrollBar ret = getDelegate().getVerticalBar();
+        return ret != null ? ret.getApi() : null;
     }
 
     protected Scrollable(IScrollable delegate) {

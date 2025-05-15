@@ -229,7 +229,8 @@ public final class Region extends Resource {
      * @see Rectangle#union
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

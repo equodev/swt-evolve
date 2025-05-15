@@ -24,6 +24,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.accessibility.ACC;
 import org.eclipse.swt.widgets.IComposite;
 import org.eclipse.swt.widgets.IControl;
+import dev.equo.swt.Convert;
 import org.eclipse.swt.graphics.IGC;
 import org.eclipse.swt.widgets.ILayout;
 
@@ -234,7 +235,7 @@ public class Composite extends Scrollable implements IComposite {
      */
     @Deprecated
     public void changed(IControl[] ichanged) {
-        Control[] changed = (Control[]) ichanged;
+        Control[] changed = Convert.array(ichanged, Control.class::cast, Control[]::new);
         layout(changed, SWT.DEFER);
     }
 
@@ -823,7 +824,7 @@ public class Composite extends Scrollable implements IComposite {
      * @since 3.1
      */
     public void layout(IControl[] ichanged) {
-        Control[] changed = (Control[]) ichanged;
+        Control[] changed = Convert.array(ichanged, Control.class::cast, Control[]::new);
         checkWidget();
         if (changed == null)
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -889,7 +890,7 @@ public class Composite extends Scrollable implements IComposite {
      * @since 3.6
      */
     public void layout(IControl[] ichanged, int flags) {
-        Control[] changed = (Control[]) ichanged;
+        Control[] changed = Convert.array(ichanged, Control.class::cast, Control[]::new);
         checkWidget();
         if (changed != null) {
             for (int i = 0; i < changed.length; i++) {
@@ -1298,7 +1299,7 @@ public class Composite extends Scrollable implements IComposite {
      * </ul>
      */
     public void setTabList(IControl[] itabList) {
-        Control[] tabList = (Control[]) itabList;
+        Control[] tabList = Convert.array(itabList, Control.class::cast, Control[]::new);
         checkWidget();
         if (tabList != null) {
             for (int i = 0; i < tabList.length; i++) {

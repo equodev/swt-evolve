@@ -228,7 +228,8 @@ public class Menu extends Widget {
      * </ul>
      */
     public MenuItem getDefaultItem() {
-        return getDelegate().getDefaultItem().getApi();
+        IMenuItem ret = getDelegate().getDefaultItem();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -266,7 +267,8 @@ public class Menu extends Widget {
      * </ul>
      */
     public MenuItem getItem(int index) {
-        return getDelegate().getItem(index).getApi();
+        IMenuItem ret = getDelegate().getItem(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -331,7 +333,8 @@ public class Menu extends Widget {
      * </ul>
      */
     public Decorations getParent() {
-        return getDelegate().getParent().getApi();
+        IDecorations ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -347,7 +350,8 @@ public class Menu extends Widget {
      * </ul>
      */
     public MenuItem getParentItem() {
-        return getDelegate().getParentItem().getApi();
+        IMenuItem ret = getDelegate().getParentItem();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -363,7 +367,8 @@ public class Menu extends Widget {
      * </ul>
      */
     public Menu getParentMenu() {
-        return getDelegate().getParentMenu().getApi();
+        IMenu ret = getDelegate().getParentMenu();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -383,7 +388,8 @@ public class Menu extends Widget {
      * @see #getParent
      */
     public Shell getShell() {
-        return getDelegate().getShell().getApi();
+        IShell ret = getDelegate().getShell();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

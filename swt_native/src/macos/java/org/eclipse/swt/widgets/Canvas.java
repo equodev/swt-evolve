@@ -119,7 +119,8 @@ public class Canvas extends Composite {
      * </ul>
      */
     public Caret getCaret() {
-        return getDelegate().getCaret().getApi();
+        ICaret ret = getDelegate().getCaret();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -135,7 +136,8 @@ public class Canvas extends Composite {
      * @since 3.4
      */
     public IME getIME() {
-        return getDelegate().getIME().getApi();
+        IIME ret = getDelegate().getIME();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

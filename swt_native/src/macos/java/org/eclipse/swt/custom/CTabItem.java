@@ -121,11 +121,8 @@ public class CTabItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -139,7 +136,8 @@ public class CTabItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        return getDelegate().getControl().getApi();
+        IControl ret = getDelegate().getControl();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -156,7 +154,8 @@ public class CTabItem extends Item {
      */
     @Deprecated
     public Image getDisabledImage() {
-        return getDelegate().getDisabledImage().getApi();
+        IImage ret = getDelegate().getDisabledImage();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -171,7 +170,8 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public Color getForeground() {
-        return getDelegate().getForeground().getApi();
+        IColor ret = getDelegate().getForeground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -186,7 +186,8 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public Color getSelectionForeground() {
-        return getDelegate().getSelectionForeground().getApi();
+        IColor ret = getDelegate().getSelectionForeground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -202,7 +203,8 @@ public class CTabItem extends Item {
      *  @since 3.0
      */
     public Font getFont() {
-        return getDelegate().getFont().getApi();
+        IFont ret = getDelegate().getFont();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -216,11 +218,8 @@ public class CTabItem extends Item {
      * </ul>
      */
     public CTabFolder getParent() {
-        return getDelegate().getParent().getApi();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
+        ICTabFolder ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

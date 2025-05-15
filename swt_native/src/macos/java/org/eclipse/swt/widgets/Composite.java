@@ -115,12 +115,12 @@ public class Composite extends Scrollable {
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     protected void checkSubclass() {
         getDelegate().checkSubclass();
-        /* Do nothing - Subclassing is allowed */
     }
 
     /**
@@ -213,7 +213,8 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public Layout getLayout() {
-        return getDelegate().getLayout().getApi();
+        ILayout ret = getDelegate().getLayout();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

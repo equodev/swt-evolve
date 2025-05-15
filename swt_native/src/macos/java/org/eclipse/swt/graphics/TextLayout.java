@@ -180,7 +180,8 @@ public final class TextLayout extends Resource {
      * @see #getLineBounds(int)
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -198,7 +199,8 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public Rectangle getBounds(int start, int end) {
-        return getDelegate().getBounds(start, end).getApi();
+        IRectangle ret = getDelegate().getBounds(start, end);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -230,7 +232,8 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public Font getFont() {
-        return getDelegate().getFont().getApi();
+        IFont ret = getDelegate().getFont();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -328,7 +331,8 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public Rectangle getLineBounds(int lineIndex) {
-        return getDelegate().getLineBounds(lineIndex).getApi();
+        IRectangle ret = getDelegate().getLineBounds(lineIndex);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -359,7 +363,8 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public FontMetrics getLineMetrics(int lineIndex) {
-        return getDelegate().getLineMetrics(lineIndex).getApi();
+        IFontMetrics ret = getDelegate().getLineMetrics(lineIndex);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -379,7 +384,8 @@ public final class TextLayout extends Resource {
      * @see #getOffset(int, int, int[])
      */
     public Point getLocation(int offset, boolean trailing) {
-        return getDelegate().getLocation(offset, trailing).getApi();
+        IPoint ret = getDelegate().getLocation(offset, trailing);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -582,7 +588,8 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public TextStyle getStyle(int offset) {
-        return getDelegate().getStyle(offset).getApi();
+        ITextStyle ret = getDelegate().getStyle(offset);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

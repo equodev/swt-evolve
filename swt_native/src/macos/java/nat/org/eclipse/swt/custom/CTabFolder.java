@@ -37,6 +37,7 @@ import org.eclipse.swt.custom.ICTabFolder;
 import org.eclipse.swt.graphics.IPoint;
 import org.eclipse.swt.custom.ICTabItem;
 import org.eclipse.swt.graphics.IColor;
+import dev.equo.swt.Convert;
 import org.eclipse.swt.graphics.IImage;
 import org.eclipse.swt.graphics.IFont;
 import org.eclipse.swt.widgets.ILayout;
@@ -2596,7 +2597,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
      *  @since 3.6
      */
     public void setBackground(IColor[] icolors, int[] percents) {
-        Color[] colors = (Color[]) icolors;
+        Color[] colors = Convert.array(icolors, Color.class::cast, Color[]::new);
         setBackground(colors, percents, false);
     }
 
@@ -2630,7 +2631,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
      *  @since 3.6
      */
     public void setBackground(IColor[] icolors, int[] percents, boolean vertical) {
-        Color[] colors = (Color[]) icolors;
+        Color[] colors = Convert.array(icolors, Color.class::cast, Color[]::new);
         checkWidget();
         if (colors != null) {
             if (percents == null || percents.length != colors.length - 1) {
@@ -3599,7 +3600,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
      * 	</ul>
      */
     public void setSelectionBackground(IColor[] icolors, int[] percents) {
-        Color[] colors = (Color[]) icolors;
+        Color[] colors = Convert.array(icolors, Color.class::cast, Color[]::new);
         setSelectionBackground(colors, percents, false);
     }
 
@@ -3633,7 +3634,7 @@ public class CTabFolder extends Composite implements ICTabFolder {
      *  @since 3.0
      */
     public void setSelectionBackground(IColor[] icolors, int[] percents, boolean vertical) {
-        Color[] colors = (Color[]) icolors;
+        Color[] colors = Convert.array(icolors, Color.class::cast, Color[]::new);
         checkWidget();
         int colorsLength;
         //null == no highlight

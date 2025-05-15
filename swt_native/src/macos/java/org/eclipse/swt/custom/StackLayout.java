@@ -94,7 +94,8 @@ public class StackLayout extends Layout {
     public Control topControl;
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-        return getDelegate().computeSize((composite != null ? composite.getDelegate() : null), wHint, hHint, flushCache).getApi();
+        IPoint ret = getDelegate().computeSize((composite != null ? composite.getDelegate() : null), wHint, hHint, flushCache);
+        return ret != null ? ret.getApi() : null;
     }
 
     protected boolean flushCache(Control control) {

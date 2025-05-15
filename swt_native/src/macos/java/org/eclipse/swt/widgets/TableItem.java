@@ -126,7 +126,8 @@ public class TableItem extends Item {
      * @since 2.0
      */
     public Color getBackground() {
-        return getDelegate().getBackground().getApi();
+        IColor ret = getDelegate().getBackground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -143,7 +144,8 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Color getBackground(int index) {
-        return getDelegate().getBackground(index).getApi();
+        IColor ret = getDelegate().getBackground(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -160,8 +162,8 @@ public class TableItem extends Item {
      * @since 3.2
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
-        // Inlined for performance.  Also prevents a NPE or potential loop, because cellSize() will
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -177,7 +179,8 @@ public class TableItem extends Item {
      * </ul>
      */
     public Rectangle getBounds(int index) {
-        return getDelegate().getBounds(index).getApi();
+        IRectangle ret = getDelegate().getBounds(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -209,7 +212,8 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Font getFont() {
-        return getDelegate().getFont().getApi();
+        IFont ret = getDelegate().getFont();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -227,7 +231,8 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Font getFont(int index) {
-        return getDelegate().getFont(index).getApi();
+        IFont ret = getDelegate().getFont(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -243,7 +248,8 @@ public class TableItem extends Item {
      * @since 2.0
      */
     public Color getForeground() {
-        return getDelegate().getForeground().getApi();
+        IColor ret = getDelegate().getForeground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -260,7 +266,8 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Color getForeground(int index) {
-        return getDelegate().getForeground(index).getApi();
+        IColor ret = getDelegate().getForeground(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -280,7 +287,8 @@ public class TableItem extends Item {
     }
 
     public Image getImage() {
-        return getDelegate().getImage().getApi();
+        IImage ret = getDelegate().getImage();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -296,7 +304,8 @@ public class TableItem extends Item {
      * </ul>
      */
     public Image getImage(int index) {
-        return getDelegate().getImage(index).getApi();
+        IImage ret = getDelegate().getImage(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -314,7 +323,8 @@ public class TableItem extends Item {
      * </ul>
      */
     public Rectangle getImageBounds(int index) {
-        return getDelegate().getImageBounds(index).getApi();
+        IRectangle ret = getDelegate().getImageBounds(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -342,7 +352,8 @@ public class TableItem extends Item {
      * </ul>
      */
     public Table getParent() {
-        return getDelegate().getParent().getApi();
+        ITable ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     public String getText() {
@@ -382,7 +393,8 @@ public class TableItem extends Item {
      * @since 3.3
      */
     public Rectangle getTextBounds(int index) {
-        return getDelegate().getTextBounds(index).getApi();
+        IRectangle ret = getDelegate().getTextBounds(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -600,7 +612,6 @@ public class TableItem extends Item {
     @Deprecated
     public void setImageIndent(int indent) {
         getDelegate().setImageIndent(indent);
-        /* Image indent is not supported on the Macintosh */
     }
 
     /**

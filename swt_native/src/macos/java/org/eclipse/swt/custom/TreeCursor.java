@@ -104,7 +104,8 @@ public class TreeCursor extends Canvas {
      * @return the receiver's background color
      */
     public Color getBackground() {
-        return getDelegate().getBackground().getApi();
+        IColor ret = getDelegate().getBackground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -127,7 +128,8 @@ public class TreeCursor extends Canvas {
      * @return the receiver's foreground color
      */
     public Color getForeground() {
-        return getDelegate().getForeground().getApi();
+        IColor ret = getDelegate().getForeground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -141,7 +143,8 @@ public class TreeCursor extends Canvas {
      * </ul>
      */
     public TreeItem getRow() {
-        return getDelegate().getRow().getApi();
+        ITreeItem ret = getDelegate().getRow();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

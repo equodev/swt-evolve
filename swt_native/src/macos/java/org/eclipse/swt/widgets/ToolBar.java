@@ -93,15 +93,18 @@ public class ToolBar extends Composite {
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getDelegate().computeTrim(x, y, width, height).getApi();
+        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
+        return ret != null ? ret.getApi() : null;
     }
 
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -120,7 +123,8 @@ public class ToolBar extends Composite {
      * </ul>
      */
     public ToolItem getItem(int index) {
-        return getDelegate().getItem(index).getApi();
+        IToolItem ret = getDelegate().getItem(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -140,7 +144,8 @@ public class ToolBar extends Composite {
      * </ul>
      */
     public ToolItem getItem(Point point) {
-        return getDelegate().getItem((point != null ? point.getDelegate() : null)).getApi();
+        IToolItem ret = getDelegate().getItem((point != null ? point.getDelegate() : null));
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

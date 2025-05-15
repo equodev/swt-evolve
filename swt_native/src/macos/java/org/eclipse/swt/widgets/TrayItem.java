@@ -146,7 +146,8 @@ public class TrayItem extends Item {
      * @since 3.8
      */
     public Image getHighlightImage() {
-        return getDelegate().getHighlightImage().getApi();
+        IImage ret = getDelegate().getHighlightImage();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -162,7 +163,8 @@ public class TrayItem extends Item {
      * @since 3.2
      */
     public Tray getParent() {
-        return getDelegate().getParent().getApi();
+        ITray ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -179,7 +181,8 @@ public class TrayItem extends Item {
      * @since 3.2
      */
     public ToolTip getToolTip() {
-        return getDelegate().getToolTip().getApi();
+        IToolTip ret = getDelegate().getToolTip();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

@@ -245,7 +245,8 @@ public class Table extends Composite {
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -317,7 +318,8 @@ public class Table extends Composite {
     }
 
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea().getApi();
+        IRectangle ret = getDelegate().getClientArea();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -348,7 +350,8 @@ public class Table extends Composite {
      * @see SWT#Move
      */
     public TableColumn getColumn(int index) {
-        return getDelegate().getColumn(index).getApi();
+        ITableColumn ret = getDelegate().getColumn(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -458,7 +461,8 @@ public class Table extends Composite {
      * @since 3.106
      */
     public Color getHeaderBackground() {
-        return getDelegate().getHeaderBackground().getApi();
+        IColor ret = getDelegate().getHeaderBackground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -473,7 +477,8 @@ public class Table extends Composite {
      * @since 3.106
      */
     public Color getHeaderForeground() {
-        return getDelegate().getHeaderForeground().getApi();
+        IColor ret = getDelegate().getHeaderForeground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -529,7 +534,8 @@ public class Table extends Composite {
      * </ul>
      */
     public TableItem getItem(int index) {
-        return getDelegate().getItem(index).getApi();
+        ITableItem ret = getDelegate().getItem(index);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -556,7 +562,8 @@ public class Table extends Composite {
      * </ul>
      */
     public TableItem getItem(Point point) {
-        return getDelegate().getItem((point != null ? point.getDelegate() : null)).getApi();
+        ITableItem ret = getDelegate().getItem((point != null ? point.getDelegate() : null));
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -716,7 +723,8 @@ public class Table extends Composite {
      * @since 3.2
      */
     public TableColumn getSortColumn() {
-        return getDelegate().getSortColumn().getApi();
+        ITableColumn ret = getDelegate().getSortColumn();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

@@ -162,7 +162,8 @@ public class Decorations extends Canvas {
      * @see #setDefaultButton(Button)
      */
     public Button getDefaultButton() {
-        return getDelegate().getDefaultButton().getApi();
+        IButton ret = getDelegate().getDefaultButton();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -187,7 +188,8 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public Image getImage() {
-        return getDelegate().getImage().getApi();
+        IImage ret = getDelegate().getImage();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -250,7 +252,8 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public Menu getMenuBar() {
-        return getDelegate().getMenuBar().getApi();
+        IMenu ret = getDelegate().getMenuBar();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

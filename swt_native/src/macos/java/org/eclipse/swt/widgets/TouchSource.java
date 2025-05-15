@@ -61,7 +61,8 @@ public final class TouchSource {
      * @return the bounding rectangle of the input source
      */
     public Rectangle getBounds() {
-        return getDelegate().getBounds().getApi();
+        IRectangle ret = getDelegate().getBounds();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

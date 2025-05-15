@@ -189,7 +189,8 @@ public final class Rectangle implements Serializable {
      * </ul>
      */
     public Rectangle intersection(Rectangle rect) {
-        return getDelegate().intersection((rect != null ? rect.getDelegate() : null)).getApi();
+        IRectangle ret = getDelegate().intersection((rect != null ? rect.getDelegate() : null));
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -287,7 +288,8 @@ public final class Rectangle implements Serializable {
      * @see #add(Rectangle)
      */
     public Rectangle union(Rectangle rect) {
-        return getDelegate().union((rect != null ? rect.getDelegate() : null)).getApi();
+        IRectangle ret = getDelegate().union((rect != null ? rect.getDelegate() : null));
+        return ret != null ? ret.getApi() : null;
     }
 
     IRectangle delegate;

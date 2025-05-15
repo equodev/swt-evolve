@@ -211,10 +211,6 @@ public class FileDialog extends Dialog {
      */
     public Optional<String> openDialog() {
         return getDelegate().openDialog();
-        /*
-	 * This line is intentionally commented. Don't show hidden files forcefully,
-	 * instead allow File dialog to use the system preference.
-	 */
     }
 
     /**

@@ -57,7 +57,8 @@ public class GLCanvas extends Canvas {
      * </ul>
      */
     public GLData getGLData() {
-        return getDelegate().getGLData().getApi();
+        IGLData ret = getDelegate().getGLData();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

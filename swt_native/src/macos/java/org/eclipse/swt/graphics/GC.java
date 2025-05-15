@@ -892,7 +892,8 @@ public final class GC extends Resource {
      * </ul>
      */
     public Color getBackground() {
-        return getDelegate().getBackground().getApi();
+        IColor ret = getDelegate().getBackground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -910,7 +911,8 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public Pattern getBackgroundPattern() {
-        return getDelegate().getBackgroundPattern().getApi();
+        IPattern ret = getDelegate().getBackgroundPattern();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -1011,7 +1013,8 @@ public final class GC extends Resource {
      * </ul>
      */
     public Rectangle getClipping() {
-        return getDelegate().getClipping().getApi();
+        IRectangle ret = getDelegate().getClipping();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -1059,7 +1062,8 @@ public final class GC extends Resource {
      * </ul>
      */
     public Font getFont() {
-        return getDelegate().getFont().getApi();
+        IFont ret = getDelegate().getFont();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -1074,7 +1078,8 @@ public final class GC extends Resource {
      * </ul>
      */
     public FontMetrics getFontMetrics() {
-        return getDelegate().getFontMetrics().getApi();
+        IFontMetrics ret = getDelegate().getFontMetrics();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -1087,7 +1092,8 @@ public final class GC extends Resource {
      * </ul>
      */
     public Color getForeground() {
-        return getDelegate().getForeground().getApi();
+        IColor ret = getDelegate().getForeground();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -1105,7 +1111,8 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public Pattern getForegroundPattern() {
-        return getDelegate().getForegroundPattern().getApi();
+        IPattern ret = getDelegate().getForegroundPattern();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -1131,7 +1138,8 @@ public final class GC extends Resource {
      * @since 3.2
      */
     public GCData getGCData() {
-        return getDelegate().getGCData().getApi();
+        IGCData ret = getDelegate().getGCData();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -1163,7 +1171,8 @@ public final class GC extends Resource {
      * @since 3.3
      */
     public LineAttributes getLineAttributes() {
-        return getDelegate().getLineAttributes().getApi();
+        ILineAttributes ret = getDelegate().getLineAttributes();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -1962,7 +1971,8 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point stringExtent(String string) {
-        return getDelegate().stringExtent(string).getApi();
+        IPoint ret = getDelegate().stringExtent(string);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -1985,7 +1995,8 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point textExtent(String string) {
-        return getDelegate().textExtent(string).getApi();
+        IPoint ret = getDelegate().textExtent(string);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -2020,7 +2031,8 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point textExtent(String string, int flags) {
-        return getDelegate().textExtent(string, flags).getApi();
+        IPoint ret = getDelegate().textExtent(string, flags);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

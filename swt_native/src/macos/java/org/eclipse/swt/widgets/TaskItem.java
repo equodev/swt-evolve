@@ -53,7 +53,8 @@ public class TaskItem extends Item {
      * </ul>
      */
     public Menu getMenu() {
-        return getDelegate().getMenu().getApi();
+        IMenu ret = getDelegate().getMenu();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -68,7 +69,8 @@ public class TaskItem extends Item {
      * </ul>
      */
     public Image getOverlayImage() {
-        return getDelegate().getOverlayImage().getApi();
+        IImage ret = getDelegate().getOverlayImage();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -97,7 +99,8 @@ public class TaskItem extends Item {
      * </ul>
      */
     public TaskBar getParent() {
-        return getDelegate().getParent().getApi();
+        ITaskBar ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

@@ -303,7 +303,8 @@ public class Combo extends Composite {
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getDelegate().computeSize(wHint, hHint, changed).getApi();
+        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -408,7 +409,8 @@ public class Combo extends Composite {
      * @since 3.8
      */
     public Point getCaretLocation() {
-        return getDelegate().getCaretLocation().getApi();
+        IPoint ret = getDelegate().getCaretLocation();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -539,7 +541,8 @@ public class Combo extends Composite {
      * </ul>
      */
     public Point getSelection() {
-        return getDelegate().getSelection().getApi();
+        IPoint ret = getDelegate().getSelection();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

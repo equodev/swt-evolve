@@ -201,7 +201,8 @@ public class TreeColumn extends Item {
      * </ul>
      */
     public Tree getParent() {
-        return getDelegate().getParent().getApi();
+        ITree ret = getDelegate().getParent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

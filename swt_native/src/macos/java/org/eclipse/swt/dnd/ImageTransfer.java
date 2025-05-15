@@ -45,7 +45,8 @@ public class ImageTransfer extends ByteArrayTransfer {
      * @return the singleton instance of the ImageTransfer class
      */
     public static ImageTransfer getInstance() {
-        return nat.org.eclipse.swt.dnd.ImageTransfer.getInstance().getApi();
+        IImageTransfer ret = nat.org.eclipse.swt.dnd.ImageTransfer.getInstance();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

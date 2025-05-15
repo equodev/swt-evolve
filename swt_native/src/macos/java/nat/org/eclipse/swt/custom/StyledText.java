@@ -8322,7 +8322,7 @@ public class StyledText extends Canvas implements IStyledText {
      * @see #setStyleRanges(int, int, int[], StyleRange[])
      */
     public void replaceStyleRanges(int start, int length, IStyleRange[] iranges) {
-        StyleRange[] ranges = (StyleRange[]) iranges;
+        StyleRange[] ranges = Convert.array(iranges, StyleRange.class::cast, StyleRange[]::new);
         checkWidget();
         if (isListening(ST.LineGetStyle))
             return;
@@ -10818,7 +10818,7 @@ public class StyledText extends Canvas implements IStyledText {
      * @since 3.2
      */
     public void setStyleRanges(int start, int length, int[] ranges, IStyleRange[] istyles) {
-        StyleRange[] styles = (StyleRange[]) istyles;
+        StyleRange[] styles = Convert.array(istyles, StyleRange.class::cast, StyleRange[]::new);
         checkWidget();
         if (isListening(ST.LineGetStyle))
             return;
@@ -10863,7 +10863,7 @@ public class StyledText extends Canvas implements IStyledText {
      * @since 3.2
      */
     public void setStyleRanges(int[] ranges, IStyleRange[] istyles) {
-        StyleRange[] styles = (StyleRange[]) istyles;
+        StyleRange[] styles = Convert.array(istyles, StyleRange.class::cast, StyleRange[]::new);
         checkWidget();
         if (isListening(ST.LineGetStyle))
             return;
@@ -11116,7 +11116,7 @@ public class StyledText extends Canvas implements IStyledText {
      * @see #setStyleRanges(int[], StyleRange[])
      */
     public void setStyleRanges(IStyleRange[] iranges) {
-        StyleRange[] ranges = (StyleRange[]) iranges;
+        StyleRange[] ranges = Convert.array(iranges, StyleRange.class::cast, StyleRange[]::new);
         checkWidget();
         if (isListening(ST.LineGetStyle))
             return;

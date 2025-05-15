@@ -148,11 +148,13 @@ public class ViewForm extends Composite {
     //	}
     //}
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getDelegate().computeTrim(x, y, width, height).getApi();
+        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
+        return ret != null ? ret.getApi() : null;
     }
 
     public Rectangle getClientArea() {
-        return getDelegate().getClientArea().getApi();
+        IRectangle ret = getDelegate().getClientArea();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -161,11 +163,8 @@ public class ViewForm extends Composite {
      * @return the control in the content area of the pane or null
      */
     public Control getContent() {
-        return getDelegate().getContent().getApi();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the parent.
-	 */
+        IControl ret = getDelegate().getContent();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -175,11 +174,8 @@ public class ViewForm extends Composite {
      * @return the control in the top center of the pane or null
      */
     public Control getTopCenter() {
-        return getDelegate().getTopCenter().getApi();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
+        IControl ret = getDelegate().getTopCenter();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -189,11 +185,8 @@ public class ViewForm extends Composite {
      * @return the control in the top left corner of the pane or null
      */
     public Control getTopLeft() {
-        return getDelegate().getTopLeft().getApi();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
+        IControl ret = getDelegate().getTopLeft();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -203,11 +196,8 @@ public class ViewForm extends Composite {
      * @return the control in the top right corner of the pane or null
      */
     public Control getTopRight() {
-        return getDelegate().getTopRight().getApi();
-        /*
-	 * This call is intentionally commented out, to allow this getter method to be
-	 * called from a thread which is different from one that created the widget.
-	 */
+        IControl ret = getDelegate().getTopRight();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

@@ -82,7 +82,8 @@ public class Accessible {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static Accessible internal_new_Accessible(Control control) {
-        return nat.org.eclipse.swt.accessibility.Accessible.internal_new_Accessible((nat.org.eclipse.swt.widgets.Control) (control != null ? control.getDelegate() : null)).getApi();
+        IAccessible ret = nat.org.eclipse.swt.accessibility.Accessible.internal_new_Accessible((nat.org.eclipse.swt.widgets.Control) (control != null ? control.getDelegate() : null));
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -395,7 +396,8 @@ public class Accessible {
      * @since 3.0
      */
     public Control getControl() {
-        return getDelegate().getControl().getApi();
+        IControl ret = getDelegate().getControl();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

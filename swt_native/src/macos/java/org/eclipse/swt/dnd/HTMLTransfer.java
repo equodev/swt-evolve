@@ -39,7 +39,8 @@ public class HTMLTransfer extends ByteArrayTransfer {
      * @return the singleton instance of the HTMLTransfer class
      */
     public static HTMLTransfer getInstance() {
-        return nat.org.eclipse.swt.dnd.HTMLTransfer.getInstance().getApi();
+        IHTMLTransfer ret = nat.org.eclipse.swt.dnd.HTMLTransfer.getInstance();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

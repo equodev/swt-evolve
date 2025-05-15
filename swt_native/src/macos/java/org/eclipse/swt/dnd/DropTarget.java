@@ -164,7 +164,8 @@ public class DropTarget extends Widget {
      * @return the Control which is registered for this DropTarget
      */
     public Control getControl() {
-        return getDelegate().getControl().getApi();
+        IControl ret = getDelegate().getControl();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -201,7 +202,8 @@ public class DropTarget extends Widget {
      * @since 3.3
      */
     public DropTargetEffect getDropTargetEffect() {
-        return getDelegate().getDropTargetEffect().getApi();
+        IDropTargetEffect ret = getDelegate().getDropTargetEffect();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -263,7 +265,6 @@ public class DropTarget extends Widget {
      */
     public void setTransfer(Transfer... transferAgents) {
         getDelegate().setTransfer(Convert.array(transferAgents, Transfer::getDelegate, ITransfer[]::new));
-        // Register the types as valid drop types in Cocoa.
     }
 
     protected DropTarget(IDropTarget delegate) {

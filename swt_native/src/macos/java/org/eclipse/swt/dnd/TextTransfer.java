@@ -45,7 +45,8 @@ public class TextTransfer extends ByteArrayTransfer {
      * @return the singleton instance of the TextTransfer class
      */
     public static TextTransfer getInstance() {
-        return nat.org.eclipse.swt.dnd.TextTransfer.getInstance().getApi();
+        ITextTransfer ret = nat.org.eclipse.swt.dnd.TextTransfer.getInstance();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

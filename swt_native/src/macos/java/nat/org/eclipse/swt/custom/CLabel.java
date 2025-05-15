@@ -28,6 +28,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.accessibility.ACC;
 import org.eclipse.swt.custom.ICLabel;
 import org.eclipse.swt.graphics.IColor;
+import dev.equo.swt.Convert;
 import org.eclipse.swt.graphics.IImage;
 import org.eclipse.swt.graphics.IFont;
 import org.eclipse.swt.graphics.IGC;
@@ -756,7 +757,7 @@ public class CLabel extends Canvas implements ICLabel {
      *  </ul>
      */
     public void setBackground(IColor[] icolors, int[] percents) {
-        Color[] colors = (Color[]) icolors;
+        Color[] colors = Convert.array(icolors, Color.class::cast, Color[]::new);
         setBackground(colors, percents, false);
     }
 
@@ -789,7 +790,7 @@ public class CLabel extends Canvas implements ICLabel {
      *  @since 3.0
      */
     public void setBackground(IColor[] icolors, int[] percents, boolean vertical) {
-        Color[] colors = (Color[]) icolors;
+        Color[] colors = Convert.array(icolors, Color.class::cast, Color[]::new);
         checkWidget();
         if (colors != null) {
             if (percents == null || percents.length != colors.length - 1) {

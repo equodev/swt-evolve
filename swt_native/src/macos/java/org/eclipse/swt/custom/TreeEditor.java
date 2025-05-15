@@ -110,7 +110,8 @@ public class TreeEditor extends ControlEditor {
      * @return the TreeItem for the row of the cell being tracked by this editor
      */
     public TreeItem getItem() {
-        return getDelegate().getItem().getApi();
+        ITreeItem ret = getDelegate().getItem();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -122,7 +123,6 @@ public class TreeEditor extends ControlEditor {
      */
     public void setColumn(int column) {
         getDelegate().setColumn(column);
-        // Separately handle the case where the tree has no TreeColumns.
     }
 
     /**

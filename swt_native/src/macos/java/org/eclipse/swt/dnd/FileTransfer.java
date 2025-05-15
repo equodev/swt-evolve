@@ -46,7 +46,8 @@ public class FileTransfer extends ByteArrayTransfer {
      * @return the singleton instance of the FileTransfer class
      */
     public static FileTransfer getInstance() {
-        return nat.org.eclipse.swt.dnd.FileTransfer.getInstance().getApi();
+        IFileTransfer ret = nat.org.eclipse.swt.dnd.FileTransfer.getInstance();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**

@@ -127,12 +127,12 @@ public class BorderLayout extends Layout {
     public double heightDistributionFactor = 0.5;
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-        return getDelegate().computeSize((composite != null ? composite.getDelegate() : null), wHint, hHint, flushCache).getApi();
+        IPoint ret = getDelegate().computeSize((composite != null ? composite.getDelegate() : null), wHint, hHint, flushCache);
+        return ret != null ? ret.getApi() : null;
     }
 
     protected void layout(Composite composite, boolean flushCache) {
         getDelegate().layout((composite != null ? composite.getDelegate() : null), flushCache);
-        // remaining height for WEST and EAST, preferred width for WEST and EAST if
     }
 
     public String toString() {

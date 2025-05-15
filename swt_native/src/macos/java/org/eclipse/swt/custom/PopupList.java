@@ -65,7 +65,8 @@ public class PopupList {
      * 	</ul>
      */
     public Font getFont() {
-        return getDelegate().getFont().getApi();
+        IFont ret = getDelegate().getFont();
+        return ret != null ? ret.getApi() : null;
     }
 
     /**
@@ -122,7 +123,6 @@ public class PopupList {
      */
     public void select(String string) {
         getDelegate().select(string);
-        // find the first entry in the list that starts with the
     }
 
     /**
