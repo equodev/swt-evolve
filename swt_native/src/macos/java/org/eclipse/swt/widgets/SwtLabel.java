@@ -115,7 +115,7 @@ public class SwtLabel extends SwtControl implements ILabel {
     boolean accessibilityIsIgnored(long id, long sel) {
         if (id == getApi().view.id)
             return true;
-        return ((SwtWidget) super.getImpl()).accessibilityIsIgnored(id, sel);
+        return super.accessibilityIsIgnored(id, sel);
     }
 
     @Override
@@ -267,7 +267,7 @@ public class SwtLabel extends SwtControl implements ILabel {
     @Override
     void createWidget() {
         text = "";
-        ((SwtControl) super.getImpl()).createWidget();
+        super.createWidget();
     }
 
     NSAttributedString createString() {
@@ -283,7 +283,7 @@ public class SwtLabel extends SwtControl implements ILabel {
 
     @Override
     void deregister() {
-        ((SwtControl) super.getImpl()).deregister();
+        super.deregister();
         if (textView != null) {
             ((SwtDisplay) display.getImpl()).removeWidget(textView);
             ((SwtDisplay) display.getImpl()).removeWidget(textView.cell());
@@ -393,22 +393,22 @@ public class SwtLabel extends SwtControl implements ILabel {
 
     @Override
     void register() {
-        ((SwtControl) super.getImpl()).register();
+        super.register();
         if (textView != null) {
-            ((SwtDisplay) display.getImpl()).addWidget(textView, this);
-            ((SwtDisplay) display.getImpl()).addWidget(textView.cell(), this);
+            ((SwtDisplay) display.getImpl()).addWidget(textView, this.getApi());
+            ((SwtDisplay) display.getImpl()).addWidget(textView.cell(), this.getApi());
         }
         if (imageView != null) {
-            ((SwtDisplay) display.getImpl()).addWidget(imageView, this);
-            ((SwtDisplay) display.getImpl()).addWidget(imageView.cell(), this);
+            ((SwtDisplay) display.getImpl()).addWidget(imageView, this.getApi());
+            ((SwtDisplay) display.getImpl()).addWidget(imageView.cell(), this.getApi());
         }
         if (separator != null)
-            ((SwtDisplay) display.getImpl()).addWidget(separator, this);
+            ((SwtDisplay) display.getImpl()).addWidget(separator, this.getApi());
     }
 
     @Override
     void releaseHandle() {
-        ((SwtControl) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (textView != null)
             textView.release();
         if (imageView != null)

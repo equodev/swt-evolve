@@ -108,7 +108,7 @@ public class SwtMessageBox extends SwtDialog implements IMessageBox {
      */
     public SwtMessageBox(Shell parent, int style) {
         super(parent, checkStyle(parent, checkStyle(style)));
-        if (((SwtDisplay) Display.getImpl()).getSheetEnabled()) {
+        if (SwtDisplay.getSheetEnabled()) {
             if (parent != null && (style & SWT.SHEET) != 0)
                 this.style |= SWT.SHEET;
         }
@@ -168,7 +168,7 @@ public class SwtMessageBox extends SwtDialog implements IMessageBox {
             if (OS.isBigSurOrLater()) {
                 alert.setIcon(NSImage.imageNamed(OS.NSImageNameInfo));
             } else {
-                NSImage icon = ((SwtDisplay) Display.getImpl()).getSystemImageForID(OS.kAlertNoteIcon);
+                NSImage icon = SwtDisplay.getSystemImageForID(OS.kAlertNoteIcon);
                 alert.setIcon(icon);
                 icon.release();
             }
@@ -178,7 +178,7 @@ public class SwtMessageBox extends SwtDialog implements IMessageBox {
             if (OS.isBigSurOrLater()) {
                 alert.setIcon(NSImage.imageNamed(OS.NSImageNameCaution));
             } else {
-                NSImage icon = ((SwtDisplay) Display.getImpl()).getSystemImageForID(OS.kAlertCautionIcon);
+                NSImage icon = SwtDisplay.getSystemImageForID(OS.kAlertCautionIcon);
                 alert.setIcon(icon);
                 icon.release();
             }
@@ -246,15 +246,15 @@ public class SwtMessageBox extends SwtDialog implements IMessageBox {
         alert.setMessageText(message);
         long jniRef = 0;
         SWTPanelDelegate delegate = null;
-        Display display = parent != null ? parent.getDisplay() : Display.getCurrent();
+        Display display = parent != null ? parent.getDisplay() : SwtDisplay.getCurrent();
         if ((style & SWT.SHEET) != 0) {
             delegate = (SWTPanelDelegate) new SWTPanelDelegate().alloc().init();
-            jniRef = OS.NewGlobalRef(this);
+            jniRef = OS.NewGlobalRef(this.getApi());
             if (jniRef == 0)
                 error(SWT.ERROR_NO_HANDLES);
             OS.object_setInstanceVariable(delegate.id, SwtDisplay.SWT_OBJECT, jniRef);
-            ((SwtDisplay) display.getImpl()).setModalDialog(this, panel);
-            callback_completion_handler = new Callback(this, "_completionHandler", 1);
+            ((SwtDisplay) display.getImpl()).setModalDialog(this.getApi(), panel);
+            callback_completion_handler = new Callback(this.getApi(), "_completionHandler", 1);
             long handler = callback_completion_handler.getAddress();
             OS.beginSheetModalForWindow(alert, ((SwtShell) parent.getImpl()).window, handler);
             if ((style & SWT.APPLICATION_MODAL) != 0) {
@@ -267,7 +267,7 @@ public class SwtMessageBox extends SwtDialog implements IMessageBox {
                 }
             }
         } else {
-            ((SwtDisplay) display.getImpl()).setModalDialog(this, panel);
+            ((SwtDisplay) display.getImpl()).setModalDialog(this.getApi(), panel);
             int response = (int) alert.runModal();
             userResponse = handleResponse(bits, response);
         }

@@ -121,7 +121,7 @@ public abstract class SwtResource implements IResource {
 
     SwtResource(Device device) {
         if (device == null)
-            device = ((SwtDevice) Device.getImpl()).getDevice();
+            device = SwtDevice.getDevice();
         if (device == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.device = device;
@@ -155,7 +155,7 @@ public abstract class SwtResource implements IResource {
             return;
         destroy();
         if (((SwtDevice) device.getImpl()).tracking)
-            ((SwtDevice) device.getImpl()).dispose_Object(this);
+            device.dispose_Object(this.getApi());
         device = null;
     }
 
@@ -182,12 +182,12 @@ public abstract class SwtResource implements IResource {
 
     void init() {
         if (((SwtDevice) device.getImpl()).tracking)
-            ((SwtDevice) device.getImpl()).new_Object(this);
+            device.new_Object(this.getApi());
     }
 
     void initNonDisposeTracking() {
         // Color doesn't really have any resource to be leaked, ignore.
-        if (this instanceof Color)
+        if (this.getApi() instanceof Color)
             return;
         // Avoid performance costs of having '.finalize()' when not tracking.
         if (nonDisposedReporter == null)
@@ -199,7 +199,7 @@ public abstract class SwtResource implements IResource {
         // work of detecting and reporting errors. This works because Resource
         // holds the only reference to 'ResourceTracker' and therefore the tracker
         // is only GC'ed when Resource itself is ready to be GC'ed.
-        tracker = new ResourceTracker(this, error);
+        tracker = new ResourceTracker(this.getApi(), error);
     }
 
     /**

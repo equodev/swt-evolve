@@ -464,7 +464,7 @@ public final class SwtCursor extends SwtResource implements ICursor {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
+        if (object == this.getApi())
             return true;
         if (!(object instanceof Cursor cursor))
             return false;

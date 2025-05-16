@@ -151,13 +151,13 @@ public class SwtCLabel extends SwtCanvas implements ICLabel {
             align = SWT.RIGHT;
         if ((style & SWT.LEFT) != 0)
             align = SWT.LEFT;
-        addPaintListener(this::onPaint);
+        addPaintListener(this.getApi()::onPaint);
         addTraverseListener(event -> {
             if (event.detail == SWT.TRAVERSE_MNEMONIC) {
                 onMnemonic(event);
             }
         });
-        addListener(SWT.Dispose, this::onDispose);
+        addListener(SWT.Dispose, this.getApi()::onDispose);
         initAccessible();
     }
 
@@ -309,7 +309,7 @@ public class SwtCLabel extends SwtCanvas implements ICLabel {
             size.x += r.width;
             size.y += r.height;
         }
-        GC gc = new GC(this);
+        GC gc = new GC(this.getApi());
         if (text != null && text.length() > 0) {
             Point e = gc.textExtent(text, DRAW_FLAGS);
             size.x += e.x;
@@ -460,7 +460,7 @@ public class SwtCLabel extends SwtCanvas implements ICLabel {
             Control[] children = control.getChildren();
             int index = 0;
             while (index < children.length) {
-                if (children[index] == this)
+                if (children[index] == this.getApi())
                     break;
                 index++;
             }

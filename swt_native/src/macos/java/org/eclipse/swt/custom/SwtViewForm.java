@@ -299,7 +299,7 @@ public class SwtViewForm extends SwtComposite implements IViewForm {
      */
     public void setContent(Control content) {
         checkWidget();
-        if (content != null && content.getParent() != this) {
+        if (content != null && content.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (this.content != null && !this.content.isDisposed()) {
@@ -356,7 +356,7 @@ public class SwtViewForm extends SwtComposite implements IViewForm {
      */
     public void setTopCenter(Control topCenter) {
         checkWidget();
-        if (topCenter != null && topCenter.getParent() != this) {
+        if (topCenter != null && topCenter.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (this.topCenter != null && !this.topCenter.isDisposed()) {
@@ -383,7 +383,7 @@ public class SwtViewForm extends SwtComposite implements IViewForm {
      */
     public void setTopLeft(Control c) {
         checkWidget();
-        if (c != null && c.getParent() != this) {
+        if (c != null && c.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (this.topLeft != null && !this.topLeft.isDisposed()) {
@@ -410,7 +410,7 @@ public class SwtViewForm extends SwtComposite implements IViewForm {
      */
     public void setTopRight(Control c) {
         checkWidget();
-        if (c != null && c.getParent() != this) {
+        if (c != null && c.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (this.topRight != null && !this.topRight.isDisposed()) {

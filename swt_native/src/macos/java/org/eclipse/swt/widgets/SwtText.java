@@ -339,7 +339,7 @@ public class SwtText extends SwtScrollable implements IText {
                 return false;
             return true;
         }
-        return ((SwtControl) super.getImpl()).becomeFirstResponder(id, sel);
+        return super.becomeFirstResponder(id, sel);
     }
 
     static int checkStyle(int style) {
@@ -593,7 +593,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     void createWidget() {
-        ((SwtScrollable) super.getImpl()).createWidget();
+        super.createWidget();
         if ((style & SWT.PASSWORD) != 0) {
             NSText fieldEditor = getApi().view.window().fieldEditor(true, getApi().view);
             long nsSecureTextViewClass = OS.objc_lookUpClass("NSSecureTextView");
@@ -683,7 +683,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     void deregister() {
-        ((SwtScrollable) super.getImpl()).deregister();
+        super.deregister();
         if ((style & SWT.SINGLE) != 0) {
             ((SwtDisplay) display.getImpl()).removeWidget(((NSControl) getApi().view).cell());
         }
@@ -710,7 +710,7 @@ public class SwtText extends SwtScrollable implements IText {
     void drawInteriorWithFrame_inView(long id, long sel, NSRect cellFrame, long viewid) {
         Control control = findBackgroundControl();
         if (control == null)
-            control = this;
+            control = this.getApi();
         Image image = ((SwtControl) control.getImpl()).backgroundImage;
         if (image != null && !image.isDisposed()) {
             NSGraphicsContext context = NSGraphicsContext.currentContext();
@@ -719,7 +719,7 @@ public class SwtText extends SwtScrollable implements IText {
             // If no background image is set, call custom paint code for search field
             drawInteriorWithFrame_inView_searchfield(id, sel, cellFrame, viewid);
         }
-        ((SwtWidget) super.getImpl()).drawInteriorWithFrame_inView(id, sel, cellFrame, viewid);
+        super.drawInteriorWithFrame_inView(id, sel, cellFrame, viewid);
     }
 
     void drawInteriorWithFrame_inView_searchfield(long id, long sel, NSRect cellFrame, long viewid) {
@@ -770,7 +770,7 @@ public class SwtText extends SwtScrollable implements IText {
     @Override
     void drawRect(long id, long sel, NSRect rect) {
         updateThemeColors();
-        ((SwtWidget) super.getImpl()).drawRect(id, sel, rect);
+        super.drawRect(id, sel, rect);
     }
 
     @Override
@@ -779,7 +779,7 @@ public class SwtText extends SwtScrollable implements IText {
         if (selection.x != selection.y) {
             long position = getPosition(x, y);
             if (selection.x <= position && position < selection.y) {
-                if (((SwtControl) super.getImpl()).dragDetect(x, y, filter, consume)) {
+                if (super.dragDetect(x, y, filter, consume)) {
                     if (consume != null)
                         consume[0] = true;
                     return true;
@@ -791,7 +791,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     void enableWidget(boolean enabled) {
-        ((SwtScrollable) super.getImpl()).enableWidget(enabled);
+        super.enableWidget(enabled);
         if ((style & SWT.MULTI) != 0) {
             setForeground(this.foreground);
         }
@@ -799,7 +799,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     Cursor findCursor() {
-        Cursor cursor = ((SwtControl) super.getImpl()).findCursor();
+        Cursor cursor = super.findCursor();
         if (cursor == null && OS.VERSION < OS.VERSION(10, 14, 0)) {
             cursor = display.getSystemCursor(SWT.CURSOR_IBEAM);
         }
@@ -809,7 +809,7 @@ public class SwtText extends SwtScrollable implements IText {
     @Override
     boolean forceFocus(NSView focusView) {
         receivingFocus = true;
-        boolean result = ((SwtControl) super.getImpl()).forceFocus(focusView);
+        boolean result = super.forceFocus(focusView);
         if (((style & SWT.SINGLE) != 0))
             ((NSTextField) getApi().view).selectText(null);
         receivingFocus = false;
@@ -840,7 +840,7 @@ public class SwtText extends SwtScrollable implements IText {
     boolean acceptsFirstResponder(long id, long sel) {
         if ((style & SWT.READ_ONLY) != 0)
             return true;
-        return ((SwtWidget) super.getImpl()).acceptsFirstResponder(id, sel);
+        return super.acceptsFirstResponder(id, sel);
     }
 
     /**
@@ -1526,7 +1526,7 @@ public class SwtText extends SwtScrollable implements IText {
     @Override
     boolean isEventView(long id) {
         if ((style & SWT.MULTI) != 0)
-            return ((SwtScrollable) super.getImpl()).isEventView(id);
+            return super.isEventView(id);
         return true;
     }
 
@@ -1619,15 +1619,15 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     void register() {
-        ((SwtScrollable) super.getImpl()).register();
+        super.register();
         if ((style & SWT.SINGLE) != 0) {
-            ((SwtDisplay) display.getImpl()).addWidget(((NSControl) getApi().view).cell(), this);
+            ((SwtDisplay) display.getImpl()).addWidget(((NSControl) getApi().view).cell(), this.getApi());
         }
     }
 
     @Override
     void releaseWidget() {
-        ((SwtControl) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         if ((style & SWT.SINGLE) != 0)
             ((NSControl) getApi().view).abortEditing();
         hiddenText = null;
@@ -1760,7 +1760,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     boolean sendKeyEvent(NSEvent nsEvent, int type) {
-        boolean result = ((SwtWidget) super.getImpl()).sendKeyEvent(nsEvent, type);
+        boolean result = super.sendKeyEvent(nsEvent, type);
         if (!result)
             return result;
         if (type != SWT.KeyDown)
@@ -1806,7 +1806,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     boolean sendKeyEvent(int type, Event event) {
-        boolean result = ((SwtWidget) super.getImpl()).sendKeyEvent(type, event);
+        boolean result = super.sendKeyEvent(type, event);
         if (!result)
             return result;
         if (type != SWT.KeyDown)
@@ -2010,7 +2010,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     void setFrameSize(long id, long sel, NSSize size) {
-        ((SwtControl) super.getImpl()).setFrameSize(id, sel, size);
+        super.setFrameSize(id, sel, size);
         /*
 	* Bug in Cocoa.  When a search field is resized while having
 	* focus, its editor is not properly positioned within the
@@ -2035,7 +2035,7 @@ public class SwtText extends SwtScrollable implements IText {
             ((NSTextView) getApi().view).setFont(font);
             return;
         }
-        ((SwtControl) super.getImpl()).setFont(font);
+        super.setFont(font);
     }
 
     @Override
@@ -2514,7 +2514,7 @@ public class SwtText extends SwtScrollable implements IText {
     @Override
     void textDidChange(long id, long sel, long aNotification) {
         if ((style & SWT.SINGLE) != 0)
-            ((SwtWidget) super.getImpl()).textDidChange(id, sel, aNotification);
+            super.textDidChange(id, sel, aNotification);
         postEvent(SWT.Modify);
     }
 
@@ -2535,7 +2535,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     int traversalCode(int key, NSEvent theEvent) {
-        int bits = ((SwtControl) super.getImpl()).traversalCode(key, theEvent);
+        int bits = super.traversalCode(key, theEvent);
         if ((style & SWT.READ_ONLY) != 0)
             return bits;
         if ((style & SWT.MULTI) != 0) {
@@ -2554,7 +2554,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     void updateCursorRects(boolean enabled) {
-        ((SwtScrollable) super.getImpl()).updateCursorRects(enabled);
+        super.updateCursorRects(enabled);
         if (scrollView == null)
             return;
         NSClipView contentView = scrollView.contentView();

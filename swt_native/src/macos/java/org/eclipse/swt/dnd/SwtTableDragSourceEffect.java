@@ -100,7 +100,7 @@ public class SwtTableDragSourceEffect extends SwtDragSourceEffect implements ITa
         if (nsImage == null)
             return null;
         //TODO: Image representation wrong???
-        Image image = Image.cocoa_new(control.getDisplay(), SWT.BITMAP, nsImage);
+        Image image = SwtImage.cocoa_new(control.getDisplay(), SWT.BITMAP, nsImage);
         dragSourceImage = image;
         nsImage.retain();
         event.offsetX = (int) point.x;

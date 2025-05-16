@@ -105,7 +105,7 @@ public class SwtList extends SwtScrollable implements IList {
         //		*/
         //		return 0;
         //	}
-        return ((SwtControl) super.getImpl()).accessibilityAttributeValue(id, sel, arg0);
+        return super.accessibilityAttributeValue(id, sel, arg0);
     }
 
     @Override
@@ -294,7 +294,7 @@ public class SwtList extends SwtScrollable implements IList {
 
     @Override
     void createWidget() {
-        ((SwtScrollable) super.getImpl()).createWidget();
+        super.createWidget();
         items = new String[4];
     }
 
@@ -424,7 +424,7 @@ public class SwtList extends SwtScrollable implements IList {
         long row = widget.rowAtPoint(pt);
         if (row == -1)
             return false;
-        boolean dragging = ((SwtControl) super.getImpl()).dragDetect(x, y, filter, consume);
+        boolean dragging = super.dragDetect(x, y, filter, consume);
         if (dragging) {
             if (!widget.isRowSelected(row)) {
                 //TODO expand current selection when Shift, Command key pressed??
@@ -440,7 +440,7 @@ public class SwtList extends SwtScrollable implements IList {
 
     @Override
     void drawBackgroundInClipRect(long id, long sel, NSRect rect) {
-        ((SwtWidget) super.getImpl()).drawViewBackgroundInRect(id, sel, rect);
+        super.drawViewBackgroundInRect(id, sel, rect);
         if (id != getApi().view.id)
             return;
         fillBackground(getApi().view, NSGraphicsContext.currentContext(), rect, -1);
@@ -794,7 +794,7 @@ public class SwtList extends SwtScrollable implements IList {
             set.release();
         }
         // else that row is currently selected, so don't change anything.
-        return ((SwtControl) super.getImpl()).menuForEvent(id, sel, theEvent);
+        return super.menuForEvent(id, sel, theEvent);
     }
 
     @Override
@@ -812,7 +812,7 @@ public class SwtList extends SwtScrollable implements IList {
             }
         }
         didSelect = false;
-        ((SwtWidget) super.getImpl()).mouseDownSuper(id, sel, theEvent);
+        super.mouseDownSuper(id, sel, theEvent);
         didSelect = false;
     }
 
@@ -828,7 +828,7 @@ public class SwtList extends SwtScrollable implements IList {
 
     @Override
     void releaseHandle() {
-        ((SwtScrollable) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (column != null)
             column.release();
         column = null;
@@ -836,7 +836,7 @@ public class SwtList extends SwtScrollable implements IList {
 
     @Override
     void releaseWidget() {
-        ((SwtControl) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         items = null;
     }
 
@@ -1165,7 +1165,7 @@ public class SwtList extends SwtScrollable implements IList {
 
     @Override
     boolean sendKeyEvent(NSEvent nsEvent, int type) {
-        boolean result = ((SwtWidget) super.getImpl()).sendKeyEvent(nsEvent, type);
+        boolean result = super.sendKeyEvent(nsEvent, type);
         if (!result)
             return result;
         if (type != SWT.KeyDown)
@@ -1202,7 +1202,7 @@ public class SwtList extends SwtScrollable implements IList {
                 }
             }
         }
-        return ((SwtControl) super.getImpl()).sendMouseEvent(nsEvent, type, send);
+        return super.sendMouseEvent(nsEvent, type, send);
     }
 
     @Override
@@ -1219,7 +1219,7 @@ public class SwtList extends SwtScrollable implements IList {
 
     @Override
     void setFont(NSFont font) {
-        ((SwtControl) super.getImpl()).setFont(font);
+        super.setFont(font);
         double ascent = font.ascender();
         double descent = -font.descender() + font.leading();
         int height = (int) Math.ceil(ascent + descent) + 1;

@@ -131,7 +131,7 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
                 arrowEvent(event);
                 return;
             }
-            if (CCombo.this == event.widget) {
+            if (this.getApi() == event.widget) {
                 comboEvent(event);
                 return;
             }
@@ -147,7 +147,7 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
         int arrowStyle = SWT.ARROW | SWT.DOWN;
         if ((style & SWT.FLAT) != 0)
             arrowStyle |= SWT.FLAT;
-        arrow = new Button(this, arrowStyle);
+        arrow = new Button(this.getApi(), arrowStyle);
         filter = event -> {
             if (isDisposed())
                 return;
@@ -212,7 +212,7 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
         if ((comboStyle & SWT.FLAT) != 0)
             textStyle |= SWT.FLAT;
         textStyle |= comboStyle & (SWT.LEAD | SWT.CENTER | SWT.TRAIL);
-        text = new Text(this, textStyle);
+        text = new Text(this.getApi(), textStyle);
         if (textValue != null) {
             text.setText(textValue);
             text.setToolTipText(tooltip);
@@ -386,7 +386,7 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
             case SWT.MouseExit:
             case SWT.MouseHover:
                 {
-                    Point pt = getDisplay().map(arrow, this, event.x, event.y);
+                    Point pt = getDisplay().map(arrow, this.getApi(), event.x, event.y);
                     event.x = pt.x;
                     event.y = pt.y;
                     notifyListeners(event.type, event);
@@ -395,7 +395,7 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
                 }
             case SWT.MouseWheel:
                 {
-                    Point pt = getDisplay().map(arrow, this, event.x, event.y);
+                    Point pt = getDisplay().map(arrow, this.getApi(), event.x, event.y);
                     event.x = pt.x;
                     event.y = pt.y;
                     notifyListeners(SWT.MouseWheel, event);
@@ -739,7 +739,7 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
     String getAssociatedLabel() {
         Control[] siblings = getParent().getChildren();
         for (int i = 0; i < siblings.length; i++) {
-            if (siblings[i] == this) {
+            if (siblings[i] == this.getApi()) {
                 if (i > 0) {
                     Control sibling = siblings[i - 1];
                     if (sibling instanceof Label)
@@ -1994,7 +1994,7 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
             case SWT.MouseExit:
             case SWT.MouseHover:
                 {
-                    Point pt = getDisplay().map(text, this, event.x, event.y);
+                    Point pt = getDisplay().map(text, this.getApi(), event.x, event.y);
                     event.x = pt.x;
                     event.y = pt.y;
                     notifyListeners(event.type, event);
@@ -2085,7 +2085,7 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
                 }
             case SWT.MouseDown:
                 {
-                    Point pt = getDisplay().map(text, this, event.x, event.y);
+                    Point pt = getDisplay().map(text, this.getApi(), event.x, event.y);
                     Event mouseEvent = new Event();
                     mouseEvent.button = event.button;
                     mouseEvent.count = event.count;
@@ -2113,7 +2113,7 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
                 }
             case SWT.MouseUp:
                 {
-                    Point pt = getDisplay().map(text, this, event.x, event.y);
+                    Point pt = getDisplay().map(text, this.getApi(), event.x, event.y);
                     Event mouseEvent = new Event();
                     mouseEvent.button = event.button;
                     mouseEvent.count = event.count;

@@ -327,7 +327,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
     @Override
     boolean becomeFirstResponder(long id, long sel) {
         receivingFocus = true;
-        boolean result = ((SwtControl) super.getImpl()).becomeFirstResponder(id, sel);
+        boolean result = super.becomeFirstResponder(id, sel);
         receivingFocus = false;
         return result;
     }
@@ -394,7 +394,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 
     @Override
     void setObjectValue(long id, long sel, long arg0) {
-        ((SwtWidget) super.getImpl()).setObjectValue(id, sel, ignoreSetObject ? arg0 : createString(text).id);
+        super.setObjectValue(id, sel, ignoreSetObject ? arg0 : createString(text).id);
     }
 
     @Override
@@ -407,7 +407,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
         if (nsString != null)
             setText(nsString.getString(), true);
         if (!ignoreSelection)
-            sendSelectionEvent(SWT.Selection, null, ((SwtDisplay) display.getImpl()).trackingControl != this);
+            sendSelectionEvent(SWT.Selection, null, ((SwtDisplay) display.getImpl()).trackingControl != this.getApi());
     }
 
     @Override
@@ -532,7 +532,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
     @Override
     void createWidget() {
         text = "";
-        ((SwtScrollable) super.getImpl()).createWidget();
+        super.createWidget();
         if ((style & SWT.READ_ONLY) == 0) {
             NSComboBox widget = (NSComboBox) getApi().view;
             NSScreen screen = widget.window().screen();
@@ -550,7 +550,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 
     @Override
     void comboBoxWillPopUp(long id, long sel, long notification) {
-        ((SwtDisplay) display.getImpl()).currentCombo = this;
+        ((SwtDisplay) display.getImpl()).currentCombo = this.getApi();
         listVisible = true;
     }
 
@@ -614,7 +614,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 
     @Override
     void deregister() {
-        ((SwtScrollable) super.getImpl()).deregister();
+        super.deregister();
         ((SwtDisplay) display.getImpl()).removeWidget(((NSControl) getApi().view).cell());
     }
 
@@ -684,7 +684,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
                     textViewMouse.y = y;
                     long charPosition = feAsTextView.characterIndexForInsertionAtPoint(textViewMouse);
                     if (charPosition != OS.NSNotFound() && charPosition >= selectedRange.location && charPosition < (selectedRange.location + selectedRange.length)) {
-                        if (((SwtControl) super.getImpl()).dragDetect(x, y, filter, consume)) {
+                        if (super.dragDetect(x, y, filter, consume)) {
                             if (consume != null)
                                 consume[0] = true;
                             return true;
@@ -694,12 +694,12 @@ public class SwtCombo extends SwtComposite implements ICombo {
             }
             return false;
         }
-        return ((SwtControl) super.getImpl()).dragDetect(x, y, filter, consume);
+        return super.dragDetect(x, y, filter, consume);
     }
 
     @Override
     Cursor findCursor() {
-        Cursor cursor = ((SwtControl) super.getImpl()).findCursor();
+        Cursor cursor = super.findCursor();
         if (cursor == null && (style & SWT.READ_ONLY) == 0 && OS.VERSION < OS.VERSION(10, 14, 0)) {
             cursor = display.getSystemCursor(SWT.CURSOR_IBEAM);
         }
@@ -1165,7 +1165,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
         // popup window. Fix is to retain the view before letting Cocoa track
         // the mouse events.
         view.retain();
-        ((SwtControl) super.getImpl()).mouseDown(id, sel, theEvent);
+        super.mouseDown(id, sel, theEvent);
         view.release();
         display.sendPostExternalEventDispatchEvent();
     }
@@ -1215,16 +1215,16 @@ public class SwtCombo extends SwtComposite implements ICombo {
 
     @Override
     void register() {
-        ((SwtScrollable) super.getImpl()).register();
-        ((SwtDisplay) display.getImpl()).addWidget(((NSControl) getApi().view).cell(), this);
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(((NSControl) getApi().view).cell(), this.getApi());
     }
 
     @Override
     void releaseWidget() {
-        if (((SwtDisplay) display.getImpl()).currentCombo == this) {
+        if (((SwtDisplay) display.getImpl()).currentCombo == this.getApi()) {
             ((SwtDisplay) display.getImpl()).currentCombo = null;
         }
-        ((SwtComposite) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         if ((style & SWT.READ_ONLY) == 0) {
             ((NSControl) getApi().view).abortEditing();
         }
@@ -1484,7 +1484,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 
     @Override
     boolean sendKeyEvent(NSEvent nsEvent, int type) {
-        boolean result = ((SwtWidget) super.getImpl()).sendKeyEvent(nsEvent, type);
+        boolean result = super.sendKeyEvent(nsEvent, type);
         if (!result)
             return result;
         int stateMask = 0;
@@ -1597,18 +1597,18 @@ public class SwtCombo extends SwtComposite implements ICombo {
             }
             height = Math.min(height, hLimit);
         }
-        ((SwtControl) super.getImpl()).setBounds(x, y, width, height, move, resize);
+        super.setBounds(x, y, width, height, move, resize);
     }
 
     @Override
     void setFont(NSFont font) {
-        ((SwtControl) super.getImpl()).setFont(font);
+        super.setFont(font);
         updateItems();
     }
 
     @Override
     void setForeground(double[] color) {
-        ((SwtControl) super.getImpl()).setForeground(color);
+        super.setForeground(color);
         updateItems();
         if ((style & SWT.READ_ONLY) == 0) {
             NSColor nsColor;
@@ -1965,7 +1965,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 
     @Override
     void textDidChange(long id, long sel, long aNotification) {
-        ((SwtWidget) super.getImpl()).textDidChange(id, sel, aNotification);
+        super.textDidChange(id, sel, aNotification);
         postEvent(SWT.Modify);
     }
 

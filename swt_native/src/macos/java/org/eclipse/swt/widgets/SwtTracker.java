@@ -144,9 +144,9 @@ public class SwtTracker extends SwtWidget implements ITracker {
      */
     public SwtTracker(Display display, int style) {
         if (display == null)
-            display = Display.getCurrent();
+            display = SwtDisplay.getCurrent();
         if (display == null)
-            display = Display.getDefault();
+            display = SwtDisplay.getDefault();
         if (!((SwtDisplay) display.getImpl()).isValidThread()) {
             error(SWT.ERROR_THREAD_INVALID_ACCESS);
         }
@@ -560,7 +560,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
         int nsType = (int) nsEvent.type();
         long modifierFlags = nsEvent.modifierFlags();
         int nsKeyCode = nsEvent.keyCode();
-        int keyCode = ((SwtDisplay) Display.getImpl()).translateKey(nsKeyCode);
+        int keyCode = SwtDisplay.translateKey(nsKeyCode);
         switch(nsType) {
             case OS.NSKeyDown:
             case OS.NSKeyUp:
@@ -962,7 +962,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
 
     @Override
     void releaseWidget() {
-        ((SwtWidget) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         parent = null;
         rectangles = proportions = null;
         bounds = null;

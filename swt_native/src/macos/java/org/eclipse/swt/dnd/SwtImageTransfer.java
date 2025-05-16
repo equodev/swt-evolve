@@ -73,7 +73,7 @@ public class SwtImageTransfer extends SwtByteArrayTransfer implements IImageTran
             DND.error(DND.ERROR_INVALID_DATA);
         }
         ImageData imgData = (ImageData) object;
-        Image image = new Image(Display.getCurrent(), imgData);
+        Image image = new Image(SwtDisplay.getCurrent(), imgData);
         NSImage handle = image.handle;
         transferData.data = handle.TIFFRepresentation();
         image.dispose();
@@ -114,7 +114,7 @@ public class SwtImageTransfer extends SwtByteArrayTransfer implements IImageTran
             nsImage = newImage;
         }
         //TODO: Image representation wrong???
-        Image image = Image.cocoa_new(Display.getCurrent(), SWT.BITMAP, nsImage);
+        Image image = SwtImage.cocoa_new(SwtDisplay.getCurrent(), SWT.BITMAP, nsImage);
         ImageData imageData = image.getImageData();
         image.dispose();
         return imageData;

@@ -153,7 +153,7 @@ public class SwtButton extends SwtControl implements IButton {
 
     @Override
     NSSize cellSizeForBounds(long id, long sel, NSRect cellFrame) {
-        NSSize size = ((SwtWidget) super.getImpl()).cellSizeForBounds(id, sel, cellFrame);
+        NSSize size = super.cellSizeForBounds(id, sel, cellFrame);
         if (image != null && ((style & (SWT.CHECK | SWT.RADIO)) != 0)) {
             NSSize imageSize = image.handle.size();
             size.width += imageSize.width + IMAGE_GAP;
@@ -295,12 +295,12 @@ public class SwtButton extends SwtControl implements IButton {
     @Override
     void createWidget() {
         text = "";
-        ((SwtControl) super.getImpl()).createWidget();
+        super.createWidget();
     }
 
     @Override
     Font defaultFont() {
-        return Font.cocoa_new(display, defaultNSFont());
+        return SwtFont.cocoa_new(display, defaultNSFont());
     }
 
     @Override
@@ -311,7 +311,7 @@ public class SwtButton extends SwtControl implements IButton {
 
     @Override
     void deregister() {
-        ((SwtControl) super.getImpl()).deregister();
+        super.deregister();
         ((SwtDisplay) display.getImpl()).removeWidget(((NSControl) getApi().view).cell());
         if (radioParent != null)
             ((SwtDisplay) display.getImpl()).removeWidget(radioParent);
@@ -319,7 +319,7 @@ public class SwtButton extends SwtControl implements IButton {
 
     @Override
     boolean dragDetect(int x, int y, boolean filter, boolean[] consume) {
-        boolean dragging = ((SwtControl) super.getImpl()).dragDetect(x, y, filter, consume);
+        boolean dragging = super.dragDetect(x, y, filter, consume);
         consume[0] = dragging;
         return dragging;
     }
@@ -414,7 +414,7 @@ public class SwtButton extends SwtControl implements IButton {
             gc.restoreGraphicsState();
             return;
         }
-        ((SwtWidget) super.getImpl()).drawBezelWithFrame_inView(id, sel, cellFrame, viewid);
+        super.drawBezelWithFrame_inView(id, sel, cellFrame, viewid);
     }
 
     @Override
@@ -422,7 +422,7 @@ public class SwtButton extends SwtControl implements IButton {
         if ((style & (SWT.CHECK | SWT.RADIO)) != 0 && backgroundImage != null) {
             fillBackground(new NSView(viewid), NSGraphicsContext.currentContext(), cellRect, -1);
         }
-        ((SwtWidget) super.getImpl()).drawInteriorWithFrame_inView(id, sel, cellRect, viewid);
+        super.drawInteriorWithFrame_inView(id, sel, cellRect, viewid);
         if (image != null && ((style & (SWT.CHECK | SWT.RADIO)) != 0)) {
             NSSize imageSize = image.handle.size();
             NSCell nsCell = new NSCell(id);
@@ -492,11 +492,11 @@ public class SwtButton extends SwtControl implements IButton {
         }
         if (!isEnabled && foreground != null) {
             NSAttributedString attribStr = createString(text, null, getLighterOrDarkerColor(foreground, 0.5, luma(foreground) >= 0.5), style, false, true, true);
-            final NSRect result = ((SwtWidget) super.getImpl()).drawTitleWithFrameInView(id, sel, attribStr.id, titleRect, view);
+            final NSRect result = super.drawTitleWithFrameInView(id, sel, attribStr.id, titleRect, view);
             attribStr.release();
             return result;
         }
-        return ((SwtWidget) super.getImpl()).drawTitleWithFrameInView(id, sel, title, titleRect, view);
+        return super.drawTitleWithFrameInView(id, sel, title, titleRect, view);
     }
 
     @Override
@@ -540,7 +540,7 @@ public class SwtButton extends SwtControl implements IButton {
             path.fill();
             context.restoreGraphicsState();
         }
-        ((SwtControl) super.getImpl()).drawWidget(id, context, rect);
+        super.drawWidget(id, context, rect);
     }
 
     @Override
@@ -685,20 +685,20 @@ public class SwtButton extends SwtControl implements IButton {
         if ((style & SWT.CHECK) != 0 && grayed) {
             return ((NSButton) getApi().view).state() == OS.NSMixedState ? OS.NSOffState : OS.NSMixedState;
         }
-        return ((SwtWidget) super.getImpl()).nextState(id, sel);
+        return super.nextState(id, sel);
     }
 
     @Override
     void register() {
-        ((SwtControl) super.getImpl()).register();
-        ((SwtDisplay) display.getImpl()).addWidget(((NSControl) getApi().view).cell(), this);
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(((NSControl) getApi().view).cell(), this.getApi());
         if (radioParent != null)
-            ((SwtDisplay) display.getImpl()).addWidget(radioParent, this);
+            ((SwtDisplay) display.getImpl()).addWidget(radioParent, this.getApi());
     }
 
     @Override
     void releaseWidget() {
-        ((SwtControl) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         image = null;
         text = null;
     }
@@ -750,7 +750,7 @@ public class SwtButton extends SwtControl implements IButton {
         Control[] children = ((SwtComposite) parent.getImpl())._getChildren();
         for (int i = 0; i < children.length; i++) {
             Control child = children[i];
-            if (this != child)
+            if (this.getApi() != child)
                 ((SwtControl) child.getImpl()).setRadioSelection(false);
         }
         setSelection(true);
@@ -846,7 +846,7 @@ public class SwtButton extends SwtControl implements IButton {
                 button.setBezelStyle(OS.NSRoundedBezelStyle);
             }
         }
-        ((SwtControl) super.getImpl()).setBounds(x, y, width, height, move, resize);
+        super.setBounds(x, y, width, height, move, resize);
         if (radioParent != null && resize) {
             NSSize size = new NSSize();
             size.width = width;
@@ -1035,7 +1035,7 @@ public class SwtButton extends SwtControl implements IButton {
 
     @Override
     NSRect titleRectForBounds(long id, long sel, NSRect cellFrame) {
-        NSRect rect = ((SwtWidget) super.getImpl()).titleRectForBounds(id, sel, cellFrame);
+        NSRect rect = super.titleRectForBounds(id, sel, cellFrame);
         if (image != null && ((style & (SWT.CHECK | SWT.RADIO)) != 0)) {
             NSSize imageSize = image.handle.size();
             rect.x += imageSize.width + IMAGE_GAP;
@@ -1047,7 +1047,7 @@ public class SwtButton extends SwtControl implements IButton {
 
     @Override
     int traversalCode(int key, NSEvent theEvent) {
-        int code = ((SwtControl) super.getImpl()).traversalCode(key, theEvent);
+        int code = super.traversalCode(key, theEvent);
         if ((style & SWT.ARROW) != 0)
             code &= ~(SWT.TRAVERSE_TAB_NEXT | SWT.TRAVERSE_TAB_PREVIOUS);
         if ((style & SWT.RADIO) != 0)
@@ -1070,12 +1070,12 @@ public class SwtButton extends SwtControl implements IButton {
     NSView topView() {
         if (radioParent != null)
             return radioParent;
-        return ((SwtControl) super.getImpl()).topView();
+        return super.topView();
     }
 
     @Override
     void setZOrder() {
-        ((SwtControl) super.getImpl()).setZOrder();
+        super.setZOrder();
         if (radioParent != null)
             radioParent.addSubview(getApi().view);
     }

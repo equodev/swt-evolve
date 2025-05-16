@@ -159,7 +159,7 @@ public class SwtGroup extends SwtComposite implements IGroup {
 
     @Override
     void deregister() {
-        ((SwtScrollable) super.getImpl()).deregister();
+        super.deregister();
         ((SwtDisplay) display.getImpl()).removeWidget(contentView);
         SWTBox box = (SWTBox) getApi().view;
         ((SwtDisplay) display.getImpl()).removeWidget(box.titleCell());
@@ -220,15 +220,15 @@ public class SwtGroup extends SwtComposite implements IGroup {
 
     @Override
     void register() {
-        ((SwtScrollable) super.getImpl()).register();
-        ((SwtDisplay) display.getImpl()).addWidget(contentView, this);
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(contentView, this.getApi());
         SWTBox box = (SWTBox) getApi().view;
-        ((SwtDisplay) display.getImpl()).addWidget(box.titleCell(), this);
+        ((SwtDisplay) display.getImpl()).addWidget(box.titleCell(), this.getApi());
     }
 
     @Override
     void releaseHandle() {
-        ((SwtScrollable) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (contentView != null)
             contentView.release();
         contentView = null;
@@ -237,7 +237,7 @@ public class SwtGroup extends SwtComposite implements IGroup {
     @Override
     void resized() {
         if (!ignoreResize)
-            ((SwtComposite) super.getImpl()).resized();
+            super.resized();
     }
 
     @Override

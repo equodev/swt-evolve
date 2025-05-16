@@ -209,7 +209,7 @@ public class SwtLink extends SwtControl implements ILink {
 
     @Override
     void createWidget() {
-        ((SwtControl) super.getImpl()).createWidget();
+        super.createWidget();
         text = "";
         NSDictionary dict = ((NSTextView) getApi().view).linkTextAttributes();
         defaultLinkColor = new NSColor(dict.valueForKey(OS.NSForegroundColorAttributeName));
@@ -226,7 +226,7 @@ public class SwtLink extends SwtControl implements ILink {
 
     @Override
     void deregister() {
-        ((SwtControl) super.getImpl()).deregister();
+        super.deregister();
         if (scrollView != null)
             ((SwtDisplay) display.getImpl()).removeWidget(scrollView);
     }
@@ -259,12 +259,12 @@ public class SwtLink extends SwtControl implements ILink {
     @Override
     void drawRect(long id, long sel, NSRect rect) {
         updateThemeColors();
-        ((SwtWidget) super.getImpl()).drawRect(id, sel, rect);
+        super.drawRect(id, sel, rect);
     }
 
     @Override
     void enableWidget(boolean enabled) {
-        ((SwtControl) super.getImpl()).enableWidget(enabled);
+        super.enableWidget(enabled);
         NSTextView widget = (NSTextView) getApi().view;
         widget.setTextColor(getTextColor(enabled));
         setLinkColor(enabled);
@@ -273,7 +273,7 @@ public class SwtLink extends SwtControl implements ILink {
 
     @Override
     Cursor findCursor() {
-        Cursor cursor = ((SwtControl) super.getImpl()).findCursor();
+        Cursor cursor = super.findCursor();
         if (cursor != null)
             return cursor;
         NSWindow window = getApi().view.window();
@@ -298,7 +298,7 @@ public class SwtLink extends SwtControl implements ILink {
      */
     public Color getLinkForeground() {
         checkWidget();
-        return Color.cocoa_new(display, ((SwtDisplay) display.getImpl()).getNSColorRGB(getLinkForegroundColor()));
+        return SwtColor.cocoa_new(display, ((SwtDisplay) display.getImpl()).getNSColorRGB(getLinkForegroundColor()));
     }
 
     NSColor getLinkForegroundColor() {
@@ -397,7 +397,7 @@ public class SwtLink extends SwtControl implements ILink {
             ignoreNextMouseUp = false;
             return;
         }
-        ((SwtControl) super.getImpl()).mouseUp(id, sel, theEvent);
+        super.mouseUp(id, sel, theEvent);
     }
 
     String parse(String string) {
@@ -556,13 +556,13 @@ public class SwtLink extends SwtControl implements ILink {
 
     @Override
     void register() {
-        ((SwtControl) super.getImpl()).register();
-        ((SwtDisplay) display.getImpl()).addWidget(scrollView, this);
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(scrollView, this.getApi());
     }
 
     @Override
     void releaseHandle() {
-        ((SwtControl) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (scrollView != null)
             scrollView.release();
         scrollView = null;
@@ -570,7 +570,7 @@ public class SwtLink extends SwtControl implements ILink {
 
     @Override
     void releaseWidget() {
-        ((SwtControl) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         offsets = null;
         ids = null;
         mnemonics = null;
@@ -608,7 +608,7 @@ public class SwtLink extends SwtControl implements ILink {
 
     @Override
     void scrollWheel(long id, long sel, long theEvent) {
-        ((SwtControl) super.getImpl()).scrollWheel(id, sel, theEvent);
+        super.scrollWheel(id, sel, theEvent);
         ((SwtComposite) parent.getImpl()).scrollWheel(parent.view.id, sel, theEvent);
     }
 
@@ -616,12 +616,12 @@ public class SwtLink extends SwtControl implements ILink {
     void sendFocusEvent(int type) {
         if (focusIndex != -1)
             redrawWidget(getApi().view, false);
-        ((SwtControl) super.getImpl()).sendFocusEvent(type);
+        super.sendFocusEvent(type);
     }
 
     @Override
     boolean sendKeyEvent(int type, Event event) {
-        boolean result = ((SwtWidget) super.getImpl()).sendKeyEvent(type, event);
+        boolean result = super.sendKeyEvent(type, event);
         if (!result)
             return result;
         if (focusIndex == -1)
@@ -666,7 +666,7 @@ public class SwtLink extends SwtControl implements ILink {
                 mouseMoved(getApi().view.id, OS.sel_mouseMoved_, nsEvent.id);
             }
         }
-        return ((SwtControl) super.getImpl()).sendMouseEvent(nsEvent, type, send);
+        return super.sendMouseEvent(nsEvent, type, send);
     }
 
     void setBackground(NSColor nsColor) {
@@ -814,7 +814,7 @@ public class SwtLink extends SwtControl implements ILink {
 
     @Override
     void setZOrder() {
-        ((SwtControl) super.getImpl()).setZOrder();
+        super.setZOrder();
         if (scrollView != null)
             scrollView.setDocumentView(getApi().view);
     }
@@ -853,7 +853,7 @@ public class SwtLink extends SwtControl implements ILink {
     int traversalCode(int key, NSEvent theEvent) {
         if (offsets.length == 0)
             return 0;
-        int bits = ((SwtControl) super.getImpl()).traversalCode(key, theEvent);
+        int bits = super.traversalCode(key, theEvent);
         if (key == 48 && /* Tab */
         theEvent != null) {
             long modifierFlags = theEvent.modifierFlags();
@@ -870,7 +870,7 @@ public class SwtLink extends SwtControl implements ILink {
 
     @Override
     void updateCursorRects(boolean enabled) {
-        ((SwtControl) super.getImpl()).updateCursorRects(enabled);
+        super.updateCursorRects(enabled);
         if (scrollView == null)
             return;
         updateCursorRects(enabled, scrollView);

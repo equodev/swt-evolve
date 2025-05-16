@@ -68,7 +68,7 @@ public final class SwtPoint implements Serializable, IPoint {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
+        if (object == this.getApi())
             return true;
         if (!(object instanceof Point p))
             return false;

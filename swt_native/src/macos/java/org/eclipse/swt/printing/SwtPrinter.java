@@ -338,7 +338,7 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
             if (data != null) {
                 if (isGCCreated)
                     SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-                data.device = this;
+                data.device = this.getApi();
                 data.background = getSystemColor(SWT.COLOR_WHITE).handle;
                 data.foreground = getSystemColor(SWT.COLOR_BLACK).handle;
                 data.font = getSystemFont();

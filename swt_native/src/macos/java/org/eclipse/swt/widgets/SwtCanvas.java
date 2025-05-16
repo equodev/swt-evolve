@@ -71,7 +71,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
     long attributedSubstringFromRange(long id, long sel, long range) {
         if (ime != null)
             return ((SwtIME) ime.getImpl()).attributedSubstringFromRange(id, sel, range);
-        return ((SwtWidget) super.getImpl()).attributedSubstringFromRange(id, sel, range);
+        return super.attributedSubstringFromRange(id, sel, range);
     }
 
     @Override
@@ -83,7 +83,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
                 ((SwtCaret) caret.getImpl()).killFocus();
             }
         }
-        ((SwtControl) super.getImpl()).sendFocusEvent(type);
+        super.sendFocusEvent(type);
     }
 
     /**
@@ -120,7 +120,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
     long characterIndexForPoint(long id, long sel, long point) {
         if (ime != null)
             return ((SwtIME) ime.getImpl()).characterIndexForPoint(id, sel, point);
-        return ((SwtWidget) super.getImpl()).characterIndexForPoint(id, sel, point);
+        return super.characterIndexForPoint(id, sel, point);
     }
 
     /**
@@ -150,7 +150,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
 
     @Override
     void drawBackground(long id, NSGraphicsContext context, NSRect rect) {
-        ((SwtComposite) super.getImpl()).drawBackground(id, context, rect);
+        super.drawBackground(id, context, rect);
         if (glcontext != null) {
             if (isObscured()) {
                 glcontext.setValues(new int[] { -1 }, OS.NSOpenGLCPSurfaceOrder);
@@ -174,14 +174,14 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
     void drawRect(long id, long sel, NSRect rect) {
         if (glcontext != null && glcontext.view() == null)
             glcontext.setView(getApi().view);
-        ((SwtWidget) super.getImpl()).drawRect(id, sel, rect);
+        super.drawRect(id, sel, rect);
     }
 
     @Override
     void drawWidget(long id, NSGraphicsContext context, NSRect rect) {
         if (id != getApi().view.id)
             return;
-        ((SwtControl) super.getImpl()).drawWidget(id, context, rect);
+        super.drawWidget(id, context, rect);
         if (caret == null)
             return;
         if (((SwtCaret) caret.getImpl()).isShowing) {
@@ -240,7 +240,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
     NSRect firstRectForCharacterRange(long id, long sel, long range) {
         if (ime != null)
             return ((SwtIME) ime.getImpl()).firstRectForCharacterRange(id, sel, range);
-        return ((SwtWidget) super.getImpl()).firstRectForCharacterRange(id, sel, range);
+        return super.firstRectForCharacterRange(id, sel, range);
     }
 
     /**
@@ -287,7 +287,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
     boolean hasMarkedText(long id, long sel) {
         if (ime != null)
             return ((SwtIME) ime.getImpl()).hasMarkedText(id, sel);
-        return ((SwtWidget) super.getImpl()).hasMarkedText(id, sel);
+        return super.hasMarkedText(id, sel);
     }
 
     @Override
@@ -301,21 +301,21 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
             if (!((SwtIME) ime.getImpl()).insertText(id, sel, string))
                 return false;
         }
-        return ((SwtControl) super.getImpl()).insertText(id, sel, string);
+        return super.insertText(id, sel, string);
     }
 
     @Override
     boolean isOpaque(long id, long sel) {
         if (glcontext != null)
             return true;
-        return ((SwtComposite) super.getImpl()).isOpaque(id, sel);
+        return super.isOpaque(id, sel);
     }
 
     @Override
     NSRange markedRange(long id, long sel) {
         if (ime != null)
             return ((SwtIME) ime.getImpl()).markedRange(id, sel);
-        return ((SwtWidget) super.getImpl()).markedRange(id, sel);
+        return super.markedRange(id, sel);
     }
 
     @Override
@@ -346,7 +346,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         }
         if (newSelection != null) {
             Accessible acc = getAccessible();
-            acc.internal_accessibilitySetValue_forAttribute(newSelection, OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
+            ((SwtAccessible) acc.getImpl()).internal_accessibilitySetValue_forAttribute(newSelection, OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
             result = true;
         }
         return result;
@@ -362,7 +362,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
             ((SwtWidget) ime.getImpl()).release(false);
             ime = null;
         }
-        ((SwtComposite) super.getImpl()).releaseChildren(destroy);
+        super.releaseChildren(destroy);
     }
 
     @Override
@@ -371,12 +371,12 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
             caret.reskin(flags);
         if (ime != null)
             ime.reskin(flags);
-        ((SwtComposite) super.getImpl()).reskinChildren(flags);
+        super.reskinChildren(flags);
     }
 
     @Override
     void releaseWidget() {
-        ((SwtComposite) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         if (visiblePath != null)
             visiblePath.release();
         visiblePath = null;
@@ -384,7 +384,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
 
     @Override
     void resetVisibleRegion() {
-        ((SwtControl) super.getImpl()).resetVisibleRegion();
+        super.resetVisibleRegion();
         if (visiblePath != null)
             visiblePath.release();
         visiblePath = null;
@@ -535,14 +535,14 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
     NSRange selectedRange(long id, long sel) {
         if (ime != null)
             return ((SwtIME) ime.getImpl()).selectedRange(id, sel);
-        return ((SwtWidget) super.getImpl()).selectedRange(id, sel);
+        return super.selectedRange(id, sel);
     }
 
     @Override
     boolean sendKeyEvent(NSEvent nsEvent, int type) {
         if (caret != null)
             NSCursor.setHiddenUntilMouseMoves(true);
-        return ((SwtWidget) super.getImpl()).sendKeyEvent(nsEvent, type);
+        return super.sendKeyEvent(nsEvent, type);
     }
 
     /**
@@ -629,14 +629,14 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
             if (!((SwtIME) ime.getImpl()).setMarkedText_selectedRange(id, sel, string, range))
                 return false;
         }
-        return ((SwtWidget) super.getImpl()).setMarkedText_selectedRange(id, sel, string, range);
+        return super.setMarkedText_selectedRange(id, sel, string, range);
     }
 
     @Override
     long validAttributesForMarkedText(long id, long sel) {
         if (ime != null)
             return ((SwtIME) ime.getImpl()).validAttributesForMarkedText(id, sel);
-        return ((SwtWidget) super.getImpl()).validAttributesForMarkedText(id, sel);
+        return super.validAttributesForMarkedText(id, sel);
     }
 
     @Override
@@ -647,13 +647,13 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
                 // This returns null if there are no additional overrides. Since this is only checked to see if there is
                 // a StyledText or other control that supports reading and writing of the selection there's no need to bother
                 // with checking the default values. They will be picked up in the default implementation.
-                NSArray attributes = acc.internal_accessibilityAttributeNames(ACC.CHILDID_SELF);
+                NSArray attributes = ((SwtAccessible) acc.getImpl()).internal_accessibilityAttributeNames(ACC.CHILDID_SELF);
                 if (attributes != null) {
                     boolean canReturn = attributes.containsObject(OS.NSAccessibilitySelectedTextAttribute);
-                    boolean canSend = acc.internal_accessibilityIsAttributeSettable(OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
+                    boolean canSend = ((SwtAccessible) acc.getImpl()).internal_accessibilityIsAttributeSettable(OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
                     boolean canHandlePBoardType = supportedPboardTypes.containsObject(new id(sendType)) && supportedPboardTypes.containsObject(new id(returnType));
                     if (canReturn && canSend && canHandlePBoardType) {
-                        id selection = acc.internal_accessibilityAttributeValue(OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
+                        id selection = ((SwtAccessible) acc.getImpl()).internal_accessibilityAttributeValue(OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
                         if (selection != null) {
                             NSString selectionString = new NSString(selection);
                             if (selectionString.length() > 0)
@@ -663,7 +663,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
                 }
             }
         }
-        return ((SwtWidget) super.getImpl()).validRequestorForSendType(id, sel, sendType, returnType);
+        return super.validRequestorForSendType(id, sel, sendType, returnType);
     }
 
     @Override
@@ -674,7 +674,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
 
     @Override
     void viewWillMoveToWindow(long id, long sel, long arg0) {
-        ((SwtWidget) super.getImpl()).viewWillMoveToWindow(id, sel, arg0);
+        super.viewWillMoveToWindow(id, sel, arg0);
         if (glcontext != null && id == getApi().view.id && arg0 != 0) {
             Widget newShell = ((SwtDisplay) display.getImpl()).getWidget(new NSWindow(arg0).contentView());
             if (newShell instanceof Shell) {
@@ -714,7 +714,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         boolean result = false;
         if (type.isEqualToString(OS.NSPasteboardTypeString)) {
             Accessible acc = getAccessible();
-            id selection = acc.internal_accessibilityAttributeValue(OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
+            id selection = ((SwtAccessible) acc.getImpl()).internal_accessibilityAttributeValue(OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
             if (selection != null) {
                 NSString selectionString = new NSString(selection);
                 if (selectionString.length() > 0)

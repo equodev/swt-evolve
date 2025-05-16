@@ -103,7 +103,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
     public SwtCoolItem(CoolBar parent, int style) {
         super(parent, style);
         this.parent = parent;
-        ((SwtCoolBar) parent.getImpl()).createItem(this, parent.getItemCount());
+        ((SwtCoolBar) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
         calculateChevronTrim();
     }
 
@@ -142,7 +142,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
     public SwtCoolItem(CoolBar parent, int style, int index) {
         super(parent, style);
         this.parent = parent;
-        ((SwtCoolBar) parent.getImpl()).createItem(this, index);
+        ((SwtCoolBar) parent.getImpl()).createItem(this.getApi(), index);
         calculateChevronTrim();
     }
 
@@ -253,7 +253,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
 	 * Must call parent.destroyItem() before super.dispose(), since it needs to
 	 * query the bounds to properly remove the item.
 	 */
-        ((SwtCoolBar) parent.getImpl()).destroyItem(this);
+        ((SwtCoolBar) parent.getImpl()).destroyItem(this.getApi());
         super.dispose();
         parent = null;
         control = null;

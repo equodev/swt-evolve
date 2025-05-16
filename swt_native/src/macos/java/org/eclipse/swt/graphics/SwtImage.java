@@ -1101,7 +1101,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
+        if (object == this.getApi())
             return true;
         if (!(object instanceof Image image))
             return false;
@@ -1171,7 +1171,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         int red = (alphaInfo.transparentPixel >> 16) & 0xFF;
         int green = (alphaInfo.transparentPixel >> 8) & 0xFF;
         int blue = (alphaInfo.transparentPixel >> 0) & 0xFF;
-        return Color.cocoa_new(device, new double[] { red / 255f, green / 255f, blue / 255f, 1 });
+        return SwtColor.cocoa_new(device, new double[] { red / 255f, green / 255f, blue / 255f, 1 });
     }
 
     /**
@@ -1338,7 +1338,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
     }
 
     NSBitmapImageRep createImageRep(NSSize targetSize) {
-        return ImageUtil.createImageRep(this, targetSize);
+        return ImageUtil.createImageRep(this.getApi(), targetSize);
     }
 
     /**
@@ -1554,7 +1554,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                 data.background = ((SwtDevice) device.getImpl()).COLOR_WHITE.handle;
                 data.foreground = ((SwtDevice) device.getImpl()).COLOR_BLACK.handle;
                 data.font = ((SwtDevice) device.getImpl()).systemFont;
-                data.image = this;
+                data.image = this.getApi();
             }
             return context.id;
         } finally {

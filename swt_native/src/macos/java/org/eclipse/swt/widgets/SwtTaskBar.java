@@ -42,9 +42,9 @@ public class SwtTaskBar extends SwtWidget implements ITaskBar {
 
     SwtTaskBar(Display display, int style) {
         if (display == null)
-            display = Display.getCurrent();
+            display = SwtDisplay.getCurrent();
         if (display == null)
-            display = Display.getDefault();
+            display = SwtDisplay.getDefault();
         if (!((SwtDisplay) display.getImpl()).isValidThread()) {
             error(SWT.ERROR_THREAD_INVALID_ACCESS);
         }
@@ -144,7 +144,7 @@ public class SwtTaskBar extends SwtWidget implements ITaskBar {
         }
         TaskItem item = null;
         if (shell == null) {
-            item = new TaskItem(this, SWT.NONE);
+            item = new TaskItem(this.getApi(), SWT.NONE);
         } else {
             // on the Mac only the application item is supported
             //		TaskBarItem item = new TaskBarItem (this, SWT.NONE);
@@ -188,13 +188,13 @@ public class SwtTaskBar extends SwtWidget implements ITaskBar {
             }
             items = null;
         }
-        ((SwtWidget) super.getImpl()).releaseChildren(destroy);
+        super.releaseChildren(destroy);
     }
 
     @Override
     void releaseParent() {
-        ((SwtWidget) super.getImpl()).releaseParent();
-        if (((SwtDisplay) display.getImpl()).taskBar == this)
+        super.releaseParent();
+        if (((SwtDisplay) display.getImpl()).taskBar == this.getApi())
             ((SwtDisplay) display.getImpl()).taskBar = null;
     }
 
@@ -207,7 +207,7 @@ public class SwtTaskBar extends SwtWidget implements ITaskBar {
                     item.reskin(flags);
             }
         }
-        ((SwtWidget) super.getImpl()).reskinChildren(flags);
+        super.reskinChildren(flags);
     }
 
     public TaskBar getApi() {

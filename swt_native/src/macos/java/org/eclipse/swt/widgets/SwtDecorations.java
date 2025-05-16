@@ -206,16 +206,16 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
 
     @Override
     Widget computeTabGroup() {
-        return this;
+        return this.getApi();
     }
 
     @Override
     Control computeTabRoot() {
-        return this;
+        return this.getApi();
     }
 
     void fixDecorations(Decorations newDecorations, Control control, Menu[] menus) {
-        if (this == newDecorations)
+        if (this.getApi() == newDecorations)
             return;
         if (control == savedFocus)
             savedFocus = null;
@@ -412,7 +412,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
 
     @Override
     Decorations menuShell() {
-        return this;
+        return this.getApi();
     }
 
     @Override
@@ -425,8 +425,8 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
         if (display == null || display.isDisposed()) {
             return;
         }
-        ((SwtCanvas) super.getImpl()).releaseChildren(destroy);
-        Menu[] menus = ((SwtDisplay) display.getImpl()).getMenus(this);
+        super.releaseChildren(destroy);
+        Menu[] menus = ((SwtDisplay) display.getImpl()).getMenus(this.getApi());
         if (menus != null) {
             for (int i = 0; i < menus.length; i++) {
                 Menu menu = menus[i];
@@ -440,7 +440,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
 
     @Override
     void releaseWidget() {
-        ((SwtCanvas) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         image = null;
         images = null;
         savedFocus = null;
@@ -451,7 +451,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
     void reskinChildren(int flags) {
         if (menuBar != null)
             menuBar.reskin(flags);
-        Menu[] menus = ((SwtDisplay) display.getImpl()).getMenus(this);
+        Menu[] menus = ((SwtDisplay) display.getImpl()).getMenus(this.getApi());
         if (menus != null) {
             for (int i = 0; i < menus.length; i++) {
                 Menu menu = menus[i];
@@ -459,7 +459,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
                     menu.reskin(flags);
             }
         }
-        ((SwtCanvas) super.getImpl()).reskinChildren(flags);
+        super.reskinChildren(flags);
     }
 
     boolean restoreFocus() {
@@ -472,7 +472,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
 
     void saveFocus() {
         Control control = ((SwtDisplay) display.getImpl())._getFocusControl(getApi().view.window());
-        if (control != null && control != this && this == ((SwtControl) control.getImpl()).menuShell()) {
+        if (control != null && control != this.getApi() && this.getApi() == ((SwtControl) control.getImpl()).menuShell()) {
             setSavedFocus(control);
         }
     }
@@ -507,7 +507,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
         if (button != null) {
             if (button.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if (((SwtControl) button.getImpl()).menuShell() != this)
+            if (((SwtControl) button.getImpl()).menuShell() != this.getApi())
                 error(SWT.ERROR_INVALID_PARENT);
             if ((((SwtWidget) button.getImpl()).style & SWT.PUSH) == 0)
                 return;
@@ -654,7 +654,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
                 error(SWT.ERROR_INVALID_ARGUMENT);
             if ((((SwtWidget) menu.getImpl()).style & SWT.BAR) == 0)
                 error(SWT.ERROR_MENU_NOT_BAR);
-            if (((SwtMenu) menu.getImpl()).parent != this)
+            if (((SwtMenu) menu.getImpl()).parent != this.getApi())
                 error(SWT.ERROR_INVALID_PARENT);
         }
         menuBar = menu;

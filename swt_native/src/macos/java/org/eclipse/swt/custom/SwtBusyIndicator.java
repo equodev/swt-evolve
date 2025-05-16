@@ -58,7 +58,7 @@ public class SwtBusyIndicator implements IBusyIndicator {
         if (runnable == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (display == null) {
-            display = Display.getCurrent();
+            display = SwtDisplay.getCurrent();
             if (display == null) {
                 runnable.run();
                 return;
@@ -94,7 +94,7 @@ public class SwtBusyIndicator implements IBusyIndicator {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
         if (!future.isDone()) {
-            Display display = Display.getCurrent();
+            Display display = SwtDisplay.getCurrent();
             if (display == null || display.isDisposed()) {
                 try {
                     future.get();
@@ -234,7 +234,7 @@ public class SwtBusyIndicator implements IBusyIndicator {
         if (executor instanceof Display) {
             throw new IllegalArgumentException("passing a Display as an executor is not allowed!");
         }
-        Display display = Display.findDisplay(Thread.currentThread());
+        Display display = SwtDisplay.findDisplay(Thread.currentThread());
         if (display == null) {
             try {
                 V inplaceResult = action.call();

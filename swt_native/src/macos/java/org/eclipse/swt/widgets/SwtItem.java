@@ -156,7 +156,7 @@ public abstract class SwtItem extends SwtWidget implements IItem {
 
     @Override
     void releaseWidget() {
-        ((SwtWidget) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         text = null;
         image = null;
     }

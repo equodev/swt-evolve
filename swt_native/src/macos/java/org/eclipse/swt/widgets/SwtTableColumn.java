@@ -85,7 +85,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
     public SwtTableColumn(Table parent, int style) {
         super(parent, checkStyle(style));
         this.parent = parent;
-        ((SwtTable) parent.getImpl()).createItem(this, ((SwtTable) parent.getImpl()).columnCount);
+        ((SwtTable) parent.getImpl()).createItem(this.getApi(), ((SwtTable) parent.getImpl()).columnCount);
     }
 
     /**
@@ -128,7 +128,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
     public SwtTableColumn(Table parent, int style, int index) {
         super(parent, checkStyle(style));
         this.parent = parent;
-        ((SwtTable) parent.getImpl()).createItem(this, index);
+        ((SwtTable) parent.getImpl()).createItem(this.getApi(), index);
     }
 
     /**
@@ -194,13 +194,13 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
 
     @Override
     void deregister() {
-        ((SwtWidget) super.getImpl()).deregister();
+        super.deregister();
         ((SwtDisplay) display.getImpl()).removeWidget(nsColumn.headerCell());
     }
 
     @Override
     void destroyWidget() {
-        ((SwtTable) parent.getImpl()).destroyItem(this);
+        ((SwtTable) parent.getImpl()).destroyItem(this.getApi());
         releaseHandle();
     }
 
@@ -249,7 +249,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
         NSAttributedString attrString = null;
         NSTableHeaderCell headerCell = nsColumn.headerCell();
         if (displayText != null) {
-            Font font = Font.cocoa_new(display, headerCell.font());
+            Font font = SwtFont.cocoa_new(display, headerCell.font());
             attrString = ((SwtControl) parent.getImpl()).createString(displayText, font, ((SwtTable) parent.getImpl()).getHeaderForegroundColor().handle, SWT.LEFT, false, (((SwtWidget) parent.getImpl()).state & DISABLED) == 0, false);
             stringSize = attrString.size();
             contentWidth += Math.ceil(stringSize.width);
@@ -297,7 +297,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
             imageSize = image.handle.size();
             contentWidth += Math.ceil(imageSize.width);
         }
-        if (((SwtTable) parent.getImpl()).sortColumn == this && ((SwtTable) parent.getImpl()).sortDirection != SWT.NONE) {
+        if (((SwtTable) parent.getImpl()).sortColumn == this.getApi() && ((SwtTable) parent.getImpl()).sortDirection != SWT.NONE) {
             boolean ascending = ((SwtTable) parent.getImpl()).sortDirection == SWT.UP;
             if (((SwtTable) parent.getImpl()).headerBackground != null || ((SwtTable) parent.getImpl()).headerForeground != null) {
                 NSRect sortIndicatorRect = headerCell.sortIndicatorRectForBounds(cellRect);
@@ -534,13 +534,13 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
             NSSize imageSize = image.handle.size();
             width += Math.ceil(imageSize.width) + MARGIN;
         }
-        if (((SwtTable) parent.getImpl()).sortColumn == this && ((SwtTable) parent.getImpl()).sortDirection != SWT.NONE) {
+        if (((SwtTable) parent.getImpl()).sortColumn == this.getApi() && ((SwtTable) parent.getImpl()).sortDirection != SWT.NONE) {
             NSRect sortRect = headerCell.sortIndicatorRectForBounds(new NSRect());
             width += Math.ceil(sortRect.width + 2 * MARGIN);
         }
         /* compute item widths down column */
         GC gc = new GC(parent);
-        int index = parent.indexOf(this);
+        int index = parent.indexOf(this.getApi());
         width = Math.max(width, ((SwtTable) parent.getImpl()).calculateWidth(((SwtTable) parent.getImpl()).items, index, gc));
         gc.dispose();
         setWidth(width);
@@ -548,7 +548,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
 
     @Override
     void releaseHandle() {
-        ((SwtWidget) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (nsColumn != null) {
             nsColumn.headerCell().release();
             nsColumn.release();
@@ -559,8 +559,8 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
 
     @Override
     void releaseWidget() {
-        ((SwtItem) super.getImpl()).releaseWidget();
-        if (((SwtTable) parent.getImpl()).sortColumn == this) {
+        super.releaseWidget();
+        if (((SwtTable) parent.getImpl()).sortColumn == this.getApi()) {
             ((SwtTable) parent.getImpl()).sortColumn = null;
         }
     }
@@ -638,7 +638,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
         checkWidget();
         if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
             return;
-        int index = parent.indexOf(this);
+        int index = parent.indexOf(this.getApi());
         if (index == -1 || index == 0)
             return;
         style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
@@ -764,7 +764,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
     public void setToolTipText(String string) {
         checkWidget();
         toolTipText = string;
-        ((SwtControl) parent.getImpl()).checkToolTip(this);
+        ((SwtControl) parent.getImpl()).checkToolTip(this.getApi());
     }
 
     /**

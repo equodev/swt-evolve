@@ -176,7 +176,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     void _addListener(int eventType, Listener listener) {
-        ((SwtWidget) super.getImpl())._addListener(eventType, listener);
+        super._addListener(eventType, listener);
         clearCachedWidth(items);
     }
 
@@ -195,7 +195,7 @@ public class SwtTree extends SwtComposite implements ITree {
         TreeItem item = items[index];
         if (item != null || (style & SWT.VIRTUAL) == 0 || !create)
             return item;
-        item = new TreeItem(this, parentItem, SWT.NONE, index, false);
+        item = new TreeItem(this.getApi(), parentItem, SWT.NONE, index, false);
         items[index] = item;
         return item;
     }
@@ -213,7 +213,7 @@ public class SwtTree extends SwtComposite implements ITree {
         // The check column is meant to appear as a part of the first column.
         if (attributeName.isEqualToString(OS.NSAccessibilityColumnsAttribute) || attributeName.isEqualToString(OS.NSAccessibilityVisibleColumnsAttribute)) {
             if ((style & SWT.CHECK) != 0) {
-                long superValue = ((SwtComposite) super.getImpl()).accessibilityAttributeValue(id, sel, arg0);
+                long superValue = super.accessibilityAttributeValue(id, sel, arg0);
                 if (superValue != 0) {
                     NSArray columns = new NSArray(superValue);
                     NSMutableArray columnsWithoutCheck = NSMutableArray.arrayWithCapacity(columns.count() - 1);
@@ -226,7 +226,7 @@ public class SwtTree extends SwtComposite implements ITree {
         if (returnValue != 0) {
             return returnValue;
         } else {
-            return ((SwtComposite) super.getImpl()).accessibilityAttributeValue(id, sel, arg0);
+            return super.accessibilityAttributeValue(id, sel, arg0);
         }
     }
 
@@ -303,7 +303,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     NSSize cellSize(long id, long sel) {
-        NSSize size = ((SwtWidget) super.getImpl()).cellSize(id, sel);
+        NSSize size = super.cellSize(id, sel);
         NSCell cell = new NSCell(id);
         NSImage image = cell.image();
         if (image != null)
@@ -328,7 +328,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     boolean canDragRowsWithIndexes_atPoint(long id, long sel, long rowIndexes, NSPoint mouseDownPoint) {
-        if (!((SwtWidget) super.getImpl()).canDragRowsWithIndexes_atPoint(id, sel, rowIndexes, mouseDownPoint))
+        if (!super.canDragRowsWithIndexes_atPoint(id, sel, rowIndexes, mouseDownPoint))
             return false;
         // If the current row is not selected and the user is not attempting to modify the selection, select the row first.
         NSTableView widget = (NSTableView) getApi().view;
@@ -509,7 +509,7 @@ public class SwtTree extends SwtComposite implements ITree {
         if (!ignoreExpand)
             ((SwtTreeItem) item.getImpl()).sendExpand(false, children);
         ignoreExpand = true;
-        ((SwtWidget) super.getImpl()).collapseItem_collapseChildren(id, sel, itemID, children);
+        super.collapseItem_collapseChildren(id, sel, itemID, children);
         ignoreExpand = false;
         if (isDisposed() || item.isDisposed())
             return;
@@ -522,7 +522,7 @@ public class SwtTree extends SwtComposite implements ITree {
             if (point.x <= getCheckColumnWidth() && point.y < headerView.frame().height)
                 return 1;
         }
-        return ((SwtWidget) super.getImpl()).columnAtPoint(id, sel, point);
+        return super.columnAtPoint(id, sel, point);
     }
 
     @Override
@@ -535,7 +535,7 @@ public class SwtTree extends SwtComposite implements ITree {
                     width += columns[i].getWidth();
                 }
             } else {
-                GC gc = new GC(this);
+                GC gc = new GC(this.getApi());
                 width = calculateWidth(items, 0, gc, true) + CELL_GAP;
                 gc.dispose();
             }
@@ -811,7 +811,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     void createWidget() {
-        ((SwtScrollable) super.getImpl()).createWidget();
+        super.createWidget();
         items = new TreeItem[4];
         columns = new TreeColumn[4];
     }
@@ -839,7 +839,7 @@ public class SwtTree extends SwtComposite implements ITree {
             if (((NSTableView) getApi().view).selectedRow() != -1)
                 return;
         }
-        ((SwtWidget) super.getImpl()).deselectAll(id, sel, sender);
+        super.deselectAll(id, sel, sender);
     }
 
     @Override
@@ -850,7 +850,7 @@ public class SwtTree extends SwtComposite implements ITree {
             if (((NSTableView) getApi().view).selectedRow() == index)
                 return;
         }
-        ((SwtWidget) super.getImpl()).deselectRow(id, sel, index);
+        super.deselectRow(id, sel, index);
     }
 
     /**
@@ -871,7 +871,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     void deregister() {
-        ((SwtScrollable) super.getImpl()).deregister();
+        super.deregister();
         ((SwtDisplay) display.getImpl()).removeWidget(headerView);
         ((SwtDisplay) display.getImpl()).removeWidget(dataCell);
         if (buttonCell != null)
@@ -1064,7 +1064,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     void drawBackgroundInClipRect(long id, long sel, NSRect rect) {
-        ((SwtWidget) super.getImpl()).drawViewBackgroundInRect(id, sel, rect);
+        super.drawViewBackgroundInRect(id, sel, rect);
         if (id != getApi().view.id)
             return;
         fillBackground(getApi().view, NSGraphicsContext.currentContext(), rect, -1);
@@ -1107,10 +1107,10 @@ public class SwtTree extends SwtComposite implements ITree {
         boolean hasFocus = hasFocus();
         Color selectionBackground = null, selectionForeground = null;
         if (isSelected && (hooksErase || hooksPaint)) {
-            selectionForeground = Color.cocoa_new(display, (hasFocus || Display.APPEARANCE.Dark == ((SwtDisplay) display.getImpl()).appAppearance) ? ((SwtDisplay) display.getImpl()).alternateSelectedControlTextColor : ((SwtDisplay) display.getImpl()).selectedControlTextColor);
-            selectionBackground = Color.cocoa_new(display, hasFocus ? ((SwtDisplay) display.getImpl()).getAlternateSelectedControlColor() : ((SwtDisplay) display.getImpl()).getSecondarySelectedControlColor());
+            selectionForeground = SwtColor.cocoa_new(display, (hasFocus || Display.APPEARANCE.Dark == ((SwtDisplay) display.getImpl()).appAppearance) ? ((SwtDisplay) display.getImpl()).alternateSelectedControlTextColor : ((SwtDisplay) display.getImpl()).selectedControlTextColor);
+            selectionBackground = SwtColor.cocoa_new(display, hasFocus ? ((SwtDisplay) display.getImpl()).getAlternateSelectedControlColor() : ((SwtDisplay) display.getImpl()).getSecondarySelectedControlColor());
         }
-        NSSize contentSize = ((SwtWidget) super.getImpl()).cellSize(id, OS.sel_cellSize);
+        NSSize contentSize = super.cellSize(id, OS.sel_cellSize);
         NSImage image = cell.image();
         if (image != null)
             contentSize.width += imageBounds.width + IMAGE_GAP;
@@ -1147,7 +1147,7 @@ public class SwtTree extends SwtComposite implements ITree {
             transform.concat();
             GCData data = new GCData();
             data.paintRect = cellRect;
-            GC gc = GC.cocoa_new(this, data);
+            GC gc = SwtGC.cocoa_new(this.getApi(), data);
             gc.setFont(item.getFont(columnIndex));
             Color fg;
             if (isSelected && ((style & SWT.HIDE_SELECTION) == 0 || hasFocus)) {
@@ -1183,7 +1183,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 drawSelection = drawSelection && (event.detail & SWT.SELECTED) != 0;
             }
             if (!drawSelection && isSelected) {
-                userForeground = Color.cocoa_new(display, gc.getForeground().handle);
+                userForeground = SwtColor.cocoa_new(display, gc.getForeground().handle);
             }
             if (isDisposed() || item.isDisposed()) {
                 gc.dispose();
@@ -1225,7 +1225,7 @@ public class SwtTree extends SwtComposite implements ITree {
             NSRect contentRect = cell.titleRectForBounds(rect);
             GCData data = new GCData();
             data.paintRect = contentRect;
-            GC gc = GC.cocoa_new(this, data);
+            GC gc = SwtGC.cocoa_new(this.getApi(), data);
             gc.setClipping((int) (contentRect.x - offsetX), (int) (contentRect.y - offsetY), (int) contentRect.width, (int) contentRect.height);
             Rectangle itemRect = insertItem.getImageBounds(0).union(insertItem.getBounds());
             Rectangle clientRect = getClientArea();
@@ -1311,7 +1311,7 @@ public class SwtTree extends SwtComposite implements ITree {
                     rect.y += (rect.height - size.height) / 2;
                     rect.height = size.height;
                 }
-                ((SwtWidget) super.getImpl()).drawInteriorWithFrame_inView(id, sel, rect, view);
+                super.drawInteriorWithFrame_inView(id, sel, rect, view);
             }
         }
         if (hooksPaint) {
@@ -1321,7 +1321,7 @@ public class SwtTree extends SwtComposite implements ITree {
             transform.concat();
             GCData data = new GCData();
             data.paintRect = cellRect;
-            GC gc = GC.cocoa_new(this, data);
+            GC gc = SwtGC.cocoa_new(this.getApi(), data);
             gc.setFont(item.getFont(columnIndex));
             if (drawSelection) {
                 gc.setForeground(selectionForeground);
@@ -1360,7 +1360,7 @@ public class SwtTree extends SwtComposite implements ITree {
     @Override
     void drawWithExpansionFrame_inView(long id, long sel, NSRect cellFrame, long view) {
         drawExpansion = true;
-        ((SwtWidget) super.getImpl()).drawWithExpansionFrame_inView(id, sel, cellFrame, view);
+        super.drawWithExpansionFrame_inView(id, sel, cellFrame, view);
         drawExpansion = false;
     }
 
@@ -1372,7 +1372,7 @@ public class SwtTree extends SwtComposite implements ITree {
         if (!ignoreExpand)
             ((SwtTreeItem) item.getImpl()).sendExpand(true, children);
         ignoreExpand = true;
-        ((SwtWidget) super.getImpl()).expandItem_expandChildren(id, sel, itemID, children);
+        super.expandItem_expandChildren(id, sel, itemID, children);
         ignoreExpand = false;
         if (isDisposed() || item.isDisposed())
             return;
@@ -1391,7 +1391,7 @@ public class SwtTree extends SwtComposite implements ITree {
     @Override
     NSRect expansionFrameWithFrame_inView(long id, long sel, NSRect cellRect, long view) {
         if (toolTipText == null) {
-            NSRect rect = ((SwtWidget) super.getImpl()).expansionFrameWithFrame_inView(id, sel, cellRect, view);
+            NSRect rect = super.expansionFrameWithFrame_inView(id, sel, cellRect, view);
             NSCell cell = new NSCell(id);
             NSAttributedString str = cell.attributedStringValue();
             NSSize textSize = str.size();
@@ -1414,7 +1414,7 @@ public class SwtTree extends SwtComposite implements ITree {
                     expansionRect.width = cellSize.width;
                 } else {
                     expansionRect = cell.titleRectForBounds(cellRect);
-                    NSSize cellSize = ((SwtWidget) super.getImpl()).cellSize(id, OS.sel_cellSize);
+                    NSSize cellSize = super.cellSize(id, OS.sel_cellSize);
                     expansionRect.width = cellSize.width;
                 }
                 if (textSize.height > expansionRect.height) {
@@ -1450,7 +1450,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 }
             }
         }
-        return ((SwtControl) super.getImpl()).findTooltip(pt);
+        return super.findTooltip(pt);
     }
 
     int getCheckColumnWidth() {
@@ -1657,7 +1657,7 @@ public class SwtTree extends SwtComposite implements ITree {
     }
 
     private Color getHeaderBackgroundColor() {
-        return headerBackground != null ? Color.cocoa_new(display, headerBackground) : defaultBackground();
+        return headerBackground != null ? SwtColor.cocoa_new(display, headerBackground) : defaultBackground();
     }
 
     /**
@@ -1677,7 +1677,7 @@ public class SwtTree extends SwtComposite implements ITree {
     }
 
     Color getHeaderForegroundColor() {
-        return headerForeground != null ? Color.cocoa_new(display, headerForeground) : defaultForeground();
+        return headerForeground != null ? SwtColor.cocoa_new(display, headerForeground) : defaultForeground();
     }
 
     /**
@@ -2171,7 +2171,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     boolean isTrim(NSView view) {
-        if (((SwtScrollable) super.getImpl()).isTrim(view))
+        if (super.isTrim(view))
             return true;
         return view.id == headerView.id;
     }
@@ -2180,7 +2180,7 @@ public class SwtTree extends SwtComposite implements ITree {
     void keyDown(long id, long sel, long theEvent) {
         ignoreSelect = preventSelect = false;
         keyDown = true;
-        ((SwtComposite) super.getImpl()).keyDown(id, sel, theEvent);
+        super.keyDown(id, sel, theEvent);
         keyDown = false;
     }
 
@@ -2210,7 +2210,7 @@ public class SwtTree extends SwtComposite implements ITree {
             }
             // else that row is currently selected, so don't change anything.
         }
-        return ((SwtControl) super.getImpl()).menuForEvent(id, sel, theEvent);
+        return super.menuForEvent(id, sel, theEvent);
     }
 
     @Override
@@ -2223,7 +2223,7 @@ public class SwtTree extends SwtComposite implements ITree {
             if ((event.modifierFlags() & OS.NSControlKeyMask) != 0)
                 return;
         }
-        ((SwtControl) super.getImpl()).mouseDown(id, sel, theEvent);
+        super.mouseDown(id, sel, theEvent);
     }
 
     @Override
@@ -2258,7 +2258,7 @@ public class SwtTree extends SwtComposite implements ITree {
         didSelect = false;
         if (itemID != null)
             itemID.retain();
-        ((SwtWidget) super.getImpl()).mouseDownSuper(id, sel, theEvent);
+        super.mouseDownSuper(id, sel, theEvent);
         if (itemID != null)
             itemID.release();
         didSelect = false;
@@ -2518,7 +2518,7 @@ public class SwtTree extends SwtComposite implements ITree {
     @Override
     void scrollClipViewToPoint(long id, long sel, long clipView, NSPoint point) {
         if (shouldScroll) {
-            ((SwtScrollable) super.getImpl()).scrollClipViewToPoint(id, sel, clipView, point);
+            super.scrollClipViewToPoint(id, sel, clipView, point);
             if ((style & SWT.CHECK) != 0 && columnCount > 0 && ((NSOutlineView) getApi().view).headerView() != null) {
                 if (point.x <= getCheckColumnWidth()) {
                     /*
@@ -2586,11 +2586,11 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     void register() {
-        ((SwtScrollable) super.getImpl()).register();
-        ((SwtDisplay) display.getImpl()).addWidget(headerView, this);
-        ((SwtDisplay) display.getImpl()).addWidget(dataCell, this);
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(headerView, this.getApi());
+        ((SwtDisplay) display.getImpl()).addWidget(dataCell, this.getApi());
         if (buttonCell != null)
-            ((SwtDisplay) display.getImpl()).addWidget(buttonCell, this);
+            ((SwtDisplay) display.getImpl()).addWidget(buttonCell, this.getApi());
     }
 
     @Override
@@ -2611,12 +2611,12 @@ public class SwtTree extends SwtComposite implements ITree {
             }
             columns = null;
         }
-        ((SwtComposite) super.getImpl()).releaseChildren(destroy);
+        super.releaseChildren(destroy);
     }
 
     @Override
     void releaseHandle() {
-        ((SwtScrollable) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (headerView != null)
             headerView.release();
         headerView = null;
@@ -2636,7 +2636,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     void releaseWidget() {
-        ((SwtComposite) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         sortColumn = null;
     }
 
@@ -2733,7 +2733,7 @@ public class SwtTree extends SwtComposite implements ITree {
                     ((SwtWidget) column.getImpl()).reskinChildren(flags);
             }
         }
-        ((SwtComposite) super.getImpl()).reskinChildren(flags);
+        super.reskinChildren(flags);
     }
 
     @Override
@@ -2837,7 +2837,7 @@ public class SwtTree extends SwtComposite implements ITree {
             if (set.count() == 0)
                 return;
         }
-        ((SwtWidget) super.getImpl()).selectRowIndexes_byExtendingSelection(id, sel, indexes, extend);
+        super.selectRowIndexes_byExtendingSelection(id, sel, indexes, extend);
     }
 
     @Override
@@ -2868,7 +2868,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     boolean sendKeyEvent(NSEvent nsEvent, int type) {
-        boolean result = ((SwtWidget) super.getImpl()).sendKeyEvent(nsEvent, type);
+        boolean result = super.sendKeyEvent(nsEvent, type);
         if (!result)
             return result;
         if (type != SWT.KeyDown)
@@ -2894,7 +2894,7 @@ public class SwtTree extends SwtComposite implements ITree {
         int itemHeight = (int) Math.ceil(widget.rowHeight() + spacing.height);
         GCData data = new GCData();
         data.paintRect = widget.frame();
-        GC gc = GC.cocoa_new(this, data);
+        GC gc = SwtGC.cocoa_new(this.getApi(), data);
         gc.setFont(item.getFont(columnIndex));
         Event event = new Event();
         event.item = item;
@@ -2963,7 +2963,7 @@ public class SwtTree extends SwtComposite implements ITree {
             }
             dragDetected = false;
         }
-        return ((SwtControl) super.getImpl()).sendMouseEvent(nsEvent, type, send);
+        return super.sendMouseEvent(nsEvent, type, send);
     }
 
     void selectItems(TreeItem[] items, boolean ignoreDisposed) {
@@ -3085,7 +3085,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     void setFont(NSFont font) {
-        ((SwtControl) super.getImpl()).setFont(font);
+        super.setFont(font);
         for (int i = 0; i < columnCount; i++) {
             ((SwtTreeColumn) columns[i].getImpl()).nsColumn.headerCell().setFont(font);
         }
@@ -3097,7 +3097,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     void setFrameSize(long id, long sel, NSSize size) {
-        ((SwtControl) super.getImpl()).setFrameSize(id, sel, size);
+        super.setFrameSize(id, sel, size);
         /*
 	 * Bug 577767: Since macOS 10.15, NSTableView has 'autoresizingMask'
 	 * set to follow resizes of its NSClipView. This sometimes causes
@@ -3263,7 +3263,7 @@ public class SwtTree extends SwtComposite implements ITree {
         } else {
             if ((style & SWT.VIRTUAL) == 0) {
                 for (int i = itemCount; i < count; i++) {
-                    new TreeItem(this, parentItem, SWT.NONE, i, true);
+                    new TreeItem(this.getApi(), parentItem, SWT.NONE, i, true);
                 }
             } else {
                 TreeItem[] newItems = new TreeItem[length];
@@ -3375,7 +3375,7 @@ public class SwtTree extends SwtComposite implements ITree {
             return false;
         if (columnCount != 0)
             return false;
-        GC gc = new GC(this);
+        GC gc = new GC(this.getApi());
         int newWidth = calculateWidth(items, 0, gc, recurse);
         gc.dispose();
         if (!set) {
@@ -3397,7 +3397,7 @@ public class SwtTree extends SwtComposite implements ITree {
         TreeItem parentItem = ((SwtTreeItem) item.getImpl()).parentItem;
         if (parentItem != null && !parentItem.getExpanded())
             return false;
-        GC gc = new GC(this);
+        GC gc = new GC(this.getApi());
         int newWidth = ((SwtTreeItem) item.getImpl()).calculateWidth(0, gc);
         gc.dispose();
         int oldWidth = (int) firstColumn.width();
@@ -3632,7 +3632,7 @@ public class SwtTree extends SwtComposite implements ITree {
             error(SWT.ERROR_NULL_ARGUMENT);
         if (column.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        if (((SwtTreeColumn) column.getImpl()).parent != this)
+        if (((SwtTreeColumn) column.getImpl()).parent != this.getApi())
             return;
         if (columnCount <= 1)
             return;
@@ -3738,7 +3738,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     void updateCursorRects(boolean enabled) {
-        ((SwtComposite) super.getImpl()).updateCursorRects(enabled);
+        super.updateCursorRects(enabled);
         if (headerView == null)
             return;
         updateCursorRects(enabled, headerView);

@@ -117,7 +117,7 @@ public class SwtAccessible implements IAccessible {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.parent = parent;
         this.control = ((SwtAccessible) parent.getImpl()).control;
-        delegate = new SWTAccessibleDelegate(this, ACC.CHILDID_SELF);
+        delegate = new SWTAccessibleDelegate(this.getApi(), ACC.CHILDID_SELF);
     }
 
     /**
@@ -493,7 +493,7 @@ public class SwtAccessible implements IAccessible {
         if (target == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (relations[type] == null) {
-            relations[type] = new Relation(this, type);
+            relations[type] = new Relation(this.getApi(), type);
         }
         relations[type].addTarget(target);
     }
@@ -564,12 +564,12 @@ public class SwtAccessible implements IAccessible {
 
     void createTableDelegate() {
         if (tableDelegate == null) {
-            tableDelegate = new TableAccessibleDelegate(this);
+            tableDelegate = new TableAccessibleDelegate(this.getApi());
         }
     }
 
     id getColumnIndexRangeAttribute(int childID) {
-        AccessibleTableCellEvent event = new AccessibleTableCellEvent(this);
+        AccessibleTableCellEvent event = new AccessibleTableCellEvent(this.getApi());
         for (int i = 0; i < accessibleTableCellListenersSize(); i++) {
             AccessibleTableCellListener listener = accessibleTableCellListeners.get(i);
             listener.getColumnIndex(event);
@@ -582,7 +582,7 @@ public class SwtAccessible implements IAccessible {
     }
 
     id getRowIndexRangeAttribute(int childID) {
-        AccessibleTableCellEvent event = new AccessibleTableCellEvent(this);
+        AccessibleTableCellEvent event = new AccessibleTableCellEvent(this.getApi());
         for (int i = 0; i < accessibleTableCellListenersSize(); i++) {
             AccessibleTableCellListener listener = accessibleTableCellListeners.get(i);
             listener.getRowIndex(event);
@@ -596,7 +596,7 @@ public class SwtAccessible implements IAccessible {
 
     id getSelectedAttribute(int childID) {
         if (accessibleTableListenersSize() > 0) {
-            AccessibleTableEvent event = new AccessibleTableEvent(this);
+            AccessibleTableEvent event = new AccessibleTableEvent(this.getApi());
             event.row = index;
             for (int i = 0; i < accessibleTableListenersSize(); i++) {
                 AccessibleTableListener listener = accessibleTableListeners.get(i);
@@ -616,7 +616,7 @@ public class SwtAccessible implements IAccessible {
 
     id getHeaderAttribute(int childID) {
         id returnValue = null;
-        AccessibleTableEvent tableEvent = new AccessibleTableEvent(this);
+        AccessibleTableEvent tableEvent = new AccessibleTableEvent(this.getApi());
         for (int i = 0; i < accessibleTableListenersSize(); i++) {
             AccessibleTableListener listener = accessibleTableListeners.get(i);
             listener.getColumnHeader(tableEvent);
@@ -630,7 +630,7 @@ public class SwtAccessible implements IAccessible {
         if (accessibleTableListenersSize() == 0)
             return null;
         id returnValue = null;
-        AccessibleTableEvent event = new AccessibleTableEvent(this);
+        AccessibleTableEvent event = new AccessibleTableEvent(this.getApi());
         for (int i = 0; i < accessibleTableListenersSize(); i++) {
             AccessibleTableListener listener = accessibleTableListeners.get(i);
             listener.getVisibleColumns(event);
@@ -651,7 +651,7 @@ public class SwtAccessible implements IAccessible {
         if (accessibleTableListenersSize() == 0)
             return null;
         id returnValue = null;
-        AccessibleTableEvent event = new AccessibleTableEvent(this);
+        AccessibleTableEvent event = new AccessibleTableEvent(this.getApi());
         for (int i = 0; i < accessibleTableListenersSize(); i++) {
             AccessibleTableListener listener = accessibleTableListeners.get(i);
             listener.getVisibleRows(event);
@@ -672,7 +672,7 @@ public class SwtAccessible implements IAccessible {
         if (accessibleTableListenersSize() == 0)
             return null;
         id returnValue = null;
-        AccessibleTableEvent event = new AccessibleTableEvent(this);
+        AccessibleTableEvent event = new AccessibleTableEvent(this.getApi());
         for (int i = 0; i < accessibleTableListenersSize(); i++) {
             AccessibleTableListener listener = accessibleTableListeners.get(i);
             listener.getSelectedRows(event);
@@ -695,7 +695,7 @@ public class SwtAccessible implements IAccessible {
     }
 
     int getRowCount() {
-        AccessibleTableEvent event = new AccessibleTableEvent(this);
+        AccessibleTableEvent event = new AccessibleTableEvent(this.getApi());
         for (int i = 0; i < accessibleTableListenersSize(); i++) {
             AccessibleTableListener listener = accessibleTableListeners.get(i);
             listener.getRowCount(event);
@@ -706,7 +706,7 @@ public class SwtAccessible implements IAccessible {
     id getRowsAttribute(int childID) {
         if (accessibleTableListenersSize() == 0)
             return null;
-        AccessibleTableEvent event = new AccessibleTableEvent(this);
+        AccessibleTableEvent event = new AccessibleTableEvent(this.getApi());
         for (int i = 0; i < accessibleTableListenersSize(); i++) {
             AccessibleTableListener listener = accessibleTableListeners.get(i);
             listener.getRowCount(event);
@@ -737,7 +737,7 @@ public class SwtAccessible implements IAccessible {
         if (accessibleTableListenersSize() == 0)
             return null;
         id returnValue = null;
-        AccessibleTableEvent event = new AccessibleTableEvent(this);
+        AccessibleTableEvent event = new AccessibleTableEvent(this.getApi());
         for (int i = 0; i < accessibleTableListenersSize(); i++) {
             AccessibleTableListener listener = accessibleTableListeners.get(i);
             listener.getSelectedColumns(event);
@@ -760,7 +760,7 @@ public class SwtAccessible implements IAccessible {
     }
 
     int getColumnCount() {
-        AccessibleTableEvent event = new AccessibleTableEvent(this);
+        AccessibleTableEvent event = new AccessibleTableEvent(this.getApi());
         for (int i = 0; i < accessibleTableListenersSize(); i++) {
             AccessibleTableListener listener = accessibleTableListeners.get(i);
             listener.getColumnCount(event);
@@ -771,7 +771,7 @@ public class SwtAccessible implements IAccessible {
     id getColumnsAttribute(int childID) {
         if (accessibleTableListenersSize() == 0)
             return null;
-        AccessibleTableEvent event = new AccessibleTableEvent(this);
+        AccessibleTableEvent event = new AccessibleTableEvent(this.getApi());
         for (int i = 0; i < accessibleTableListenersSize(); i++) {
             AccessibleTableListener listener = accessibleTableListeners.get(i);
             listener.getColumnCount(event);
@@ -814,7 +814,7 @@ public class SwtAccessible implements IAccessible {
         NSString returnValue = NSString.string();
         String actionName = action.getString();
         if (accessibleActionListenersSize() > 0) {
-            AccessibleActionEvent event = new AccessibleActionEvent(this);
+            AccessibleActionEvent event = new AccessibleActionEvent(this.getApi());
             for (int i = 0; i < accessibleActionListenersSize(); i++) {
                 AccessibleActionListener listener = accessibleActionListeners.get(i);
                 listener.getActionCount(event);
@@ -859,7 +859,7 @@ public class SwtAccessible implements IAccessible {
      */
     public NSArray internal_accessibilityActionNames(int childID) {
         if (accessibleActionListenersSize() > 0) {
-            AccessibleActionEvent event = new AccessibleActionEvent(this);
+            AccessibleActionEvent event = new AccessibleActionEvent(this.getApi());
             for (int i = 0; i < accessibleActionListenersSize(); i++) {
                 AccessibleActionListener listener = accessibleActionListeners.get(i);
                 listener.getActionCount(event);
@@ -876,7 +876,7 @@ public class SwtAccessible implements IAccessible {
             return array;
         } else {
             // The supported action list depends on the role played by the control.
-            AccessibleControlEvent event = new AccessibleControlEvent(this);
+            AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
             event.childID = childID;
             event.detail = -1;
             for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -969,7 +969,7 @@ public class SwtAccessible implements IAccessible {
     public NSArray internal_accessibilityAttributeNames(int childID) {
         // The supported attribute set depends on the role played by the control.
         // We may need to add or remove from the base set as needed.
-        AccessibleControlEvent event = new AccessibleControlEvent(this);
+        AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
         event.childID = childID;
         event.detail = -1;
         for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -1377,7 +1377,7 @@ public class SwtAccessible implements IAccessible {
      * @nooverride This method is not intended to be re-implemented or extended by clients.
      */
     public id internal_accessibilityFocusedUIElement(int childID) {
-        AccessibleControlEvent event = new AccessibleControlEvent(this);
+        AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
         // set to invalid value, to test if the application sets it in getFocus()
         event.childID = ACC.CHILDID_MULTIPLE;
         event.accessible = null;
@@ -1415,9 +1415,9 @@ public class SwtAccessible implements IAccessible {
      * @nooverride This method is not intended to be re-implemented or extended by clients.
      */
     public id internal_accessibilityHitTest(NSPoint point, int childID) {
-        AccessibleControlEvent event = new AccessibleControlEvent(this);
+        AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
         event.x = (int) point.x;
-        Monitor primaryMonitor = Display.getCurrent().getPrimaryMonitor();
+        Monitor primaryMonitor = SwtDisplay.getCurrent().getPrimaryMonitor();
         event.y = (int) (primaryMonitor.getBounds().height - point.y);
         // Set an impossible value to determine if anything responded to the event.
         event.childID = ACC.CHILDID_MULTIPLE;
@@ -1451,7 +1451,7 @@ public class SwtAccessible implements IAccessible {
      * @noreference This method is not intended to be referenced by clients.
      */
     public boolean internal_accessibilityIsIgnored(int childID) {
-        AccessibleControlEvent event = new AccessibleControlEvent(this);
+        AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
         event.childID = childID;
         event.detail = -1;
         for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -1478,7 +1478,7 @@ public class SwtAccessible implements IAccessible {
      * @nooverride This method is not intended to be re-implemented or extended by clients.
      */
     public NSArray internal_accessibilityParameterizedAttributeNames(int childID) {
-        AccessibleControlEvent event = new AccessibleControlEvent(this);
+        AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
         event.childID = childID;
         event.detail = -1;
         for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -1536,7 +1536,7 @@ public class SwtAccessible implements IAccessible {
     public boolean internal_accessibilityPerformAction(NSString action, int childID) {
         String actionName = action.getString();
         if (accessibleActionListenersSize() > 0) {
-            AccessibleActionEvent event = new AccessibleActionEvent(this);
+            AccessibleActionEvent event = new AccessibleActionEvent(this.getApi());
             for (int i = 0; i < accessibleActionListenersSize(); i++) {
                 AccessibleActionListener listener = accessibleActionListeners.get(i);
                 listener.getActionCount(event);
@@ -1587,7 +1587,7 @@ public class SwtAccessible implements IAccessible {
         if (attribute.isEqualToString(OS.NSAccessibilityVisibleCharacterRangeAttribute))
             setVisibleCharacterRangeAttribute(value, childId);
         if (accessibleValueListenersSize() > 0) {
-            AccessibleValueEvent event = new AccessibleValueEvent(this);
+            AccessibleValueEvent event = new AccessibleValueEvent(this.getApi());
             NSNumber number = new NSNumber(value);
             event.value = Double.valueOf(number.doubleValue());
             for (int i = 0; i < accessibleValueListenersSize(); i++) {
@@ -1656,7 +1656,7 @@ public class SwtAccessible implements IAccessible {
         // Parameter is an NSRange wrapped in an NSValue.
         NSValue parameterObject = new NSValue(parameter.id);
         NSRange range = parameterObject.rangeValue();
-        AccessibleTextAttributeEvent event = new AccessibleTextAttributeEvent(this);
+        AccessibleTextAttributeEvent event = new AccessibleTextAttributeEvent(this.getApi());
         event.offset = (int) range.location;
         event.start = event.end = -1;
         NSRange attributeRange = new NSRange();
@@ -1740,7 +1740,7 @@ public class SwtAccessible implements IAccessible {
             }
         }
         // Now add the alignment, justification, and indent, if available.
-        AccessibleAttributeEvent docAttributes = new AccessibleAttributeEvent(this);
+        AccessibleAttributeEvent docAttributes = new AccessibleAttributeEvent(this.getApi());
         // if unchanged no listener filled it in.
         docAttributes.indent = Integer.MAX_VALUE;
         for (int i = 0; i < accessibleAttributeListenersSize(); i++) {
@@ -1775,7 +1775,7 @@ public class SwtAccessible implements IAccessible {
         NSRange range = parameterObject.rangeValue();
         NSRect rect = new NSRect();
         if (accessibleTextExtendedListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.childID = childID;
             event.start = (int) range.location;
             event.end = (int) (range.location + range.length);
@@ -1808,7 +1808,7 @@ public class SwtAccessible implements IAccessible {
 
     id getHelpAttribute(int childID) {
         id returnValue = null;
-        AccessibleEvent event = new AccessibleEvent(this);
+        AccessibleEvent event = new AccessibleEvent(this.getApi());
         event.childID = childID;
         for (int i = 0; i < accessibleListenersSize(); i++) {
             AccessibleListener listener = accessibleListeners.get(i);
@@ -1832,7 +1832,7 @@ public class SwtAccessible implements IAccessible {
             NSScreen screen = new NSScreen(screens.objectAtIndex(0));
             NSRect frame = screen.frame();
             point.y = frame.height - point.y;
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.childID = childID;
             event.x = (int) point.x;
             event.y = (int) point.y;
@@ -1852,7 +1852,7 @@ public class SwtAccessible implements IAccessible {
 
     NSString getRoleAttribute(int childID) {
         NSString returnValue = null;
-        AccessibleControlEvent event = new AccessibleControlEvent(this);
+        AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
         event.childID = childID;
         event.detail = -1;
         for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -1871,7 +1871,7 @@ public class SwtAccessible implements IAccessible {
 
     id getSubroleAttribute(int childID) {
         id returnValue = null;
-        AccessibleControlEvent event = new AccessibleControlEvent(this);
+        AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
         event.childID = childID;
         event.detail = -1;
         for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -1891,7 +1891,7 @@ public class SwtAccessible implements IAccessible {
 
     id getRoleDescriptionAttribute(int childID) {
         id returnValue = null;
-        AccessibleControlEvent event = new AccessibleControlEvent(this);
+        AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
         event.childID = childID;
         event.detail = -1;
         for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -1925,7 +1925,7 @@ public class SwtAccessible implements IAccessible {
 		* Feature of the Macintosh.  The text of a Label is returned in its value,
 		* not its title, so ensure that the role is not Label before asking for the title.
 		*/
-        AccessibleControlEvent roleEvent = new AccessibleControlEvent(this);
+        AccessibleControlEvent roleEvent = new AccessibleControlEvent(this.getApi());
         roleEvent.childID = childID;
         roleEvent.detail = -1;
         for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -1933,7 +1933,7 @@ public class SwtAccessible implements IAccessible {
             listener.getRole(roleEvent);
         }
         if (roleEvent.detail != ACC.ROLE_LABEL) {
-            AccessibleEvent event = new AccessibleEvent(this);
+            AccessibleEvent event = new AccessibleEvent(this.getApi());
             event.childID = childID;
             event.result = null;
             for (int i = 0; i < accessibleListenersSize(); i++) {
@@ -1958,14 +1958,14 @@ public class SwtAccessible implements IAccessible {
     id getValueAttribute(int childID) {
         id returnValue = null;
         if (accessibleValueListenersSize() > 0) {
-            AccessibleValueEvent event = new AccessibleValueEvent(this);
+            AccessibleValueEvent event = new AccessibleValueEvent(this.getApi());
             for (int i = 0; i < accessibleValueListenersSize(); i++) {
                 AccessibleValueListener listener = accessibleValueListeners.get(i);
                 listener.getCurrentValue(event);
             }
             returnValue = NSNumber.numberWithDouble(event.value.doubleValue());
         } else {
-            AccessibleControlEvent event = new AccessibleControlEvent(this);
+            AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
             event.childID = childID;
             event.detail = -1;
             //TODO: could pass the OS value to the app
@@ -2007,7 +2007,7 @@ public class SwtAccessible implements IAccessible {
                 case ACC.ROLE_TABFOLDER:
                 case // 1 = selected, 0 = not selected
                 ACC.ROLE_TABITEM:
-                    AccessibleControlEvent ace = new AccessibleControlEvent(this);
+                    AccessibleControlEvent ace = new AccessibleControlEvent(this.getApi());
                     ace.childID = -4;
                     for (int i = 0; i < accessibleControlListenersSize(); i++) {
                         AccessibleControlListener listener = accessibleControlListeners.get(i);
@@ -2039,7 +2039,7 @@ public class SwtAccessible implements IAccessible {
                 case // text in the label
                 ACC.ROLE_LABEL:
                     /* On a Mac, the 'value' of a label is the same as the 'name' of the label. */
-                    AccessibleEvent e = new AccessibleEvent(this);
+                    AccessibleEvent e = new AccessibleEvent(this.getApi());
                     e.childID = childID;
                     e.result = null;
                     for (int i = 0; i < accessibleListenersSize(); i++) {
@@ -2060,7 +2060,7 @@ public class SwtAccessible implements IAccessible {
     }
 
     id getEnabledAttribute(int childID) {
-        AccessibleControlEvent event = new AccessibleControlEvent(this);
+        AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
         event.detail = ACC.STATE_NORMAL;
         event.childID = childID;
         for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -2074,7 +2074,7 @@ public class SwtAccessible implements IAccessible {
     }
 
     id getFocusedAttribute(int childID) {
-        AccessibleControlEvent event = new AccessibleControlEvent(this);
+        AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
         // set to invalid value, to test if the application sets it in getFocus()
         event.childID = ACC.CHILDID_MULTIPLE;
         for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -2116,7 +2116,7 @@ public class SwtAccessible implements IAccessible {
                 returnValue = null;
             }
         } else {
-            returnValue = new id(OS.NSAccessibilityUnignoredAncestor(accessibleHandle(this).id));
+            returnValue = new id(OS.NSAccessibilityUnignoredAncestor(accessibleHandle(this.getApi()).id));
         }
         return returnValue;
     }
@@ -2132,7 +2132,7 @@ public class SwtAccessible implements IAccessible {
                 getRowsAttribute(childID);
                 getColumnsAttribute(childID);
             }
-            AccessibleControlEvent event = new AccessibleControlEvent(this);
+            AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
             event.childID = childID;
             // set to impossible value to test if app resets
             event.detail = -1;
@@ -2180,7 +2180,7 @@ public class SwtAccessible implements IAccessible {
     id getTabsAttribute(int childID) {
         id returnValue = null;
         if (childID == ACC.CHILDID_SELF) {
-            AccessibleControlEvent event = new AccessibleControlEvent(this);
+            AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
             event.childID = childID;
             // set to impossible value to test if app resets
             event.detail = -1;
@@ -2238,14 +2238,14 @@ public class SwtAccessible implements IAccessible {
 
     id getPositionAttribute(int childID) {
         id returnValue = null;
-        AccessibleControlEvent event = new AccessibleControlEvent(this);
+        AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
         event.childID = childID;
         event.width = -1;
         for (int i = 0; i < accessibleControlListenersSize(); i++) {
             AccessibleControlListener listener = accessibleControlListeners.get(i);
             listener.getLocation(event);
         }
-        Monitor primaryMonitor = Display.getCurrent().getPrimaryMonitor();
+        Monitor primaryMonitor = SwtDisplay.getCurrent().getPrimaryMonitor();
         NSPoint osPositionAttribute = new NSPoint();
         if (event.width != -1) {
             // The point returned is the lower-left coordinate of the widget in lower-left relative screen coordinates.
@@ -2270,7 +2270,7 @@ public class SwtAccessible implements IAccessible {
 
     id getSizeAttribute(int childID) {
         id returnValue = null;
-        AccessibleControlEvent event = new AccessibleControlEvent(this);
+        AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
         event.childID = childID;
         event.width = -1;
         for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -2295,7 +2295,7 @@ public class SwtAccessible implements IAccessible {
         id returnValue = null;
         NSArray parameterObject = new NSArray(parameter.id);
         if (parameterObject.count() == 2) {
-            AccessibleTableEvent event = new AccessibleTableEvent(this);
+            AccessibleTableEvent event = new AccessibleTableEvent(this.getApi());
             event.column = new NSNumber(parameterObject.objectAtIndex(0)).intValue();
             event.row = new NSNumber(parameterObject.objectAtIndex(1)).intValue();
             for (int i = 0; i < accessibleTableListenersSize(); i++) {
@@ -2308,7 +2308,7 @@ public class SwtAccessible implements IAccessible {
     }
 
     id getDescriptionAttribute(int childID) {
-        AccessibleEvent event = new AccessibleEvent(this);
+        AccessibleEvent event = new AccessibleEvent(this.getApi());
         event.childID = childID;
         event.result = null;
         id returnValue = null;
@@ -2329,7 +2329,7 @@ public class SwtAccessible implements IAccessible {
     id getInsertionPointLineNumberAttribute(int childID) {
         id returnValue = null;
         if (accessibleTextExtendedListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.childID = childID;
             for (int i = 0; i < accessibleTextExtendedListenersSize(); i++) {
                 AccessibleTextExtendedListener listener = accessibleTextExtendedListeners.get(i);
@@ -2346,14 +2346,14 @@ public class SwtAccessible implements IAccessible {
             }
             returnValue = NSNumber.numberWithInt(Math.max(0, -event.count));
         } else {
-            AccessibleControlEvent controlEvent = new AccessibleControlEvent(this);
+            AccessibleControlEvent controlEvent = new AccessibleControlEvent(this.getApi());
             controlEvent.childID = childID;
             controlEvent.result = null;
             for (int i = 0; i < accessibleControlListenersSize(); i++) {
                 AccessibleControlListener listener = accessibleControlListeners.get(i);
                 listener.getValue(controlEvent);
             }
-            AccessibleTextEvent textEvent = new AccessibleTextEvent(this);
+            AccessibleTextEvent textEvent = new AccessibleTextEvent(this.getApi());
             textEvent.childID = childID;
             textEvent.offset = -1;
             for (int i = 0; i < accessibleTextListenersSize(); i++) {
@@ -2373,7 +2373,7 @@ public class SwtAccessible implements IAccessible {
         NSNumber charNumberObj = new NSNumber(parameter.id);
         int charNumber = charNumberObj.intValue();
         if (accessibleTextExtendedListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.childID = childID;
             event.start = charNumber;
             event.end = charNumber;
@@ -2385,7 +2385,7 @@ public class SwtAccessible implements IAccessible {
             }
             returnValue = NSNumber.numberWithInt(Math.max(0, -event.count));
         } else {
-            AccessibleControlEvent controlEvent = new AccessibleControlEvent(this);
+            AccessibleControlEvent controlEvent = new AccessibleControlEvent(this.getApi());
             controlEvent.childID = childID;
             controlEvent.result = null;
             for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -2402,7 +2402,7 @@ public class SwtAccessible implements IAccessible {
     id getMaxValueAttribute(int childID) {
         id returnValue = null;
         if (accessibleValueListenersSize() > 0) {
-            AccessibleValueEvent event = new AccessibleValueEvent(this);
+            AccessibleValueEvent event = new AccessibleValueEvent(this.getApi());
             for (int i = 0; i < accessibleValueListenersSize(); i++) {
                 AccessibleValueListener listener = accessibleValueListeners.get(i);
                 listener.getMaximumValue(event);
@@ -2415,7 +2415,7 @@ public class SwtAccessible implements IAccessible {
     id getMinValueAttribute(int childID) {
         id returnValue = null;
         if (accessibleValueListenersSize() > 0) {
-            AccessibleValueEvent event = new AccessibleValueEvent(this);
+            AccessibleValueEvent event = new AccessibleValueEvent(this.getApi());
             for (int i = 0; i < accessibleValueListenersSize(); i++) {
                 AccessibleValueListener listener = accessibleValueListeners.get(i);
                 listener.getMinimumValue(event);
@@ -2427,14 +2427,14 @@ public class SwtAccessible implements IAccessible {
 
     id getNumberOfCharactersAttribute(int childID) {
         id returnValue = null;
-        AccessibleTextEvent event = new AccessibleTextEvent(this);
+        AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
         event.count = -1;
         for (int i = 0; i < accessibleTextExtendedListenersSize(); i++) {
             AccessibleTextExtendedListener listener = accessibleTextExtendedListeners.get(i);
             listener.getCharacterCount(event);
         }
         if (event.count != -1) {
-            AccessibleControlEvent e = new AccessibleControlEvent(this);
+            AccessibleControlEvent e = new AccessibleControlEvent(this.getApi());
             e.childID = ACC.CHILDID_SELF;
             for (int i = 0; i < accessibleControlListenersSize(); i++) {
                 AccessibleControlListener listener = accessibleControlListeners.get(i);
@@ -2454,7 +2454,7 @@ public class SwtAccessible implements IAccessible {
         NSNumber lineNumberObj = new NSNumber(parameter.id);
         int lineNumber = lineNumberObj.intValue();
         if (accessibleTextExtendedListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.childID = childID;
             event.start = event.end = 0;
             event.count = lineNumber;
@@ -2468,7 +2468,7 @@ public class SwtAccessible implements IAccessible {
             range.length = event.end - event.start;
             returnValue = NSValue.valueWithRange(range);
         } else if (accessibleControlListenersSize() > 0) {
-            AccessibleControlEvent event = new AccessibleControlEvent(this);
+            AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
             event.childID = childID;
             event.result = null;
             for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -2491,7 +2491,7 @@ public class SwtAccessible implements IAccessible {
         NSNumber charNumberObj = new NSNumber(parameter.id);
         int charNumber = charNumberObj.intValue();
         if (accessibleTextExtendedListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.childID = childID;
             event.start = event.end = 0;
             event.count = charNumber;
@@ -2525,7 +2525,7 @@ public class SwtAccessible implements IAccessible {
     id getSelectedTextAttribute(int childID) {
         id returnValue = NSString.string();
         if (accessibleTextExtendedListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.childID = childID;
             event.index = 0;
             for (int i = 0; i < accessibleTextExtendedListenersSize(); i++) {
@@ -2545,7 +2545,7 @@ public class SwtAccessible implements IAccessible {
             if (text != null)
                 returnValue = NSString.stringWith(text);
         } else if (accessibleTextListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.childID = childID;
             event.offset = -1;
             event.length = -1;
@@ -2557,7 +2557,7 @@ public class SwtAccessible implements IAccessible {
             int length = event.length;
             if (offset != -1 && length != -1 && length != 0) {
                 // TODO: do we need the && length != 0 ?
-                AccessibleControlEvent event2 = new AccessibleControlEvent(this);
+                AccessibleControlEvent event2 = new AccessibleControlEvent(this.getApi());
                 event2.childID = event.childID;
                 event2.result = null;
                 for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -2576,7 +2576,7 @@ public class SwtAccessible implements IAccessible {
     id getSelectedTextRangeAttribute(int childID) {
         id returnValue = null;
         if (accessibleTextExtendedListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.childID = childID;
             event.index = 0;
             for (int i = 0; i < accessibleTextExtendedListenersSize(); i++) {
@@ -2588,7 +2588,7 @@ public class SwtAccessible implements IAccessible {
             range.length = event.end - event.start;
             returnValue = NSValue.valueWithRange(range);
         } else if (accessibleTextExtendedListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.childID = childID;
             event.offset = -1;
             event.length = 0;
@@ -2620,7 +2620,7 @@ public class SwtAccessible implements IAccessible {
         NSValue parameterObject = new NSValue(parameter.id);
         NSRange range = parameterObject.rangeValue();
         if (accessibleTextExtendedListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.childID = childID;
             event.start = (int) range.location;
             event.end = (int) (range.location + range.length);
@@ -2632,7 +2632,7 @@ public class SwtAccessible implements IAccessible {
             if (event.result != null)
                 returnValue = NSString.stringWith(event.result);
         } else if (accessibleControlListenersSize() > 0) {
-            AccessibleControlEvent event = new AccessibleControlEvent(this);
+            AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
             event.childID = childID;
             event.result = null;
             for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -2650,7 +2650,7 @@ public class SwtAccessible implements IAccessible {
     id getSelectedTextRangesAttribute(int childID) {
         NSMutableArray returnValue = NSMutableArray.arrayWithCapacity(3);
         if (accessibleTextExtendedListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.childID = childID;
             for (int i = 0; i < accessibleTextExtendedListenersSize(); i++) {
                 AccessibleTextExtendedListener listener = accessibleTextExtendedListeners.get(i);
@@ -2670,7 +2670,7 @@ public class SwtAccessible implements IAccessible {
                 }
             }
         } else if (accessibleTextListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.childID = childID;
             event.offset = -1;
             event.length = 0;
@@ -2697,7 +2697,7 @@ public class SwtAccessible implements IAccessible {
         // Parameter is an NSRange wrapped in an NSValue.
         NSNumber parameterObject = new NSNumber(parameter.id);
         int index = parameterObject.intValue();
-        AccessibleTextAttributeEvent event = new AccessibleTextAttributeEvent(this);
+        AccessibleTextAttributeEvent event = new AccessibleTextAttributeEvent(this.getApi());
         event.offset = (int) index;
         // Marker values -- if -1 after calling getTextAttributes, no one implemented it.
         event.start = event.end = -1;
@@ -2719,7 +2719,7 @@ public class SwtAccessible implements IAccessible {
     id getVisibleCharacterRangeAttribute(int childID) {
         NSRange range = null;
         if (accessibleTextExtendedListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.childID = childID;
             for (int i = 0; i < accessibleTextExtendedListenersSize(); i++) {
                 AccessibleTextExtendedListener listener = accessibleTextExtendedListeners.get(i);
@@ -2729,7 +2729,7 @@ public class SwtAccessible implements IAccessible {
             range.location = event.start;
             range.length = event.end - event.start;
         } else if (accessibleControlListenersSize() > 0) {
-            AccessibleControlEvent event = new AccessibleControlEvent(this);
+            AccessibleControlEvent event = new AccessibleControlEvent(this.getApi());
             event.childID = childID;
             event.result = null;
             for (int i = 0; i < accessibleControlListenersSize(); i++) {
@@ -3218,7 +3218,7 @@ public class SwtAccessible implements IAccessible {
      */
     public void sendEvent(int event, Object eventData) {
         checkWidget();
-        id eventSource = accessibleHandle(this);
+        id eventSource = accessibleHandle(this.getApi());
         if (DEBUG)
             System.out.println("sendEvent: 0x" + Integer.toHexString(event) + ", data = " + eventData + ", source = " + eventSource);
         switch(event) {
@@ -3349,7 +3349,7 @@ public class SwtAccessible implements IAccessible {
      */
     public void selectionChanged() {
         checkWidget();
-        id eventSource = accessibleHandle(this);
+        id eventSource = accessibleHandle(this.getApi());
         if (DEBUG)
             System.out.println("selectionChanged on " + eventSource);
         if (currentRole == ACC.ROLE_TABLE) {
@@ -3390,7 +3390,7 @@ public class SwtAccessible implements IAccessible {
             rangeEnd = (int) (range.location + range.length);
         }
         if (accessibleEditableTextListenersSize() > 0) {
-            AccessibleEditableTextEvent event = new AccessibleEditableTextEvent(this);
+            AccessibleEditableTextEvent event = new AccessibleEditableTextEvent(this.getApi());
             event.start = rangeStart;
             event.end = rangeEnd;
             event.string = newText.getString();
@@ -3404,7 +3404,7 @@ public class SwtAccessible implements IAccessible {
     void setSelectedTextRangeAttribute(id value, int childId) {
         NSRange newRange = new NSValue(value.id).rangeValue();
         if (accessibleTextExtendedListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.index = 0;
             event.start = (int) newRange.location;
             event.end = (int) (newRange.location + newRange.length);
@@ -3419,7 +3419,7 @@ public class SwtAccessible implements IAccessible {
     void setVisibleCharacterRangeAttribute(id value, int childId) {
         NSRange newRange = new NSValue(value.id).rangeValue();
         if (accessibleTextExtendedListenersSize() > 0) {
-            AccessibleTextEvent event = new AccessibleTextEvent(this);
+            AccessibleTextEvent event = new AccessibleTextEvent(this.getApi());
             event.type = ACC.SCROLL_TYPE_TOP_LEFT;
             event.start = (int) newRange.location;
             event.end = (int) (newRange.location + newRange.length);
@@ -3495,7 +3495,7 @@ public class SwtAccessible implements IAccessible {
         /* Check cache for childID, if found, return corresponding osChildID. */
         SWTAccessibleDelegate childRef = (SWTAccessibleDelegate) childToIdMap.get(Integer.valueOf(childID));
         if (childRef == null) {
-            childRef = new SWTAccessibleDelegate(this, childID);
+            childRef = new SWTAccessibleDelegate(this.getApi(), childID);
             childToIdMap.put(Integer.valueOf(childID), childRef);
         }
         return childRef;

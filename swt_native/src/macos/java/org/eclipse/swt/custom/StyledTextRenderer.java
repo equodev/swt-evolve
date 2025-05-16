@@ -352,7 +352,7 @@ class StyledTextRenderer {
         if (startLine < 0 || endLine > lineSizes.length) {
             return;
         }
-        int hTrim = styledText.leftMargin + styledText.rightMargin + styledText.getCaretWidth();
+        int hTrim = ((SwtStyledText) styledText.getImpl()).leftMargin + ((SwtStyledText) styledText.getImpl()).rightMargin + ((SwtStyledText) styledText.getImpl()).getCaretWidth();
         for (int i = startLine; i < endLine; i++) {
             LineSizeInfo line = getLineSize(i);
             if (line.needsRecalculateSize()) {
@@ -417,10 +417,10 @@ class StyledTextRenderer {
                     display.asyncExec(this);
                 } else {
                     idleRunning = false;
-                    styledText.setScrollBars(true);
+                    ((SwtStyledText) styledText.getImpl()).setScrollBars(true);
                     ScrollBar bar = styledText.getVerticalBar();
                     if (bar != null) {
-                        bar.setSelection(styledText.getVerticalScrollOffset());
+                        bar.setSelection(((SwtStyledText) styledText.getImpl()).getVerticalScrollOffset());
                     }
                 }
             }
@@ -609,7 +609,7 @@ class StyledTextRenderer {
     private void drawLineBackground(LineDrawInfo lineInfo, int paintY, GC gc, Color widgetBackground) {
         Rectangle client = styledText.getClientArea();
         Color lineBackground = getLineBackground(lineInfo.index, null);
-        StyledTextEvent event = styledText.getLineBackgroundData(lineInfo.offset, lineInfo.text);
+        StyledTextEvent event = ((SwtStyledText) styledText.getImpl()).getLineBackgroundData(lineInfo.offset, lineInfo.text);
         if (event != null && event.lineBackground != null)
             lineBackground = event.lineBackground;
         int verticalIndent = lineInfo.layout.getVerticalIndent();
@@ -660,7 +660,7 @@ class StyledTextRenderer {
             } else {
                 for (Bullet b : bullets) {
                     bullet = b;
-                    bulletIndex = bullet.indexOf(lineInfo.index);
+                    bulletIndex = ((SwtBullet) bullet.getImpl()).indexOf(lineInfo.index);
                     if (bulletIndex != -1)
                         break;
                 }
@@ -671,7 +671,7 @@ class StyledTextRenderer {
             int lineAscent = metrics.getAscent() + metrics.getLeading();
             if (bullet.type == ST.BULLET_CUSTOM) {
                 bullet.style.start = lineInfo.offset;
-                styledText.paintObject(gc, paintX, paintY, lineAscent, metrics.getDescent(), bullet.style, bullet, bulletIndex);
+                ((SwtStyledText) styledText.getImpl()).paintObject(gc, paintX, paintY, lineAscent, metrics.getDescent(), bullet.style, bullet, bulletIndex);
             } else {
                 drawBullet(bullet, gc, paintX, paintY, bulletIndex, lineAscent, metrics.getDescent());
             }
@@ -690,7 +690,7 @@ class StyledTextRenderer {
                 style.start = start + lineInfo.offset;
                 style.length = length;
                 int lineAscent = metrics.getAscent() + metrics.getLeading();
-                styledText.paintObject(gc, point.x + paintX, point.y + paintY, lineAscent, metrics.getDescent(), style, null, 0);
+                ((SwtStyledText) styledText.getImpl()).paintObject(gc, point.x + paintX, point.y + paintY, lineAscent, metrics.getDescent(), style, null, 0);
             }
         }
     }
@@ -746,11 +746,11 @@ class StyledTextRenderer {
 
     int getHeight() {
         int defaultLineHeight = getLineHeight();
-        if (styledText.isFixedLineHeight()) {
-            return lineCount * defaultLineHeight + styledText.topMargin + styledText.bottomMargin;
+        if (((SwtStyledText) styledText.getImpl()).isFixedLineHeight()) {
+            return lineCount * defaultLineHeight + ((SwtStyledText) styledText.getImpl()).topMargin + ((SwtStyledText) styledText.getImpl()).bottomMargin;
         }
         int totalHeight = 0;
-        int width = styledText.getWrapWidth();
+        int width = ((SwtStyledText) styledText.getImpl()).getWrapWidth();
         for (int i = 0; i < lineCount; i++) {
             LineSizeInfo line = getLineSize(i);
             int height = line.height;
@@ -764,7 +764,7 @@ class StyledTextRenderer {
             }
             totalHeight += height;
         }
-        return totalHeight + styledText.topMargin + styledText.bottomMargin;
+        return totalHeight + ((SwtStyledText) styledText.getImpl()).topMargin + ((SwtStyledText) styledText.getImpl()).bottomMargin;
     }
 
     boolean hasLink(int offset) {
@@ -773,7 +773,7 @@ class StyledTextRenderer {
         int lineIndex = content.getLineAtOffset(offset);
         int lineOffset = content.getOffsetAtLine(lineIndex);
         String line = content.getLine(lineIndex);
-        StyledTextEvent event = styledText.getLineStyleData(lineOffset, line);
+        StyledTextEvent event = ((SwtStyledText) styledText.getImpl()).getLineStyleData(lineOffset, line);
         if (event != null) {
             StyleRange[] styles = event.styles;
             if (styles != null) {
@@ -835,7 +835,7 @@ class StyledTextRenderer {
         if (bulletsIndices != null)
             return defaultBullet;
         for (Bullet bullet : bullets) {
-            if (bullet.indexOf(index) != -1)
+            if (((SwtBullet) bullet.getImpl()).indexOf(index) != -1)
                 return bullet;
         }
         return defaultBullet;
@@ -877,14 +877,14 @@ class StyledTextRenderer {
      *         otherwise.
      */
     private boolean isVariableHeight(int lineIndex) {
-        if (styledText.isWordWrap()) {
+        if (((SwtStyledText) styledText.getImpl()).isWordWrap()) {
             // In word wrap mode, the line height must be recomputed with TextLayout
             return true;
         }
         StyleRange[] styles = getStylesForLine(lineIndex);
         if (styles != null) {
             for (StyleRange style : styles) {
-                if (style.isVariableHeight()) {
+                if (((SwtStyleRange) style.getImpl()).isVariableHeight()) {
                     // style is variable height
                     return true;
                 }
@@ -903,8 +903,8 @@ class StyledTextRenderer {
      *         otherwise.
      */
     private int getLineSpacing(int lineIndex) {
-        if (styledText.lineSpacing > 0) {
-            return styledText.lineSpacing;
+        if (((SwtStyledText) styledText.getImpl()).lineSpacing > 0) {
+            return ((SwtStyledText) styledText.getImpl()).lineSpacing;
         } else if (lineSpacingProvider != null) {
             Integer lineSpacing = lineSpacingProvider.getLineSpacing(lineIndex);
             if (lineSpacing != null) {
@@ -1119,20 +1119,20 @@ class StyledTextRenderer {
 
     TextLayout getTextLayout(int lineIndex) {
         if (lineSpacingProvider == null) {
-            return getTextLayout(lineIndex, styledText.getOrientation(), styledText.getWrapWidth(), styledText.lineSpacing);
+            return getTextLayout(lineIndex, styledText.getOrientation(), ((SwtStyledText) styledText.getImpl()).getWrapWidth(), ((SwtStyledText) styledText.getImpl()).lineSpacing);
         }
         // Compute line spacing for the given line index.
-        int newLineSpacing = styledText.lineSpacing;
+        int newLineSpacing = ((SwtStyledText) styledText.getImpl()).lineSpacing;
         Integer spacing = lineSpacingProvider.getLineSpacing(lineIndex);
         if (spacing != null && spacing.intValue() >= 0) {
             newLineSpacing = spacing;
         }
         // Check if line spacing has not changed
         if (isSameLineSpacing(lineIndex, newLineSpacing)) {
-            return getTextLayout(lineIndex, styledText.getOrientation(), styledText.getWrapWidth(), newLineSpacing);
+            return getTextLayout(lineIndex, styledText.getOrientation(), ((SwtStyledText) styledText.getImpl()).getWrapWidth(), newLineSpacing);
         }
         // Get text layout with original StyledText line spacing.
-        TextLayout layout = getTextLayout(lineIndex, styledText.getOrientation(), styledText.getWrapWidth(), styledText.lineSpacing);
+        TextLayout layout = getTextLayout(lineIndex, styledText.getOrientation(), ((SwtStyledText) styledText.getImpl()).getWrapWidth(), ((SwtStyledText) styledText.getImpl()).lineSpacing);
         if (layout.getSpacing() != newLineSpacing) {
             layout.setSpacing(newLineSpacing);
             if (lineSpacingComputing) {
@@ -1144,8 +1144,8 @@ class StyledTextRenderer {
 			 * resetCache, setCaretLocation, redraw methods only at the end of the compute of all lines spacing.
 			 */
                 lineSpacingComputing = true;
-                styledText.resetCache(lineIndex, 1);
-                styledText.setCaretLocations();
+                ((SwtStyledText) styledText.getImpl()).resetCache(lineIndex, 1);
+                ((SwtStyledText) styledText.getImpl()).setCaretLocations();
                 styledText.redraw();
             } finally {
                 lineSpacingComputing = false;
@@ -1184,7 +1184,7 @@ class StyledTextRenderer {
     TextLayout getTextLayout(int lineIndex, int orientation, int width, int lineSpacing) {
         TextLayout layout = null;
         if (styledText != null) {
-            int topIndex = styledText.topIndex > 0 ? styledText.topIndex - 1 : 0;
+            int topIndex = ((SwtStyledText) styledText.getImpl()).topIndex > 0 ? ((SwtStyledText) styledText.getImpl()).topIndex - 1 : 0;
             if (layouts == null || topIndex != this.topIndex) {
                 TextLayout[] newLayouts = new TextLayout[CACHE_SIZE];
                 if (layouts != null) {
@@ -1254,23 +1254,23 @@ class StyledTextRenderer {
         int rangeStart = 0, styleCount = 0;
         StyledTextEvent event = null;
         if (styledText != null) {
-            event = styledText.getBidiSegments(lineOffset, line);
+            event = ((SwtStyledText) styledText.getImpl()).getBidiSegments(lineOffset, line);
             if (event != null) {
                 segments = event.segments;
                 segmentChars = event.segmentsChars;
             }
-            event = styledText.getLineStyleData(lineOffset, line);
-            indent = styledText.indent;
-            wrapIndent = styledText.wrapIndent;
-            alignment = styledText.alignment;
+            event = ((SwtStyledText) styledText.getImpl()).getLineStyleData(lineOffset, line);
+            indent = ((SwtStyledText) styledText.getImpl()).indent;
+            wrapIndent = ((SwtStyledText) styledText.getImpl()).wrapIndent;
+            alignment = ((SwtStyledText) styledText.getImpl()).alignment;
             if (styledText.isAutoDirection()) {
                 textDirection = SWT.AUTO_TEXT_DIRECTION;
             } else if ((styledText.getStyle() & SWT.FLIP_TEXT_DIRECTION) != 0) {
                 textDirection = orientation == SWT.RIGHT_TO_LEFT ? SWT.LEFT_TO_RIGHT : SWT.RIGHT_TO_LEFT;
             }
-            justify = styledText.justify;
-            if (styledText.tabs != null)
-                tabs = styledText.tabs;
+            justify = ((SwtStyledText) styledText.getImpl()).justify;
+            if (((SwtStyledText) styledText.getImpl()).tabs != null)
+                tabs = ((SwtStyledText) styledText.getImpl()).tabs;
         }
         if (event != null) {
             indent = event.indent;
@@ -1285,11 +1285,11 @@ class StyledTextRenderer {
                 tabs = event.tabStops;
             if (styles != null) {
                 styleCount = styles.length;
-                if (styledText.isFixedLineHeight()) {
+                if (((SwtStyledText) styledText.getImpl()).isFixedLineHeight()) {
                     for (int i = 0; i < styleCount; i++) {
-                        if (styles[i].isVariableHeight()) {
-                            styledText.hasStyleWithVariableHeight = true;
-                            styledText.verticalScrollOffset = -1;
+                        if (((SwtStyleRange) styles[i].getImpl()).isVariableHeight()) {
+                            ((SwtStyledText) styledText.getImpl()).hasStyleWithVariableHeight = true;
+                            ((SwtStyledText) styledText.getImpl()).verticalScrollOffset = -1;
                             styledText.redraw();
                             break;
                         }
@@ -1333,7 +1333,7 @@ class StyledTextRenderer {
             }
             if (bullets != null) {
                 for (Bullet b : bullets) {
-                    if (b.indexOf(lineIndex) != -1) {
+                    if (((SwtBullet) b.getImpl()).indexOf(lineIndex) != -1) {
                         bullet = b;
                         break;
                     }
@@ -1435,8 +1435,8 @@ class StyledTextRenderer {
         for (StyleEntry styleEntry : styleEntries) {
             layout.setStyle(styleEntry.style, styleEntry.start, styleEntry.end);
         }
-        if (styledText != null && styledText.ime != null) {
-            IME ime = styledText.ime;
+        if (styledText != null && ((SwtStyledText) styledText.getImpl()).ime != null) {
+            IME ime = ((SwtStyledText) styledText.getImpl()).ime;
             int compositionOffset = ime.getCompositionOffset();
             if (compositionOffset != -1 && compositionOffset <= content.getCharCount()) {
                 int commitCount = ime.getCommitCount();
@@ -1495,7 +1495,7 @@ class StyledTextRenderer {
                 }
             }
         }
-        if (styledText != null && styledText.isFixedLineHeight()) {
+        if (styledText != null && ((SwtStyledText) styledText.getImpl()).isFixedLineHeight()) {
             int index = -1;
             int lineCount = layout.getLineCount();
             int height = getLineHeight();
@@ -1518,10 +1518,10 @@ class StyledTextRenderer {
                         }
                     }
                 }
-                styledText.calculateScrollBars();
-                if (styledText.verticalScrollOffset != 0) {
-                    int topIndex = styledText.topIndex;
-                    int topIndexY = styledText.topIndexY;
+                ((SwtStyledText) styledText.getImpl()).calculateScrollBars();
+                if (((SwtStyledText) styledText.getImpl()).verticalScrollOffset != 0) {
+                    int topIndex = ((SwtStyledText) styledText.getImpl()).topIndex;
+                    int topIndexY = ((SwtStyledText) styledText.getImpl()).topIndexY;
                     int lineHeight = getLineHeight();
                     int newVerticalScrollOffset;
                     if (topIndexY >= 0) {
@@ -1529,12 +1529,12 @@ class StyledTextRenderer {
                     } else {
                         newVerticalScrollOffset = topIndex * lineHeight - topIndexY;
                     }
-                    styledText.scrollVertical(newVerticalScrollOffset - styledText.verticalScrollOffset, true);
+                    ((SwtStyledText) styledText.getImpl()).scrollVertical(newVerticalScrollOffset - ((SwtStyledText) styledText.getImpl()).verticalScrollOffset, true);
                 }
-                if (styledText.isBidiCaret())
-                    styledText.createCaretBitmaps();
-                styledText.caretDirection = SWT.NULL;
-                styledText.setCaretLocations();
+                if (((SwtStyledText) styledText.getImpl()).isBidiCaret())
+                    ((SwtStyledText) styledText.getImpl()).createCaretBitmaps();
+                ((SwtStyledText) styledText.getImpl()).caretDirection = SWT.NULL;
+                ((SwtStyledText) styledText.getImpl()).setCaretLocations();
                 styledText.redraw();
             }
         }
@@ -1721,10 +1721,10 @@ class StyledTextRenderer {
                 newBulletsList[index] = bullet;
                 bullets = newBulletsList;
             }
-            bullet.addIndices(startLine, count);
+            ((SwtBullet) bullet.getImpl()).addIndices(startLine, count);
         } else {
             updateBullets(startLine, count, 0, false);
-            styledText.redrawLinesBullet(redrawLines);
+            ((SwtStyledText) styledText.getImpl()).redrawLinesBullet(redrawLines);
             redrawLines = null;
         }
     }
@@ -2116,7 +2116,7 @@ class StyledTextRenderer {
         if (bulletsIndices != null)
             return;
         for (Bullet bullet : bullets) {
-            int[] lines = bullet.removeIndices(startLine, replaceLineCount, newLineCount, update);
+            int[] lines = ((SwtBullet) bullet.getImpl()).removeIndices(startLine, replaceLineCount, newLineCount, update);
             if (lines != null) {
                 if (redrawLines == null) {
                     redrawLines = lines;
@@ -2130,7 +2130,7 @@ class StyledTextRenderer {
         }
         int removed = 0;
         for (Bullet bullet : bullets) {
-            if (bullet.size() == 0)
+            if (((SwtBullet) bullet.getImpl()).size() == 0)
                 removed++;
         }
         if (removed > 0) {
@@ -2140,7 +2140,7 @@ class StyledTextRenderer {
                 Bullet[] newBulletsList = new Bullet[bullets.length - removed];
                 for (int i = 0, j = 0; i < bullets.length; i++) {
                     Bullet bullet = bullets[i];
-                    if (bullet.size() > 0)
+                    if (((SwtBullet) bullet.getImpl()).size() > 0)
                         newBulletsList[j++] = bullet;
                 }
                 bullets = newBulletsList;

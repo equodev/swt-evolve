@@ -393,7 +393,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
 
     void convertRgn(NSAffineTransform transform) {
         long newRgn = OS.NewRgn();
-        Callback callback = new Callback(this, "convertRgn", 4);
+        Callback callback = new Callback(this.getApi(), "convertRgn", 4);
         this.transform = transform;
         OS.QDRegionToRects(getApi().handle, OS.kQDParseRegionFromTopLeft, callback.getAddress(), newRgn);
         this.transform = null;
@@ -457,7 +457,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
      */
     @Override
     public boolean equals(Object object) {
-        if (this == object)
+        if (this.getApi() == object)
             return true;
         if (!(object instanceof Region region))
             return false;
@@ -496,7 +496,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
     }
 
     NSBezierPath getPath() {
-        Callback callback = new Callback(this, "regionToRects", 4);
+        Callback callback = new Callback(this.getApi(), "regionToRects", 4);
         NSBezierPath path = NSBezierPath.bezierPath();
         path.retain();
         OS.QDRegionToRects(getApi().handle, OS.kQDParseRegionFromTopLeft, callback.getAddress(), path.id);

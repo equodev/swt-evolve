@@ -90,7 +90,7 @@ public class SwtTaskItem extends SwtItem implements ITaskItem {
     SwtTaskItem(TaskBar parent, int style) {
         super(parent, style);
         this.parent = parent;
-        ((SwtTaskBar) parent.getImpl()).createItem(this, -1);
+        ((SwtTaskBar) parent.getImpl()).createItem(this.getApi(), -1);
         createWidget();
     }
 
@@ -109,7 +109,7 @@ public class SwtTaskItem extends SwtItem implements ITaskItem {
 
     @Override
     void destroyWidget() {
-        ((SwtTaskBar) parent.getImpl()).destroyItem(this);
+        ((SwtTaskBar) parent.getImpl()).destroyItem(this.getApi());
         releaseHandle();
     }
 
@@ -208,7 +208,7 @@ public class SwtTaskItem extends SwtItem implements ITaskItem {
 
     @Override
     void releaseHandle() {
-        ((SwtWidget) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         parent = null;
         if (defaultImage != null)
             defaultImage.release();
@@ -217,7 +217,7 @@ public class SwtTaskItem extends SwtItem implements ITaskItem {
 
     @Override
     void releaseWidget() {
-        ((SwtItem) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         overlayImage = null;
         overlayText = null;
         shell = null;

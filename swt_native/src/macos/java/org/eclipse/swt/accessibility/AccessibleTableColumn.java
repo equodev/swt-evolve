@@ -41,15 +41,15 @@ class AccessibleTableColumn extends Accessible {
                 event.childID = ACC.CHILDID_SELF;
                 event.width = -1;
                 Accessible child = cells[0];
-                for (int i = 0; i < child.accessibleControlListeners.size(); i++) {
-                    AccessibleControlListener listener = child.accessibleControlListeners.get(i);
+                for (int i = 0; i < ((SwtAccessible) child.getImpl()).accessibleControlListeners.size(); i++) {
+                    AccessibleControlListener listener = ((SwtAccessible) child.getImpl()).accessibleControlListeners.get(i);
                     listener.getLocation(event);
                 }
                 // Ask all children for size.
                 int height = 0;
                 int width = 0;
                 for (int j = 0; j < cells.length; j++) {
-                    NSValue sizeObj = (NSValue) cells[j].getSizeAttribute(ACC.CHILDID_SELF);
+                    NSValue sizeObj = (NSValue) ((SwtAccessible) cells[j].getImpl()).getSizeAttribute(ACC.CHILDID_SELF);
                     NSSize size = sizeObj.sizeValue();
                     if (size.width > width)
                         width = (int) size.width;
@@ -91,14 +91,14 @@ class AccessibleTableColumn extends Accessible {
     }
 
     private Accessible[] getColumnCells() {
-        int validRowCount = Math.max(1, parent.getRowCount());
+        int validRowCount = Math.max(1, ((SwtAccessible) parent.getImpl()).getRowCount());
         Accessible[] cells = new Accessible[validRowCount];
         AccessibleTableEvent event = new AccessibleTableEvent(this);
         for (int i = 0; i < validRowCount; i++) {
             event.column = index;
             event.row = i;
-            for (int j = 0; j < parent.accessibleTableListeners.size(); j++) {
-                AccessibleTableListener listener = parent.accessibleTableListeners.get(j);
+            for (int j = 0; j < ((SwtAccessible) parent.getImpl()).accessibleTableListeners.size(); j++) {
+                AccessibleTableListener listener = ((SwtAccessible) parent.getImpl()).accessibleTableListeners.get(j);
                 listener.getCell(event);
             }
             cells[i] = event.accessible;

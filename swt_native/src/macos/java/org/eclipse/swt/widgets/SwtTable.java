@@ -166,7 +166,7 @@ public class SwtTable extends SwtComposite implements ITable {
         // The check column is meant to appear as a part of the first column.
         if (attributeName.isEqualToString(OS.NSAccessibilityColumnsAttribute) || attributeName.isEqualToString(OS.NSAccessibilityVisibleColumnsAttribute)) {
             if ((style & SWT.CHECK) != 0) {
-                long superValue = ((SwtComposite) super.getImpl()).accessibilityAttributeValue(id, sel, arg0);
+                long superValue = super.accessibilityAttributeValue(id, sel, arg0);
                 if (superValue != 0) {
                     NSArray columns = new NSArray(superValue);
                     NSMutableArray columnsWithoutCheck = NSMutableArray.arrayWithCapacity(columns.count() - 1);
@@ -179,13 +179,13 @@ public class SwtTable extends SwtComposite implements ITable {
         if (returnValue != 0) {
             return returnValue;
         } else {
-            return ((SwtComposite) super.getImpl()).accessibilityAttributeValue(id, sel, arg0);
+            return super.accessibilityAttributeValue(id, sel, arg0);
         }
     }
 
     @Override
     void _addListener(int eventType, Listener listener) {
-        ((SwtWidget) super.getImpl())._addListener(eventType, listener);
+        super._addListener(eventType, listener);
         clearCachedWidth(items);
     }
 
@@ -225,7 +225,7 @@ public class SwtTable extends SwtComposite implements ITable {
             return items[index];
         if (items[index] != null)
             return items[index];
-        return items[index] = new TableItem(this, SWT.NULL, -1, false);
+        return items[index] = new TableItem(this.getApi(), SWT.NULL, -1, false);
     }
 
     int calculateWidth(TableItem[] items, int index, GC gc) {
@@ -241,7 +241,7 @@ public class SwtTable extends SwtComposite implements ITable {
 
     @Override
     NSSize cellSize(long id, long sel) {
-        NSSize size = ((SwtWidget) super.getImpl()).cellSize(id, sel);
+        NSSize size = super.cellSize(id, sel);
         NSCell cell = new NSCell(id);
         NSImage image = cell.image();
         if (image != null)
@@ -267,7 +267,7 @@ public class SwtTable extends SwtComposite implements ITable {
 
     @Override
     boolean canDragRowsWithIndexes_atPoint(long id, long sel, long rowIndexes, NSPoint mouseDownPoint) {
-        if (!((SwtWidget) super.getImpl()).canDragRowsWithIndexes_atPoint(id, sel, rowIndexes, mouseDownPoint))
+        if (!super.canDragRowsWithIndexes_atPoint(id, sel, rowIndexes, mouseDownPoint))
             return false;
         // If the current row is not selected and the user is not attempting to modify the selection, select the row first.
         NSTableView widget = (NSTableView) getApi().view;
@@ -490,7 +490,7 @@ public class SwtTable extends SwtComposite implements ITable {
             if (point.x <= getCheckColumnWidth() && point.y < headerView.frame().height)
                 return 1;
         }
-        return ((SwtWidget) super.getImpl()).columnAtPoint(id, sel, point);
+        return super.columnAtPoint(id, sel, point);
     }
 
     @Override
@@ -503,7 +503,7 @@ public class SwtTable extends SwtComposite implements ITable {
                     width += columns[i].getWidth();
                 }
             } else {
-                GC gc = new GC(this);
+                GC gc = new GC(this.getApi());
                 width += calculateWidth(items, 0, gc) + CELL_GAP;
                 gc.dispose();
             }
@@ -715,7 +715,7 @@ public class SwtTable extends SwtComposite implements ITable {
 
     @Override
     void createWidget() {
-        ((SwtScrollable) super.getImpl()).createWidget();
+        super.createWidget();
         items = new TableItem[4];
         columns = new TableColumn[4];
     }
@@ -737,7 +737,7 @@ public class SwtTable extends SwtComposite implements ITable {
 
     @Override
     void deregister() {
-        ((SwtScrollable) super.getImpl()).deregister();
+        super.deregister();
         ((SwtDisplay) display.getImpl()).removeWidget(headerView);
         ((SwtDisplay) display.getImpl()).removeWidget(dataCell);
         if (buttonCell != null)
@@ -752,7 +752,7 @@ public class SwtTable extends SwtComposite implements ITable {
             if (((NSTableView) getApi().view).selectedRow() != -1)
                 return;
         }
-        ((SwtWidget) super.getImpl()).deselectAll(id, sel, sender);
+        super.deselectAll(id, sel, sender);
     }
 
     @Override
@@ -763,7 +763,7 @@ public class SwtTable extends SwtComposite implements ITable {
             if (((NSTableView) getApi().view).selectedRow() == index)
                 return;
         }
-        ((SwtWidget) super.getImpl()).deselectRow(id, sel, index);
+        super.deselectRow(id, sel, index);
     }
 
     /**
@@ -991,7 +991,7 @@ public class SwtTable extends SwtComposite implements ITable {
 
     @Override
     void drawBackgroundInClipRect(long id, long sel, NSRect rect) {
-        ((SwtWidget) super.getImpl()).drawViewBackgroundInRect(id, sel, rect);
+        super.drawViewBackgroundInRect(id, sel, rect);
         if (id != getApi().view.id)
             return;
         fillBackground(getApi().view, NSGraphicsContext.currentContext(), rect, -1);
@@ -1028,10 +1028,10 @@ public class SwtTable extends SwtComposite implements ITable {
         boolean hasFocus = hasFocus();
         Color selectionBackground = null, selectionForeground = null;
         if (isSelected && (hooksErase || hooksPaint)) {
-            selectionForeground = Color.cocoa_new(display, (hasFocus || Display.APPEARANCE.Dark == ((SwtDisplay) display.getImpl()).appAppearance) ? ((SwtDisplay) display.getImpl()).alternateSelectedControlTextColor : ((SwtDisplay) display.getImpl()).selectedControlTextColor);
-            selectionBackground = Color.cocoa_new(display, hasFocus ? ((SwtDisplay) display.getImpl()).getAlternateSelectedControlColor() : ((SwtDisplay) display.getImpl()).getSecondarySelectedControlColor());
+            selectionForeground = SwtColor.cocoa_new(display, (hasFocus || Display.APPEARANCE.Dark == ((SwtDisplay) display.getImpl()).appAppearance) ? ((SwtDisplay) display.getImpl()).alternateSelectedControlTextColor : ((SwtDisplay) display.getImpl()).selectedControlTextColor);
+            selectionBackground = SwtColor.cocoa_new(display, hasFocus ? ((SwtDisplay) display.getImpl()).getAlternateSelectedControlColor() : ((SwtDisplay) display.getImpl()).getSecondarySelectedControlColor());
         }
-        NSSize contentSize = ((SwtWidget) super.getImpl()).cellSize(id, OS.sel_cellSize);
+        NSSize contentSize = super.cellSize(id, OS.sel_cellSize);
         NSImage image = cell.image();
         if (image != null)
             contentSize.width += imageBounds.width + IMAGE_GAP;
@@ -1068,7 +1068,7 @@ public class SwtTable extends SwtComposite implements ITable {
             transform.concat();
             GCData data = new GCData();
             data.paintRect = cellRect;
-            GC gc = GC.cocoa_new(this, data);
+            GC gc = SwtGC.cocoa_new(this.getApi(), data);
             gc.setFont(item.getFont(columnIndex));
             Color fg;
             if (isSelected && ((style & SWT.HIDE_SELECTION) == 0 || hasFocus)) {
@@ -1104,7 +1104,7 @@ public class SwtTable extends SwtComposite implements ITable {
                 drawSelection = drawSelection && (event.detail & SWT.SELECTED) != 0;
             }
             if (!drawSelection && isSelected) {
-                userForeground = Color.cocoa_new(display, gc.getForeground().handle);
+                userForeground = SwtColor.cocoa_new(display, gc.getForeground().handle);
             }
             if (isDisposed() || item.isDisposed()) {
                 gc.dispose();
@@ -1213,7 +1213,7 @@ public class SwtTable extends SwtComposite implements ITable {
                     rect.y += (rect.height - size.height) / 2;
                     rect.height = size.height;
                 }
-                ((SwtWidget) super.getImpl()).drawInteriorWithFrame_inView(id, sel, rect, view);
+                super.drawInteriorWithFrame_inView(id, sel, rect, view);
             }
         }
         if (hooksPaint) {
@@ -1223,7 +1223,7 @@ public class SwtTable extends SwtComposite implements ITable {
             transform.concat();
             GCData data = new GCData();
             data.paintRect = cellRect;
-            GC gc = GC.cocoa_new(this, data);
+            GC gc = SwtGC.cocoa_new(this.getApi(), data);
             gc.setFont(item.getFont(columnIndex));
             if (drawSelection) {
                 gc.setForeground(selectionForeground);
@@ -1262,14 +1262,14 @@ public class SwtTable extends SwtComposite implements ITable {
     @Override
     void drawWithExpansionFrame_inView(long id, long sel, NSRect cellFrame, long view) {
         drawExpansion = true;
-        ((SwtWidget) super.getImpl()).drawWithExpansionFrame_inView(id, sel, cellFrame, view);
+        super.drawWithExpansionFrame_inView(id, sel, cellFrame, view);
         drawExpansion = false;
     }
 
     @Override
     void drawRect(long id, long sel, NSRect rect) {
         fixScrollWidth = false;
-        ((SwtWidget) super.getImpl()).drawRect(id, sel, rect);
+        super.drawRect(id, sel, rect);
         if (isDisposed())
             return;
         if (fixScrollWidth) {
@@ -1282,7 +1282,7 @@ public class SwtTable extends SwtComposite implements ITable {
     @Override
     NSRect expansionFrameWithFrame_inView(long id, long sel, NSRect cellRect, long view) {
         if (toolTipText == null) {
-            NSRect rect = ((SwtWidget) super.getImpl()).expansionFrameWithFrame_inView(id, sel, cellRect, view);
+            NSRect rect = super.expansionFrameWithFrame_inView(id, sel, cellRect, view);
             NSCell cell = new NSCell(id);
             NSAttributedString str = cell.attributedStringValue();
             NSSize textSize = str.size();
@@ -1305,7 +1305,7 @@ public class SwtTable extends SwtComposite implements ITable {
                     expansionRect.width = cellSize.width;
                 } else {
                     expansionRect = cell.titleRectForBounds(cellRect);
-                    NSSize cellSize = ((SwtWidget) super.getImpl()).cellSize(id, OS.sel_cellSize);
+                    NSSize cellSize = super.cellSize(id, OS.sel_cellSize);
                     expansionRect.width = cellSize.width;
                 }
                 if (textSize.height > expansionRect.height) {
@@ -1341,7 +1341,7 @@ public class SwtTable extends SwtComposite implements ITable {
                 }
             }
         }
-        return ((SwtControl) super.getImpl()).findTooltip(pt);
+        return super.findTooltip(pt);
     }
 
     void fixSelection(int index, boolean add) {
@@ -1562,7 +1562,7 @@ public class SwtTable extends SwtComposite implements ITable {
     }
 
     private Color getHeaderBackgroundColor() {
-        return headerBackground != null ? Color.cocoa_new(display, headerBackground) : defaultBackground();
+        return headerBackground != null ? SwtColor.cocoa_new(display, headerBackground) : defaultBackground();
     }
 
     /**
@@ -1582,7 +1582,7 @@ public class SwtTable extends SwtComposite implements ITable {
     }
 
     Color getHeaderForegroundColor() {
-        return headerForeground != null ? Color.cocoa_new(display, headerForeground) : defaultForeground();
+        return headerForeground != null ? SwtColor.cocoa_new(display, headerForeground) : defaultForeground();
     }
 
     /**
@@ -2112,13 +2112,13 @@ public class SwtTable extends SwtComposite implements ITable {
     void keyDown(long id, long sel, long theEvent) {
         ignoreSelect = preventSelect = false;
         keyDown = true;
-        ((SwtComposite) super.getImpl()).keyDown(id, sel, theEvent);
+        super.keyDown(id, sel, theEvent);
         keyDown = false;
     }
 
     @Override
     boolean isTrim(NSView view) {
-        if (((SwtScrollable) super.getImpl()).isTrim(view))
+        if (super.isTrim(view))
             return true;
         return view.id == headerView.id;
     }
@@ -2149,7 +2149,7 @@ public class SwtTable extends SwtComposite implements ITable {
             }
             // else that row is currently selected, so don't change anything.
         }
-        return ((SwtControl) super.getImpl()).menuForEvent(id, sel, theEvent);
+        return super.menuForEvent(id, sel, theEvent);
     }
 
     @Override
@@ -2163,7 +2163,7 @@ public class SwtTable extends SwtComposite implements ITable {
             if ((event.modifierFlags() & OS.NSControlKeyMask) != 0)
                 return;
         }
-        ((SwtControl) super.getImpl()).mouseDown(id, sel, theEvent);
+        super.mouseDown(id, sel, theEvent);
     }
 
     @Override
@@ -2192,7 +2192,7 @@ public class SwtTable extends SwtComposite implements ITable {
             }
         }
         didSelect = false;
-        ((SwtWidget) super.getImpl()).mouseDownSuper(id, sel, theEvent);
+        super.mouseDownSuper(id, sel, theEvent);
         didSelect = false;
     }
 
@@ -2227,11 +2227,11 @@ public class SwtTable extends SwtComposite implements ITable {
 
     @Override
     void register() {
-        ((SwtScrollable) super.getImpl()).register();
-        ((SwtDisplay) display.getImpl()).addWidget(headerView, this);
-        ((SwtDisplay) display.getImpl()).addWidget(dataCell, this);
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(headerView, this.getApi());
+        ((SwtDisplay) display.getImpl()).addWidget(dataCell, this.getApi());
         if (buttonCell != null)
-            ((SwtDisplay) display.getImpl()).addWidget(buttonCell, this);
+            ((SwtDisplay) display.getImpl()).addWidget(buttonCell, this.getApi());
     }
 
     @Override
@@ -2254,12 +2254,12 @@ public class SwtTable extends SwtComposite implements ITable {
             }
             columns = null;
         }
-        ((SwtComposite) super.getImpl()).releaseChildren(destroy);
+        super.releaseChildren(destroy);
     }
 
     @Override
     void releaseHandle() {
-        ((SwtScrollable) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (headerView != null)
             headerView.release();
         headerView = null;
@@ -2279,7 +2279,7 @@ public class SwtTable extends SwtComposite implements ITable {
 
     @Override
     void releaseWidget() {
-        ((SwtComposite) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         currentItem = null;
         sortColumn = null;
     }
@@ -2490,13 +2490,13 @@ public class SwtTable extends SwtComposite implements ITable {
                     column.reskin(flags);
             }
         }
-        ((SwtComposite) super.getImpl()).reskinChildren(flags);
+        super.reskinChildren(flags);
     }
 
     @Override
     void scrollClipViewToPoint(long id, long sel, long clipView, NSPoint point) {
         if (shouldScroll) {
-            ((SwtScrollable) super.getImpl()).scrollClipViewToPoint(id, sel, clipView, point);
+            super.scrollClipViewToPoint(id, sel, clipView, point);
             if ((style & SWT.CHECK) != 0 && columnCount > 0 && ((NSTableView) getApi().view).headerView() != null) {
                 if (point.x <= getCheckColumnWidth()) {
                     /*
@@ -2745,7 +2745,7 @@ public class SwtTable extends SwtComposite implements ITable {
 
     @Override
     void setFont(NSFont font) {
-        ((SwtControl) super.getImpl()).setFont(font);
+        super.setFont(font);
         for (int i = 0; i < columnCount; i++) {
             ((SwtTableColumn) columns[i].getImpl()).nsColumn.headerCell().setFont(font);
         }
@@ -2757,7 +2757,7 @@ public class SwtTable extends SwtComposite implements ITable {
 
     @Override
     void setFrameSize(long id, long sel, NSSize size) {
-        ((SwtControl) super.getImpl()).setFrameSize(id, sel, size);
+        super.setFrameSize(id, sel, size);
         /*
 	 * Bug 577767: Since macOS 10.15, NSTableView has 'autoresizingMask'
 	 * set to follow resizes of its NSClipView. This sometimes causes
@@ -2893,7 +2893,7 @@ public class SwtTable extends SwtComposite implements ITable {
         if (count > itemCount) {
             if ((getStyle() & SWT.VIRTUAL) == 0) {
                 for (int i = itemCount; i < count; i++) {
-                    new TableItem(this, SWT.NONE, i, true);
+                    new TableItem(this.getApi(), SWT.NONE, i, true);
                 }
                 return;
             }
@@ -3001,7 +3001,7 @@ public class SwtTable extends SwtComposite implements ITable {
                 fixScrollWidth = true;
             return false;
         }
-        GC gc = new GC(this);
+        GC gc = new GC(this.getApi());
         int newWidth = ((SwtTableItem) item.getImpl()).calculateWidth(0, gc, isSelected(indexOf(item)));
         gc.dispose();
         int oldWidth = (int) firstColumn.width();
@@ -3025,7 +3025,7 @@ public class SwtTable extends SwtComposite implements ITable {
             fixScrollWidth = true;
             return false;
         }
-        GC gc = new GC(this);
+        GC gc = new GC(this.getApi());
         int newWidth = 0;
         for (int i = 0; i < items.length; i++) {
             TableItem item = items[i];
@@ -3354,7 +3354,7 @@ public class SwtTable extends SwtComposite implements ITable {
             error(SWT.ERROR_NULL_ARGUMENT);
         if (column.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        if (((SwtTableColumn) column.getImpl()).parent != this)
+        if (((SwtTableColumn) column.getImpl()).parent != this.getApi())
             return;
         if (columnCount <= 1)
             return;
@@ -3455,7 +3455,7 @@ public class SwtTable extends SwtComposite implements ITable {
             if (set.count() == 0)
                 return;
         }
-        ((SwtWidget) super.getImpl()).selectRowIndexes_byExtendingSelection(id, sel, indexes, extend);
+        super.selectRowIndexes_byExtendingSelection(id, sel, indexes, extend);
     }
 
     @Override
@@ -3482,7 +3482,7 @@ public class SwtTable extends SwtComposite implements ITable {
 
     @Override
     boolean sendKeyEvent(NSEvent nsEvent, int type) {
-        boolean result = ((SwtWidget) super.getImpl()).sendKeyEvent(nsEvent, type);
+        boolean result = super.sendKeyEvent(nsEvent, type);
         if (!result)
             return result;
         if (type != SWT.KeyDown)
@@ -3508,7 +3508,7 @@ public class SwtTable extends SwtComposite implements ITable {
         int itemHeight = (int) Math.ceil(widget.rowHeight() + spacing.height);
         GCData data = new GCData();
         data.paintRect = widget.frame();
-        GC gc = GC.cocoa_new(this, data);
+        GC gc = SwtGC.cocoa_new(this.getApi(), data);
         gc.setFont(item.getFont(columnIndex));
         Event event = new Event();
         event.item = item;
@@ -3866,7 +3866,7 @@ public class SwtTable extends SwtComposite implements ITable {
             handleClickSelected();
             dragDetected = false;
         }
-        return ((SwtControl) super.getImpl()).sendMouseEvent(nsEvent, type, send);
+        return super.sendMouseEvent(nsEvent, type, send);
     }
 
     @Override
@@ -3882,7 +3882,7 @@ public class SwtTable extends SwtComposite implements ITable {
 
     @Override
     void updateCursorRects(boolean enabled) {
-        ((SwtComposite) super.getImpl()).updateCursorRects(enabled);
+        super.updateCursorRects(enabled);
         if (headerView == null)
             return;
         updateCursorRects(enabled, headerView);

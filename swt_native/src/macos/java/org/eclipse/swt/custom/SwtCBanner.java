@@ -430,7 +430,7 @@ public class SwtCBanner extends SwtComposite implements ICBanner {
      */
     public void setBottom(Control control) {
         checkWidget();
-        if (control != null && control.getParent() != this) {
+        if (control != null && control.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (bottom != null && !bottom.isDisposed()) {
@@ -479,7 +479,7 @@ public class SwtCBanner extends SwtComposite implements ICBanner {
      */
     public void setLeft(Control control) {
         checkWidget();
-        if (control != null && control.getParent() != this) {
+        if (control != null && control.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (left != null && !left.isDisposed()) {
@@ -507,7 +507,7 @@ public class SwtCBanner extends SwtComposite implements ICBanner {
      */
     public void setRight(Control control) {
         checkWidget();
-        if (control != null && control.getParent() != this) {
+        if (control != null && control.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (right != null && !right.isDisposed()) {

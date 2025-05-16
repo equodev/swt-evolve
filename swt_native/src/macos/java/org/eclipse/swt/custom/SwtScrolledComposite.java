@@ -204,7 +204,7 @@ public class SwtScrolledComposite extends SwtComposite implements IScrolledCompo
             return false;
         Composite parent = control.getParent();
         while (parent != null && !(parent instanceof Shell)) {
-            if (this == parent)
+            if (this.getApi() == parent)
                 return true;
             parent = parent.getParent();
         }
@@ -723,7 +723,7 @@ public class SwtScrolledComposite extends SwtComposite implements IScrolledCompo
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (!contains(control))
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        Rectangle itemRect = getDisplay().map(control.getParent(), this, control.getBounds());
+        Rectangle itemRect = getDisplay().map(control.getParent(), this.getApi(), control.getBounds());
         Rectangle area = getClientArea();
         Point origin = getOrigin();
         if (itemRect.x < 0) {

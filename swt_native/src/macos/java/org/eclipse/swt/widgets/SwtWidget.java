@@ -463,7 +463,7 @@ public abstract class SwtWidget implements IWidget {
     void reskinWidget() {
         if ((state & SKIN_NEEDED) != SKIN_NEEDED) {
             this.state |= SKIN_NEEDED;
-            ((SwtDisplay) display.getImpl()).addSkinnableWidget(this);
+            ((SwtDisplay) display.getImpl()).addSkinnableWidget(this.getApi());
         }
     }
 
@@ -709,7 +709,7 @@ public abstract class SwtWidget implements IWidget {
     }
 
     void createJNIRef() {
-        jniRef = OS.NewGlobalRef(this);
+        jniRef = OS.NewGlobalRef(this.getApi());
         if (jniRef == 0)
             error(SWT.ERROR_NO_HANDLES);
     }
@@ -1246,7 +1246,7 @@ public abstract class SwtWidget implements IWidget {
     }
 
     boolean isValidSubclass() {
-        return ((SwtDisplay) Display.getImpl()).isValidClass(getClass());
+        return SwtDisplay.isValidClass(getClass());
     }
 
     boolean isValidThread() {
@@ -1525,7 +1525,7 @@ public abstract class SwtWidget implements IWidget {
 
     void releaseWidget() {
         deregister();
-        if (((SwtDisplay) display.getImpl()).tooltipTarget == this)
+        if (((SwtDisplay) display.getImpl()).tooltipTarget == this.getApi())
             ((SwtDisplay) display.getImpl()).tooltipTarget = null;
         eventTable = null;
         data = null;
@@ -1708,7 +1708,7 @@ public abstract class SwtWidget implements IWidget {
             event = new Event();
         event.type = eventType;
         event.display = display;
-        event.widget = this;
+        event.widget = this.getApi();
         if (event.time == 0) {
             event.time = ((SwtDisplay) display.getImpl()).getLastEventTime();
         }
@@ -1998,7 +1998,7 @@ public abstract class SwtWidget implements IWidget {
     }
 
     private int calculateKeycode(Event event, NSEvent nsEvent) {
-        long keyLayout = ((SwtDisplay) Display.getImpl()).getCurrentKeyLayout();
+        long keyLayout = SwtDisplay.getCurrentKeyLayout();
         if (keyLayout == 0) {
             // KCHR keyboard layouts are no longer supported, so fall back to the basic but flawed
             // method of determining which key was pressed.
@@ -2121,7 +2121,7 @@ public abstract class SwtWidget implements IWidget {
     boolean setKeyState(Event event, int type, NSEvent nsEvent) {
         boolean isNull = false;
         int keyCode = nsEvent.keyCode();
-        event.keyCode = ((SwtDisplay) Display.getImpl()).translateKey(keyCode);
+        event.keyCode = SwtDisplay.translateKey(keyCode);
         switch(event.keyCode) {
             case SWT.LF:
                 {
@@ -2545,13 +2545,13 @@ public abstract class SwtWidget implements IWidget {
 
     void notifyCreationTracker() {
         if (WidgetSpy.isEnabled) {
-            WidgetSpy.getInstance().widgetCreated(this);
+            WidgetSpy.getInstance().widgetCreated(this.getApi());
         }
     }
 
     void notifyDisposalTracker() {
         if (WidgetSpy.isEnabled) {
-            WidgetSpy.getInstance().widgetDisposed(this);
+            WidgetSpy.getInstance().widgetDisposed(this.getApi());
         }
     }
 

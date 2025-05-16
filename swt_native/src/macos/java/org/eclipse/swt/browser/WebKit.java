@@ -321,7 +321,7 @@ class WebKit extends WebBrowser {
                         /* Browser could have been disposed by one of the Dispose listeners */
                         if (!browser.isDisposed()) {
                             /* invoke onbeforeunload handlers */
-                            if (!browser.isClosing) {
+                            if (!((SwtBrowser) browser.getImpl()).isClosing) {
                                 close(false);
                             }
                             e.display.setData(ADD_WIDGET_KEY, new Object[] { delegate, null });
@@ -339,7 +339,7 @@ class WebKit extends WebBrowser {
                         lastHoveredLinkURL = lastNavigateURL = null;
                         Iterator<BrowserFunction> elements = functions.values().iterator();
                         while (elements.hasNext()) {
-                            elements.next().dispose(false);
+                            ((SwtBrowserFunction) elements.next().getImpl()).dispose(false);
                         }
                         functions = null;
                         if (preferences != null)
@@ -380,13 +380,13 @@ class WebKit extends WebBrowser {
                 return webScriptNameForSelector(arg0);
             }
         }
-        Display d = Display.getCurrent();
+        Display d = SwtDisplay.getCurrent();
         if (d == null || d.isDisposed())
             return 0;
         Widget widget = d.findWidget(id);
         if (widget == null)
             return 0;
-        WebKit webKit = (WebKit) ((Browser) widget).webBrowser;
+        WebKit webKit = (WebKit) ((SwtBrowser) ((Browser) widget).getImpl()).webBrowser;
         if (sel == OS.sel_webViewShow_) {
             webKit.webViewShow(arg0);
         } else if (sel == OS.sel_webViewClose_) {
@@ -402,13 +402,13 @@ class WebKit extends WebBrowser {
     }
 
     static long browserProc(long id, long sel, long arg0, long arg1) {
-        Display d = Display.getCurrent();
+        Display d = SwtDisplay.getCurrent();
         if (d == null || d.isDisposed())
             return 0;
         Widget widget = d.findWidget(id);
         if (widget == null)
             return 0;
-        WebKit webKit = (WebKit) ((Browser) widget).webBrowser;
+        WebKit webKit = (WebKit) ((SwtBrowser) ((Browser) widget).getImpl()).webBrowser;
         if (sel == OS.sel_webView_didChangeLocationWithinPageForFrame_) {
             webKit.webView_didChangeLocationWithinPageForFrame(arg0, arg1);
         } else if (sel == OS.sel_webView_didFinishLoadForFrame_) {
@@ -448,13 +448,13 @@ class WebKit extends WebBrowser {
     }
 
     static long browserProc(long id, long sel, long arg0, long arg1, long arg2) {
-        Display d = Display.getCurrent();
+        Display d = SwtDisplay.getCurrent();
         if (d == null || d.isDisposed())
             return 0;
         Widget widget = d.findWidget(id);
         if (widget == null)
             return 0;
-        WebKit webKit = (WebKit) ((Browser) widget).webBrowser;
+        WebKit webKit = (WebKit) ((SwtBrowser) ((Browser) widget).getImpl()).webBrowser;
         if (sel == OS.sel_webView_didFailProvisionalLoadWithError_forFrame_) {
             webKit.webView_didFailProvisionalLoadWithError_forFrame(arg0, arg1, arg2);
         } else if (sel == OS.sel_webView_didReceiveTitle_forFrame_) {
@@ -482,13 +482,13 @@ class WebKit extends WebBrowser {
     }
 
     static long browserProc(long id, long sel, long arg0, long arg1, long arg2, long arg3) {
-        Display d = Display.getCurrent();
+        Display d = SwtDisplay.getCurrent();
         if (d == null || d.isDisposed())
             return 0;
         Widget widget = d.findWidget(id);
         if (widget == null)
             return 0;
-        WebKit webKit = (WebKit) ((Browser) widget).webBrowser;
+        WebKit webKit = (WebKit) ((SwtBrowser) ((Browser) widget).getImpl()).webBrowser;
         if (sel == OS.sel_webView_resource_didFailLoadingWithError_fromDataSource_) {
             webKit.webView_resource_didFailLoadingWithError_fromDataSource(arg0, arg1, arg2, arg3);
         } else if (sel == OS.sel_webView_resource_didReceiveAuthenticationChallenge_fromDataSource_) {
@@ -503,13 +503,13 @@ class WebKit extends WebBrowser {
     }
 
     static long browserProc(long id, long sel, long arg0, long arg1, long arg2, long arg3, long arg4) {
-        Display d = Display.getCurrent();
+        Display d = SwtDisplay.getCurrent();
         if (d == null || d.isDisposed())
             return 0;
         Widget widget = d.findWidget(id);
         if (widget == null)
             return 0;
-        WebKit webKit = (WebKit) ((Browser) widget).webBrowser;
+        WebKit webKit = (WebKit) ((SwtBrowser) ((Browser) widget).getImpl()).webBrowser;
         if (sel == OS.sel_webView_resource_willSendRequest_redirectResponse_fromDataSource_) {
             return webKit.webView_resource_willSendRequest_redirectResponse_fromDataSource(arg0, arg1, arg2, arg3, arg4);
         } else if (sel == OS.sel_webView_decidePolicyForMIMEType_request_frame_decisionListener_) {
@@ -1055,7 +1055,7 @@ class WebKit extends WebBrowser {
             Iterator<BrowserFunction> elements = functions.values().iterator();
             while (elements.hasNext()) {
                 BrowserFunction function = elements.next();
-                execute(function.functionString);
+                execute(((SwtBrowserFunction) function.getImpl()).functionString);
             }
             ProgressEvent progress = new ProgressEvent(browser);
             progress.display = display;
@@ -1314,11 +1314,11 @@ class WebKit extends WebBrowser {
         }
         WebView result = null;
         Browser browser = null;
-        if (newEvent.browser != null && newEvent.browser.webBrowser instanceof WebKit) {
+        if (newEvent.browser != null && ((SwtBrowser) newEvent.browser.getImpl()).webBrowser instanceof WebKit) {
             browser = newEvent.browser;
         }
         if (browser != null && !browser.isDisposed()) {
-            result = ((WebKit) browser.webBrowser).webView;
+            result = ((WebKit) ((SwtBrowser) browser.getImpl()).webBrowser).webView;
             if (request != 0) {
                 WebFrame mainFrame = result.mainFrame();
                 mainFrame.loadRequest(new NSURLRequest(request));
@@ -1903,7 +1903,7 @@ class WebKit extends WebBrowser {
             if (object.isKindOfClass(clazz)) {
                 NSString tokenString = new NSString(token);
                 BrowserFunction function = (BrowserFunction) functions.get(key);
-                if (function != null && tokenString.getString().equals(function.token)) {
+                if (function != null && tokenString.getString().equals(((SwtBrowserFunction) function.getImpl()).token)) {
                     try {
                         Object temp = convertToJava(args);
                         if (temp instanceof Object[] arguments) {
@@ -1916,7 +1916,7 @@ class WebKit extends WebBrowser {
                         }
                     } catch (IllegalArgumentException e) {
                         /* invalid argument value type */
-                        if (function.isEvaluate) {
+                        if (((SwtBrowserFunction) function.getImpl()).isEvaluate) {
                             /* notify the evaluate function so that a java exception can be thrown */
                             function.function(new String[] { WebBrowser.CreateErrorString(new SWTException(SWT.ERROR_INVALID_RETURN_VALUE).getLocalizedMessage()) });
                         }

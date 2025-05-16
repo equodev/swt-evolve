@@ -120,7 +120,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     long accessibilityAttributeValue(long id, long sel, long arg0) {
         NSString nsAttributeName = new NSString(arg0);
         if (id == accessibleHandle() && accessible != null) {
-            id returnObject = accessible.internal_accessibilityAttributeValue(nsAttributeName, ACC.CHILDID_SELF);
+            id returnObject = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue(nsAttributeName, ACC.CHILDID_SELF);
             if (returnObject != null)
                 return returnObject.id;
         }
@@ -144,7 +144,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             boolean focused = (getApi().view.id == getApi().view.window().firstResponder().id);
             return NSNumber.numberWithBool(focused).id;
         }
-        return ((SwtComposite) super.getImpl()).accessibilityAttributeValue(id, sel, arg0);
+        return super.accessibilityAttributeValue(id, sel, arg0);
     }
 
     @Override
@@ -152,7 +152,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         // Toolbars aren't ignored.
         if (id == getApi().view.id)
             return false;
-        return ((SwtComposite) super.getImpl()).accessibilityIsIgnored(id, sel);
+        return super.accessibilityIsIgnored(id, sel);
     }
 
     static int checkStyle(Composite parent, int style, boolean internal) {
@@ -308,7 +308,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     void createWidget() {
-        ((SwtScrollable) super.getImpl()).createWidget();
+        super.createWidget();
         items = new ToolItem[4];
         itemCount = 0;
     }
@@ -320,7 +320,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     void deregister() {
-        ((SwtScrollable) super.getImpl()).deregister();
+        super.deregister();
         if (nsToolbar != null)
             ((SwtDisplay) display.getImpl()).removeWidget(nsToolbar);
     }
@@ -357,7 +357,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     void enableWidget(boolean enabled) {
-        ((SwtScrollable) super.getImpl()).enableWidget(enabled);
+        super.enableWidget(enabled);
         for (int i = 0; i < itemCount; i++) {
             ToolItem item = items[i];
             if (item != null) {
@@ -374,14 +374,14 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             if (OS.NSPointInRect(pt, ((SwtToolItem) item.getImpl()).view.frame()))
                 return item;
         }
-        return ((SwtControl) super.getImpl()).findTooltip(pt);
+        return super.findTooltip(pt);
     }
 
     @Override
     void setZOrder() {
         if (nsToolbar != null)
             return;
-        ((SwtScrollable) super.getImpl()).setZOrder();
+        super.setZOrder();
     }
 
     @Override
@@ -677,9 +677,9 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     void register() {
-        ((SwtScrollable) super.getImpl()).register();
+        super.register();
         if (nsToolbar != null)
-            ((SwtDisplay) display.getImpl()).addWidget(nsToolbar, this);
+            ((SwtDisplay) display.getImpl()).addWidget(nsToolbar, this.getApi());
     }
 
     void relayout() {
@@ -701,12 +701,12 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             itemCount = 0;
             items = null;
         }
-        ((SwtComposite) super.getImpl()).releaseChildren(destroy);
+        super.releaseChildren(destroy);
     }
 
     @Override
     void releaseHandle() {
-        ((SwtScrollable) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (nsToolbar != null) {
             nsToolbar.release();
             nsToolbar = null;
@@ -718,7 +718,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     void removeControl(Control control) {
-        ((SwtComposite) super.getImpl()).removeControl(control);
+        super.removeControl(control);
         for (int i = 0; i < itemCount; i++) {
             ToolItem item = items[i];
             if (((SwtToolItem) item.getImpl()).control == control)
@@ -728,7 +728,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     void resized() {
-        ((SwtComposite) super.getImpl()).resized();
+        super.resized();
         relayout();
     }
 
@@ -741,7 +741,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                     item.reskin(flags);
             }
         }
-        ((SwtComposite) super.getImpl()).reskinChildren(flags);
+        super.reskinChildren(flags);
     }
 
     @Override
@@ -776,7 +776,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                 }
                 break;
         }
-        return ((SwtControl) super.getImpl()).sendMouseEvent(nsEvent, type, send);
+        return super.sendMouseEvent(nsEvent, type, send);
     }
 
     @Override
@@ -785,7 +785,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         // by the window, so don't change its bounds or location.
         if (nsToolbar != null)
             return;
-        ((SwtControl) super.getImpl()).setBounds(x, y, width, height, move, resize);
+        super.setBounds(x, y, width, height, move, resize);
     }
 
     @Override
@@ -797,7 +797,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     void setForeground(double[] color) {
-        ((SwtControl) super.getImpl()).setForeground(color);
+        super.setForeground(color);
         for (int i = 0; i < itemCount; i++) {
             ((SwtToolItem) items[i].getImpl()).updateStyle();
         }
@@ -867,7 +867,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     boolean translateTraversal(int key, NSEvent theEvent, boolean[] consume) {
-        boolean result = ((SwtControl) super.getImpl()).translateTraversal(key, theEvent, consume);
+        boolean result = super.translateTraversal(key, theEvent, consume);
         if (result)
             return result;
         boolean next = false;

@@ -90,7 +90,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     public SwtMenuItem(Menu parent, int style) {
         super(parent, checkStyle(style));
         this.parent = parent;
-        ((SwtMenu) parent.getImpl()).createItem(this, parent.getItemCount());
+        ((SwtMenu) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
     }
 
     /**
@@ -132,14 +132,14 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     public SwtMenuItem(Menu parent, int style, int index) {
         super(parent, checkStyle(style));
         this.parent = parent;
-        ((SwtMenu) parent.getImpl()).createItem(this, index);
+        ((SwtMenu) parent.getImpl()).createItem(this.getApi(), index);
     }
 
     SwtMenuItem(Menu parent, NSMenuItem nsMenuItem) {
         super(parent, 0);
         this.parent = parent;
         this.nsItem = nsMenuItem;
-        ((SwtMenu) parent.getImpl()).createItem(this, parent.getItemCount());
+        ((SwtMenu) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
     }
 
     /**
@@ -241,13 +241,13 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
 
     @Override
     void deregister() {
-        ((SwtWidget) super.getImpl()).deregister();
+        super.deregister();
         ((SwtDisplay) display.getImpl()).removeWidget(nsItem);
     }
 
     @Override
     void destroyWidget() {
-        ((SwtMenu) parent.getImpl()).destroyItem(this);
+        ((SwtMenu) parent.getImpl()).destroyItem(this.getApi());
         releaseHandle();
     }
 
@@ -330,7 +330,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     String getNameText() {
         if ((style & SWT.SEPARATOR) != 0)
             return "|";
-        return ((SwtItem) super.getImpl()).getNameText();
+        return super.getNameText();
     }
 
     /**
@@ -487,13 +487,13 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
 
     @Override
     void register() {
-        ((SwtWidget) super.getImpl()).register();
-        ((SwtDisplay) display.getImpl()).addWidget(nsItem, this);
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(nsItem, this.getApi());
     }
 
     @Override
     void releaseHandle() {
-        ((SwtWidget) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (nsItem != null)
             nsItem.release();
         nsItem = null;
@@ -506,14 +506,14 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
             ((SwtWidget) menu.getImpl()).release(false);
             menu = null;
         }
-        ((SwtWidget) super.getImpl()).releaseChildren(destroy);
+        super.releaseChildren(destroy);
     }
 
     @Override
     void releaseWidget() {
-        ((SwtItem) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         accelerator = 0;
-        if (this == ((SwtMenu) parent.getImpl()).defaultItem)
+        if (this.getApi() == ((SwtMenu) parent.getImpl()).defaultItem)
             ((SwtMenu) parent.getImpl()).defaultItem = null;
     }
 
@@ -601,13 +601,13 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         if (menu != null) {
             menu.reskin(flags);
         }
-        ((SwtWidget) super.getImpl()).reskinChildren(flags);
+        super.reskinChildren(flags);
     }
 
     void selectRadio() {
         int index = 0;
         MenuItem[] items = parent.getItems();
-        while (index < items.length && items[index] != this) index++;
+        while (index < items.length && items[index] != this.getApi()) index++;
         int i = index - 1;
         while (i >= 0 && ((SwtMenuItem) items[i].getImpl()).setRadioSelection(false)) --i;
         int j = index + 1;
@@ -810,7 +810,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
                 emptyMenu.release();
             }
         } else {
-            ((SwtMenu) menu.getImpl()).cascade = this;
+            ((SwtMenu) menu.getImpl()).cascade = this.getApi();
             nsItem.setSubmenu(((SwtMenu) menu.getImpl()).nsMenu);
         }
         if (menu != null) {

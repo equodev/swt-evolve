@@ -88,7 +88,7 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
     public SwtTrayItem(Tray parent, int style) {
         super(parent, style);
         this.parent = parent;
-        ((SwtTray) parent.getImpl()).createItem(this, parent.getItemCount());
+        ((SwtTray) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
         createWidget();
     }
 
@@ -168,14 +168,14 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
 
     @Override
     void deregister() {
-        ((SwtWidget) super.getImpl()).deregister();
+        super.deregister();
         ((SwtDisplay) display.getImpl()).removeWidget(view);
         ((SwtDisplay) display.getImpl()).removeWidget(view.cell());
     }
 
     @Override
     void destroyWidget() {
-        ((SwtTray) parent.getImpl()).destroyItem(this);
+        ((SwtTray) parent.getImpl()).destroyItem(this.getApi());
         releaseHandle();
     }
 
@@ -276,14 +276,14 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
 
     @Override
     void register() {
-        ((SwtWidget) super.getImpl()).register();
-        ((SwtDisplay) display.getImpl()).addWidget(view, this);
-        ((SwtDisplay) display.getImpl()).addWidget(((NSControl) view).cell(), this);
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(view, this.getApi());
+        ((SwtDisplay) display.getImpl()).addWidget(((NSControl) view).cell(), this.getApi());
     }
 
     @Override
     void releaseHandle() {
-        ((SwtWidget) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         parent = null;
         if (item != null)
             item.release();
@@ -295,7 +295,7 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
 
     @Override
     void releaseWidget() {
-        ((SwtItem) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         NSStatusBar statusBar = NSStatusBar.systemStatusBar();
         statusBar.removeStatusItem(item);
         if (toolTip != null)
@@ -426,7 +426,7 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
             ((SwtToolTip) oldTip.getImpl()).item = null;
         this.toolTip = newTip;
         if (newTip != null)
-            ((SwtToolTip) newTip.getImpl()).item = this;
+            ((SwtToolTip) newTip.getImpl()).item = this.getApi();
     }
 
     /**
@@ -506,7 +506,7 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
     void showMenu() {
         _setToolTipText(null);
         Display display = this.display;
-        ((SwtDisplay) display.getImpl()).currentTrayItem = this;
+        ((SwtDisplay) display.getImpl()).currentTrayItem = this.getApi();
         sendEvent(SWT.MenuDetect);
         if (!isDisposed())
             ((SwtDisplay) display.getImpl()).runPopups();
@@ -609,7 +609,7 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
     @Override
     void drawRect(long id, long sel, NSRect rect) {
         item.drawStatusBarBackgroundInRect(rect, highlight);
-        ((SwtWidget) super.getImpl()).drawRect(id, sel, rect);
+        super.drawRect(id, sel, rect);
     }
 
     void updateImage() {

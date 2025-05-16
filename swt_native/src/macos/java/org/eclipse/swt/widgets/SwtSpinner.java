@@ -107,14 +107,14 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
     boolean acceptsFirstResponder(long id, long sel) {
         if (id == getApi().view.id)
             return false;
-        return ((SwtComposite) super.getImpl()).acceptsFirstResponder(id, sel);
+        return super.acceptsFirstResponder(id, sel);
     }
 
     @Override
     boolean accessibilityIsIgnored(long id, long sel) {
         if (id == getApi().view.id)
             return true;
-        return ((SwtComposite) super.getImpl()).accessibilityIsIgnored(id, sel);
+        return super.accessibilityIsIgnored(id, sel);
     }
 
     /**
@@ -213,7 +213,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
         checkWidget();
         double width = 0, height = 0;
         String string = Double.toString(buttonView.maxValue());
-        Font font = Font.cocoa_new(display, textView.font());
+        Font font = SwtFont.cocoa_new(display, textView.font());
         NSAttributedString str = ((SwtControl) parent.getImpl()).createString(string, font, null, 0, false, true, false);
         NSSize size = str.size();
         str.release();
@@ -321,7 +321,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
 
     @Override
     void enableWidget(boolean enabled) {
-        ((SwtScrollable) super.getImpl()).enableWidget(enabled);
+        super.enableWidget(enabled);
         buttonView.setEnabled(enabled);
         textView.setEnabled(enabled);
     }
@@ -333,7 +333,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
 
     @Override
     void deregister() {
-        ((SwtScrollable) super.getImpl()).deregister();
+        super.deregister();
         if (textView != null) {
             ((SwtDisplay) display.getImpl()).removeWidget(textView);
             ((SwtDisplay) display.getImpl()).removeWidget(textView.cell());
@@ -360,18 +360,18 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
     void drawInteriorWithFrame_inView(long id, long sel, NSRect cellFrame, long viewid) {
         Control control = findBackgroundControl();
         if (control == null)
-            control = this;
+            control = this.getApi();
         Image image = ((SwtControl) control.getImpl()).backgroundImage;
         if (image != null && !image.isDisposed()) {
             NSGraphicsContext context = NSGraphicsContext.currentContext();
             ((SwtControl) control.getImpl()).fillBackground(getApi().view, context, cellFrame, -1);
         }
-        ((SwtWidget) super.getImpl()).drawInteriorWithFrame_inView(id, sel, cellFrame, viewid);
+        super.drawInteriorWithFrame_inView(id, sel, cellFrame, viewid);
     }
 
     @Override
     Cursor findCursor() {
-        Cursor cursor = ((SwtControl) super.getImpl()).findCursor();
+        Cursor cursor = super.findCursor();
         if (cursor == null && (style & SWT.READ_ONLY) == 0 && OS.VERSION < OS.VERSION(10, 14, 0)) {
             cursor = display.getSystemCursor(SWT.CURSOR_IBEAM);
         }
@@ -597,20 +597,20 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
 
     @Override
     void register() {
-        ((SwtScrollable) super.getImpl()).register();
+        super.register();
         if (textView != null) {
-            ((SwtDisplay) display.getImpl()).addWidget(textView, this);
-            ((SwtDisplay) display.getImpl()).addWidget(textView.cell(), this);
+            ((SwtDisplay) display.getImpl()).addWidget(textView, this.getApi());
+            ((SwtDisplay) display.getImpl()).addWidget(textView.cell(), this.getApi());
         }
         if (buttonView != null) {
-            ((SwtDisplay) display.getImpl()).addWidget(buttonView, this);
-            ((SwtDisplay) display.getImpl()).addWidget(buttonView.cell(), this);
+            ((SwtDisplay) display.getImpl()).addWidget(buttonView, this.getApi());
+            ((SwtDisplay) display.getImpl()).addWidget(buttonView.cell(), this.getApi());
         }
     }
 
     @Override
     void releaseHandle() {
-        ((SwtScrollable) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (textFormatter != null)
             textFormatter.release();
         if (buttonView != null)
@@ -624,7 +624,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
 
     @Override
     void releaseWidget() {
-        ((SwtComposite) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         if (textView != null)
             textView.abortEditing();
     }
@@ -710,7 +710,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
 
     @Override
     void resized() {
-        ((SwtComposite) super.getImpl()).resized();
+        super.resized();
         buttonView.sizeToFit();
         NSSize textSize = textView.cell().cellSize();
         NSRect buttonFrame = buttonView.bounds();
@@ -728,7 +728,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
 
     @Override
     boolean sendKeyEvent(NSEvent nsEvent, int type) {
-        boolean result = ((SwtWidget) super.getImpl()).sendKeyEvent(nsEvent, type);
+        boolean result = super.sendKeyEvent(nsEvent, type);
         if (!result)
             return result;
         if (type != SWT.KeyDown)
@@ -1129,7 +1129,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
 
     @Override
     void textDidChange(long id, long sel, long aNotification) {
-        ((SwtWidget) super.getImpl()).textDidChange(id, sel, aNotification);
+        super.textDidChange(id, sel, aNotification);
         boolean[] parseFail = new boolean[1];
         int value = getSelectionText(parseFail);
         if (!parseFail[0]) {
@@ -1157,12 +1157,12 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
             value = (int) buttonView.doubleValue();
             setSelection(value, false, true, false);
         }
-        ((SwtWidget) super.getImpl()).textDidEndEditing(id, sel, aNotification);
+        super.textDidEndEditing(id, sel, aNotification);
     }
 
     @Override
     void updateCursorRects(boolean enabled) {
-        ((SwtComposite) super.getImpl()).updateCursorRects(enabled);
+        super.updateCursorRects(enabled);
         updateCursorRects(enabled, textView);
         updateCursorRects(enabled, buttonView);
     }

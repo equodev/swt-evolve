@@ -145,7 +145,7 @@ public class SwtProgressBar extends SwtControl implements IProgressBar {
         NSGraphicsContext context = NSGraphicsContext.currentContext();
         context.saveGraphicsState();
         visiblePath.setClip();
-        ((SwtWidget) super.getImpl())._drawThemeProgressArea(id, sel, arg0);
+        super._drawThemeProgressArea(id, sel, arg0);
         context.restoreGraphicsState();
     }
 
@@ -321,7 +321,7 @@ public class SwtProgressBar extends SwtControl implements IProgressBar {
 
     @Override
     void releaseWidget() {
-        ((SwtControl) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         if (visiblePath != null)
             visiblePath.release();
         visiblePath = null;
@@ -329,7 +329,7 @@ public class SwtProgressBar extends SwtControl implements IProgressBar {
 
     @Override
     void resetVisibleRegion() {
-        ((SwtControl) super.getImpl()).resetVisibleRegion();
+        super.resetVisibleRegion();
         if (visiblePath != null)
             visiblePath.release();
         visiblePath = null;

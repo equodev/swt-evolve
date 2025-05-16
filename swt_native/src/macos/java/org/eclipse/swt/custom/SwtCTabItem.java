@@ -136,7 +136,7 @@ public class SwtCTabItem extends SwtItem implements ICTabItem {
     public SwtCTabItem(CTabFolder parent, int style, int index) {
         super(parent, style);
         showClose = (style & SWT.CLOSE) != 0;
-        ((SwtCTabFolder) parent.getImpl()).createItem(this, index);
+        ((SwtCTabFolder) parent.getImpl()).createItem(this.getApi(), index);
     }
 
     @Override
@@ -144,7 +144,7 @@ public class SwtCTabItem extends SwtItem implements ICTabItem {
         if (isDisposed())
             return;
         //if (!isValidThread ()) error (SWT.ERROR_THREAD_INVALID_ACCESS);
-        ((SwtCTabFolder) parent.getImpl()).destroyItem(this);
+        ((SwtCTabFolder) parent.getImpl()).destroyItem(this.getApi());
         super.dispose();
         parent = null;
         control = null;
@@ -366,7 +366,7 @@ public class SwtCTabItem extends SwtItem implements ICTabItem {
         }
         this.control = control;
         if (this.control != null) {
-            int index = parent.indexOf(this);
+            int index = parent.indexOf(this.getApi());
             if (index == parent.getSelectionIndex()) {
                 this.control.setBounds(parent.getClientArea());
                 this.control.setVisible(true);

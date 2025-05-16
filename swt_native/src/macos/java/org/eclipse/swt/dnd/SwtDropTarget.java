@@ -230,7 +230,7 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
         if (listener == null)
             DND.error(SWT.ERROR_NULL_ARGUMENT);
         DNDListener typedListener = new DNDListener(listener);
-        typedListener.dndWidget = this;
+        typedListener.dndWidget = this.getApi();
         addListener(DND.DragEnter, typedListener);
         addListener(DND.DragLeave, typedListener);
         addListener(DND.DragOver, typedListener);
@@ -311,7 +311,7 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
             return;
         keyOperation = -1;
         DNDEvent event = new DNDEvent();
-        event.widget = this;
+        event.widget = this.getApi();
         event.time = (int) System.currentTimeMillis();
         event.detail = DND.DROP_NONE;
         notifyListeners(DND.DragLeave, event);
@@ -410,7 +410,7 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
         if (control.getData(DND.DROP_TARGET_KEY) != null) {
             DND.error(DND.ERROR_CANNOT_INIT_DROP);
         }
-        control.setData(DND.DROP_TARGET_KEY, this);
+        control.setData(DND.DROP_TARGET_KEY, this.getApi());
         controlListener = event -> {
             if (!DropTarget.this.isDisposed()) {
                 DropTarget.this.dispose();
@@ -430,7 +430,7 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
     }
 
     static long dropTargetProc(long id, long sel) {
-        Display display = Display.findDisplay(Thread.currentThread());
+        Display display = SwtDisplay.findDisplay(Thread.currentThread());
         if (display == null || display.isDisposed())
             return 0;
         Widget widget = display.findWidget(id);
@@ -446,7 +446,7 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
     }
 
     static long dropTargetProc(long id, long sel, long arg0) {
-        Display display = Display.findDisplay(Thread.currentThread());
+        Display display = SwtDisplay.findDisplay(Thread.currentThread());
         if (display == null || display.isDisposed())
             return 0;
         Widget widget = display.findWidget(id);
@@ -485,7 +485,7 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
     }
 
     static long dropTargetProc(long id, long sel, long arg0, long arg1, long arg2, long arg3) {
-        Display display = Display.findDisplay(Thread.currentThread());
+        Display display = SwtDisplay.findDisplay(Thread.currentThread());
         if (display == null || display.isDisposed())
             return 0;
         Widget widget = display.findWidget(id);
@@ -638,7 +638,7 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
     boolean drop(NSObject sender) {
         clearDropNotAllowed();
         DNDEvent event = new DNDEvent();
-        event.widget = this;
+        event.widget = this.getApi();
         event.time = (int) System.currentTimeMillis();
         if (dropEffect != null) {
             NSPoint mouseLocation = sender.draggingLocation();
@@ -692,7 +692,7 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
         NSString type = pasteboard.availableTypeFromArray(types);
         TransferData tdata = new TransferData();
         if (type != null) {
-            tdata.type = Transfer.registerType(type.getString());
+            tdata.type = SwtTransfer.registerType(type.getString());
             if (type.isEqual(OS.NSPasteboardTypeString) || type.isEqual(OS.NSPasteboardTypeHTML) || type.isEqual(OS.NSPasteboardTypeRTF)) {
                 tdata.data = pasteboard.stringForType(type);
             } else if (type.isEqual(OS.NSURLPboardType) || type.isEqual(OS.kUTTypeURL)) {
@@ -850,7 +850,7 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
             id draggedType = draggedTypes.objectAtIndex(i);
             NSString nativeDataType = new NSString(draggedType);
             TransferData data = new TransferData();
-            data.type = Transfer.registerType(nativeDataType.getString());
+            data.type = SwtTransfer.registerType(nativeDataType.getString());
             for (int j = 0; j < transferAgents.length; j++) {
                 Transfer transfer = transferAgents[j];
                 if (transfer != null && transfer.isSupportedType(data)) {
@@ -874,7 +874,7 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
             return false;
         NSRect screenRect = new NSScreen(screens.objectAtIndex(0)).frame();
         globalMouse.y = screenRect.height - globalMouse.y;
-        event.widget = this;
+        event.widget = this.getApi();
         event.x = (int) globalMouse.x;
         event.y = (int) globalMouse.y;
         event.time = (int) System.currentTimeMillis();

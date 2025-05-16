@@ -785,7 +785,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @see Widget#checkSubclass
      */
     public void checkSubclass() {
-        if (!((SwtDisplay) Display.getImpl()).isValidClass(getClass()))
+        if (!SwtDisplay.isValidClass(getClass()))
             error(SWT.ERROR_INVALID_SUBCLASS);
     }
 
@@ -974,10 +974,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         checkSubclass();
         checkDisplay(thread = Thread.currentThread(), false);
         createDisplay(data);
-        register(this);
-        synchronizer = new Synchronizer(this);
+        register(this.getApi());
+        synchronizer = new Synchronizer(this.getApi());
         if (Default == null)
-            Default = this;
+            Default = this.getApi();
     }
 
     void createDisplay(DeviceData data) {
@@ -1182,9 +1182,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     @Override
     public void destroy() {
-        if (this == Default)
+        if (this.getApi() == Default)
             Default = null;
-        deregister(this);
+        deregister(this.getApi());
         destroyDisplay();
     }
 
@@ -2009,7 +2009,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     Color getWidgetColor(int id) {
         if (0 <= id && id < colors.length && colors[id] != null) {
-            return Color.cocoa_new(this, colors[id]);
+            return SwtColor.cocoa_new(this.getApi(), colors[id]);
         }
         return null;
     }
@@ -2159,7 +2159,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (!(0 <= id && id < cursors.length))
             return null;
         if (cursors[id] == null) {
-            cursors[id] = new Cursor(this, id);
+            cursors[id] = new Cursor(this.getApi(), id);
         }
         return cursors[id];
     }
@@ -2220,7 +2220,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                     if (errorImage != null)
                         return errorImage;
                     NSImage img = getSystemImageForID(OS.kAlertStopIcon);
-                    return errorImage = Image.cocoa_new(this, SWT.ICON, img);
+                    return errorImage = SwtImage.cocoa_new(this.getApi(), SWT.ICON, img);
                 }
             case SWT.ICON_INFORMATION:
             case SWT.ICON_QUESTION:
@@ -2239,7 +2239,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                     } else {
                         img = getSystemImageForID(OS.kAlertNoteIcon);
                     }
-                    return infoImage = Image.cocoa_new(this, SWT.ICON, img);
+                    return infoImage = SwtImage.cocoa_new(this.getApi(), SWT.ICON, img);
                 }
             case SWT.ICON_WARNING:
                 {
@@ -2256,7 +2256,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                     } else {
                         img = getSystemImageForID(OS.kAlertCautionIcon);
                     }
-                    return warningImage = Image.cocoa_new(this, SWT.ICON, img);
+                    return warningImage = SwtImage.cocoa_new(this.getApi(), SWT.ICON, img);
                 }
         }
         return null;
@@ -2278,7 +2278,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         checkDevice();
         if (appMenuBar != null)
             return appMenuBar;
-        appMenuBar = new Menu(this);
+        appMenuBar = new Menu(this.getApi());
         // the menubar will be updated when the Shell or the application activates.
         return appMenuBar;
     }
@@ -2301,7 +2301,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (appMenu == null) {
             NSMenu mainMenu = NSApplication.sharedApplication().mainMenu();
             NSMenu nsAppMenu = mainMenu.itemAtIndex(0).submenu();
-            appMenu = new Menu(this, nsAppMenu);
+            appMenu = new Menu(this.getApi(), nsAppMenu);
             // Create menu items that correspond to the NSMenuItems.
             long nsCount = nsAppMenu.numberOfItems();
             for (int j = 0; j < nsCount; j++) {
@@ -2328,7 +2328,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         checkDevice();
         if (tray != null)
             return tray;
-        return tray = new Tray(this, SWT.NONE);
+        return tray = new Tray(this.getApi(), SWT.NONE);
     }
 
     /**
@@ -2347,7 +2347,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         checkDevice();
         if (taskBar != null)
             return taskBar;
-        taskBar = new TaskBar(this, SWT.NONE);
+        taskBar = new TaskBar(this.getApi(), SWT.NONE);
         return taskBar;
     }
 
@@ -2528,7 +2528,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (prefsItem != null)
             prefsItem.setTag(SWT.ID_PREFERENCES);
         //$NON-NLS-1$
-        observerCallback = new Callback(this, "observerProc", 3);
+        observerCallback = new Callback(this.getApi(), "observerProc", 3);
         long observerProc = observerCallback.getAddress();
         int activities = OS.kCFRunLoopBeforeWaiting;
         runLoopObserver = OS.CFRunLoopObserverCreate(0, activities, true, 0, observerProc, 0);
@@ -2540,7 +2540,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (javaRunLoopMode != null) {
             OS.CFRunLoopAddObserver(OS.CFRunLoopGetCurrent(), runLoopObserver, javaRunLoopMode.id);
         }
-        cursorSetCallback = new Callback(this, "cursorSetProc", 2);
+        cursorSetCallback = new Callback(this.getApi(), "cursorSetProc", 2);
         long cursorSetProc = cursorSetCallback.getAddress();
         long method = OS.class_getInstanceMethod(OS.class_NSCursor, OS.sel_set);
         if (method != 0)
@@ -3424,7 +3424,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             if ((data.style & mask) == 0) {
                 data.style |= SWT.LEFT_TO_RIGHT;
             }
-            data.device = this;
+            data.device = this.getApi();
             data.background = getSystemColor(SWT.COLOR_WHITE).handle;
             data.foreground = getSystemColor(SWT.COLOR_BLACK).handle;
             data.font = getSystemFont();
@@ -3569,7 +3569,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 case SWT.KeyDown:
                 case SWT.KeyUp:
                     {
-                        short vKey = (short) ((SwtDisplay) Display.getImpl()).untranslateKey(event.keyCode);
+                        short vKey = (short) SwtDisplay.untranslateKey(event.keyCode);
                         if (vKey == 0) {
                             long keyLayout = getCurrentKeyLayout();
                             if (keyLayout == 0)
@@ -4712,7 +4712,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         }
         Event event = new Event();
         event.detail = detail;
-        event.display = this;
+        event.display = this.getApi();
         event.type = eventType;
         // time is set for debugging purpose only:
         event.time = (int) (System.nanoTime() / 1000_000L);
@@ -4727,7 +4727,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         }
         if (event == null)
             event = new Event();
-        event.display = this;
+        event.display = this.getApi();
         event.type = eventType;
         if (event.time == 0)
             event.time = getLastEventTime();
@@ -4887,7 +4887,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 if (((SwtCaret) currentCaret.getImpl()).blinkCaret()) {
                     int blinkRate = ((SwtCaret) currentCaret.getImpl()).blinkRate;
                     if (blinkRate != 0)
-                        timerExec(blinkRate, this);
+                        timerExec(blinkRate, this.getApi());
                 } else {
                     currentCaret = null;
                 }
@@ -4913,7 +4913,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             if (isDisposed())
                 return;
             if (hasDefaultButton())
-                timerExec(DEFAULT_BUTTON_INTERVAL, this);
+                timerExec(DEFAULT_BUTTON_INTERVAL, this.getApi());
         }
     };
 

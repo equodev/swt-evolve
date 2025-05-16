@@ -110,7 +110,7 @@ public class SwtTreeEditor extends SwtControlEditor implements ITreeEditor {
                 layout();
             }
         };
-        timer = this::layout;
+        timer = this.getApi()::layout;
         treeListener = new TreeListener() {
 
             final Runnable runnable = () -> {

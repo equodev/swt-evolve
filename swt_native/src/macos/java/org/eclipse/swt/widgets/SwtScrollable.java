@@ -128,7 +128,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
         if (scrollView == null)
             return null;
         ScrollBar bar = new ScrollBar();
-        ((SwtScrollBar) bar.getImpl()).parent = this;
+        ((SwtScrollBar) bar.getImpl()).parent = this.getApi();
         ((SwtWidget) bar.getImpl()).style = style;
         ((SwtWidget) bar.getImpl()).display = display;
         NSScroller scroller;
@@ -165,7 +165,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
 
     @Override
     void createWidget() {
-        ((SwtControl) super.getImpl()).createWidget();
+        super.createWidget();
         if ((style & SWT.H_SCROLL) != 0)
             horizontalBar = createScrollBar(SWT.H_SCROLL);
         if ((style & SWT.V_SCROLL) != 0)
@@ -174,7 +174,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
 
     @Override
     void deregister() {
-        ((SwtControl) super.getImpl()).deregister();
+        super.deregister();
         if (scrollView != null)
             ((SwtDisplay) display.getImpl()).removeWidget(scrollView);
     }
@@ -320,7 +320,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
             if (verticalBar != null && ((SwtScrollBar) verticalBar.getImpl()).view.id == view.id)
                 return true;
         }
-        return ((SwtControl) super.getImpl()).isTrim(view);
+        return super.isTrim(view);
     }
 
     void redrawBackgroundImage() {
@@ -334,20 +334,20 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
 
     @Override
     void reflectScrolledClipView(long id, long sel, long aClipView) {
-        ((SwtWidget) super.getImpl()).reflectScrolledClipView(id, sel, aClipView);
+        super.reflectScrolledClipView(id, sel, aClipView);
         redrawBackgroundImage();
     }
 
     @Override
     void register() {
-        ((SwtControl) super.getImpl()).register();
+        super.register();
         if (scrollView != null)
-            ((SwtDisplay) display.getImpl()).addWidget(scrollView, this);
+            ((SwtDisplay) display.getImpl()).addWidget(scrollView, this.getApi());
     }
 
     @Override
     void releaseHandle() {
-        ((SwtControl) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (scrollView != null)
             scrollView.release();
         scrollView = null;
@@ -363,7 +363,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
             ((SwtWidget) verticalBar.getImpl()).release(false);
             verticalBar = null;
         }
-        ((SwtWidget) super.getImpl()).releaseChildren(destroy);
+        super.releaseChildren(destroy);
     }
 
     @Override
@@ -372,7 +372,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
             horizontalBar.reskin(flags);
         if (verticalBar != null)
             verticalBar.reskin(flags);
-        ((SwtWidget) super.getImpl()).reskinChildren(flags);
+        super.reskinChildren(flags);
     }
 
     @Override
@@ -386,7 +386,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
                 copies = !hasRegion();
             clip.setCopiesOnScroll(copies);
         }
-        ((SwtWidget) super.getImpl()).scrollClipViewToPoint(id, sel, clipView, point);
+        super.scrollClipViewToPoint(id, sel, clipView, point);
     }
 
     @Override
@@ -405,7 +405,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
 
     @Override
     void enableWidget(boolean enabled) {
-        ((SwtControl) super.getImpl()).enableWidget(enabled);
+        super.enableWidget(enabled);
         if (horizontalBar != null)
             ((SwtScrollBar) horizontalBar.getImpl()).enableWidget(enabled && isNeeded(horizontalBar));
         if (verticalBar != null)
@@ -438,7 +438,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
 
     @Override
     void setZOrder() {
-        ((SwtControl) super.getImpl()).setZOrder();
+        super.setZOrder();
         if (scrollView != null)
             scrollView.setDocumentView(getApi().view);
     }
@@ -447,12 +447,12 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
     NSView topView() {
         if (scrollView != null)
             return scrollView;
-        return ((SwtControl) super.getImpl()).topView();
+        return super.topView();
     }
 
     @Override
     void updateCursorRects(boolean enabled) {
-        ((SwtControl) super.getImpl()).updateCursorRects(enabled);
+        super.updateCursorRects(enabled);
         if (scrollView == null)
             return;
         updateCursorRects(enabled, scrollView);

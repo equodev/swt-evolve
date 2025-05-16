@@ -103,7 +103,7 @@ public class SwtBrowser extends SwtComposite implements IBrowser {
         style = getStyle();
         webBrowser = new BrowserFactory().createWebBrowser(style);
         if (webBrowser != null) {
-            webBrowser.setBrowser(this);
+            webBrowser.setBrowser(this.getApi());
             webBrowser.create(parent, style);
             return;
         }

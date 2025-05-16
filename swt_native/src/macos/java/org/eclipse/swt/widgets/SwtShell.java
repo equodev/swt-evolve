@@ -291,16 +291,16 @@ public class SwtShell extends SwtDecorations implements IShell {
         super();
         checkSubclass();
         if (display == null)
-            display = Display.getCurrent();
+            display = SwtDisplay.getCurrent();
         if (display == null)
-            display = Display.getDefault();
+            display = SwtDisplay.getDefault();
         if (!((SwtDisplay) display.getImpl()).isValidThread()) {
             error(SWT.ERROR_THREAD_INVALID_ACCESS);
         }
         if (parent != null && parent.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        if (!((SwtDisplay) Display.getImpl()).getSheetEnabled()) {
+        if (!SwtDisplay.getSheetEnabled()) {
             this.center = parent != null && (style & SWT.SHEET) != 0;
         }
         this.style = checkStyle(parent, style);
@@ -445,11 +445,11 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     static int checkStyle(Shell parent, int style) {
-        style = ((SwtDecorations) Decorations.getImpl()).checkStyle(style);
+        style = SwtDecorations.checkStyle(style);
         style &= ~SWT.TRANSPARENT;
         int mask = SWT.SYSTEM_MODAL | SWT.APPLICATION_MODAL | SWT.PRIMARY_MODAL;
         if ((style & SWT.SHEET) != 0) {
-            if (((SwtDisplay) Display.getImpl()).getSheetEnabled()) {
+            if (SwtDisplay.getSheetEnabled()) {
                 style &= ~(SWT.CLOSE | SWT.TITLE | SWT.MIN | SWT.MAX);
                 if (parent == null) {
                     style &= ~SWT.SHEET;
@@ -478,7 +478,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         // The content view of a shell is always ignored.
         if (id == getApi().view.id)
             return true;
-        return ((SwtComposite) super.getImpl()).accessibilityIsIgnored(id, sel);
+        return super.accessibilityIsIgnored(id, sel);
     }
 
     /**
@@ -515,7 +515,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         hostWindow.retain();
         long embeddedSubclass = ((SwtDisplay) display.getImpl()).createWindowSubclass(newHostWindowClass, "SWTAWTWindow", true);
         OS.object_setClass(hostWindow.id, embeddedSubclass);
-        ((SwtDisplay) display.getImpl()).addWidget(hostWindow, this);
+        ((SwtDisplay) display.getImpl()).addWidget(hostWindow, this.getApi());
         hostWindowClass = newHostWindowClass;
         if (windowEmbedCounts == null)
             windowEmbedCounts = new HashMap<>();
@@ -546,7 +546,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         }
         Display display = this.display;
         ((SwtDisplay) display.getImpl()).keyWindow = getApi().view.window();
-        ((SwtWidget) super.getImpl()).becomeKeyWindow(id, sel);
+        super.becomeKeyWindow(id, sel);
         ((SwtDisplay) display.getImpl()).checkFocus();
         ((SwtDisplay) display.getImpl()).keyWindow = null;
     }
@@ -583,7 +583,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             if (styleMask == OS.NSBorderlessWindowMask || (styleMask & (OS.NSNonactivatingPanelMask | OS.NSDocModalWindowMask | OS.NSResizableWindowMask)) != 0)
                 return true;
         }
-        return ((SwtWidget) super.getImpl()).canBecomeKeyWindow(id, sel);
+        return super.canBecomeKeyWindow(id, sel);
     }
 
     @Override
@@ -764,7 +764,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             if ((style & SWT.ON_TOP) != 0) {
                 window.setLevel(OS.NSStatusWindowLevel);
             }
-            ((SwtComposite) super.getImpl()).createHandle();
+            super.createHandle();
             topView().setHidden(true);
         } else {
             state &= ~HIDDEN;
@@ -775,7 +775,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 // content view in setZOrder.
                 getApi().view = window.contentView();
                 if (getApi().view == null) {
-                    ((SwtComposite) super.getImpl()).createHandle();
+                    super.createHandle();
                 } else {
                     getApi().view.retain();
                 }
@@ -784,7 +784,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 // In that case we will hold on to the foreign view, create our own SWTCanvasView (which overwrites 'view') and then
                 // add it to the foreign view.
                 NSView parentView = getApi().view;
-                ((SwtComposite) super.getImpl()).createHandle();
+                super.createHandle();
                 parentView.addSubview(topView());
             }
             style |= SWT.NO_BACKGROUND;
@@ -823,7 +823,7 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     @Override
     void deregister() {
-        ((SwtScrollable) super.getImpl()).deregister();
+        super.deregister();
         if (window != null)
             ((SwtDisplay) display.getImpl()).removeWidget(window);
         if (windowDelegate != null)
@@ -873,17 +873,17 @@ public class SwtShell extends SwtDecorations implements IShell {
             context.restoreGraphicsState();
             return;
         }
-        ((SwtCanvas) super.getImpl()).drawBackground(id, context, rect);
+        super.drawBackground(id, context, rect);
     }
 
     @Override
     Control findBackgroundControl() {
-        return background != null || backgroundImage != null ? this : null;
+        return background != null || backgroundImage != null ? this.getApi() : null;
     }
 
     @Override
     Composite findDeferredControl() {
-        return layoutCount > 0 ? this : null;
+        return layoutCount > 0 ? this.getApi() : null;
     }
 
     @Override
@@ -910,7 +910,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     void fixShell(Shell newShell, Control control) {
-        if (this == newShell)
+        if (this.getApi() == newShell)
             return;
         if (control == lastActive)
             setActiveControl(null);
@@ -1101,7 +1101,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 Shell modal = modalShells[index];
                 if (modal != null) {
                     if ((((SwtWidget) modal.getImpl()).style & bits) != 0) {
-                        Control control = this;
+                        Control control = this.getApi();
                         while (control != null) {
                             if (control == modal)
                                 break;
@@ -1219,7 +1219,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     @Override
     public Shell getShell() {
         checkWidget();
-        return this;
+        return this.getApi();
     }
 
     /**
@@ -1241,8 +1241,8 @@ public class SwtShell extends SwtDecorations implements IShell {
             Control shell = activeshell;
             do {
                 shell = shell.getParent();
-            } while (shell != null && shell != this);
-            if (shell == this)
+            } while (shell != null && shell != this.getApi());
+            if (shell == this.getApi())
                 count++;
         }
         int index = 0;
@@ -1251,8 +1251,8 @@ public class SwtShell extends SwtDecorations implements IShell {
             Control shell = activeshell;
             do {
                 shell = shell.getParent();
-            } while (shell != null && shell != this);
-            if (shell == this) {
+            } while (shell != null && shell != this.getApi());
+            if (shell == this.getApi()) {
                 result[index++] = activeshell;
             }
         }
@@ -1290,7 +1290,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         checkWidget();
         if ((style & SWT.NO_TRIM) == 0) {
             if (toolBar == null)
-                toolBar = new ToolBar(this, SWT.HORIZONTAL | SWT.SMOOTH, true);
+                toolBar = new ToolBar(this.getApi(), SWT.HORIZONTAL | SWT.SMOOTH, true);
         }
         return toolBar;
     }
@@ -1360,7 +1360,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     @Override
     boolean makeFirstResponder(long id, long sel, long responder) {
         Display display = this.display;
-        boolean result = ((SwtWidget) super.getImpl()).makeFirstResponder(id, sel, responder);
+        boolean result = super.makeFirstResponder(id, sel, responder);
         if (!display.isDisposed())
             ((SwtDisplay) display.getImpl()).checkFocus();
         return result;
@@ -1386,7 +1386,7 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     @Override
     void mouseMoved(long id, long sel, long theEvent) {
-        ((SwtWidget) super.getImpl()).mouseMoved(id, sel, theEvent);
+        super.mouseMoved(id, sel, theEvent);
         /**
          * Bug in AWT. WebViews need to have a mouseMove: handled by the window so it can generate
          * DOMMouseMove events and also provide proper feedback to the window. However, the top-level
@@ -1408,7 +1408,7 @@ public class SwtShell extends SwtDecorations implements IShell {
          * not call the default implementation when a keyDown: is being handled.
          */
         if (selector != OS.sel_keyDown_)
-            ((SwtWidget) super.getImpl()).noResponderFor(id, sel, selector);
+            super.noResponderFor(id, sel, selector);
     }
 
     /**
@@ -1436,7 +1436,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         checkWidget();
         int mask = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
         if ((style & mask) != 0) {
-            ((SwtDisplay) display.getImpl()).setModalShell(this);
+            ((SwtDisplay) display.getImpl()).setModalShell(this.getApi());
         } else {
             updateModal();
         }
@@ -1476,11 +1476,11 @@ public class SwtShell extends SwtDecorations implements IShell {
 	 * will be associated with the NSWindow. This is okay, and intentional because
 	 * all of the NSWindow overrides operate on the entire window.
 	 */
-        ((SwtScrollable) super.getImpl()).register();
+        super.register();
         if (window != null)
-            ((SwtDisplay) display.getImpl()).addWidget(window, this);
+            ((SwtDisplay) display.getImpl()).addWidget(window, this.getApi());
         if (windowDelegate != null)
-            ((SwtDisplay) display.getImpl()).addWidget(windowDelegate, this);
+            ((SwtDisplay) display.getImpl()).addWidget(windowDelegate, this.getApi());
     }
 
     @Override
@@ -1492,7 +1492,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 shell.dispose();
             }
         }
-        ((SwtDecorations) super.getImpl()).releaseChildren(destroy);
+        super.releaseChildren(destroy);
     }
 
     @Override
@@ -1503,7 +1503,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         if (windowDelegate != null)
             windowDelegate.release();
         windowDelegate = null;
-        ((SwtScrollable) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         window = null;
     }
 
@@ -1514,7 +1514,7 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     @Override
     void releaseWidget() {
-        ((SwtDecorations) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         if (toolBar != null) {
             toolBar.dispose();
             toolBar = null;
@@ -1523,7 +1523,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             getApi().view.window().contentView().removeToolTip(tooltipTag);
             tooltipTag = 0;
         }
-        ((SwtDisplay) display.getImpl()).clearModal(this);
+        ((SwtDisplay) display.getImpl()).clearModal(this.getApi());
         updateParent(false);
         ((SwtDisplay) display.getImpl()).updateQuitMenu();
         lastActive = null;
@@ -1595,7 +1595,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             if (shell != null)
                 shell.reskin(flags);
         }
-        ((SwtDecorations) super.getImpl()).reskinChildren(flags);
+        super.reskinChildren(flags);
     }
 
     void sendToolTipEvent(boolean enter) {
@@ -1876,7 +1876,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     public void setMenuBar(Menu menu) {
         checkWidget();
         super.setMenuBar(menu);
-        if (display.getActiveShell() == this) {
+        if (display.getActiveShell() == this.getApi()) {
             ((SwtDisplay) display.getImpl()).setMenuBar(menuBar);
         }
     }
@@ -2141,9 +2141,9 @@ public class SwtShell extends SwtDecorations implements IShell {
         int mask = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
         if ((style & mask) != 0) {
             if (visible) {
-                ((SwtDisplay) display.getImpl()).setModalShell(this);
+                ((SwtDisplay) display.getImpl()).setModalShell(this.getApi());
             } else {
-                ((SwtDisplay) display.getImpl()).clearModal(this);
+                ((SwtDisplay) display.getImpl()).clearModal(this.getApi());
             }
         } else {
             updateModal();
@@ -2175,7 +2175,7 @@ public class SwtShell extends SwtDecorations implements IShell {
 	 * to reliably distinguish 11 from 12, see comment for OS.VERSION.
 	 */
         if (OS.isBigSurOrLater()) {
-            ((SwtDisplay) Display.getImpl()).cancelRootMenuTracking();
+            SwtDisplay.cancelRootMenuTracking();
         }
     }
 
@@ -2324,7 +2324,7 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     @Override
     void updateCursorRects(boolean enabled) {
-        ((SwtComposite) super.getImpl()).updateCursorRects(enabled);
+        super.updateCursorRects(enabled);
         if (toolBar != null)
             ((SwtComposite) toolBar.getImpl()).updateCursorRects(enabled);
     }
@@ -2382,7 +2382,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         Shell[] shells = getShells();
         for (int i = 0; i < shells.length; i++) {
             Shell shell = shells[i];
-            if (((SwtControl) shell.getImpl()).parent == this && shell.getVisible()) {
+            if (((SwtControl) shell.getImpl()).parent == this.getApi() && shell.getVisible()) {
                 ((SwtShell) shell.getImpl()).updateParent(visible);
             }
         }
@@ -2453,7 +2453,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         if (isDisposed())
             return;
         if ((window.collectionBehavior() & OS.NSWindowCollectionBehaviorFullScreenPrimary) == 0) {
-            Shell parentShell = this;
+            Shell parentShell = this.getApi();
             while (((SwtControl) parentShell.getImpl()).parent != null) {
                 parentShell = (Shell) ((SwtControl) parentShell.getImpl()).parent;
                 if (((SwtShell) parentShell.getImpl())._getFullScreen()) {
@@ -2626,7 +2626,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         // Window may have been disposed at this point.
         if (isDisposed())
             return;
-        ((SwtWidget) super.getImpl()).windowSendEvent(id, sel, event);
+        super.windowSendEvent(id, sel, event);
     }
 
     private void updateEscMenuItem() {

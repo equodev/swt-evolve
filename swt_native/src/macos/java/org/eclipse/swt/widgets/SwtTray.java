@@ -144,13 +144,13 @@ public class SwtTray extends SwtWidget implements ITray {
             }
             items = null;
         }
-        ((SwtWidget) super.getImpl()).releaseChildren(destroy);
+        super.releaseChildren(destroy);
     }
 
     @Override
     void releaseParent() {
-        ((SwtWidget) super.getImpl()).releaseParent();
-        if (((SwtDisplay) display.getImpl()).tray == this)
+        super.releaseParent();
+        if (((SwtDisplay) display.getImpl()).tray == this.getApi())
             ((SwtDisplay) display.getImpl()).tray = null;
     }
 
@@ -162,7 +162,7 @@ public class SwtTray extends SwtWidget implements ITray {
                     item.reskin(flags);
             }
         }
-        ((SwtWidget) super.getImpl()).reskinChildren(flags);
+        super.reskinChildren(flags);
     }
 
     public Tray getApi() {

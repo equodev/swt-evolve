@@ -91,7 +91,7 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
             sashStyle |= SWT.BORDER;
         if ((style & SWT.SMOOTH) != 0)
             sashStyle |= SWT.SMOOTH;
-        sashListener = this::onDragSash;
+        sashListener = this.getApi()::onDragSash;
     }
 
     static int checkStyle(int style) {
@@ -100,7 +100,7 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
     }
 
     Sash createSash() {
-        Sash sash = new Sash(this, sashStyle);
+        Sash sash = new Sash(this.getApi(), sashStyle);
         sash.setBackground(background);
         sash.setForeground(foreground);
         sash.setToolTipText(getToolTipText());

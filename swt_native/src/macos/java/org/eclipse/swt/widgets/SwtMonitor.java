@@ -54,7 +54,7 @@ public final class SwtMonitor implements IMonitor {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
+        if (object == this.getApi())
             return true;
         if (!(object instanceof Monitor monitor))
             return false;

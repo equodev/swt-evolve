@@ -130,9 +130,9 @@ public class SwtMenu extends SwtWidget implements IMenu {
         if (parent != null) {
             display = ((SwtWidget) parent.getImpl()).display;
         } else {
-            display = Display.getCurrent();
+            display = SwtDisplay.getCurrent();
             if (display == null)
-                display = Display.getDefault();
+                display = SwtDisplay.getDefault();
             if (!((SwtDisplay) display.getImpl()).isValidThread()) {
                 error(SWT.ERROR_THREAD_INVALID_ACCESS);
             }
@@ -200,9 +200,9 @@ public class SwtMenu extends SwtWidget implements IMenu {
 
     SwtMenu(Display display) {
         if (display == null)
-            display = Display.getCurrent();
+            display = SwtDisplay.getCurrent();
         if (display == null)
-            display = Display.getDefault();
+            display = SwtDisplay.getDefault();
         if (!((SwtDisplay) display.getImpl()).isValidThread()) {
             error(SWT.ERROR_THREAD_INVALID_ACCESS);
         }
@@ -260,7 +260,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             return;
         TrayItem trayItem = ((SwtDisplay) display.getImpl()).currentTrayItem;
         if (trayItem != null && visible) {
-            ((SwtTrayItem) trayItem.getImpl()).showMenu(this);
+            ((SwtTrayItem) trayItem.getImpl()).showMenu(this.getApi());
             return;
         }
         if (visible) {
@@ -341,7 +341,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
 
     @Override
     void createHandle() {
-        ((SwtDisplay) display.getImpl()).addMenu(this);
+        ((SwtDisplay) display.getImpl()).addMenu(this.getApi());
         if (nsMenu == null) {
             NSMenu widget = (NSMenu) new SWTMenu().alloc();
             widget = widget.initWithTitle(NSString.string());
@@ -430,7 +430,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
                 nsItem.setSubmenu(emptyMenu);
                 emptyMenu.release();
             }
-            if (((SwtDisplay) display.getImpl()).menuBar == this) {
+            if (((SwtDisplay) display.getImpl()).menuBar == this.getApi()) {
                 NSApplication application = ((SwtDisplay) display.getImpl()).application;
                 NSMenu menubar = application.mainMenu();
                 if (menubar != null) {
@@ -447,13 +447,13 @@ public class SwtMenu extends SwtWidget implements IMenu {
     @Override
     void createWidget() {
         checkOrientation(parent);
-        ((SwtWidget) super.getImpl()).createWidget();
+        super.createWidget();
         items = new MenuItem[4];
     }
 
     @Override
     void deregister() {
-        ((SwtWidget) super.getImpl()).deregister();
+        super.deregister();
         ((SwtDisplay) display.getImpl()).removeWidget(nsMenu);
     }
 
@@ -471,7 +471,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
         if (itemCount == 0)
             items = new MenuItem[4];
         nsMenu.removeItem(((SwtMenuItem) item.getImpl()).nsItem);
-        if (((SwtDisplay) display.getImpl()).menuBar == this) {
+        if (((SwtDisplay) display.getImpl()).menuBar == this.getApi()) {
             NSApplication application = ((SwtDisplay) display.getImpl()).application;
             NSMenu menubar = application.mainMenu();
             if (menubar != null) {
@@ -721,17 +721,17 @@ public class SwtMenu extends SwtWidget implements IMenu {
     public boolean getVisible() {
         checkWidget();
         if ((style & SWT.BAR) != 0) {
-            if (this == ((SwtDisplay) display.getImpl()).appMenuBar)
+            if (this.getApi() == ((SwtDisplay) display.getImpl()).appMenuBar)
                 return ((SwtDisplay) display.getImpl()).application.isActive();
             else
-                return this == ((SwtDecorations) parent.menuShell().getImpl()).menuBar;
+                return this.getApi() == ((SwtDecorations) parent.menuShell().getImpl()).menuBar;
         }
         if ((style & SWT.POP_UP) != 0) {
             Menu[] popups = ((SwtDisplay) display.getImpl()).popups;
             if (popups == null)
                 return false;
             for (int i = 0; i < popups.length; i++) {
-                if (popups[i] == this)
+                if (popups[i] == this.getApi())
                     return true;
             }
         }
@@ -783,9 +783,9 @@ public class SwtMenu extends SwtWidget implements IMenu {
      */
     public boolean isEnabled() {
         checkWidget();
-        if (this == ((SwtDisplay) display.getImpl()).appMenuBar)
+        if (this.getApi() == ((SwtDisplay) display.getImpl()).appMenuBar)
             return getEnabled();
-        if (this == ((SwtDisplay) display.getImpl()).appMenu)
+        if (this.getApi() == ((SwtDisplay) display.getImpl()).appMenu)
             return getEnabled();
         Menu parentMenu = getParentMenu();
         if (parentMenu == null) {
@@ -913,8 +913,8 @@ public class SwtMenu extends SwtWidget implements IMenu {
 
     @Override
     void register() {
-        ((SwtWidget) super.getImpl()).register();
-        ((SwtDisplay) display.getImpl()).addWidget(nsMenu, this);
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(nsMenu, this.getApi());
     }
 
     @Override
@@ -928,12 +928,12 @@ public class SwtMenu extends SwtWidget implements IMenu {
             }
             items = null;
         }
-        ((SwtWidget) super.getImpl()).releaseChildren(destroy);
+        super.releaseChildren(destroy);
     }
 
     @Override
     void releaseHandle() {
-        ((SwtWidget) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (nsMenu != null)
             nsMenu.release();
         nsMenu = null;
@@ -941,18 +941,18 @@ public class SwtMenu extends SwtWidget implements IMenu {
 
     @Override
     void releaseParent() {
-        ((SwtWidget) super.getImpl()).releaseParent();
+        super.releaseParent();
         if (cascade != null)
             cascade.setMenu(null);
-        if ((style & SWT.BAR) != 0 && parent != null && this == ((SwtDecorations) parent.getImpl()).menuBar) {
+        if ((style & SWT.BAR) != 0 && parent != null && this.getApi() == ((SwtDecorations) parent.getImpl()).menuBar) {
             parent.setMenuBar(null);
         }
     }
 
     @Override
     void releaseWidget() {
-        ((SwtWidget) super.getImpl()).releaseWidget();
-        ((SwtDisplay) display.getImpl()).removeMenu(this);
+        super.releaseWidget();
+        ((SwtDisplay) display.getImpl()).removeMenu(this.getApi());
         parent = null;
         cascade = defaultItem = null;
     }
@@ -1017,7 +1017,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             MenuItem item = items[i];
             item.reskin(flags);
         }
-        ((SwtWidget) super.getImpl()).reskinChildren(flags);
+        super.reskinChildren(flags);
     }
 
     /**
@@ -1175,9 +1175,9 @@ public class SwtMenu extends SwtWidget implements IMenu {
         if ((style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
             return;
         if (visible) {
-            ((SwtDisplay) display.getImpl()).addPopup(this);
+            ((SwtDisplay) display.getImpl()).addPopup(this.getApi());
         } else {
-            ((SwtDisplay) display.getImpl()).removePopup(this);
+            ((SwtDisplay) display.getImpl()).removePopup(this.getApi());
             _setVisible(false);
         }
     }

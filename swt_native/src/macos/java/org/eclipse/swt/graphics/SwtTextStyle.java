@@ -107,7 +107,7 @@ public class SwtTextStyle implements ITextStyle {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
+        if (object == this.getApi())
             return true;
         if (object == null)
             return false;
@@ -205,7 +205,7 @@ public class SwtTextStyle implements ITextStyle {
     }
 
     boolean isAdherentBorder(TextStyle style) {
-        if (this == style)
+        if (this.getApi() == style)
             return true;
         if (style == null)
             return false;
@@ -227,7 +227,7 @@ public class SwtTextStyle implements ITextStyle {
     }
 
     boolean isAdherentUnderline(TextStyle style) {
-        if (this == style)
+        if (this.getApi() == style)
             return true;
         if (style == null)
             return false;
@@ -251,7 +251,7 @@ public class SwtTextStyle implements ITextStyle {
     }
 
     boolean isAdherentStrikeout(TextStyle style) {
-        if (this == style)
+        if (this.getApi() == style)
             return true;
         if (style == null)
             return false;

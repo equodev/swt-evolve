@@ -91,7 +91,7 @@ public final class SwtFontMetrics implements IFontMetrics {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
+        if (object == this.getApi())
             return true;
         if (!(object instanceof FontMetrics metrics))
             return false;

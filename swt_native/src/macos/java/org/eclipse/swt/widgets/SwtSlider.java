@@ -196,7 +196,7 @@ public class SwtSlider extends SwtControl implements ISlider {
     void createWidget() {
         maximum = 100;
         thumb = 10;
-        ((SwtControl) super.getImpl()).createWidget();
+        super.createWidget();
     }
 
     @Override
@@ -206,7 +206,7 @@ public class SwtSlider extends SwtControl implements ISlider {
 
     @Override
     void enableWidget(boolean enabled) {
-        ((SwtControl) super.getImpl()).enableWidget(enabled);
+        super.enableWidget(enabled);
         if (enabled) {
             int range = maximum - thumb - minimum;
             if (range <= 0)

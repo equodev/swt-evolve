@@ -74,7 +74,7 @@ public class SwtBorderLayout extends SwtLayout implements IBorderLayout {
         }
         Stream<Entry<Control, BorderData>> children = //
         Arrays.stream(composite.getChildren()).map(control -> borderDataControl(control, flushCache));
-        Map<Integer, List<Entry<Control, BorderData>>> regionMap = children.collect(Collectors.groupingBy(BorderLayout::region));
+        Map<Integer, List<Entry<Control, BorderData>>> regionMap = children.collect(Collectors.groupingBy(SwtBorderLayout::region));
         int width;
         if (wHint <= SWT.DEFAULT) {
             Builder widthBuilder = IntStream.builder();
@@ -195,7 +195,7 @@ public class SwtBorderLayout extends SwtLayout implements IBorderLayout {
         int clientHeight = clientArea.height - 2 * getApi().marginHeight;
         Stream<Entry<Control, BorderData>> children = //
         Arrays.stream(composite.getChildren()).map(control -> borderDataControl(control, flushCache));
-        Map<Integer, List<Entry<Control, BorderData>>> regionMap = children.collect(Collectors.groupingBy(BorderLayout::region));
+        Map<Integer, List<Entry<Control, BorderData>>> regionMap = children.collect(Collectors.groupingBy(SwtBorderLayout::region));
         regionMap.getOrDefault(SWT.NONE, Collections.emptyList()).forEach(entry -> entry.getKey().setBounds(clientX, clientY, 0, 0));
         List<Entry<Control, BorderData>> northList = regionMap.getOrDefault(TOP, Collections.emptyList());
         List<Entry<Control, BorderData>> southList = regionMap.getOrDefault(BOTTOM, Collections.emptyList());

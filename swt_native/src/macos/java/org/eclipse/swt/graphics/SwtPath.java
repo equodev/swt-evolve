@@ -541,7 +541,7 @@ public class SwtPath extends SwtResource implements IPath {
                 OS.CGContextSetLineJoin(context, joinStyle);
                 OS.CGContextSetLineWidth(context, data.lineWidth);
                 OS.CGContextTranslateCTM(context, -x + 0.5f, -y + 0.5f);
-                long path = ((SwtGC) GC.getImpl()).createCGPathRef(getApi().handle);
+                long path = SwtGC.createCGPathRef(getApi().handle);
                 OS.CGContextAddPath(context, path);
                 OS.CGPathRelease(path);
                 OS.CGContextStrokePath(context);

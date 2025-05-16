@@ -174,7 +174,7 @@ public final class SwtFontData implements IFontData {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
+        if (object == this.getApi())
             return true;
         if (!(object instanceof FontData data))
             return false;

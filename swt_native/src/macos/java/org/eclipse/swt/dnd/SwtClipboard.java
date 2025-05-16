@@ -52,9 +52,9 @@ public class SwtClipboard implements IClipboard {
     public SwtClipboard(Display display) {
         checkSubclass();
         if (display == null) {
-            display = Display.getCurrent();
+            display = SwtDisplay.getCurrent();
             if (display == null) {
-                display = Display.getDefault();
+                display = SwtDisplay.getDefault();
             }
         }
         if (display.getThread() != Thread.currentThread()) {
@@ -299,7 +299,7 @@ public class SwtClipboard implements IClipboard {
         NSString type = pasteboard.availableTypeFromArray(types);
         if (type != null) {
             TransferData tdata = new TransferData();
-            tdata.type = Transfer.registerType(type.getString());
+            tdata.type = SwtTransfer.registerType(type.getString());
             if (type.isEqualToString(OS.NSPasteboardTypeString) || type.isEqual(OS.NSPasteboardTypeRTF) || type.isEqual(OS.NSPasteboardTypeHTML)) {
                 tdata.data = pasteboard.stringForType(type);
             } else if (type.isEqual(OS.NSFilenamesPboardType) || type.isEqual(OS.kUTTypeFileURL)) {
@@ -467,7 +467,7 @@ public class SwtClipboard implements IClipboard {
             String[] typeNames = dataTypes[i].getTypeNames();
             for (int j = 0; j < typeNames.length; j++) {
                 TransferData transferData = new TransferData();
-                transferData.type = Transfer.registerType(typeNames[j]);
+                transferData.type = SwtTransfer.registerType(typeNames[j]);
                 dataTypes[i].javaToNative(data[i], transferData);
                 NSObject tdata = transferData.data;
                 NSString dataType = NSString.stringWith(typeNames[j]);
@@ -542,7 +542,7 @@ public class SwtClipboard implements IClipboard {
         TransferData[] result = new TransferData[count];
         for (int i = 0; i < count; i++) {
             result[i] = new TransferData();
-            result[i].type = Transfer.registerType(new NSString(types.objectAtIndex(i)).getString());
+            result[i].type = SwtTransfer.registerType(new NSString(types.objectAtIndex(i)).getString());
         }
         return result;
     }

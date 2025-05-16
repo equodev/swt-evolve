@@ -29,16 +29,16 @@ class CTabFolderLayout extends Layout {
     @Override
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         CTabFolder folder = (CTabFolder) composite;
-        CTabItem[] items = folder.items;
-        CTabFolderRenderer renderer = folder.renderer;
+        CTabItem[] items = ((SwtCTabFolder) folder.getImpl()).items;
+        CTabFolderRenderer renderer = ((SwtCTabFolder) folder.getImpl()).renderer;
         // preferred width of tab area to show all tabs
         int tabW = 0;
-        int selectedIndex = folder.selectedIndex;
+        int selectedIndex = ((SwtCTabFolder) folder.getImpl()).selectedIndex;
         if (selectedIndex == -1)
             selectedIndex = 0;
         GC gc = new GC(folder);
         for (int i = 0; i < items.length; i++) {
-            if (folder.single) {
+            if (((SwtCTabFolder) folder.getImpl()).single) {
                 tabW = Math.max(tabW, renderer.computeSize(i, SWT.SELECTED, gc, SWT.DEFAULT, SWT.DEFAULT).x);
             } else {
                 int state = 0;
@@ -50,10 +50,10 @@ class CTabFolderLayout extends Layout {
         int width = 0, wrapHeight = 0;
         boolean leftControl = false, rightControl = false;
         if (wHint == SWT.DEFAULT) {
-            for (int i = 0; i < folder.controls.length; i++) {
-                Control control = folder.controls[i];
+            for (int i = 0; i < ((SwtCTabFolder) folder.getImpl()).controls.length; i++) {
+                Control control = ((SwtCTabFolder) folder.getImpl()).controls[i];
                 if (!control.isDisposed() && control.getVisible()) {
-                    if ((folder.controlAlignments[i] & SWT.LEAD) != 0) {
+                    if ((((SwtCTabFolder) folder.getImpl()).controlAlignments[i] & SWT.LEAD) != 0) {
                         leftControl = true;
                     } else {
                         rightControl = true;
@@ -64,7 +64,7 @@ class CTabFolderLayout extends Layout {
         } else {
             Point size = new Point(wHint, hHint);
             boolean[][] positions = new boolean[1][];
-            Rectangle[] rects = folder.computeControlBounds(size, positions);
+            Rectangle[] rects = ((SwtCTabFolder) folder.getImpl()).computeControlBounds(size, positions);
             int minY = Integer.MAX_VALUE, maxY = 0;
             for (int i = 0; i < rects.length; i++) {
                 if (positions[0][i]) {
@@ -72,7 +72,7 @@ class CTabFolderLayout extends Layout {
                     maxY = Math.max(maxY, rects[i].y + rects[i].height);
                     wrapHeight = maxY - minY;
                 } else {
-                    if ((folder.controlAlignments[i] & SWT.LEAD) != 0) {
+                    if ((((SwtCTabFolder) folder.getImpl()).controlAlignments[i] & SWT.LEAD) != 0) {
                         leftControl = true;
                     } else {
                         rightControl = true;
@@ -82,16 +82,16 @@ class CTabFolderLayout extends Layout {
             }
         }
         if (leftControl)
-            width += CTabFolder.SPACING * 2;
+            width += SwtCTabFolder.SPACING * 2;
         if (rightControl)
-            width += CTabFolder.SPACING * 2;
+            width += SwtCTabFolder.SPACING * 2;
         tabW += width;
         gc.dispose();
         int controlW = 0;
         int controlH = 0;
         // preferred size of controls in tab items
         for (CTabItem item : items) {
-            Control control = item.control;
+            Control control = ((SwtCTabItem) item.getImpl()).control;
             if (control != null && !control.isDisposed()) {
                 Point size = control.computeSize(wHint, hHint, flushCache);
                 controlW = Math.max(controlW, size.x);
@@ -99,11 +99,11 @@ class CTabFolderLayout extends Layout {
             }
         }
         int minWidth = Math.max(tabW, controlW + folder.marginWidth);
-        int minHeight = (folder.minimized) ? 0 : controlH + wrapHeight;
+        int minHeight = (((SwtCTabFolder) folder.getImpl()).minimized) ? 0 : controlH + wrapHeight;
         if (minWidth == 0)
-            minWidth = CTabFolder.DEFAULT_WIDTH;
+            minWidth = SwtCTabFolder.DEFAULT_WIDTH;
         if (minHeight == 0)
-            minHeight = CTabFolder.DEFAULT_HEIGHT;
+            minHeight = SwtCTabFolder.DEFAULT_HEIGHT;
         if (wHint != SWT.DEFAULT)
             minWidth = wHint;
         if (hHint != SWT.DEFAULT)
@@ -120,8 +120,8 @@ class CTabFolderLayout extends Layout {
     protected void layout(Composite composite, boolean flushCache) {
         CTabFolder folder = (CTabFolder) composite;
         // resize content
-        if (folder.selectedIndex != -1) {
-            Control control = folder.items[folder.selectedIndex].control;
+        if (((SwtCTabFolder) folder.getImpl()).selectedIndex != -1) {
+            Control control = ((SwtCTabItem) folder.items[folder.selectedIndex].getImpl()).control;
             if (control != null && !control.isDisposed()) {
                 control.setBounds(folder.getClientArea());
             }

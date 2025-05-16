@@ -184,7 +184,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
         if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
             if (itemCount > 0) {
                 height += spacing;
-                GC gc = new GC(this);
+                GC gc = new GC(this.getApi());
                 for (int i = 0; i < itemCount; i++) {
                     ExpandItem item = items[i];
                     height += item.getHeaderHeight();
@@ -254,7 +254,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
     int getBandHeight() {
         if (font == null)
             return SwtExpandItem.CHEVRON_SIZE;
-        GC gc = new GC(this);
+        GC gc = new GC(this.getApi());
         FontMetrics metrics = gc.getFontMetrics();
         gc.dispose();
         return Math.max(SwtExpandItem.CHEVRON_SIZE, metrics.getHeight());
@@ -431,7 +431,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
                     item.reskin(flags);
             }
         }
-        ((SwtComposite) super.getImpl()).reskinChildren(flags);
+        super.reskinChildren(flags);
     }
 
     @Override

@@ -315,7 +315,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         Display display = getDisplay();
         selectionForeground = display.getSystemColor(SELECTION_FOREGROUND);
         selectionBackground = display.getSystemColor(SELECTION_BACKGROUND);
-        renderer = new CTabFolderRenderer(this);
+        renderer = new CTabFolderRenderer(this.getApi());
         useDefaultRenderer = true;
         controls = new Control[0];
         controlAlignments = new int[0];
@@ -749,7 +749,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
 
     Image createButtonImage(Display display, int button) {
         return new Image(display, (ImageDataProvider) zoom -> {
-            GC tempGC = new GC(CTabFolder.this);
+            GC tempGC = new GC(this.getApi());
             Point size = renderer.computeSize(button, SWT.NONE, tempGC, SWT.DEFAULT, SWT.DEFAULT);
             tempGC.dispose();
             Rectangle trim = renderer.computeTrim(button, SWT.NONE, 0, 0, 0, 0);
@@ -768,7 +768,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
     }
 
     private void notifyItemCountChange() {
-        CTabFolderEvent e = new CTabFolderEvent(this);
+        CTabFolderEvent e = new CTabFolderEvent(this.getApi());
         for (CTabFolder2Listener listener : folderListeners) {
             listener.itemsCount(e);
         }
@@ -777,7 +777,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
     void createItem(CTabItem item, int index) {
         if (0 > index || index > getItemCount())
             SWT.error(SWT.ERROR_INVALID_RANGE);
-        ((SwtCTabItem) item.getImpl()).parent = this;
+        ((SwtCTabItem) item.getImpl()).parent = this.getApi();
         CTabItem[] newItems = new CTabItem[items.length + 1];
         System.arraycopy(items, 0, newItems, 0, index);
         newItems[index] = item;
@@ -873,7 +873,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
 
     ToolBar getChevron() {
         if (chevronTb == null) {
-            chevronTb = new ToolBar(this, SWT.FLAT);
+            chevronTb = new ToolBar(this.getApi(), SWT.FLAT);
             initAccessibleChevronTb();
             addTabControl(chevronTb, SWT.TRAIL, -1, false);
         }
@@ -1730,8 +1730,8 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                     } else {
                         if (showChevron) {
                             Rectangle chevronRect = chevronItem.getBounds();
-                            chevronRect = event.display.map(chevronTb, this, chevronRect);
-                            CTabFolderEvent e = new CTabFolderEvent(this);
+                            chevronRect = event.display.map(chevronTb, this.getApi(), chevronRect);
+                            CTabFolderEvent e = new CTabFolderEvent(this.getApi());
                             e.time = event.time;
                             e.x = chevronRect.x;
                             e.y = chevronRect.y;
@@ -1862,7 +1862,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         if (event.detail == SWT.MENU_KEYBOARD) {
             if (selectedIndex != -1) {
                 CTabItem item = items[selectedIndex];
-                Rectangle rect = getDisplay().map(this, null, item.getBounds());
+                Rectangle rect = getDisplay().map(this.getApi(), null, item.getBounds());
                 if (!rect.contains(event.x, event.y)) {
                     /* If the mouse is not in the currently-selected tab,
 				 * then pop up the menu near the top-right corner of the current tab.
@@ -1941,7 +1941,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                                                     reschedule = true;
                                                 } else {
                                                     temp = temp.getParent();
-                                                    if (temp == null || temp.equals(CTabFolder.this))
+                                                    if (temp == null || temp.equals(this.getApi()))
                                                         break;
                                                 }
                                             } while (!reschedule);
@@ -1950,7 +1950,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                                         }
                                     }
                                     if (reschedule && hoverTimerRunning) {
-                                        display.timerExec(2000, this);
+                                        display.timerExec(2000, this.getApi());
                                     } else {
                                         hovering = false;
                                         updateItems();
@@ -2065,7 +2065,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                             redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
                             if (!selected)
                                 return;
-                            CTabFolderEvent e = new CTabFolderEvent(this);
+                            CTabFolderEvent e = new CTabFolderEvent(this.getApi());
                             e.time = event.time;
                             e.item = item;
                             e.doit = true;
@@ -2080,7 +2080,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                             if (!isDisposed() && item.isDisposed()) {
                                 Display display = getDisplay();
                                 Point pt = display.getCursorLocation();
-                                pt = display.map(null, this, pt.x, pt.y);
+                                pt = display.map(null, this.getApi(), pt.x, pt.y);
                                 CTabItem nextItem = getItem(pt);
                                 if (nextItem != null) {
                                     if (((SwtCTabItem) nextItem.getImpl()).closeRect.contains(pt)) {
@@ -2130,8 +2130,8 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                 } else {
                     if (showChevron) {
                         Rectangle chevronRect = chevronItem.getBounds();
-                        chevronRect = event.display.map(chevronTb, this, chevronRect);
-                        CTabFolderEvent e = new CTabFolderEvent(this);
+                        chevronRect = event.display.map(chevronTb, this.getApi(), chevronRect);
+                        CTabFolderEvent e = new CTabFolderEvent(this.getApi());
                         e.time = event.time;
                         e.x = chevronRect.x;
                         e.y = chevronRect.y;
@@ -2263,7 +2263,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
             updateItems();
         }
         if (event.widget == maxItem) {
-            CTabFolderEvent e = new CTabFolderEvent(this);
+            CTabFolderEvent e = new CTabFolderEvent(this.getApi());
             e.time = event.time;
             for (CTabFolder2Listener folderListener : folderListeners) {
                 if (maximized) {
@@ -2273,7 +2273,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                 }
             }
         } else if (event.widget == minItem) {
-            CTabFolderEvent e = new CTabFolderEvent(this);
+            CTabFolderEvent e = new CTabFolderEvent(this.getApi());
             e.time = event.time;
             for (CTabFolder2Listener folderListener : folderListeners) {
                 if (minimized) {
@@ -2284,8 +2284,8 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
             }
         } else if (event.widget == chevronItem) {
             Rectangle chevronRect = chevronItem.getBounds();
-            chevronRect = event.display.map(chevronTb, this, chevronRect);
-            CTabFolderEvent e = new CTabFolderEvent(this);
+            chevronRect = event.display.map(chevronTb, this.getApi(), chevronRect);
+            CTabFolderEvent e = new CTabFolderEvent(this.getApi());
             e.time = event.time;
             e.x = chevronRect.x;
             e.y = chevronRect.y;
@@ -2311,7 +2311,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
             case SWT.TRAVERSE_TAB_NEXT:
             case SWT.TRAVERSE_TAB_PREVIOUS:
                 Control focusControl = getDisplay().getFocusControl();
-                if (focusControl == this)
+                if (focusControl == this.getApi())
                     event.doit = true;
                 break;
             case SWT.TRAVERSE_MNEMONIC:
@@ -2640,7 +2640,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         Display display = getDisplay();
         if (showMax) {
             if (minMaxTb == null) {
-                minMaxTb = new ToolBar(this, SWT.FLAT);
+                minMaxTb = new ToolBar(this.getApi(), SWT.FLAT);
                 initAccessibleMinMaxTb();
                 addTabControl(minMaxTb, SWT.TRAIL, 0, false);
             }
@@ -2664,7 +2664,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         // min button
         if (showMin) {
             if (minMaxTb == null) {
-                minMaxTb = new ToolBar(this, SWT.FLAT);
+                minMaxTb = new ToolBar(this.getApi(), SWT.FLAT);
                 initAccessibleMinMaxTb();
                 addTabControl(minMaxTb, SWT.TRAIL, 0, false);
             }
@@ -2827,10 +2827,10 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
 
     /* Copy of isFocusAncestor from Control. */
     boolean isAncestor(Control control) {
-        while (control != null && control != this && !(control instanceof Shell)) {
+        while (control != null && control != this.getApi() && !(control instanceof Shell)) {
             control = control.getParent();
         }
-        return control == this;
+        return control == this.getApi();
     }
 
     @Override
@@ -3361,7 +3361,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
             this.renderer.dispose();
         useDefaultRenderer = renderer == null;
         if (useDefaultRenderer)
-            renderer = new CTabFolderRenderer(this);
+            renderer = new CTabFolderRenderer(this.getApi());
         this.renderer = renderer;
         updateFolder(REDRAW);
     }
@@ -3854,7 +3854,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         if (alignment != SWT.RIGHT && alignment != SWT.FILL && alignment != (SWT.RIGHT | SWT.WRAP)) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        if (control != null && (control.isDisposed() || control.getParent() != this)) {
+        if (control != null && (control.isDisposed() || control.getParent() != this.getApi())) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (topRight == control && topRightAlignment == alignment)
@@ -4014,7 +4014,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         }
         int x = rect.x;
         int y = rect.y + rect.height;
-        Point location = getDisplay().map(this, null, x, y);
+        Point location = getDisplay().map(this.getApi(), null, x, y);
         showMenu.setLocation(location.x, location.y);
         showMenu.setVisible(true);
     }
@@ -4053,7 +4053,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
     }
 
     boolean updateItems(int showIndex) {
-        GC gc = new GC(this);
+        GC gc = new GC(this.getApi());
         if (!single && !mru && showIndex != -1) {
             // make sure selected item will be showing
             int firstIndex = showIndex;
@@ -4147,7 +4147,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
 
     boolean updateTabHeight(boolean force) {
         int oldHeight = tabHeight;
-        GC gc = new GC(this);
+        GC gc = new GC(this.getApi());
         tabHeight = renderer.computeSize(CTabFolderRenderer.PART_HEADER, SWT.NONE, gc, SWT.DEFAULT, SWT.DEFAULT).y;
         gc.dispose();
         if (fixedTabHeight == SWT.DEFAULT && controls != null && controls.length > 0) {
@@ -4312,7 +4312,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
                 break;
         }
-        if (control != null && control.getParent() != this) {
+        if (control != null && control.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         //check for duplicates
@@ -4371,7 +4371,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
     }
 
     void removeTabControl(Control control, boolean update) {
-        if (control != null && control.getParent() != this) {
+        if (control != null && control.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         int index = -1;

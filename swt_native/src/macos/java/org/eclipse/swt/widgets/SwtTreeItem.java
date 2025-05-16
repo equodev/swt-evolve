@@ -182,7 +182,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         this.parent = parent;
         this.parentItem = parentItem;
         if (create) {
-            ((SwtTree) parent.getImpl()).createItem(this, parentItem, index);
+            ((SwtTree) parent.getImpl()).createItem(this.getApi(), parentItem, index);
         } else {
             getApi().handle = (SWTTreeItem) new SWTTreeItem().alloc().init();
             createJNIRef();
@@ -259,7 +259,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         if (sendMeasure && ((SwtWidget) parent.getImpl()).hooks(SWT.MeasureItem)) {
             gc.setFont(font);
             Event event = new Event();
-            event.item = this;
+            event.item = this.getApi();
             event.index = index;
             event.gc = gc;
             NSTableView widget = (NSTableView) parent.view;
@@ -330,7 +330,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         int count = getItemCount();
         if (index < 0 || index >= count)
             error(SWT.ERROR_INVALID_RANGE);
-        ((SwtTree) parent.getImpl()).clear(this, index, all);
+        ((SwtTree) parent.getImpl()).clear(this.getApi(), index, all);
     }
 
     /**
@@ -354,7 +354,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public void clearAll(boolean all) {
         checkWidget();
-        ((SwtTree) parent.getImpl()).clearAll(this, all);
+        ((SwtTree) parent.getImpl()).clearAll(this.getApi(), all);
     }
 
     NSObject createString(int index) {
@@ -368,13 +368,13 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
     @Override
     void dealloc(long id, long sel) {
         OS.object_setInstanceVariable(id, SwtDisplay.SWT_OBJECT, 0);
-        ((SwtWidget) super.getImpl()).destroyJNIRef();
-        ((SwtWidget) super.getImpl()).dealloc(id, sel);
+        super.destroyJNIRef();
+        super.dealloc(id, sel);
     }
 
     @Override
     void deregister() {
-        ((SwtWidget) super.getImpl()).deregister();
+        super.deregister();
         //This is done in #dealloc
         //	display.removeWidget (handle);
     }
@@ -386,7 +386,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
 
     @Override
     void destroyWidget() {
-        ((SwtTree) parent.getImpl()).destroyItem(this);
+        ((SwtTree) parent.getImpl()).destroyItem(this.getApi());
         releaseHandle();
     }
 
@@ -404,7 +404,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Color getBackground() {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         return background != null ? background : parent.getBackground();
     }
@@ -424,7 +424,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Color getBackground(int index) {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         int count = Math.max(1, ((SwtTree) parent.getImpl()).columnCount);
         if (0 > index || index > count - 1)
@@ -447,7 +447,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         ((SwtTree) parent.getImpl()).checkItems();
         NSOutlineView widget = (NSOutlineView) parent.view;
@@ -511,7 +511,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Rectangle getBounds(int index) {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (!(0 <= index && index < Math.max(1, ((SwtTree) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
@@ -541,7 +541,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public boolean getChecked() {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if ((((SwtWidget) parent.getImpl()).style & SWT.CHECK) == 0)
             return false;
@@ -578,7 +578,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Font getFont() {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         return font != null ? font : parent.getFont();
     }
@@ -599,7 +599,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Font getFont(int index) {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         int count = Math.max(1, ((SwtTree) parent.getImpl()).columnCount);
         if (0 > index || index > count - 1)
@@ -623,7 +623,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Color getForeground() {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         return foreground != null ? foreground : parent.getForeground();
     }
@@ -643,7 +643,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Color getForeground(int index) {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         int count = Math.max(1, ((SwtTree) parent.getImpl()).columnCount);
         if (0 > index || index > count - 1)
@@ -667,7 +667,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public boolean getGrayed() {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if ((((SwtWidget) parent.getImpl()).style & SWT.CHECK) == 0)
             return false;
@@ -677,7 +677,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
     @Override
     public Image getImage() {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         return super.getImage();
     }
@@ -698,7 +698,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Image getImage(int index) {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (index == 0)
             return getImage();
@@ -726,7 +726,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Rectangle getImageBounds(int index) {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (!(0 <= index && index < Math.max(1, ((SwtTree) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
@@ -770,11 +770,11 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         checkWidget();
         if (index < 0)
             error(SWT.ERROR_INVALID_RANGE);
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (index >= itemCount)
             error(SWT.ERROR_INVALID_RANGE);
-        return ((SwtTree) parent.getImpl())._getItem(this, index, true);
+        return ((SwtTree) parent.getImpl())._getItem(this.getApi(), index, true);
     }
 
     /**
@@ -790,7 +790,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public int getItemCount() {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         return itemCount;
     }
@@ -813,11 +813,11 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public TreeItem[] getItems() {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         TreeItem[] result = new TreeItem[itemCount];
         for (int i = 0; i < itemCount; i++) {
-            result[i] = ((SwtTree) parent.getImpl())._getItem(this, i, true);
+            result[i] = ((SwtTree) parent.getImpl())._getItem(this.getApi(), i, true);
         }
         return result;
     }
@@ -829,7 +829,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
             if (!cached)
                 return "*virtual*";
         }
-        return ((SwtItem) super.getImpl()).getNameText();
+        return super.getNameText();
     }
 
     /**
@@ -867,7 +867,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
     @Override
     public String getText() {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         return super.getText();
     }
@@ -888,7 +888,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public String getText(int index) {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (index == 0)
             return getText();
@@ -918,7 +918,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Rectangle getTextBounds(int index) {
         checkWidget();
-        if (!((SwtTree) parent.getImpl()).checkData(this))
+        if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (!(0 <= index && index < Math.max(1, ((SwtTree) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
@@ -968,7 +968,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
             error(SWT.ERROR_NULL_ARGUMENT);
         if (item.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        if (((SwtTreeItem) item.getImpl()).parentItem != this)
+        if (((SwtTreeItem) item.getImpl()).parentItem != this.getApi())
             return -1;
         for (int i = 0; i < itemCount; i++) {
             if (item == items[i])
@@ -1008,8 +1008,8 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
 
     @Override
     void register() {
-        ((SwtWidget) super.getImpl()).register();
-        ((SwtDisplay) display.getImpl()).addWidget(getApi().handle, this);
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(getApi().handle, this.getApi());
     }
 
     @Override
@@ -1020,7 +1020,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
             if (getDrawing())
                 selectedItems = parent.getSelection();
         }
-        ((SwtWidget) super.getImpl()).release(destroy);
+        super.release(destroy);
         if (selectedItems != null)
             ((SwtTree) parent.getImpl()).selectItems(selectedItems, true);
     }
@@ -1035,12 +1035,12 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         }
         items = null;
         itemCount = 0;
-        ((SwtWidget) super.getImpl()).releaseChildren(destroy);
+        super.releaseChildren(destroy);
     }
 
     @Override
     void releaseHandle() {
-        ((SwtWidget) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (getApi().handle != null)
             getApi().handle.autorelease();
         getApi().handle = null;
@@ -1050,7 +1050,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
 
     @Override
     void releaseWidget() {
-        ((SwtItem) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         strings = null;
         images = null;
         background = foreground = null;
@@ -1071,7 +1071,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public void removeAll() {
         checkWidget();
-        ((SwtTree) parent.getImpl()).setItemCount(this, 0);
+        ((SwtTree) parent.getImpl()).setItemCount(this.getApi(), 0);
     }
 
     void sendExpand(boolean expand, boolean recurse) {
@@ -1079,7 +1079,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
             return;
         if (expanded != expand) {
             Event event = new Event();
-            event.item = this;
+            event.item = this.getApi();
             ((SwtWidget) parent.getImpl()).sendEvent(expand ? SWT.Expand : SWT.Collapse, event);
             if (isDisposed())
                 return;
@@ -1457,7 +1457,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         }
         cached = true;
         if (index == 0)
-            ((SwtTree) parent.getImpl()).setScrollWidth(this);
+            ((SwtTree) parent.getImpl()).setScrollWidth(this.getApi());
         if (0 <= index && index < count)
             redraw(index);
     }
@@ -1489,7 +1489,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
     public void setItemCount(int count) {
         checkWidget();
         count = Math.max(0, count);
-        ((SwtTree) parent.getImpl()).setItemCount(this, count);
+        ((SwtTree) parent.getImpl()).setItemCount(this.getApi(), count);
     }
 
     /**
@@ -1560,7 +1560,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         }
         cached = true;
         if (index == 0)
-            ((SwtTree) parent.getImpl()).setScrollWidth(this);
+            ((SwtTree) parent.getImpl()).setScrollWidth(this.getApi());
         if (0 <= index && index < count)
             redraw(index);
     }

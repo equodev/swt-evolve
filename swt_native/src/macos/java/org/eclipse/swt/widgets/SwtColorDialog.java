@@ -141,12 +141,12 @@ public class SwtColorDialog extends SwtDialog implements IColorDialog {
      */
     public RGB open() {
         NSColorPanel panel = NSColorPanel.sharedColorPanel();
-        Display display = parent != null ? parent.getDisplay() : Display.getCurrent();
+        Display display = parent != null ? parent.getDisplay() : SwtDisplay.getCurrent();
         if (rgb != null) {
             NSColor color = NSColor.colorWithDeviceRed(rgb.red / 255f, rgb.green / 255f, rgb.blue / 255f, 1);
             panel.setColor(color);
         }
-        NSString appName = ((SwtDisplay) Display.getImpl()).getApplicationName();
+        NSString appName = SwtDisplay.getApplicationName();
         NSColorList colorList = NSColorList.colorListNamed(appName);
         if (colorList == null) {
             colorList = (NSColorList) new NSColorList().alloc();
@@ -174,7 +174,7 @@ public class SwtColorDialog extends SwtDialog implements IColorDialog {
             }
         }
         SWTPanelDelegate delegate = (SWTPanelDelegate) new SWTPanelDelegate().alloc().init();
-        long jniRef = OS.NewGlobalRef(this);
+        long jniRef = OS.NewGlobalRef(this.getApi());
         if (jniRef == 0)
             error(SWT.ERROR_NO_HANDLES);
         OS.object_setInstanceVariable(delegate.id, SwtDisplay.SWT_OBJECT, jniRef);
@@ -182,7 +182,7 @@ public class SwtColorDialog extends SwtDialog implements IColorDialog {
         rgb = null;
         selected = false;
         panel.orderFront(null);
-        ((SwtDisplay) display.getImpl()).setModalDialog(this);
+        ((SwtDisplay) display.getImpl()).setModalDialog(this.getApi());
         NSApplication.sharedApplication().runModalForWindow(panel);
         ((SwtDisplay) display.getImpl()).setModalDialog(null);
         panel.setDelegate(null);

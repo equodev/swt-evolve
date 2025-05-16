@@ -150,7 +150,7 @@ public abstract class SwtDialog implements IDialog {
      * @see Widget#checkSubclass
      */
     public void checkSubclass() {
-        if (!((SwtDisplay) Display.getImpl()).isValidClass(getClass())) {
+        if (!SwtDisplay.isValidClass(getClass())) {
             error(SWT.ERROR_INVALID_SUBCLASS);
         }
     }
@@ -193,7 +193,7 @@ public abstract class SwtDialog implements IDialog {
                     style |= SWT.RIGHT_TO_LEFT;
             }
         }
-        return ((SwtWidget) Widget.getImpl()).checkBits(style, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, 0, 0, 0, 0);
+        return SwtWidget.checkBits(style, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, 0, 0, 0, 0);
     }
 
     /**

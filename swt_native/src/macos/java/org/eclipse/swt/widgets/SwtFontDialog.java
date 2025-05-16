@@ -169,14 +169,14 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
      * </ul>
      */
     public FontData open() {
-        Display display = parent != null ? ((SwtWidget) parent.getImpl()).display : Display.getCurrent();
+        Display display = parent != null ? ((SwtWidget) parent.getImpl()).display : SwtDisplay.getCurrent();
         NSFontPanel panel = NSFontPanel.sharedFontPanel();
         panel.setTitle(NSString.stringWith(title != null ? title : ""));
         boolean create = fontData != null;
         Font font = create ? new Font(display, fontData) : display.getSystemFont();
         panel.setPanelFont(font.handle, false);
         SWTPanelDelegate delegate = (SWTPanelDelegate) new SWTPanelDelegate().alloc().init();
-        long jniRef = OS.NewGlobalRef(this);
+        long jniRef = OS.NewGlobalRef(this.getApi());
         if (jniRef == 0)
             error(SWT.ERROR_NO_HANDLES);
         OS.object_setInstanceVariable(delegate.id, SwtDisplay.SWT_OBJECT, jniRef);
@@ -184,13 +184,13 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
         fontData = null;
         selected = false;
         panel.orderFront(null);
-        ((SwtDisplay) display.getImpl()).setModalDialog(this);
+        ((SwtDisplay) display.getImpl()).setModalDialog(this.getApi());
         NSApplication.sharedApplication().runModalForWindow(panel);
         ((SwtDisplay) display.getImpl()).setModalDialog(null);
         if (selected) {
             NSFont nsFont = panel.panelConvertFont(font.handle);
             if (nsFont != null) {
-                fontData = Font.cocoa_new(display, nsFont).getFontData()[0];
+                fontData = SwtFont.cocoa_new(display, nsFont).getFontData()[0];
             }
         }
         panel.setDelegate(null);
@@ -206,7 +206,7 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
             //$NON-NLS-1$
             if (colorArg != 0) {
                 NSColor color = new NSColor(colorArg);
-                Display display = parent != null ? parent.getDisplay() : Display.getCurrent();
+                Display display = parent != null ? parent.getDisplay() : SwtDisplay.getCurrent();
                 double[] handle = ((SwtDisplay) display.getImpl()).getNSColorRGB(color);
                 if (handle != null) {
                     rgb = new RGB((int) (handle[0] * 255), (int) (handle[1] * 255), (int) (handle[2] * 255));

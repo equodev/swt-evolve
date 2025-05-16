@@ -141,7 +141,7 @@ public class SwtIME extends SwtWidget implements IIME {
         text = "";
         startOffset = -1;
         if (parent.getIME() == null) {
-            parent.setIME(this);
+            parent.setIME(this.getApi());
         }
     }
 
@@ -283,13 +283,13 @@ public class SwtIME extends SwtWidget implements IIME {
             NSString key = new NSString(keys.objectAtIndex(j));
             if (key.isEqual(OS.NSBackgroundColorAttributeName)) {
                 NSColor color = new NSColor(attribs.objectForKey(key));
-                style.background = Color.cocoa_new(display, ((SwtDisplay) display.getImpl()).getNSColorRGB(color));
+                style.background = SwtColor.cocoa_new(display, ((SwtDisplay) display.getImpl()).getNSColorRGB(color));
             } else if (key.isEqual(OS.NSForegroundColorAttributeName)) {
                 NSColor color = new NSColor(attribs.objectForKey(key));
-                style.foreground = Color.cocoa_new(display, ((SwtDisplay) display.getImpl()).getNSColorRGB(color));
+                style.foreground = SwtColor.cocoa_new(display, ((SwtDisplay) display.getImpl()).getNSColorRGB(color));
             } else if (key.isEqual(OS.NSUnderlineColorAttributeName)) {
                 NSColor color = new NSColor(attribs.objectForKey(key));
-                style.underlineColor = Color.cocoa_new(display, ((SwtDisplay) display.getImpl()).getNSColorRGB(color));
+                style.underlineColor = SwtColor.cocoa_new(display, ((SwtDisplay) display.getImpl()).getNSColorRGB(color));
             } else if (key.isEqual(OS.NSUnderlineStyleAttributeName)) {
                 NSNumber value = new NSNumber(attribs.objectForKey(key));
                 switch(value.intValue()) {
@@ -306,14 +306,14 @@ public class SwtIME extends SwtWidget implements IIME {
                 style.underline = value.intValue() != OS.NSUnderlineStyleNone;
             } else if (key.isEqual(OS.NSStrikethroughColorAttributeName)) {
                 NSColor color = new NSColor(attribs.objectForKey(key));
-                style.strikeoutColor = Color.cocoa_new(display, ((SwtDisplay) display.getImpl()).getNSColorRGB(color));
+                style.strikeoutColor = SwtColor.cocoa_new(display, ((SwtDisplay) display.getImpl()).getNSColorRGB(color));
             } else if (key.isEqual(OS.NSStrikethroughStyleAttributeName)) {
                 NSNumber value = new NSNumber(attribs.objectForKey(key));
                 style.strikeout = value.intValue() != OS.NSUnderlineStyleNone;
             } else if (key.isEqual(OS.NSFontAttributeName)) {
                 NSFont font = new NSFont(attribs.objectForKey(key));
                 font.retain();
-                style.font = Font.cocoa_new(display, font);
+                style.font = SwtFont.cocoa_new(display, font);
             }
         }
         return style;
@@ -417,14 +417,14 @@ public class SwtIME extends SwtWidget implements IIME {
 
     @Override
     void releaseParent() {
-        ((SwtWidget) super.getImpl()).releaseParent();
-        if (this == parent.getIME())
+        super.releaseParent();
+        if (this.getApi() == parent.getIME())
             parent.setIME(null);
     }
 
     @Override
     void releaseWidget() {
-        ((SwtWidget) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         parent = null;
         text = null;
         resetStyles();

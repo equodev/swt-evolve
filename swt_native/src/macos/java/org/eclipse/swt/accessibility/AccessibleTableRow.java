@@ -35,23 +35,23 @@ class AccessibleTableRow extends Accessible {
 
             @Override
             public void getChildCount(AccessibleControlEvent e) {
-                e.detail = Math.max(1, parent.getColumnCount());
+                e.detail = Math.max(1, ((SwtAccessible) parent.getImpl()).getColumnCount());
             }
 
             @Override
             public void getChildren(AccessibleControlEvent e) {
-                int validColumnCount = Math.max(1, parent.getColumnCount());
+                int validColumnCount = Math.max(1, ((SwtAccessible) parent.getImpl()).getColumnCount());
                 Object[] children = new Object[validColumnCount];
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
                 for (int i = 0; i < validColumnCount; i++) {
                     event.column = i;
                     event.row = index;
-                    for (int j = 0; j < parent.accessibleTableListeners.size(); j++) {
-                        AccessibleTableListener listener = parent.accessibleTableListeners.get(j);
+                    for (int j = 0; j < ((SwtAccessible) parent.getImpl()).accessibleTableListeners.size(); j++) {
+                        AccessibleTableListener listener = ((SwtAccessible) parent.getImpl()).accessibleTableListeners.get(j);
                         listener.getCell(event);
                     }
                     if (event.accessible != null) {
-                        event.accessible.parent = AccessibleTableRow.this;
+                        ((SwtAccessible) event.accessible.getImpl()).parent = AccessibleTableRow.this;
                     }
                     children[i] = event.accessible;
                 }
@@ -60,26 +60,26 @@ class AccessibleTableRow extends Accessible {
 
             @Override
             public void getLocation(AccessibleControlEvent e) {
-                int validColumnCount = Math.max(1, parent.getColumnCount());
+                int validColumnCount = Math.max(1, ((SwtAccessible) parent.getImpl()).getColumnCount());
                 Accessible[] children = new Accessible[validColumnCount];
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
                 for (int i = 0; i < validColumnCount; i++) {
                     event.column = i;
                     event.row = index;
-                    for (int j = 0; j < parent.accessibleTableListeners.size(); j++) {
-                        AccessibleTableListener listener = parent.accessibleTableListeners.get(j);
+                    for (int j = 0; j < ((SwtAccessible) parent.getImpl()).accessibleTableListeners.size(); j++) {
+                        AccessibleTableListener listener = ((SwtAccessible) parent.getImpl()).accessibleTableListeners.get(j);
                         listener.getCell(event);
                     }
                     children[i] = event.accessible;
                 }
                 // Ask first child for position.
-                NSValue positionObj = (NSValue) children[0].getPositionAttribute(ACC.CHILDID_SELF);
+                NSValue positionObj = (NSValue) ((SwtAccessible) children[0].getImpl()).getPositionAttribute(ACC.CHILDID_SELF);
                 NSPoint position = positionObj.pointValue();
                 // Ask all children for size.
                 int height = 0;
                 int width = 0;
                 for (int j = 0; j < children.length; j++) {
-                    NSValue sizeObj = (NSValue) children[j].getSizeAttribute(ACC.CHILDID_SELF);
+                    NSValue sizeObj = (NSValue) ((SwtAccessible) children[j].getImpl()).getSizeAttribute(ACC.CHILDID_SELF);
                     NSSize size = sizeObj.sizeValue();
                     if (size.height > height)
                         height = (int) size.height;
@@ -112,12 +112,12 @@ class AccessibleTableRow extends Accessible {
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
                 event.column = 0;
                 event.row = index;
-                for (int j = 0; j < parent.accessibleTableListeners.size(); j++) {
-                    AccessibleTableListener listener = parent.accessibleTableListeners.get(j);
+                for (int j = 0; j < ((SwtAccessible) parent.getImpl()).accessibleTableListeners.size(); j++) {
+                    AccessibleTableListener listener = ((SwtAccessible) parent.getImpl()).accessibleTableListeners.get(j);
                     listener.getCell(event);
                 }
                 if (event.accessible != null) {
-                    NSNumber focusedObj = (NSNumber) event.accessible.getFocusedAttribute(ACC.CHILDID_SELF);
+                    NSNumber focusedObj = (NSNumber) ((SwtAccessible) event.accessible.getImpl()).getFocusedAttribute(ACC.CHILDID_SELF);
                     e.childID = focusedObj.boolValue() ? ACC.CHILDID_SELF : ACC.CHILDID_NONE;
                 } else {
                     e.childID = ACC.CHILDID_NONE;
@@ -136,8 +136,8 @@ class AccessibleTableRow extends Accessible {
                 // Delegate to the parent table.
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
                 event.row = e.row;
-                for (int i = 0; i < parent.accessibleTableListeners.size(); i++) {
-                    AccessibleTableListener listener = parent.accessibleTableListeners.get(i);
+                for (int i = 0; i < ((SwtAccessible) parent.getImpl()).accessibleTableListeners.size(); i++) {
+                    AccessibleTableListener listener = ((SwtAccessible) parent.getImpl()).accessibleTableListeners.get(i);
                     listener.isRowSelected(event);
                 }
                 e.isSelected = event.isSelected;
@@ -146,25 +146,25 @@ class AccessibleTableRow extends Accessible {
     }
 
     void getChildAtPoint(AccessibleControlEvent e) {
-        int validColumnCount = Math.max(1, parent.getColumnCount());
+        int validColumnCount = Math.max(1, ((SwtAccessible) parent.getImpl()).getColumnCount());
         Accessible[] children = new Accessible[validColumnCount];
         AccessibleTableEvent event = new AccessibleTableEvent(this);
         for (int i = 0; i < validColumnCount; i++) {
             event.column = i;
             event.row = index;
-            for (int j = 0; j < parent.accessibleTableListeners.size(); j++) {
-                AccessibleTableListener listener = parent.accessibleTableListeners.get(j);
+            for (int j = 0; j < ((SwtAccessible) parent.getImpl()).accessibleTableListeners.size(); j++) {
+                AccessibleTableListener listener = ((SwtAccessible) parent.getImpl()).accessibleTableListeners.get(j);
                 listener.getCell(event);
             }
             children[i] = event.accessible;
         }
         for (int j = 0; j < children.length; j++) {
-            NSValue positionObj = (NSValue) children[j].getPositionAttribute(index);
+            NSValue positionObj = (NSValue) ((SwtAccessible) children[j].getImpl()).getPositionAttribute(index);
             NSPoint position = positionObj.pointValue();
-            NSValue sizeObj = (NSValue) children[j].getSizeAttribute(index);
+            NSValue sizeObj = (NSValue) ((SwtAccessible) children[j].getImpl()).getSizeAttribute(index);
             NSSize size = sizeObj.sizeValue();
             if (position.x <= e.x && e.x <= position.x + size.width) {
-                children[j].parent = this;
+                ((SwtAccessible) children[j].getImpl()).parent = this;
                 e.accessible = children[j];
                 break;
             }

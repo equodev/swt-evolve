@@ -79,12 +79,12 @@ class TableAccessibleDelegate {
             public void getChildAtPoint(AccessibleControlEvent e) {
                 NSPoint testPoint = new NSPoint();
                 testPoint.x = e.x;
-                Monitor primaryMonitor = Display.getCurrent().getPrimaryMonitor();
+                Monitor primaryMonitor = SwtDisplay.getCurrent().getPrimaryMonitor();
                 testPoint.y = primaryMonitor.getBounds().height - e.y;
                 for (AccessibleTableRow row : childRowToIdMap.values()) {
-                    NSValue locationValue = new NSValue(row.getPositionAttribute(ACC.CHILDID_SELF).id);
+                    NSValue locationValue = new NSValue(((SwtAccessible) row.getImpl()).getPositionAttribute(ACC.CHILDID_SELF).id);
                     NSPoint location = locationValue.pointValue();
-                    NSValue sizeValue = new NSValue(row.getSizeAttribute(ACC.CHILDID_SELF));
+                    NSValue sizeValue = new NSValue(((SwtAccessible) row.getImpl()).getSizeAttribute(ACC.CHILDID_SELF));
                     NSSize size = sizeValue.sizeValue();
                     if (location.y < testPoint.y && testPoint.y < (location.y + size.height)) {
                         AccessibleControlEvent e2 = new AccessibleControlEvent(e.getSource());
@@ -100,20 +100,20 @@ class TableAccessibleDelegate {
             public void getState(AccessibleControlEvent e) {
                 int state = ACC.STATE_NORMAL | ACC.STATE_FOCUSABLE | ACC.STATE_SELECTABLE;
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
-                for (int i = 0; i < tableAccessible.accessibleTableListeners.size(); i++) {
-                    AccessibleTableListener listener = tableAccessible.accessibleTableListeners.get(i);
+                for (int i = 0; i < ((SwtAccessible) tableAccessible.getImpl()).accessibleTableListeners.size(); i++) {
+                    AccessibleTableListener listener = ((SwtAccessible) tableAccessible.getImpl()).accessibleTableListeners.get(i);
                     listener.getSelectedRows(event);
                 }
                 if (event.selected != null) {
                     int[] selected = event.selected;
                     for (int i = 0; i < selected.length; i++) {
-                        if (selected[i] == tableAccessible.index) {
+                        if (selected[i] == ((SwtAccessible) tableAccessible.getImpl()).index) {
                             state |= ACC.STATE_SELECTED;
                             break;
                         }
                     }
                 }
-                NSNumber focusedObject = (NSNumber) tableAccessible.getFocusedAttribute(ACC.CHILDID_SELF);
+                NSNumber focusedObject = (NSNumber) ((SwtAccessible) tableAccessible.getImpl()).getFocusedAttribute(ACC.CHILDID_SELF);
                 if (focusedObject.boolValue()) {
                     state |= ACC.STATE_FOCUSED;
                 }
@@ -125,8 +125,8 @@ class TableAccessibleDelegate {
             @Override
             public void getColumnCount(AccessibleTableEvent e) {
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
-                for (int i = 0; i < tableAccessible.accessibleTableListeners.size(); i++) {
-                    AccessibleTableListener listener = tableAccessible.accessibleTableListeners.get(i);
+                for (int i = 0; i < ((SwtAccessible) tableAccessible.getImpl()).accessibleTableListeners.size(); i++) {
+                    AccessibleTableListener listener = ((SwtAccessible) tableAccessible.getImpl()).accessibleTableListeners.get(i);
                     if (listener != this)
                         listener.getColumnCount(event);
                 }
@@ -170,8 +170,8 @@ class TableAccessibleDelegate {
             @Override
             public void getRowCount(AccessibleTableEvent e) {
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
-                for (int i = 0; i < tableAccessible.accessibleTableListeners.size(); i++) {
-                    AccessibleTableListener listener = tableAccessible.accessibleTableListeners.get(i);
+                for (int i = 0; i < ((SwtAccessible) tableAccessible.getImpl()).accessibleTableListeners.size(); i++) {
+                    AccessibleTableListener listener = ((SwtAccessible) tableAccessible.getImpl()).accessibleTableListeners.get(i);
                     if (listener != this)
                         listener.getRowCount(event);
                 }
@@ -244,7 +244,7 @@ class TableAccessibleDelegate {
     void release() {
         if (childRowToIdMap != null) {
             for (AccessibleTableRow delegate : childRowToIdMap.values()) {
-                SWTAccessibleDelegate childDelegate = delegate.delegate;
+                SWTAccessibleDelegate childDelegate = ((SwtAccessible) delegate.getImpl()).delegate;
                 if (childDelegate != null) {
                     childDelegate.internal_dispose_SWTAccessibleDelegate();
                     childDelegate.release();
@@ -255,7 +255,7 @@ class TableAccessibleDelegate {
         }
         if (childColumnToIdMap != null) {
             for (AccessibleTableColumn delegate : childColumnToIdMap.values()) {
-                SWTAccessibleDelegate childDelegate = delegate.delegate;
+                SWTAccessibleDelegate childDelegate = ((SwtAccessible) delegate.getImpl()).delegate;
                 if (childDelegate != null) {
                     childDelegate.internal_dispose_SWTAccessibleDelegate();
                     childDelegate.release();

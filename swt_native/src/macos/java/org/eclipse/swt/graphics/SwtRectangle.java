@@ -140,7 +140,7 @@ public final class SwtRectangle implements Serializable, IRectangle {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
+        if (object == this.getApi())
             return true;
         if (!(object instanceof Rectangle r))
             return false;
@@ -178,7 +178,7 @@ public final class SwtRectangle implements Serializable, IRectangle {
     public void intersect(Rectangle rect) {
         if (rect == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (this == rect)
+        if (this.getApi() == rect)
             return;
         int left = getApi().x > rect.x ? getApi().x : rect.x;
         int top = getApi().y > rect.y ? getApi().y : rect.y;
@@ -212,7 +212,7 @@ public final class SwtRectangle implements Serializable, IRectangle {
     public Rectangle intersection(Rectangle rect) {
         if (rect == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (this == rect)
+        if (this.getApi() == rect)
             return new Rectangle(getApi().x, getApi().y, getApi().width, getApi().height);
         int left = getApi().x > rect.x ? getApi().x : rect.x;
         int top = getApi().y > rect.y ? getApi().y : rect.y;
@@ -274,7 +274,7 @@ public final class SwtRectangle implements Serializable, IRectangle {
     public boolean intersects(Rectangle rect) {
         if (rect == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return rect == this || intersects(rect.x, rect.y, rect.width, rect.height);
+        return rect == this.getApi() || intersects(rect.x, rect.y, rect.width, rect.height);
     }
 
     /**

@@ -306,7 +306,7 @@ public final class SwtColor extends SwtResource implements IColor {
         // Fall back on Device.getDevice only if we haven't been disposed
         // already.
         if (this.device == null && this.getApi().handle != null)
-            return ((SwtDevice) Device.getImpl()).getDevice();
+            return SwtDevice.getDevice();
         return super.getDevice();
     }
 
@@ -322,7 +322,7 @@ public final class SwtColor extends SwtResource implements IColor {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
+        if (object == this.getApi())
             return true;
         if (!(object instanceof Color color))
             return false;

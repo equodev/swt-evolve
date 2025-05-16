@@ -80,7 +80,7 @@ class MouseNavigator {
         if ((e.button != 2) || navigationActivated) {
             return;
         }
-        if (!parent.isVisible() || !parent.getEnabled() || parent.middleClickPressed) {
+        if (!parent.isVisible() || !parent.getEnabled() || ((SwtStyledText) parent.getImpl()).middleClickPressed) {
             return;
         }
         // Widget has no bar or bars are not enabled
@@ -181,7 +181,7 @@ class MouseNavigator {
     }
 
     private Point getMouseLocation() {
-        final Point cursorLocation = Display.getCurrent().getCursorLocation();
+        final Point cursorLocation = SwtDisplay.getCurrent().getCursorLocation();
         final Point relativeCursorLocation = parent.toControl(cursorLocation);
         return relativeCursorLocation;
     }

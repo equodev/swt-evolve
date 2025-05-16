@@ -121,7 +121,7 @@ public class SwtSash extends SwtControl implements ISash {
                 extraAttributes.addObject(OS.NSAccessibilityTitleAttribute);
                 for (int i = (int) extraAttributes.count() - 1; i >= 0; i--) {
                     NSString attribute = new NSString(extraAttributes.objectAtIndex(i).id);
-                    if (accessible.internal_accessibilityAttributeValue(attribute, ACC.CHILDID_SELF) != null) {
+                    if (((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue(attribute, ACC.CHILDID_SELF) != null) {
                         ourAttributes.addObject(extraAttributes.objectAtIndex(i));
                     }
                 }
@@ -137,7 +137,7 @@ public class SwtSash extends SwtControl implements ISash {
         long returnValue = 0;
         NSString attributeName = new NSString(arg0);
         if (accessible != null) {
-            id returnObject = accessible.internal_accessibilityAttributeValue(attributeName, ACC.CHILDID_SELF);
+            id returnObject = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue(attributeName, ACC.CHILDID_SELF);
             if (returnObject != null)
                 returnValue = returnObject.id;
         }
@@ -170,7 +170,7 @@ public class SwtSash extends SwtControl implements ISash {
             Control[] children = ((SwtComposite) parent.getImpl())._getChildren();
             Control nextView = null;
             for (int i = 0; i < children.length; i++) {
-                if (children[i] == this) {
+                if (children[i] == this.getApi()) {
                     if (i < children.length - 1) {
                         nextView = children[i + 1];
                         break;
@@ -185,7 +185,7 @@ public class SwtSash extends SwtControl implements ISash {
             Control[] children = ((SwtComposite) parent.getImpl())._getChildren();
             Control nextView = null;
             for (int i = 0; i < children.length; i++) {
-                if (children[i] == this) {
+                if (children[i] == this.getApi()) {
                     if (i > 0) {
                         nextView = children[i - 1];
                         break;
@@ -197,7 +197,7 @@ public class SwtSash extends SwtControl implements ISash {
             else
                 return NSArray.array().id;
         }
-        return ((SwtControl) super.getImpl()).accessibilityAttributeValue(id, sel, arg0);
+        return super.accessibilityAttributeValue(id, sel, arg0);
     }
 
     @Override
@@ -244,7 +244,7 @@ public class SwtSash extends SwtControl implements ISash {
 
     @Override
     boolean becomeFirstResponder(long id, long sel) {
-        boolean result = ((SwtControl) super.getImpl()).becomeFirstResponder(id, sel);
+        boolean result = super.becomeFirstResponder(id, sel);
         NSRect frame = getApi().view.frame();
         lastX = (int) frame.x;
         lastY = (int) frame.y;
@@ -286,7 +286,7 @@ public class SwtSash extends SwtControl implements ISash {
 
     @Override
     Cursor findCursor() {
-        Cursor cursor = ((SwtControl) super.getImpl()).findCursor();
+        Cursor cursor = super.findCursor();
         if (cursor == null) {
             int cursorType = (style & SWT.HORIZONTAL) != 0 ? SWT.CURSOR_SIZENS : SWT.CURSOR_SIZEWE;
             cursor = display.getSystemCursor(cursorType);
@@ -296,7 +296,7 @@ public class SwtSash extends SwtControl implements ISash {
 
     @Override
     boolean sendKeyEvent(NSEvent nsEvent, int type) {
-        ((SwtWidget) super.getImpl()).sendKeyEvent(nsEvent, type);
+        super.sendKeyEvent(nsEvent, type);
         if (type == SWT.KeyDown) {
             int keyCode = nsEvent.keyCode();
             switch(keyCode) {
@@ -370,7 +370,7 @@ public class SwtSash extends SwtControl implements ISash {
     @Override
     void mouseDown(long id, long sel, long theEvent) {
         //TODO use sendMouseEvent
-        ((SwtControl) super.getImpl()).mouseDown(id, sel, theEvent);
+        super.mouseDown(id, sel, theEvent);
         if (isDisposed())
             return;
         NSEvent nsEvent = new NSEvent(theEvent);
@@ -399,14 +399,14 @@ public class SwtSash extends SwtControl implements ISash {
 
     @Override
     boolean mouseEvent(long id, long sel, long theEvent, int type) {
-        ((SwtControl) super.getImpl()).mouseEvent(id, sel, theEvent, type);
+        super.mouseEvent(id, sel, theEvent, type);
         return new NSEvent(theEvent).type() != OS.NSLeftMouseDown;
     }
 
     @Override
     void mouseDragged(long id, long sel, long theEvent) {
         //TODO use sendMouseEvent
-        ((SwtControl) super.getImpl()).mouseDragged(id, sel, theEvent);
+        super.mouseDragged(id, sel, theEvent);
         if (isDisposed())
             return;
         if (!dragging)
@@ -442,7 +442,7 @@ public class SwtSash extends SwtControl implements ISash {
     @Override
     void mouseUp(long id, long sel, long theEvent) {
         //TODO use sendMouseEvent
-        ((SwtControl) super.getImpl()).mouseUp(id, sel, theEvent);
+        super.mouseUp(id, sel, theEvent);
         if (isDisposed())
             return;
         if (!dragging)
@@ -464,7 +464,7 @@ public class SwtSash extends SwtControl implements ISash {
 
     @Override
     void releaseHandle() {
-        ((SwtControl) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (accessibilityAttributes != null)
             accessibilityAttributes.release();
         accessibilityAttributes = null;
@@ -472,7 +472,7 @@ public class SwtSash extends SwtControl implements ISash {
 
     @Override
     void releaseWidget() {
-        ((SwtControl) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         if (sizeCursor != null)
             sizeCursor.dispose();
         sizeCursor = null;

@@ -45,7 +45,7 @@ class DNDListener extends TypedListener {
                     //    corresponding 'sourceEffect.dragFinished()'.
                     // 2) It simply makes no sense to prepare drag image if drag&drop
                     //    is not going to happen.
-                    if (event.doit && dragSource.canBeginDrag() && (sourceEffect != null)) {
+                    if (event.doit && ((SwtDragSource) dragSource.getImpl()).canBeginDrag() && (sourceEffect != null)) {
                         sourceEffect.dragStart(event);
                     }
                     event.updateEvent((DNDEvent) e);

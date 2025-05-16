@@ -130,7 +130,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         super(parent, style);
         this.parent = parent;
         if (create)
-            ((SwtTable) parent.getImpl()).createItem(this, index);
+            ((SwtTable) parent.getImpl()).createItem(this.getApi(), index);
     }
 
     static Table checkNull(Table control) {
@@ -186,7 +186,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         if (sendMeasure && ((SwtWidget) parent.getImpl()).hooks(SWT.MeasureItem)) {
             gc.setFont(font);
             Event event = new Event();
-            event.item = this;
+            event.item = this.getApi();
             event.index = index;
             event.gc = gc;
             NSTableView widget = (NSTableView) parent.view;
@@ -236,7 +236,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
 
     @Override
     void destroyWidget() {
-        ((SwtTable) parent.getImpl()).destroyItem(this);
+        ((SwtTable) parent.getImpl()).destroyItem(this.getApi());
         releaseHandle();
     }
 
@@ -254,7 +254,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Color getBackground() {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         return background != null ? background : parent.getBackground();
     }
@@ -274,7 +274,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Color getBackground(int index) {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         int count = Math.max(1, ((SwtTable) parent.getImpl()).columnCount);
         if (0 > index || index > count - 1)
@@ -299,10 +299,10 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         NSTableView widget = (NSTableView) parent.view;
-        int rowIndex = parent.indexOf(this);
+        int rowIndex = parent.indexOf(this.getApi());
         NSTableColumn column = ((SwtTable) parent.getImpl()).columnCount == 0 ? ((SwtTable) parent.getImpl()).firstColumn : ((SwtTableColumn) parent.columns[0].getImpl()).nsColumn;
         int columnIndex = ((SwtTable) parent.getImpl()).indexOf(column);
         NSRect titleRect = widget.frameOfCellAtColumn(columnIndex, rowIndex);
@@ -358,7 +358,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Rectangle getBounds(int index) {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (!(0 <= index && index < Math.max(1, ((SwtTable) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
@@ -369,7 +369,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
             TableColumn column = parent.getColumn(index);
             index = ((SwtTable) parent.getImpl()).indexOf(((SwtTableColumn) column.getImpl()).nsColumn);
         }
-        NSRect rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this));
+        NSRect rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this.getApi()));
         return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
     }
 
@@ -387,7 +387,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public boolean getChecked() {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if ((((SwtWidget) parent.getImpl()).style & SWT.CHECK) == 0)
             return false;
@@ -408,7 +408,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Font getFont() {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         return font != null ? font : parent.getFont();
     }
@@ -429,7 +429,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Font getFont(int index) {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         int count = Math.max(1, ((SwtTable) parent.getImpl()).columnCount);
         if (0 > index || index > count - 1)
@@ -453,7 +453,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Color getForeground() {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         return foreground != null ? foreground : parent.getForeground();
     }
@@ -473,7 +473,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Color getForeground(int index) {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         int count = Math.max(1, ((SwtTable) parent.getImpl()).columnCount);
         if (0 > index || index > count - 1)
@@ -497,7 +497,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public boolean getGrayed() {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if ((((SwtWidget) parent.getImpl()).style & SWT.CHECK) == 0)
             return false;
@@ -507,7 +507,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
     @Override
     public Image getImage() {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         return super.getImage();
     }
@@ -526,7 +526,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Image getImage(int index) {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (index == 0)
             return getImage();
@@ -553,7 +553,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Rectangle getImageBounds(int index) {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (!(0 <= index && index < Math.max(1, ((SwtTable) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
@@ -565,7 +565,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
             TableColumn column = parent.getColumn(index);
             index = ((SwtTable) parent.getImpl()).indexOf(((SwtTableColumn) column.getImpl()).nsColumn);
         }
-        NSRect rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this));
+        NSRect rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this.getApi()));
         rect.x += SwtTable.IMAGE_GAP;
         if (image != null) {
             rect.width = ((SwtTable) parent.getImpl()).imageBounds.width;
@@ -587,7 +587,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public int getImageIndent() {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         return 0;
     }
@@ -599,7 +599,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
             if (!cached)
                 return "*virtual*";
         }
-        return ((SwtItem) super.getImpl()).getNameText();
+        return super.getNameText();
     }
 
     /**
@@ -620,7 +620,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
     @Override
     public String getText() {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         return super.getText();
     }
@@ -639,7 +639,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public String getText(int index) {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (index == 0)
             return getText();
@@ -670,7 +670,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Rectangle getTextBounds(int index) {
         checkWidget();
-        if (!((SwtTable) parent.getImpl()).checkData(this))
+        if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (!(0 <= index && index < Math.max(1, ((SwtTable) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
@@ -682,7 +682,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
             TableColumn column = parent.getColumn(index);
             index = ((SwtTable) parent.getImpl()).indexOf(((SwtTableColumn) column.getImpl()).nsColumn);
         }
-        NSRect rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this));
+        NSRect rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this.getApi()));
         rect.x += SwtTable.TEXT_GAP;
         rect.width -= SwtTable.TEXT_GAP;
         if (image != null) {
@@ -699,13 +699,13 @@ public class SwtTableItem extends SwtItem implements ITableItem {
     }
 
     void redraw(int columnIndex) {
-        if (((SwtTable) parent.getImpl()).currentItem == this || !isDrawing())
+        if (((SwtTable) parent.getImpl()).currentItem == this.getApi() || !isDrawing())
             return;
         /* redraw the full item if columnIndex == -1 */
         NSTableView tableView = (NSTableView) parent.view;
         NSRect rect = null;
         if (columnIndex == -1 || ((SwtWidget) parent.getImpl()).hooks(SWT.MeasureItem) || ((SwtWidget) parent.getImpl()).hooks(SWT.EraseItem) || ((SwtWidget) parent.getImpl()).hooks(SWT.PaintItem)) {
-            rect = tableView.rectOfRow(parent.indexOf(this));
+            rect = tableView.rectOfRow(parent.indexOf(this.getApi()));
         } else {
             int index;
             if (((SwtTable) parent.getImpl()).columnCount == 0) {
@@ -717,26 +717,26 @@ public class SwtTableItem extends SwtItem implements ITableItem {
                     return;
                 }
             }
-            rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this));
+            rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this.getApi()));
         }
         tableView.setNeedsDisplayInRect(rect);
     }
 
     @Override
     void releaseHandle() {
-        ((SwtWidget) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         parent = null;
     }
 
     @Override
     void releaseParent() {
-        ((SwtWidget) super.getImpl()).releaseParent();
+        super.releaseParent();
         //	parent.checkItems (true);
     }
 
     @Override
     void releaseWidget() {
-        ((SwtItem) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         strings = null;
         images = null;
         background = foreground = null;
@@ -1053,7 +1053,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        int itemIndex = parent.indexOf(this);
+        int itemIndex = parent.indexOf(this.getApi());
         if (itemIndex == -1)
             return;
         if (((SwtTable) parent.getImpl()).imageBounds == null && image != null) {
@@ -1079,7 +1079,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         }
         cached = true;
         if (index == 0)
-            ((SwtTable) parent.getImpl()).setScrollWidth(this);
+            ((SwtTable) parent.getImpl()).setScrollWidth(this.getApi());
         redraw(index);
     }
 
@@ -1174,7 +1174,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         }
         cached = true;
         if (index == 0)
-            ((SwtTable) parent.getImpl()).setScrollWidth(this);
+            ((SwtTable) parent.getImpl()).setScrollWidth(this.getApi());
         redraw(index);
     }
 

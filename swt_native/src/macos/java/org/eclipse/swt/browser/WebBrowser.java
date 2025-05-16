@@ -217,23 +217,23 @@ abstract class WebBrowser {
 	 * (the new function overwrites the old one).
 	 */
         for (BrowserFunction current : functions.values()) {
-            if (current.name.equals(function.name)) {
+            if (((SwtBrowserFunction) current.getImpl()).name.equals(((SwtBrowserFunction) function.getImpl()).name)) {
                 deregisterFunction(current);
                 break;
             }
         }
-        function.index = getNextFunctionIndex();
+        ((SwtBrowserFunction) function.getImpl()).index = getNextFunctionIndex();
         registerFunction(function);
-        StringBuilder functionBuffer = new StringBuilder(function.name);
+        StringBuilder functionBuffer = new StringBuilder(((SwtBrowserFunction) function.getImpl()).name);
         //$NON-NLS-1$
         functionBuffer.append(" = function ");
-        functionBuffer.append(function.name);
+        functionBuffer.append(((SwtBrowserFunction) function.getImpl()).name);
         //$NON-NLS-1$
         functionBuffer.append("() {var result = callJava(");
-        functionBuffer.append(function.index);
+        functionBuffer.append(((SwtBrowserFunction) function.getImpl()).index);
         //$NON-NLS-1$
         functionBuffer.append(",'");
-        functionBuffer.append(function.token);
+        functionBuffer.append(((SwtBrowserFunction) function.getImpl()).token);
         //$NON-NLS-1$
         functionBuffer.append("',Array.prototype.slice.call(arguments)); if (typeof result == 'string' && result.indexOf('");
         functionBuffer.append(ERROR_ID);
@@ -245,21 +245,21 @@ abstract class WebBrowser {
         String javaCallDeclaration = getJavaCallDeclaration();
         StringBuilder buffer = new StringBuilder();
         buffer.append(javaCallDeclaration);
-        if (function.top) {
+        if (((SwtBrowserFunction) function.getImpl()).top) {
             buffer.append(functionBuffer.toString());
         }
         //$NON-NLS-1$
         buffer.append("var frameIds = null;");
-        if (function.frameNames != null) {
+        if (((SwtBrowserFunction) function.getImpl()).frameNames != null) {
             //$NON-NLS-1$
             buffer.append("frameIds = {");
-            for (String frameName : function.frameNames) {
+            for (String frameName : ((SwtBrowserFunction) function.getImpl()).frameNames) {
                 buffer.append('\'');
                 buffer.append(frameName);
                 //$NON-NLS-1$
                 buffer.append("':1,");
             }
-            if (function.frameNames.length > 0) {
+            if (((SwtBrowserFunction) function.getImpl()).frameNames.length > 0) {
                 buffer.deleteCharAt(buffer.length() - 1);
             }
             //$NON-NLS-1$
@@ -272,8 +272,8 @@ abstract class WebBrowser {
         buffer.append(functionBuffer.toString());
         //$NON-NLS-1$
         buffer.append("}} catch(e) {}};");
-        function.functionString = buffer.toString();
-        nonBlockingExecute(function.functionString);
+        ((SwtBrowserFunction) function.getImpl()).functionString = buffer.toString();
+        nonBlockingExecute(((SwtBrowserFunction) function.getImpl()).functionString);
     }
 
     /**
@@ -285,11 +285,11 @@ abstract class WebBrowser {
     }
 
     void deregisterFunction(BrowserFunction function) {
-        functions.remove(function.index);
+        functions.remove(((SwtBrowserFunction) function.getImpl()).index);
     }
 
     public void destroyFunction(BrowserFunction function) {
-        String deleteString = getDeleteFunctionString(function.name);
+        String deleteString = getDeleteFunctionString(((SwtBrowserFunction) function.getImpl()).name);
         //$NON-NLS-1$
         StringBuilder buffer = new StringBuilder("for (var i = 0; i < frames.length; i++) {try {frames[i].eval(\"");
         buffer.append(deleteString);
@@ -319,9 +319,9 @@ abstract class WebBrowser {
         // $NON-NLS-1$
         BrowserFunction function = new EvaluateFunction(browser, "");
         int index = getNextFunctionIndex();
-        function.index = index;
+        ((SwtBrowserFunction) function.getImpl()).index = index;
         // Note, Webkit2 doesn't use 'isEvaluate' machinery because it doesn't use a function for evaluation.
-        function.isEvaluate = true;
+        ((SwtBrowserFunction) function.getImpl()).isEvaluate = true;
         registerFunction(function);
         String functionName = EXECUTE_ID + index;
         // $NON-NLS-1$
@@ -344,7 +344,7 @@ abstract class WebBrowser {
         buffer.append(index);
         //$NON-NLS-1$
         buffer.append(",'");
-        buffer.append(function.token);
+        buffer.append(((SwtBrowserFunction) function.getImpl()).token);
         // $NON-NLS-1$
         buffer.append("', ['");
         buffer.append(ERROR_ID);
@@ -356,13 +356,13 @@ abstract class WebBrowser {
         buffer.append(index);
         //$NON-NLS-1$
         buffer.append(",'");
-        buffer.append(function.token);
+        buffer.append(((SwtBrowserFunction) function.getImpl()).token);
         // $NON-NLS-1$
         buffer.append("', [result]);} catch (e) {window.external.callJava(");
         buffer.append(index);
         //$NON-NLS-1$
         buffer.append(",'");
-        buffer.append(function.token);
+        buffer.append(((SwtBrowserFunction) function.getImpl()).token);
         // $NON-NLS-1$
         buffer.append("', ['");
         buffer.append(ERROR_ID);
@@ -410,7 +410,7 @@ abstract class WebBrowser {
     public abstract void refresh();
 
     void registerFunction(BrowserFunction function) {
-        functions.put(function.index, function);
+        functions.put(((SwtBrowserFunction) function.getImpl()).index, function);
     }
 
     public void removeAuthenticationListener(AuthenticationListener listener) {

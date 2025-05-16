@@ -119,7 +119,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
     public SwtExpandItem(ExpandBar parent, int style, int index) {
         super(parent, style);
         this.parent = parent;
-        ((SwtExpandBar) parent.getImpl()).createItem(this, style, index);
+        ((SwtExpandBar) parent.getImpl()).createItem(this.getApi(), style, index);
     }
 
     static ExpandBar checkNull(ExpandBar control) {
@@ -133,7 +133,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
         if (isDisposed())
             return;
         //if (!isValidThread ()) error (SWT.ERROR_THREAD_INVALID_ACCESS);
-        ((SwtExpandBar) parent.getImpl()).destroyItem(this);
+        ((SwtExpandBar) parent.getImpl()).destroyItem(this.getApi());
         super.dispose();
         parent = null;
         control = null;
@@ -357,7 +357,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
     public void setExpanded(boolean expanded) {
         checkWidget();
         this.expanded = expanded;
-        ((SwtExpandBar) parent.getImpl()).showItem(this);
+        ((SwtExpandBar) parent.getImpl()).showItem(this.getApi());
     }
 
     @Override
@@ -372,7 +372,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
             imageHeight = imageWidth = 0;
         }
         if (oldImageHeight != imageHeight) {
-            ((SwtExpandBar) parent.getImpl()).layoutItems(parent.indexOf(this), true);
+            ((SwtExpandBar) parent.getImpl()).layoutItems(parent.indexOf(this.getApi()), true);
         } else {
             redraw();
         }
@@ -395,7 +395,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
             return;
         setBounds(0, 0, width, height, false, true);
         if (expanded)
-            ((SwtExpandBar) parent.getImpl()).layoutItems(parent.indexOf(this) + 1, true);
+            ((SwtExpandBar) parent.getImpl()).layoutItems(parent.indexOf(this.getApi()) + 1, true);
     }
 
     @Override

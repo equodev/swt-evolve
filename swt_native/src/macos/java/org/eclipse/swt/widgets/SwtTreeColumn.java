@@ -87,7 +87,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
     public SwtTreeColumn(Tree parent, int style) {
         super(parent, checkStyle(style));
         this.parent = parent;
-        ((SwtTree) parent.getImpl()).createItem(this, ((SwtTree) parent.getImpl()).columnCount);
+        ((SwtTree) parent.getImpl()).createItem(this.getApi(), ((SwtTree) parent.getImpl()).columnCount);
     }
 
     /**
@@ -130,7 +130,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
     public SwtTreeColumn(Tree parent, int style, int index) {
         super(parent, checkStyle(style));
         this.parent = parent;
-        ((SwtTree) parent.getImpl()).createItem(this, index);
+        ((SwtTree) parent.getImpl()).createItem(this.getApi(), index);
     }
 
     /**
@@ -196,13 +196,13 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
 
     @Override
     void deregister() {
-        ((SwtWidget) super.getImpl()).deregister();
+        super.deregister();
         ((SwtDisplay) display.getImpl()).removeWidget(nsColumn.headerCell());
     }
 
     @Override
     void destroyWidget() {
-        ((SwtTree) parent.getImpl()).destroyItem(this);
+        ((SwtTree) parent.getImpl()).destroyItem(this.getApi());
         releaseHandle();
     }
 
@@ -250,7 +250,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
         NSAttributedString attrString = null;
         NSTableHeaderCell headerCell = nsColumn.headerCell();
         if (displayText != null) {
-            Font font = Font.cocoa_new(display, headerCell.font());
+            Font font = SwtFont.cocoa_new(display, headerCell.font());
             attrString = ((SwtControl) parent.getImpl()).createString(displayText, font, ((SwtTree) parent.getImpl()).getHeaderForegroundColor().handle, SWT.LEFT, false, (((SwtWidget) parent.getImpl()).state & DISABLED) == 0, false);
             stringSize = attrString.size();
             contentWidth += Math.ceil(stringSize.width);
@@ -298,7 +298,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
             imageSize = image.handle.size();
             contentWidth += Math.ceil(imageSize.width);
         }
-        if (((SwtTree) parent.getImpl()).sortColumn == this && ((SwtTree) parent.getImpl()).sortDirection != SWT.NONE) {
+        if (((SwtTree) parent.getImpl()).sortColumn == this.getApi() && ((SwtTree) parent.getImpl()).sortDirection != SWT.NONE) {
             boolean ascending = ((SwtTree) parent.getImpl()).sortDirection == SWT.UP;
             if (((SwtTree) parent.getImpl()).headerBackground != null || ((SwtTree) parent.getImpl()).headerForeground != null) {
                 NSRect sortIndicatorRect = headerCell.sortIndicatorRectForBounds(cellRect);
@@ -535,20 +535,20 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
             NSSize imageSize = image.handle.size();
             width += Math.ceil(imageSize.width) + MARGIN;
         }
-        if (((SwtTree) parent.getImpl()).sortColumn == this && ((SwtTree) parent.getImpl()).sortDirection != SWT.NONE) {
+        if (((SwtTree) parent.getImpl()).sortColumn == this.getApi() && ((SwtTree) parent.getImpl()).sortDirection != SWT.NONE) {
             NSRect sortRect = headerCell.sortIndicatorRectForBounds(new NSRect());
             width += Math.ceil(sortRect.width + 2 * MARGIN);
         }
         /* compute item widths down column */
         GC gc = new GC(parent);
-        width = Math.max(width, ((SwtTree) parent.getImpl()).calculateWidth(((SwtTree) parent.getImpl()).items, parent.indexOf(this), gc, true));
+        width = Math.max(width, ((SwtTree) parent.getImpl()).calculateWidth(((SwtTree) parent.getImpl()).items, parent.indexOf(this.getApi()), gc, true));
         gc.dispose();
         setWidth(width);
     }
 
     @Override
     void releaseHandle() {
-        ((SwtWidget) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (nsColumn != null) {
             nsColumn.headerCell().release();
             nsColumn.release();
@@ -559,8 +559,8 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
 
     @Override
     void releaseWidget() {
-        ((SwtItem) super.getImpl()).releaseWidget();
-        if (((SwtTree) parent.getImpl()).sortColumn == this) {
+        super.releaseWidget();
+        if (((SwtTree) parent.getImpl()).sortColumn == this.getApi()) {
             ((SwtTree) parent.getImpl()).sortColumn = null;
         }
     }
@@ -638,7 +638,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
         checkWidget();
         if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
             return;
-        int index = parent.indexOf(this);
+        int index = parent.indexOf(this.getApi());
         if (index == -1 || index == 0)
             return;
         style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
@@ -762,7 +762,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
     public void setToolTipText(String string) {
         checkWidget();
         toolTipText = string;
-        ((SwtControl) parent.getImpl()).checkToolTip(this);
+        ((SwtControl) parent.getImpl()).checkToolTip(this.getApi());
     }
 
     /**

@@ -65,7 +65,7 @@ class Relation {
         id result = null;
         for (int i = 0; i < targets.length; i++) {
             Accessible target = targets[i];
-            result = target.accessibleHandle(target);
+            result = ((SwtAccessible) target.getImpl()).accessibleHandle(target);
         }
         return result;
     }
@@ -74,7 +74,7 @@ class Relation {
         NSMutableArray result = NSMutableArray.arrayWithCapacity(targets.length);
         for (int i = 0; i < targets.length; i++) {
             Accessible target = targets[i];
-            id accessibleElement = target.accessibleHandle(target);
+            id accessibleElement = ((SwtAccessible) target.getImpl()).accessibleHandle(target);
             result.addObject(accessibleElement);
         }
         return result;
@@ -84,7 +84,7 @@ class Relation {
         NSMutableArray result = NSMutableArray.arrayWithCapacity(targets.length);
         for (int i = 0; i < targets.length; i++) {
             Accessible target = targets[i];
-            id accessibleElement = target.accessibleHandle(target);
+            id accessibleElement = ((SwtAccessible) target.getImpl()).accessibleHandle(target);
             result.addObject(accessibleElement);
         }
         return result;

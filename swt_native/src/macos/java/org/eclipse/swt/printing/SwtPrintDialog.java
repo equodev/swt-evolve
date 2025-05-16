@@ -195,12 +195,12 @@ public class SwtPrintDialog extends SwtDialog implements IPrintDialog {
         printInfo.setSelectionOnly(printerData.scope == PrinterData.SELECTION);
         panel.setOptions(OS.NSPrintPanelShowsPageSetupAccessory | OS.NSPrintPanelShowsPrintSelection | panel.options());
         Shell parent = getParent();
-        Display display = parent != null ? parent.getDisplay() : Display.getCurrent();
+        Display display = parent != null ? parent.getDisplay() : SwtDisplay.getCurrent();
         int response;
         if ((getStyle() & SWT.SHEET) != 0) {
             initClasses();
             SWTPrintPanelDelegate delegate = (SWTPrintPanelDelegate) new SWTPrintPanelDelegate().alloc().init();
-            long jniRef = OS.NewGlobalRef(this);
+            long jniRef = OS.NewGlobalRef(this.getApi());
             if (jniRef == 0)
                 SWT.error(SWT.ERROR_NO_HANDLES);
             OS.object_setInstanceVariable(delegate.id, SWT_OBJECT, jniRef);
@@ -216,7 +216,7 @@ public class SwtPrintDialog extends SwtDialog implements IPrintDialog {
                 OS.DeleteGlobalRef(jniRef);
             response = returnCode;
         } else {
-            display.setData(SET_MODAL_DIALOG, this);
+            display.setData(SET_MODAL_DIALOG, this.getApi());
             response = (int) panel.runModalWithPrintInfo(printInfo);
         }
         display.setData(SET_MODAL_DIALOG, null);

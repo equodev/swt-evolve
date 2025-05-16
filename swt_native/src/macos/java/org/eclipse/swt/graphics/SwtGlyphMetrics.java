@@ -72,7 +72,7 @@ public final class SwtGlyphMetrics implements IGlyphMetrics {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
+        if (object == this.getApi())
             return true;
         if (!(object instanceof GlyphMetrics metrics))
             return false;

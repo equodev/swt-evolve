@@ -390,7 +390,7 @@ public final class SwtProgram implements IProgram {
                     size.width = size.height = 16;
                     nsImage.setSize(size);
                     nsImage.retain();
-                    Image image = Image.cocoa_new(Display.getCurrent(), SWT.BITMAP, nsImage);
+                    Image image = SwtImage.cocoa_new(SwtDisplay.getCurrent(), SWT.BITMAP, nsImage);
                     ImageData imageData = image.getImageData(zoom);
                     image.dispose();
                     return imageData;
@@ -426,7 +426,7 @@ public final class SwtProgram implements IProgram {
      */
     @Override
     public boolean equals(Object other) {
-        if (this == other)
+        if (this.getApi() == other)
             return true;
         if (other instanceof final Program program) {
             return name.equals(((SwtProgram) program.getImpl()).name) && identifier.equals(((SwtProgram) program.getImpl()).identifier);

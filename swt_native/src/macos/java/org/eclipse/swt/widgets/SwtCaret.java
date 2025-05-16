@@ -99,11 +99,11 @@ public class SwtCaret extends SwtWidget implements ICaret {
 
     @Override
     void createWidget() {
-        ((SwtWidget) super.getImpl()).createWidget();
+        super.createWidget();
         blinkRate = ((SwtDisplay) display.getImpl()).getCaretBlinkTime();
         isVisible = true;
         if (parent.getCaret() == null) {
-            parent.setCaret(this);
+            parent.setCaret(this.getApi());
         }
     }
 
@@ -288,11 +288,11 @@ public class SwtCaret extends SwtWidget implements ICaret {
     }
 
     boolean isFocusCaret() {
-        return this == ((SwtDisplay) display.getImpl()).currentCaret;
+        return this.getApi() == ((SwtDisplay) display.getImpl()).currentCaret;
     }
 
     void killFocus() {
-        if (((SwtDisplay) display.getImpl()).currentCaret != this)
+        if (((SwtDisplay) display.getImpl()).currentCaret != this.getApi())
             return;
         ((SwtDisplay) display.getImpl()).setCurrentCaret(null);
         if (isVisible)
@@ -301,8 +301,8 @@ public class SwtCaret extends SwtWidget implements ICaret {
 
     @Override
     void releaseParent() {
-        ((SwtWidget) super.getImpl()).releaseParent();
-        if (parent != null && this == ((SwtCanvas) parent.getImpl()).caret) {
+        super.releaseParent();
+        if (parent != null && this.getApi() == ((SwtCanvas) parent.getImpl()).caret) {
             if (!parent.isDisposed())
                 parent.setCaret(null);
             else
@@ -312,8 +312,8 @@ public class SwtCaret extends SwtWidget implements ICaret {
 
     @Override
     void releaseWidget() {
-        ((SwtWidget) super.getImpl()).releaseWidget();
-        if (((SwtDisplay) display.getImpl()).currentCaret == this) {
+        super.releaseWidget();
+        if (((SwtDisplay) display.getImpl()).currentCaret == this.getApi()) {
             hideCaret();
             ((SwtDisplay) display.getImpl()).setCurrentCaret(null);
         }
@@ -373,9 +373,9 @@ public class SwtCaret extends SwtWidget implements ICaret {
     }
 
     void setFocus() {
-        if (((SwtDisplay) display.getImpl()).currentCaret == this)
+        if (((SwtDisplay) display.getImpl()).currentCaret == this.getApi())
             return;
-        ((SwtDisplay) display.getImpl()).setCurrentCaret(this);
+        ((SwtDisplay) display.getImpl()).setCurrentCaret(this.getApi());
         if (isVisible)
             showCaret();
     }

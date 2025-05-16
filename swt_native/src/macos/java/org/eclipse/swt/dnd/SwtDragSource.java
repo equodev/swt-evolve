@@ -201,7 +201,7 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         if (control.getData(DND.DRAG_SOURCE_KEY) != null) {
             DND.error(DND.ERROR_CANNOT_INIT_DRAG);
         }
-        control.setData(DND.DRAG_SOURCE_KEY, this);
+        control.setData(DND.DRAG_SOURCE_KEY, this.getApi());
         controlListener = event -> {
             if (event.type == SWT.Dispose) {
                 if (!DragSource.this.isDisposed()) {
@@ -229,7 +229,7 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         } else if (control instanceof Table) {
             dragEffect = new TableDragSourceEffect((Table) control);
         }
-        delegateJniRef = OS.NewGlobalRef(this);
+        delegateJniRef = OS.NewGlobalRef(this.getApi());
         if (delegateJniRef == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
         // The dragSourceDelegate implements the pasteboard callback to provide the dragged data, so we always need
@@ -291,7 +291,7 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         if (listener == null)
             DND.error(SWT.ERROR_NULL_ARGUMENT);
         DNDListener typedListener = new DNDListener(listener);
-        typedListener.dndWidget = this;
+        typedListener.dndWidget = this.getApi();
         addListener(DND.DragStart, typedListener);
         addListener(DND.DragSetData, typedListener);
         addListener(DND.DragEnd, typedListener);
@@ -349,15 +349,15 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
             // If no image was provided, just create a trivial image. dragImage requires a non-null image.
             if (image == null) {
                 int width = 20, height = 20;
-                Image newDragImage = new Image(Display.getCurrent(), width, height);
+                Image newDragImage = new Image(SwtDisplay.getCurrent(), width, height);
                 GC imageGC = new GC(newDragImage);
-                Color grayColor = new Color(Display.getCurrent(), 50, 50, 50);
+                Color grayColor = new Color(SwtDisplay.getCurrent(), 50, 50, 50);
                 imageGC.setForeground(grayColor);
                 imageGC.drawRectangle(0, 0, 19, 19);
                 imageGC.dispose();
                 ImageData newImageData = newDragImage.getImageData();
                 newImageData.alpha = (int) (255 * .4);
-                defaultDragImage = new Image(Display.getCurrent(), newImageData);
+                defaultDragImage = new Image(SwtDisplay.getCurrent(), newImageData);
                 newDragImage.dispose();
                 grayColor.dispose();
                 image = defaultDragImage;
@@ -419,7 +419,7 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         OS.objc_msgSend(id, OS.sel_retain);
         try {
             Event event = new DNDEvent();
-            event.widget = this;
+            event.widget = this.getApi();
             event.time = (int) System.currentTimeMillis();
             event.doit = swtOperation != DND.DROP_NONE;
             event.detail = swtOperation;
@@ -454,7 +454,7 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
     }
 
     static long dragSourceProc(long id, long sel) {
-        Display display = Display.findDisplay(Thread.currentThread());
+        Display display = SwtDisplay.findDisplay(Thread.currentThread());
         if (display == null || display.isDisposed())
             return 0;
         Widget widget = display.findWidget(id);
@@ -475,7 +475,7 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
     }
 
     static long dragSourceProc(long id, long sel, long arg0) {
-        Display display = Display.findDisplay(Thread.currentThread());
+        Display display = SwtDisplay.findDisplay(Thread.currentThread());
         if (display == null || display.isDisposed())
             return 0;
         Widget widget = display.findWidget(id);
@@ -496,7 +496,7 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
     }
 
     static long dragSourceProc(long id, long sel, long arg0, long arg1) {
-        Display display = Display.findDisplay(Thread.currentThread());
+        Display display = SwtDisplay.findDisplay(Thread.currentThread());
         if (display == null || display.isDisposed())
             return 0;
         Widget widget = display.findWidget(id);
@@ -519,7 +519,7 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
     }
 
     static long dragSourceProc(long id, long sel, long arg0, long arg1, long arg2) {
-        Display display = Display.findDisplay(Thread.currentThread());
+        Display display = SwtDisplay.findDisplay(Thread.currentThread());
         if (display == null || display.isDisposed())
             return 0;
         Widget widget = display.findWidget(id);
@@ -542,7 +542,7 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
     }
 
     static long dragSourceProc(long id, long sel, long arg0, long arg1, long arg2, long arg3) {
-        Display display = Display.findDisplay(Thread.currentThread());
+        Display display = SwtDisplay.findDisplay(Thread.currentThread());
         if (display == null || display.isDisposed())
             return 0;
         Widget widget = display.findWidget(id);
@@ -687,9 +687,9 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         if (pasteboard == null || dataType == null)
             return;
         TransferData transferData = new TransferData();
-        transferData.type = Transfer.registerType(dataType.getString());
+        transferData.type = SwtTransfer.registerType(dataType.getString());
         DNDEvent event = new DNDEvent();
-        event.widget = this;
+        event.widget = this.getApi();
         event.time = (int) System.currentTimeMillis();
         event.dataType = transferData;
         notifyListeners(DND.DragSetData, event);
@@ -789,7 +789,7 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
 
     DNDEvent startDrag(Event dragEvent) {
         DNDEvent event = new DNDEvent();
-        event.widget = this;
+        event.widget = this.getApi();
         event.x = dragEvent.x;
         event.y = dragEvent.y;
         event.time = dragEvent.time;

@@ -149,7 +149,7 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
 
     @Override
     void deregister() {
-        ((SwtWidget) super.getImpl()).deregister();
+        super.deregister();
         ((SwtDisplay) display.getImpl()).removeWidget(view);
     }
 
@@ -446,13 +446,13 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
 
     @Override
     void register() {
-        ((SwtWidget) super.getImpl()).register();
-        ((SwtDisplay) display.getImpl()).addWidget(view, this);
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(view, this.getApi());
     }
 
     @Override
     void releaseHandle() {
-        ((SwtWidget) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (view != null)
             view.release();
         view = null;
@@ -460,16 +460,16 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
 
     @Override
     void releaseParent() {
-        ((SwtWidget) super.getImpl()).releaseParent();
-        if (((SwtScrollable) parent.getImpl()).horizontalBar == this)
+        super.releaseParent();
+        if (((SwtScrollable) parent.getImpl()).horizontalBar == this.getApi())
             ((SwtScrollable) parent.getImpl()).horizontalBar = null;
-        if (((SwtScrollable) parent.getImpl()).verticalBar == this)
+        if (((SwtScrollable) parent.getImpl()).verticalBar == this.getApi())
             ((SwtScrollable) parent.getImpl()).verticalBar = null;
     }
 
     @Override
     void releaseWidget() {
-        ((SwtWidget) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         parent = null;
     }
 
@@ -758,7 +758,7 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
      */
     public void setVisible(boolean visible) {
         checkWidget();
-        ((SwtScrollable) parent.getImpl()).setScrollBarVisible(this, visible);
+        ((SwtScrollable) parent.getImpl()).setScrollBarVisible(this.getApi(), visible);
     }
 
     void updateBar(int selection, int minimum, int maximum, int thumb) {

@@ -237,7 +237,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
             popupCalendar.setFont(font);
         if (clickListener == null) {
             clickListener = event -> {
-                if (event.widget instanceof Control c && event.widget != DateTime.this) {
+                if (event.widget instanceof Control c && event.widget != this.getApi()) {
                     if (c.getShell() != popupShell) {
                         hideCalendar();
                     }
@@ -274,7 +274,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     @Override
     void deregister() {
-        ((SwtScrollable) super.getImpl()).deregister();
+        super.deregister();
         if (buttonView != null) {
             ((SwtDisplay) display.getImpl()).removeWidget(buttonView);
             ((SwtDisplay) display.getImpl()).removeWidget(buttonView.cell());
@@ -481,7 +481,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     @Override
     boolean isFlipped(long id, long sel) {
         if ((style & SWT.CALENDAR) != 0)
-            return ((SwtWidget) super.getImpl()).isFlipped(id, sel);
+            return super.isFlipped(id, sel);
         return true;
     }
 
@@ -489,7 +489,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     void keyDown(long id, long sel, long theEvent) {
         if ((style & SWT.DROP_DOWN) != 0) {
             NSEvent nsEvent = new NSEvent(theEvent);
-            int keyCode = ((SwtDisplay) Display.getImpl()).translateKey(nsEvent.keyCode());
+            int keyCode = SwtDisplay.translateKey(nsEvent.keyCode());
             boolean alt = (nsEvent.modifierFlags() & OS.NSAlternateKeyMask) != 0;
             if (alt && (keyCode == SWT.ARROW_UP || keyCode == SWT.ARROW_DOWN)) {
                 if (isDropped()) {
@@ -507,7 +507,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
                 return;
             }
         }
-        ((SwtComposite) super.getImpl()).keyDown(id, sel, theEvent);
+        super.keyDown(id, sel, theEvent);
         if ((style & SWT.DROP_DOWN) != 0 && popupCalendar != null) {
             // Re-sync the calendar to the current date in the field.
             int month = getMonth();
@@ -519,16 +519,16 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     @Override
     void register() {
-        ((SwtScrollable) super.getImpl()).register();
+        super.register();
         if (buttonView != null) {
-            ((SwtDisplay) display.getImpl()).addWidget(buttonView, this);
-            ((SwtDisplay) display.getImpl()).addWidget(buttonView.cell(), this);
+            ((SwtDisplay) display.getImpl()).addWidget(buttonView, this.getApi());
+            ((SwtDisplay) display.getImpl()).addWidget(buttonView.cell(), this.getApi());
         }
     }
 
     @Override
     void releaseHandle() {
-        ((SwtScrollable) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (buttonView != null)
             buttonView.release();
         buttonView = null;
@@ -563,7 +563,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     @Override
     void resized() {
-        ((SwtComposite) super.getImpl()).resized();
+        super.resized();
         if (buttonView == null)
             return;
         NSSize buttonSize = buttonView.cell().cellSize();
@@ -577,7 +577,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     @Override
     boolean sendKeyEvent(NSEvent nsEvent, int type) {
-        boolean result = ((SwtWidget) super.getImpl()).sendKeyEvent(nsEvent, type);
+        boolean result = super.sendKeyEvent(nsEvent, type);
         if (!result)
             return result;
         if (type != SWT.KeyDown)

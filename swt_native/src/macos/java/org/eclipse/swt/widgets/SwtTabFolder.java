@@ -194,7 +194,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
 
     @Override
     void createWidget() {
-        ((SwtScrollable) super.getImpl()).createWidget();
+        super.createWidget();
         items = new TabItem[4];
     }
 
@@ -241,7 +241,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
                     return item;
             }
         }
-        return ((SwtControl) super.getImpl()).findTooltip(pt);
+        return super.findTooltip(pt);
     }
 
     @Override
@@ -476,12 +476,12 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
             }
             items = null;
         }
-        ((SwtComposite) super.getImpl()).releaseChildren(destroy);
+        super.releaseChildren(destroy);
     }
 
     @Override
     void removeControl(Control control) {
-        ((SwtComposite) super.getImpl()).removeControl(control);
+        super.removeControl(control);
         int count = itemCount;
         for (int i = 0; i < count; i++) {
             TabItem item = items[i];
@@ -526,7 +526,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
                     item.reskin(flags);
             }
         }
-        ((SwtComposite) super.getImpl()).reskinChildren(flags);
+        super.reskinChildren(flags);
     }
 
     @Override
@@ -540,7 +540,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
 
     @Override
     void setForeground(double[] color) {
-        ((SwtControl) super.getImpl()).setForeground(color);
+        super.setForeground(color);
         int index = getSelectionIndex();
         for (int i = 0; i < itemCount; i++) {
             ((SwtTabItem) items[i].getImpl()).updateText(i == index);

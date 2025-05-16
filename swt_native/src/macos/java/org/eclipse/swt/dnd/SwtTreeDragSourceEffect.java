@@ -97,7 +97,7 @@ public class SwtTreeDragSourceEffect extends SwtDragSourceEffect implements ITre
         OS.memmove(point, ptr, NSPoint.sizeof);
         C.free(ptr);
         //TODO: Image representation wrong???
-        Image image = Image.cocoa_new(control.getDisplay(), SWT.BITMAP, nsImage);
+        Image image = SwtImage.cocoa_new(control.getDisplay(), SWT.BITMAP, nsImage);
         dragSourceImage = image;
         nsImage.retain();
         event.offsetX = (int) point.x;

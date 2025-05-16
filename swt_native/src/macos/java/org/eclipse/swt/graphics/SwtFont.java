@@ -216,7 +216,7 @@ public final class SwtFont extends SwtResource implements IFont {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
+        if (object == this.getApi())
             return true;
         if (!(object instanceof Font font))
             return false;

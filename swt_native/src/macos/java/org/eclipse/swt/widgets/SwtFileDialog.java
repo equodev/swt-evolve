@@ -129,7 +129,7 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
      */
     public SwtFileDialog(Shell parent, int style) {
         super(parent, checkStyle(parent, style));
-        if (((SwtDisplay) Display.getImpl()).getSheetEnabled()) {
+        if (SwtDisplay.getSheetEnabled()) {
             if (parent != null && (style & SWT.SHEET) != 0)
                 this.style |= SWT.SHEET;
         }
@@ -309,7 +309,7 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
         if (parent != null && (style & SWT.SHEET) != 0) {
             NSApplication.sharedApplication().stopModal();
         }
-        Display display = parent != null ? parent.getDisplay() : Display.getCurrent();
+        Display display = parent != null ? parent.getDisplay() : SwtDisplay.getCurrent();
         ((SwtDisplay) display.getImpl()).setModalDialog(null);
         filterIndex = popup != null ? (int) popup.indexOfSelectedItem() : -1;
         fullPath = null;
@@ -401,7 +401,7 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
                 error(SWT.ERROR_INVALID_RETURN_VALUE);
             panel = savePanel;
             if (!overwrite) {
-                callback_overwrite_existing_file = new Callback(this, "_overwriteExistingFileCheck", 3);
+                callback_overwrite_existing_file = new Callback(this.getApi(), "_overwriteExistingFileCheck", 3);
                 long proc = callback_overwrite_existing_file.getAddress();
                 method_overwriteExistingFileCheck = OS.class_getInstanceMethod(OS.class_NSSavePanel, OS.sel_overwriteExistingFileCheck);
                 if (method_overwriteExistingFileCheck != 0) {
@@ -415,7 +415,7 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
             openPanel.setAllowsMultipleSelection((style & SWT.MULTI) != 0);
             panel = openPanel;
         }
-        callback_performKeyEquivalent = new Callback(this, "_performKeyEquivalent", 3);
+        callback_performKeyEquivalent = new Callback(this.getApi(), "_performKeyEquivalent", 3);
         long proc = callback_performKeyEquivalent.getAddress();
         method_performKeyEquivalent = OS.class_getInstanceMethod(OS.class_NSSavePanel, OS.sel_performKeyEquivalent_);
         if (method_performKeyEquivalent != 0) {
@@ -439,7 +439,7 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
         delegate = null;
         if (filterExtensions != null && filterExtensions.length != 0) {
             delegate = (SWTOpenSavePanelDelegate) new SWTOpenSavePanelDelegate().alloc().init();
-            jniRef = OS.NewGlobalRef(this);
+            jniRef = OS.NewGlobalRef(this.getApi());
             if (jniRef == 0)
                 error(SWT.ERROR_NO_HANDLES);
             OS.object_setInstanceVariable(delegate.id, SwtDisplay.SWT_OBJECT, jniRef);
@@ -479,10 +479,10 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
         } else {
             panel.setTreatsFilePackagesAsDirectories(false);
         }
-        Display display = parent != null ? parent.getDisplay() : Display.getCurrent();
-        ((SwtDisplay) display.getImpl()).setModalDialog(this, panel);
+        Display display = parent != null ? parent.getDisplay() : SwtDisplay.getCurrent();
+        ((SwtDisplay) display.getImpl()).setModalDialog(this.getApi(), panel);
         if (parent != null && (style & SWT.SHEET) != 0) {
-            callback_completion_handler = new Callback(this, "_completionHandler", 1);
+            callback_completion_handler = new Callback(this.getApi(), "_completionHandler", 1);
             long handler = callback_completion_handler.getAddress();
             OS.beginSheetModalForWindow(panel, parent.view.window(), handler);
             NSApplication.sharedApplication().runModalForWindow(parent.view.window());

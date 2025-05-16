@@ -293,7 +293,7 @@ public final class SwtGC extends SwtResource implements IGC {
             long contextId = drawable.internal_new_GC(data);
             Device device = data.device;
             if (device == null)
-                device = ((SwtDevice) Device.getImpl()).getDevice();
+                device = SwtDevice.getDevice();
             if (device == null)
                 SWT.error(SWT.ERROR_NULL_ARGUMENT);
             this.device = data.device = device;
@@ -1008,7 +1008,7 @@ public final class SwtGC extends SwtResource implements IGC {
     }
 
     NSBezierPath createNSBezierPath(long cgPath) {
-        Callback callback = new Callback(this, "applierFunc", 2);
+        Callback callback = new Callback(this.getApi(), "applierFunc", 2);
         long proc = callback.getAddress();
         count = typeCount = 0;
         element = new CGPathElement();
@@ -2012,7 +2012,7 @@ public final class SwtGC extends SwtResource implements IGC {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
+        if (object == this.getApi())
             return true;
         if (!(object instanceof GC))
             return false;
@@ -2568,7 +2568,7 @@ public final class SwtGC extends SwtResource implements IGC {
     public Color getBackground() {
         if (getApi().handle == null)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return Color.cocoa_new(data.device, data.background);
+        return SwtColor.cocoa_new(data.device, data.background);
     }
 
     /**
@@ -2911,7 +2911,7 @@ public final class SwtGC extends SwtResource implements IGC {
                 double avgWidth = Math.ceil(rect.width) / s.length();
                 int ascent = (int) layoutManager.defaultBaselineOffsetForFont(data.font.handle);
                 int height = (int) layoutManager.defaultLineHeightForFont(data.font.handle);
-                ((SwtFont) data.font.getImpl()).metrics = FontMetrics.cocoa_new(ascent, height - ascent, avgWidth, 0, height);
+                ((SwtFont) data.font.getImpl()).metrics = SwtFontMetrics.cocoa_new(ascent, height - ascent, avgWidth, 0, height);
             }
             return ((SwtFont) data.font.getImpl()).metrics;
         } finally {
@@ -2931,7 +2931,7 @@ public final class SwtGC extends SwtResource implements IGC {
     public Color getForeground() {
         if (getApi().handle == null)
             SWT.error(SWT.ERROR_WIDGET_DISPOSED);
-        return Color.cocoa_new(data.device, data.foreground);
+        return SwtColor.cocoa_new(data.device, data.foreground);
     }
 
     /**
@@ -3284,7 +3284,7 @@ public final class SwtGC extends SwtResource implements IGC {
         data.state &= ~DRAW_OFFSET;
         Image image = data.image;
         if (image != null)
-            ((SwtImage) image.getImpl()).memGC = this;
+            ((SwtImage) image.getImpl()).memGC = this.getApi();
         this.drawable = drawable;
         this.data = data;
         getApi().handle = new NSGraphicsContext(context);

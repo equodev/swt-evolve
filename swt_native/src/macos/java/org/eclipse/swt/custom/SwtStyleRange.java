@@ -91,7 +91,7 @@ public class SwtStyleRange extends SwtTextStyle implements Cloneable, IStyleRang
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
+        if (object == this.getApi())
             return true;
         if (object instanceof StyleRange style) {
             if (getApi().start != style.start)

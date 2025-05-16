@@ -152,7 +152,7 @@ public class SwtScale extends SwtControl implements IScale {
 
     @Override
     void deregister() {
-        ((SwtControl) super.getImpl()).deregister();
+        super.deregister();
         ((SwtDisplay) display.getImpl()).removeWidget(((NSControl) getApi().view).cell());
     }
 
@@ -237,8 +237,8 @@ public class SwtScale extends SwtControl implements IScale {
 
     @Override
     void register() {
-        ((SwtControl) super.getImpl()).register();
-        ((SwtDisplay) display.getImpl()).addWidget(((NSControl) getApi().view).cell(), this);
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(((NSControl) getApi().view).cell(), this.getApi());
     }
 
     /**

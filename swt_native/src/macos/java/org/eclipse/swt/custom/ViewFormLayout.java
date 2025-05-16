@@ -29,10 +29,10 @@ class ViewFormLayout extends Layout {
     @Override
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         ViewForm form = (ViewForm) composite;
-        Control left = form.topLeft;
-        Control center = form.topCenter;
-        Control right = form.topRight;
-        Control content = form.content;
+        Control left = ((SwtViewForm) form.getImpl()).topLeft;
+        Control center = ((SwtViewForm) form.getImpl()).topCenter;
+        Control right = ((SwtViewForm) form.getImpl()).topRight;
+        Control content = ((SwtViewForm) form.getImpl()).content;
         Point leftSize = new Point(0, 0);
         if (left != null) {
             leftSize = computeChildSize(left, SWT.DEFAULT, SWT.DEFAULT, flushCache);
@@ -47,7 +47,7 @@ class ViewFormLayout extends Layout {
         }
         Point size = new Point(0, 0);
         // calculate width of title bar
-        if (form.separateTopCenter || (wHint != SWT.DEFAULT && leftSize.x + centerSize.x + rightSize.x > wHint)) {
+        if (((SwtViewForm) form.getImpl()).separateTopCenter || (wHint != SWT.DEFAULT && leftSize.x + centerSize.x + rightSize.x > wHint)) {
             size.x = leftSize.x + rightSize.x;
             if (leftSize.x > 0 && rightSize.x > 0)
                 size.x += form.horizontalSpacing;
@@ -119,10 +119,10 @@ class ViewFormLayout extends Layout {
     @Override
     protected void layout(Composite composite, boolean flushCache) {
         ViewForm form = (ViewForm) composite;
-        Control left = form.topLeft;
-        Control center = form.topCenter;
-        Control right = form.topRight;
-        Control content = form.content;
+        Control left = ((SwtViewForm) form.getImpl()).topLeft;
+        Control center = ((SwtViewForm) form.getImpl()).topCenter;
+        Control right = ((SwtViewForm) form.getImpl()).topRight;
+        Control content = ((SwtViewForm) form.getImpl()).content;
         Rectangle rect = composite.getClientArea();
         Point leftSize = new Point(0, 0);
         if (left != null && !left.isDisposed()) {
@@ -136,7 +136,7 @@ class ViewFormLayout extends Layout {
         if (right != null && !right.isDisposed()) {
             rightSize = computeChildSize(right, SWT.DEFAULT, SWT.DEFAULT, flushCache);
         }
-        int minTopWidth = leftSize.x + centerSize.x + rightSize.x + 2 * form.marginWidth + 2 * form.highlight;
+        int minTopWidth = leftSize.x + centerSize.x + rightSize.x + 2 * form.marginWidth + 2 * ((SwtViewForm) form.getImpl()).highlight;
         int count = -1;
         if (leftSize.x > 0)
             count++;
@@ -146,10 +146,10 @@ class ViewFormLayout extends Layout {
             count++;
         if (count > 0)
             minTopWidth += count * form.horizontalSpacing;
-        int x = rect.x + rect.width - form.marginWidth - form.highlight;
-        int y = rect.y + form.marginHeight + form.highlight;
+        int x = rect.x + rect.width - form.marginWidth - ((SwtViewForm) form.getImpl()).highlight;
+        int y = rect.y + form.marginHeight + ((SwtViewForm) form.getImpl()).highlight;
         boolean top = false;
-        if (form.separateTopCenter || minTopWidth > rect.width) {
+        if (((SwtViewForm) form.getImpl()).separateTopCenter || minTopWidth > rect.width) {
             int topHeight = Math.max(rightSize.y, leftSize.y);
             if (right != null && !right.isDisposed()) {
                 top = true;
@@ -160,21 +160,21 @@ class ViewFormLayout extends Layout {
             if (left != null && !left.isDisposed()) {
                 top = true;
                 int trim = computeTrim(left);
-                int leftW = x - rect.x - form.marginWidth - form.highlight - trim;
+                int leftW = x - rect.x - form.marginWidth - ((SwtViewForm) form.getImpl()).highlight - trim;
                 leftSize = computeChildSize(left, leftW, SWT.DEFAULT, false);
-                left.setBounds(rect.x + form.marginWidth + form.highlight, y, leftSize.x, topHeight);
+                left.setBounds(rect.x + form.marginWidth + ((SwtViewForm) form.getImpl()).highlight, y, leftSize.x, topHeight);
             }
             if (top)
                 y += topHeight + form.verticalSpacing;
             if (center != null && !center.isDisposed()) {
                 top = true;
                 int trim = computeTrim(center);
-                int w = rect.width - 2 * form.marginWidth - 2 * form.highlight - trim;
+                int w = rect.width - 2 * form.marginWidth - 2 * ((SwtViewForm) form.getImpl()).highlight - trim;
                 Point size = computeChildSize(center, w, SWT.DEFAULT, false);
                 if (size.x < centerSize.x) {
                     centerSize = size;
                 }
-                center.setBounds(rect.x + rect.width - form.marginWidth - form.highlight - centerSize.x, y, centerSize.x, centerSize.y);
+                center.setBounds(rect.x + rect.width - form.marginWidth - ((SwtViewForm) form.getImpl()).highlight - centerSize.x, y, centerSize.x, centerSize.y);
                 y += centerSize.y + form.verticalSpacing;
             }
         } else {
@@ -194,36 +194,36 @@ class ViewFormLayout extends Layout {
             if (left != null && !left.isDisposed()) {
                 top = true;
                 Rectangle trim = left instanceof Composite ? ((Composite) left).computeTrim(0, 0, 0, 0) : new Rectangle(0, 0, 0, 0);
-                int w = x - rect.x - form.marginWidth - form.highlight - trim.width;
+                int w = x - rect.x - form.marginWidth - ((SwtViewForm) form.getImpl()).highlight - trim.width;
                 int h = topHeight - trim.height;
                 leftSize = computeChildSize(left, w, h, false);
-                left.setBounds(rect.x + form.marginWidth + form.highlight, y, leftSize.x, topHeight);
+                left.setBounds(rect.x + form.marginWidth + ((SwtViewForm) form.getImpl()).highlight, y, leftSize.x, topHeight);
             }
             if (top)
                 y += topHeight + form.verticalSpacing;
         }
-        int oldSeperator = form.separator;
-        form.separator = -1;
+        int oldSeperator = ((SwtViewForm) form.getImpl()).separator;
+        ((SwtViewForm) form.getImpl()).separator = -1;
         if (content != null && !content.isDisposed()) {
             if (left != null || right != null || center != null) {
-                form.separator = y;
+                ((SwtViewForm) form.getImpl()).separator = y;
                 y++;
             }
-            content.setBounds(rect.x + form.marginWidth + form.highlight, y, rect.width - 2 * form.marginWidth - 2 * form.highlight, rect.y + rect.height - y - form.marginHeight - form.highlight);
+            content.setBounds(rect.x + form.marginWidth + ((SwtViewForm) form.getImpl()).highlight, y, rect.width - 2 * form.marginWidth - 2 * ((SwtViewForm) form.getImpl()).highlight, rect.y + rect.height - y - form.marginHeight - ((SwtViewForm) form.getImpl()).highlight);
         }
-        if (oldSeperator != form.separator) {
+        if (oldSeperator != ((SwtViewForm) form.getImpl()).separator) {
             int t, b;
             if (oldSeperator == -1) {
-                t = form.separator;
-                b = form.separator + 1;
-            } else if (form.separator == -1) {
+                t = ((SwtViewForm) form.getImpl()).separator;
+                b = ((SwtViewForm) form.getImpl()).separator + 1;
+            } else if (((SwtViewForm) form.getImpl()).separator == -1) {
                 t = oldSeperator;
                 b = oldSeperator + 1;
             } else {
-                t = Math.min(form.separator, oldSeperator);
-                b = Math.max(form.separator, oldSeperator);
+                t = Math.min(((SwtViewForm) form.getImpl()).separator, oldSeperator);
+                b = Math.max(((SwtViewForm) form.getImpl()).separator, oldSeperator);
             }
-            form.redraw(form.borderLeft, t, form.getSize().x - form.borderLeft - form.borderRight, b - t, false);
+            form.redraw(((SwtViewForm) form.getImpl()).borderLeft, t, form.getSize().x - ((SwtViewForm) form.getImpl()).borderLeft - ((SwtViewForm) form.getImpl()).borderRight, b - t, false);
         }
     }
 }

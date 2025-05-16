@@ -85,7 +85,7 @@ public class SwtAnimatedProgress extends SwtCanvas implements IAnimatedProgress 
         }
         showBorder = (style & SWT.BORDER) != 0;
         addControlListener(ControlListener.controlResizedAdapter(e -> redraw()));
-        addPaintListener(this::paint);
+        addPaintListener(this.getApi()::paint);
         addDisposeListener(e -> stop());
     }
 
@@ -202,7 +202,7 @@ public class SwtAnimatedProgress extends SwtCanvas implements IAnimatedProgress 
         timer[0] = () -> {
             if (!active)
                 return;
-            GC gc = new GC(AnimatedProgress.this);
+            GC gc = new GC(this.getApi());
             paintStripes(gc);
             gc.dispose();
             display.timerExec(SLEEP, timer[0]);

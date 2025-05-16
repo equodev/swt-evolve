@@ -29,9 +29,9 @@ class CBannerLayout extends Layout {
     @Override
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         CBanner banner = (CBanner) composite;
-        Control left = banner.left;
-        Control right = banner.right;
-        Control bottom = banner.bottom;
+        Control left = ((SwtCBanner) banner.getImpl()).left;
+        Control right = ((SwtCBanner) banner.getImpl()).right;
+        Control bottom = ((SwtCBanner) banner.getImpl()).bottom;
         boolean showCurve = left != null && right != null;
         int height = hHint;
         int width = wHint;
@@ -46,16 +46,16 @@ class CBannerLayout extends Layout {
         if (right != null) {
             int trim = computeTrim(right);
             int w = SWT.DEFAULT;
-            if (banner.rightWidth != SWT.DEFAULT) {
-                w = banner.rightWidth - trim;
+            if (((SwtCBanner) banner.getImpl()).rightWidth != SWT.DEFAULT) {
+                w = ((SwtCBanner) banner.getImpl()).rightWidth - trim;
                 if (left != null) {
-                    w = Math.min(w, width - banner.curve_width + 2 * banner.curve_indent - CBanner.MIN_LEFT - trim);
+                    w = Math.min(w, width - ((SwtCBanner) banner.getImpl()).curve_width + 2 * ((SwtCBanner) banner.getImpl()).curve_indent - SwtCBanner.MIN_LEFT - trim);
                 }
                 w = Math.max(0, w);
             }
             rightSize = computeChildSize(right, w, SWT.DEFAULT, flushCache);
             if (wHint != SWT.DEFAULT) {
-                width -= rightSize.x + banner.curve_width - 2 * banner.curve_indent;
+                width -= rightSize.x + ((SwtCBanner) banner.getImpl()).curve_width - 2 * ((SwtCBanner) banner.getImpl()).curve_indent;
             }
         }
         Point leftSize = new Point(0, 0);
@@ -68,20 +68,20 @@ class CBannerLayout extends Layout {
         width = leftSize.x + rightSize.x;
         height = bottomSize.y;
         if (bottom != null && (left != null || right != null)) {
-            height += CBanner.BORDER_STRIPE + 2;
+            height += SwtCBanner.BORDER_STRIPE + 2;
         }
         if (left != null) {
             if (right == null) {
                 height += leftSize.y;
             } else {
-                height += Math.max(leftSize.y, banner.rightMinHeight == SWT.DEFAULT ? rightSize.y : banner.rightMinHeight);
+                height += Math.max(leftSize.y, ((SwtCBanner) banner.getImpl()).rightMinHeight == SWT.DEFAULT ? rightSize.y : ((SwtCBanner) banner.getImpl()).rightMinHeight);
             }
         } else {
             height += rightSize.y;
         }
         if (showCurve) {
-            width += banner.curve_width - 2 * banner.curve_indent;
-            height += CBanner.BORDER_TOP + CBanner.BORDER_BOTTOM + 2 * CBanner.BORDER_STRIPE;
+            width += ((SwtCBanner) banner.getImpl()).curve_width - 2 * ((SwtCBanner) banner.getImpl()).curve_indent;
+            height += SwtCBanner.BORDER_TOP + SwtCBanner.BORDER_BOTTOM + 2 * SwtCBanner.BORDER_STRIPE;
         }
         if (wHint != SWT.DEFAULT)
             width = wHint;
@@ -118,9 +118,9 @@ class CBannerLayout extends Layout {
     @Override
     protected void layout(Composite composite, boolean flushCache) {
         CBanner banner = (CBanner) composite;
-        Control left = banner.left;
-        Control right = banner.right;
-        Control bottom = banner.bottom;
+        Control left = ((SwtCBanner) banner.getImpl()).left;
+        Control right = ((SwtCBanner) banner.getImpl()).right;
+        Control bottom = ((SwtCBanner) banner.getImpl()).bottom;
         Point size = banner.getSize();
         boolean showCurve = left != null && right != null;
         int width = size.x - 2 * banner.getBorderWidth();
@@ -130,24 +130,24 @@ class CBannerLayout extends Layout {
             int trim = computeTrim(bottom);
             int w = Math.max(0, width - trim);
             bottomSize = computeChildSize(bottom, w, SWT.DEFAULT, flushCache);
-            height -= bottomSize.y + CBanner.BORDER_STRIPE + 2;
+            height -= bottomSize.y + SwtCBanner.BORDER_STRIPE + 2;
         }
         if (showCurve)
-            height -= CBanner.BORDER_TOP + CBanner.BORDER_BOTTOM + 2 * CBanner.BORDER_STRIPE;
+            height -= SwtCBanner.BORDER_TOP + SwtCBanner.BORDER_BOTTOM + 2 * SwtCBanner.BORDER_STRIPE;
         height = Math.max(0, height);
         Point rightSize = new Point(0, 0);
         if (right != null) {
             int trim = computeTrim(right);
             int w = SWT.DEFAULT;
-            if (banner.rightWidth != SWT.DEFAULT) {
-                w = banner.rightWidth - trim;
+            if (((SwtCBanner) banner.getImpl()).rightWidth != SWT.DEFAULT) {
+                w = ((SwtCBanner) banner.getImpl()).rightWidth - trim;
                 if (left != null) {
-                    w = Math.min(w, width - banner.curve_width + 2 * banner.curve_indent - CBanner.MIN_LEFT - trim);
+                    w = Math.min(w, width - ((SwtCBanner) banner.getImpl()).curve_width + 2 * ((SwtCBanner) banner.getImpl()).curve_indent - SwtCBanner.MIN_LEFT - trim);
                 }
                 w = Math.max(0, w);
             }
             rightSize = computeChildSize(right, w, SWT.DEFAULT, flushCache);
-            width = width - (rightSize.x - banner.curve_indent + banner.curve_width - banner.curve_indent);
+            width = width - (rightSize.x - ((SwtCBanner) banner.getImpl()).curve_indent + ((SwtCBanner) banner.getImpl()).curve_width - ((SwtCBanner) banner.getImpl()).curve_indent);
         }
         Point leftSize = new Point(0, 0);
         if (left != null) {
@@ -157,7 +157,7 @@ class CBannerLayout extends Layout {
         }
         int x = 0;
         int y = 0;
-        int oldStart = banner.curveStart;
+        int oldStart = ((SwtCBanner) banner.getImpl()).curveStart;
         Rectangle leftRect = null;
         Rectangle rightRect = null;
         Rectangle bottomRect = null;
@@ -165,23 +165,23 @@ class CBannerLayout extends Layout {
             bottomRect = new Rectangle(x, y + size.y - bottomSize.y, bottomSize.x, bottomSize.y);
         }
         if (showCurve)
-            y += CBanner.BORDER_TOP + CBanner.BORDER_STRIPE;
+            y += SwtCBanner.BORDER_TOP + SwtCBanner.BORDER_STRIPE;
         if (left != null) {
             leftRect = new Rectangle(x, y, leftSize.x, leftSize.y);
-            banner.curveStart = x + leftSize.x - banner.curve_indent;
-            x += leftSize.x - banner.curve_indent + banner.curve_width - banner.curve_indent;
+            ((SwtCBanner) banner.getImpl()).curveStart = x + leftSize.x - ((SwtCBanner) banner.getImpl()).curve_indent;
+            x += leftSize.x - ((SwtCBanner) banner.getImpl()).curve_indent + ((SwtCBanner) banner.getImpl()).curve_width - ((SwtCBanner) banner.getImpl()).curve_indent;
         }
         if (right != null) {
             if (left != null) {
-                rightSize.y = Math.max(leftSize.y, banner.rightMinHeight == SWT.DEFAULT ? rightSize.y : banner.rightMinHeight);
+                rightSize.y = Math.max(leftSize.y, ((SwtCBanner) banner.getImpl()).rightMinHeight == SWT.DEFAULT ? rightSize.y : ((SwtCBanner) banner.getImpl()).rightMinHeight);
             }
             rightRect = new Rectangle(x, y, rightSize.x, rightSize.y);
         }
-        if (banner.curveStart < oldStart) {
-            banner.redraw(banner.curveStart - CBanner.CURVE_TAIL, 0, oldStart + banner.curve_width - banner.curveStart + CBanner.CURVE_TAIL + 5, size.y, false);
+        if (((SwtCBanner) banner.getImpl()).curveStart < oldStart) {
+            banner.redraw(((SwtCBanner) banner.getImpl()).curveStart - SwtCBanner.CURVE_TAIL, 0, oldStart + ((SwtCBanner) banner.getImpl()).curve_width - ((SwtCBanner) banner.getImpl()).curveStart + SwtCBanner.CURVE_TAIL + 5, size.y, false);
         }
-        if (banner.curveStart > oldStart) {
-            banner.redraw(oldStart - CBanner.CURVE_TAIL, 0, banner.curveStart + banner.curve_width - oldStart + CBanner.CURVE_TAIL + 5, size.y, false);
+        if (((SwtCBanner) banner.getImpl()).curveStart > oldStart) {
+            banner.redraw(oldStart - SwtCBanner.CURVE_TAIL, 0, ((SwtCBanner) banner.getImpl()).curveStart + ((SwtCBanner) banner.getImpl()).curve_width - oldStart + SwtCBanner.CURVE_TAIL + 5, size.y, false);
         }
         /*
 	 * The paint events must be flushed in order to make the curve draw smoothly
@@ -190,7 +190,7 @@ class CBannerLayout extends Layout {
 	 * resized because otherwise the children (particularly toolbars) will flash.
 	 */
         banner.update();
-        banner.curveRect = new Rectangle(banner.curveStart, 0, banner.curve_width, size.y);
+        ((SwtCBanner) banner.getImpl()).curveRect = new Rectangle(((SwtCBanner) banner.getImpl()).curveStart, 0, ((SwtCBanner) banner.getImpl()).curve_width, size.y);
         if (bottomRect != null)
             bottom.setBounds(bottomRect);
         if (rightRect != null)

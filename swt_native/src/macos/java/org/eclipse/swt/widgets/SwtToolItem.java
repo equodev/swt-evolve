@@ -114,7 +114,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
     public SwtToolItem(ToolBar parent, int style) {
         super(parent, checkStyle(style));
         this.parent = parent;
-        ((SwtToolBar) parent.getImpl()).createItem(this, parent.getItemCount());
+        ((SwtToolBar) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
     }
 
     /**
@@ -156,7 +156,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
     public SwtToolItem(ToolBar parent, int style, int index) {
         super(parent, checkStyle(style));
         this.parent = parent;
-        ((SwtToolBar) parent.getImpl()).createItem(this, index);
+        ((SwtToolBar) parent.getImpl()).createItem(this.getApi(), index);
     }
 
     @Override
@@ -170,7 +170,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     long accessibilityActionNames(long id, long sel) {
-        long returnValue = ((SwtWidget) super.getImpl()).accessibilityActionNames(id, sel);
+        long returnValue = super.accessibilityActionNames(id, sel);
         if (id == accessibleHandle()) {
             if ((style & SWT.DROP_DOWN) != 0) {
                 NSArray baseArray = new NSArray(returnValue);
@@ -180,14 +180,14 @@ public class SwtToolItem extends SwtItem implements IToolItem {
                 returnValue = ourNames.id;
             }
         } else {
-            returnValue = ((SwtWidget) super.getImpl()).accessibilityActionNames(id, sel);
+            returnValue = super.accessibilityActionNames(id, sel);
         }
         return returnValue;
     }
 
     @Override
     long accessibilityAttributeNames(long id, long sel) {
-        long returnValue = ((SwtWidget) super.getImpl()).accessibilityAttributeNames(id, sel);
+        long returnValue = super.accessibilityAttributeNames(id, sel);
         if (id == accessibleHandle()) {
             if ((style & (SWT.CHECK | SWT.RADIO)) != 0) {
                 NSArray baseArray = new NSArray(returnValue);
@@ -203,7 +203,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
                 returnValue = ourNames.id;
             }
         } else {
-            returnValue = ((SwtWidget) super.getImpl()).accessibilityAttributeNames(id, sel);
+            returnValue = super.accessibilityAttributeNames(id, sel);
         }
         return returnValue;
     }
@@ -251,7 +251,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
             // Parent of the toolitem is always its toolbar.
             return parent.view.id;
         }
-        return ((SwtWidget) super.getImpl()).accessibilityAttributeValue(id, sel, arg0);
+        return super.accessibilityAttributeValue(id, sel, arg0);
     }
 
     @Override
@@ -259,7 +259,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
         // The interesting part of a ToolItem is its button, if it has one.
         if (id == accessibleHandle())
             return false;
-        return ((SwtWidget) super.getImpl()).accessibilityIsIgnored(id, sel);
+        return super.accessibilityIsIgnored(id, sel);
     }
 
     /**
@@ -422,7 +422,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     void deregister() {
-        ((SwtWidget) super.getImpl()).deregister();
+        super.deregister();
         ((SwtDisplay) display.getImpl()).removeWidget(view);
         if (button != null) {
             ((SwtDisplay) display.getImpl()).removeWidget(button);
@@ -432,8 +432,8 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     void destroyWidget() {
-        ((SwtToolBar) parent.getImpl()).destroyItem(this);
-        ((SwtWidget) super.getImpl()).destroyWidget();
+        ((SwtToolBar) parent.getImpl()).destroyItem(this.getApi());
+        super.destroyWidget();
     }
 
     @Override
@@ -457,7 +457,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
             cgRect.size.height = rect.height;
             OS.CGContextBeginTransparencyLayerWithRect(cgContext, cgRect, 0);
         }
-        ((SwtWidget) super.getImpl()).drawImageWithFrameInView(id, sel, image, rect, view);
+        super.drawImageWithFrameInView(id, sel, image, rect, view);
         if (drawSelected) {
             NSColor.colorWithDeviceRed(0, 0, 0, .3f).setFill();
             OS.NSRectFillUsingOperation(rect, OS.NSCompositeSourceAtop);
@@ -481,7 +481,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
             tmpString.autorelease();
             title = tmpString.id;
         }
-        return ((SwtWidget) super.getImpl()).drawTitleWithFrameInView(id, sel, title, titleRect, view);
+        return super.drawTitleWithFrameInView(id, sel, title, titleRect, view);
     }
 
     @Override
@@ -835,7 +835,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
             return;
         Display display = this.display;
         ((SwtDisplay) display.getImpl()).trackingControl = parent;
-        ((SwtWidget) super.getImpl()).mouseDown(id, sel, theEvent);
+        super.mouseDown(id, sel, theEvent);
         ((SwtDisplay) display.getImpl()).trackingControl = null;
         if ((style & SWT.DROP_DOWN) != 0 && id == view.id) {
             NSRect frame = view.frame();
@@ -851,72 +851,72 @@ public class SwtToolItem extends SwtItem implements IToolItem {
     boolean mouseDownCanMoveWindow(long id, long sel) {
         if (id == view.id)
             return false;
-        return ((SwtWidget) super.getImpl()).mouseDownCanMoveWindow(id, sel);
+        return super.mouseDownCanMoveWindow(id, sel);
     }
 
     @Override
     void mouseUp(long id, long sel, long theEvent) {
         if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseUp))
             return;
-        ((SwtWidget) super.getImpl()).mouseUp(id, sel, theEvent);
+        super.mouseUp(id, sel, theEvent);
     }
 
     @Override
     void mouseDragged(long id, long sel, long theEvent) {
         if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseMove))
             return;
-        ((SwtWidget) super.getImpl()).mouseDragged(id, sel, theEvent);
+        super.mouseDragged(id, sel, theEvent);
     }
 
     @Override
     void rightMouseDown(long id, long sel, long theEvent) {
         if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseDown))
             return;
-        ((SwtWidget) super.getImpl()).rightMouseDown(id, sel, theEvent);
+        super.rightMouseDown(id, sel, theEvent);
     }
 
     @Override
     void rightMouseUp(long id, long sel, long theEvent) {
         if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseUp))
             return;
-        ((SwtWidget) super.getImpl()).rightMouseUp(id, sel, theEvent);
+        super.rightMouseUp(id, sel, theEvent);
     }
 
     @Override
     void rightMouseDragged(long id, long sel, long theEvent) {
         if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseMove))
             return;
-        ((SwtWidget) super.getImpl()).rightMouseDragged(id, sel, theEvent);
+        super.rightMouseDragged(id, sel, theEvent);
     }
 
     @Override
     void otherMouseDown(long id, long sel, long theEvent) {
         if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseDown))
             return;
-        ((SwtWidget) super.getImpl()).otherMouseDown(id, sel, theEvent);
+        super.otherMouseDown(id, sel, theEvent);
     }
 
     @Override
     void otherMouseUp(long id, long sel, long theEvent) {
         if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseUp))
             return;
-        ((SwtWidget) super.getImpl()).otherMouseUp(id, sel, theEvent);
+        super.otherMouseUp(id, sel, theEvent);
     }
 
     @Override
     void otherMouseDragged(long id, long sel, long theEvent) {
         if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseMove))
             return;
-        ((SwtWidget) super.getImpl()).otherMouseDragged(id, sel, theEvent);
+        super.otherMouseDragged(id, sel, theEvent);
     }
 
     @Override
     void register() {
-        ((SwtWidget) super.getImpl()).register();
-        ((SwtDisplay) display.getImpl()).addWidget(view, this);
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(view, this.getApi());
         if (button != null) {
-            ((SwtDisplay) display.getImpl()).addWidget(button, this);
-            ((SwtDisplay) display.getImpl()).addWidget(button.cell(), this);
+            ((SwtDisplay) display.getImpl()).addWidget(button, this.getApi());
+            ((SwtDisplay) display.getImpl()).addWidget(button.cell(), this.getApi());
         }
     }
 
@@ -949,13 +949,13 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     void releaseParent() {
-        ((SwtWidget) super.getImpl()).releaseParent();
+        super.releaseParent();
         setVisible(false);
     }
 
     @Override
     void releaseHandle() {
-        ((SwtWidget) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (view != null)
             view.release();
         if (button != null)
@@ -978,7 +978,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     void releaseWidget() {
-        ((SwtItem) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         control = null;
         toolTipText = null;
         image = disabledImage = hotImage = null;
@@ -987,7 +987,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
     void selectRadio() {
         int index = 0;
         ToolItem[] items = parent.getItems();
-        while (index < items.length && items[index] != this) index++;
+        while (index < items.length && items[index] != this.getApi()) index++;
         int i = index - 1;
         while (i >= 0 && ((SwtToolItem) items[i].getImpl()).setRadioSelection(false)) --i;
         int j = index + 1;
@@ -1396,7 +1396,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
             int length = fixMnemonic(chars);
             nsItem.setToolTip(NSString.stringWithCharacters(chars, length));
         } else {
-            ((SwtControl) parent.getImpl()).checkToolTip(this);
+            ((SwtControl) parent.getImpl()).checkToolTip(this.getApi());
         }
     }
 
@@ -1438,7 +1438,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
         this.width = width;
         if (((SwtToolBar) parent.getImpl()).nsToolbar != null) {
             NSToolbar toolbar = ((SwtToolBar) parent.getImpl()).nsToolbar;
-            int index = parent.indexOf(this);
+            int index = parent.indexOf(this.getApi());
             toolbar.removeItemAtIndex(index);
             toolbar.insertItemWithItemIdentifier(getItemID(), index);
         }

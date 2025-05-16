@@ -83,7 +83,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
     public SwtTabItem(TabFolder parent, int style) {
         super(parent, style);
         this.parent = parent;
-        ((SwtTabFolder) parent.getImpl()).createItem(this, parent.getItemCount());
+        ((SwtTabFolder) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
     }
 
     /**
@@ -121,7 +121,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
     public SwtTabItem(TabFolder parent, int style, int index) {
         super(parent, style);
         this.parent = parent;
-        ((SwtTabFolder) parent.getImpl()).createItem(this, index);
+        ((SwtTabFolder) parent.getImpl()).createItem(this.getApi(), index);
     }
 
     @Override
@@ -138,7 +138,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
                 }
             }
         }
-        return ((SwtWidget) super.getImpl()).accessibilityAttributeValue(id, sel, arg0);
+        return super.accessibilityAttributeValue(id, sel, arg0);
     }
 
     @Override
@@ -149,13 +149,13 @@ public class SwtTabItem extends SwtItem implements ITabItem {
 
     @Override
     void deregister() {
-        ((SwtWidget) super.getImpl()).deregister();
+        super.deregister();
         ((SwtDisplay) display.getImpl()).removeWidget(nsItem);
     }
 
     @Override
     void destroyWidget() {
-        ((SwtTabFolder) parent.getImpl()).destroyItem(this);
+        ((SwtTabFolder) parent.getImpl()).destroyItem(this.getApi());
         releaseHandle();
     }
 
@@ -181,7 +181,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
         if (attriStr != null) {
             attriStr.drawInRect(rect);
         }
-        ((SwtWidget) super.getImpl()).drawLabelInRect(id, sel, shouldTruncateLabel, rect);
+        super.drawLabelInRect(id, sel, shouldTruncateLabel, rect);
     }
 
     /**
@@ -270,13 +270,13 @@ public class SwtTabItem extends SwtItem implements ITabItem {
 
     @Override
     void register() {
-        ((SwtWidget) super.getImpl()).register();
-        ((SwtDisplay) display.getImpl()).addWidget(nsItem, this);
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(nsItem, this.getApi());
     }
 
     @Override
     void releaseHandle() {
-        ((SwtWidget) super.getImpl()).releaseHandle();
+        super.releaseHandle();
         if (nsItem != null)
             nsItem.release();
         nsItem = null;
@@ -288,8 +288,8 @@ public class SwtTabItem extends SwtItem implements ITabItem {
 
     @Override
     void releaseParent() {
-        ((SwtWidget) super.getImpl()).releaseParent();
-        int index = parent.indexOf(this);
+        super.releaseParent();
+        int index = parent.indexOf(this.getApi());
         if (index == parent.getSelectionIndex()) {
             if (control != null)
                 control.setVisible(false);
@@ -298,7 +298,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
 
     @Override
     void releaseWidget() {
-        ((SwtItem) super.getImpl()).releaseWidget();
+        super.releaseWidget();
         control = null;
     }
 
@@ -330,7 +330,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
         }
         Control oldControl = this.control, newControl = control;
         this.control = control;
-        int index = parent.indexOf(this), selectionIndex = parent.getSelectionIndex();
+        int index = parent.indexOf(this.getApi()), selectionIndex = parent.getSelectionIndex();
         ;
         if (index != selectionIndex) {
             if (newControl != null) {
@@ -375,7 +375,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
     @Override
     public void setImage(Image image) {
         checkWidget();
-        int index = parent.indexOf(this);
+        int index = parent.indexOf(this.getApi());
         if (index == -1)
             return;
         super.setImage(image);
@@ -412,7 +412,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        int index = parent.indexOf(this);
+        int index = parent.indexOf(this.getApi());
         if (index == -1)
             return;
         super.setText(string);
@@ -447,12 +447,12 @@ public class SwtTabItem extends SwtItem implements ITabItem {
     public void setToolTipText(String string) {
         checkWidget();
         toolTipText = string;
-        ((SwtControl) parent.getImpl()).checkToolTip(this);
+        ((SwtControl) parent.getImpl()).checkToolTip(this.getApi());
     }
 
     @Override
     NSSize sizeOfLabel(long id, long sel, boolean shouldTruncateLabel) {
-        NSSize size = ((SwtWidget) super.getImpl()).sizeOfLabel(id, sel, shouldTruncateLabel);
+        NSSize size = super.sizeOfLabel(id, sel, shouldTruncateLabel);
         if (image != null && !image.isDisposed()) {
             NSSize imageSize = image.handle.size();
             size.width += imageSize.width + IMAGE_GAP;
