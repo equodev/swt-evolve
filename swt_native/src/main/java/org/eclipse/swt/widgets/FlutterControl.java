@@ -72,6 +72,7 @@ public abstract class FlutterControl extends FlutterWidget implements Drawable, 
     IMenu menu;
 
     public SWTComposite parentComposite;
+    protected Point currentSize;
 
     protected ExpandPolicy getExpandPolicy() {
         return ExpandPolicy.FOLLOW_PARENT;
@@ -603,7 +604,7 @@ public abstract class FlutterControl extends FlutterWidget implements Drawable, 
      *                         </ul>
      */
     public Point getSize() {
-        return computeSize(SWT.DEFAULT, SWT.DEFAULT, false);
+        return currentSize != null ? currentSize : computeSize(SWT.DEFAULT, SWT.DEFAULT, false);
 //        Rectangle bounds = builder().getBounds().get();
 //        return new Point(bounds.width, bounds.height);
     }
