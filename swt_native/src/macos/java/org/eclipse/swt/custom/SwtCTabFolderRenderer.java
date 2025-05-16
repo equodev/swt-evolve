@@ -592,7 +592,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
     public void draw(int part, int state, Rectangle bounds, GC gc) {
         switch(part) {
             case CTabFolderRenderer.PART_BACKGROUND:
-                ((SwtCTabFolderRenderer) this.getImpl()).drawBackground(gc, bounds, state);
+                this.drawBackground(gc, bounds, state);
                 break;
             case CTabFolderRenderer.PART_BODY:
                 drawBody(gc, bounds, state);

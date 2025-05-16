@@ -2641,7 +2641,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         }
         setText(tabBuffer.toString());
         ignoreSegments = true;
-        this.defaultTabWidth = ((SwtTextLayout) this.getImpl()).getTabWidth();
+        this.defaultTabWidth = this.getTabWidth();
         ignoreSegments = false;
         setText(oldString);
     }

@@ -858,7 +858,7 @@ public class SwtText extends SwtScrollable implements IText {
         checkWidget();
         NSTextView widget = null;
         if ((style & SWT.SINGLE) != 0) {
-            if (((SwtControl) this.getImpl()).hasFocus()) {
+            if (this.hasFocus()) {
                 widget = new NSTextView(getApi().view.window().fieldEditor(true, getApi().view));
             }
         } else {

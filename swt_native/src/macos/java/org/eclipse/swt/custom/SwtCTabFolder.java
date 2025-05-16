@@ -749,7 +749,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
 
     Image createButtonImage(Display display, int button) {
         return new Image(display, (ImageDataProvider) zoom -> {
-            GC tempGC = new GC(this.getApi());
+            GC tempGC = new GC(SwtCTabFolder.this.getApi());
             Point size = renderer.computeSize(button, SWT.NONE, tempGC, SWT.DEFAULT, SWT.DEFAULT);
             tempGC.dispose();
             Rectangle trim = renderer.computeTrim(button, SWT.NONE, 0, 0, 0, 0);
@@ -1941,7 +1941,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                                                     reschedule = true;
                                                 } else {
                                                     temp = temp.getParent();
-                                                    if (temp == null || temp.equals(this.getApi()))
+                                                    if (temp == null || temp.equals(SwtCTabFolder.this.getApi()))
                                                         break;
                                                 }
                                             } while (!reschedule);
@@ -1950,7 +1950,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                                         }
                                     }
                                     if (reschedule && hoverTimerRunning) {
-                                        display.timerExec(2000, this.getApi());
+                                        display.timerExec(2000, this);
                                     } else {
                                         hovering = false;
                                         updateItems();
@@ -4008,7 +4008,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                 public void widgetSelected(SelectionEvent e) {
                     MenuItem menuItem = (MenuItem) e.widget;
                     int index = indexOf((CTabItem) menuItem.getData(id));
-                    ((SwtCTabFolder) CTabFolder.this.getImpl()).setSelection(index, true);
+                    SwtCTabFolder.this.setSelection(index, true);
                 }
             });
         }

@@ -668,7 +668,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
                 if (chevron == null) {
                     chevron = new ToolBar(parent, SWT.FLAT | SWT.NO_FOCUS);
                     ToolItem toolItem = new ToolItem(chevron, SWT.PUSH);
-                    toolItem.addListener(SWT.Selection, event -> ((SwtCoolItem) CoolItem.this.getImpl()).onSelection(event));
+                    toolItem.addListener(SWT.Selection, event -> SwtCoolItem.this.onSelection(event));
                 }
                 int controlHeight, currentImageHeight = 0;
                 if ((((SwtWidget) parent.getImpl()).style & SWT.VERTICAL) != 0) {

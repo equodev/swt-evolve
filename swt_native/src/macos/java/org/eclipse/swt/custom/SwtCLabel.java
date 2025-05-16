@@ -151,13 +151,13 @@ public class SwtCLabel extends SwtCanvas implements ICLabel {
             align = SWT.RIGHT;
         if ((style & SWT.LEFT) != 0)
             align = SWT.LEFT;
-        addPaintListener(this.getApi()::onPaint);
+        addPaintListener(this::onPaint);
         addTraverseListener(event -> {
             if (event.detail == SWT.TRAVERSE_MNEMONIC) {
                 onMnemonic(event);
             }
         });
-        addListener(SWT.Dispose, this.getApi()::onDispose);
+        addListener(SWT.Dispose, this::onDispose);
         initAccessible();
     }
 
@@ -392,7 +392,7 @@ public class SwtCLabel extends SwtCanvas implements ICLabel {
 
             @Override
             public void getKeyboardShortcut(AccessibleEvent e) {
-                char mnemonic = _findMnemonic(CLabel.this.text);
+                char mnemonic = _findMnemonic(SwtCLabel.this.text);
                 if (mnemonic != '\0') {
                     //$NON-NLS-1$
                     e.result = "Alt+" + mnemonic;

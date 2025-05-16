@@ -3706,7 +3706,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         checkWidget();
         _setBackground(color);
         if (color != null) {
-            ((SwtControl) this.getImpl()).updateBackgroundMode();
+            this.updateBackgroundMode();
         }
     }
 

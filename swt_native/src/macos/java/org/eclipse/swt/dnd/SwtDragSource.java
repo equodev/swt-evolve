@@ -204,16 +204,16 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         control.setData(DND.DRAG_SOURCE_KEY, this.getApi());
         controlListener = event -> {
             if (event.type == SWT.Dispose) {
-                if (!DragSource.this.isDisposed()) {
-                    DragSource.this.dispose();
+                if (!SwtDragSource.this.getApi().isDisposed()) {
+                    SwtDragSource.this.getApi().dispose();
                 }
             }
             if (event.type == SWT.DragDetect) {
-                if (!DragSource.this.isDisposed()) {
+                if (!SwtDragSource.this.getApi().isDisposed()) {
                     if (event.widget instanceof Table || event.widget instanceof Tree) {
-                        ((SwtDragSource) DragSource.this.getImpl()).dragOutlineViewStart(event);
+                        SwtDragSource.this.dragOutlineViewStart(event);
                     } else {
-                        ((SwtDragSource) DragSource.this.getImpl()).drag(event);
+                        SwtDragSource.this.drag(event);
                     }
                 }
             }

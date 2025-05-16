@@ -412,8 +412,8 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
         }
         control.setData(DND.DROP_TARGET_KEY, this.getApi());
         controlListener = event -> {
-            if (!DropTarget.this.isDisposed()) {
-                DropTarget.this.dispose();
+            if (!SwtDropTarget.this.getApi().isDisposed()) {
+                SwtDropTarget.this.getApi().dispose();
             }
         };
         control.addListener(SWT.Dispose, controlListener);

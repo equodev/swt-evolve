@@ -110,13 +110,13 @@ public class SwtTreeEditor extends SwtControlEditor implements ITreeEditor {
                 layout();
             }
         };
-        timer = this.getApi()::layout;
+        timer = this::layout;
         treeListener = new TreeListener() {
 
             final Runnable runnable = () -> {
                 if (editor == null || editor.isDisposed())
                     return;
-                if (TreeEditor.this.tree.isDisposed())
+                if (SwtTreeEditor.this.tree.isDisposed())
                     return;
                 layout();
                 editor.setVisible(true);

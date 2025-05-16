@@ -93,7 +93,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
 	 * for this reason it can't be disposed. Tell leak detector
 	 * to just ignore it.
 	 */
-        ((SwtResource) this.getImpl()).ignoreNonDisposed();
+        this.ignoreNonDisposed();
     }
 
     /**

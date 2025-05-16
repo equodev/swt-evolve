@@ -150,7 +150,7 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
         NSEvent nsEvent = new NSEvent(event);
         NSWindow window = nsEvent.window();
         if (window != null) {
-            result = ((SwtDisplay) parent.display.getImpl()).performKeyEquivalent(window, nsEvent);
+            result = ((SwtWidget) parent.getImpl()).display.performKeyEquivalent(window, nsEvent);
         }
         return result ? 1 : 0;
     }

@@ -110,7 +110,7 @@ public class SwtTableEditor extends SwtControlEditor implements ITableEditor {
                 layout();
             }
         };
-        timer = this.getApi()::layout;
+        timer = this::layout;
         // To be consistent with older versions of SWT, grabVertical defaults to true
         getApi().grabVertical = true;
     }

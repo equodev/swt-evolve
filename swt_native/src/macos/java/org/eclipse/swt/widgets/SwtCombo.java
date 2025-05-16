@@ -747,7 +747,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
     public Point getCaretLocation() {
         checkWidget();
         NSTextView widget = null;
-        if (((SwtControl) this.getImpl()).hasFocus()) {
+        if (this.hasFocus()) {
             widget = new NSTextView(getApi().view.window().fieldEditor(true, getApi().view));
         }
         if (widget == null)

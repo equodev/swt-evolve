@@ -237,7 +237,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
             popupCalendar.setFont(font);
         if (clickListener == null) {
             clickListener = event -> {
-                if (event.widget instanceof Control c && event.widget != this.getApi()) {
+                if (event.widget instanceof Control c && event.widget != SwtDateTime.this.getApi()) {
                     if (c.getShell() != popupShell) {
                         hideCalendar();
                     }

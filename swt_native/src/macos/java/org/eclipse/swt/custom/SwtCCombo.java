@@ -131,7 +131,7 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
                 arrowEvent(event);
                 return;
             }
-            if (this.getApi() == event.widget) {
+            if (SwtCCombo.this.getApi() == event.widget) {
                 comboEvent(event);
                 return;
             }
@@ -159,7 +159,7 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
             }
             if (event.widget instanceof Control) {
                 Shell shell = ((Control) event.widget).getShell();
-                if (shell == CCombo.this.getShell()) {
+                if (shell == SwtCCombo.this.getApi().getShell()) {
                     handleFocus(SWT.FocusOut);
                 }
             }

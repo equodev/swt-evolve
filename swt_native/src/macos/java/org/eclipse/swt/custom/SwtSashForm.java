@@ -91,7 +91,7 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
             sashStyle |= SWT.BORDER;
         if ((style & SWT.SMOOTH) != 0)
             sashStyle |= SWT.SMOOTH;
-        sashListener = this.getApi()::onDragSash;
+        sashListener = this::onDragSash;
     }
 
     static int checkStyle(int style) {

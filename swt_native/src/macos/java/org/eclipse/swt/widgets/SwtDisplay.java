@@ -4887,7 +4887,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 if (((SwtCaret) currentCaret.getImpl()).blinkCaret()) {
                     int blinkRate = ((SwtCaret) currentCaret.getImpl()).blinkRate;
                     if (blinkRate != 0)
-                        timerExec(blinkRate, this.getApi());
+                        timerExec(blinkRate, this);
                 } else {
                     currentCaret = null;
                 }
@@ -4913,7 +4913,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             if (isDisposed())
                 return;
             if (hasDefaultButton())
-                timerExec(DEFAULT_BUTTON_INTERVAL, this.getApi());
+                timerExec(DEFAULT_BUTTON_INTERVAL, this);
         }
     };
 

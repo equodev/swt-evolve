@@ -90,7 +90,7 @@ public class SwtControlEditor implements IControlEditor {
         for (int event : EVENTS) {
             parent.addListener(event, controlListener);
         }
-        scrollbarListener = this.getApi()::scroll;
+        scrollbarListener = this::scroll;
         ScrollBar hBar = parent.getHorizontalBar();
         if (hBar != null)
             hBar.addListener(SWT.Selection, scrollbarListener);

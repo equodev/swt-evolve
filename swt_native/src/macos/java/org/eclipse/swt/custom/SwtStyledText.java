@@ -926,7 +926,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     return;
                 if (getCaret() != defaultCaret)
                     return;
-                setCaretLocations(Arrays.stream(caretOffsets).mapToObj(this.getApi()::getPointAtOffset).toArray(Point[]::new), direction);
+                setCaretLocations(Arrays.stream(caretOffsets).mapToObj(this::getPointAtOffset).toArray(Point[]::new), direction);
             };
             BidiUtil.addLanguageListener(this.getApi(), runnable);
         }
@@ -1922,7 +1922,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                         } else {
                             doSelectionPageUp(autoScrollDistance);
                         }
-                        display.timerExec(V_SCROLL_RATE, this.getApi());
+                        display.timerExec(V_SCROLL_RATE, this);
                     }
                 }
             };
@@ -1952,7 +1952,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                         } else {
                             doSelectionPageDown(autoScrollDistance);
                         }
-                        display.timerExec(V_SCROLL_RATE, this.getApi());
+                        display.timerExec(V_SCROLL_RATE, this);
                     }
                 }
             };
@@ -1983,7 +1983,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                             setMouseWordSelectionAnchor();
                             doMouseSelection();
                         }
-                        display.timerExec(H_SCROLL_RATE, this.getApi());
+                        display.timerExec(H_SCROLL_RATE, this);
                     }
                 }
             };
@@ -2013,7 +2013,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                             setMouseWordSelectionAnchor();
                             doMouseSelection();
                         }
-                        display.timerExec(H_SCROLL_RATE, this.getApi());
+                        display.timerExec(H_SCROLL_RATE, this);
                     }
                 }
             };
@@ -5904,10 +5904,10 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             }
         });
         if (verticalBar != null) {
-            verticalBar.addListener(SWT.Selection, this.getApi()::handleVerticalScroll);
+            verticalBar.addListener(SWT.Selection, this::handleVerticalScroll);
         }
         if (horizontalBar != null) {
-            horizontalBar.addListener(SWT.Selection, this.getApi()::handleHorizontalScroll);
+            horizontalBar.addListener(SWT.Selection, this::handleHorizontalScroll);
         }
     }
 
@@ -6682,25 +6682,25 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getCaretOffset(AccessibleTextEvent e) {
-                e.offset = StyledText.this.getCaretOffset();
+                e.offset = SwtStyledText.this.getApi().getCaretOffset();
             }
 
             @Override
             public void setCaretOffset(AccessibleTextEvent e) {
-                StyledText.this.setCaretOffset(e.offset);
+                SwtStyledText.this.getApi().setCaretOffset(e.offset);
                 e.result = ACC.OK;
             }
 
             @Override
             public void getSelectionRange(AccessibleTextEvent e) {
-                Point selection = StyledText.this.getSelectionRange();
+                Point selection = SwtStyledText.this.getApi().getSelectionRange();
                 e.offset = selection.x;
                 e.length = selection.y;
             }
 
             @Override
             public void addSelection(AccessibleTextEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 Point point = st.getSelection();
                 if (point.x == point.y) {
                     int end = e.end;
@@ -6713,7 +6713,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getSelection(AccessibleTextEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 if (((SwtStyledText) st.getImpl()).blockSelection && ((SwtStyledText) st.getImpl()).blockXLocation != -1) {
                     Rectangle rect = ((SwtStyledText) st.getImpl()).getBlockSelectionPosition();
                     int lineIndex = rect.y + e.index;
@@ -6739,7 +6739,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getSelectionCount(AccessibleTextEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 if (((SwtStyledText) st.getImpl()).blockSelection && ((SwtStyledText) st.getImpl()).blockXLocation != -1) {
                     Rectangle rect = ((SwtStyledText) st.getImpl()).getBlockSelectionPosition();
                     e.count = rect.height - rect.y + 1;
@@ -6751,7 +6751,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void removeSelection(AccessibleTextEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 if (e.index == 0) {
                     if (((SwtStyledText) st.getImpl()).blockSelection) {
                         ((SwtStyledText) st.getImpl()).clearBlockSelection(true, false);
@@ -6766,7 +6766,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             public void setSelection(AccessibleTextEvent e) {
                 if (e.index != 0)
                     return;
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 Point point = st.getSelection();
                 if (point.x == point.y)
                     return;
@@ -6779,12 +6779,12 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getCharacterCount(AccessibleTextEvent e) {
-                e.count = StyledText.this.getCharCount();
+                e.count = SwtStyledText.this.getApi().getCharCount();
             }
 
             @Override
             public void getOffsetAtPoint(AccessibleTextEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 Point point = new Point(e.x, e.y);
                 Display display = st.getDisplay();
                 point = display.map(null, st, point);
@@ -6793,7 +6793,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getTextBounds(AccessibleTextEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 int start = e.start;
                 int end = e.end;
                 int contentLength = st.getCharCount();
@@ -6843,7 +6843,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             }
 
             int[] getRanges(int left, int top, int right, int bottom) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 int lineStart = st.getLineIndex(top);
                 int lineEnd = st.getLineIndex(bottom);
                 int count = lineEnd - lineStart + 1;
@@ -6878,7 +6878,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getRanges(AccessibleTextEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 Point point = new Point(e.x, e.y);
                 Display display = st.getDisplay();
                 point = display.map(null, st, point);
@@ -6891,7 +6891,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getText(AccessibleTextEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 int start = e.start;
                 int end = e.end;
                 int contentLength = st.getCharCount();
@@ -7005,7 +7005,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void scrollText(AccessibleTextEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 int topPixel = getTopPixel(), horizontalPixel = st.getHorizontalPixel();
                 switch(e.type) {
                     case ACC.SCROLL_TYPE_ANYWHERE:
@@ -7062,14 +7062,14 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void replaceText(AccessibleEditableTextEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 st.replaceTextRange(e.start, e.end - e.start, e.string);
                 e.result = ACC.OK;
             }
 
             @Override
             public void pasteText(AccessibleEditableTextEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 st.setSelection(e.start);
                 st.paste();
                 e.result = ACC.OK;
@@ -7077,7 +7077,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void cutText(AccessibleEditableTextEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 st.setSelection(e.start, e.end);
                 st.cut();
                 e.result = ACC.OK;
@@ -7085,7 +7085,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void copyText(AccessibleEditableTextEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 st.setSelection(e.start, e.end);
                 st.copy();
                 e.result = ACC.OK;
@@ -7096,7 +7096,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getAttributes(AccessibleAttributeEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 e.leftMargin = st.getLeftMargin();
                 e.topMargin = st.getTopMargin();
                 e.rightMargin = st.getRightMargin();
@@ -7109,7 +7109,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getTextAttributes(AccessibleTextAttributeEvent e) {
-                StyledText st = this.getApi();
+                StyledText st = SwtStyledText.this.getApi();
                 int contentLength = st.getCharCount();
                 if (!isListening(ST.LineGetStyle) && ((SwtStyledText) st.getImpl()).renderer.styleCount == 0) {
                     e.start = 0;
@@ -7209,7 +7209,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getValue(AccessibleControlEvent e) {
-                e.result = StyledText.this.getText();
+                e.result = SwtStyledText.this.getApi().getText();
             }
         };
         acc.addAccessibleControlListener(accControlAdapter);
@@ -7234,7 +7234,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     String getAssociatedLabel() {
         Control[] siblings = getParent().getChildren();
         for (int i = 0; i < siblings.length; i++) {
-            if (siblings[i] == this.getApi()) {
+            if (siblings[i] == SwtStyledText.this.getApi()) {
                 if (i > 0) {
                     Control sibling = siblings[i - 1];
                     if (sibling instanceof Label)
@@ -9031,7 +9031,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      * Moves the Caret to the current caret offset.
      */
     void setCaretLocations() {
-        Point[] newCaretPos = Arrays.stream(caretOffsets).mapToObj(this.getApi()::getPointAtOffset).toArray(Point[]::new);
+        Point[] newCaretPos = Arrays.stream(caretOffsets).mapToObj(this::getPointAtOffset).toArray(Point[]::new);
         setCaretLocations(newCaretPos, getCaretDirection());
     }
 
