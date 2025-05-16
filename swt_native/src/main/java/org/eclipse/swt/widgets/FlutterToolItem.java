@@ -744,7 +744,7 @@ public class FlutterToolItem extends FlutterItem implements IToolItem {
 
     public ToolItemValue.Builder builder() {
         if (builder == null)
-            builder = ToolItemValue.builder().setId(handle).setStyle(style);
+            builder = ToolItemValue.builder().setId(hashCode()).setStyle(style);
         return (ToolItemValue.Builder) builder;
     }
 }
