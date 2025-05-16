@@ -148,7 +148,7 @@ public interface IClipboard {
      *
      * @see Transfer
      */
-    Object getContents(ITransfer transfer);
+    Object getContents(Transfer transfer);
 
     /**
      * Retrieve the data of the specified type currently available on the specified
@@ -193,7 +193,7 @@ public interface IClipboard {
      *
      * @since 3.1
      */
-    Object getContents(ITransfer transfer, int clipboards);
+    Object getContents(Transfer transfer, int clipboards);
 
     /**
      * Returns <code>true</code> if the clipboard has been disposed,
@@ -257,7 +257,7 @@ public interface IClipboard {
      *  <p>NOTE: ERROR_CANNOT_SET_CLIPBOARD should be an SWTException, since it is a
      *  recoverable error, but can not be changed due to backward compatibility.</p>
      */
-    void setContents(Object[] data, ITransfer[] dataTypes);
+    void setContents(Object[] data, Transfer[] dataTypes);
 
     /**
      *  Place data of the specified type on the specified clipboard.  More than one
@@ -318,7 +318,7 @@ public interface IClipboard {
      *
      *  @since 3.1
      */
-    void setContents(Object[] data, ITransfer[] dataTypes, int clipboards);
+    void setContents(Object[] data, Transfer[] dataTypes, int clipboards);
 
     /**
      * Returns an array of the data types currently available on the system
@@ -335,7 +335,7 @@ public interface IClipboard {
      *
      * @since 3.0
      */
-    ITransferData[] getAvailableTypes();
+    TransferData[] getAvailableTypes();
 
     /**
      * Returns an array of the data types currently available on the specified
@@ -360,7 +360,7 @@ public interface IClipboard {
      *
      * @since 3.1
      */
-    ITransferData[] getAvailableTypes(int clipboards);
+    TransferData[] getAvailableTypes(int clipboards);
 
     /**
      * Returns a platform specific list of the data types currently available on the

@@ -71,7 +71,7 @@ public interface ITracker extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IRectangle[] getRectangles();
+    Rectangle[] getRectangles();
 
     /**
      * Returns <code>true</code> if the rectangles are drawn with a stippled line, <code>false</code> otherwise.
@@ -148,7 +148,7 @@ public interface ITracker extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setCursor(ICursor newCursor);
+    void setCursor(Cursor newCursor);
 
     /**
      * Specifies the rectangles that should be drawn, expressed relative to the parent
@@ -164,7 +164,7 @@ public interface ITracker extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setRectangles(IRectangle[] rectangles);
+    void setRectangles(Rectangle[] rectangles);
 
     /**
      * Changes the appearance of the line used to draw the rectangles.

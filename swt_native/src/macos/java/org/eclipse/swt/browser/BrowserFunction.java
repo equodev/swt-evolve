@@ -78,7 +78,7 @@ public class BrowserFunction {
      * @see org.eclipse.swt.browser.LocationListener#changed(LocationEvent)
      */
     public BrowserFunction(Browser browser, String name) {
-        this(new nat.org.eclipse.swt.browser.BrowserFunction((nat.org.eclipse.swt.browser.Browser) (browser != null ? browser.getDelegate() : null), name));
+        this(new SwtBrowserFunction(browser, name));
     }
 
     /**
@@ -119,7 +119,7 @@ public class BrowserFunction {
      * @since 3.8
      */
     public BrowserFunction(Browser browser, String name, boolean top, String[] frameNames) {
-        this(new nat.org.eclipse.swt.browser.BrowserFunction((nat.org.eclipse.swt.browser.Browser) (browser != null ? browser.getDelegate() : null), name, top, frameNames));
+        this(new SwtBrowserFunction(browser, name, top, frameNames));
     }
 
     /**
@@ -131,7 +131,7 @@ public class BrowserFunction {
      * </p>
      */
     public void dispose() {
-        getDelegate().dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -165,7 +165,7 @@ public class BrowserFunction {
      * </ul>
      */
     public Object function(Object[] arguments) {
-        return getDelegate().function(arguments);
+        return getImpl().function(arguments);
     }
 
     /**
@@ -179,8 +179,7 @@ public class BrowserFunction {
      * </ul>
      */
     public Browser getBrowser() {
-        IBrowser ret = getDelegate().getBrowser();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBrowser();
     }
 
     /**
@@ -194,7 +193,7 @@ public class BrowserFunction {
      * </ul>
      */
     public String getName() {
-        return getDelegate().getName();
+        return getImpl().getName();
     }
 
     /**
@@ -212,21 +211,21 @@ public class BrowserFunction {
      * and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return getDelegate().isDisposed();
+        return getImpl().isDisposed();
     }
 
-    IBrowserFunction delegate;
+    IBrowserFunction impl;
 
-    protected BrowserFunction(IBrowserFunction delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected BrowserFunction(IBrowserFunction impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static BrowserFunction createApi(IBrowserFunction delegate) {
-        return new BrowserFunction(delegate);
+    public static BrowserFunction createApi(IBrowserFunction impl) {
+        return new BrowserFunction(impl);
     }
 
-    public IBrowserFunction getDelegate() {
-        return delegate;
+    public IBrowserFunction getImpl() {
+        return impl;
     }
 }

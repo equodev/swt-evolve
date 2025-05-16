@@ -21,7 +21,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void copyArea(IImage image, int x, int y);
+    void copyArea(Image image, int x, int y);
 
     /**
      * Copies a rectangular area of the receiver at the source
@@ -129,7 +129,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_NO_HANDLES - if no handles are available to perform the operation</li>
      * </ul>
      */
-    void drawImage(IImage image, int x, int y);
+    void drawImage(Image image, int x, int y);
 
     /**
      * Copies a rectangular area from the source image into a (potentially
@@ -163,7 +163,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_NO_HANDLES - if no handles are available to perform the operation</li>
      * </ul>
      */
-    void drawImage(IImage image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight);
+    void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight);
 
     /**
      * Draws a line, using the foreground color, between the points
@@ -226,7 +226,7 @@ public interface IGC extends IResource {
      *
      * @since 3.1
      */
-    void drawPath(IPath path);
+    void drawPath(Path path);
 
     /**
      * Draws an SWT logical point, using the foreground color, at the specified
@@ -318,7 +318,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void drawRectangle(IRectangle rect);
+    void drawRectangle(Rectangle rect);
 
     /**
      * Draws the outline of the round-cornered rectangle specified by
@@ -596,7 +596,7 @@ public interface IGC extends IResource {
      *
      * @since 3.1
      */
-    void fillPath(IPath path);
+    void fillPath(Path path);
 
     /**
      * Fills the interior of the closed polygon which is defined by the
@@ -651,7 +651,7 @@ public interface IGC extends IResource {
      *
      * @see #drawRectangle(int, int, int, int)
      */
-    void fillRectangle(IRectangle rect);
+    void fillRectangle(Rectangle rect);
 
     /**
      * Fills the interior of the round-cornered rectangle specified by
@@ -698,7 +698,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IColor getBackground();
+    Color getBackground();
 
     /**
      * Returns the background pattern. The default value is
@@ -714,7 +714,7 @@ public interface IGC extends IResource {
      *
      * @since 3.1
      */
-    IPattern getBackgroundPattern();
+    Pattern getBackgroundPattern();
 
     /**
      * Returns <code>true</code> if receiver is using the operating system's
@@ -805,7 +805,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IRectangle getClipping();
+    Rectangle getClipping();
 
     /**
      * Sets the region managed by the argument to the current
@@ -821,7 +821,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void getClipping(IRegion region);
+    void getClipping(Region region);
 
     /**
      * Returns the receiver's fill rule, which will be one of
@@ -847,7 +847,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IFont getFont();
+    Font getFont();
 
     /**
      * Returns a FontMetrics which contains information
@@ -860,7 +860,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IFontMetrics getFontMetrics();
+    FontMetrics getFontMetrics();
 
     /**
      * Returns the receiver's foreground color.
@@ -871,7 +871,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IColor getForeground();
+    Color getForeground();
 
     /**
      * Returns the foreground pattern. The default value is
@@ -887,7 +887,7 @@ public interface IGC extends IResource {
      *
      * @since 3.1
      */
-    IPattern getForegroundPattern();
+    Pattern getForegroundPattern();
 
     /**
      * Returns the GCData.
@@ -911,7 +911,7 @@ public interface IGC extends IResource {
      *
      * @since 3.2
      */
-    IGCData getGCData();
+    GCData getGCData();
 
     /**
      * Returns the receiver's interpolation setting, which will be one of
@@ -939,7 +939,7 @@ public interface IGC extends IResource {
      *
      * @since 3.3
      */
-    ILineAttributes getLineAttributes();
+    LineAttributes getLineAttributes();
 
     /**
      * Returns the receiver's line cap style, which will be one
@@ -1069,7 +1069,7 @@ public interface IGC extends IResource {
      *
      * @since 3.1
      */
-    void getTransform(ITransform transform);
+    void getTransform(Transform transform);
 
     /**
      * Returns <code>true</code> if this GC is drawing in the mode
@@ -1242,7 +1242,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void setBackground(IColor color);
+    void setBackground(Color color);
 
     /**
      * Sets the background pattern. The default value is <code>null</code>.
@@ -1268,7 +1268,7 @@ public interface IGC extends IResource {
      *
      * @since 3.1
      */
-    void setBackgroundPattern(IPattern pattern);
+    void setBackgroundPattern(Pattern pattern);
 
     /**
      * Sets the area of the receiver which can be changed
@@ -1312,7 +1312,7 @@ public interface IGC extends IResource {
      *
      * @since 3.1
      */
-    void setClipping(IPath path);
+    void setClipping(Path path);
 
     /**
      * Sets the area of the receiver which can be changed
@@ -1327,7 +1327,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void setClipping(IRectangle rect);
+    void setClipping(Rectangle rect);
 
     /**
      * Sets the area of the receiver which can be changed
@@ -1345,7 +1345,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void setClipping(IRegion region);
+    void setClipping(Region region);
 
     /**
      * Sets the receiver's fill rule to the parameter, which must be one of
@@ -1380,7 +1380,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void setFont(IFont font);
+    void setFont(Font font);
 
     /**
      * Sets the foreground color. The foreground color is used
@@ -1396,7 +1396,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void setForeground(IColor color);
+    void setForeground(Color color);
 
     /**
      * Sets the foreground pattern. The default value is <code>null</code>.
@@ -1421,7 +1421,7 @@ public interface IGC extends IResource {
      *
      * @since 3.1
      */
-    void setForegroundPattern(IPattern pattern);
+    void setForegroundPattern(Pattern pattern);
 
     /**
      * Sets the receiver's interpolation setting to the parameter, which
@@ -1475,7 +1475,7 @@ public interface IGC extends IResource {
      *
      * @since 3.3
      */
-    void setLineAttributes(ILineAttributes attributes);
+    void setLineAttributes(LineAttributes attributes);
 
     /**
      * Sets the receiver's line cap style to the argument, which must be one
@@ -1643,7 +1643,7 @@ public interface IGC extends IResource {
      *
      * @since 3.1
      */
-    void setTransform(ITransform transform);
+    void setTransform(Transform transform);
 
     /**
      * Returns the extent of the given string. No tab
@@ -1664,7 +1664,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IPoint stringExtent(String string);
+    Point stringExtent(String string);
 
     /**
      * Returns the extent of the given string. Tab expansion and
@@ -1685,7 +1685,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IPoint textExtent(String string);
+    Point textExtent(String string);
 
     /**
      * Returns the extent of the given string. Tab expansion, line
@@ -1718,7 +1718,7 @@ public interface IGC extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IPoint textExtent(String string, int flags);
+    Point textExtent(String string, int flags);
 
     /**
      * Returns a string containing a concise, human-readable

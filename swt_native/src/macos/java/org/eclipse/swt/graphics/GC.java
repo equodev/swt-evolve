@@ -100,7 +100,7 @@ public final class GC extends Resource {
      * @see #dispose()
      */
     public GC(Drawable drawable) {
-        this(new nat.org.eclipse.swt.graphics.GC(drawable));
+        this(new SwtGC(drawable));
     }
 
     /**
@@ -133,7 +133,7 @@ public final class GC extends Resource {
      * @since 2.1.2
      */
     public GC(Drawable drawable, int style) {
-        this(new nat.org.eclipse.swt.graphics.GC(drawable, style));
+        this(new SwtGC(drawable, style));
     }
 
     /**
@@ -153,7 +153,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void copyArea(Image image, int x, int y) {
-        getDelegate().copyArea((image != null ? image.getDelegate() : null), x, y);
+        getImpl().copyArea(image, x, y);
     }
 
     /**
@@ -172,7 +172,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void copyArea(int srcX, int srcY, int width, int height, int destX, int destY) {
-        getDelegate().copyArea(srcX, srcY, width, height, destX, destY);
+        getImpl().copyArea(srcX, srcY, width, height, destX, destY);
     }
 
     /**
@@ -194,7 +194,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void copyArea(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
-        getDelegate().copyArea(srcX, srcY, width, height, destX, destY, paint);
+        getImpl().copyArea(srcX, srcY, width, height, destX, destY, paint);
     }
 
     /**
@@ -227,7 +227,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        getDelegate().drawArc(x, y, width, height, startAngle, arcAngle);
+        getImpl().drawArc(x, y, width, height, startAngle, arcAngle);
     }
 
     /**
@@ -248,7 +248,7 @@ public final class GC extends Resource {
      * @see #drawRectangle(int, int, int, int)
      */
     public void drawFocus(int x, int y, int width, int height) {
-        getDelegate().drawFocus(x, y, width, height);
+        getImpl().drawFocus(x, y, width, height);
     }
 
     /**
@@ -271,7 +271,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawImage(Image image, int x, int y) {
-        getDelegate().drawImage((image != null ? image.getDelegate() : null), x, y);
+        getImpl().drawImage(image, x, y);
     }
 
     /**
@@ -307,7 +307,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
-        getDelegate().drawImage((image != null ? image.getDelegate() : null), srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
+        getImpl().drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
     }
 
     /**
@@ -324,7 +324,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawLine(int x1, int y1, int x2, int y2) {
-        getDelegate().drawLine(x1, y1, x2, y2);
+        getImpl().drawLine(x1, y1, x2, y2);
     }
 
     /**
@@ -349,7 +349,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawOval(int x, int y, int width, int height) {
-        getDelegate().drawOval(x, y, width, height);
+        getImpl().drawOval(x, y, width, height);
     }
 
     /**
@@ -376,7 +376,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void drawPath(Path path) {
-        getDelegate().drawPath((path != null ? path.getDelegate() : null));
+        getImpl().drawPath(path);
     }
 
     /**
@@ -397,7 +397,7 @@ public final class GC extends Resource {
      * @since 3.0
      */
     public void drawPoint(int x, int y) {
-        getDelegate().drawPoint(x, y);
+        getImpl().drawPoint(x, y);
     }
 
     /**
@@ -418,7 +418,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawPolygon(int[] pointArray) {
-        getDelegate().drawPolygon(pointArray);
+        getImpl().drawPolygon(pointArray);
     }
 
     /**
@@ -439,7 +439,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawPolyline(int[] pointArray) {
-        getDelegate().drawPolyline(pointArray);
+        getImpl().drawPolyline(pointArray);
     }
 
     /**
@@ -458,7 +458,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawRectangle(int x, int y, int width, int height) {
-        getDelegate().drawRectangle(x, y, width, height);
+        getImpl().drawRectangle(x, y, width, height);
     }
 
     /**
@@ -478,7 +478,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawRectangle(Rectangle rect) {
-        getDelegate().drawRectangle((rect != null ? rect.getDelegate() : null));
+        getImpl().drawRectangle(rect);
     }
 
     /**
@@ -503,7 +503,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        getDelegate().drawRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+        getImpl().drawRoundRectangle(x, y, width, height, arcWidth, arcHeight);
     }
 
     /**
@@ -529,7 +529,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawString(String string, int x, int y) {
-        getDelegate().drawString(string, x, y);
+        getImpl().drawString(string, x, y);
     }
 
     /**
@@ -560,7 +560,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawString(String string, int x, int y, boolean isTransparent) {
-        getDelegate().drawString(string, x, y, isTransparent);
+        getImpl().drawString(string, x, y, isTransparent);
     }
 
     /**
@@ -586,7 +586,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawText(String string, int x, int y) {
-        getDelegate().drawText(string, x, y);
+        getImpl().drawText(string, x, y);
     }
 
     /**
@@ -614,7 +614,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawText(String string, int x, int y, boolean isTransparent) {
-        getDelegate().drawText(string, x, y, isTransparent);
+        getImpl().drawText(string, x, y, isTransparent);
     }
 
     /**
@@ -657,7 +657,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawText(String string, int x, int y, int flags) {
-        getDelegate().drawText(string, x, y, flags);
+        getImpl().drawText(string, x, y, flags);
     }
 
     /**
@@ -671,7 +671,7 @@ public final class GC extends Resource {
      * @see #hashCode
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object instanceof GC ? ((GC) object).getDelegate() : object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -707,7 +707,7 @@ public final class GC extends Resource {
      * @see #drawArc
      */
     public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        getDelegate().fillArc(x, y, width, height, startAngle, arcAngle);
+        getImpl().fillArc(x, y, width, height, startAngle, arcAngle);
     }
 
     /**
@@ -731,7 +731,7 @@ public final class GC extends Resource {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillGradientRectangle(int x, int y, int width, int height, boolean vertical) {
-        getDelegate().fillGradientRectangle(x, y, width, height, vertical);
+        getImpl().fillGradientRectangle(x, y, width, height, vertical);
     }
 
     /**
@@ -751,7 +751,7 @@ public final class GC extends Resource {
      * @see #drawOval
      */
     public void fillOval(int x, int y, int width, int height) {
-        getDelegate().fillOval(x, y, width, height);
+        getImpl().fillOval(x, y, width, height);
     }
 
     /**
@@ -778,7 +778,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void fillPath(Path path) {
-        getDelegate().fillPath((path != null ? path.getDelegate() : null));
+        getImpl().fillPath(path);
     }
 
     /**
@@ -801,7 +801,7 @@ public final class GC extends Resource {
      * @see #drawPolygon
      */
     public void fillPolygon(int[] pointArray) {
-        getDelegate().fillPolygon(pointArray);
+        getImpl().fillPolygon(pointArray);
     }
 
     /**
@@ -820,7 +820,7 @@ public final class GC extends Resource {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(int x, int y, int width, int height) {
-        getDelegate().fillRectangle(x, y, width, height);
+        getImpl().fillRectangle(x, y, width, height);
     }
 
     /**
@@ -839,7 +839,7 @@ public final class GC extends Resource {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(Rectangle rect) {
-        getDelegate().fillRectangle((rect != null ? rect.getDelegate() : null));
+        getImpl().fillRectangle(rect);
     }
 
     /**
@@ -860,7 +860,7 @@ public final class GC extends Resource {
      * @see #drawRoundRectangle
      */
     public void fillRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        getDelegate().fillRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+        getImpl().fillRoundRectangle(x, y, width, height, arcWidth, arcHeight);
     }
 
     /**
@@ -879,7 +879,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public int getAdvanceWidth(char ch) {
-        return getDelegate().getAdvanceWidth(ch);
+        return getImpl().getAdvanceWidth(ch);
     }
 
     /**
@@ -892,8 +892,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Color getBackground() {
-        IColor ret = getDelegate().getBackground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBackground();
     }
 
     /**
@@ -911,8 +910,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public Pattern getBackgroundPattern() {
-        IPattern ret = getDelegate().getBackgroundPattern();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBackgroundPattern();
     }
 
     /**
@@ -941,7 +939,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public boolean getAdvanced() {
-        return getDelegate().getAdvanced();
+        return getImpl().getAdvanced();
     }
 
     /**
@@ -957,7 +955,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getAlpha() {
-        return getDelegate().getAlpha();
+        return getImpl().getAlpha();
     }
 
     /**
@@ -977,7 +975,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getAntialias() {
-        return getDelegate().getAntialias();
+        return getImpl().getAntialias();
     }
 
     /**
@@ -997,7 +995,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public int getCharWidth(char ch) {
-        return getDelegate().getCharWidth(ch);
+        return getImpl().getCharWidth(ch);
     }
 
     /**
@@ -1013,8 +1011,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Rectangle getClipping() {
-        IRectangle ret = getDelegate().getClipping();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getClipping();
     }
 
     /**
@@ -1032,7 +1029,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void getClipping(Region region) {
-        getDelegate().getClipping((region != null ? region.getDelegate() : null));
+        getImpl().getClipping(region);
     }
 
     /**
@@ -1048,7 +1045,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getFillRule() {
-        return getDelegate().getFillRule();
+        return getImpl().getFillRule();
     }
 
     /**
@@ -1062,8 +1059,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Font getFont() {
-        IFont ret = getDelegate().getFont();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getFont();
     }
 
     /**
@@ -1078,8 +1074,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public FontMetrics getFontMetrics() {
-        IFontMetrics ret = getDelegate().getFontMetrics();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getFontMetrics();
     }
 
     /**
@@ -1092,8 +1087,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Color getForeground() {
-        IColor ret = getDelegate().getForeground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getForeground();
     }
 
     /**
@@ -1111,8 +1105,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public Pattern getForegroundPattern() {
-        IPattern ret = getDelegate().getForegroundPattern();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getForegroundPattern();
     }
 
     /**
@@ -1138,8 +1131,7 @@ public final class GC extends Resource {
      * @since 3.2
      */
     public GCData getGCData() {
-        IGCData ret = getDelegate().getGCData();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getGCData();
     }
 
     /**
@@ -1156,7 +1148,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getInterpolation() {
-        return getDelegate().getInterpolation();
+        return getImpl().getInterpolation();
     }
 
     /**
@@ -1171,8 +1163,7 @@ public final class GC extends Resource {
      * @since 3.3
      */
     public LineAttributes getLineAttributes() {
-        ILineAttributes ret = getDelegate().getLineAttributes();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getLineAttributes();
     }
 
     /**
@@ -1189,7 +1180,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getLineCap() {
-        return getDelegate().getLineCap();
+        return getImpl().getLineCap();
     }
 
     /**
@@ -1205,7 +1196,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int[] getLineDash() {
-        return getDelegate().getLineDash();
+        return getImpl().getLineDash();
     }
 
     /**
@@ -1222,7 +1213,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getLineJoin() {
-        return getDelegate().getLineJoin();
+        return getImpl().getLineJoin();
     }
 
     /**
@@ -1238,7 +1229,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public int getLineStyle() {
-        return getDelegate().getLineStyle();
+        return getImpl().getLineStyle();
     }
 
     /**
@@ -1254,7 +1245,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public int getLineWidth() {
-        return getDelegate().getLineWidth();
+        return getImpl().getLineWidth();
     }
 
     /**
@@ -1276,7 +1267,7 @@ public final class GC extends Resource {
      * @since 2.1.2
      */
     public int getStyle() {
-        return getDelegate().getStyle();
+        return getImpl().getStyle();
     }
 
     /**
@@ -1296,7 +1287,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getTextAntialias() {
-        return getDelegate().getTextAntialias();
+        return getImpl().getTextAntialias();
     }
 
     // Internal methos that returns the topView of the Control. It's the same view that would be returned
@@ -1320,7 +1311,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void getTransform(Transform transform) {
-        getDelegate().getTransform((transform != null ? transform.getDelegate() : null));
+        getImpl().getTransform(transform);
     }
 
     /**
@@ -1338,7 +1329,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public boolean getXORMode() {
-        return getDelegate().getXORMode();
+        return getImpl().getXORMode();
     }
 
     /**
@@ -1356,7 +1347,7 @@ public final class GC extends Resource {
      * @see #equals
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
     /**
@@ -1374,7 +1365,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public boolean isClipped() {
-        return getDelegate().isClipped();
+        return getImpl().isClipped();
     }
 
     /**
@@ -1388,7 +1379,7 @@ public final class GC extends Resource {
      * @return <code>true</code> when the GC is disposed and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return getDelegate().isDisposed();
+        return getImpl().isDisposed();
     }
 
     /**
@@ -1434,7 +1425,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setAdvanced(boolean advanced) {
-        getDelegate().setAdvanced(advanced);
+        getImpl().setAdvanced(advanced);
     }
 
     /**
@@ -1458,7 +1449,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setAlpha(int alpha) {
-        getDelegate().setAlpha(alpha);
+        getImpl().setAlpha(alpha);
     }
 
     /**
@@ -1490,7 +1481,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setAntialias(int antialias) {
-        getDelegate().setAntialias(antialias);
+        getImpl().setAntialias(antialias);
     }
 
     /**
@@ -1509,7 +1500,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground((color != null ? color.getDelegate() : null));
+        getImpl().setBackground(color);
     }
 
     /**
@@ -1537,7 +1528,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setBackgroundPattern(Pattern pattern) {
-        getDelegate().setBackgroundPattern((pattern != null ? pattern.getDelegate() : null));
+        getImpl().setBackgroundPattern(pattern);
     }
 
     /**
@@ -1555,7 +1546,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setClipping(int x, int y, int width, int height) {
-        getDelegate().setClipping(x, y, width, height);
+        getImpl().setClipping(x, y, width, height);
     }
 
     /**
@@ -1585,7 +1576,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setClipping(Path path) {
-        getDelegate().setClipping((path != null ? path.getDelegate() : null));
+        getImpl().setClipping(path);
     }
 
     /**
@@ -1602,7 +1593,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setClipping(Rectangle rect) {
-        getDelegate().setClipping((rect != null ? rect.getDelegate() : null));
+        getImpl().setClipping(rect);
     }
 
     /**
@@ -1622,7 +1613,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setClipping(Region region) {
-        getDelegate().setClipping((region != null ? region.getDelegate() : null));
+        getImpl().setClipping(region);
     }
 
     /**
@@ -1642,7 +1633,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setFillRule(int rule) {
-        getDelegate().setFillRule(rule);
+        getImpl().setFillRule(rule);
     }
 
     /**
@@ -1661,7 +1652,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setFont(Font font) {
-        getDelegate().setFont((font != null ? font.getDelegate() : null));
+        getImpl().setFont(font);
     }
 
     /**
@@ -1679,7 +1670,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground((color != null ? color.getDelegate() : null));
+        getImpl().setForeground(color);
     }
 
     /**
@@ -1706,7 +1697,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setForegroundPattern(Pattern pattern) {
-        getDelegate().setForegroundPattern((pattern != null ? pattern.getDelegate() : null));
+        getImpl().setForegroundPattern(pattern);
     }
 
     /**
@@ -1736,7 +1727,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setInterpolation(int interpolation) {
-        getDelegate().setInterpolation(interpolation);
+        getImpl().setInterpolation(interpolation);
     }
 
     /**
@@ -1764,7 +1755,7 @@ public final class GC extends Resource {
      * @since 3.3
      */
     public void setLineAttributes(LineAttributes attributes) {
-        getDelegate().setLineAttributes((attributes != null ? attributes.getDelegate() : null));
+        getImpl().setLineAttributes(attributes);
     }
 
     /**
@@ -1784,7 +1775,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setLineCap(int cap) {
-        getDelegate().setLineCap(cap);
+        getImpl().setLineCap(cap);
     }
 
     /**
@@ -1805,7 +1796,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setLineDash(int[] dashes) {
-        getDelegate().setLineDash(dashes);
+        getImpl().setLineDash(dashes);
     }
 
     /**
@@ -1825,7 +1816,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setLineJoin(int join) {
-        getDelegate().setLineJoin(join);
+        getImpl().setLineJoin(join);
     }
 
     /**
@@ -1844,7 +1835,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setLineStyle(int lineStyle) {
-        getDelegate().setLineStyle(lineStyle);
+        getImpl().setLineStyle(lineStyle);
     }
 
     /**
@@ -1868,7 +1859,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setLineWidth(int lineWidth) {
-        getDelegate().setLineWidth(lineWidth);
+        getImpl().setLineWidth(lineWidth);
     }
 
     /**
@@ -1886,7 +1877,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setXORMode(boolean xor) {
-        getDelegate().setXORMode(xor);
+        getImpl().setXORMode(xor);
     }
 
     /**
@@ -1918,7 +1909,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setTextAntialias(int antialias) {
-        getDelegate().setTextAntialias(antialias);
+        getImpl().setTextAntialias(antialias);
     }
 
     /**
@@ -1948,7 +1939,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setTransform(Transform transform) {
-        getDelegate().setTransform((transform != null ? transform.getDelegate() : null));
+        getImpl().setTransform(transform);
     }
 
     /**
@@ -1971,8 +1962,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point stringExtent(String string) {
-        IPoint ret = getDelegate().stringExtent(string);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().stringExtent(string);
     }
 
     /**
@@ -1995,8 +1985,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point textExtent(String string) {
-        IPoint ret = getDelegate().textExtent(string);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().textExtent(string);
     }
 
     /**
@@ -2031,8 +2020,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point textExtent(String string, int flags) {
-        IPoint ret = getDelegate().textExtent(string, flags);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().textExtent(string, flags);
     }
 
     /**
@@ -2042,18 +2030,18 @@ public final class GC extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected GC(IGC delegate) {
-        super(delegate);
+    protected GC(IGC impl) {
+        super(impl);
     }
 
-    public static GC createApi(IGC delegate) {
-        return new GC(delegate);
+    public static GC createApi(IGC impl) {
+        return new GC(impl);
     }
 
-    public IGC getDelegate() {
-        return (IGC) super.getDelegate();
+    public IGC getImpl() {
+        return (IGC) super.getImpl();
     }
 }

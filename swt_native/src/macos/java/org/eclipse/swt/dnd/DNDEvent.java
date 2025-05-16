@@ -18,7 +18,7 @@ package org.eclipse.swt.dnd;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public class DNDEvent extends Event {
+class DNDEvent extends Event {
 
     public TransferData dataType;
 

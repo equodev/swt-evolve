@@ -94,7 +94,7 @@ public class Spinner extends Composite {
      * @see Widget#getStyle
      */
     public Spinner(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Spinner((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtSpinner(parent, style));
     }
 
     /**
@@ -117,7 +117,7 @@ public class Spinner extends Composite {
      * @see #removeModifyListener
      */
     public void addModifyListener(ModifyListener listener) {
-        getDelegate().addModifyListener(listener);
+        getImpl().addModifyListener(listener);
     }
 
     /**
@@ -145,21 +145,19 @@ public class Spinner extends Composite {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeTrim(x, y, width, height);
     }
 
     /**
@@ -174,7 +172,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void copy() {
-        getDelegate().copy();
+        getImpl().copy();
     }
 
     /**
@@ -190,7 +188,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void cut() {
-        getDelegate().cut();
+        getImpl().cut();
     }
 
     /**
@@ -204,7 +202,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public int getDigits() {
-        return getDelegate().getDigits();
+        return getImpl().getDigits();
     }
 
     /**
@@ -219,7 +217,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public int getIncrement() {
-        return getDelegate().getIncrement();
+        return getImpl().getIncrement();
     }
 
     /**
@@ -233,7 +231,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public int getMaximum() {
-        return getDelegate().getMaximum();
+        return getImpl().getMaximum();
     }
 
     /**
@@ -247,7 +245,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public int getMinimum() {
-        return getDelegate().getMinimum();
+        return getImpl().getMinimum();
     }
 
     /**
@@ -262,7 +260,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public int getPageIncrement() {
-        return getDelegate().getPageIncrement();
+        return getImpl().getPageIncrement();
     }
 
     /**
@@ -276,7 +274,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public int getSelection() {
-        return getDelegate().getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -294,7 +292,7 @@ public class Spinner extends Composite {
      * @since 3.4
      */
     public String getText() {
-        return getDelegate().getText();
+        return getImpl().getText();
     }
 
     /**
@@ -315,7 +313,7 @@ public class Spinner extends Composite {
      * @since 3.4
      */
     public int getTextLimit() {
-        return getDelegate().getTextLimit();
+        return getImpl().getTextLimit();
     }
 
     /**
@@ -331,7 +329,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void paste() {
-        getDelegate().paste();
+        getImpl().paste();
     }
 
     /**
@@ -352,7 +350,7 @@ public class Spinner extends Composite {
      * @see #addModifyListener
      */
     public void removeModifyListener(ModifyListener listener) {
-        getDelegate().removeModifyListener(listener);
+        getImpl().removeModifyListener(listener);
     }
 
     /**
@@ -373,7 +371,7 @@ public class Spinner extends Composite {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -397,7 +395,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void setDigits(int value) {
-        getDelegate().setDigits(value);
+        getImpl().setDigits(value);
     }
 
     /**
@@ -413,7 +411,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void setIncrement(int value) {
-        getDelegate().setIncrement(value);
+        getImpl().setIncrement(value);
     }
 
     /**
@@ -430,7 +428,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void setMaximum(int value) {
-        getDelegate().setMaximum(value);
+        getImpl().setMaximum(value);
     }
 
     /**
@@ -447,7 +445,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void setMinimum(int value) {
-        getDelegate().setMinimum(value);
+        getImpl().setMinimum(value);
     }
 
     /**
@@ -463,7 +461,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void setPageIncrement(int value) {
-        getDelegate().setPageIncrement(value);
+        getImpl().setPageIncrement(value);
     }
 
     /**
@@ -480,7 +478,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void setSelection(int value) {
-        getDelegate().setSelection(value);
+        getImpl().setSelection(value);
     }
 
     /**
@@ -506,7 +504,7 @@ public class Spinner extends Composite {
      * @since 3.4
      */
     public void setTextLimit(int limit) {
-        getDelegate().setTextLimit(limit);
+        getImpl().setTextLimit(limit);
     }
 
     /**
@@ -533,18 +531,18 @@ public class Spinner extends Composite {
      * @since 3.2
      */
     public void setValues(int selection, int minimum, int maximum, int digits, int increment, int pageIncrement) {
-        getDelegate().setValues(selection, minimum, maximum, digits, increment, pageIncrement);
+        getImpl().setValues(selection, minimum, maximum, digits, increment, pageIncrement);
     }
 
-    protected Spinner(ISpinner delegate) {
-        super(delegate);
+    protected Spinner(ISpinner impl) {
+        super(impl);
     }
 
-    public static Spinner createApi(ISpinner delegate) {
-        return new Spinner(delegate);
+    public static Spinner createApi(ISpinner impl) {
+        return new Spinner(impl);
     }
 
-    public ISpinner getDelegate() {
-        return (ISpinner) super.getDelegate();
+    public ISpinner getImpl() {
+        return (ISpinner) super.getImpl();
     }
 }

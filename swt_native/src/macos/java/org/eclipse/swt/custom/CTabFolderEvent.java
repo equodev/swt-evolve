@@ -76,7 +76,7 @@ public class CTabFolderEvent extends TypedEvent {
      *
      * @param w the widget that fired the event
      */
-    public CTabFolderEvent(Widget w) {
+    CTabFolderEvent(Widget w) {
         super(w);
         this.widget = w;
     }

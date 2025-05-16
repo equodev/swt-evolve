@@ -84,7 +84,7 @@ public class TableEditor extends ControlEditor {
      * @param table the Table Control above which this editor will be displayed
      */
     public TableEditor(Table table) {
-        this(new nat.org.eclipse.swt.custom.TableEditor((nat.org.eclipse.swt.widgets.Table) (table != null ? table.getDelegate() : null)));
+        this(new SwtTableEditor(table));
     }
 
     /**
@@ -92,7 +92,7 @@ public class TableEditor extends ControlEditor {
      * Table and the editor Control are <b>not</b> disposed.
      */
     public void dispose() {
-        getDelegate().dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -101,7 +101,7 @@ public class TableEditor extends ControlEditor {
      * @return the zero based index of the column of the cell being tracked by this editor
      */
     public int getColumn() {
-        return getDelegate().getColumn();
+        return getImpl().getColumn();
     }
 
     /**
@@ -110,8 +110,7 @@ public class TableEditor extends ControlEditor {
      * @return the TableItem for the row of the cell being tracked by this editor
      */
     public TableItem getItem() {
-        ITableItem ret = getDelegate().getItem();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getItem();
     }
 
     /**
@@ -120,7 +119,7 @@ public class TableEditor extends ControlEditor {
      * @param column the zero based index of the column of the cell being tracked by this editor
      */
     public void setColumn(int column) {
-        getDelegate().setColumn(column);
+        getImpl().setColumn(column);
     }
 
     /**
@@ -129,11 +128,11 @@ public class TableEditor extends ControlEditor {
      * @param item the item to be edited
      */
     public void setItem(TableItem item) {
-        getDelegate().setItem((item != null ? item.getDelegate() : null));
+        getImpl().setItem(item);
     }
 
     public void setEditor(Control editor) {
-        getDelegate().setEditor((editor != null ? editor.getDelegate() : null));
+        getImpl().setEditor(editor);
     }
 
     /**
@@ -147,22 +146,22 @@ public class TableEditor extends ControlEditor {
      * @param column the zero based index of the column of the cell being tracked by this editor
      */
     public void setEditor(Control editor, TableItem item, int column) {
-        getDelegate().setEditor((editor != null ? editor.getDelegate() : null), (item != null ? item.getDelegate() : null), column);
+        getImpl().setEditor(editor, item, column);
     }
 
     public void layout() {
-        getDelegate().layout();
+        getImpl().layout();
     }
 
-    protected TableEditor(ITableEditor delegate) {
-        super(delegate);
+    protected TableEditor(ITableEditor impl) {
+        super(impl);
     }
 
-    public static TableEditor createApi(ITableEditor delegate) {
-        return new TableEditor(delegate);
+    public static TableEditor createApi(ITableEditor impl) {
+        return new TableEditor(impl);
     }
 
-    public ITableEditor getDelegate() {
-        return (ITableEditor) super.getDelegate();
+    public ITableEditor getImpl() {
+        return (ITableEditor) super.getImpl();
     }
 }

@@ -20,7 +20,6 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import dev.equo.swt.Convert;
 
 /**
  *  A Label which supports aligned text and/or an image and different border styles.
@@ -90,12 +89,11 @@ public class CLabel extends Canvas {
      * @see #getStyle()
      */
     public CLabel(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.custom.CLabel((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtCLabel(parent, style));
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -105,7 +103,7 @@ public class CLabel extends Canvas {
      * @return SWT.LEFT, SWT.RIGHT or SWT.CENTER
      */
     public int getAlignment() {
-        return getDelegate().getAlignment();
+        return getImpl().getAlignment();
     }
 
     /**
@@ -116,7 +114,7 @@ public class CLabel extends Canvas {
      * @since 3.6
      */
     public int getBottomMargin() {
-        return getDelegate().getBottomMargin();
+        return getImpl().getBottomMargin();
     }
 
     /**
@@ -125,8 +123,7 @@ public class CLabel extends Canvas {
      * @return the image of the label or null
      */
     public Image getImage() {
-        IImage ret = getDelegate().getImage();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getImage();
     }
 
     /**
@@ -137,7 +134,7 @@ public class CLabel extends Canvas {
      * @since 3.6
      */
     public int getLeftMargin() {
-        return getDelegate().getLeftMargin();
+        return getImpl().getLeftMargin();
     }
 
     /**
@@ -148,11 +145,11 @@ public class CLabel extends Canvas {
      * @since 3.6
      */
     public int getRightMargin() {
-        return getDelegate().getRightMargin();
+        return getImpl().getRightMargin();
     }
 
     public int getStyle() {
-        return getDelegate().getStyle();
+        return getImpl().getStyle();
     }
 
     /**
@@ -161,11 +158,11 @@ public class CLabel extends Canvas {
      * @return the text of the label or null
      */
     public String getText() {
-        return getDelegate().getText();
+        return getImpl().getText();
     }
 
     public String getToolTipText() {
-        return getDelegate().getToolTipText();
+        return getImpl().getToolTipText();
     }
 
     /**
@@ -176,7 +173,7 @@ public class CLabel extends Canvas {
      * @since 3.6
      */
     public int getTopMargin() {
-        return getDelegate().getTopMargin();
+        return getImpl().getTopMargin();
     }
 
     /**
@@ -192,11 +189,11 @@ public class CLabel extends Canvas {
      * </ul>
      */
     public void setAlignment(int align) {
-        getDelegate().setAlignment(align);
+        getImpl().setAlignment(align);
     }
 
     public void setBackground(Color color) {
-        getDelegate().setBackground((color != null ? color.getDelegate() : null));
+        getImpl().setBackground(color);
     }
 
     /**
@@ -227,7 +224,7 @@ public class CLabel extends Canvas {
      *  </ul>
      */
     public void setBackground(Color[] colors, int[] percents) {
-        getDelegate().setBackground(Convert.array(colors, Color::getDelegate, IColor[]::new), percents);
+        getImpl().setBackground(colors, percents);
     }
 
     /**
@@ -259,7 +256,7 @@ public class CLabel extends Canvas {
      *  @since 3.0
      */
     public void setBackground(Color[] colors, int[] percents, boolean vertical) {
-        getDelegate().setBackground(Convert.array(colors, Color::getDelegate, IColor[]::new), percents, vertical);
+        getImpl().setBackground(colors, percents, vertical);
     }
 
     /**
@@ -273,7 +270,7 @@ public class CLabel extends Canvas {
      * </ul>
      */
     public void setBackground(Image image) {
-        getDelegate().setBackground((image != null ? image.getDelegate() : null));
+        getImpl().setBackground(image);
     }
 
     /**
@@ -289,11 +286,11 @@ public class CLabel extends Canvas {
      * @since 3.6
      */
     public void setBottomMargin(int bottomMargin) {
-        getDelegate().setBottomMargin(bottomMargin);
+        getImpl().setBottomMargin(bottomMargin);
     }
 
     public void setFont(Font font) {
-        getDelegate().setFont((font != null ? font.getDelegate() : null));
+        getImpl().setFont(font);
     }
 
     /**
@@ -308,7 +305,7 @@ public class CLabel extends Canvas {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -324,7 +321,7 @@ public class CLabel extends Canvas {
      * @since 3.6
      */
     public void setLeftMargin(int leftMargin) {
-        getDelegate().setLeftMargin(leftMargin);
+        getImpl().setLeftMargin(leftMargin);
     }
 
     /**
@@ -342,7 +339,7 @@ public class CLabel extends Canvas {
      * @since 3.6
      */
     public void setMargins(int leftMargin, int topMargin, int rightMargin, int bottomMargin) {
-        getDelegate().setMargins(leftMargin, topMargin, rightMargin, bottomMargin);
+        getImpl().setMargins(leftMargin, topMargin, rightMargin, bottomMargin);
     }
 
     /**
@@ -358,7 +355,7 @@ public class CLabel extends Canvas {
      * @since 3.6
      */
     public void setRightMargin(int rightMargin) {
-        getDelegate().setRightMargin(rightMargin);
+        getImpl().setRightMargin(rightMargin);
     }
 
     /**
@@ -386,11 +383,11 @@ public class CLabel extends Canvas {
      * </ul>
      */
     public void setText(String text) {
-        getDelegate().setText(text);
+        getImpl().setText(text);
     }
 
     public void setToolTipText(String string) {
-        getDelegate().setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
     /**
@@ -406,7 +403,7 @@ public class CLabel extends Canvas {
      * @since 3.6
      */
     public void setTopMargin(int topMargin) {
-        getDelegate().setTopMargin(topMargin);
+        getImpl().setTopMargin(topMargin);
     }
 
     /**
@@ -421,18 +418,18 @@ public class CLabel extends Canvas {
      * @return the shortened text
      */
     protected String shortenText(GC gc, String t, int width) {
-        return getDelegate().shortenText((gc != null ? gc.getDelegate() : null), t, width);
+        return getImpl().shortenText(gc, t, width);
     }
 
-    protected CLabel(ICLabel delegate) {
-        super(delegate);
+    protected CLabel(ICLabel impl) {
+        super(impl);
     }
 
-    public static CLabel createApi(ICLabel delegate) {
-        return new CLabel(delegate);
+    public static CLabel createApi(ICLabel impl) {
+        return new CLabel(impl);
     }
 
-    public ICLabel getDelegate() {
-        return (ICLabel) super.getDelegate();
+    public ICLabel getImpl() {
+        return (ICLabel) super.getImpl();
     }
 }

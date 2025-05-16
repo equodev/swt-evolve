@@ -127,7 +127,7 @@ public interface ITable extends IComposite {
      */
     void clearAll();
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Deselects the item at the given zero-relative index in the receiver.
@@ -189,7 +189,7 @@ public interface ITable extends IComposite {
      */
     void deselectAll();
 
-    IRectangle getClientArea();
+    Rectangle getClientArea();
 
     /**
      * Returns the column at the given, zero-relative index in the
@@ -218,7 +218,7 @@ public interface ITable extends IComposite {
      * @see TableColumn#setMoveable(boolean)
      * @see SWT#Move
      */
-    ITableColumn getColumn(int index);
+    TableColumn getColumn(int index);
 
     /**
      * Returns the number of columns contained in the receiver.
@@ -293,7 +293,7 @@ public interface ITable extends IComposite {
      * @see TableColumn#setMoveable(boolean)
      * @see SWT#Move
      */
-    ITableColumn[] getColumns();
+    TableColumn[] getColumns();
 
     /**
      * Returns the width in points of a grid line.
@@ -318,7 +318,7 @@ public interface ITable extends IComposite {
      * </ul>
      * @since 3.106
      */
-    IColor getHeaderBackground();
+    Color getHeaderBackground();
 
     /**
      * Returns the header foreground color.
@@ -331,7 +331,7 @@ public interface ITable extends IComposite {
      * </ul>
      * @since 3.106
      */
-    IColor getHeaderForeground();
+    Color getHeaderForeground();
 
     /**
      * Returns the height of the receiver's header
@@ -381,7 +381,7 @@ public interface ITable extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITableItem getItem(int index);
+    TableItem getItem(int index);
 
     /**
      * Returns the item at the given point in the receiver
@@ -406,7 +406,7 @@ public interface ITable extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITableItem getItem(IPoint point);
+    TableItem getItem(Point point);
 
     /**
      * Returns the number of items contained in the receiver.
@@ -449,7 +449,7 @@ public interface ITable extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITableItem[] getItems();
+    TableItem[] getItems();
 
     /**
      * Returns <code>true</code> if the receiver's lines are visible,
@@ -487,7 +487,7 @@ public interface ITable extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITableItem[] getSelection();
+    TableItem[] getSelection();
 
     /**
      * Returns the number of selected items contained in the receiver.
@@ -548,7 +548,7 @@ public interface ITable extends IComposite {
      *
      * @since 3.2
      */
-    ITableColumn getSortColumn();
+    TableColumn getSortColumn();
 
     /**
      * Returns the direction of the sort indicator for the receiver.
@@ -599,7 +599,7 @@ public interface ITable extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int indexOf(ITableColumn column);
+    int indexOf(TableColumn column);
 
     /**
      * Searches the receiver's list starting at the first item
@@ -618,7 +618,7 @@ public interface ITable extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int indexOf(ITableItem item);
+    int indexOf(TableItem item);
 
     /**
      * Returns <code>true</code> if the item is selected,
@@ -837,7 +837,7 @@ public interface ITable extends IComposite {
      * </ul>
      * @since 3.106
      */
-    void setHeaderBackground(IColor color);
+    void setHeaderBackground(Color color);
 
     /**
      * Sets the header foreground color to the color specified
@@ -858,7 +858,7 @@ public interface ITable extends IComposite {
      * </ul>
      * @since 3.106
      */
-    void setHeaderForeground(IColor color);
+    void setHeaderForeground(Color color);
 
     /**
      * Marks the receiver's header as visible if the argument is <code>true</code>,
@@ -1001,7 +1001,7 @@ public interface ITable extends IComposite {
      *
      * @since 3.2
      */
-    void setSelection(ITableItem item);
+    void setSelection(TableItem item);
 
     /**
      * Sets the receiver's selection to be the given array of items.
@@ -1028,7 +1028,7 @@ public interface ITable extends IComposite {
      * @see Table#select(int[])
      * @see Table#setSelection(int[])
      */
-    void setSelection(ITableItem[] items);
+    void setSelection(TableItem[] items);
 
     /**
      * Sets the column used by the sort indicator for the receiver. A null
@@ -1047,7 +1047,7 @@ public interface ITable extends IComposite {
      *
      * @since 3.2
      */
-    void setSortColumn(ITableColumn column);
+    void setSortColumn(TableColumn column);
 
     /**
      * Sets the direction of the sort indicator for the receiver. The value
@@ -1096,7 +1096,7 @@ public interface ITable extends IComposite {
      *
      * @since 3.0
      */
-    void showColumn(ITableColumn column);
+    void showColumn(TableColumn column);
 
     /**
      * Shows the item.  If the item is already showing in the receiver,
@@ -1116,7 +1116,7 @@ public interface ITable extends IComposite {
      *
      * @see Table#showSelection()
      */
-    void showItem(ITableItem item);
+    void showItem(TableItem item);
 
     /**
      * Shows the selection.  If the selection is already showing in the receiver,

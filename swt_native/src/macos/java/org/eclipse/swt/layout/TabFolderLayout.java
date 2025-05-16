@@ -30,27 +30,26 @@ import org.eclipse.swt.widgets.*;
 public class TabFolderLayout extends Layout {
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-        IPoint ret = getDelegate().computeSize((composite != null ? composite.getDelegate() : null), wHint, hHint, flushCache);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(composite, wHint, hHint, flushCache);
     }
 
     protected void layout(Composite composite, boolean flushCache) {
-        getDelegate().layout((composite != null ? composite.getDelegate() : null), flushCache);
+        getImpl().layout(composite, flushCache);
     }
 
     public TabFolderLayout() {
-        this(new nat.org.eclipse.swt.layout.TabFolderLayout());
+        this(new SwtTabFolderLayout());
     }
 
-    protected TabFolderLayout(ITabFolderLayout delegate) {
-        super(delegate);
+    protected TabFolderLayout(ITabFolderLayout impl) {
+        super(impl);
     }
 
-    public static TabFolderLayout createApi(ITabFolderLayout delegate) {
-        return new TabFolderLayout(delegate);
+    public static TabFolderLayout createApi(ITabFolderLayout impl) {
+        return new TabFolderLayout(impl);
     }
 
-    public ITabFolderLayout getDelegate() {
-        return (ITabFolderLayout) super.getDelegate();
+    public ITabFolderLayout getImpl() {
+        return (ITabFolderLayout) super.getImpl();
     }
 }

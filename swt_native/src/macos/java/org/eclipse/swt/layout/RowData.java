@@ -80,7 +80,7 @@ public final class RowData {
      * default values.
      */
     public RowData() {
-        this(new nat.org.eclipse.swt.layout.RowData());
+        this(new SwtRowData());
     }
 
     /**
@@ -92,7 +92,7 @@ public final class RowData {
      * @param height a minimum height for the control
      */
     public RowData(int width, int height) {
-        this(new nat.org.eclipse.swt.layout.RowData(width, height));
+        this(new SwtRowData(width, height));
     }
 
     /**
@@ -104,7 +104,7 @@ public final class RowData {
      * and y coordinate specifies a minimum height for the control
      */
     public RowData(Point point) {
-        this(new nat.org.eclipse.swt.layout.RowData((nat.org.eclipse.swt.graphics.Point) (point != null ? point.getDelegate() : null)));
+        this(new SwtRowData(point));
     }
 
     /**
@@ -114,21 +114,21 @@ public final class RowData {
      * @return a string representation of the RowData object
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    IRowData delegate;
+    IRowData impl;
 
-    protected RowData(IRowData delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected RowData(IRowData impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static RowData createApi(IRowData delegate) {
-        return new RowData(delegate);
+    public static RowData createApi(IRowData impl) {
+        return new RowData(impl);
     }
 
-    public IRowData getDelegate() {
-        return delegate;
+    public IRowData getImpl() {
+        return impl;
     }
 }

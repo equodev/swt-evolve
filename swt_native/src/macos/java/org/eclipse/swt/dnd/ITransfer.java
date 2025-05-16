@@ -11,7 +11,7 @@ public interface ITransfer {
      *
      * @return a list of the data types that can be converted using this transfer agent
      */
-    abstract ITransferData[] getSupportedTypes();
+    abstract TransferData[] getSupportedTypes();
 
     /**
      * Returns true if the <code>TransferData</code> data type can be converted
@@ -24,7 +24,7 @@ public interface ITransfer {
      * @return true if the transferData data type can be converted using this transfer
      * agent
      */
-    abstract boolean isSupportedType(ITransferData transferData);
+    abstract boolean isSupportedType(TransferData transferData);
 
     /**
      * Returns the platform specific ids of the  data types that can be converted using
@@ -71,7 +71,7 @@ public interface ITransfer {
      *    <li>ERROR_INVALID_DATA - if object does not contain data in a valid format or is <code>null</code></li>
      * </ul>
      */
-    abstract void javaToNative(Object object, ITransferData transferData);
+    abstract void javaToNative(Object object, TransferData transferData);
 
     /**
      * Converts a platform specific representation of data to a java representation.
@@ -84,7 +84,7 @@ public interface ITransfer {
      * <code>null</code> is returned.  The type of Object that is returned is
      * dependent on the <code>Transfer</code> subclass.
      */
-    abstract Object nativeToJava(ITransferData transferData);
+    abstract Object nativeToJava(TransferData transferData);
 
     /**
      * Test that the object is of the correct format for this Transfer class.

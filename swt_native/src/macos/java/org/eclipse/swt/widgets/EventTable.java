@@ -25,7 +25,7 @@ import org.eclipse.swt.internal.*;
  * to a listener.  Multiple listeners for the
  * same event type are supported.
  */
-public class EventTable {
+class EventTable {
 
     int[] types;
 

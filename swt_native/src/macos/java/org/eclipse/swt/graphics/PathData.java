@@ -36,21 +36,21 @@ public final class PathData {
     public float[] points;
 
     public PathData() {
-        this(new nat.org.eclipse.swt.graphics.PathData());
+        this(new SwtPathData());
     }
 
-    IPathData delegate;
+    IPathData impl;
 
-    protected PathData(IPathData delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected PathData(IPathData impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static PathData createApi(IPathData delegate) {
-        return new PathData(delegate);
+    public static PathData createApi(IPathData impl) {
+        return new PathData(impl);
     }
 
-    public IPathData getDelegate() {
-        return delegate;
+    public IPathData getImpl() {
+        return impl;
     }
 }

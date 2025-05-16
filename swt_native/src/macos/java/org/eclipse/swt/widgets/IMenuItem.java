@@ -143,7 +143,7 @@ public interface IMenuItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IMenu getMenu();
+    Menu getMenu();
 
     /**
      * Returns the receiver's parent, which must be a <code>Menu</code>.
@@ -155,7 +155,7 @@ public interface IMenuItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IMenu getParent();
+    Menu getParent();
 
     /**
      * Returns <code>true</code> if the receiver is selected,
@@ -324,7 +324,7 @@ public interface IMenuItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setImage(IImage image);
+    void setImage(Image image);
 
     /**
      * Sets the receiver's pull down menu to the argument.
@@ -351,7 +351,7 @@ public interface IMenuItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setMenu(IMenu menu);
+    void setMenu(Menu menu);
 
     /**
      * Sets the selection state of the receiver.

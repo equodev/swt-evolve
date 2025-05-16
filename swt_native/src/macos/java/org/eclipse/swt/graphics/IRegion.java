@@ -35,7 +35,7 @@ public interface IRegion extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void add(IRectangle rect);
+    void add(Rectangle rect);
 
     /**
      * Adds the given rectangle to the collection of polygons
@@ -72,7 +72,7 @@ public interface IRegion extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void add(IRegion region);
+    void add(Region region);
 
     /**
      * Returns <code>true</code> if the point specified by the
@@ -104,7 +104,7 @@ public interface IRegion extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    boolean contains(IPoint pt);
+    boolean contains(Point pt);
 
     /**
      * Compares the argument to the receiver, and returns true
@@ -131,7 +131,7 @@ public interface IRegion extends IResource {
      *
      * @see Rectangle#union
      */
-    IRectangle getBounds();
+    Rectangle getBounds();
 
     /**
      * Returns an integer hash code for the receiver. Any two
@@ -161,7 +161,7 @@ public interface IRegion extends IResource {
      *
      * @since 3.0
      */
-    void intersect(IRectangle rect);
+    void intersect(Rectangle rect);
 
     /**
      * Intersects the given rectangle to the collection of polygons
@@ -200,7 +200,7 @@ public interface IRegion extends IResource {
      *
      * @since 3.0
      */
-    void intersect(IRegion region);
+    void intersect(Region region);
 
     /**
      * Returns <code>true</code> if the rectangle described by the
@@ -238,7 +238,7 @@ public interface IRegion extends IResource {
      *
      * @see Rectangle#intersects(Rectangle)
      */
-    boolean intersects(IRectangle rect);
+    boolean intersects(Rectangle rect);
 
     /**
      * Returns <code>true</code> if the region has been disposed,
@@ -298,7 +298,7 @@ public interface IRegion extends IResource {
      *
      * @since 3.0
      */
-    void subtract(IRectangle rect);
+    void subtract(Rectangle rect);
 
     /**
      * Subtracts the given rectangle from the collection of polygons
@@ -337,7 +337,7 @@ public interface IRegion extends IResource {
      *
      * @since 3.0
      */
-    void subtract(IRegion region);
+    void subtract(Region region);
 
     /**
      * Translate all of the polygons the receiver maintains to describe
@@ -369,7 +369,7 @@ public interface IRegion extends IResource {
      *
      * @since 3.1
      */
-    void translate(IPoint pt);
+    void translate(Point pt);
 
     /**
      * Returns a string containing a concise, human-readable

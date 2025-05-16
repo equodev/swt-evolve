@@ -46,7 +46,7 @@ public class Synchronizer {
      * @param display the display to create the synchronizer on
      */
     public Synchronizer(Display display) {
-        this(new nat.org.eclipse.swt.widgets.Synchronizer((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null)));
+        this(new SwtSynchronizer(display));
     }
 
     /**
@@ -61,7 +61,7 @@ public class Synchronizer {
      * @see #syncExec
      */
     protected void asyncExec(Runnable runnable) {
-        getDelegate().asyncExec(runnable);
+        getImpl().asyncExec(runnable);
     }
 
     /**
@@ -79,21 +79,21 @@ public class Synchronizer {
      * @see #asyncExec
      */
     protected void syncExec(Runnable runnable) {
-        getDelegate().syncExec(runnable);
+        getImpl().syncExec(runnable);
     }
 
-    ISynchronizer delegate;
+    ISynchronizer impl;
 
-    protected Synchronizer(ISynchronizer delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected Synchronizer(ISynchronizer impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static Synchronizer createApi(ISynchronizer delegate) {
-        return new Synchronizer(delegate);
+    public static Synchronizer createApi(ISynchronizer impl) {
+        return new Synchronizer(impl);
     }
 
-    public ISynchronizer getDelegate() {
-        return delegate;
+    public ISynchronizer getImpl() {
+        return impl;
     }
 }

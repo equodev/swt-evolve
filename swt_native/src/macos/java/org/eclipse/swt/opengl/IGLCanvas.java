@@ -14,7 +14,7 @@ public interface IGLCanvas extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IGLData getGLData();
+    GLData getGLData();
 
     /**
      * Returns a boolean indicating whether the receiver's OpenGL context

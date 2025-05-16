@@ -38,7 +38,7 @@ public final class BorderData {
      * creates a {@link BorderData} with default options
      */
     public BorderData() {
-        this(new nat.org.eclipse.swt.layout.BorderData());
+        this(new SwtBorderData());
     }
 
     /**
@@ -51,7 +51,7 @@ public final class BorderData {
      *               {@link SWT#BOTTOM}
      */
     public BorderData(int region) {
-        this(new nat.org.eclipse.swt.layout.BorderData(region));
+        this(new SwtBorderData(region));
     }
 
     /**
@@ -65,25 +65,25 @@ public final class BorderData {
      * @param heightHint he default hint for the height
      */
     public BorderData(int region, int widthHint, int heightHint) {
-        this(new nat.org.eclipse.swt.layout.BorderData(region, widthHint, heightHint));
+        this(new SwtBorderData(region, widthHint, heightHint));
     }
 
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    IBorderData delegate;
+    IBorderData impl;
 
-    protected BorderData(IBorderData delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected BorderData(IBorderData impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static BorderData createApi(IBorderData delegate) {
-        return new BorderData(delegate);
+    public static BorderData createApi(IBorderData impl) {
+        return new BorderData(impl);
     }
 
-    public IBorderData getDelegate() {
-        return delegate;
+    public IBorderData getImpl() {
+        return impl;
     }
 }

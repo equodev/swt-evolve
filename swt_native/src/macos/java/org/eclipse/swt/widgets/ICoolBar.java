@@ -7,7 +7,7 @@ public interface ICoolBar extends IComposite {
 
     void checkSubclass();
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Returns the item that is currently displayed at the given,
@@ -25,7 +25,7 @@ public interface ICoolBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ICoolItem getItem(int index);
+    CoolItem getItem(int index);
 
     /**
      * Returns the number of items contained in the receiver.
@@ -55,7 +55,7 @@ public interface ICoolBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ICoolItem[] getItems();
+    CoolItem[] getItems();
 
     /**
      * Searches the receiver's items in the order they are currently
@@ -75,7 +75,7 @@ public interface ICoolBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int indexOf(ICoolItem item);
+    int indexOf(CoolItem item);
 
     /**
      * Returns an array of zero-relative ints that map
@@ -100,7 +100,7 @@ public interface ICoolBar extends IComposite {
      */
     int[] getItemOrder();
 
-    void setBackground(IColor color);
+    void setBackground(Color color);
 
     /**
      * Returns an array of points whose x and y coordinates describe
@@ -114,7 +114,7 @@ public interface ICoolBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IPoint[] getItemSizes();
+    Point[] getItemSizes();
 
     /**
      * Returns whether or not the receiver is 'locked'. When a coolbar
@@ -178,7 +178,7 @@ public interface ICoolBar extends IComposite {
      */
     void setWrapIndices(int[] indices);
 
-    void setCursor(ICursor cursor);
+    void setCursor(Cursor cursor);
 
     /**
      * Sets the receiver's item order, wrap indices, and item sizes
@@ -213,7 +213,7 @@ public interface ICoolBar extends IComposite {
      *    <li>ERROR_INVALID_ARGUMENT - if item order or sizes is not the same length as the number of items</li>
      * </ul>
      */
-    void setItemLayout(int[] itemOrder, int[] wrapIndices, IPoint[] sizes);
+    void setItemLayout(int[] itemOrder, int[] wrapIndices, Point[] sizes);
 
     void setOrientation(int orientation);
 

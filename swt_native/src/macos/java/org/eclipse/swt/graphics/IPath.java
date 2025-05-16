@@ -48,7 +48,7 @@ public interface IPath extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void addPath(IPath path);
+    void addPath(Path path);
 
     /**
      * Adds to the receiver the rectangle specified by x, y, width and height.
@@ -81,7 +81,7 @@ public interface IPath extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void addString(String string, float x, float y, IFont font);
+    void addString(String string, float x, float y, Font font);
 
     /**
      * Closes the current sub path by adding to the receiver a line
@@ -117,7 +117,7 @@ public interface IPath extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    boolean contains(float x, float y, IGC gc, boolean outline);
+    boolean contains(float x, float y, GC gc, boolean outline);
 
     /**
      * Adds to the receiver a cubic bezier curve based on the parameters.
@@ -179,7 +179,7 @@ public interface IPath extends IResource {
      *
      * @see PathData
      */
-    IPathData getPathData();
+    PathData getPathData();
 
     /**
      * Returns <code>true</code> if the Path has been disposed,

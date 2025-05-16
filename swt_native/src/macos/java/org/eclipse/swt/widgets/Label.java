@@ -91,12 +91,11 @@ public class Label extends Control {
      * @see Widget#getStyle
      */
     public Label(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Label((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtLabel(parent, style));
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -114,7 +113,7 @@ public class Label extends Control {
      * </ul>
      */
     public int getAlignment() {
-        return getDelegate().getAlignment();
+        return getImpl().getAlignment();
     }
 
     /**
@@ -129,8 +128,7 @@ public class Label extends Control {
      * </ul>
      */
     public Image getImage() {
-        IImage ret = getDelegate().getImage();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getImage();
     }
 
     /**
@@ -146,7 +144,7 @@ public class Label extends Control {
      * </ul>
      */
     public String getText() {
-        return getDelegate().getText();
+        return getImpl().getText();
     }
 
     /**
@@ -163,7 +161,7 @@ public class Label extends Control {
      * </ul>
      */
     public void setAlignment(int alignment) {
-        getDelegate().setAlignment(alignment);
+        getImpl().setAlignment(alignment);
     }
 
     /**
@@ -181,7 +179,7 @@ public class Label extends Control {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -216,18 +214,18 @@ public class Label extends Control {
      * </ul>
      */
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
-    protected Label(ILabel delegate) {
-        super(delegate);
+    protected Label(ILabel impl) {
+        super(impl);
     }
 
-    public static Label createApi(ILabel delegate) {
-        return new Label(delegate);
+    public static Label createApi(ILabel impl) {
+        return new Label(impl);
     }
 
-    public ILabel getDelegate() {
-        return (ILabel) super.getDelegate();
+    public ILabel getImpl() {
+        return (ILabel) super.getImpl();
     }
 }

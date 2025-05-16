@@ -78,7 +78,7 @@ public interface ITransform extends IResource {
      *    <li>ERROR_INVALID_ARGUMENT - if the parameter has been disposed</li>
      * </ul>
      */
-    void multiply(ITransform matrix);
+    void multiply(Transform matrix);
 
     /**
      * Modifies the receiver so that it represents a transformation that is

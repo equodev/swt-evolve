@@ -11,7 +11,7 @@ public interface IDragSourceEffect extends IDragSourceAdapter {
      *
      * @return the Control which is registered for this DragSourceEffect
      */
-    IControl getControl();
+    Control getControl();
 
     DragSourceEffect getApi();
 }

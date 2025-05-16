@@ -71,7 +71,7 @@ public class CBanner extends Composite {
      * </ul>
      */
     public CBanner(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.custom.CBanner((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtCBanner(parent, style));
     }
 
     /*
@@ -98,13 +98,11 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public Control getBottom() {
-        IControl ret = getDelegate().getBottom();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBottom();
     }
 
     public Rectangle getClientArea() {
-        IRectangle ret = getDelegate().getClientArea();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getClientArea();
     }
 
     /**
@@ -120,8 +118,7 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public Control getLeft() {
-        IControl ret = getDelegate().getLeft();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getLeft();
     }
 
     /**
@@ -137,8 +134,7 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public Control getRight() {
-        IControl ret = getDelegate().getRight();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getRight();
     }
 
     /**
@@ -149,8 +145,7 @@ public class CBanner extends Composite {
      * @since 3.1
      */
     public Point getRightMinimumSize() {
-        IPoint ret = getDelegate().getRightMinimumSize();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getRightMinimumSize();
     }
 
     /**
@@ -161,7 +156,7 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public int getRightWidth() {
-        return getDelegate().getRightWidth();
+        return getImpl().getRightWidth();
     }
 
     /**
@@ -173,7 +168,7 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public boolean getSimple() {
-        return getDelegate().getSimple();
+        return getImpl().getSimple();
     }
 
     /**
@@ -192,7 +187,7 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public void setBottom(Control control) {
-        getDelegate().setBottom((control != null ? control.getDelegate() : null));
+        getImpl().setBottom(control);
     }
 
     /**
@@ -211,7 +206,7 @@ public class CBanner extends Composite {
      * </ul>
      */
     public void setLayout(Layout layout) {
-        getDelegate().setLayout((layout != null ? layout.getDelegate() : null));
+        getImpl().setLayout(layout);
     }
 
     /**
@@ -230,7 +225,7 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public void setLeft(Control control) {
-        getDelegate().setLeft((control != null ? control.getDelegate() : null));
+        getImpl().setLeft(control);
     }
 
     /**
@@ -249,7 +244,7 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public void setRight(Control control) {
-        getDelegate().setRight((control != null ? control.getDelegate() : null));
+        getImpl().setRight(control);
     }
 
     /**
@@ -266,7 +261,7 @@ public class CBanner extends Composite {
      * @since 3.1
      */
     public void setRightMinimumSize(Point size) {
-        getDelegate().setRightMinimumSize((size != null ? size.getDelegate() : null));
+        getImpl().setRightMinimumSize(size);
     }
 
     /**
@@ -283,7 +278,7 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public void setRightWidth(int width) {
-        getDelegate().setRightWidth(width);
+        getImpl().setRightWidth(width);
     }
 
     /**
@@ -299,18 +294,18 @@ public class CBanner extends Composite {
      * @since 3.0
      */
     public void setSimple(boolean simple) {
-        getDelegate().setSimple(simple);
+        getImpl().setSimple(simple);
     }
 
-    protected CBanner(ICBanner delegate) {
-        super(delegate);
+    protected CBanner(ICBanner impl) {
+        super(impl);
     }
 
-    public static CBanner createApi(ICBanner delegate) {
-        return new CBanner(delegate);
+    public static CBanner createApi(ICBanner impl) {
+        return new CBanner(impl);
     }
 
-    public ICBanner getDelegate() {
-        return (ICBanner) super.getDelegate();
+    public ICBanner getImpl() {
+        return (ICBanner) super.getImpl();
     }
 }

@@ -80,7 +80,7 @@ public interface IScrolledComposite extends IComposite {
      *
      * @return the control displayed in the content area
      */
-    IControl getContent();
+    Control getContent();
 
     /**
      * Returns <code>true</code> if the receiver automatically scrolls to a focused child control
@@ -112,7 +112,7 @@ public interface IScrolledComposite extends IComposite {
      *
      * @since 2.0
      */
-    IPoint getOrigin();
+    Point getOrigin();
 
     /**
      * Scrolls the content so that the specified point in the content is in the top
@@ -130,7 +130,7 @@ public interface IScrolledComposite extends IComposite {
      * </ul>
      * @since 2.0
      */
-    void setOrigin(IPoint origin);
+    void setOrigin(Point origin);
 
     /**
      * Scrolls the content so that the specified point in the content is in the top
@@ -178,7 +178,7 @@ public interface IScrolledComposite extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setContent(IControl content);
+    void setContent(Control content);
 
     /**
      * Configure the ScrolledComposite to resize the content object to be as wide as the
@@ -229,7 +229,7 @@ public interface IScrolledComposite extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setLayout(ILayout layout);
+    void setLayout(Layout layout);
 
     /**
      * Specify the minimum height at which the ScrolledComposite will begin scrolling the
@@ -257,7 +257,7 @@ public interface IScrolledComposite extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setMinSize(IPoint size);
+    void setMinSize(Point size);
 
     /**
      * Specify the minimum width and height at which the ScrolledComposite will begin scrolling the
@@ -322,7 +322,7 @@ public interface IScrolledComposite extends IComposite {
      *
      * @since 3.4
      */
-    void showControl(IControl control);
+    void showControl(Control control);
 
     ScrolledComposite getApi();
 }

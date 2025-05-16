@@ -184,7 +184,7 @@ public interface IDisplay extends IDevice {
      *
      * @see #init
      */
-    void create(IDeviceData data);
+    void create(DeviceData data);
 
     /**
      * Destroys the device in the operating system and releases
@@ -233,7 +233,7 @@ public interface IDisplay extends IDevice {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    IWidget findWidget(long handle);
+    Widget findWidget(long handle);
 
     /**
      * Given the operating system handle for a widget,
@@ -259,7 +259,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.1
      */
-    IWidget findWidget(long handle, long id);
+    Widget findWidget(long handle, long id);
 
     /**
      * Given a widget and a widget-specific id, returns the
@@ -280,7 +280,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.3
      */
-    IWidget findWidget(IWidget widget, long id);
+    Widget findWidget(Widget widget, long id);
 
     /**
      * Returns the currently active <code>Shell</code>, or null
@@ -294,7 +294,7 @@ public interface IDisplay extends IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IShell getActiveShell();
+    Shell getActiveShell();
 
     /**
      * Returns a rectangle describing the receiver's size and location. Note that
@@ -307,7 +307,7 @@ public interface IDisplay extends IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IRectangle getBounds();
+    Rectangle getBounds();
 
     /**
      * Returns a rectangle which describes the area of the
@@ -322,7 +322,7 @@ public interface IDisplay extends IDevice {
      *
      * @see #getBounds
      */
-    IRectangle getClientArea();
+    Rectangle getClientArea();
 
     /**
      * Returns the control which the on-screen pointer is currently
@@ -336,7 +336,7 @@ public interface IDisplay extends IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IControl getCursorControl();
+    Control getCursorControl();
 
     /**
      * Returns the location of the on-screen pointer relative
@@ -349,7 +349,7 @@ public interface IDisplay extends IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IPoint getCursorLocation();
+    Point getCursorLocation();
 
     /**
      * Returns an array containing the recommended cursor sizes.
@@ -363,7 +363,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.0
      */
-    IPoint[] getCursorSizes();
+    Point[] getCursorSizes();
 
     /**
      * Returns the application defined property of the receiver
@@ -463,7 +463,7 @@ public interface IDisplay extends IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IControl getFocusControl();
+    Control getFocusControl();
 
     /**
      * Returns true when the high contrast mode is enabled.
@@ -513,7 +513,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.0
      */
-    IPoint[] getIconSizes();
+    Point[] getIconSizes();
 
     /**
      * Returns an array of monitors attached to the device.
@@ -522,7 +522,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.0
      */
-    IMonitor[] getMonitors();
+    Monitor[] getMonitors();
 
     /**
      * Returns the primary monitor for that device.
@@ -531,7 +531,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.0
      */
-    IMonitor getPrimaryMonitor();
+    Monitor getPrimaryMonitor();
 
     /**
      * Returns a (possibly empty) array containing all shells which have
@@ -544,7 +544,7 @@ public interface IDisplay extends IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IShell[] getShells();
+    Shell[] getShells();
 
     /**
      * Gets the synchronizer used by the display.
@@ -558,7 +558,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.4
      */
-    ISynchronizer getSynchronizer();
+    Synchronizer getSynchronizer();
 
     /**
      * Returns the thread that has invoked <code>syncExec</code>
@@ -596,7 +596,7 @@ public interface IDisplay extends IDevice {
      *
      * @see SWT
      */
-    IColor getSystemColor(int id);
+    Color getSystemColor(int id);
 
     /**
      * Returns the matching standard platform cursor for the given
@@ -640,7 +640,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.0
      */
-    ICursor getSystemCursor(int id);
+    Cursor getSystemCursor(int id);
 
     /**
      * Returns the matching standard platform image for the given
@@ -668,7 +668,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.0
      */
-    IImage getSystemImage(int id);
+    Image getSystemImage(int id);
 
     /**
      * Returns the single instance of the application menu bar, or
@@ -682,7 +682,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.7
      */
-    IMenu getMenuBar();
+    Menu getMenuBar();
 
     /**
      * Returns the single instance of the system-provided menu for the application, or
@@ -697,7 +697,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.7
      */
-    IMenu getSystemMenu();
+    Menu getSystemMenu();
 
     /**
      * Returns the single instance of the system tray or null
@@ -711,7 +711,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.0
      */
-    ITray getSystemTray();
+    Tray getSystemTray();
 
     /**
      * Returns the single instance of the system taskBar or null
@@ -725,7 +725,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 3.6
      */
-    ITaskBar getSystemTaskBar();
+    TaskBar getSystemTaskBar();
 
     /**
      * Returns the user-interface thread for the receiver.
@@ -786,7 +786,7 @@ public interface IDisplay extends IDevice {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    long internal_new_GC(org.eclipse.swt.graphics.GCData data);
+    long internal_new_GC(GCData data);
 
     /**
      * Invokes platform specific functionality to dispose a GC handle.
@@ -803,7 +803,7 @@ public interface IDisplay extends IDevice {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    void internal_dispose_GC(long hDC, org.eclipse.swt.graphics.GCData data);
+    void internal_dispose_GC(long hDC, GCData data);
 
     /**
      * Generate a low level system event.
@@ -905,7 +905,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 2.1.2
      */
-    IPoint map(IControl from, IControl to, IPoint point);
+    Point map(Control from, Control to, Point point);
 
     /**
      * Maps a point from one coordinate system to another.
@@ -943,7 +943,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 2.1.2
      */
-    IPoint map(IControl from, IControl to, int x, int y);
+    Point map(Control from, Control to, int x, int y);
 
     /**
      * Maps a point from one coordinate system to another.
@@ -981,7 +981,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 2.1.2
      */
-    IRectangle map(IControl from, IControl to, IRectangle rectangle);
+    Rectangle map(Control from, Control to, Rectangle rectangle);
 
     /**
      * Maps a point from one coordinate system to another.
@@ -1021,7 +1021,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 2.1.2
      */
-    IRectangle map(IControl from, IControl to, int x, int y, int width, int height);
+    Rectangle map(Control from, Control to, int x, int y, int width, int height);
 
     /**
      * Reads an event from the operating system's event queue,
@@ -1170,7 +1170,7 @@ public interface IDisplay extends IDevice {
      *
      * @since 2.0
      */
-    void setCursorLocation(IPoint point);
+    void setCursorLocation(Point point);
 
     /**
      * Sets the application defined property of the receiver
@@ -1239,7 +1239,7 @@ public interface IDisplay extends IDevice {
      *    <li>ERROR_FAILED_EXEC - if an exception occurred while running an inter-thread message</li>
      * </ul>
      */
-    void setSynchronizer(ISynchronizer synchronizer);
+    void setSynchronizer(Synchronizer synchronizer);
 
     /**
      * Sets a callback that will be invoked whenever an exception is thrown by a listener or external

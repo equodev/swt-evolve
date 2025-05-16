@@ -72,7 +72,7 @@ public class Canvas extends Composite {
      * @see Widget#getStyle
      */
     public Canvas(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Canvas((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtCanvas(parent, style));
     }
 
     /**
@@ -97,7 +97,7 @@ public class Canvas extends Composite {
      * @since 3.2
      */
     public void drawBackground(GC gc, int x, int y, int width, int height) {
-        getDelegate().drawBackground((gc != null ? gc.getDelegate() : null), x, y, width, height);
+        getImpl().drawBackground(gc, x, y, width, height);
     }
 
     /**
@@ -119,8 +119,7 @@ public class Canvas extends Composite {
      * </ul>
      */
     public Caret getCaret() {
-        ICaret ret = getDelegate().getCaret();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getCaret();
     }
 
     /**
@@ -136,8 +135,7 @@ public class Canvas extends Composite {
      * @since 3.4
      */
     public IME getIME() {
-        IIME ret = getDelegate().getIME();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getIME();
     }
 
     /**
@@ -163,7 +161,7 @@ public class Canvas extends Composite {
      * </ul>
      */
     public void scroll(int destX, int destY, int x, int y, int width, int height, boolean all) {
-        getDelegate().scroll(destX, destY, x, y, width, height, all);
+        getImpl().scroll(destX, destY, x, y, width, height, all);
     }
 
     /**
@@ -187,11 +185,11 @@ public class Canvas extends Composite {
      * </ul>
      */
     public void setCaret(Caret caret) {
-        getDelegate().setCaret((caret != null ? caret.getDelegate() : null));
+        getImpl().setCaret(caret);
     }
 
     public void setFont(Font font) {
-        getDelegate().setFont((font != null ? font.getDelegate() : null));
+        getImpl().setFont(font);
     }
 
     /**
@@ -210,18 +208,18 @@ public class Canvas extends Composite {
      * @since 3.4
      */
     public void setIME(IME ime) {
-        getDelegate().setIME((ime != null ? ime.getDelegate() : null));
+        getImpl().setIME(ime);
     }
 
-    protected Canvas(ICanvas delegate) {
-        super(delegate);
+    protected Canvas(ICanvas impl) {
+        super(impl);
     }
 
-    public static Canvas createApi(ICanvas delegate) {
-        return new Canvas(delegate);
+    public static Canvas createApi(ICanvas impl) {
+        return new Canvas(impl);
     }
 
-    public ICanvas getDelegate() {
-        return (ICanvas) super.getDelegate();
+    public ICanvas getImpl() {
+        return (ICanvas) super.getImpl();
     }
 }

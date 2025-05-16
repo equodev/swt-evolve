@@ -6,9 +6,9 @@ import org.eclipse.swt.widgets.*;
 
 public interface ITabFolderLayout extends ILayout {
 
-    IPoint computeSize(IComposite composite, int wHint, int hHint, boolean flushCache);
+    Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache);
 
-    void layout(IComposite composite, boolean flushCache);
+    void layout(Composite composite, boolean flushCache);
 
     TabFolderLayout getApi();
 }

@@ -106,7 +106,7 @@ public class Slider extends Control {
      * @see Widget#getStyle
      */
     public Slider(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Slider((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtSlider(parent, style));
     }
 
     /**
@@ -142,12 +142,11 @@ public class Slider extends Control {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -163,7 +162,7 @@ public class Slider extends Control {
      * </ul>
      */
     public int getIncrement() {
-        return getDelegate().getIncrement();
+        return getImpl().getIncrement();
     }
 
     /**
@@ -177,7 +176,7 @@ public class Slider extends Control {
      * </ul>
      */
     public int getMaximum() {
-        return getDelegate().getMaximum();
+        return getImpl().getMaximum();
     }
 
     /**
@@ -191,7 +190,7 @@ public class Slider extends Control {
      * </ul>
      */
     public int getMinimum() {
-        return getDelegate().getMinimum();
+        return getImpl().getMinimum();
     }
 
     /**
@@ -207,7 +206,7 @@ public class Slider extends Control {
      * </ul>
      */
     public int getPageIncrement() {
-        return getDelegate().getPageIncrement();
+        return getImpl().getPageIncrement();
     }
 
     /**
@@ -221,7 +220,7 @@ public class Slider extends Control {
      * </ul>
      */
     public int getSelection() {
-        return getDelegate().getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -235,7 +234,7 @@ public class Slider extends Control {
      * </ul>
      */
     public int getThumb() {
-        return getDelegate().getThumb();
+        return getImpl().getThumb();
     }
 
     /**
@@ -256,7 +255,7 @@ public class Slider extends Control {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -273,7 +272,7 @@ public class Slider extends Control {
      * </ul>
      */
     public void setIncrement(int value) {
-        getDelegate().setIncrement(value);
+        getImpl().setIncrement(value);
     }
 
     /**
@@ -290,7 +289,7 @@ public class Slider extends Control {
      * </ul>
      */
     public void setMaximum(int value) {
-        getDelegate().setMaximum(value);
+        getImpl().setMaximum(value);
     }
 
     /**
@@ -307,7 +306,7 @@ public class Slider extends Control {
      * </ul>
      */
     public void setMinimum(int value) {
-        getDelegate().setMinimum(value);
+        getImpl().setMinimum(value);
     }
 
     /**
@@ -324,7 +323,7 @@ public class Slider extends Control {
      * </ul>
      */
     public void setPageIncrement(int value) {
-        getDelegate().setPageIncrement(value);
+        getImpl().setPageIncrement(value);
     }
 
     /**
@@ -340,7 +339,7 @@ public class Slider extends Control {
      * </ul>
      */
     public void setSelection(int value) {
-        getDelegate().setSelection(value);
+        getImpl().setSelection(value);
     }
 
     /**
@@ -361,7 +360,7 @@ public class Slider extends Control {
      * </ul>
      */
     public void setThumb(int value) {
-        getDelegate().setThumb(value);
+        getImpl().setThumb(value);
     }
 
     /**
@@ -386,18 +385,18 @@ public class Slider extends Control {
      * </ul>
      */
     public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
-        getDelegate().setValues(selection, minimum, maximum, thumb, increment, pageIncrement);
+        getImpl().setValues(selection, minimum, maximum, thumb, increment, pageIncrement);
     }
 
-    protected Slider(ISlider delegate) {
-        super(delegate);
+    protected Slider(ISlider impl) {
+        super(impl);
     }
 
-    public static Slider createApi(ISlider delegate) {
-        return new Slider(delegate);
+    public static Slider createApi(ISlider impl) {
+        return new Slider(impl);
     }
 
-    public ISlider getDelegate() {
-        return (ISlider) super.getDelegate();
+    public ISlider getImpl() {
+        return (ISlider) super.getImpl();
     }
 }

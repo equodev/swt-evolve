@@ -18,7 +18,6 @@ package org.eclipse.swt.dnd;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.*;
-import dev.equo.swt.Convert;
 
 /**
  * The <code>Clipboard</code> provides a mechanism for transferring data from one
@@ -49,7 +48,7 @@ public class Clipboard {
      * @see Clipboard#checkSubclass
      */
     public Clipboard(Display display) {
-        this(new nat.org.eclipse.swt.dnd.Clipboard((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null)));
+        this(new SwtClipboard(display));
     }
 
     /**
@@ -80,7 +79,7 @@ public class Clipboard {
      * </ul>
      */
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -106,7 +105,7 @@ public class Clipboard {
      * </ul>
      */
     protected void checkWidget() {
-        getDelegate().checkWidget();
+        getImpl().checkWidget();
     }
 
     /**
@@ -124,7 +123,7 @@ public class Clipboard {
      * @since 3.1
      */
     public void clearContents() {
-        getDelegate().clearContents();
+        getImpl().clearContents();
     }
 
     /**
@@ -154,7 +153,7 @@ public class Clipboard {
      * @since 3.1
      */
     public void clearContents(int clipboards) {
-        getDelegate().clearContents(clipboards);
+        getImpl().clearContents(clipboards);
     }
 
     /**
@@ -170,7 +169,7 @@ public class Clipboard {
      * </ul>
      */
     public void dispose() {
-        getDelegate().dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -206,7 +205,7 @@ public class Clipboard {
      * @see Transfer
      */
     public Object getContents(Transfer transfer) {
-        return getDelegate().getContents((transfer != null ? transfer.getDelegate() : null));
+        return getImpl().getContents(transfer);
     }
 
     /**
@@ -253,7 +252,7 @@ public class Clipboard {
      * @since 3.1
      */
     public Object getContents(Transfer transfer, int clipboards) {
-        return getDelegate().getContents((transfer != null ? transfer.getDelegate() : null), clipboards);
+        return getImpl().getContents(transfer, clipboards);
     }
 
     /**
@@ -270,7 +269,7 @@ public class Clipboard {
      * @since 3.0
      */
     public boolean isDisposed() {
-        return getDelegate().isDisposed();
+        return getImpl().isDisposed();
     }
 
     /**
@@ -321,7 +320,7 @@ public class Clipboard {
      *  recoverable error, but can not be changed due to backward compatibility.</p>
      */
     public void setContents(Object[] data, Transfer[] dataTypes) {
-        getDelegate().setContents(data, Convert.array(dataTypes, Transfer::getDelegate, ITransfer[]::new));
+        getImpl().setContents(data, dataTypes);
     }
 
     /**
@@ -384,7 +383,7 @@ public class Clipboard {
      *  @since 3.1
      */
     public void setContents(Object[] data, Transfer[] dataTypes, int clipboards) {
-        getDelegate().setContents(data, Convert.array(dataTypes, Transfer::getDelegate, ITransfer[]::new), clipboards);
+        getImpl().setContents(data, dataTypes, clipboards);
     }
 
     /**
@@ -403,7 +402,7 @@ public class Clipboard {
      * @since 3.0
      */
     public TransferData[] getAvailableTypes() {
-        return Convert.array(getDelegate().getAvailableTypes(), ITransferData::getApi, TransferData[]::new);
+        return getImpl().getAvailableTypes();
     }
 
     /**
@@ -430,7 +429,7 @@ public class Clipboard {
      * @since 3.1
      */
     public TransferData[] getAvailableTypes(int clipboards) {
-        return Convert.array(getDelegate().getAvailableTypes(clipboards), ITransferData::getApi, TransferData[]::new);
+        return getImpl().getAvailableTypes(clipboards);
     }
 
     /**
@@ -450,21 +449,21 @@ public class Clipboard {
      * </ul>
      */
     public String[] getAvailableTypeNames() {
-        return getDelegate().getAvailableTypeNames();
+        return getImpl().getAvailableTypeNames();
     }
 
-    IClipboard delegate;
+    IClipboard impl;
 
-    protected Clipboard(IClipboard delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected Clipboard(IClipboard impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static Clipboard createApi(IClipboard delegate) {
-        return new Clipboard(delegate);
+    public static Clipboard createApi(IClipboard impl) {
+        return new Clipboard(impl);
     }
 
-    public IClipboard getDelegate() {
-        return delegate;
+    public IClipboard getImpl() {
+        return impl;
     }
 }

@@ -59,7 +59,7 @@ public interface IMenu extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IMenuItem getDefaultItem();
+    MenuItem getDefaultItem();
 
     /**
      * Returns <code>true</code> if the receiver is enabled, and
@@ -93,7 +93,7 @@ public interface IMenu extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IMenuItem getItem(int index);
+    MenuItem getItem(int index);
 
     /**
      * Returns the number of items contained in the receiver.
@@ -123,7 +123,7 @@ public interface IMenu extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IMenuItem[] getItems();
+    MenuItem[] getItems();
 
     /**
      * Returns the orientation of the receiver, which will be one of the
@@ -150,7 +150,7 @@ public interface IMenu extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IDecorations getParent();
+    Decorations getParent();
 
     /**
      * Returns the receiver's parent item, which must be a
@@ -164,7 +164,7 @@ public interface IMenu extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IMenuItem getParentItem();
+    MenuItem getParentItem();
 
     /**
      * Returns the receiver's parent item, which must be a
@@ -178,7 +178,7 @@ public interface IMenu extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IMenu getParentMenu();
+    Menu getParentMenu();
 
     /**
      * Returns the receiver's shell. For all controls other than
@@ -196,7 +196,7 @@ public interface IMenu extends IWidget {
      *
      * @see #getParent
      */
-    IShell getShell();
+    Shell getShell();
 
     /**
      * Returns <code>true</code> if the receiver is visible, and
@@ -234,7 +234,7 @@ public interface IMenu extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int indexOf(IMenuItem item);
+    int indexOf(MenuItem item);
 
     /**
      * Returns <code>true</code> if the receiver is enabled and all
@@ -321,7 +321,7 @@ public interface IMenu extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setDefaultItem(IMenuItem item);
+    void setDefaultItem(MenuItem item);
 
     /**
      * Enables the receiver if the argument is <code>true</code>,
@@ -386,7 +386,7 @@ public interface IMenu extends IWidget {
      *
      * @since 2.1
      */
-    void setLocation(IPoint location);
+    void setLocation(Point location);
 
     /**
      * Sets the orientation of the receiver, which must be one

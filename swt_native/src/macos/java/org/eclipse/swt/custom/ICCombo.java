@@ -148,7 +148,7 @@ public interface ICCombo extends IComposite {
      */
     void clearSelection();
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Copies the selected text.
@@ -220,7 +220,7 @@ public interface ICCombo extends IComposite {
      */
     int getAlignment();
 
-    IControl[] getChildren();
+    Control[] getChildren();
 
     /**
      * Gets the editable state.
@@ -318,7 +318,7 @@ public interface ICCombo extends IComposite {
      */
     boolean getListVisible();
 
-    IMenu getMenu();
+    Menu getMenu();
 
     /**
      * Returns a <code>Point</code> whose x coordinate is the start
@@ -334,7 +334,7 @@ public interface ICCombo extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IPoint getSelection();
+    Point getSelection();
 
     /**
      * Returns the zero-relative index of the item which is currently
@@ -349,7 +349,7 @@ public interface ICCombo extends IComposite {
      */
     int getSelectionIndex();
 
-    IShell getShell();
+    Shell getShell();
 
     int getStyle();
 
@@ -621,7 +621,7 @@ public interface ICCombo extends IComposite {
      */
     void setAlignment(int align);
 
-    void setBackground(IColor color);
+    void setBackground(Color color);
 
     /**
      * Sets the editable state.
@@ -641,9 +641,9 @@ public interface ICCombo extends IComposite {
 
     boolean setFocus();
 
-    void setFont(IFont font);
+    void setFont(Font font);
 
-    void setForeground(IColor color);
+    void setForeground(Color color);
 
     /**
      * Sets the text of the item in the receiver's list at the given
@@ -696,7 +696,7 @@ public interface ICCombo extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setLayout(ILayout layout);
+    void setLayout(Layout layout);
 
     /**
      * Marks the receiver's list as visible if the argument is <code>true</code>,
@@ -718,7 +718,7 @@ public interface ICCombo extends IComposite {
      */
     void setListVisible(boolean visible);
 
-    void setMenu(IMenu menu);
+    void setMenu(Menu menu);
 
     /**
      * Sets the selection in the receiver's text field to the
@@ -736,7 +736,7 @@ public interface ICCombo extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSelection(IPoint selection);
+    void setSelection(Point selection);
 
     /**
      * Sets the contents of the receiver's text field to the

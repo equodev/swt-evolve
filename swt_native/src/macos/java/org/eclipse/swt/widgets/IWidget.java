@@ -256,7 +256,7 @@ public interface IWidget {
      *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IDisplay getDisplay();
+    Display getDisplay();
 
     /**
      * Returns an array of {@link Listener listeners} who will be notified when an event

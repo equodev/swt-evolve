@@ -39,8 +39,7 @@ public class RTFTransfer extends ByteArrayTransfer {
      * @return the singleton instance of the RTFTransfer class
      */
     public static RTFTransfer getInstance() {
-        IRTFTransfer ret = nat.org.eclipse.swt.dnd.RTFTransfer.getInstance();
-        return ret != null ? ret.getApi() : null;
+        return SwtRTFTransfer.getInstance();
     }
 
     /**
@@ -54,7 +53,7 @@ public class RTFTransfer extends ByteArrayTransfer {
      * @see Transfer#nativeToJava
      */
     public void javaToNative(Object object, TransferData transferData) {
-        getDelegate().javaToNative(object, (transferData != null ? transferData.getDelegate() : null));
+        getImpl().javaToNative(object, transferData);
     }
 
     /**
@@ -68,30 +67,30 @@ public class RTFTransfer extends ByteArrayTransfer {
      * @see Transfer#javaToNative
      */
     public Object nativeToJava(TransferData transferData) {
-        return getDelegate().nativeToJava((transferData != null ? transferData.getDelegate() : null));
+        return getImpl().nativeToJava(transferData);
     }
 
     protected int[] getTypeIds() {
-        return getDelegate().getTypeIds();
+        return getImpl().getTypeIds();
     }
 
     protected String[] getTypeNames() {
-        return getDelegate().getTypeNames();
+        return getImpl().getTypeNames();
     }
 
     protected boolean validate(Object object) {
-        return getDelegate().validate(object);
+        return getImpl().validate(object);
     }
 
-    protected RTFTransfer(IRTFTransfer delegate) {
-        super(delegate);
+    protected RTFTransfer(IRTFTransfer impl) {
+        super(impl);
     }
 
-    public static RTFTransfer createApi(IRTFTransfer delegate) {
-        return new RTFTransfer(delegate);
+    public static RTFTransfer createApi(IRTFTransfer impl) {
+        return new RTFTransfer(impl);
     }
 
-    public IRTFTransfer getDelegate() {
-        return (IRTFTransfer) super.getDelegate();
+    public IRTFTransfer getImpl() {
+        return (IRTFTransfer) super.getImpl();
     }
 }

@@ -76,7 +76,7 @@ public final class Rectangle implements Serializable {
      * @param height the height of the rectangle
      */
     public Rectangle(int x, int y, int width, int height) {
-        this(new nat.org.eclipse.swt.graphics.Rectangle(x, y, width, height));
+        this(new SwtRectangle(x, y, width, height));
     }
 
     /**
@@ -96,7 +96,7 @@ public final class Rectangle implements Serializable {
      * </ul>
      */
     public void add(Rectangle rect) {
-        getDelegate().add((rect != null ? rect.getDelegate() : null));
+        getImpl().add(rect);
     }
 
     /**
@@ -109,7 +109,7 @@ public final class Rectangle implements Serializable {
      * @return <code>true</code> if the rectangle contains the point and <code>false</code> otherwise
      */
     public boolean contains(int x, int y) {
-        return getDelegate().contains(x, y);
+        return getImpl().contains(x, y);
     }
 
     /**
@@ -125,7 +125,7 @@ public final class Rectangle implements Serializable {
      * </ul>
      */
     public boolean contains(Point pt) {
-        return getDelegate().contains((pt != null ? pt.getDelegate() : null));
+        return getImpl().contains(pt);
     }
 
     /**
@@ -139,7 +139,7 @@ public final class Rectangle implements Serializable {
      * @see #hashCode()
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object instanceof Rectangle ? ((Rectangle) object).getDelegate() : object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -153,7 +153,7 @@ public final class Rectangle implements Serializable {
      * @see #equals(Object)
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
     /**
@@ -170,7 +170,7 @@ public final class Rectangle implements Serializable {
      * since 3.0
      */
     public void intersect(Rectangle rect) {
-        getDelegate().intersect((rect != null ? rect.getDelegate() : null));
+        getImpl().intersect(rect);
     }
 
     /**
@@ -189,8 +189,7 @@ public final class Rectangle implements Serializable {
      * </ul>
      */
     public Rectangle intersection(Rectangle rect) {
-        IRectangle ret = getDelegate().intersection((rect != null ? rect.getDelegate() : null));
-        return ret != null ? ret.getApi() : null;
+        return getImpl().intersection(rect);
     }
 
     /**
@@ -218,7 +217,7 @@ public final class Rectangle implements Serializable {
      * @since 3.0
      */
     public boolean intersects(int x, int y, int width, int height) {
-        return getDelegate().intersects(x, y, width, height);
+        return getImpl().intersects(x, y, width, height);
     }
 
     /**
@@ -240,7 +239,7 @@ public final class Rectangle implements Serializable {
      * @see #isEmpty()
      */
     public boolean intersects(Rectangle rect) {
-        return getDelegate().intersects((rect != null ? rect.getDelegate() : null));
+        return getImpl().intersects(rect);
     }
 
     /**
@@ -256,7 +255,7 @@ public final class Rectangle implements Serializable {
      * @return <code>true</code> if the receiver is empty, and <code>false</code> otherwise
      */
     public boolean isEmpty() {
-        return getDelegate().isEmpty();
+        return getImpl().isEmpty();
     }
 
     /**
@@ -266,7 +265,7 @@ public final class Rectangle implements Serializable {
      * @return a string representation of the rectangle
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
     /**
@@ -288,22 +287,21 @@ public final class Rectangle implements Serializable {
      * @see #add(Rectangle)
      */
     public Rectangle union(Rectangle rect) {
-        IRectangle ret = getDelegate().union((rect != null ? rect.getDelegate() : null));
-        return ret != null ? ret.getApi() : null;
+        return getImpl().union(rect);
     }
 
-    IRectangle delegate;
+    IRectangle impl;
 
-    protected Rectangle(IRectangle delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected Rectangle(IRectangle impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static Rectangle createApi(IRectangle delegate) {
-        return new Rectangle(delegate);
+    public static Rectangle createApi(IRectangle impl) {
+        return new Rectangle(impl);
     }
 
-    public IRectangle getDelegate() {
-        return delegate;
+    public IRectangle getImpl() {
+        return impl;
     }
 }

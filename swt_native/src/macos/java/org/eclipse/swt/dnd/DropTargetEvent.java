@@ -110,7 +110,7 @@ public class DropTargetEvent extends TypedEvent {
         this.item = e.item;
     }
 
-    public void updateEvent(DNDEvent e) {
+    void updateEvent(DNDEvent e) {
         e.widget = this.widget;
         e.time = this.time;
         e.data = this.data;

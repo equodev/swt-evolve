@@ -58,7 +58,7 @@ public interface IToolItem extends IItem {
      *
      * @since 3.120
      */
-    IColor getBackground();
+    Color getBackground();
 
     /**
      * Returns a rectangle describing the receiver's size and location
@@ -71,7 +71,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IRectangle getBounds();
+    Rectangle getBounds();
 
     /**
      * Returns the control that is used to fill the bounds of
@@ -84,7 +84,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Returns the receiver's disabled image if it has one, or null
@@ -100,7 +100,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IImage getDisabledImage();
+    Image getDisabledImage();
 
     /**
      * Returns <code>true</code> if the receiver is enabled, and
@@ -131,7 +131,7 @@ public interface IToolItem extends IItem {
      *
      * @since 3.120
      */
-    IColor getForeground();
+    Color getForeground();
 
     /**
      * Returns the receiver's hot image if it has one, or null
@@ -147,7 +147,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IImage getHotImage();
+    Image getHotImage();
 
     /**
      * Returns the receiver's enabled image if it has one, or null
@@ -160,7 +160,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IImage getImage();
+    Image getImage();
 
     /**
      * Returns the receiver's parent, which must be a <code>ToolBar</code>.
@@ -172,7 +172,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IToolBar getParent();
+    ToolBar getParent();
 
     /**
      * Returns <code>true</code> if the receiver is selected,
@@ -272,7 +272,7 @@ public interface IToolItem extends IItem {
      *
      * @since 3.120
      */
-    void setBackground(IColor color);
+    void setBackground(Color color);
 
     /**
      * Sets the control that is used to fill the bounds of
@@ -289,7 +289,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setControl(IControl control);
+    void setControl(Control control);
 
     /**
      * Enables the receiver if the argument is <code>true</code>,
@@ -326,7 +326,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setDisabledImage(IImage image);
+    void setDisabledImage(Image image);
 
     /**
      * Sets the receiver's foreground color to the color specified
@@ -347,7 +347,7 @@ public interface IToolItem extends IItem {
      *
      * @since 3.120
      */
-    void setForeground(IColor color);
+    void setForeground(Color color);
 
     /**
      * Sets the receiver's hot image to the argument, which may be
@@ -366,9 +366,9 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setHotImage(IImage image);
+    void setHotImage(Image image);
 
-    void setImage(IImage image);
+    void setImage(Image image);
 
     /**
      * Sets the selection state of the receiver.

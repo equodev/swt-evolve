@@ -45,7 +45,7 @@ public interface IStyleRange extends ITextStyle {
      * @param style the object to compare with this object
      * @return true if the objects are similar, false otherwise
      */
-    boolean similarTo(IStyleRange style);
+    boolean similarTo(StyleRange style);
 
     /**
      * Returns a new StyleRange with the same values as this StyleRange.

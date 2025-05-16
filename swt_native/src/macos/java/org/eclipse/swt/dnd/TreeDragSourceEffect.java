@@ -47,7 +47,7 @@ public class TreeDragSourceEffect extends DragSourceEffect {
      * @param tree the <code>Tree</code> that the user clicks on to initiate the drag
      */
     public TreeDragSourceEffect(Tree tree) {
-        this(new nat.org.eclipse.swt.dnd.TreeDragSourceEffect((nat.org.eclipse.swt.widgets.Tree) (tree != null ? tree.getDelegate() : null)));
+        this(new SwtTreeDragSourceEffect(tree));
     }
 
     /**
@@ -60,7 +60,7 @@ public class TreeDragSourceEffect extends DragSourceEffect {
      * @param event the information associated with the drag finished event
      */
     public void dragFinished(DragSourceEvent event) {
-        getDelegate().dragFinished(event);
+        getImpl().dragFinished(event);
     }
 
     /**
@@ -75,18 +75,18 @@ public class TreeDragSourceEffect extends DragSourceEffect {
      * @param event the information associated with the drag start event
      */
     public void dragStart(DragSourceEvent event) {
-        getDelegate().dragStart(event);
+        getImpl().dragStart(event);
     }
 
-    protected TreeDragSourceEffect(ITreeDragSourceEffect delegate) {
-        super(delegate);
+    protected TreeDragSourceEffect(ITreeDragSourceEffect impl) {
+        super(impl);
     }
 
-    public static TreeDragSourceEffect createApi(ITreeDragSourceEffect delegate) {
-        return new TreeDragSourceEffect(delegate);
+    public static TreeDragSourceEffect createApi(ITreeDragSourceEffect impl) {
+        return new TreeDragSourceEffect(impl);
     }
 
-    public ITreeDragSourceEffect getDelegate() {
-        return (ITreeDragSourceEffect) super.getDelegate();
+    public ITreeDragSourceEffect getImpl() {
+        return (ITreeDragSourceEffect) super.getImpl();
     }
 }

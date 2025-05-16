@@ -12,7 +12,7 @@ public interface IDropTargetEffect extends IDropTargetAdapter {
      *
      * @return the Control which is registered for this DropTargetEffect
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Returns the item at the given x-y coordinate in the receiver
@@ -23,7 +23,7 @@ public interface IDropTargetEffect extends IDropTargetAdapter {
      * @param y the y coordinate used to locate the item
      * @return the item at the given x-y coordinate, or null if the coordinate is not in a selectable item
      */
-    IWidget getItem(int x, int y);
+    Widget getItem(int x, int y);
 
     DropTargetEffect getApi();
 }

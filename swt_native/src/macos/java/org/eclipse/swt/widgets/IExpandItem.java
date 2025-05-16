@@ -18,7 +18,7 @@ public interface IExpandItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Returns <code>true</code> if the receiver is expanded,
@@ -67,7 +67,7 @@ public interface IExpandItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IExpandBar getParent();
+    ExpandBar getParent();
 
     /**
      * Sets the control that is shown when the item is expanded.
@@ -83,7 +83,7 @@ public interface IExpandItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setControl(IControl control);
+    void setControl(Control control);
 
     /**
      * Sets the expanded state of the receiver.
@@ -97,7 +97,7 @@ public interface IExpandItem extends IItem {
      */
     void setExpanded(boolean expanded);
 
-    void setImage(IImage image);
+    void setImage(Image image);
 
     /**
      * Sets the height of the receiver. This is height of the item when it is expanded,

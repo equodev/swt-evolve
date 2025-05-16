@@ -108,7 +108,7 @@ public class Combo extends Composite {
      * @see Widget#getStyle
      */
     public Combo(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Combo((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtCombo(parent, style));
     }
 
     /**
@@ -130,7 +130,7 @@ public class Combo extends Composite {
      * @see #add(String,int)
      */
     public void add(String string) {
-        getDelegate().add(string);
+        getImpl().add(string);
     }
 
     /**
@@ -160,7 +160,7 @@ public class Combo extends Composite {
      * @see #add(String)
      */
     public void add(String string, int index) {
-        getDelegate().add(string, index);
+        getImpl().add(string, index);
     }
 
     /**
@@ -183,7 +183,7 @@ public class Combo extends Composite {
      * @see #removeModifyListener
      */
     public void addModifyListener(ModifyListener listener) {
-        getDelegate().addModifyListener(listener);
+        getImpl().addModifyListener(listener);
     }
 
     /**
@@ -221,7 +221,7 @@ public class Combo extends Composite {
      * @since 3.103
      */
     public void addSegmentListener(SegmentListener listener) {
-        getDelegate().addSegmentListener(listener);
+        getImpl().addSegmentListener(listener);
     }
 
     /**
@@ -249,7 +249,7 @@ public class Combo extends Composite {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -274,11 +274,11 @@ public class Combo extends Composite {
      * @since 3.1
      */
     public void addVerifyListener(VerifyListener listener) {
-        getDelegate().addVerifyListener(listener);
+        getImpl().addVerifyListener(listener);
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -299,12 +299,11 @@ public class Combo extends Composite {
      * @see #deselectAll
      */
     public void clearSelection() {
-        getDelegate().clearSelection();
+        getImpl().clearSelection();
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -321,7 +320,7 @@ public class Combo extends Composite {
      * @since 2.1
      */
     public void copy() {
-        getDelegate().copy();
+        getImpl().copy();
     }
 
     /**
@@ -339,7 +338,7 @@ public class Combo extends Composite {
      * @since 2.1
      */
     public void cut() {
-        getDelegate().cut();
+        getImpl().cut();
     }
 
     /**
@@ -355,7 +354,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public void deselect(int index) {
-        getDelegate().deselect(index);
+        getImpl().deselect(index);
     }
 
     /**
@@ -373,7 +372,7 @@ public class Combo extends Composite {
      * @see #clearSelection
      */
     public void deselectAll() {
-        getDelegate().deselectAll();
+        getImpl().deselectAll();
     }
 
     /**
@@ -392,7 +391,7 @@ public class Combo extends Composite {
      * @since 3.8
      */
     public int getCaretPosition() {
-        return getDelegate().getCaretPosition();
+        return getImpl().getCaretPosition();
     }
 
     /**
@@ -409,8 +408,7 @@ public class Combo extends Composite {
      * @since 3.8
      */
     public Point getCaretLocation() {
-        IPoint ret = getDelegate().getCaretLocation();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getCaretLocation();
     }
 
     /**
@@ -430,7 +428,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public String getItem(int index) {
-        return getDelegate().getItem(index);
+        return getImpl().getItem(index);
     }
 
     /**
@@ -444,7 +442,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public int getItemCount() {
-        return getDelegate().getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -459,7 +457,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public int getItemHeight() {
-        return getDelegate().getItemHeight();
+        return getImpl().getItemHeight();
     }
 
     /**
@@ -479,7 +477,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public String[] getItems() {
-        return getDelegate().getItems();
+        return getImpl().getItems();
     }
 
     /**
@@ -502,7 +500,7 @@ public class Combo extends Composite {
      * @since 3.4
      */
     public boolean getListVisible() {
-        return getDelegate().getListVisible();
+        return getImpl().getListVisible();
     }
 
     /**
@@ -518,7 +516,7 @@ public class Combo extends Composite {
      * @since 2.1.2
      */
     public int getOrientation() {
-        return getDelegate().getOrientation();
+        return getImpl().getOrientation();
     }
 
     /**
@@ -541,8 +539,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public Point getSelection() {
-        IPoint ret = getDelegate().getSelection();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getSelection();
     }
 
     /**
@@ -557,7 +554,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public int getSelectionIndex() {
-        return getDelegate().getSelectionIndex();
+        return getImpl().getSelectionIndex();
     }
 
     /**
@@ -573,7 +570,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public String getText() {
-        return getDelegate().getText();
+        return getImpl().getText();
     }
 
     /**
@@ -587,7 +584,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public int getTextHeight() {
-        return getDelegate().getTextHeight();
+        return getImpl().getTextHeight();
     }
 
     /**
@@ -606,7 +603,7 @@ public class Combo extends Composite {
      * @see #LIMIT
      */
     public int getTextLimit() {
-        return getDelegate().getTextLimit();
+        return getImpl().getTextLimit();
     }
 
     /**
@@ -627,7 +624,7 @@ public class Combo extends Composite {
      * @since 3.0
      */
     public int getVisibleItemCount() {
-        return getDelegate().getVisibleItemCount();
+        return getImpl().getVisibleItemCount();
     }
 
     /**
@@ -648,7 +645,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public int indexOf(String string) {
-        return getDelegate().indexOf(string);
+        return getImpl().indexOf(string);
     }
 
     /**
@@ -671,7 +668,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public int indexOf(String string, int start) {
-        return getDelegate().indexOf(string, start);
+        return getImpl().indexOf(string, start);
     }
 
     /**
@@ -689,7 +686,7 @@ public class Combo extends Composite {
      * @since 2.1
      */
     public void paste() {
-        getDelegate().paste();
+        getImpl().paste();
     }
 
     /**
@@ -707,7 +704,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public void remove(int index) {
-        getDelegate().remove(index);
+        getImpl().remove(index);
     }
 
     /**
@@ -727,7 +724,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public void remove(int start, int end) {
-        getDelegate().remove(start, end);
+        getImpl().remove(start, end);
     }
 
     /**
@@ -747,7 +744,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public void remove(String string) {
-        getDelegate().remove(string);
+        getImpl().remove(string);
     }
 
     /**
@@ -759,7 +756,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public void removeAll() {
-        getDelegate().removeAll();
+        getImpl().removeAll();
     }
 
     /**
@@ -780,7 +777,7 @@ public class Combo extends Composite {
      * @see #addModifyListener
      */
     public void removeModifyListener(ModifyListener listener) {
-        getDelegate().removeModifyListener(listener);
+        getImpl().removeModifyListener(listener);
     }
 
     /**
@@ -804,7 +801,7 @@ public class Combo extends Composite {
      * @since 3.103
      */
     public void removeSegmentListener(SegmentListener listener) {
-        getDelegate().removeSegmentListener(listener);
+        getImpl().removeSegmentListener(listener);
     }
 
     /**
@@ -825,7 +822,7 @@ public class Combo extends Composite {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -848,7 +845,7 @@ public class Combo extends Composite {
      * @since 3.1
      */
     public void removeVerifyListener(VerifyListener listener) {
-        getDelegate().removeVerifyListener(listener);
+        getImpl().removeVerifyListener(listener);
     }
 
     /**
@@ -864,7 +861,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public void select(int index) {
-        getDelegate().select(index);
+        getImpl().select(index);
     }
 
     /**
@@ -884,7 +881,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public void setItem(int index, String string) {
-        getDelegate().setItem(index, string);
+        getImpl().setItem(index, string);
     }
 
     /**
@@ -902,7 +899,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public void setItems(String... items) {
-        getDelegate().setItems(items);
+        getImpl().setItems(items);
     }
 
     /**
@@ -924,7 +921,7 @@ public class Combo extends Composite {
      * @since 3.4
      */
     public void setListVisible(boolean visible) {
-        getDelegate().setListVisible(visible);
+        getImpl().setListVisible(visible);
     }
 
     /**
@@ -941,7 +938,7 @@ public class Combo extends Composite {
      * @since 2.1.2
      */
     public void setOrientation(int orientation) {
-        getDelegate().setOrientation(orientation);
+        getImpl().setOrientation(orientation);
     }
 
     /**
@@ -961,7 +958,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public void setSelection(Point selection) {
-        getDelegate().setSelection((selection != null ? selection.getDelegate() : null));
+        getImpl().setSelection(selection);
     }
 
     /**
@@ -993,7 +990,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -1017,7 +1014,7 @@ public class Combo extends Composite {
      * @see #LIMIT
      */
     public void setTextLimit(int limit) {
-        getDelegate().setTextLimit(limit);
+        getImpl().setTextLimit(limit);
     }
 
     /**
@@ -1038,18 +1035,18 @@ public class Combo extends Composite {
      * @since 3.0
      */
     public void setVisibleItemCount(int count) {
-        getDelegate().setVisibleItemCount(count);
+        getImpl().setVisibleItemCount(count);
     }
 
-    protected Combo(ICombo delegate) {
-        super(delegate);
+    protected Combo(ICombo impl) {
+        super(impl);
     }
 
-    public static Combo createApi(ICombo delegate) {
-        return new Combo(delegate);
+    public static Combo createApi(ICombo impl) {
+        return new Combo(impl);
     }
 
-    public ICombo getDelegate() {
-        return (ICombo) super.getDelegate();
+    public ICombo getImpl() {
+        return (ICombo) super.getImpl();
     }
 }

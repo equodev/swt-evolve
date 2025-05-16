@@ -12,7 +12,7 @@ public interface ITextTransfer extends IByteArrayTransfer {
      *
      * @see Transfer#nativeToJava
      */
-    void javaToNative(Object object, ITransferData transferData);
+    void javaToNative(Object object, TransferData transferData);
 
     /**
      * This implementation of <code>nativeToJava</code> converts a platform specific
@@ -23,7 +23,7 @@ public interface ITextTransfer extends IByteArrayTransfer {
      *
      * @see Transfer#javaToNative
      */
-    Object nativeToJava(ITransferData transferData);
+    Object nativeToJava(TransferData transferData);
 
     int[] getTypeIds();
 

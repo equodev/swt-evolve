@@ -139,7 +139,7 @@ public abstract class Dialog {
      * @see Widget#checkSubclass
      */
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -154,8 +154,7 @@ public abstract class Dialog {
      * </ul>
      */
     public Shell getParent() {
-        IShell ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     /**
@@ -174,7 +173,7 @@ public abstract class Dialog {
      * </ul>
      */
     public int getStyle() {
-        return getDelegate().getStyle();
+        return getImpl().getStyle();
     }
 
     /**
@@ -191,7 +190,7 @@ public abstract class Dialog {
      * </ul>
      */
     public String getText() {
-        return getDelegate().getText();
+        return getImpl().getText();
     }
 
     /**
@@ -210,17 +209,17 @@ public abstract class Dialog {
      * </ul>
      */
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
-    IDialog delegate;
+    IDialog impl;
 
-    protected Dialog(IDialog delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected Dialog(IDialog impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public IDialog getDelegate() {
-        return delegate;
+    public IDialog getImpl() {
+        return impl;
     }
 }

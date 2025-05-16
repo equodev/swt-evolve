@@ -57,7 +57,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @since 3.2
      */
     public StyleRange() {
-        this(new nat.org.eclipse.swt.custom.StyleRange());
+        this(new SwtStyleRange());
     }
 
     /**
@@ -68,7 +68,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @since 3.4
      */
     public StyleRange(TextStyle style) {
-        this(new nat.org.eclipse.swt.custom.StyleRange((nat.org.eclipse.swt.graphics.TextStyle) (style != null ? style.getDelegate() : null)));
+        this(new SwtStyleRange(style));
     }
 
     /**
@@ -80,7 +80,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @param background background color of the style, null if none
      */
     public StyleRange(int start, int length, Color foreground, Color background) {
-        this(new nat.org.eclipse.swt.custom.StyleRange(start, length, (nat.org.eclipse.swt.graphics.Color) (foreground != null ? foreground.getDelegate() : null), (nat.org.eclipse.swt.graphics.Color) (background != null ? background.getDelegate() : null)));
+        this(new SwtStyleRange(start, length, foreground, background));
     }
 
     /**
@@ -93,7 +93,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @param fontStyle font style of the style, may be SWT.NORMAL, SWT.ITALIC or SWT.BOLD
      */
     public StyleRange(int start, int length, Color foreground, Color background, int fontStyle) {
-        this(new nat.org.eclipse.swt.custom.StyleRange(start, length, (nat.org.eclipse.swt.graphics.Color) (foreground != null ? foreground.getDelegate() : null), (nat.org.eclipse.swt.graphics.Color) (background != null ? background.getDelegate() : null), fontStyle));
+        this(new SwtStyleRange(start, length, foreground, background, fontStyle));
     }
 
     /**
@@ -107,7 +107,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @see #hashCode()
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object instanceof StyleRange ? ((StyleRange) object).getDelegate() : object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -121,7 +121,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @see #equals(Object)
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
     /**
@@ -131,7 +131,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @return true if the receiver is unstyled, false otherwise.
      */
     public boolean isUnstyled() {
-        return getDelegate().isUnstyled();
+        return getImpl().isUnstyled();
     }
 
     /**
@@ -143,7 +143,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @return true if the objects are similar, false otherwise
      */
     public boolean similarTo(StyleRange style) {
-        return getDelegate().similarTo((style != null ? style.getDelegate() : null));
+        return getImpl().similarTo(style);
     }
 
     /**
@@ -152,7 +152,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @return a shallow copy of this StyleRange
      */
     public Object clone() {
-        return getDelegate().clone();
+        return getImpl().clone();
     }
 
     /**
@@ -162,18 +162,18 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @return a string representation of the StyleRange
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected StyleRange(IStyleRange delegate) {
-        super(delegate);
+    protected StyleRange(IStyleRange impl) {
+        super(impl);
     }
 
-    public static StyleRange createApi(IStyleRange delegate) {
-        return new StyleRange(delegate);
+    public static StyleRange createApi(IStyleRange impl) {
+        return new StyleRange(impl);
     }
 
-    public IStyleRange getDelegate() {
-        return (IStyleRange) super.getDelegate();
+    public IStyleRange getImpl() {
+        return (IStyleRange) super.getImpl();
     }
 }

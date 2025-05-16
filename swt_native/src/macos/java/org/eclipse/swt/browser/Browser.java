@@ -76,11 +76,11 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public Browser(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.browser.Browser((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtBrowser(parent, style));
     }
 
     protected void checkWidget() {
-        getDelegate().checkWidget();
+        getImpl().checkWidget();
     }
 
     /**
@@ -89,7 +89,7 @@ public class Browser extends Composite {
      * @since 3.2
      */
     public static void clearSessions() {
-        nat.org.eclipse.swt.browser.Browser.clearSessions();
+        SwtBrowser.clearSessions();
     }
 
     /**
@@ -108,7 +108,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public static String getCookie(String name, String url) {
-        return nat.org.eclipse.swt.browser.Browser.getCookie(name, url);
+        return SwtBrowser.getCookie(name, url);
     }
 
     /**
@@ -136,7 +136,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public static boolean setCookie(String value, String url) {
-        return nat.org.eclipse.swt.browser.Browser.setCookie(value, url);
+        return SwtBrowser.setCookie(value, url);
     }
 
     /**
@@ -161,7 +161,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public void addAuthenticationListener(AuthenticationListener listener) {
-        getDelegate().addAuthenticationListener(listener);
+        getImpl().addAuthenticationListener(listener);
     }
 
     /**
@@ -186,7 +186,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addCloseWindowListener(CloseWindowListener listener) {
-        getDelegate().addCloseWindowListener(listener);
+        getImpl().addCloseWindowListener(listener);
     }
 
     /**
@@ -212,7 +212,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addLocationListener(LocationListener listener) {
-        getDelegate().addLocationListener(listener);
+        getImpl().addLocationListener(listener);
     }
 
     /**
@@ -237,7 +237,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addOpenWindowListener(OpenWindowListener listener) {
-        getDelegate().addOpenWindowListener(listener);
+        getImpl().addOpenWindowListener(listener);
     }
 
     /**
@@ -259,7 +259,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addProgressListener(ProgressListener listener) {
-        getDelegate().addProgressListener(listener);
+        getImpl().addProgressListener(listener);
     }
 
     /**
@@ -284,7 +284,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addStatusTextListener(StatusTextListener listener) {
-        getDelegate().addStatusTextListener(listener);
+        getImpl().addStatusTextListener(listener);
     }
 
     /**
@@ -306,7 +306,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addTitleListener(TitleListener listener) {
-        getDelegate().addTitleListener(listener);
+        getImpl().addTitleListener(listener);
     }
 
     /**
@@ -328,7 +328,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addVisibilityWindowListener(VisibilityWindowListener listener) {
-        getDelegate().addVisibilityWindowListener(listener);
+        getImpl().addVisibilityWindowListener(listener);
     }
 
     /**
@@ -346,11 +346,11 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public boolean back() {
-        return getDelegate().back();
+        return getImpl().back();
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -379,7 +379,7 @@ public class Browser extends Composite {
      * @since 3.1
      */
     public boolean execute(String script) {
-        return getDelegate().execute(script);
+        return getImpl().execute(script);
     }
 
     /**
@@ -399,7 +399,7 @@ public class Browser extends Composite {
      * @since 3.6
      */
     public boolean close() {
-        return getDelegate().close();
+        return getImpl().close();
     }
 
     /**
@@ -447,7 +447,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public Object evaluate(String script) throws SWTException {
-        return getDelegate().evaluate(script);
+        return getImpl().evaluate(script);
     }
 
     /**
@@ -496,7 +496,7 @@ public class Browser extends Composite {
      * @see ProgressListener#completed(ProgressEvent)
      */
     public Object evaluate(String script, boolean trusted) throws SWTException {
-        return getDelegate().evaluate(script, trusted);
+        return getImpl().evaluate(script, trusted);
     }
 
     /**
@@ -514,7 +514,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public boolean forward() {
-        return getDelegate().forward();
+        return getImpl().forward();
     }
 
     /**
@@ -526,7 +526,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public String getBrowserType() {
-        return getDelegate().getBrowserType();
+        return getImpl().getBrowserType();
     }
 
     /**
@@ -548,11 +548,11 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public boolean getJavascriptEnabled() {
-        return getDelegate().getJavascriptEnabled();
+        return getImpl().getJavascriptEnabled();
     }
 
     public int getStyle() {
-        return getDelegate().getStyle();
+        return getImpl().getStyle();
     }
 
     /**
@@ -574,7 +574,7 @@ public class Browser extends Composite {
      * @since 3.4
      */
     public String getText() {
-        return getDelegate().getText();
+        return getImpl().getText();
     }
 
     /**
@@ -592,7 +592,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public String getUrl() {
-        return getDelegate().getUrl();
+        return getImpl().getUrl();
     }
 
     /**
@@ -611,7 +611,7 @@ public class Browser extends Composite {
      */
     @Deprecated
     public Object getWebBrowser() {
-        return getDelegate().getWebBrowser();
+        return getImpl().getWebBrowser();
     }
 
     /**
@@ -628,11 +628,11 @@ public class Browser extends Composite {
      * @see #back
      */
     public boolean isBackEnabled() {
-        return getDelegate().isBackEnabled();
+        return getImpl().isBackEnabled();
     }
 
     public boolean isFocusControl() {
-        return getDelegate().isFocusControl();
+        return getImpl().isFocusControl();
     }
 
     /**
@@ -649,7 +649,7 @@ public class Browser extends Composite {
      * @see #forward
      */
     public boolean isForwardEnabled() {
-        return getDelegate().isForwardEnabled();
+        return getImpl().isForwardEnabled();
     }
 
     /**
@@ -663,7 +663,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void refresh() {
-        getDelegate().refresh();
+        getImpl().refresh();
     }
 
     /**
@@ -684,7 +684,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public void removeAuthenticationListener(AuthenticationListener listener) {
-        getDelegate().removeAuthenticationListener(listener);
+        getImpl().removeAuthenticationListener(listener);
     }
 
     /**
@@ -705,7 +705,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeCloseWindowListener(CloseWindowListener listener) {
-        getDelegate().removeCloseWindowListener(listener);
+        getImpl().removeCloseWindowListener(listener);
     }
 
     /**
@@ -726,7 +726,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeLocationListener(LocationListener listener) {
-        getDelegate().removeLocationListener(listener);
+        getImpl().removeLocationListener(listener);
     }
 
     /**
@@ -747,7 +747,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeOpenWindowListener(OpenWindowListener listener) {
-        getDelegate().removeOpenWindowListener(listener);
+        getImpl().removeOpenWindowListener(listener);
     }
 
     /**
@@ -769,7 +769,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeProgressListener(ProgressListener listener) {
-        getDelegate().removeProgressListener(listener);
+        getImpl().removeProgressListener(listener);
     }
 
     /**
@@ -790,7 +790,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeStatusTextListener(StatusTextListener listener) {
-        getDelegate().removeStatusTextListener(listener);
+        getImpl().removeStatusTextListener(listener);
     }
 
     /**
@@ -812,7 +812,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeTitleListener(TitleListener listener) {
-        getDelegate().removeTitleListener(listener);
+        getImpl().removeTitleListener(listener);
     }
 
     /**
@@ -834,7 +834,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeVisibilityWindowListener(VisibilityWindowListener listener) {
-        getDelegate().removeVisibilityWindowListener(listener);
+        getImpl().removeVisibilityWindowListener(listener);
     }
 
     /**
@@ -852,7 +852,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public void setJavascriptEnabled(boolean enabled) {
-        getDelegate().setJavascriptEnabled(enabled);
+        getImpl().setJavascriptEnabled(enabled);
     }
 
     /**
@@ -883,7 +883,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public boolean setText(String html) {
-        return getDelegate().setText(html);
+        return getImpl().setText(html);
     }
 
     /**
@@ -923,7 +923,7 @@ public class Browser extends Composite {
      * @since 3.6
      */
     public boolean setText(String html, boolean trusted) {
-        return getDelegate().setText(html, trusted);
+        return getImpl().setText(html, trusted);
     }
 
     /**
@@ -948,7 +948,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public boolean setUrl(String url) {
-        return getDelegate().setUrl(url);
+        return getImpl().setUrl(url);
     }
 
     /**
@@ -978,7 +978,7 @@ public class Browser extends Composite {
      * @since 3.6
      */
     public boolean setUrl(String url, String postData, String[] headers) {
-        return getDelegate().setUrl(url, postData, headers);
+        return getImpl().setUrl(url, postData, headers);
     }
 
     /**
@@ -992,18 +992,18 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void stop() {
-        getDelegate().stop();
+        getImpl().stop();
     }
 
-    protected Browser(IBrowser delegate) {
-        super(delegate);
+    protected Browser(IBrowser impl) {
+        super(impl);
     }
 
-    public static Browser createApi(IBrowser delegate) {
-        return new Browser(delegate);
+    public static Browser createApi(IBrowser impl) {
+        return new Browser(impl);
     }
 
-    public IBrowser getDelegate() {
-        return (IBrowser) super.getDelegate();
+    public IBrowser getImpl() {
+        return (IBrowser) super.getImpl();
     }
 }

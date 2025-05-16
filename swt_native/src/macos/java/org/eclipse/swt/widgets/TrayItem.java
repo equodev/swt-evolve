@@ -72,7 +72,7 @@ public class TrayItem extends Item {
      * @see Widget#getStyle
      */
     public TrayItem(Tray parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.TrayItem((nat.org.eclipse.swt.widgets.Tray) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtTrayItem(parent, style));
     }
 
     /**
@@ -97,7 +97,7 @@ public class TrayItem extends Item {
      * @since 3.3
      */
     public void addMenuDetectListener(MenuDetectListener listener) {
-        getDelegate().addMenuDetectListener(listener);
+        getImpl().addMenuDetectListener(listener);
     }
 
     /**
@@ -125,11 +125,11 @@ public class TrayItem extends Item {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -146,8 +146,7 @@ public class TrayItem extends Item {
      * @since 3.8
      */
     public Image getHighlightImage() {
-        IImage ret = getDelegate().getHighlightImage();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getHighlightImage();
     }
 
     /**
@@ -163,8 +162,7 @@ public class TrayItem extends Item {
      * @since 3.2
      */
     public Tray getParent() {
-        ITray ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     /**
@@ -181,8 +179,7 @@ public class TrayItem extends Item {
      * @since 3.2
      */
     public ToolTip getToolTip() {
-        IToolTip ret = getDelegate().getToolTip();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getToolTip();
     }
 
     /**
@@ -197,7 +194,7 @@ public class TrayItem extends Item {
      * </ul>
      */
     public String getToolTipText() {
-        return getDelegate().getToolTipText();
+        return getImpl().getToolTipText();
     }
 
     /**
@@ -212,7 +209,7 @@ public class TrayItem extends Item {
      * </ul>
      */
     public boolean getVisible() {
-        return getDelegate().getVisible();
+        return getImpl().getVisible();
     }
 
     /**
@@ -236,7 +233,7 @@ public class TrayItem extends Item {
      * @since 3.3
      */
     public void removeMenuDetectListener(MenuDetectListener listener) {
-        getDelegate().removeMenuDetectListener(listener);
+        getImpl().removeMenuDetectListener(listener);
     }
 
     /**
@@ -257,7 +254,7 @@ public class TrayItem extends Item {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -274,7 +271,7 @@ public class TrayItem extends Item {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -293,7 +290,7 @@ public class TrayItem extends Item {
      * @since 3.8
      */
     public void setHighlightImage(Image image) {
-        getDelegate().setHighlightImage((image != null ? image.getDelegate() : null));
+        getImpl().setHighlightImage(image);
     }
 
     /**
@@ -310,7 +307,7 @@ public class TrayItem extends Item {
      * @since 3.2
      */
     public void setToolTip(ToolTip toolTip) {
-        getDelegate().setToolTip((toolTip != null ? toolTip.getDelegate() : null));
+        getImpl().setToolTip(toolTip);
     }
 
     /**
@@ -339,7 +336,7 @@ public class TrayItem extends Item {
      * </ul>
      */
     public void setToolTipText(String string) {
-        getDelegate().setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
     /**
@@ -354,18 +351,18 @@ public class TrayItem extends Item {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        getDelegate().setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
-    protected TrayItem(ITrayItem delegate) {
-        super(delegate);
+    protected TrayItem(ITrayItem impl) {
+        super(impl);
     }
 
-    public static TrayItem createApi(ITrayItem delegate) {
-        return new TrayItem(delegate);
+    public static TrayItem createApi(ITrayItem impl) {
+        return new TrayItem(impl);
     }
 
-    public ITrayItem getDelegate() {
-        return (ITrayItem) super.getDelegate();
+    public ITrayItem getImpl() {
+        return (ITrayItem) super.getImpl();
     }
 }

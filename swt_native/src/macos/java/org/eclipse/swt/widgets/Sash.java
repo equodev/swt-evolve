@@ -75,7 +75,7 @@ public class Sash extends Control {
      * @see Widget#getStyle
      */
     public Sash(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Sash((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtSash(parent, style));
     }
 
     /**
@@ -104,12 +104,11 @@ public class Sash extends Control {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -130,18 +129,18 @@ public class Sash extends Control {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
-    protected Sash(ISash delegate) {
-        super(delegate);
+    protected Sash(ISash impl) {
+        super(impl);
     }
 
-    public static Sash createApi(ISash delegate) {
-        return new Sash(delegate);
+    public static Sash createApi(ISash impl) {
+        return new Sash(impl);
     }
 
-    public ISash getDelegate() {
-        return (ISash) super.getDelegate();
+    public ISash getImpl() {
+        return (ISash) super.getImpl();
     }
 }

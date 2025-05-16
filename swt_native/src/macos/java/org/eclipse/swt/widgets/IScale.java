@@ -31,7 +31,7 @@ public interface IScale extends IControl {
      */
     void addSelectionListener(SelectionListener listener);
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Returns the amount that the receiver's value will be

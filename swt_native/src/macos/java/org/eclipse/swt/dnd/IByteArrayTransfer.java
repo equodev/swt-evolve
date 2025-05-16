@@ -2,9 +2,9 @@ package org.eclipse.swt.dnd;
 
 public interface IByteArrayTransfer extends ITransfer {
 
-    ITransferData[] getSupportedTypes();
+    TransferData[] getSupportedTypes();
 
-    boolean isSupportedType(ITransferData transferData);
+    boolean isSupportedType(TransferData transferData);
 
     /**
      * This implementation of <code>javaToNative</code> converts a java
@@ -16,7 +16,7 @@ public interface IByteArrayTransfer extends ITransfer {
      *
      * @see Transfer#nativeToJava
      */
-    void javaToNative(Object object, ITransferData transferData);
+    void javaToNative(Object object, TransferData transferData);
 
     /**
      * This implementation of <code>nativeToJava</code> converts a platform specific
@@ -28,7 +28,7 @@ public interface IByteArrayTransfer extends ITransfer {
      *
      * @see Transfer#javaToNative
      */
-    Object nativeToJava(ITransferData transferData);
+    Object nativeToJava(TransferData transferData);
 
     ByteArrayTransfer getApi();
 }

@@ -45,8 +45,7 @@ public class ImageTransfer extends ByteArrayTransfer {
      * @return the singleton instance of the ImageTransfer class
      */
     public static ImageTransfer getInstance() {
-        IImageTransfer ret = nat.org.eclipse.swt.dnd.ImageTransfer.getInstance();
-        return ret != null ? ret.getApi() : null;
+        return SwtImageTransfer.getInstance();
     }
 
     /**
@@ -60,7 +59,7 @@ public class ImageTransfer extends ByteArrayTransfer {
      * @see Transfer#nativeToJava
      */
     public void javaToNative(Object object, TransferData transferData) {
-        getDelegate().javaToNative(object, (transferData != null ? transferData.getDelegate() : null));
+        getImpl().javaToNative(object, transferData);
     }
 
     /**
@@ -74,30 +73,30 @@ public class ImageTransfer extends ByteArrayTransfer {
      * @see Transfer#javaToNative
      */
     public Object nativeToJava(TransferData transferData) {
-        return getDelegate().nativeToJava((transferData != null ? transferData.getDelegate() : null));
+        return getImpl().nativeToJava(transferData);
     }
 
     protected int[] getTypeIds() {
-        return getDelegate().getTypeIds();
+        return getImpl().getTypeIds();
     }
 
     protected String[] getTypeNames() {
-        return getDelegate().getTypeNames();
+        return getImpl().getTypeNames();
     }
 
     protected boolean validate(Object object) {
-        return getDelegate().validate(object);
+        return getImpl().validate(object);
     }
 
-    protected ImageTransfer(IImageTransfer delegate) {
-        super(delegate);
+    protected ImageTransfer(IImageTransfer impl) {
+        super(impl);
     }
 
-    public static ImageTransfer createApi(IImageTransfer delegate) {
-        return new ImageTransfer(delegate);
+    public static ImageTransfer createApi(IImageTransfer impl) {
+        return new ImageTransfer(impl);
     }
 
-    public IImageTransfer getDelegate() {
-        return (IImageTransfer) super.getDelegate();
+    public IImageTransfer getImpl() {
+        return (IImageTransfer) super.getImpl();
     }
 }

@@ -189,7 +189,7 @@ public final class RowLayout extends Layout {
      * Constructs a new instance of this class with type HORIZONTAL.
      */
     public RowLayout() {
-        this(new nat.org.eclipse.swt.layout.RowLayout());
+        this(new SwtRowLayout());
     }
 
     /**
@@ -200,20 +200,19 @@ public final class RowLayout extends Layout {
      * @since 2.0
      */
     public RowLayout(int type) {
-        this(new nat.org.eclipse.swt.layout.RowLayout(type));
+        this(new SwtRowLayout(type));
     }
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-        IPoint ret = getDelegate().computeSize((composite != null ? composite.getDelegate() : null), wHint, hHint, flushCache);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(composite, wHint, hHint, flushCache);
     }
 
     protected boolean flushCache(Control control) {
-        return getDelegate().flushCache((control != null ? control.getDelegate() : null));
+        return getImpl().flushCache(control);
     }
 
     protected void layout(Composite composite, boolean flushCache) {
-        getDelegate().layout((composite != null ? composite.getDelegate() : null), flushCache);
+        getImpl().layout(composite, flushCache);
     }
 
     /**
@@ -223,18 +222,18 @@ public final class RowLayout extends Layout {
      * @return a string representation of the layout
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected RowLayout(IRowLayout delegate) {
-        super(delegate);
+    protected RowLayout(IRowLayout impl) {
+        super(impl);
     }
 
-    public static RowLayout createApi(IRowLayout delegate) {
-        return new RowLayout(delegate);
+    public static RowLayout createApi(IRowLayout impl) {
+        return new RowLayout(impl);
     }
 
-    public IRowLayout getDelegate() {
-        return (IRowLayout) super.getDelegate();
+    public IRowLayout getImpl() {
+        return (IRowLayout) super.getImpl();
     }
 }

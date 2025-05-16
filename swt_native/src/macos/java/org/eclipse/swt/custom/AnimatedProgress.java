@@ -63,7 +63,7 @@ public class AnimatedProgress extends Canvas {
      * @see #getStyle()
      */
     public AnimatedProgress(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.custom.AnimatedProgress((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtAnimatedProgress(parent, style));
     }
 
     /**
@@ -76,12 +76,11 @@ public class AnimatedProgress extends Canvas {
      * </ul>
      */
     public synchronized void clear() {
-        getDelegate().clear();
+        getImpl().clear();
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -93,25 +92,25 @@ public class AnimatedProgress extends Canvas {
      * </ul>
      */
     public synchronized void start() {
-        getDelegate().start();
+        getImpl().start();
     }
 
     /**
      * Stop the animation.   Freeze the presentation at its current appearance.
      */
     public synchronized void stop() {
-        getDelegate().stop();
+        getImpl().stop();
     }
 
-    protected AnimatedProgress(IAnimatedProgress delegate) {
-        super(delegate);
+    protected AnimatedProgress(IAnimatedProgress impl) {
+        super(impl);
     }
 
-    public static AnimatedProgress createApi(IAnimatedProgress delegate) {
-        return new AnimatedProgress(delegate);
+    public static AnimatedProgress createApi(IAnimatedProgress impl) {
+        return new AnimatedProgress(impl);
     }
 
-    public IAnimatedProgress getDelegate() {
-        return (IAnimatedProgress) super.getDelegate();
+    public IAnimatedProgress getImpl() {
+        return (IAnimatedProgress) super.getImpl();
     }
 }

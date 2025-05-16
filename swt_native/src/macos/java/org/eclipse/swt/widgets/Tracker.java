@@ -19,7 +19,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Convert;
 
 /**
  *  Instances of this class implement rubber banding rectangles that are
@@ -81,7 +80,7 @@ public class Tracker extends Widget {
      * @see Widget#getStyle
      */
     public Tracker(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Tracker((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtTracker(parent, style));
     }
 
     /**
@@ -120,7 +119,7 @@ public class Tracker extends Widget {
      * @see SWT#RESIZE
      */
     public Tracker(Display display, int style) {
-        this(new nat.org.eclipse.swt.widgets.Tracker((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null), style));
+        this(new SwtTracker(display, style));
     }
 
     /**
@@ -143,7 +142,7 @@ public class Tracker extends Widget {
      * @see #removeControlListener
      */
     public void addControlListener(ControlListener listener) {
-        getDelegate().addControlListener(listener);
+        getImpl().addControlListener(listener);
     }
 
     /**
@@ -166,7 +165,7 @@ public class Tracker extends Widget {
      * @see #removeKeyListener
      */
     public void addKeyListener(KeyListener listener) {
-        getDelegate().addKeyListener(listener);
+        getImpl().addKeyListener(listener);
     }
 
     /**
@@ -179,7 +178,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public void close() {
-        getDelegate().close();
+        getImpl().close();
     }
 
     /**
@@ -195,7 +194,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public Rectangle[] getRectangles() {
-        return Convert.array(getDelegate().getRectangles(), IRectangle::getApi, Rectangle[]::new);
+        return getImpl().getRectangles();
     }
 
     /**
@@ -209,7 +208,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public boolean getStippled() {
-        return getDelegate().getStippled();
+        return getImpl().getStippled();
     }
 
     /**
@@ -225,7 +224,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public boolean open() {
-        return getDelegate().open();
+        return getImpl().open();
     }
 
     /**
@@ -246,7 +245,7 @@ public class Tracker extends Widget {
      * @see #addControlListener
      */
     public void removeControlListener(ControlListener listener) {
-        getDelegate().removeControlListener(listener);
+        getImpl().removeControlListener(listener);
     }
 
     /**
@@ -267,7 +266,7 @@ public class Tracker extends Widget {
      * @see #addKeyListener
      */
     public void removeKeyListener(KeyListener listener) {
-        getDelegate().removeKeyListener(listener);
+        getImpl().removeKeyListener(listener);
     }
 
     /**
@@ -282,7 +281,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public void setCursor(Cursor newCursor) {
-        getDelegate().setCursor((newCursor != null ? newCursor.getDelegate() : null));
+        getImpl().setCursor(newCursor);
     }
 
     /**
@@ -300,7 +299,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public void setRectangles(Rectangle[] rectangles) {
-        getDelegate().setRectangles(Convert.array(rectangles, Rectangle::getDelegate, IRectangle[]::new));
+        getImpl().setRectangles(rectangles);
     }
 
     /**
@@ -314,18 +313,18 @@ public class Tracker extends Widget {
      * </ul>
      */
     public void setStippled(boolean stippled) {
-        getDelegate().setStippled(stippled);
+        getImpl().setStippled(stippled);
     }
 
-    protected Tracker(ITracker delegate) {
-        super(delegate);
+    protected Tracker(ITracker impl) {
+        super(impl);
     }
 
-    public static Tracker createApi(ITracker delegate) {
-        return new Tracker(delegate);
+    public static Tracker createApi(ITracker impl) {
+        return new Tracker(impl);
     }
 
-    public ITracker getDelegate() {
-        return (ITracker) super.getDelegate();
+    public ITracker getImpl() {
+        return (ITracker) super.getImpl();
     }
 }

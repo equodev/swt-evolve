@@ -78,21 +78,19 @@ public class Group extends Composite {
      * @see Widget#getStyle
      */
     public Group(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Group((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtGroup(parent, style));
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeTrim(x, y, width, height);
     }
 
     public Rectangle getClientArea() {
-        IRectangle ret = getDelegate().getClientArea();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getClientArea();
     }
 
     /**
@@ -108,7 +106,7 @@ public class Group extends Composite {
      * </ul>
      */
     public String getText() {
-        return getDelegate().getText();
+        return getImpl().getText();
     }
 
     /**
@@ -139,18 +137,18 @@ public class Group extends Composite {
      * </ul>
      */
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
-    protected Group(IGroup delegate) {
-        super(delegate);
+    protected Group(IGroup impl) {
+        super(impl);
     }
 
-    public static Group createApi(IGroup delegate) {
-        return new Group(delegate);
+    public static Group createApi(IGroup impl) {
+        return new Group(impl);
     }
 
-    public IGroup getDelegate() {
-        return (IGroup) super.getDelegate();
+    public IGroup getImpl() {
+        return (IGroup) super.getImpl();
     }
 }

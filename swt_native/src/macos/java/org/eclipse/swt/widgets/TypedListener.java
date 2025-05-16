@@ -42,7 +42,7 @@ public class TypedListener implements Listener {
     /**
      * The receiver's event listener
      */
-    public EventListener eventListener;
+    protected EventListener eventListener;
 
     /**
      * Constructs a new instance of this class for the given event listener.
@@ -61,7 +61,7 @@ public class TypedListener implements Listener {
         eventListener = listener;
     }
 
-    public TypedListener(EventListener listener) {
+    TypedListener(EventListener listener) {
         eventListener = listener;
     }
 

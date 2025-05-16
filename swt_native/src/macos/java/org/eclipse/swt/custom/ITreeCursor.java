@@ -40,7 +40,7 @@ public interface ITreeCursor extends ICanvas {
      *
      * @return the receiver's background color
      */
-    IColor getBackground();
+    Color getBackground();
 
     /**
      * Returns the index of the column over which the TreeCursor is positioned.
@@ -59,7 +59,7 @@ public interface ITreeCursor extends ICanvas {
      *
      * @return the receiver's foreground color
      */
-    IColor getForeground();
+    Color getForeground();
 
     /**
      * Returns the row over which the TreeCursor is positioned.
@@ -71,7 +71,7 @@ public interface ITreeCursor extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITreeItem getRow();
+    TreeItem getRow();
 
     /**
      * Removes the listener from the collection of listeners who will be notified when the
@@ -110,7 +110,7 @@ public interface ITreeCursor extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setBackground(IColor color);
+    void setBackground(Color color);
 
     /**
      * Sets the receiver's foreground color to the color specified
@@ -129,7 +129,7 @@ public interface ITreeCursor extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setForeground(IColor color);
+    void setForeground(Color color);
 
     /**
      * Positions the TreeCursor over the root-level cell at the given row and column in the parent tree.
@@ -155,7 +155,7 @@ public interface ITreeCursor extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSelection(ITreeItem row, int column);
+    void setSelection(TreeItem row, int column);
 
     void setVisible(boolean visible);
 

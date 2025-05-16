@@ -69,7 +69,7 @@ public class TabItem extends Item {
      * @see Widget#getStyle
      */
     public TabItem(TabFolder parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.TabItem((nat.org.eclipse.swt.widgets.TabFolder) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtTabItem(parent, style));
     }
 
     /**
@@ -105,11 +105,11 @@ public class TabItem extends Item {
      * @see Widget#getStyle
      */
     public TabItem(TabFolder parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.TabItem((nat.org.eclipse.swt.widgets.TabFolder) (parent != null ? parent.getDelegate() : null), style, index));
+        this(new SwtTabItem(parent, style, index));
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -126,8 +126,7 @@ public class TabItem extends Item {
      * @since 3.4
      */
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     /**
@@ -143,8 +142,7 @@ public class TabItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        IControl ret = getDelegate().getControl();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getControl();
     }
 
     /**
@@ -158,8 +156,7 @@ public class TabItem extends Item {
      * </ul>
      */
     public TabFolder getParent() {
-        ITabFolder ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     /**
@@ -174,7 +171,7 @@ public class TabItem extends Item {
      * </ul>
      */
     public String getToolTipText() {
-        return getDelegate().getToolTipText();
+        return getImpl().getToolTipText();
     }
 
     /**
@@ -193,11 +190,11 @@ public class TabItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        getDelegate().setControl((control != null ? control.getDelegate() : null));
+        getImpl().setControl(control);
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -225,7 +222,7 @@ public class TabItem extends Item {
      * </ul>
      */
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -254,18 +251,18 @@ public class TabItem extends Item {
      * </ul>
      */
     public void setToolTipText(String string) {
-        getDelegate().setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
-    protected TabItem(ITabItem delegate) {
-        super(delegate);
+    protected TabItem(ITabItem impl) {
+        super(impl);
     }
 
-    public static TabItem createApi(ITabItem delegate) {
-        return new TabItem(delegate);
+    public static TabItem createApi(ITabItem impl) {
+        return new TabItem(impl);
     }
 
-    public ITabItem getDelegate() {
-        return (ITabItem) super.getDelegate();
+    public ITabItem getImpl() {
+        return (ITabItem) super.getImpl();
     }
 }

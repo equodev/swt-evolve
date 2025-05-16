@@ -8,7 +8,7 @@ import org.eclipse.swt.widgets.*;
 
 public interface ICLabel extends ICanvas {
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Returns the horizontal alignment.
@@ -32,7 +32,7 @@ public interface ICLabel extends ICanvas {
      *
      * @return the image of the label or null
      */
-    IImage getImage();
+    Image getImage();
 
     /**
      * Return the CLabel's left margin.
@@ -86,7 +86,7 @@ public interface ICLabel extends ICanvas {
      */
     void setAlignment(int align);
 
-    void setBackground(IColor color);
+    void setBackground(Color color);
 
     /**
      *  Specify a gradient of colours to be drawn in the background of the CLabel.
@@ -115,7 +115,7 @@ public interface ICLabel extends ICanvas {
      *     <li>ERROR_INVALID_ARGUMENT - if the values of colors and percents are not consistent</li>
      *  </ul>
      */
-    void setBackground(IColor[] colors, int[] percents);
+    void setBackground(Color[] colors, int[] percents);
 
     /**
      *  Specify a gradient of colours to be drawn in the background of the CLabel.
@@ -145,7 +145,7 @@ public interface ICLabel extends ICanvas {
      *
      *  @since 3.0
      */
-    void setBackground(IColor[] colors, int[] percents, boolean vertical);
+    void setBackground(Color[] colors, int[] percents, boolean vertical);
 
     /**
      * Set the image to be drawn in the background of the label.
@@ -157,7 +157,7 @@ public interface ICLabel extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setBackground(IImage image);
+    void setBackground(Image image);
 
     /**
      * Set the label's bottom margin, in points.
@@ -173,7 +173,7 @@ public interface ICLabel extends ICanvas {
      */
     void setBottomMargin(int bottomMargin);
 
-    void setFont(IFont font);
+    void setFont(Font font);
 
     /**
      * Set the label's Image.
@@ -186,7 +186,7 @@ public interface ICLabel extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setImage(IImage image);
+    void setImage(Image image);
 
     /**
      * Set the label's horizontal left margin, in points.
@@ -285,7 +285,7 @@ public interface ICLabel extends ICanvas {
      * @param width the width to shorten the text to, in points
      * @return the shortened text
      */
-    String shortenText(IGC gc, String t, int width);
+    String shortenText(GC gc, String t, int width);
 
     CLabel getApi();
 }

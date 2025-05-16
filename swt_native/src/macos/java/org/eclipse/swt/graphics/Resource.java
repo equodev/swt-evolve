@@ -54,7 +54,7 @@ public abstract class Resource {
      * This method does nothing if the resource is already disposed.
      */
     public void dispose() {
-        getDelegate().dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -66,8 +66,7 @@ public abstract class Resource {
      * @since 3.2
      */
     public Device getDevice() {
-        IDevice ret = getDelegate().getDevice();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getDevice();
     }
 
     /**
@@ -97,17 +96,17 @@ public abstract class Resource {
      * @since 3.116
      */
     public static void setNonDisposeHandler(Consumer<Error> reporter) {
-        nat.org.eclipse.swt.graphics.Resource.setNonDisposeHandler(reporter);
+        SwtResource.setNonDisposeHandler(reporter);
     }
 
-    IResource delegate;
+    IResource impl;
 
-    protected Resource(IResource delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected Resource(IResource impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public IResource getDelegate() {
-        return delegate;
+    public IResource getImpl() {
+        return impl;
     }
 }

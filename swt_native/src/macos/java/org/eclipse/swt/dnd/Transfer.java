@@ -131,7 +131,7 @@ public abstract class Transfer {
      * @return the unique identifier associated with this data type
      */
     public static int registerType(String formatName) {
-        return nat.org.eclipse.swt.dnd.Transfer.registerType(formatName);
+        return SwtTransfer.registerType(formatName);
     }
 
     /**
@@ -144,20 +144,20 @@ public abstract class Transfer {
      * @since 3.1
      */
     protected boolean validate(Object object) {
-        return getDelegate().validate(object);
+        return getImpl().validate(object);
     }
 
     public Transfer() {
     }
 
-    ITransfer delegate;
+    ITransfer impl;
 
-    protected Transfer(ITransfer delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected Transfer(ITransfer impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public ITransfer getDelegate() {
-        return delegate;
+    public ITransfer getImpl() {
+        return impl;
     }
 }

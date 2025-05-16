@@ -27,7 +27,7 @@ public interface ICanvas extends IComposite {
      *
      * @since 3.2
      */
-    void drawBackground(IGC gc, int x, int y, int width, int height);
+    void drawBackground(GC gc, int x, int y, int width, int height);
 
     /**
      * Returns the caret.
@@ -47,7 +47,7 @@ public interface ICanvas extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ICaret getCaret();
+    Caret getCaret();
 
     /**
      * Returns the IME.
@@ -61,7 +61,7 @@ public interface ICanvas extends IComposite {
      *
      * @since 3.4
      */
-    IIME getIME();
+    IME getIME();
 
     /**
      * Scrolls a rectangular area of the receiver by first copying
@@ -107,9 +107,9 @@ public interface ICanvas extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setCaret(ICaret caret);
+    void setCaret(Caret caret);
 
-    void setFont(IFont font);
+    void setFont(Font font);
 
     /**
      * Sets the receiver's IME.
@@ -126,7 +126,7 @@ public interface ICanvas extends IComposite {
      *
      * @since 3.4
      */
-    void setIME(IIME ime);
+    void setIME(IME ime);
 
     Canvas getApi();
 }

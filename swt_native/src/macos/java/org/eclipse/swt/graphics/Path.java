@@ -82,7 +82,7 @@ public class Path extends Resource {
      * @see #dispose()
      */
     public Path(Device device) {
-        this(new nat.org.eclipse.swt.graphics.Path((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null)));
+        this(new SwtPath(device));
     }
 
     /**
@@ -120,7 +120,7 @@ public class Path extends Resource {
      * @since 3.4
      */
     public Path(Device device, Path path, float flatness) {
-        this(new nat.org.eclipse.swt.graphics.Path((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), (nat.org.eclipse.swt.graphics.Path) (path != null ? path.getDelegate() : null), flatness));
+        this(new SwtPath(device, path, flatness));
     }
 
     /**
@@ -152,7 +152,7 @@ public class Path extends Resource {
      * @since 3.4
      */
     public Path(Device device, PathData data) {
-        this(new nat.org.eclipse.swt.graphics.Path((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), (nat.org.eclipse.swt.graphics.PathData) (data != null ? data.getDelegate() : null)));
+        this(new SwtPath(device, data));
     }
 
     /**
@@ -185,7 +185,7 @@ public class Path extends Resource {
      * </ul>
      */
     public void addArc(float x, float y, float width, float height, float startAngle, float arcAngle) {
-        getDelegate().addArc(x, y, width, height, startAngle, arcAngle);
+        getImpl().addArc(x, y, width, height, startAngle, arcAngle);
     }
 
     /**
@@ -202,7 +202,7 @@ public class Path extends Resource {
      * </ul>
      */
     public void addPath(Path path) {
-        getDelegate().addPath((path != null ? path.getDelegate() : null));
+        getImpl().addPath(path);
     }
 
     /**
@@ -218,7 +218,7 @@ public class Path extends Resource {
      * </ul>
      */
     public void addRectangle(float x, float y, float width, float height) {
-        getDelegate().addRectangle(x, y, width, height);
+        getImpl().addRectangle(x, y, width, height);
     }
 
     /**
@@ -239,7 +239,7 @@ public class Path extends Resource {
      * </ul>
      */
     public void addString(String string, float x, float y, Font font) {
-        getDelegate().addString(string, x, y, (font != null ? font.getDelegate() : null));
+        getImpl().addString(string, x, y, font);
     }
 
     /**
@@ -252,7 +252,7 @@ public class Path extends Resource {
      * </ul>
      */
     public void close() {
-        getDelegate().close();
+        getImpl().close();
     }
 
     /**
@@ -279,7 +279,7 @@ public class Path extends Resource {
      * </ul>
      */
     public boolean contains(float x, float y, GC gc, boolean outline) {
-        return getDelegate().contains(x, y, (gc != null ? gc.getDelegate() : null), outline);
+        return getImpl().contains(x, y, gc, outline);
     }
 
     /**
@@ -297,7 +297,7 @@ public class Path extends Resource {
      * </ul>
      */
     public void cubicTo(float cx1, float cy1, float cx2, float cy2, float x, float y) {
-        getDelegate().cubicTo(cx1, cy1, cx2, cy2, x, y);
+        getImpl().cubicTo(cx1, cy1, cx2, cy2, x, y);
     }
 
     /**
@@ -316,7 +316,7 @@ public class Path extends Resource {
      * </ul>
      */
     public void getBounds(float[] bounds) {
-        getDelegate().getBounds(bounds);
+        getImpl().getBounds(bounds);
     }
 
     /**
@@ -334,7 +334,7 @@ public class Path extends Resource {
      * </ul>
      */
     public void getCurrentPoint(float[] point) {
-        getDelegate().getCurrentPoint(point);
+        getImpl().getCurrentPoint(point);
     }
 
     /**
@@ -349,8 +349,7 @@ public class Path extends Resource {
      * @see PathData
      */
     public PathData getPathData() {
-        IPathData ret = getDelegate().getPathData();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getPathData();
     }
 
     /**
@@ -364,7 +363,7 @@ public class Path extends Resource {
      * @return <code>true</code> when the Path is disposed, and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return getDelegate().isDisposed();
+        return getImpl().isDisposed();
     }
 
     /**
@@ -379,7 +378,7 @@ public class Path extends Resource {
      * </ul>
      */
     public void lineTo(float x, float y) {
-        getDelegate().lineTo(x, y);
+        getImpl().lineTo(x, y);
     }
 
     /**
@@ -395,7 +394,7 @@ public class Path extends Resource {
      * </ul>
      */
     public void moveTo(float x, float y) {
-        getDelegate().moveTo(x, y);
+        getImpl().moveTo(x, y);
     }
 
     /**
@@ -411,7 +410,7 @@ public class Path extends Resource {
      * </ul>
      */
     public void quadTo(float cx, float cy, float x, float y) {
-        getDelegate().quadTo(cx, cy, x, y);
+        getImpl().quadTo(cx, cy, x, y);
     }
 
     /**
@@ -421,18 +420,18 @@ public class Path extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected Path(IPath delegate) {
-        super(delegate);
+    protected Path(IPath impl) {
+        super(impl);
     }
 
-    public static Path createApi(IPath delegate) {
-        return new Path(delegate);
+    public static Path createApi(IPath impl) {
+        return new Path(impl);
     }
 
-    public IPath getDelegate() {
-        return (IPath) super.getDelegate();
+    public IPath getImpl() {
+        return (IPath) super.getImpl();
     }
 }

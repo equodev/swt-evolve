@@ -80,7 +80,7 @@ public interface ICTabFolder extends IComposite {
     void addSelectionListener(SelectionListener listener);
 
     //}
-    IRectangle computeTrim(int x, int y, int width, int height);
+    Rectangle computeTrim(int x, int y, int width, int height);
 
     /**
      * Returns <code>true</code> if the receiver's border is visible.
@@ -96,7 +96,7 @@ public interface ICTabFolder extends IComposite {
      */
     boolean getBorderVisible();
 
-    IRectangle getClientArea();
+    Rectangle getClientArea();
 
     /**
      * Return the tab that is located at the specified index.
@@ -112,7 +112,7 @@ public interface ICTabFolder extends IComposite {
      *    <li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
      * </ul>
      */
-    ICTabItem getItem(int index);
+    CTabItem getItem(int index);
 
     /**
      *  Gets the item at a point in the widget.
@@ -125,7 +125,7 @@ public interface ICTabFolder extends IComposite {
      * 		<li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
      * 	</ul>
      */
-    ICTabItem getItem(IPoint pt);
+    CTabItem getItem(Point pt);
 
     /**
      *  Return the number of tabs in the folder.
@@ -149,7 +149,7 @@ public interface ICTabFolder extends IComposite {
      * 		<li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
      * 	</ul>
      */
-    ICTabItem[] getItems();
+    CTabItem[] getItems();
 
     /**
      * Returns <code>true</code> if the receiver is minimized.
@@ -265,7 +265,7 @@ public interface ICTabFolder extends IComposite {
      *
      *  @since 3.6
      */
-    ICTabFolderRenderer getRenderer();
+    CTabFolderRenderer getRenderer();
 
     /**
      *  Return the selected tab item, or null if there is no selection.
@@ -277,7 +277,7 @@ public interface ICTabFolder extends IComposite {
      * 		<li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
      * 	</ul>
      */
-    ICTabItem getSelection();
+    CTabItem getSelection();
 
     /**
      * Returns the receiver's selection background color.
@@ -291,7 +291,7 @@ public interface ICTabFolder extends IComposite {
      *
      * @since 3.0
      */
-    IColor getSelectionBackground();
+    Color getSelectionBackground();
 
     /**
      * Returns the receiver's selection foreground color.
@@ -305,7 +305,7 @@ public interface ICTabFolder extends IComposite {
      *
      * @since 3.0
      */
-    IColor getSelectionForeground();
+    Color getSelectionForeground();
 
     /**
      *  Return the index of the selected tab item, or -1 if there
@@ -379,7 +379,7 @@ public interface ICTabFolder extends IComposite {
      *
      *  @since 2.1
      */
-    IControl getTopRight();
+    Control getTopRight();
 
     /**
      *  Returns the alignment of the top right control.
@@ -443,7 +443,7 @@ public interface ICTabFolder extends IComposite {
      *    <li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
      * </ul>
      */
-    int indexOf(ICTabItem item);
+    int indexOf(CTabItem item);
 
     /**
      * Removes the listener.
@@ -504,7 +504,7 @@ public interface ICTabFolder extends IComposite {
 
     void reskin(int flags);
 
-    void setBackground(IColor color);
+    void setBackground(Color color);
 
     /**
      *  Specify a gradient of colors to be drawn in the background of the unselected tabs.
@@ -533,7 +533,7 @@ public interface ICTabFolder extends IComposite {
      *
      *  @since 3.6
      */
-    void setBackground(IColor[] colors, int[] percents);
+    void setBackground(Color[] colors, int[] percents);
 
     /**
      *  Specify a gradient of colors to be drawn in the background of the unselected tab.
@@ -564,9 +564,9 @@ public interface ICTabFolder extends IComposite {
      *
      *  @since 3.6
      */
-    void setBackground(IColor[] colors, int[] percents, boolean vertical);
+    void setBackground(Color[] colors, int[] percents, boolean vertical);
 
-    void setBackgroundImage(IImage image);
+    void setBackgroundImage(Image image);
 
     /**
      * Toggle the visibility of the border
@@ -582,9 +582,9 @@ public interface ICTabFolder extends IComposite {
 
     boolean setFocus();
 
-    void setFont(IFont font);
+    void setFont(Font font);
 
-    void setForeground(IColor color);
+    void setForeground(Color color);
 
     /**
      * Display an insert marker before or after the specified tab item.
@@ -600,7 +600,7 @@ public interface ICTabFolder extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setInsertMark(ICTabItem item, boolean after);
+    void setInsertMark(CTabItem item, boolean after);
 
     /**
      * Display an insert marker before or after the specified tab item.
@@ -652,7 +652,7 @@ public interface ICTabFolder extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setLayout(ILayout layout);
+    void setLayout(Layout layout);
 
     /**
      * Sets the maximized state of the receiver.
@@ -757,7 +757,7 @@ public interface ICTabFolder extends IComposite {
      *
      *  @since 3.6
      */
-    void setRenderer(ICTabFolderRenderer renderer);
+    void setRenderer(CTabFolderRenderer renderer);
 
     /**
      * Set the selection to the tab at the specified item.
@@ -773,7 +773,7 @@ public interface ICTabFolder extends IComposite {
      *    <li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
      * </ul>
      */
-    void setSelection(ICTabItem item);
+    void setSelection(CTabItem item);
 
     /**
      * Set the selection to the tab at the specified index.
@@ -804,7 +804,7 @@ public interface ICTabFolder extends IComposite {
      *
      * @since 3.0
      */
-    void setSelectionBackground(IColor color);
+    void setSelectionBackground(Color color);
 
     /**
      *  Specify a gradient of colours to be draw in the background of the selected tab.
@@ -831,7 +831,7 @@ public interface ICTabFolder extends IComposite {
      * 		<li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
      * 	</ul>
      */
-    void setSelectionBackground(IColor[] colors, int[] percents);
+    void setSelectionBackground(Color[] colors, int[] percents);
 
     /**
      *  Specify a gradient of colours to be draw in the background of the selected tab.
@@ -862,7 +862,7 @@ public interface ICTabFolder extends IComposite {
      *
      *  @since 3.0
      */
-    void setSelectionBackground(IColor[] colors, int[] percents, boolean vertical);
+    void setSelectionBackground(Color[] colors, int[] percents, boolean vertical);
 
     /**
      * Set the image to be drawn in the background of the selected tab.  Image
@@ -875,7 +875,7 @@ public interface ICTabFolder extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSelectionBackground(IImage image);
+    void setSelectionBackground(Image image);
 
     /**
      * Set the foreground color of the selected tab.
@@ -887,7 +887,7 @@ public interface ICTabFolder extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSelectionForeground(IColor color);
+    void setSelectionForeground(Color color);
 
     /**
      * Sets the thickness of the highlight bar on the selected tab. The highlight bar is drawn in the top margin of the selected tab.
@@ -979,7 +979,7 @@ public interface ICTabFolder extends IComposite {
      *
      * @since 2.1
      */
-    void setTopRight(IControl control);
+    void setTopRight(Control control);
 
     /**
      * Set the control that appears in the top right corner of the tab folder.
@@ -1007,7 +1007,7 @@ public interface ICTabFolder extends IComposite {
      *
      * @since 3.0
      */
-    void setTopRight(IControl control, int alignment);
+    void setTopRight(Control control, int alignment);
 
     /**
      * Specify whether the close button appears
@@ -1072,7 +1072,7 @@ public interface ICTabFolder extends IComposite {
      *
      * @since 2.0
      */
-    void showItem(ICTabItem item);
+    void showItem(CTabItem item);
 
     /**
      * Shows the selection.  If the selection is already showing in the receiver,

@@ -30,21 +30,21 @@ public class DeviceData {
     public Object[] objects;
 
     public DeviceData() {
-        this(new nat.org.eclipse.swt.graphics.DeviceData());
+        this(new SwtDeviceData());
     }
 
-    IDeviceData delegate;
+    IDeviceData impl;
 
-    protected DeviceData(IDeviceData delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected DeviceData(IDeviceData impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static DeviceData createApi(IDeviceData delegate) {
-        return new DeviceData(delegate);
+    public static DeviceData createApi(IDeviceData impl) {
+        return new DeviceData(impl);
     }
 
-    public IDeviceData getDelegate() {
-        return delegate;
+    public IDeviceData getImpl() {
+        return impl;
     }
 }

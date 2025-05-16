@@ -221,7 +221,7 @@ public final class PrinterData extends DeviceData {
      * @see Printer#getDefaultPrinterData
      */
     public PrinterData() {
-        this(new nat.org.eclipse.swt.printing.PrinterData());
+        this(new SwtPrinterData());
     }
 
     /**
@@ -235,7 +235,7 @@ public final class PrinterData extends DeviceData {
      * @see #name
      */
     public PrinterData(String driver, String name) {
-        this(new nat.org.eclipse.swt.printing.PrinterData(driver, name));
+        this(new SwtPrinterData(driver, name));
     }
 
     /**
@@ -245,18 +245,18 @@ public final class PrinterData extends DeviceData {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected PrinterData(IPrinterData delegate) {
-        super(delegate);
+    protected PrinterData(IPrinterData impl) {
+        super(impl);
     }
 
-    public static PrinterData createApi(IPrinterData delegate) {
-        return new PrinterData(delegate);
+    public static PrinterData createApi(IPrinterData impl) {
+        return new PrinterData(impl);
     }
 
-    public IPrinterData getDelegate() {
-        return (IPrinterData) super.getDelegate();
+    public IPrinterData getImpl() {
+        return (IPrinterData) super.getImpl();
     }
 }

@@ -163,20 +163,19 @@ public final class FormLayout extends Layout {
      * Constructs a new instance of this class.
      */
     public FormLayout() {
-        this(new nat.org.eclipse.swt.layout.FormLayout());
+        this(new SwtFormLayout());
     }
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-        IPoint ret = getDelegate().computeSize((composite != null ? composite.getDelegate() : null), wHint, hHint, flushCache);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(composite, wHint, hHint, flushCache);
     }
 
     protected boolean flushCache(Control control) {
-        return getDelegate().flushCache((control != null ? control.getDelegate() : null));
+        return getImpl().flushCache(control);
     }
 
     protected void layout(Composite composite, boolean flushCache) {
-        getDelegate().layout((composite != null ? composite.getDelegate() : null), flushCache);
+        getImpl().layout(composite, flushCache);
     }
 
     /**
@@ -186,18 +185,18 @@ public final class FormLayout extends Layout {
      * @return a string representation of the layout
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected FormLayout(IFormLayout delegate) {
-        super(delegate);
+    protected FormLayout(IFormLayout impl) {
+        super(impl);
     }
 
-    public static FormLayout createApi(IFormLayout delegate) {
-        return new FormLayout(delegate);
+    public static FormLayout createApi(IFormLayout impl) {
+        return new FormLayout(impl);
     }
 
-    public IFormLayout getDelegate() {
-        return (IFormLayout) super.getDelegate();
+    public IFormLayout getImpl() {
+        return (IFormLayout) super.getImpl();
     }
 }

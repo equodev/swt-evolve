@@ -72,7 +72,7 @@ public class Bullet {
      * </ul>
      */
     public Bullet(StyleRange style) {
-        this(new nat.org.eclipse.swt.custom.Bullet((nat.org.eclipse.swt.custom.StyleRange) (style != null ? style.getDelegate() : null)));
+        this(new SwtBullet(style));
     }
 
     /**
@@ -87,25 +87,25 @@ public class Bullet {
      * </ul>
      */
     public Bullet(int type, StyleRange style) {
-        this(new nat.org.eclipse.swt.custom.Bullet(type, (nat.org.eclipse.swt.custom.StyleRange) (style != null ? style.getDelegate() : null)));
+        this(new SwtBullet(type, style));
     }
 
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
-    IBullet delegate;
+    IBullet impl;
 
-    protected Bullet(IBullet delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected Bullet(IBullet impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static Bullet createApi(IBullet delegate) {
-        return new Bullet(delegate);
+    public static Bullet createApi(IBullet impl) {
+        return new Bullet(impl);
     }
 
-    public IBullet getDelegate() {
-        return delegate;
+    public IBullet getImpl() {
+        return impl;
     }
 }

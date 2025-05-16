@@ -32,7 +32,7 @@ public interface IScrollable extends IControl {
      *
      * @see #getClientArea
      */
-    IRectangle computeTrim(int x, int y, int width, int height);
+    Rectangle computeTrim(int x, int y, int width, int height);
 
     /**
      * Returns a rectangle which describes the area of the
@@ -48,7 +48,7 @@ public interface IScrollable extends IControl {
      *
      * @see #computeTrim
      */
-    IRectangle getClientArea();
+    Rectangle getClientArea();
 
     /**
      * Returns the receiver's horizontal scroll bar if it has
@@ -61,7 +61,7 @@ public interface IScrollable extends IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IScrollBar getHorizontalBar();
+    ScrollBar getHorizontalBar();
 
     /**
      * Returns the mode of the receiver's scrollbars. This will be
@@ -122,7 +122,7 @@ public interface IScrollable extends IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IScrollBar getVerticalBar();
+    ScrollBar getVerticalBar();
 
     Scrollable getApi();
 }

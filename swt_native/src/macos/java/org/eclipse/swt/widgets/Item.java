@@ -100,7 +100,7 @@ public abstract class Item extends Widget {
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -115,8 +115,7 @@ public abstract class Item extends Widget {
      * </ul>
      */
     public Image getImage() {
-        IImage ret = getDelegate().getImage();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getImage();
     }
 
     /**
@@ -131,7 +130,7 @@ public abstract class Item extends Widget {
      * </ul>
      */
     public String getText() {
-        return getDelegate().getText();
+        return getImpl().getText();
     }
 
     /**
@@ -149,7 +148,7 @@ public abstract class Item extends Widget {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -169,14 +168,14 @@ public abstract class Item extends Widget {
      * </ul>
      */
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
-    protected Item(IItem delegate) {
-        super(delegate);
+    protected Item(IItem impl) {
+        super(impl);
     }
 
-    public IItem getDelegate() {
-        return (IItem) super.getDelegate();
+    public IItem getImpl() {
+        return (IItem) super.getImpl();
     }
 }

@@ -16,7 +16,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class represent the system task bar.
@@ -53,8 +52,7 @@ public class TaskBar extends Widget {
      * </ul>
      */
     public TaskItem getItem(int index) {
-        ITaskItem ret = getDelegate().getItem(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getItem(index);
     }
 
     /**
@@ -68,7 +66,7 @@ public class TaskBar extends Widget {
      * </ul>
      */
     public int getItemCount() {
-        return getDelegate().getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -85,8 +83,7 @@ public class TaskBar extends Widget {
      * </ul>
      */
     public TaskItem getItem(Shell shell) {
-        ITaskItem ret = getDelegate().getItem((shell != null ? shell.getDelegate() : null));
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getItem(shell);
     }
 
     /**
@@ -106,18 +103,18 @@ public class TaskBar extends Widget {
      * </ul>
      */
     public TaskItem[] getItems() {
-        return Convert.array(getDelegate().getItems(), ITaskItem::getApi, TaskItem[]::new);
+        return getImpl().getItems();
     }
 
-    protected TaskBar(ITaskBar delegate) {
-        super(delegate);
+    protected TaskBar(ITaskBar impl) {
+        super(impl);
     }
 
-    public static TaskBar createApi(ITaskBar delegate) {
-        return new TaskBar(delegate);
+    public static TaskBar createApi(ITaskBar impl) {
+        return new TaskBar(impl);
     }
 
-    public ITaskBar getDelegate() {
-        return (ITaskBar) super.getDelegate();
+    public ITaskBar getImpl() {
+        return (ITaskBar) super.getImpl();
     }
 }

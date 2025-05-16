@@ -147,7 +147,7 @@ public final class GridLayout extends Layout {
      * with a single column.
      */
     public GridLayout() {
-        this(new nat.org.eclipse.swt.layout.GridLayout());
+        this(new SwtGridLayout());
     }
 
     /**
@@ -163,20 +163,19 @@ public final class GridLayout extends Layout {
      * @since 2.0
      */
     public GridLayout(int numColumns, boolean makeColumnsEqualWidth) {
-        this(new nat.org.eclipse.swt.layout.GridLayout(numColumns, makeColumnsEqualWidth));
+        this(new SwtGridLayout(numColumns, makeColumnsEqualWidth));
     }
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-        IPoint ret = getDelegate().computeSize((composite != null ? composite.getDelegate() : null), wHint, hHint, flushCache);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(composite, wHint, hHint, flushCache);
     }
 
     protected boolean flushCache(Control control) {
-        return getDelegate().flushCache((control != null ? control.getDelegate() : null));
+        return getImpl().flushCache(control);
     }
 
     protected void layout(Composite composite, boolean flushCache) {
-        getDelegate().layout((composite != null ? composite.getDelegate() : null), flushCache);
+        getImpl().layout(composite, flushCache);
     }
 
     /**
@@ -186,18 +185,18 @@ public final class GridLayout extends Layout {
      * @return a string representation of the layout
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected GridLayout(IGridLayout delegate) {
-        super(delegate);
+    protected GridLayout(IGridLayout impl) {
+        super(impl);
     }
 
-    public static GridLayout createApi(IGridLayout delegate) {
-        return new GridLayout(delegate);
+    public static GridLayout createApi(IGridLayout impl) {
+        return new GridLayout(impl);
     }
 
-    public IGridLayout getDelegate() {
-        return (IGridLayout) super.getDelegate();
+    public IGridLayout getImpl() {
+        return (IGridLayout) super.getImpl();
     }
 }

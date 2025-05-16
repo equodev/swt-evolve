@@ -18,7 +18,7 @@ public interface ITaskItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IMenu getMenu();
+    Menu getMenu();
 
     /**
      * Returns the receiver's overlay image if it has one, or null
@@ -31,7 +31,7 @@ public interface ITaskItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IImage getOverlayImage();
+    Image getOverlayImage();
 
     /**
      * Returns the receiver's overlay text, which will be an empty
@@ -56,7 +56,7 @@ public interface ITaskItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITaskBar getParent();
+    TaskBar getParent();
 
     /**
      * Returns the receiver's progress.
@@ -113,7 +113,7 @@ public interface ITaskItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setMenu(IMenu menu);
+    void setMenu(Menu menu);
 
     /**
      * Sets the receiver's overlay image, which may be null
@@ -142,7 +142,7 @@ public interface ITaskItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setOverlayImage(IImage overlayImage);
+    void setOverlayImage(Image overlayImage);
 
     /**
      * Sets the receiver's overlay text. The space available to display the

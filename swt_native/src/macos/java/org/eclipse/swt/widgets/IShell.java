@@ -45,9 +45,9 @@ public interface IShell extends IDecorations {
      */
     void close();
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
-    IRectangle computeTrim(int x, int y, int width, int height);
+    Rectangle computeTrim(int x, int y, int width, int height);
 
     /**
      * If the receiver is visible, moves it to the top of the
@@ -87,9 +87,9 @@ public interface IShell extends IDecorations {
      */
     int getAlpha();
 
-    IRectangle getBounds();
+    Rectangle getBounds();
 
-    IRectangle getClientArea();
+    Rectangle getClientArea();
 
     /**
      * Returns <code>true</code> if the receiver is currently
@@ -125,7 +125,7 @@ public interface IShell extends IDecorations {
      */
     int getImeInputMode();
 
-    IPoint getLocation();
+    Point getLocation();
 
     boolean getMaximized();
 
@@ -160,7 +160,7 @@ public interface IShell extends IDecorations {
      *
      * @since 3.116
      */
-    IPoint getMaximumSize();
+    Point getMaximumSize();
 
     /**
      * Returns a point describing the minimum receiver's size. The
@@ -177,7 +177,7 @@ public interface IShell extends IDecorations {
      *
      * @since 3.1
      */
-    IPoint getMinimumSize();
+    Point getMinimumSize();
 
     /**
      * Returns the region that defines the shape of the shell,
@@ -192,9 +192,9 @@ public interface IShell extends IDecorations {
      *
      * @since 3.0
      */
-    IRegion getRegion();
+    Region getRegion();
 
-    IShell getShell();
+    Shell getShell();
 
     /**
      * Returns an array containing all shells which are
@@ -207,9 +207,9 @@ public interface IShell extends IDecorations {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IShell[] getShells();
+    Shell[] getShells();
 
-    IPoint getSize();
+    Point getSize();
 
     /**
      * Returns a ToolBar object representing the tool bar that can be shown in the receiver's
@@ -226,7 +226,7 @@ public interface IShell extends IDecorations {
      *
      * @since 3.7
      */
-    IToolBar getToolBar();
+    ToolBar getToolBar();
 
     boolean isEnabled();
 
@@ -255,7 +255,7 @@ public interface IShell extends IDecorations {
      */
     void open();
 
-    boolean print(IGC gc);
+    boolean print(GC gc);
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -348,7 +348,7 @@ public interface IShell extends IDecorations {
      */
     void setFullScreen(boolean fullScreen);
 
-    void setMenuBar(IMenu menu);
+    void setMenuBar(Menu menu);
 
     /**
      * Sets the input method editor mode to the argument which
@@ -414,7 +414,7 @@ public interface IShell extends IDecorations {
      *
      * @since 3.116
      */
-    void setMaximumSize(IPoint size);
+    void setMaximumSize(Point size);
 
     void setMinimized(boolean minimized);
 
@@ -452,7 +452,7 @@ public interface IShell extends IDecorations {
      *
      * @since 3.1
      */
-    void setMinimumSize(IPoint size);
+    void setMinimumSize(Point size);
 
     /**
      * Sets the receiver's modified state as specified by the argument.
@@ -492,7 +492,7 @@ public interface IShell extends IDecorations {
      *
      * @since 3.0
      */
-    void setRegion(IRegion region);
+    void setRegion(Region region);
 
     void setText(String string);
 

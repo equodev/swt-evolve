@@ -74,21 +74,21 @@ public final class Touch {
      * @return a string representation of the event
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    ITouch delegate;
+    ITouch impl;
 
-    protected Touch(ITouch delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected Touch(ITouch impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static Touch createApi(ITouch delegate) {
-        return new Touch(delegate);
+    public static Touch createApi(ITouch impl) {
+        return new Touch(impl);
     }
 
-    public ITouch getDelegate() {
-        return delegate;
+    public ITouch getImpl() {
+        return impl;
     }
 }

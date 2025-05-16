@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class support the layout of selectable
@@ -79,7 +78,7 @@ public class ExpandBar extends Composite {
      * @see Widget#getStyle
      */
     public ExpandBar(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.ExpandBar((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtExpandBar(parent, style));
     }
 
     /**
@@ -102,21 +101,19 @@ public class ExpandBar extends Composite {
      * @see #removeExpandListener
      */
     public void addExpandListener(ExpandListener listener) {
-        getDelegate().addExpandListener(listener);
+        getImpl().addExpandListener(listener);
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     public Color getForeground() {
-        IColor ret = getDelegate().getForeground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getForeground();
     }
 
     /**
@@ -135,8 +132,7 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public ExpandItem getItem(int index) {
-        IExpandItem ret = getDelegate().getItem(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getItem(index);
     }
 
     /**
@@ -150,7 +146,7 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public int getItemCount() {
-        return getDelegate().getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -170,7 +166,7 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public ExpandItem[] getItems() {
-        return Convert.array(getDelegate().getItems(), IExpandItem::getApi, ExpandItem[]::new);
+        return getImpl().getItems();
     }
 
     /**
@@ -184,7 +180,7 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public int getSpacing() {
-        return getDelegate().getSpacing();
+        return getImpl().getSpacing();
     }
 
     /**
@@ -206,7 +202,7 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public int indexOf(ExpandItem item) {
-        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
+        return getImpl().indexOf(item);
     }
 
     /**
@@ -227,15 +223,15 @@ public class ExpandBar extends Composite {
      * @see #addExpandListener
      */
     public void removeExpandListener(ExpandListener listener) {
-        getDelegate().removeExpandListener(listener);
+        getImpl().removeExpandListener(listener);
     }
 
     public void setFont(Font font) {
-        getDelegate().setFont((font != null ? font.getDelegate() : null));
+        getImpl().setFont(font);
     }
 
     public void setForeground(Color color) {
-        getDelegate().setForeground((color != null ? color.getDelegate() : null));
+        getImpl().setForeground(color);
     }
 
     /**
@@ -250,18 +246,18 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public void setSpacing(int spacing) {
-        getDelegate().setSpacing(spacing);
+        getImpl().setSpacing(spacing);
     }
 
-    protected ExpandBar(IExpandBar delegate) {
-        super(delegate);
+    protected ExpandBar(IExpandBar impl) {
+        super(impl);
     }
 
-    public static ExpandBar createApi(IExpandBar delegate) {
-        return new ExpandBar(delegate);
+    public static ExpandBar createApi(IExpandBar impl) {
+        return new ExpandBar(impl);
     }
 
-    public IExpandBar getDelegate() {
-        return (IExpandBar) super.getDelegate();
+    public IExpandBar getImpl() {
+        return (IExpandBar) super.getImpl();
     }
 }

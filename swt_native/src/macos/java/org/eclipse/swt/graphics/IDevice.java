@@ -56,7 +56,7 @@ public interface IDevice {
      *
      * @see #init
      */
-    void create(IDeviceData data);
+    void create(DeviceData data);
 
     /**
      * Disposes of the operating system resources associated with
@@ -97,7 +97,7 @@ public interface IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IRectangle getBounds();
+    Rectangle getBounds();
 
     /**
      * Returns a <code>DeviceData</code> based on the receiver.
@@ -112,7 +112,7 @@ public interface IDevice {
      *
      * @see DeviceData
      */
-    IDeviceData getDeviceData();
+    DeviceData getDeviceData();
 
     /**
      * Returns a rectangle which describes the area of the
@@ -126,7 +126,7 @@ public interface IDevice {
      *
      * @see #getBounds
      */
-    IRectangle getClientArea();
+    Rectangle getClientArea();
 
     /**
      * Returns the bit depth of the screen, which is the number of
@@ -153,7 +153,7 @@ public interface IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IPoint getDPI();
+    Point getDPI();
 
     /**
      * Returns <code>FontData</code> objects which describe
@@ -168,7 +168,7 @@ public interface IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IFontData[] getFontList(String faceName, boolean scalable);
+    FontData[] getFontList(String faceName, boolean scalable);
 
     /**
      * Returns the matching standard color for the given
@@ -188,7 +188,7 @@ public interface IDevice {
      *
      * @see SWT
      */
-    IColor getSystemColor(int id);
+    Color getSystemColor(int id);
 
     /**
      * Returns a reasonable font for applications to use.
@@ -210,7 +210,7 @@ public interface IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IFont getSystemFont();
+    Font getSystemFont();
 
     /**
      * Returns <code>true</code> if the underlying window system prints out
@@ -254,7 +254,7 @@ public interface IDevice {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    abstract long internal_new_GC(org.eclipse.swt.graphics.GCData data);
+    abstract long internal_new_GC(GCData data);
 
     /**
      * Invokes platform specific functionality to dispose a GC handle.
@@ -271,7 +271,7 @@ public interface IDevice {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    abstract void internal_dispose_GC(long hDC, org.eclipse.swt.graphics.GCData data);
+    abstract void internal_dispose_GC(long hDC, GCData data);
 
     /**
      * Returns <code>true</code> if the device has been disposed,

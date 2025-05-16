@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class provide the appearance and
@@ -141,11 +140,11 @@ public class Decorations extends Canvas {
      * @see Widget#getStyle
      */
     public Decorations(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Decorations((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtDecorations(parent, style));
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -162,8 +161,7 @@ public class Decorations extends Canvas {
      * @see #setDefaultButton(Button)
      */
     public Button getDefaultButton() {
-        IButton ret = getDelegate().getDefaultButton();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getDefaultButton();
     }
 
     /**
@@ -188,8 +186,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public Image getImage() {
-        IImage ret = getDelegate().getImage();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getImage();
     }
 
     /**
@@ -220,7 +217,7 @@ public class Decorations extends Canvas {
      * @since 3.0
      */
     public Image[] getImages() {
-        return Convert.array(getDelegate().getImages(), IImage::getApi, Image[]::new);
+        return getImpl().getImages();
     }
 
     /**
@@ -237,7 +234,7 @@ public class Decorations extends Canvas {
      * @see #setMaximized
      */
     public boolean getMaximized() {
-        return getDelegate().getMaximized();
+        return getImpl().getMaximized();
     }
 
     /**
@@ -252,8 +249,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public Menu getMenuBar() {
-        IMenu ret = getDelegate().getMenuBar();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getMenuBar();
     }
 
     /**
@@ -270,7 +266,7 @@ public class Decorations extends Canvas {
      * @see #setMinimized
      */
     public boolean getMinimized() {
-        return getDelegate().getMinimized();
+        return getImpl().getMinimized();
     }
 
     /**
@@ -287,11 +283,11 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public String getText() {
-        return getDelegate().getText();
+        return getImpl().getText();
     }
 
     public boolean isReparentable() {
-        return getDelegate().isReparentable();
+        return getImpl().isReparentable();
     }
 
     /**
@@ -320,7 +316,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public void setDefaultButton(Button button) {
-        getDelegate().setDefaultButton((button != null ? button.getDelegate() : null));
+        getImpl().setDefaultButton(button);
     }
 
     /**
@@ -341,7 +337,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -369,7 +365,7 @@ public class Decorations extends Canvas {
      * @since 3.0
      */
     public void setImages(Image[] images) {
-        getDelegate().setImages(Convert.array(images, Image::getDelegate, IImage[]::new));
+        getImpl().setImages(images);
     }
 
     /**
@@ -396,7 +392,7 @@ public class Decorations extends Canvas {
      * @see #setMinimized
      */
     public void setMaximized(boolean maximized) {
-        getDelegate().setMaximized(maximized);
+        getImpl().setMaximized(maximized);
     }
 
     /**
@@ -415,7 +411,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public void setMenuBar(Menu menu) {
-        getDelegate().setMenuBar((menu != null ? menu.getDelegate() : null));
+        getImpl().setMenuBar(menu);
     }
 
     /**
@@ -442,7 +438,7 @@ public class Decorations extends Canvas {
      * @see #setMaximized
      */
     public void setMinimized(boolean minimized) {
-        getDelegate().setMinimized(minimized);
+        getImpl().setMinimized(minimized);
     }
 
     /**
@@ -465,18 +461,18 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
-    protected Decorations(IDecorations delegate) {
-        super(delegate);
+    protected Decorations(IDecorations impl) {
+        super(impl);
     }
 
-    public static Decorations createApi(IDecorations delegate) {
-        return new Decorations(delegate);
+    public static Decorations createApi(IDecorations impl) {
+        return new Decorations(impl);
     }
 
-    public IDecorations getDelegate() {
-        return (IDecorations) super.getDelegate();
+    public IDecorations getImpl() {
+        return (IDecorations) super.getImpl();
     }
 }

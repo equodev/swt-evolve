@@ -53,7 +53,7 @@ public class DragSourceEffect extends DragSourceAdapter {
      * </ul>
      */
     public DragSourceEffect(Control control) {
-        this(new nat.org.eclipse.swt.dnd.DragSourceEffect((nat.org.eclipse.swt.widgets.Control) (control != null ? control.getDelegate() : null)));
+        this(new SwtDragSourceEffect(control));
     }
 
     /**
@@ -63,19 +63,18 @@ public class DragSourceEffect extends DragSourceAdapter {
      * @return the Control which is registered for this DragSourceEffect
      */
     public Control getControl() {
-        IControl ret = getDelegate().getControl();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getControl();
     }
 
-    protected DragSourceEffect(IDragSourceEffect delegate) {
-        super(delegate);
+    protected DragSourceEffect(IDragSourceEffect impl) {
+        super(impl);
     }
 
-    public static DragSourceEffect createApi(IDragSourceEffect delegate) {
-        return new DragSourceEffect(delegate);
+    public static DragSourceEffect createApi(IDragSourceEffect impl) {
+        return new DragSourceEffect(impl);
     }
 
-    public IDragSourceEffect getDelegate() {
-        return (IDragSourceEffect) super.getDelegate();
+    public IDragSourceEffect getImpl() {
+        return (IDragSourceEffect) super.getImpl();
     }
 }

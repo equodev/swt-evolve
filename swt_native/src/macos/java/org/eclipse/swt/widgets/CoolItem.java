@@ -69,7 +69,7 @@ public class CoolItem extends Item {
      * @see Widget#getStyle
      */
     public CoolItem(CoolBar parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.CoolItem((nat.org.eclipse.swt.widgets.CoolBar) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtCoolItem(parent, style));
     }
 
     /**
@@ -105,7 +105,7 @@ public class CoolItem extends Item {
      * @see Widget#getStyle
      */
     public CoolItem(CoolBar parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.CoolItem((nat.org.eclipse.swt.widgets.CoolBar) (parent != null ? parent.getDelegate() : null), style, index));
+        this(new SwtCoolItem(parent, style, index));
     }
 
     /**
@@ -139,11 +139,11 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -174,12 +174,11 @@ public class CoolItem extends Item {
      * @see Scrollable#getClientArea
      */
     public Point computeSize(int wHint, int hHint) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint);
     }
 
     public void dispose() {
-        getDelegate().dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -194,8 +193,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     /**
@@ -209,8 +207,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        IControl ret = getDelegate().getControl();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getControl();
     }
 
     /**
@@ -227,8 +224,7 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public Point getMinimumSize() {
-        IPoint ret = getDelegate().getMinimumSize();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getMinimumSize();
     }
 
     /**
@@ -242,8 +238,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public CoolBar getParent() {
-        ICoolBar ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     /**
@@ -259,8 +254,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Point getPreferredSize() {
-        IPoint ret = getDelegate().getPreferredSize();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getPreferredSize();
     }
 
     /**
@@ -277,8 +271,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Point getSize() {
-        IPoint ret = getDelegate().getSize();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getSize();
     }
 
     /**
@@ -301,7 +294,7 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -320,7 +313,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        getDelegate().setControl((control != null ? control.getDelegate() : null));
+        getImpl().setControl(control);
     }
 
     /**
@@ -338,7 +331,7 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void setMinimumSize(int width, int height) {
-        getDelegate().setMinimumSize(width, height);
+        getImpl().setMinimumSize(width, height);
     }
 
     /**
@@ -358,7 +351,7 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void setMinimumSize(Point size) {
-        getDelegate().setMinimumSize((size != null ? size.getDelegate() : null));
+        getImpl().setMinimumSize(size);
     }
 
     /**
@@ -373,7 +366,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setPreferredSize(int width, int height) {
-        getDelegate().setPreferredSize(width, height);
+        getImpl().setPreferredSize(width, height);
     }
 
     /**
@@ -390,7 +383,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setPreferredSize(Point size) {
-        getDelegate().setPreferredSize((size != null ? size.getDelegate() : null));
+        getImpl().setPreferredSize(size);
     }
 
     /**
@@ -410,7 +403,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setSize(int width, int height) {
-        getDelegate().setSize(width, height);
+        getImpl().setSize(width, height);
     }
 
     /**
@@ -432,18 +425,18 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setSize(Point size) {
-        getDelegate().setSize((size != null ? size.getDelegate() : null));
+        getImpl().setSize(size);
     }
 
-    protected CoolItem(ICoolItem delegate) {
-        super(delegate);
+    protected CoolItem(ICoolItem impl) {
+        super(impl);
     }
 
-    public static CoolItem createApi(ICoolItem delegate) {
-        return new CoolItem(delegate);
+    public static CoolItem createApi(ICoolItem impl) {
+        return new CoolItem(impl);
     }
 
-    public ICoolItem getDelegate() {
-        return (ICoolItem) super.getDelegate();
+    public ICoolItem getImpl() {
+        return (ICoolItem) super.getImpl();
     }
 }

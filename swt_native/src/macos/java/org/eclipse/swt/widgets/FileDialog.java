@@ -56,7 +56,7 @@ public class FileDialog extends Dialog {
      * </ul>
      */
     public FileDialog(Shell parent) {
-        this(new nat.org.eclipse.swt.widgets.FileDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
+        this(new SwtFileDialog(parent));
     }
 
     /**
@@ -88,7 +88,7 @@ public class FileDialog extends Dialog {
      * @see SWT#MULTI
      */
     public FileDialog(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.FileDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtFileDialog(parent, style));
     }
 
     /**
@@ -99,7 +99,7 @@ public class FileDialog extends Dialog {
      * @return the relative path of the file
      */
     public String getFileName() {
-        return getDelegate().getFileName();
+        return getImpl().getFileName();
     }
 
     /**
@@ -109,7 +109,7 @@ public class FileDialog extends Dialog {
      * @return the relative paths of the files
      */
     public String[] getFileNames() {
-        return getDelegate().getFileNames();
+        return getImpl().getFileNames();
     }
 
     /**
@@ -119,7 +119,7 @@ public class FileDialog extends Dialog {
      * @return the file extensions filter
      */
     public String[] getFilterExtensions() {
-        return getDelegate().getFilterExtensions();
+        return getImpl().getFilterExtensions();
     }
 
     /**
@@ -139,7 +139,7 @@ public class FileDialog extends Dialog {
      * @since 3.4
      */
     public int getFilterIndex() {
-        return getDelegate().getFilterIndex();
+        return getImpl().getFilterIndex();
     }
 
     /**
@@ -149,7 +149,7 @@ public class FileDialog extends Dialog {
      * @return the list of filter names
      */
     public String[] getFilterNames() {
-        return getDelegate().getFilterNames();
+        return getImpl().getFilterNames();
     }
 
     /**
@@ -162,7 +162,7 @@ public class FileDialog extends Dialog {
      * @see #setFilterExtensions
      */
     public String getFilterPath() {
-        return getDelegate().getFilterPath();
+        return getImpl().getFilterPath();
     }
 
     /**
@@ -175,7 +175,7 @@ public class FileDialog extends Dialog {
      * @since 3.4
      */
     public boolean getOverwrite() {
-        return getDelegate().getOverwrite();
+        return getImpl().getOverwrite();
     }
 
     /**
@@ -191,7 +191,7 @@ public class FileDialog extends Dialog {
      * </ul>
      */
     public String open() {
-        return getDelegate().open();
+        return getImpl().open();
     }
 
     /**
@@ -210,7 +210,7 @@ public class FileDialog extends Dialog {
      * @since 3.126
      */
     public Optional<String> openDialog() {
-        return getDelegate().openDialog();
+        return getImpl().openDialog();
     }
 
     /**
@@ -222,7 +222,7 @@ public class FileDialog extends Dialog {
      * @param string the file name
      */
     public void setFileName(String string) {
-        getDelegate().setFileName(string);
+        getImpl().setFileName(string);
     }
 
     /**
@@ -251,7 +251,7 @@ public class FileDialog extends Dialog {
      * names corresponding to the extensions
      */
     public void setFilterExtensions(String[] extensions) {
-        getDelegate().setFilterExtensions(extensions);
+        getImpl().setFilterExtensions(extensions);
     }
 
     /**
@@ -271,7 +271,7 @@ public class FileDialog extends Dialog {
      * @since 3.4
      */
     public void setFilterIndex(int index) {
-        getDelegate().setFilterIndex(index);
+        getImpl().setFilterIndex(index);
     }
 
     /**
@@ -289,7 +289,7 @@ public class FileDialog extends Dialog {
      * @see #setFilterExtensions
      */
     public void setFilterNames(String[] names) {
-        getDelegate().setFilterNames(names);
+        getImpl().setFilterNames(names);
     }
 
     /**
@@ -310,7 +310,7 @@ public class FileDialog extends Dialog {
      * @see #setFilterExtensions
      */
     public void setFilterPath(String string) {
-        getDelegate().setFilterPath(string);
+        getImpl().setFilterPath(string);
     }
 
     /**
@@ -328,18 +328,18 @@ public class FileDialog extends Dialog {
      * @since 3.4
      */
     public void setOverwrite(boolean overwrite) {
-        getDelegate().setOverwrite(overwrite);
+        getImpl().setOverwrite(overwrite);
     }
 
-    protected FileDialog(IFileDialog delegate) {
-        super(delegate);
+    protected FileDialog(IFileDialog impl) {
+        super(impl);
     }
 
-    public static FileDialog createApi(IFileDialog delegate) {
-        return new FileDialog(delegate);
+    public static FileDialog createApi(IFileDialog impl) {
+        return new FileDialog(impl);
     }
 
-    public IFileDialog getDelegate() {
-        return (IFileDialog) super.getDelegate();
+    public IFileDialog getImpl() {
+        return (IFileDialog) super.getImpl();
     }
 }

@@ -68,7 +68,7 @@ public interface IToolTip extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IShell getParent();
+    Shell getParent();
 
     /**
      * Returns the receiver's text, which will be an empty
@@ -194,7 +194,7 @@ public interface IToolTip extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setLocation(IPoint location);
+    void setLocation(Point location);
 
     /**
      * Sets the receiver's message.

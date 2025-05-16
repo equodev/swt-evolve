@@ -18,7 +18,6 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Convert;
 
 /**
  * <code>TextLayout</code> is a graphic object that represents
@@ -56,7 +55,7 @@ public final class TextLayout extends Resource {
      * @see #dispose()
      */
     public TextLayout(Device device) {
-        this(new nat.org.eclipse.swt.graphics.TextLayout((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null)));
+        this(new SwtTextLayout(device));
     }
 
     /**
@@ -75,7 +74,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public void draw(GC gc, int x, int y) {
-        getDelegate().draw((gc != null ? gc.getDelegate() : null), x, y);
+        getImpl().draw(gc, x, y);
     }
 
     /**
@@ -98,7 +97,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground) {
-        getDelegate().draw((gc != null ? gc.getDelegate() : null), x, y, selectionStart, selectionEnd, (selectionForeground != null ? selectionForeground.getDelegate() : null), (selectionBackground != null ? selectionBackground.getDelegate() : null));
+        getImpl().draw(gc, x, y, selectionStart, selectionEnd, selectionForeground, selectionBackground);
     }
 
     /**
@@ -129,7 +128,7 @@ public final class TextLayout extends Resource {
      * @since 3.3
      */
     public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground, int flags) {
-        getDelegate().draw((gc != null ? gc.getDelegate() : null), x, y, selectionStart, selectionEnd, (selectionForeground != null ? selectionForeground.getDelegate() : null), (selectionBackground != null ? selectionBackground.getDelegate() : null), flags);
+        getImpl().draw(gc, x, y, selectionStart, selectionEnd, selectionForeground, selectionBackground, flags);
     }
 
     /**
@@ -144,7 +143,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public int getAlignment() {
-        return getDelegate().getAlignment();
+        return getImpl().getAlignment();
     }
 
     /**
@@ -162,7 +161,7 @@ public final class TextLayout extends Resource {
      * @see #getLineMetrics(int)
      */
     public int getAscent() {
-        return getDelegate().getAscent();
+        return getImpl().getAscent();
     }
 
     /**
@@ -180,8 +179,7 @@ public final class TextLayout extends Resource {
      * @see #getLineBounds(int)
      */
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     /**
@@ -199,8 +197,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public Rectangle getBounds(int start, int end) {
-        IRectangle ret = getDelegate().getBounds(start, end);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds(start, end);
     }
 
     /**
@@ -218,7 +215,7 @@ public final class TextLayout extends Resource {
      * @see #getLineMetrics(int)
      */
     public int getDescent() {
-        return getDelegate().getDescent();
+        return getImpl().getDescent();
     }
 
     /**
@@ -232,8 +229,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public Font getFont() {
-        IFont ret = getDelegate().getFont();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getFont();
     }
 
     /**
@@ -248,7 +244,7 @@ public final class TextLayout extends Resource {
      * @since 3.2
      */
     public int getIndent() {
-        return getDelegate().getIndent();
+        return getImpl().getIndent();
     }
 
     /**
@@ -263,7 +259,7 @@ public final class TextLayout extends Resource {
      * @since 3.2
      */
     public boolean getJustify() {
-        return getDelegate().getJustify();
+        return getImpl().getJustify();
     }
 
     /**
@@ -281,7 +277,7 @@ public final class TextLayout extends Resource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li></ul>
      */
     public int getLevel(int offset) {
-        return getDelegate().getLevel(offset);
+        return getImpl().getLevel(offset);
     }
 
     /**
@@ -296,7 +292,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public int[] getLineOffsets() {
-        return getDelegate().getLineOffsets();
+        return getImpl().getLineOffsets();
     }
 
     /**
@@ -314,7 +310,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public int getLineIndex(int offset) {
-        return getDelegate().getLineIndex(offset);
+        return getImpl().getLineIndex(offset);
     }
 
     /**
@@ -331,8 +327,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public Rectangle getLineBounds(int lineIndex) {
-        IRectangle ret = getDelegate().getLineBounds(lineIndex);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getLineBounds(lineIndex);
     }
 
     /**
@@ -346,7 +341,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public int getLineCount() {
-        return getDelegate().getLineCount();
+        return getImpl().getLineCount();
     }
 
     /**
@@ -363,8 +358,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public FontMetrics getLineMetrics(int lineIndex) {
-        IFontMetrics ret = getDelegate().getLineMetrics(lineIndex);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getLineMetrics(lineIndex);
     }
 
     /**
@@ -384,8 +378,7 @@ public final class TextLayout extends Resource {
      * @see #getOffset(int, int, int[])
      */
     public Point getLocation(int offset, boolean trailing) {
-        IPoint ret = getDelegate().getLocation(offset, trailing);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getLocation(offset, trailing);
     }
 
     /**
@@ -408,7 +401,7 @@ public final class TextLayout extends Resource {
      * @see #getPreviousOffset(int, int)
      */
     public int getNextOffset(int offset, int movement) {
-        return getDelegate().getNextOffset(offset, movement);
+        return getImpl().getNextOffset(offset, movement);
     }
 
     /**
@@ -435,7 +428,7 @@ public final class TextLayout extends Resource {
      * @see #getLocation(int, boolean)
      */
     public int getOffset(Point point, int[] trailing) {
-        return getDelegate().getOffset((point != null ? point.getDelegate() : null), trailing);
+        return getImpl().getOffset(point, trailing);
     }
 
     /**
@@ -462,7 +455,7 @@ public final class TextLayout extends Resource {
      * @see #getLocation(int, boolean)
      */
     public int getOffset(int x, int y, int[] trailing) {
-        return getDelegate().getOffset(x, y, trailing);
+        return getImpl().getOffset(x, y, trailing);
     }
 
     /**
@@ -475,7 +468,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public int getOrientation() {
-        return getDelegate().getOrientation();
+        return getImpl().getOrientation();
     }
 
     /**
@@ -498,7 +491,7 @@ public final class TextLayout extends Resource {
      * @see #getNextOffset(int, int)
      */
     public int getPreviousOffset(int offset, int movement) {
-        return getDelegate().getPreviousOffset(offset, movement);
+        return getImpl().getPreviousOffset(offset, movement);
     }
 
     /**
@@ -516,7 +509,7 @@ public final class TextLayout extends Resource {
      * @since 3.2
      */
     public int[] getRanges() {
-        return getDelegate().getRanges();
+        return getImpl().getRanges();
     }
 
     /**
@@ -529,7 +522,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public int[] getSegments() {
-        return getDelegate().getSegments();
+        return getImpl().getSegments();
     }
 
     /**
@@ -544,7 +537,7 @@ public final class TextLayout extends Resource {
      * @since 3.6
      */
     public char[] getSegmentsChars() {
-        return getDelegate().getSegmentsChars();
+        return getImpl().getSegmentsChars();
     }
 
     /**
@@ -557,7 +550,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public int getSpacing() {
-        return getDelegate().getSpacing();
+        return getImpl().getSpacing();
     }
 
     /**
@@ -571,7 +564,7 @@ public final class TextLayout extends Resource {
      * @since 3.109
      */
     public int getVerticalIndent() {
-        return getDelegate().getVerticalIndent();
+        return getImpl().getVerticalIndent();
     }
 
     /**
@@ -588,8 +581,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public TextStyle getStyle(int offset) {
-        ITextStyle ret = getDelegate().getStyle(offset);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getStyle(offset);
     }
 
     /**
@@ -606,7 +598,7 @@ public final class TextLayout extends Resource {
      * @since 3.2
      */
     public TextStyle[] getStyles() {
-        return Convert.array(getDelegate().getStyles(), ITextStyle::getApi, TextStyle[]::new);
+        return getImpl().getStyles();
     }
 
     /**
@@ -619,7 +611,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public int[] getTabs() {
-        return getDelegate().getTabs();
+        return getImpl().getTabs();
     }
 
     /**
@@ -633,7 +625,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public String getText() {
-        return getDelegate().getText();
+        return getImpl().getText();
     }
 
     /**
@@ -647,7 +639,7 @@ public final class TextLayout extends Resource {
      * @since 3.103
      */
     public int getTextDirection() {
-        return getDelegate().getTextDirection();
+        return getImpl().getTextDirection();
     }
 
     /**
@@ -660,7 +652,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public int getWidth() {
-        return getDelegate().getWidth();
+        return getImpl().getWidth();
     }
 
     /**
@@ -675,7 +667,7 @@ public final class TextLayout extends Resource {
      * @since 3.6
      */
     public int getWrapIndent() {
-        return getDelegate().getWrapIndent();
+        return getImpl().getWrapIndent();
     }
 
     /**
@@ -690,7 +682,7 @@ public final class TextLayout extends Resource {
      * @return <code>true</code> when the text layout is disposed and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return getDelegate().isDisposed();
+        return getImpl().isDisposed();
     }
 
     /**
@@ -712,7 +704,7 @@ public final class TextLayout extends Resource {
      * @see #setWidth(int)
      */
     public void setAlignment(int alignment) {
-        getDelegate().setAlignment(alignment);
+        getImpl().setAlignment(alignment);
     }
 
     /**
@@ -734,7 +726,7 @@ public final class TextLayout extends Resource {
      * @see #getLineMetrics(int)
      */
     public void setAscent(int ascent) {
-        getDelegate().setAscent(ascent);
+        getImpl().setAscent(ascent);
     }
 
     /**
@@ -756,7 +748,7 @@ public final class TextLayout extends Resource {
      * @see #getLineMetrics(int)
      */
     public void setDescent(int descent) {
-        getDelegate().setDescent(descent);
+        getImpl().setDescent(descent);
     }
 
     /**
@@ -789,7 +781,7 @@ public final class TextLayout extends Resource {
      * @since 3.125
      */
     public void setFixedLineMetrics(FontMetrics metrics) {
-        getDelegate().setFixedLineMetrics((metrics != null ? metrics.getDelegate() : null));
+        getImpl().setFixedLineMetrics(metrics);
     }
 
     /**
@@ -809,7 +801,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public void setFont(Font font) {
-        getDelegate().setFont((font != null ? font.getDelegate() : null));
+        getImpl().setFont(font);
     }
 
     /**
@@ -827,7 +819,7 @@ public final class TextLayout extends Resource {
      * @since 3.2
      */
     public void setIndent(int indent) {
-        getDelegate().setIndent(indent);
+        getImpl().setIndent(indent);
     }
 
     /**
@@ -845,7 +837,7 @@ public final class TextLayout extends Resource {
      * @since 3.6
      */
     public void setWrapIndent(int wrapIndent) {
-        getDelegate().setWrapIndent(wrapIndent);
+        getImpl().setWrapIndent(wrapIndent);
     }
 
     /**
@@ -861,7 +853,7 @@ public final class TextLayout extends Resource {
      * @since 3.2
      */
     public void setJustify(boolean justify) {
-        getDelegate().setJustify(justify);
+        getImpl().setJustify(justify);
     }
 
     /**
@@ -875,7 +867,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public void setOrientation(int orientation) {
-        getDelegate().setOrientation(orientation);
+        getImpl().setOrientation(orientation);
     }
 
     /**
@@ -903,7 +895,7 @@ public final class TextLayout extends Resource {
      * @see #setSegmentsChars(char[])
      */
     public void setSegments(int[] segments) {
-        getDelegate().setSegments(segments);
+        getImpl().setSegments(segments);
     }
 
     /**
@@ -924,7 +916,7 @@ public final class TextLayout extends Resource {
      * @since 3.6
      */
     public void setSegmentsChars(char[] segmentsChars) {
-        getDelegate().setSegmentsChars(segmentsChars);
+        getImpl().setSegmentsChars(segmentsChars);
     }
 
     /**
@@ -941,7 +933,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public void setSpacing(int spacing) {
-        getDelegate().setSpacing(spacing);
+        getImpl().setSpacing(spacing);
     }
 
     /**
@@ -959,7 +951,7 @@ public final class TextLayout extends Resource {
      * @since 3.109
      */
     public void setVerticalIndent(int verticalIndent) {
-        getDelegate().setVerticalIndent(verticalIndent);
+        getImpl().setVerticalIndent(verticalIndent);
     }
 
     /**
@@ -976,7 +968,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public void setStyle(TextStyle style, int start, int end) {
-        getDelegate().setStyle((style != null ? style.getDelegate() : null), start, end);
+        getImpl().setStyle(style, start, end);
     }
 
     /**
@@ -991,7 +983,7 @@ public final class TextLayout extends Resource {
      * </ul>
      */
     public void setTabs(int[] tabs) {
-        getDelegate().setTabs(tabs);
+        getImpl().setTabs(tabs);
     }
 
     /**
@@ -1012,7 +1004,7 @@ public final class TextLayout extends Resource {
      *  </ul>
      */
     public void setText(String text) {
-        getDelegate().setText(text);
+        getImpl().setText(text);
     }
 
     /**
@@ -1033,7 +1025,7 @@ public final class TextLayout extends Resource {
      * @since 3.103
      */
     public void setTextDirection(int textDirection) {
-        getDelegate().setTextDirection(textDirection);
+        getImpl().setTextDirection(textDirection);
     }
 
     /**
@@ -1053,7 +1045,7 @@ public final class TextLayout extends Resource {
      * @see #setAlignment(int)
      */
     public void setWidth(int width) {
-        getDelegate().setWidth(width);
+        getImpl().setWidth(width);
     }
 
     /**
@@ -1063,7 +1055,7 @@ public final class TextLayout extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
     /**
@@ -1084,18 +1076,18 @@ public final class TextLayout extends Resource {
      * @since 3.107
      */
     public void setDefaultTabWidth(int tabLength) {
-        getDelegate().setDefaultTabWidth(tabLength);
+        getImpl().setDefaultTabWidth(tabLength);
     }
 
-    protected TextLayout(ITextLayout delegate) {
-        super(delegate);
+    protected TextLayout(ITextLayout impl) {
+        super(impl);
     }
 
-    public static TextLayout createApi(ITextLayout delegate) {
-        return new TextLayout(delegate);
+    public static TextLayout createApi(ITextLayout impl) {
+        return new TextLayout(impl);
     }
 
-    public ITextLayout getDelegate() {
-        return (ITextLayout) super.getDelegate();
+    public ITextLayout getImpl() {
+        return (ITextLayout) super.getImpl();
     }
 }

@@ -18,7 +18,7 @@ public interface IAnimatedProgress extends ICanvas {
      */
     void clear();
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Start the animation.

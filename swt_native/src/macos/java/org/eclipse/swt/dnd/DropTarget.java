@@ -22,7 +22,6 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.*;
-import dev.equo.swt.Convert;
 
 /**
  *  Class <code>DropTarget</code> defines the target object for a drag and drop transfer.
@@ -115,11 +114,11 @@ public class DropTarget extends Widget {
      * @see DropTargetEvent
      */
     public void addDropListener(DropTargetListener listener) {
-        getDelegate().addDropListener(listener);
+        getImpl().addDropListener(listener);
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -154,7 +153,7 @@ public class DropTarget extends Widget {
      *  @see DND#DROP_LINK
      */
     public DropTarget(Control control, int style) {
-        this(new nat.org.eclipse.swt.dnd.DropTarget((nat.org.eclipse.swt.widgets.Control) (control != null ? control.getDelegate() : null), style));
+        this(new SwtDropTarget(control, style));
     }
 
     /**
@@ -164,8 +163,7 @@ public class DropTarget extends Widget {
      * @return the Control which is registered for this DropTarget
      */
     public Control getControl() {
-        IControl ret = getDelegate().getControl();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getControl();
     }
 
     /**
@@ -189,7 +187,7 @@ public class DropTarget extends Widget {
      * @since 3.4
      */
     public DropTargetListener[] getDropListeners() {
-        return getDelegate().getDropListeners();
+        return getImpl().getDropListeners();
     }
 
     /**
@@ -202,8 +200,7 @@ public class DropTarget extends Widget {
      * @since 3.3
      */
     public DropTargetEffect getDropTargetEffect() {
-        IDropTargetEffect ret = getDelegate().getDropTargetEffect();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getDropTargetEffect();
     }
 
     /**
@@ -212,7 +209,7 @@ public class DropTarget extends Widget {
      * @return a list of the data types that can be transferred to this DropTarget
      */
     public Transfer[] getTransfer() {
-        return Convert.array(getDelegate().getTransfer(), ITransfer::getApi, Transfer[]::new);
+        return getImpl().getTransfer();
     }
 
     /**
@@ -234,7 +231,7 @@ public class DropTarget extends Widget {
      * @see #getDropListeners
      */
     public void removeDropListener(DropTargetListener listener) {
-        getDelegate().removeDropListener(listener);
+        getImpl().removeDropListener(listener);
     }
 
     /**
@@ -247,7 +244,7 @@ public class DropTarget extends Widget {
      * @since 3.3
      */
     public void setDropTargetEffect(DropTargetEffect effect) {
-        getDelegate().setDropTargetEffect((effect != null ? effect.getDelegate() : null));
+        getImpl().setDropTargetEffect(effect);
     }
 
     /**
@@ -264,18 +261,18 @@ public class DropTarget extends Widget {
      *  </ul>
      */
     public void setTransfer(Transfer... transferAgents) {
-        getDelegate().setTransfer(Convert.array(transferAgents, Transfer::getDelegate, ITransfer[]::new));
+        getImpl().setTransfer(transferAgents);
     }
 
-    protected DropTarget(IDropTarget delegate) {
-        super(delegate);
+    protected DropTarget(IDropTarget impl) {
+        super(impl);
     }
 
-    public static DropTarget createApi(IDropTarget delegate) {
-        return new DropTarget(delegate);
+    public static DropTarget createApi(IDropTarget impl) {
+        return new DropTarget(impl);
     }
 
-    public IDropTarget getDelegate() {
-        return (IDropTarget) super.getDelegate();
+    public IDropTarget getImpl() {
+        return (IDropTarget) super.getImpl();
     }
 }

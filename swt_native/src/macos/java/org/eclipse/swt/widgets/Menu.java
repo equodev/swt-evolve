@@ -19,7 +19,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class are user interface objects that contain
@@ -70,7 +69,7 @@ public class Menu extends Widget {
      * @see Widget#getStyle
      */
     public Menu(Control parent) {
-        this(new nat.org.eclipse.swt.widgets.Menu((nat.org.eclipse.swt.widgets.Control) (parent != null ? parent.getDelegate() : null)));
+        this(new SwtMenu(parent));
     }
 
     /**
@@ -111,7 +110,7 @@ public class Menu extends Widget {
      * @see Widget#getStyle
      */
     public Menu(Decorations parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Menu((nat.org.eclipse.swt.widgets.Decorations) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtMenu(parent, style));
     }
 
     /**
@@ -139,7 +138,7 @@ public class Menu extends Widget {
      * @see Widget#getStyle
      */
     public Menu(Menu parentMenu) {
-        this(new nat.org.eclipse.swt.widgets.Menu((nat.org.eclipse.swt.widgets.Menu) (parentMenu != null ? parentMenu.getDelegate() : null)));
+        this(new SwtMenu(parentMenu));
     }
 
     /**
@@ -167,7 +166,7 @@ public class Menu extends Widget {
      * @see Widget#getStyle
      */
     public Menu(MenuItem parentItem) {
-        this(new nat.org.eclipse.swt.widgets.Menu((nat.org.eclipse.swt.widgets.MenuItem) (parentItem != null ? parentItem.getDelegate() : null)));
+        this(new SwtMenu(parentItem));
     }
 
     /**
@@ -190,7 +189,7 @@ public class Menu extends Widget {
      * @see #removeHelpListener
      */
     public void addHelpListener(HelpListener listener) {
-        getDelegate().addHelpListener(listener);
+        getImpl().addHelpListener(listener);
     }
 
     /**
@@ -213,7 +212,7 @@ public class Menu extends Widget {
      * @see #removeMenuListener
      */
     public void addMenuListener(MenuListener listener) {
-        getDelegate().addMenuListener(listener);
+        getImpl().addMenuListener(listener);
     }
 
     /**
@@ -228,8 +227,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public MenuItem getDefaultItem() {
-        IMenuItem ret = getDelegate().getDefaultItem();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getDefaultItem();
     }
 
     /**
@@ -248,7 +246,7 @@ public class Menu extends Widget {
      * @see #isEnabled
      */
     public boolean getEnabled() {
-        return getDelegate().getEnabled();
+        return getImpl().getEnabled();
     }
 
     /**
@@ -267,8 +265,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public MenuItem getItem(int index) {
-        IMenuItem ret = getDelegate().getItem(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getItem(index);
     }
 
     /**
@@ -282,7 +279,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public int getItemCount() {
-        return getDelegate().getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -302,7 +299,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public MenuItem[] getItems() {
-        return Convert.array(getDelegate().getItems(), IMenuItem::getApi, MenuItem[]::new);
+        return getImpl().getItems();
     }
 
     /**
@@ -319,7 +316,7 @@ public class Menu extends Widget {
      * @since 3.7
      */
     public int getOrientation() {
-        return getDelegate().getOrientation();
+        return getImpl().getOrientation();
     }
 
     /**
@@ -333,8 +330,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public Decorations getParent() {
-        IDecorations ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     /**
@@ -350,8 +346,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public MenuItem getParentItem() {
-        IMenuItem ret = getDelegate().getParentItem();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParentItem();
     }
 
     /**
@@ -367,8 +362,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public Menu getParentMenu() {
-        IMenu ret = getDelegate().getParentMenu();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParentMenu();
     }
 
     /**
@@ -388,8 +382,7 @@ public class Menu extends Widget {
      * @see #getParent
      */
     public Shell getShell() {
-        IShell ret = getDelegate().getShell();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getShell();
     }
 
     /**
@@ -410,7 +403,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public boolean getVisible() {
-        return getDelegate().getVisible();
+        return getImpl().getVisible();
     }
 
     /**
@@ -431,7 +424,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public int indexOf(MenuItem item) {
-        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
+        return getImpl().indexOf(item);
     }
 
     /**
@@ -450,7 +443,7 @@ public class Menu extends Widget {
      * @see #getEnabled
      */
     public boolean isEnabled() {
-        return getDelegate().isEnabled();
+        return getImpl().isEnabled();
     }
 
     /**
@@ -468,7 +461,7 @@ public class Menu extends Widget {
      * @see #getVisible
      */
     public boolean isVisible() {
-        return getDelegate().isVisible();
+        return getImpl().isVisible();
     }
 
     /**
@@ -489,7 +482,7 @@ public class Menu extends Widget {
      * @see #addHelpListener
      */
     public void removeHelpListener(HelpListener listener) {
-        getDelegate().removeHelpListener(listener);
+        getImpl().removeHelpListener(listener);
     }
 
     /**
@@ -510,7 +503,7 @@ public class Menu extends Widget {
      * @see #addMenuListener
      */
     public void removeMenuListener(MenuListener listener) {
-        getDelegate().removeMenuListener(listener);
+        getImpl().removeMenuListener(listener);
     }
 
     /**
@@ -528,7 +521,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public void setDefaultItem(MenuItem item) {
-        getDelegate().setDefaultItem((item != null ? item.getDelegate() : null));
+        getImpl().setDefaultItem(item);
     }
 
     /**
@@ -545,7 +538,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        getDelegate().setEnabled(enabled);
+        getImpl().setEnabled(enabled);
     }
 
     /**
@@ -571,7 +564,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public void setLocation(int x, int y) {
-        getDelegate().setLocation(x, y);
+        getImpl().setLocation(x, y);
     }
 
     /**
@@ -599,7 +592,7 @@ public class Menu extends Widget {
      * @since 2.1
      */
     public void setLocation(Point location) {
-        getDelegate().setLocation((location != null ? location.getDelegate() : null));
+        getImpl().setLocation(location);
     }
 
     /**
@@ -616,7 +609,7 @@ public class Menu extends Widget {
      * @since 3.7
      */
     public void setOrientation(int orientation) {
-        getDelegate().setOrientation(orientation);
+        getImpl().setOrientation(orientation);
     }
 
     /**
@@ -636,18 +629,18 @@ public class Menu extends Widget {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        getDelegate().setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
-    protected Menu(IMenu delegate) {
-        super(delegate);
+    protected Menu(IMenu impl) {
+        super(impl);
     }
 
-    public static Menu createApi(IMenu delegate) {
-        return new Menu(delegate);
+    public static Menu createApi(IMenu impl) {
+        return new Menu(impl);
     }
 
-    public IMenu getDelegate() {
-        return (IMenu) super.getDelegate();
+    public IMenu getImpl() {
+        return (IMenu) super.getImpl();
     }
 }

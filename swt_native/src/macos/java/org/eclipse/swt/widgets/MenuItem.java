@@ -76,7 +76,7 @@ public class MenuItem extends Item {
      * @see Widget#getStyle
      */
     public MenuItem(Menu parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.MenuItem((nat.org.eclipse.swt.widgets.Menu) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtMenuItem(parent, style));
     }
 
     /**
@@ -116,7 +116,7 @@ public class MenuItem extends Item {
      * @see Widget#getStyle
      */
     public MenuItem(Menu parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.MenuItem((nat.org.eclipse.swt.widgets.Menu) (parent != null ? parent.getDelegate() : null), style, index));
+        this(new SwtMenuItem(parent, style, index));
     }
 
     /**
@@ -139,7 +139,7 @@ public class MenuItem extends Item {
      * @see #removeArmListener
      */
     public void addArmListener(ArmListener listener) {
-        getDelegate().addArmListener(listener);
+        getImpl().addArmListener(listener);
     }
 
     /**
@@ -162,7 +162,7 @@ public class MenuItem extends Item {
      * @see #removeHelpListener
      */
     public void addHelpListener(HelpListener listener) {
-        getDelegate().addHelpListener(listener);
+        getImpl().addHelpListener(listener);
     }
 
     /**
@@ -196,11 +196,11 @@ public class MenuItem extends Item {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -218,7 +218,7 @@ public class MenuItem extends Item {
      * </ul>
      */
     public int getAccelerator() {
-        return getDelegate().getAccelerator();
+        return getImpl().getAccelerator();
     }
 
     /**
@@ -237,7 +237,7 @@ public class MenuItem extends Item {
      * @see #isEnabled
      */
     public boolean getEnabled() {
-        return getDelegate().getEnabled();
+        return getImpl().getEnabled();
     }
 
     /**
@@ -253,7 +253,7 @@ public class MenuItem extends Item {
      * @since 3.7
      */
     public int getID() {
-        return getDelegate().getID();
+        return getImpl().getID();
     }
 
     /**
@@ -271,8 +271,7 @@ public class MenuItem extends Item {
      * </ul>
      */
     public Menu getMenu() {
-        IMenu ret = getDelegate().getMenu();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getMenu();
     }
 
     /**
@@ -286,8 +285,7 @@ public class MenuItem extends Item {
      * </ul>
      */
     public Menu getParent() {
-        IMenu ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     /**
@@ -305,7 +303,7 @@ public class MenuItem extends Item {
      * </ul>
      */
     public boolean getSelection() {
-        return getDelegate().getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -321,7 +319,7 @@ public class MenuItem extends Item {
      * @since 3.104
      */
     public String getToolTipText() {
-        return getDelegate().getToolTipText();
+        return getImpl().getToolTipText();
     }
 
     /**
@@ -340,7 +338,7 @@ public class MenuItem extends Item {
      * @see #getEnabled
      */
     public boolean isEnabled() {
-        return getDelegate().isEnabled();
+        return getImpl().isEnabled();
     }
 
     /**
@@ -361,7 +359,7 @@ public class MenuItem extends Item {
      * @see #addArmListener
      */
     public void removeArmListener(ArmListener listener) {
-        getDelegate().removeArmListener(listener);
+        getImpl().removeArmListener(listener);
     }
 
     /**
@@ -382,7 +380,7 @@ public class MenuItem extends Item {
      * @see #addHelpListener
      */
     public void removeHelpListener(HelpListener listener) {
-        getDelegate().removeHelpListener(listener);
+        getImpl().removeHelpListener(listener);
     }
 
     /**
@@ -403,7 +401,7 @@ public class MenuItem extends Item {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -422,7 +420,7 @@ public class MenuItem extends Item {
      * </ul>
      */
     public void setAccelerator(int accelerator) {
-        getDelegate().setAccelerator(accelerator);
+        getImpl().setAccelerator(accelerator);
     }
 
     /**
@@ -439,7 +437,7 @@ public class MenuItem extends Item {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        getDelegate().setEnabled(enabled);
+        getImpl().setEnabled(enabled);
     }
 
     /**
@@ -456,7 +454,7 @@ public class MenuItem extends Item {
      * @since 3.7
      */
     public void setID(int id) {
-        getDelegate().setID(id);
+        getImpl().setID(id);
     }
 
     /**
@@ -476,7 +474,7 @@ public class MenuItem extends Item {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -505,7 +503,7 @@ public class MenuItem extends Item {
      * </ul>
      */
     public void setMenu(Menu menu) {
-        getDelegate().setMenu((menu != null ? menu.getDelegate() : null));
+        getImpl().setMenu(menu);
     }
 
     /**
@@ -522,7 +520,7 @@ public class MenuItem extends Item {
      * </ul>
      */
     public void setSelection(boolean selected) {
-        getDelegate().setSelection(selected);
+        getImpl().setSelection(selected);
     }
 
     /**
@@ -563,7 +561,7 @@ public class MenuItem extends Item {
      * @see #setAccelerator
      */
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -597,18 +595,18 @@ public class MenuItem extends Item {
      * @since 3.104
      */
     public void setToolTipText(String toolTip) {
-        getDelegate().setToolTipText(toolTip);
+        getImpl().setToolTipText(toolTip);
     }
 
-    protected MenuItem(IMenuItem delegate) {
-        super(delegate);
+    protected MenuItem(IMenuItem impl) {
+        super(impl);
     }
 
-    public static MenuItem createApi(IMenuItem delegate) {
-        return new MenuItem(delegate);
+    public static MenuItem createApi(IMenuItem impl) {
+        return new MenuItem(impl);
     }
 
-    public IMenuItem getDelegate() {
-        return (IMenuItem) super.getDelegate();
+    public IMenuItem getImpl() {
+        return (IMenuItem) super.getImpl();
     }
 }

@@ -181,7 +181,7 @@ public interface ICombo extends IComposite {
      */
     void clearSelection();
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Copies the selected text.
@@ -274,7 +274,7 @@ public interface ICombo extends IComposite {
      *
      * @since 3.8
      */
-    IPoint getCaretLocation();
+    Point getCaretLocation();
 
     /**
      * Returns the item at the given, zero-relative index in the
@@ -391,7 +391,7 @@ public interface ICombo extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IPoint getSelection();
+    Point getSelection();
 
     /**
      * Returns the zero-relative index of the item which is currently
@@ -766,7 +766,7 @@ public interface ICombo extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSelection(IPoint selection);
+    void setSelection(Point selection);
 
     /**
      * Sets the contents of the receiver's text field to the

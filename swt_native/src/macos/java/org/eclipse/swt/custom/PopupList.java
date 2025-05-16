@@ -39,7 +39,7 @@ public class PopupList {
      * @param parent a Shell control which will be the parent of the new instance (cannot be null)
      */
     public PopupList(Shell parent) {
-        this(new nat.org.eclipse.swt.custom.PopupList((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
+        this(new SwtPopupList(parent));
     }
 
     /**
@@ -51,7 +51,7 @@ public class PopupList {
      * @since 3.0
      */
     public PopupList(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.custom.PopupList((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtPopupList(parent, style));
     }
 
     /**
@@ -65,8 +65,7 @@ public class PopupList {
      * 	</ul>
      */
     public Font getFont() {
-        IFont ret = getDelegate().getFont();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getFont();
     }
 
     /**
@@ -83,7 +82,7 @@ public class PopupList {
      * 	</ul>
      */
     public String[] getItems() {
-        return getDelegate().getItems();
+        return getImpl().getItems();
     }
 
     /**
@@ -92,7 +91,7 @@ public class PopupList {
      * @return the minimum width of the list
      */
     public int getMinimumWidth() {
-        return getDelegate().getMinimumWidth();
+        return getImpl().getMinimumWidth();
     }
 
     /**
@@ -104,7 +103,7 @@ public class PopupList {
      * @return the text of the selected item or null if no item is selected
      */
     public String open(Rectangle rect) {
-        return getDelegate().open((rect != null ? rect.getDelegate() : null));
+        return getImpl().open(rect);
     }
 
     /**
@@ -122,7 +121,7 @@ public class PopupList {
      * 	</ul>
      */
     public void select(String string) {
-        getDelegate().select(string);
+        getImpl().select(string);
     }
 
     /**
@@ -139,7 +138,7 @@ public class PopupList {
      * 	</ul>
      */
     public void setFont(Font font) {
-        getDelegate().setFont((font != null ? font.getDelegate() : null));
+        getImpl().setFont(font);
     }
 
     /**
@@ -165,7 +164,7 @@ public class PopupList {
      * 	</ul>
      */
     public void setItems(String[] strings) {
-        getDelegate().setItems(strings);
+        getImpl().setItems(strings);
     }
 
     /**
@@ -174,21 +173,21 @@ public class PopupList {
      * @param width the minimum width of the list
      */
     public void setMinimumWidth(int width) {
-        getDelegate().setMinimumWidth(width);
+        getImpl().setMinimumWidth(width);
     }
 
-    IPopupList delegate;
+    IPopupList impl;
 
-    protected PopupList(IPopupList delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected PopupList(IPopupList impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static PopupList createApi(IPopupList delegate) {
-        return new PopupList(delegate);
+    public static PopupList createApi(IPopupList impl) {
+        return new PopupList(impl);
     }
 
-    public IPopupList getDelegate() {
-        return delegate;
+    public IPopupList getImpl() {
+        return impl;
     }
 }

@@ -113,7 +113,7 @@ public class ControlEditor {
      * @param parent the Composite above which this editor will be displayed
      */
     public ControlEditor(Composite parent) {
-        this(new nat.org.eclipse.swt.custom.ControlEditor((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null)));
+        this(new SwtControlEditor(parent));
     }
 
     /**
@@ -121,7 +121,7 @@ public class ControlEditor {
      * composite and the editor Control are <b>not</b> disposed.
      */
     public void dispose() {
-        getDelegate().dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -130,8 +130,7 @@ public class ControlEditor {
      * @return the Control that is displayed above the composite being edited
      */
     public Control getEditor() {
-        IControl ret = getDelegate().getEditor();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getEditor();
     }
 
     /**
@@ -142,7 +141,7 @@ public class ControlEditor {
      * @since 2.1
      */
     public void layout() {
-        getDelegate().layout();
+        getImpl().layout();
     }
 
     /**
@@ -154,21 +153,21 @@ public class ControlEditor {
      * @param editor the Control that is displayed above the composite being edited
      */
     public void setEditor(Control editor) {
-        getDelegate().setEditor((editor != null ? editor.getDelegate() : null));
+        getImpl().setEditor(editor);
     }
 
-    IControlEditor delegate;
+    IControlEditor impl;
 
-    protected ControlEditor(IControlEditor delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected ControlEditor(IControlEditor impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static ControlEditor createApi(IControlEditor delegate) {
-        return new ControlEditor(delegate);
+    public static ControlEditor createApi(IControlEditor impl) {
+        return new ControlEditor(impl);
     }
 
-    public IControlEditor getDelegate() {
-        return delegate;
+    public IControlEditor getImpl() {
+        return impl;
     }
 }

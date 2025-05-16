@@ -78,7 +78,7 @@ public class Transform extends Resource {
      * @see #dispose()
      */
     public Transform(Device device) {
-        this(new nat.org.eclipse.swt.graphics.Transform((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null)));
+        this(new SwtTransform(device));
     }
 
     /**
@@ -110,7 +110,7 @@ public class Transform extends Resource {
      * @see #dispose()
      */
     public Transform(Device device, float[] elements) {
-        this(new nat.org.eclipse.swt.graphics.Transform((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), elements));
+        this(new SwtTransform(device, elements));
     }
 
     /**
@@ -146,7 +146,7 @@ public class Transform extends Resource {
      * @see #dispose()
      */
     public Transform(Device device, float m11, float m12, float m21, float m22, float dx, float dy) {
-        this(new nat.org.eclipse.swt.graphics.Transform((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), m11, m12, m21, m22, dx, dy));
+        this(new SwtTransform(device, m11, m12, m21, m22, dx, dy));
     }
 
     /**
@@ -164,7 +164,7 @@ public class Transform extends Resource {
      * </ul>
      */
     public void getElements(float[] elements) {
-        getDelegate().getElements(elements);
+        getImpl().getElements(elements);
     }
 
     /**
@@ -178,7 +178,7 @@ public class Transform extends Resource {
      * @since 3.4
      */
     public void identity() {
-        getDelegate().identity();
+        getImpl().identity();
     }
 
     /**
@@ -191,7 +191,7 @@ public class Transform extends Resource {
      * </ul>
      */
     public void invert() {
-        getDelegate().invert();
+        getImpl().invert();
     }
 
     /**
@@ -205,7 +205,7 @@ public class Transform extends Resource {
      * @return <code>true</code> when the Transform is disposed, and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return getDelegate().isDisposed();
+        return getImpl().isDisposed();
     }
 
     /**
@@ -215,7 +215,7 @@ public class Transform extends Resource {
      * @return <code>true</code> if the receiver is an identity Transform, and <code>false</code> otherwise
      */
     public boolean isIdentity() {
-        return getDelegate().isIdentity();
+        return getImpl().isIdentity();
     }
 
     /**
@@ -234,7 +234,7 @@ public class Transform extends Resource {
      * </ul>
      */
     public void multiply(Transform matrix) {
-        getDelegate().multiply((matrix != null ? matrix.getDelegate() : null));
+        getImpl().multiply(matrix);
     }
 
     /**
@@ -251,7 +251,7 @@ public class Transform extends Resource {
      * </ul>
      */
     public void rotate(float angle) {
-        getDelegate().rotate(angle);
+        getImpl().rotate(angle);
     }
 
     /**
@@ -266,7 +266,7 @@ public class Transform extends Resource {
      * </ul>
      */
     public void scale(float scaleX, float scaleY) {
-        getDelegate().scale(scaleX, scaleY);
+        getImpl().scale(scaleX, scaleY);
     }
 
     /**
@@ -285,7 +285,7 @@ public class Transform extends Resource {
      * </ul>
      */
     public void setElements(float m11, float m12, float m21, float m22, float dx, float dy) {
-        getDelegate().setElements(m11, m12, m21, m22, dx, dy);
+        getImpl().setElements(m11, m12, m21, m22, dx, dy);
     }
 
     /**
@@ -302,7 +302,7 @@ public class Transform extends Resource {
      * @since 3.4
      */
     public void shear(float shearX, float shearY) {
-        getDelegate().shear(shearX, shearY);
+        getImpl().shear(shearX, shearY);
     }
 
     /**
@@ -320,7 +320,7 @@ public class Transform extends Resource {
      * </ul>
      */
     public void transform(float[] pointArray) {
-        getDelegate().transform(pointArray);
+        getImpl().transform(pointArray);
     }
 
     /**
@@ -335,7 +335,7 @@ public class Transform extends Resource {
      * </ul>
      */
     public void translate(float offsetX, float offsetY) {
-        getDelegate().translate(offsetX, offsetY);
+        getImpl().translate(offsetX, offsetY);
     }
 
     /**
@@ -345,18 +345,18 @@ public class Transform extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected Transform(ITransform delegate) {
-        super(delegate);
+    protected Transform(ITransform impl) {
+        super(impl);
     }
 
-    public static Transform createApi(ITransform delegate) {
-        return new Transform(delegate);
+    public static Transform createApi(ITransform impl) {
+        return new Transform(impl);
     }
 
-    public ITransform getDelegate() {
-        return (ITransform) super.getDelegate();
+    public ITransform getImpl() {
+        return (ITransform) super.getImpl();
     }
 }

@@ -78,7 +78,7 @@ public class ToolItem extends Item {
      * @see Widget#getStyle
      */
     public ToolItem(ToolBar parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.ToolItem((nat.org.eclipse.swt.widgets.ToolBar) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtToolItem(parent, style));
     }
 
     /**
@@ -118,7 +118,7 @@ public class ToolItem extends Item {
      * @see Widget#getStyle
      */
     public ToolItem(ToolBar parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.ToolItem((nat.org.eclipse.swt.widgets.ToolBar) (parent != null ? parent.getDelegate() : null), style, index));
+        this(new SwtToolItem(parent, style, index));
     }
 
     /**
@@ -153,11 +153,11 @@ public class ToolItem extends Item {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -177,8 +177,7 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public Color getBackground() {
-        IColor ret = getDelegate().getBackground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBackground();
     }
 
     /**
@@ -193,8 +192,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     /**
@@ -209,8 +207,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        IControl ret = getDelegate().getControl();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getControl();
     }
 
     /**
@@ -228,8 +225,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Image getDisabledImage() {
-        IImage ret = getDelegate().getDisabledImage();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getDisabledImage();
     }
 
     /**
@@ -248,7 +244,7 @@ public class ToolItem extends Item {
      * @see #isEnabled
      */
     public boolean getEnabled() {
-        return getDelegate().getEnabled();
+        return getImpl().getEnabled();
     }
 
     /**
@@ -264,8 +260,7 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public Color getForeground() {
-        IColor ret = getDelegate().getForeground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getForeground();
     }
 
     /**
@@ -283,8 +278,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Image getHotImage() {
-        IImage ret = getDelegate().getHotImage();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getHotImage();
     }
 
     /**
@@ -299,8 +293,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Image getImage() {
-        IImage ret = getDelegate().getImage();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getImage();
     }
 
     /**
@@ -314,8 +307,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public ToolBar getParent() {
-        IToolBar ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     /**
@@ -336,7 +328,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public boolean getSelection() {
-        return getDelegate().getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -350,7 +342,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public String getToolTipText() {
-        return getDelegate().getToolTipText();
+        return getImpl().getToolTipText();
     }
 
     /**
@@ -364,7 +356,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public int getWidth() {
-        return getDelegate().getWidth();
+        return getImpl().getWidth();
     }
 
     /**
@@ -383,7 +375,7 @@ public class ToolItem extends Item {
      * @see #getEnabled
      */
     public boolean isEnabled() {
-        return getDelegate().isEnabled();
+        return getImpl().isEnabled();
     }
 
     /**
@@ -404,7 +396,7 @@ public class ToolItem extends Item {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -427,7 +419,7 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground((color != null ? color.getDelegate() : null));
+        getImpl().setBackground(color);
     }
 
     /**
@@ -446,7 +438,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        getDelegate().setControl((control != null ? control.getDelegate() : null));
+        getImpl().setControl(control);
     }
 
     /**
@@ -466,7 +458,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        getDelegate().setEnabled(enabled);
+        getImpl().setEnabled(enabled);
     }
 
     /**
@@ -487,7 +479,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setDisabledImage(Image image) {
-        getDelegate().setDisabledImage((image != null ? image.getDelegate() : null));
+        getImpl().setDisabledImage(image);
     }
 
     /**
@@ -510,7 +502,7 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground((color != null ? color.getDelegate() : null));
+        getImpl().setForeground(color);
     }
 
     /**
@@ -531,11 +523,11 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setHotImage(Image image) {
-        getDelegate().setHotImage((image != null ? image.getDelegate() : null));
+        getImpl().setHotImage(image);
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -554,7 +546,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setSelection(boolean selected) {
-        getDelegate().setSelection(selected);
+        getImpl().setSelection(selected);
     }
 
     /**
@@ -585,7 +577,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -614,7 +606,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setToolTipText(String string) {
-        getDelegate().setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
     /**
@@ -634,18 +626,18 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setWidth(int width) {
-        getDelegate().setWidth(width);
+        getImpl().setWidth(width);
     }
 
-    protected ToolItem(IToolItem delegate) {
-        super(delegate);
+    protected ToolItem(IToolItem impl) {
+        super(impl);
     }
 
-    public static ToolItem createApi(IToolItem delegate) {
-        return new ToolItem(delegate);
+    public static ToolItem createApi(IToolItem impl) {
+        return new ToolItem(impl);
     }
 
-    public IToolItem getDelegate() {
-        return (IToolItem) super.getDelegate();
+    public IToolItem getImpl() {
+        return (IToolItem) super.getImpl();
     }
 }

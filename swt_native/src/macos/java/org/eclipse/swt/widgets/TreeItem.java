@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -77,7 +76,7 @@ public class TreeItem extends Item {
      * @see Widget#getStyle
      */
     public TreeItem(Tree parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.TreeItem((nat.org.eclipse.swt.widgets.Tree) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtTreeItem(parent, style));
     }
 
     /**
@@ -110,7 +109,7 @@ public class TreeItem extends Item {
      * @see Tree#setRedraw
      */
     public TreeItem(Tree parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.TreeItem((nat.org.eclipse.swt.widgets.Tree) (parent != null ? parent.getDelegate() : null), style, index));
+        this(new SwtTreeItem(parent, style, index));
     }
 
     /**
@@ -136,7 +135,7 @@ public class TreeItem extends Item {
      * @see Widget#getStyle
      */
     public TreeItem(TreeItem parentItem, int style) {
-        this(new nat.org.eclipse.swt.widgets.TreeItem((nat.org.eclipse.swt.widgets.TreeItem) (parentItem != null ? parentItem.getDelegate() : null), style));
+        this(new SwtTreeItem(parentItem, style));
     }
 
     /**
@@ -165,11 +164,11 @@ public class TreeItem extends Item {
      * @see Tree#setRedraw
      */
     public TreeItem(TreeItem parentItem, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.TreeItem((nat.org.eclipse.swt.widgets.TreeItem) (parentItem != null ? parentItem.getDelegate() : null), style, index));
+        this(new SwtTreeItem(parentItem, style, index));
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -196,7 +195,7 @@ public class TreeItem extends Item {
      * @since 3.2
      */
     public void clear(int index, boolean all) {
-        getDelegate().clear(index, all);
+        getImpl().clear(index, all);
     }
 
     /**
@@ -219,7 +218,7 @@ public class TreeItem extends Item {
      * @since 3.2
      */
     public void clearAll(boolean all) {
-        getDelegate().clearAll(all);
+        getImpl().clearAll(all);
     }
 
     /**
@@ -235,8 +234,7 @@ public class TreeItem extends Item {
      * @since 2.0
      */
     public Color getBackground() {
-        IColor ret = getDelegate().getBackground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBackground();
     }
 
     /**
@@ -253,8 +251,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public Color getBackground(int index) {
-        IColor ret = getDelegate().getBackground(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBackground(index);
     }
 
     /**
@@ -269,8 +266,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     /**
@@ -288,8 +284,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public Rectangle getBounds(int index) {
-        IRectangle ret = getDelegate().getBounds(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds(index);
     }
 
     /**
@@ -305,7 +300,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public boolean getChecked() {
-        return getDelegate().getChecked();
+        return getImpl().getChecked();
     }
 
     /**
@@ -320,7 +315,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public boolean getExpanded() {
-        return getDelegate().getExpanded();
+        return getImpl().getExpanded();
     }
 
     /**
@@ -336,8 +331,7 @@ public class TreeItem extends Item {
      * @since 3.0
      */
     public Font getFont() {
-        IFont ret = getDelegate().getFont();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getFont();
     }
 
     /**
@@ -355,8 +349,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public Font getFont(int index) {
-        IFont ret = getDelegate().getFont(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getFont(index);
     }
 
     /**
@@ -372,8 +365,7 @@ public class TreeItem extends Item {
      * @since 2.0
      */
     public Color getForeground() {
-        IColor ret = getDelegate().getForeground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getForeground();
     }
 
     /**
@@ -390,8 +382,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public Color getForeground(int index) {
-        IColor ret = getDelegate().getForeground(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getForeground(index);
     }
 
     /**
@@ -407,12 +398,11 @@ public class TreeItem extends Item {
      * </ul>
      */
     public boolean getGrayed() {
-        return getDelegate().getGrayed();
+        return getImpl().getGrayed();
     }
 
     public Image getImage() {
-        IImage ret = getDelegate().getImage();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getImage();
     }
 
     /**
@@ -430,8 +420,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public Image getImage(int index) {
-        IImage ret = getDelegate().getImage(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getImage(index);
     }
 
     /**
@@ -450,8 +439,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public Rectangle getImageBounds(int index) {
-        IRectangle ret = getDelegate().getImageBounds(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getImageBounds(index);
     }
 
     /**
@@ -472,8 +460,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public TreeItem getItem(int index) {
-        ITreeItem ret = getDelegate().getItem(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getItem(index);
     }
 
     /**
@@ -488,7 +475,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public int getItemCount() {
-        return getDelegate().getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -508,7 +495,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public TreeItem[] getItems() {
-        return Convert.array(getDelegate().getItems(), ITreeItem::getApi, TreeItem[]::new);
+        return getImpl().getItems();
     }
 
     /**
@@ -522,8 +509,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public Tree getParent() {
-        ITree ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     /**
@@ -539,12 +525,11 @@ public class TreeItem extends Item {
      * </ul>
      */
     public TreeItem getParentItem() {
-        ITreeItem ret = getDelegate().getParentItem();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParentItem();
     }
 
     public String getText() {
-        return getDelegate().getText();
+        return getImpl().getText();
     }
 
     /**
@@ -562,7 +547,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public String getText(int index) {
-        return getDelegate().getText(index);
+        return getImpl().getText(index);
     }
 
     /**
@@ -581,8 +566,7 @@ public class TreeItem extends Item {
      * @since 3.3
      */
     public Rectangle getTextBounds(int index) {
-        IRectangle ret = getDelegate().getTextBounds(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getTextBounds(index);
     }
 
     /**
@@ -606,7 +590,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public int indexOf(TreeItem item) {
-        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
+        return getImpl().indexOf(item);
     }
 
     /**
@@ -620,7 +604,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void removeAll() {
-        getDelegate().removeAll();
+        getImpl().removeAll();
     }
 
     /**
@@ -641,7 +625,7 @@ public class TreeItem extends Item {
      * @since 2.0
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground((color != null ? color.getDelegate() : null));
+        getImpl().setBackground(color);
     }
 
     /**
@@ -663,7 +647,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setBackground(int index, Color color) {
-        getDelegate().setBackground(index, (color != null ? color.getDelegate() : null));
+        getImpl().setBackground(index, color);
     }
 
     /**
@@ -677,7 +661,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public void setChecked(boolean checked) {
-        getDelegate().setChecked(checked);
+        getImpl().setChecked(checked);
     }
 
     /**
@@ -691,7 +675,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public void setExpanded(boolean expanded) {
-        getDelegate().setExpanded(expanded);
+        getImpl().setExpanded(expanded);
     }
 
     /**
@@ -712,7 +696,7 @@ public class TreeItem extends Item {
      * @since 3.0
      */
     public void setFont(Font font) {
-        getDelegate().setFont((font != null ? font.getDelegate() : null));
+        getImpl().setFont(font);
     }
 
     /**
@@ -735,7 +719,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setFont(int index, Font font) {
-        getDelegate().setFont(index, (font != null ? font.getDelegate() : null));
+        getImpl().setFont(index, font);
     }
 
     /**
@@ -756,7 +740,7 @@ public class TreeItem extends Item {
      * @since 2.0
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground((color != null ? color.getDelegate() : null));
+        getImpl().setForeground(color);
     }
 
     /**
@@ -778,7 +762,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setForeground(int index, Color color) {
-        getDelegate().setForeground(index, (color != null ? color.getDelegate() : null));
+        getImpl().setForeground(index, color);
     }
 
     /**
@@ -793,7 +777,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public void setGrayed(boolean grayed) {
-        getDelegate().setGrayed(grayed);
+        getImpl().setGrayed(grayed);
     }
 
     /**
@@ -813,7 +797,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setImage(Image[] images) {
-        getDelegate().setImage(Convert.array(images, Image::getDelegate, IImage[]::new));
+        getImpl().setImage(images);
     }
 
     /**
@@ -833,11 +817,11 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setImage(int index, Image image) {
-        getDelegate().setImage(index, (image != null ? image.getDelegate() : null));
+        getImpl().setImage(index, image);
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -859,7 +843,7 @@ public class TreeItem extends Item {
      * @since 3.2
      */
     public void setItemCount(int count) {
-        getDelegate().setItemCount(count);
+        getImpl().setItemCount(count);
     }
 
     /**
@@ -881,7 +865,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setText(String[] strings) {
-        getDelegate().setText(strings);
+        getImpl().setText(strings);
     }
 
     /**
@@ -904,22 +888,22 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setText(int index, String string) {
-        getDelegate().setText(index, string);
+        getImpl().setText(index, string);
     }
 
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
-    protected TreeItem(ITreeItem delegate) {
-        super(delegate);
+    protected TreeItem(ITreeItem impl) {
+        super(impl);
     }
 
-    public static TreeItem createApi(ITreeItem delegate) {
-        return new TreeItem(delegate);
+    public static TreeItem createApi(ITreeItem impl) {
+        return new TreeItem(impl);
     }
 
-    public ITreeItem getDelegate() {
-        return (ITreeItem) super.getDelegate();
+    public ITreeItem getImpl() {
+        return (ITreeItem) super.getImpl();
     }
 }

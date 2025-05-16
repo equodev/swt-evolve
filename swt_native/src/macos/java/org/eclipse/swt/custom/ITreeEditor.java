@@ -27,7 +27,7 @@ public interface ITreeEditor extends IControlEditor {
      *
      * @return the TreeItem for the row of the cell being tracked by this editor
      */
-    ITreeItem getItem();
+    TreeItem getItem();
 
     /**
      * Sets the zero based index of the column of the cell being tracked by this editor.
@@ -43,7 +43,7 @@ public interface ITreeEditor extends IControlEditor {
      *
      * @param item the item to be edited
      */
-    void setItem(ITreeItem item);
+    void setItem(TreeItem item);
 
     /**
      * Specify the Control that is to be displayed and the cell in the tree that it is to be positioned above.
@@ -57,9 +57,9 @@ public interface ITreeEditor extends IControlEditor {
      *
      * @since 3.1
      */
-    void setEditor(IControl editor, ITreeItem item, int column);
+    void setEditor(Control editor, TreeItem item, int column);
 
-    void setEditor(IControl editor);
+    void setEditor(Control editor);
 
     /**
      * Specify the Control that is to be displayed and the cell in the tree that it is to be positioned above.
@@ -70,7 +70,7 @@ public interface ITreeEditor extends IControlEditor {
      * @param editor the Control that is displayed above the cell being edited
      * @param item the TreeItem for the row of the cell being tracked by this editor
      */
-    void setEditor(IControl editor, ITreeItem item);
+    void setEditor(Control editor, TreeItem item);
 
     void layout();
 

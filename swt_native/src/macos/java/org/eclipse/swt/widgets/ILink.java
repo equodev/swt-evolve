@@ -33,7 +33,7 @@ public interface ILink extends IControl {
      */
     void addSelectionListener(SelectionListener listener);
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Returns the link foreground color.
@@ -46,7 +46,7 @@ public interface ILink extends IControl {
      * </ul>
      * @since 3.105
      */
-    IColor getLinkForeground();
+    Color getLinkForeground();
 
     /**
      * Returns the receiver's text, which will be an empty
@@ -98,7 +98,7 @@ public interface ILink extends IControl {
      * </ul>
      * @since 3.105
      */
-    void setLinkForeground(IColor color);
+    void setLinkForeground(Color color);
 
     /**
      * Sets the receiver's text.

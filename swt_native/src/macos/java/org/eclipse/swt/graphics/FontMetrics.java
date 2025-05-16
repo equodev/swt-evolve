@@ -38,7 +38,7 @@ public final class FontMetrics {
      * @see #hashCode
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object instanceof FontMetrics ? ((FontMetrics) object).getDelegate() : object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -50,7 +50,7 @@ public final class FontMetrics {
      * @return the ascent of the font
      */
     public int getAscent() {
-        return getDelegate().getAscent();
+        return getImpl().getAscent();
     }
 
     /**
@@ -61,7 +61,7 @@ public final class FontMetrics {
      * @since 3.107
      */
     public double getAverageCharacterWidth() {
-        return getDelegate().getAverageCharacterWidth();
+        return getImpl().getAverageCharacterWidth();
     }
 
     /**
@@ -73,7 +73,7 @@ public final class FontMetrics {
      */
     @Deprecated
     public int getAverageCharWidth() {
-        return getDelegate().getAverageCharWidth();
+        return getImpl().getAverageCharWidth();
     }
 
     /**
@@ -85,7 +85,7 @@ public final class FontMetrics {
      * @return the descent of the font
      */
     public int getDescent() {
-        return getDelegate().getDescent();
+        return getImpl().getDescent();
     }
 
     /**
@@ -100,7 +100,7 @@ public final class FontMetrics {
      * @see #getLeading
      */
     public int getHeight() {
-        return getDelegate().getHeight();
+        return getImpl().getHeight();
     }
 
     /**
@@ -111,7 +111,7 @@ public final class FontMetrics {
      * @return the leading space of the font
      */
     public int getLeading() {
-        return getDelegate().getLeading();
+        return getImpl().getLeading();
     }
 
     /**
@@ -125,25 +125,25 @@ public final class FontMetrics {
      * @see #equals
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    IFontMetrics delegate;
+    IFontMetrics impl;
 
-    protected FontMetrics(IFontMetrics delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected FontMetrics(IFontMetrics impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static FontMetrics createApi(IFontMetrics delegate) {
-        return new FontMetrics(delegate);
+    public static FontMetrics createApi(IFontMetrics impl) {
+        return new FontMetrics(impl);
     }
 
-    public IFontMetrics getDelegate() {
-        return delegate;
+    public IFontMetrics getImpl() {
+        return impl;
     }
 }

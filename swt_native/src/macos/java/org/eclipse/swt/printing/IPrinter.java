@@ -40,7 +40,7 @@ public interface IPrinter extends IDevice {
      * @see #getBounds
      * @see #getClientArea
      */
-    IRectangle computeTrim(int x, int y, int width, int height);
+    Rectangle computeTrim(int x, int y, int width, int height);
 
     /**
      * Creates the printer handle.
@@ -48,7 +48,7 @@ public interface IPrinter extends IDevice {
      * mechanism of the <code>Device</code> class.
      * @param deviceData the device data
      */
-    void create(IDeviceData deviceData);
+    void create(DeviceData deviceData);
 
     /**
      * Destroys the printer handle.
@@ -72,7 +72,7 @@ public interface IPrinter extends IDevice {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    long internal_new_GC(org.eclipse.swt.graphics.GCData data);
+    long internal_new_GC(GCData data);
 
     /**
      * Initializes any internal resources needed by the
@@ -103,7 +103,7 @@ public interface IPrinter extends IDevice {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    void internal_dispose_GC(long hDC, org.eclipse.swt.graphics.GCData data);
+    void internal_dispose_GC(long hDC, GCData data);
 
     /**
      * @noreference This method is not intended to be referenced by clients.
@@ -206,7 +206,7 @@ public interface IPrinter extends IDevice {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IPoint getDPI();
+    Point getDPI();
 
     /**
      * Returns a rectangle describing the receiver's size and location.
@@ -223,7 +223,7 @@ public interface IPrinter extends IDevice {
      * @see #getClientArea
      * @see #computeTrim
      */
-    IRectangle getBounds();
+    Rectangle getBounds();
 
     /**
      * Returns a rectangle which describes the area of the
@@ -242,7 +242,7 @@ public interface IPrinter extends IDevice {
      * @see #getBounds
      * @see #computeTrim
      */
-    IRectangle getClientArea();
+    Rectangle getClientArea();
 
     /**
      * Returns a <code>PrinterData</code> object representing the
@@ -250,7 +250,7 @@ public interface IPrinter extends IDevice {
      *
      * @return a PrinterData object describing the receiver
      */
-    IPrinterData getPrinterData();
+    PrinterData getPrinterData();
 
     Printer getApi();
 }

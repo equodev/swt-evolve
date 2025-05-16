@@ -163,8 +163,7 @@ public class CTabFolderRenderer {
      * @since 3.6
      */
     protected Point computeSize(int part, int state, GC gc, int wHint, int hHint) {
-        IPoint ret = getDelegate().computeSize(part, state, (gc != null ? gc.getDelegate() : null), wHint, hHint);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(part, state, gc, wHint, hHint);
     }
 
     /**
@@ -194,8 +193,7 @@ public class CTabFolderRenderer {
      * @since 3.6
      */
     protected Rectangle computeTrim(int part, int state, int x, int y, int width, int height) {
-        IRectangle ret = getDelegate().computeTrim(part, state, x, y, width, height);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeTrim(part, state, x, y, width, height);
     }
 
     /**
@@ -206,7 +204,7 @@ public class CTabFolderRenderer {
      * @since 3.6
      */
     protected void dispose() {
-        getDelegate().dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -242,21 +240,21 @@ public class CTabFolderRenderer {
      * @since 3.6
      */
     protected void draw(int part, int state, Rectangle bounds, GC gc) {
-        getDelegate().draw(part, state, (bounds != null ? bounds.getDelegate() : null), (gc != null ? gc.getDelegate() : null));
+        getImpl().draw(part, state, bounds, gc);
     }
 
-    ICTabFolderRenderer delegate;
+    ICTabFolderRenderer impl;
 
-    protected CTabFolderRenderer(ICTabFolderRenderer delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected CTabFolderRenderer(ICTabFolderRenderer impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static CTabFolderRenderer createApi(ICTabFolderRenderer delegate) {
-        return new CTabFolderRenderer(delegate);
+    public static CTabFolderRenderer createApi(ICTabFolderRenderer impl) {
+        return new CTabFolderRenderer(impl);
     }
 
-    public ICTabFolderRenderer getDelegate() {
-        return delegate;
+    public ICTabFolderRenderer getImpl() {
+        return impl;
     }
 }

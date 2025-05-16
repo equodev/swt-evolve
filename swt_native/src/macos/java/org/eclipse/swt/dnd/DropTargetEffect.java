@@ -63,7 +63,7 @@ public class DropTargetEffect extends DropTargetAdapter {
      * </ul>
      */
     public DropTargetEffect(Control control) {
-        this(new nat.org.eclipse.swt.dnd.DropTargetEffect((nat.org.eclipse.swt.widgets.Control) (control != null ? control.getDelegate() : null)));
+        this(new SwtDropTargetEffect(control));
     }
 
     /**
@@ -73,8 +73,7 @@ public class DropTargetEffect extends DropTargetAdapter {
      * @return the Control which is registered for this DropTargetEffect
      */
     public Control getControl() {
-        IControl ret = getDelegate().getControl();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getControl();
     }
 
     /**
@@ -87,19 +86,18 @@ public class DropTargetEffect extends DropTargetAdapter {
      * @return the item at the given x-y coordinate, or null if the coordinate is not in a selectable item
      */
     public Widget getItem(int x, int y) {
-        IWidget ret = getDelegate().getItem(x, y);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getItem(x, y);
     }
 
-    protected DropTargetEffect(IDropTargetEffect delegate) {
-        super(delegate);
+    protected DropTargetEffect(IDropTargetEffect impl) {
+        super(impl);
     }
 
-    public static DropTargetEffect createApi(IDropTargetEffect delegate) {
-        return new DropTargetEffect(delegate);
+    public static DropTargetEffect createApi(IDropTargetEffect impl) {
+        return new DropTargetEffect(impl);
     }
 
-    public IDropTargetEffect getDelegate() {
-        return (IDropTargetEffect) super.getDelegate();
+    public IDropTargetEffect getImpl() {
+        return (IDropTargetEffect) super.getImpl();
     }
 }

@@ -234,7 +234,7 @@ public interface IStyledText extends ICanvas {
      */
     void append(String string);
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Copies the selected text to the <code>DND.CLIPBOARD</code> clipboard.
@@ -320,7 +320,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.5
      */
-    IColor getMarginColor();
+    Color getMarginColor();
 
     /**
      * Moves the selected text to the clipboard.  The text will be put in the
@@ -333,7 +333,7 @@ public interface IStyledText extends ICanvas {
      */
     void cut();
 
-    IColor getBackground();
+    Color getBackground();
 
     /**
      * Returns the baseline, in points.
@@ -413,7 +413,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.5
      */
-    IRectangle getBlockSelectionBounds();
+    Rectangle getBlockSelectionBounds();
 
     /**
      * Returns the bottom margin.
@@ -477,7 +477,7 @@ public interface IStyledText extends ICanvas {
      */
     boolean getEditable();
 
-    IColor getForeground();
+    Color getForeground();
 
     /**
      * Returns the horizontal scroll offset relative to the start of the line.
@@ -640,7 +640,7 @@ public interface IStyledText extends ICanvas {
      *    <li>ERROR_INVALID_ARGUMENT when the index is invalid</li>
      * </ul>
      */
-    IColor getLineBackground(int index);
+    Color getLineBackground(int index);
 
     /**
      * Returns the bullet of the line at the given index.
@@ -659,7 +659,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.2
      */
-    IBullet getLineBullet(int index);
+    Bullet getLineBullet(int index);
 
     /**
      * Gets the number of text lines.
@@ -893,7 +893,7 @@ public interface IStyledText extends ICanvas {
      *   <li>ERROR_INVALID_RANGE when the offset is outside the valid range (&lt; 0 or &gt; getCharCount())</li>
      * </ul>
      */
-    IPoint getLocationAtOffset(int offset);
+    Point getLocationAtOffset(int offset);
 
     /**
      * Returns <code>true</code> if the mouse navigator is enabled.
@@ -958,7 +958,7 @@ public interface IStyledText extends ICanvas {
      *
      * @deprecated Use {@link #getOffsetAtPoint(Point)} instead for better performance
      */
-    int getOffsetAtLocation(IPoint point);
+    int getOffsetAtLocation(Point point);
 
     /**
      * Returns the offset of the character at the given point relative
@@ -987,7 +987,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.107
      */
-    int getOffsetAtPoint(IPoint point);
+    int getOffsetAtPoint(Point point);
 
     /**
      * Returns the orientation of the receiver.
@@ -1096,7 +1096,7 @@ public interface IStyledText extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IPoint getSelection();
+    Point getSelection();
 
     /**
      * Returns the selection.
@@ -1118,7 +1118,7 @@ public interface IStyledText extends ICanvas {
      * </ul>
      * @see #getSelectionRanges
      */
-    IPoint getSelectionRange();
+    Point getSelectionRange();
 
     /**
      * Returns the selected ranges of text.
@@ -1153,7 +1153,7 @@ public interface IStyledText extends ICanvas {
      * </ul>
      * @since 2.1
      */
-    IColor getSelectionBackground();
+    Color getSelectionBackground();
 
     /**
      * Gets the number of selected characters.
@@ -1177,7 +1177,7 @@ public interface IStyledText extends ICanvas {
      * </ul>
      * @since 2.1
      */
-    IColor getSelectionForeground();
+    Color getSelectionForeground();
 
     /**
      * Returns the selected text.
@@ -1212,7 +1212,7 @@ public interface IStyledText extends ICanvas {
      *   <li>ERROR_INVALID_ARGUMENT when the offset is invalid</li>
      * </ul>
      */
-    IStyleRange getStyleRangeAtOffset(int offset);
+    StyleRange getStyleRangeAtOffset(int offset);
 
     /**
      * Returns the styles.
@@ -1237,7 +1237,7 @@ public interface IStyledText extends ICanvas {
      *
      * @see #getStyleRanges(boolean)
      */
-    IStyleRange[] getStyleRanges();
+    StyleRange[] getStyleRanges();
 
     /**
      * Returns the styles.
@@ -1267,7 +1267,7 @@ public interface IStyledText extends ICanvas {
      * @see #getRanges(int, int)
      * @see #setStyleRanges(int[], StyleRange[])
      */
-    IStyleRange[] getStyleRanges(boolean includeRanges);
+    StyleRange[] getStyleRanges(boolean includeRanges);
 
     /**
      * Returns the styles for the given text range.
@@ -1303,7 +1303,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.0
      */
-    IStyleRange[] getStyleRanges(int start, int length);
+    StyleRange[] getStyleRanges(int start, int length);
 
     /**
      * Returns the styles for the given text range.
@@ -1342,7 +1342,7 @@ public interface IStyledText extends ICanvas {
      * @see #getRanges(int, int)
      * @see #setStyleRanges(int[], StyleRange[])
      */
-    IStyleRange[] getStyleRanges(int start, int length, boolean includeRanges);
+    StyleRange[] getStyleRanges(int start, int length, boolean includeRanges);
 
     /**
      * Returns the tab width measured in characters.
@@ -1413,7 +1413,7 @@ public interface IStyledText extends ICanvas {
      * </ul>
      * @since 3.1
      */
-    IRectangle getTextBounds(int start, int end);
+    Rectangle getTextBounds(int start, int end);
 
     /**
      * Returns the widget content starting at start for length characters.
@@ -1593,7 +1593,7 @@ public interface IStyledText extends ICanvas {
      *    <li>ERROR_NULL_ARGUMENT when printer is null</li>
      * </ul>
      */
-    Runnable print(IPrinter printer);
+    Runnable print(Printer printer);
 
     /**
      * Returns a runnable that will print the widget's text
@@ -1616,7 +1616,7 @@ public interface IStyledText extends ICanvas {
      * </ul>
      * @since 2.1
      */
-    Runnable print(IPrinter printer, IStyledTextPrintOptions options);
+    Runnable print(Printer printer, StyledTextPrintOptions options);
 
     /**
      * Causes the entire bounds of the receiver to be marked
@@ -1891,7 +1891,7 @@ public interface IStyledText extends ICanvas {
      *
      * @see #setStyleRanges(int, int, int[], StyleRange[])
      */
-    void replaceStyleRanges(int start, int length, IStyleRange[] ranges);
+    void replaceStyleRanges(int start, int length, StyleRange[] ranges);
 
     /**
      * Replaces the given text range with new text.
@@ -1982,7 +1982,7 @@ public interface IStyledText extends ICanvas {
     /**
      * @see Control#setBackground(Color)
      */
-    void setBackground(IColor color);
+    void setBackground(Color color);
 
     /**
      * Sets the block selection mode.
@@ -2010,7 +2010,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.5
      */
-    void setBlockSelectionBounds(IRectangle rect);
+    void setBlockSelectionBounds(Rectangle rect);
 
     /**
      * Sets the block selection bounds. The bounds is
@@ -2040,7 +2040,7 @@ public interface IStyledText extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setCaret(ICaret caret);
+    void setCaret(Caret caret);
 
     /**
      * Sets the BIDI coloring mode.  When true the BIDI text display
@@ -2106,7 +2106,7 @@ public interface IStyledText extends ICanvas {
      *
      * @see Control#setCursor(Cursor)
      */
-    void setCursor(ICursor cursor);
+    void setCursor(Cursor cursor);
 
     /**
      * Sets whether the widget implements double click mouse behavior.
@@ -2143,7 +2143,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.125
      */
-    void setFixedLineMetrics(IFontMetrics metrics);
+    void setFixedLineMetrics(FontMetrics metrics);
 
     /**
      * Sets a new font to render text with.
@@ -2158,9 +2158,9 @@ public interface IStyledText extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setFont(IFont font);
+    void setFont(Font font);
 
-    void setForeground(IColor color);
+    void setForeground(Color color);
 
     /**
      * Sets the horizontal scroll offset relative to the start of the line.
@@ -2341,7 +2341,7 @@ public interface IStyledText extends ICanvas {
      *   <li>ERROR_INVALID_ARGUMENT when the specified line range is invalid</li>
      * </ul>
      */
-    void setLineBackground(int startLine, int lineCount, IColor background);
+    void setLineBackground(int startLine, int lineCount, Color background);
 
     /**
      * Sets the bullet of the specified lines.
@@ -2375,7 +2375,7 @@ public interface IStyledText extends ICanvas {
      * </ul>
      * @since 3.2
      */
-    void setLineBullet(int startLine, int lineCount, IBullet bullet);
+    void setLineBullet(int startLine, int lineCount, Bullet bullet);
 
     /**
      * Sets the indent of the specified lines.
@@ -2596,7 +2596,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.5
      */
-    void setMarginColor(IColor color);
+    void setMarginColor(Color color);
 
     /**
      * Sets the margins.
@@ -2692,7 +2692,7 @@ public interface IStyledText extends ICanvas {
      * multi byte line delimiter (and thus neither clearly in front of or after the line delimiter)
      * </ul>
      */
-    void setSelection(IPoint point);
+    void setSelection(Point point);
 
     /**
      * Sets the receiver's selection background color to the color specified
@@ -2710,7 +2710,7 @@ public interface IStyledText extends ICanvas {
      * </ul>
      * @since 2.1
      */
-    void setSelectionBackground(IColor color);
+    void setSelectionBackground(Color color);
 
     /**
      * Sets the receiver's selection foreground color to the color specified
@@ -2731,7 +2731,7 @@ public interface IStyledText extends ICanvas {
      * </ul>
      * @since 2.1
      */
-    void setSelectionForeground(IColor color);
+    void setSelectionForeground(Color color);
 
     /**
      * Sets the selection and scrolls it into view.
@@ -2822,7 +2822,7 @@ public interface IStyledText extends ICanvas {
      *   <li>ERROR_INVALID_RANGE when the style range is outside the valid range (&gt; getCharCount())</li>
      * </ul>
      */
-    void setStyleRange(IStyleRange range);
+    void setStyleRange(StyleRange range);
 
     /**
      * Clears the styles in the range specified by <code>start</code> and
@@ -2859,7 +2859,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.2
      */
-    void setStyleRanges(int start, int length, int[] ranges, IStyleRange[] styles);
+    void setStyleRanges(int start, int length, int[] ranges, StyleRange[] styles);
 
     /**
      * Sets styles to be used for rendering the widget content.
@@ -2894,7 +2894,7 @@ public interface IStyledText extends ICanvas {
      *
      * @since 3.2
      */
-    void setStyleRanges(int[] ranges, IStyleRange[] styles);
+    void setStyleRanges(int[] ranges, StyleRange[] styles);
 
     /**
      * Sets styles to be used for rendering the widget content. All styles
@@ -2924,7 +2924,7 @@ public interface IStyledText extends ICanvas {
      *
      * @see #setStyleRanges(int[], StyleRange[])
      */
-    void setStyleRanges(IStyleRange[] ranges);
+    void setStyleRanges(StyleRange[] ranges);
 
     /**
      * Sets the tab width.

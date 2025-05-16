@@ -7,9 +7,9 @@ public interface IGroup extends IComposite {
 
     void checkSubclass();
 
-    IRectangle computeTrim(int x, int y, int width, int height);
+    Rectangle computeTrim(int x, int y, int width, int height);
 
-    IRectangle getClientArea();
+    Rectangle getClientArea();
 
     /**
      * Returns the receiver's text, which is the string that the

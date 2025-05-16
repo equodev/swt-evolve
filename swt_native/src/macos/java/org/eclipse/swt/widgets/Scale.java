@@ -74,7 +74,7 @@ public class Scale extends Control {
      * @see Widget#getStyle
      */
     public Scale(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Scale((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtScale(parent, style));
     }
 
     /**
@@ -101,12 +101,11 @@ public class Scale extends Control {
      * @see #removeSelectionListener
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -122,7 +121,7 @@ public class Scale extends Control {
      * </ul>
      */
     public int getIncrement() {
-        return getDelegate().getIncrement();
+        return getImpl().getIncrement();
     }
 
     /**
@@ -136,7 +135,7 @@ public class Scale extends Control {
      * </ul>
      */
     public int getMaximum() {
-        return getDelegate().getMaximum();
+        return getImpl().getMaximum();
     }
 
     /**
@@ -150,7 +149,7 @@ public class Scale extends Control {
      * </ul>
      */
     public int getMinimum() {
-        return getDelegate().getMinimum();
+        return getImpl().getMinimum();
     }
 
     /**
@@ -166,7 +165,7 @@ public class Scale extends Control {
      * </ul>
      */
     public int getPageIncrement() {
-        return getDelegate().getPageIncrement();
+        return getImpl().getPageIncrement();
     }
 
     /**
@@ -180,7 +179,7 @@ public class Scale extends Control {
      * </ul>
      */
     public int getSelection() {
-        return getDelegate().getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -201,7 +200,7 @@ public class Scale extends Control {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -218,7 +217,7 @@ public class Scale extends Control {
      * </ul>
      */
     public void setIncrement(int increment) {
-        getDelegate().setIncrement(increment);
+        getImpl().setIncrement(increment);
     }
 
     /**
@@ -235,7 +234,7 @@ public class Scale extends Control {
      * </ul>
      */
     public void setMaximum(int value) {
-        getDelegate().setMaximum(value);
+        getImpl().setMaximum(value);
     }
 
     /**
@@ -252,7 +251,7 @@ public class Scale extends Control {
      * </ul>
      */
     public void setMinimum(int value) {
-        getDelegate().setMinimum(value);
+        getImpl().setMinimum(value);
     }
 
     /**
@@ -269,7 +268,7 @@ public class Scale extends Control {
      * </ul>
      */
     public void setPageIncrement(int pageIncrement) {
-        getDelegate().setPageIncrement(pageIncrement);
+        getImpl().setPageIncrement(pageIncrement);
     }
 
     /**
@@ -284,18 +283,18 @@ public class Scale extends Control {
      * </ul>
      */
     public void setSelection(int value) {
-        getDelegate().setSelection(value);
+        getImpl().setSelection(value);
     }
 
-    protected Scale(IScale delegate) {
-        super(delegate);
+    protected Scale(IScale impl) {
+        super(impl);
     }
 
-    public static Scale createApi(IScale delegate) {
-        return new Scale(delegate);
+    public static Scale createApi(IScale impl) {
+        return new Scale(impl);
     }
 
-    public IScale getDelegate() {
-        return (IScale) super.getDelegate();
+    public IScale getImpl() {
+        return (IScale) super.getImpl();
     }
 }

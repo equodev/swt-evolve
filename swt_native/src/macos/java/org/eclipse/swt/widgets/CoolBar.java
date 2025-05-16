@@ -17,7 +17,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class provide an area for dynamically
@@ -81,16 +80,15 @@ public class CoolBar extends Composite {
      * @see Widget#getStyle
      */
     public CoolBar(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.CoolBar((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtCoolBar(parent, style));
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -110,8 +108,7 @@ public class CoolBar extends Composite {
      * </ul>
      */
     public CoolItem getItem(int index) {
-        ICoolItem ret = getDelegate().getItem(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getItem(index);
     }
 
     /**
@@ -125,7 +122,7 @@ public class CoolBar extends Composite {
      * </ul>
      */
     public int getItemCount() {
-        return getDelegate().getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -145,7 +142,7 @@ public class CoolBar extends Composite {
      * </ul>
      */
     public CoolItem[] getItems() {
-        return Convert.array(getDelegate().getItems(), ICoolItem::getApi, CoolItem[]::new);
+        return getImpl().getItems();
     }
 
     /**
@@ -167,7 +164,7 @@ public class CoolBar extends Composite {
      * </ul>
      */
     public int indexOf(CoolItem item) {
-        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
+        return getImpl().indexOf(item);
     }
 
     /**
@@ -192,11 +189,11 @@ public class CoolBar extends Composite {
      * </ul>
      */
     public int[] getItemOrder() {
-        return getDelegate().getItemOrder();
+        return getImpl().getItemOrder();
     }
 
     public void setBackground(Color color) {
-        getDelegate().setBackground((color != null ? color.getDelegate() : null));
+        getImpl().setBackground(color);
     }
 
     /**
@@ -212,7 +209,7 @@ public class CoolBar extends Composite {
      * </ul>
      */
     public Point[] getItemSizes() {
-        return Convert.array(getDelegate().getItemSizes(), IPoint::getApi, Point[]::new);
+        return getImpl().getItemSizes();
     }
 
     /**
@@ -229,7 +226,7 @@ public class CoolBar extends Composite {
      * @since 2.0
      */
     public boolean getLocked() {
-        return getDelegate().getLocked();
+        return getImpl().getLocked();
     }
 
     /**
@@ -246,7 +243,7 @@ public class CoolBar extends Composite {
      * </ul>
      */
     public int[] getWrapIndices() {
-        return getDelegate().getWrapIndices();
+        return getImpl().getWrapIndices();
     }
 
     /**
@@ -263,7 +260,7 @@ public class CoolBar extends Composite {
      * @since 2.0
      */
     public void setLocked(boolean locked) {
-        getDelegate().setLocked(locked);
+        getImpl().setLocked(locked);
     }
 
     /**
@@ -282,11 +279,11 @@ public class CoolBar extends Composite {
      * </ul>
      */
     public void setWrapIndices(int[] indices) {
-        getDelegate().setWrapIndices(indices);
+        getImpl().setWrapIndices(indices);
     }
 
     public void setCursor(Cursor cursor) {
-        getDelegate().setCursor((cursor != null ? cursor.getDelegate() : null));
+        getImpl().setCursor(cursor);
     }
 
     /**
@@ -323,22 +320,22 @@ public class CoolBar extends Composite {
      * </ul>
      */
     public void setItemLayout(int[] itemOrder, int[] wrapIndices, Point[] sizes) {
-        getDelegate().setItemLayout(itemOrder, wrapIndices, Convert.array(sizes, Point::getDelegate, IPoint[]::new));
+        getImpl().setItemLayout(itemOrder, wrapIndices, sizes);
     }
 
     public void setOrientation(int orientation) {
-        getDelegate().setOrientation(orientation);
+        getImpl().setOrientation(orientation);
     }
 
-    protected CoolBar(ICoolBar delegate) {
-        super(delegate);
+    protected CoolBar(ICoolBar impl) {
+        super(impl);
     }
 
-    public static CoolBar createApi(ICoolBar delegate) {
-        return new CoolBar(delegate);
+    public static CoolBar createApi(ICoolBar impl) {
+        return new CoolBar(impl);
     }
 
-    public ICoolBar getDelegate() {
-        return (ICoolBar) super.getDelegate();
+    public ICoolBar getImpl() {
+        return (ICoolBar) super.getImpl();
     }
 }

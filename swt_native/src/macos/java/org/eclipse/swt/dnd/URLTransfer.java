@@ -40,8 +40,7 @@ public class URLTransfer extends ByteArrayTransfer {
      * @return the singleton instance of the URLTransfer class
      */
     public static URLTransfer getInstance() {
-        IURLTransfer ret = nat.org.eclipse.swt.dnd.URLTransfer.getInstance();
-        return ret != null ? ret.getApi() : null;
+        return SwtURLTransfer.getInstance();
     }
 
     /**
@@ -55,7 +54,7 @@ public class URLTransfer extends ByteArrayTransfer {
      * @see Transfer#nativeToJava
      */
     public void javaToNative(Object object, TransferData transferData) {
-        getDelegate().javaToNative(object, (transferData != null ? transferData.getDelegate() : null));
+        getImpl().javaToNative(object, transferData);
     }
 
     /**
@@ -69,30 +68,30 @@ public class URLTransfer extends ByteArrayTransfer {
      * @see Transfer#javaToNative
      */
     public Object nativeToJava(TransferData transferData) {
-        return getDelegate().nativeToJava((transferData != null ? transferData.getDelegate() : null));
+        return getImpl().nativeToJava(transferData);
     }
 
     protected int[] getTypeIds() {
-        return getDelegate().getTypeIds();
+        return getImpl().getTypeIds();
     }
 
     protected String[] getTypeNames() {
-        return getDelegate().getTypeNames();
+        return getImpl().getTypeNames();
     }
 
     protected boolean validate(Object object) {
-        return getDelegate().validate(object);
+        return getImpl().validate(object);
     }
 
-    protected URLTransfer(IURLTransfer delegate) {
-        super(delegate);
+    protected URLTransfer(IURLTransfer impl) {
+        super(impl);
     }
 
-    public static URLTransfer createApi(IURLTransfer delegate) {
-        return new URLTransfer(delegate);
+    public static URLTransfer createApi(IURLTransfer impl) {
+        return new URLTransfer(impl);
     }
 
-    public IURLTransfer getDelegate() {
-        return (IURLTransfer) super.getDelegate();
+    public IURLTransfer getImpl() {
+        return (IURLTransfer) super.getImpl();
     }
 }

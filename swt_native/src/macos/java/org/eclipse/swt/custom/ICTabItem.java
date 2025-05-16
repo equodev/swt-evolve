@@ -19,7 +19,7 @@ public interface ICTabItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IRectangle getBounds();
+    Rectangle getBounds();
 
     /**
      * Gets the control that is displayed in the content area of the tab item.
@@ -31,7 +31,7 @@ public interface ICTabItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Get the image displayed in the tab if the tab is disabled.
@@ -45,7 +45,7 @@ public interface ICTabItem extends IItem {
      *
      * @deprecated the disabled image is not used
      */
-    IImage getDisabledImage();
+    Image getDisabledImage();
 
     /**
      * Returns the foreground color that the receiver will use to paint textual information.
@@ -58,7 +58,7 @@ public interface ICTabItem extends IItem {
      * </ul>
      * @since 3.114
      */
-    IColor getForeground();
+    Color getForeground();
 
     /**
      * Returns the selection foreground color that the receiver will use to paint textual information.
@@ -71,7 +71,7 @@ public interface ICTabItem extends IItem {
      * </ul>
      * @since 3.114
      */
-    IColor getSelectionForeground();
+    Color getSelectionForeground();
 
     /**
      * Returns the font that the receiver will use to paint textual information.
@@ -85,7 +85,7 @@ public interface ICTabItem extends IItem {
      *
      *  @since 3.0
      */
-    IFont getFont();
+    Font getFont();
 
     /**
      * Returns the receiver's parent, which must be a <code>CTabFolder</code>.
@@ -97,7 +97,7 @@ public interface ICTabItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ICTabFolder getParent();
+    CTabFolder getParent();
 
     /**
      * Returns <code>true</code> to indicate that the receiver's close button should be shown.
@@ -157,7 +157,7 @@ public interface ICTabItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setControl(IControl control);
+    void setControl(Control control);
 
     /**
      * Sets the image that is displayed if the tab item is disabled.
@@ -172,7 +172,7 @@ public interface ICTabItem extends IItem {
      *
      * @deprecated This image is not used
      */
-    void setDisabledImage(IImage image);
+    void setDisabledImage(Image image);
 
     /**
      * Sets the font that the receiver will use to paint textual information
@@ -191,7 +191,7 @@ public interface ICTabItem extends IItem {
      *
      * @since 3.0
      */
-    void setFont(IFont font);
+    void setFont(Font font);
 
     /**
      * Sets the foreground color that the receiver will use to paint textual information
@@ -209,7 +209,7 @@ public interface ICTabItem extends IItem {
      * </ul>
      * @since 3.114
      */
-    void setForeground(IColor color);
+    void setForeground(Color color);
 
     /**
      * Sets the selection foreground color that the receiver will use to paint textual information
@@ -227,9 +227,9 @@ public interface ICTabItem extends IItem {
      * </ul>
      * @since 3.114
      */
-    void setSelectionForeground(IColor color);
+    void setSelectionForeground(Color color);
 
-    void setImage(IImage image);
+    void setImage(Image image);
 
     /**
      * Sets to <code>true</code> to indicate that the receiver's close button should be shown.

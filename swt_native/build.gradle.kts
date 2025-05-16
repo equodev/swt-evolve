@@ -157,7 +157,7 @@ val extractSources by tasks.registering {
     dependsOn(configurations["swtSources"])
 
     doLast {
-        val sourcesDir = file("src/$os/java")
+        val sourcesDir = file("build/swt/$os")
         sourcesDir.mkdirs()
 
         configurations["swtSources"].files.forEach { jar ->

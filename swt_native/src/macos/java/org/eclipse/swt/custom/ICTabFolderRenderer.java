@@ -46,7 +46,7 @@ public interface ICTabFolderRenderer {
      *
      * @since 3.6
      */
-    IPoint computeSize(int part, int state, IGC gc, int wHint, int hHint);
+    Point computeSize(int part, int state, GC gc, int wHint, int hHint);
 
     /**
      * Given a desired <em>client area</em> for the part
@@ -74,7 +74,7 @@ public interface ICTabFolderRenderer {
      *
      * @since 3.6
      */
-    IRectangle computeTrim(int part, int state, int x, int y, int width, int height);
+    Rectangle computeTrim(int part, int state, int x, int y, int width, int height);
 
     /**
      * Dispose of any operating system resources associated with
@@ -117,7 +117,7 @@ public interface ICTabFolderRenderer {
      *
      * @since 3.6
      */
-    void draw(int part, int state, IRectangle bounds, IGC gc);
+    void draw(int part, int state, Rectangle bounds, GC gc);
 
     CTabFolderRenderer getApi();
 

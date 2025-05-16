@@ -67,7 +67,7 @@ public final class GlyphMetrics {
      * </ul>
      */
     public GlyphMetrics(int ascent, int descent, int width) {
-        this(new nat.org.eclipse.swt.graphics.GlyphMetrics(ascent, descent, width));
+        this(new SwtGlyphMetrics(ascent, descent, width));
     }
 
     /**
@@ -81,7 +81,7 @@ public final class GlyphMetrics {
      * @see #hashCode()
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object instanceof GlyphMetrics ? ((GlyphMetrics) object).getDelegate() : object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -95,7 +95,7 @@ public final class GlyphMetrics {
      * @see #equals(Object)
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
     /**
@@ -105,21 +105,21 @@ public final class GlyphMetrics {
      * @return a string representation of the <code>GlyphMetrics</code>
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    IGlyphMetrics delegate;
+    IGlyphMetrics impl;
 
-    protected GlyphMetrics(IGlyphMetrics delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected GlyphMetrics(IGlyphMetrics impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static GlyphMetrics createApi(IGlyphMetrics delegate) {
-        return new GlyphMetrics(delegate);
+    public static GlyphMetrics createApi(IGlyphMetrics impl) {
+        return new GlyphMetrics(impl);
     }
 
-    public IGlyphMetrics getDelegate() {
-        return delegate;
+    public IGlyphMetrics getImpl() {
+        return impl;
     }
 }

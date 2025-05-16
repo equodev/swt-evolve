@@ -406,7 +406,7 @@ public final class GridData {
      * default values.
      */
     public GridData() {
-        this(new nat.org.eclipse.swt.layout.GridData());
+        this(new SwtGridData());
     }
 
     /**
@@ -416,7 +416,7 @@ public final class GridData {
      * @param style the GridData style
      */
     public GridData(int style) {
-        this(new nat.org.eclipse.swt.layout.GridData(style));
+        this(new SwtGridData(style));
     }
 
     /**
@@ -432,7 +432,7 @@ public final class GridData {
      * @since 3.0
      */
     public GridData(int horizontalAlignment, int verticalAlignment, boolean grabExcessHorizontalSpace, boolean grabExcessVerticalSpace) {
-        this(new nat.org.eclipse.swt.layout.GridData(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace));
+        this(new SwtGridData(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace));
     }
 
     /**
@@ -450,7 +450,7 @@ public final class GridData {
      * @since 3.0
      */
     public GridData(int horizontalAlignment, int verticalAlignment, boolean grabExcessHorizontalSpace, boolean grabExcessVerticalSpace, int horizontalSpan, int verticalSpan) {
-        this(new nat.org.eclipse.swt.layout.GridData(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace, horizontalSpan, verticalSpan));
+        this(new SwtGridData(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace, horizontalSpan, verticalSpan));
     }
 
     /**
@@ -464,7 +464,7 @@ public final class GridData {
      * @since 3.0
      */
     public GridData(int width, int height) {
-        this(new nat.org.eclipse.swt.layout.GridData(width, height));
+        this(new SwtGridData(width, height));
     }
 
     /**
@@ -474,21 +474,21 @@ public final class GridData {
      * @return a string representation of the GridData object
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    IGridData delegate;
+    IGridData impl;
 
-    protected GridData(IGridData delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected GridData(IGridData impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static GridData createApi(IGridData delegate) {
-        return new GridData(delegate);
+    public static GridData createApi(IGridData impl) {
+        return new GridData(impl);
     }
 
-    public IGridData getDelegate() {
-        return delegate;
+    public IGridData getImpl() {
+        return impl;
     }
 }

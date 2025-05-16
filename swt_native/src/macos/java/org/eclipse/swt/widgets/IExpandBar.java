@@ -29,9 +29,9 @@ public interface IExpandBar extends IComposite {
 
     void checkSubclass();
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
-    IColor getForeground();
+    Color getForeground();
 
     /**
      * Returns the item at the given, zero-relative index in the
@@ -48,7 +48,7 @@ public interface IExpandBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IExpandItem getItem(int index);
+    ExpandItem getItem(int index);
 
     /**
      * Returns the number of items contained in the receiver.
@@ -78,7 +78,7 @@ public interface IExpandBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IExpandItem[] getItems();
+    ExpandItem[] getItems();
 
     /**
      * Returns the receiver's spacing.
@@ -110,7 +110,7 @@ public interface IExpandBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int indexOf(IExpandItem item);
+    int indexOf(ExpandItem item);
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -131,9 +131,9 @@ public interface IExpandBar extends IComposite {
      */
     void removeExpandListener(ExpandListener listener);
 
-    void setFont(IFont font);
+    void setFont(Font font);
 
-    void setForeground(IColor color);
+    void setForeground(Color color);
 
     /**
      * Sets the receiver's spacing. Spacing specifies the number of points allocated around

@@ -55,9 +55,9 @@ public interface ISpinner extends IComposite {
 
     void checkSubclass();
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
-    IRectangle computeTrim(int x, int y, int width, int height);
+    Rectangle computeTrim(int x, int y, int width, int height);
 
     /**
      * Copies the selected text.

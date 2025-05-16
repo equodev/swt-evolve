@@ -19,7 +19,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class support the layout of selectable
@@ -85,26 +84,23 @@ public class ToolBar extends Composite {
      * @see Widget#getStyle()
      */
     public ToolBar(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.ToolBar((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtToolBar(parent, style));
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeTrim(x, y, width, height);
     }
 
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     /**
@@ -123,8 +119,7 @@ public class ToolBar extends Composite {
      * </ul>
      */
     public ToolItem getItem(int index) {
-        IToolItem ret = getDelegate().getItem(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getItem(index);
     }
 
     /**
@@ -144,8 +139,7 @@ public class ToolBar extends Composite {
      * </ul>
      */
     public ToolItem getItem(Point point) {
-        IToolItem ret = getDelegate().getItem((point != null ? point.getDelegate() : null));
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getItem(point);
     }
 
     /**
@@ -159,7 +153,7 @@ public class ToolBar extends Composite {
      * </ul>
      */
     public int getItemCount() {
-        return getDelegate().getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -179,7 +173,7 @@ public class ToolBar extends Composite {
      * </ul>
      */
     public ToolItem[] getItems() {
-        return Convert.array(getDelegate().getItems(), IToolItem::getApi, ToolItem[]::new);
+        return getImpl().getItems();
     }
 
     /**
@@ -196,7 +190,7 @@ public class ToolBar extends Composite {
      * </ul>
      */
     public int getRowCount() {
-        return getDelegate().getRowCount();
+        return getImpl().getRowCount();
     }
 
     /**
@@ -218,26 +212,26 @@ public class ToolBar extends Composite {
      * </ul>
      */
     public int indexOf(ToolItem item) {
-        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
+        return getImpl().indexOf(item);
     }
 
     public void setRedraw(boolean redraw) {
-        getDelegate().setRedraw(redraw);
+        getImpl().setRedraw(redraw);
     }
 
     public void setVisible(boolean visible) {
-        getDelegate().setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
-    protected ToolBar(IToolBar delegate) {
-        super(delegate);
+    protected ToolBar(IToolBar impl) {
+        super(impl);
     }
 
-    public static ToolBar createApi(IToolBar delegate) {
-        return new ToolBar(delegate);
+    public static ToolBar createApi(IToolBar impl) {
+        return new ToolBar(impl);
     }
 
-    public IToolBar getDelegate() {
-        return (IToolBar) super.getDelegate();
+    public IToolBar getImpl() {
+        return (IToolBar) super.getImpl();
     }
 }

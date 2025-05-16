@@ -68,7 +68,7 @@ public class Pattern extends Resource {
      * @see #dispose()
      */
     public Pattern(Device device, Image image) {
-        this(new nat.org.eclipse.swt.graphics.Pattern((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), (nat.org.eclipse.swt.graphics.Image) (image != null ? image.getDelegate() : null)));
+        this(new SwtPattern(device, image));
     }
 
     /**
@@ -107,7 +107,7 @@ public class Pattern extends Resource {
      * @see #dispose()
      */
     public Pattern(Device device, float x1, float y1, float x2, float y2, Color color1, Color color2) {
-        this(new nat.org.eclipse.swt.graphics.Pattern((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), x1, y1, x2, y2, (nat.org.eclipse.swt.graphics.Color) (color1 != null ? color1.getDelegate() : null), (nat.org.eclipse.swt.graphics.Color) (color2 != null ? color2.getDelegate() : null)));
+        this(new SwtPattern(device, x1, y1, x2, y2, color1, color2));
     }
 
     /**
@@ -150,7 +150,7 @@ public class Pattern extends Resource {
      * @since 3.2
      */
     public Pattern(Device device, float x1, float y1, float x2, float y2, Color color1, int alpha1, Color color2, int alpha2) {
-        this(new nat.org.eclipse.swt.graphics.Pattern((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), x1, y1, x2, y2, (nat.org.eclipse.swt.graphics.Color) (color1 != null ? color1.getDelegate() : null), alpha1, (nat.org.eclipse.swt.graphics.Color) (color2 != null ? color2.getDelegate() : null), alpha2));
+        this(new SwtPattern(device, x1, y1, x2, y2, color1, alpha1, color2, alpha2));
     }
 
     /**
@@ -164,7 +164,7 @@ public class Pattern extends Resource {
      * @return <code>true</code> when the Pattern is disposed, and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return getDelegate().isDisposed();
+        return getImpl().isDisposed();
     }
 
     /**
@@ -174,18 +174,18 @@ public class Pattern extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected Pattern(IPattern delegate) {
-        super(delegate);
+    protected Pattern(IPattern impl) {
+        super(impl);
     }
 
-    public static Pattern createApi(IPattern delegate) {
-        return new Pattern(delegate);
+    public static Pattern createApi(IPattern impl) {
+        return new Pattern(impl);
     }
 
-    public IPattern getDelegate() {
-        return (IPattern) super.getDelegate();
+    public IPattern getImpl() {
+        return (IPattern) super.getImpl();
     }
 }

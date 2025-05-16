@@ -250,7 +250,7 @@ public interface IAccessible {
      * @exception IllegalArgumentException ERROR_NULL_ARGUMENT - if the Accessible target is null
      * @since 3.6
      */
-    void addRelation(int type, IAccessible target);
+    void addRelation(int type, Accessible target);
 
     /**
      * Return YES if the UIElement doesn't show up to the outside world -
@@ -291,7 +291,7 @@ public interface IAccessible {
      * @return the receiver's control
      * @since 3.0
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Invokes platform specific functionality to dispose an accessible object.
@@ -543,7 +543,7 @@ public interface IAccessible {
      * @exception IllegalArgumentException ERROR_NULL_ARGUMENT - if the Accessible target is null
      * @since 3.6
      */
-    void removeRelation(int type, IAccessible target);
+    void removeRelation(int type, Accessible target);
 
     /**
      * Sends a message with event-specific data to accessible clients

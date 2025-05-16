@@ -48,7 +48,7 @@ public class TableDragSourceEffect extends DragSourceEffect {
      * @param table the <code>Table</code> that the user clicks on to initiate the drag
      */
     public TableDragSourceEffect(Table table) {
-        this(new nat.org.eclipse.swt.dnd.TableDragSourceEffect((nat.org.eclipse.swt.widgets.Table) (table != null ? table.getDelegate() : null)));
+        this(new SwtTableDragSourceEffect(table));
     }
 
     /**
@@ -61,7 +61,7 @@ public class TableDragSourceEffect extends DragSourceEffect {
      * @param event the information associated with the drag finished event
      */
     public void dragFinished(DragSourceEvent event) {
-        getDelegate().dragFinished(event);
+        getImpl().dragFinished(event);
     }
 
     /**
@@ -76,18 +76,18 @@ public class TableDragSourceEffect extends DragSourceEffect {
      * @param event the information associated with the drag start event
      */
     public void dragStart(DragSourceEvent event) {
-        getDelegate().dragStart(event);
+        getImpl().dragStart(event);
     }
 
-    protected TableDragSourceEffect(ITableDragSourceEffect delegate) {
-        super(delegate);
+    protected TableDragSourceEffect(ITableDragSourceEffect impl) {
+        super(impl);
     }
 
-    public static TableDragSourceEffect createApi(ITableDragSourceEffect delegate) {
-        return new TableDragSourceEffect(delegate);
+    public static TableDragSourceEffect createApi(ITableDragSourceEffect impl) {
+        return new TableDragSourceEffect(impl);
     }
 
-    public ITableDragSourceEffect getDelegate() {
-        return (ITableDragSourceEffect) super.getDelegate();
+    public ITableDragSourceEffect getImpl() {
+        return (ITableDragSourceEffect) super.getImpl();
     }
 }

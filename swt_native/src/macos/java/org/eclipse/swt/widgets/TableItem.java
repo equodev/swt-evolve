@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -70,7 +69,7 @@ public class TableItem extends Item {
      * @see Widget#getStyle
      */
     public TableItem(Table parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.TableItem((nat.org.eclipse.swt.widgets.Table) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtTableItem(parent, style));
     }
 
     /**
@@ -106,11 +105,11 @@ public class TableItem extends Item {
      * @see Widget#getStyle
      */
     public TableItem(Table parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.TableItem((nat.org.eclipse.swt.widgets.Table) (parent != null ? parent.getDelegate() : null), style, index));
+        this(new SwtTableItem(parent, style, index));
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -126,8 +125,7 @@ public class TableItem extends Item {
      * @since 2.0
      */
     public Color getBackground() {
-        IColor ret = getDelegate().getBackground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBackground();
     }
 
     /**
@@ -144,8 +142,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Color getBackground(int index) {
-        IColor ret = getDelegate().getBackground(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBackground(index);
     }
 
     /**
@@ -162,8 +159,7 @@ public class TableItem extends Item {
      * @since 3.2
      */
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     /**
@@ -179,8 +175,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public Rectangle getBounds(int index) {
-        IRectangle ret = getDelegate().getBounds(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds(index);
     }
 
     /**
@@ -196,7 +191,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public boolean getChecked() {
-        return getDelegate().getChecked();
+        return getImpl().getChecked();
     }
 
     /**
@@ -212,8 +207,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Font getFont() {
-        IFont ret = getDelegate().getFont();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getFont();
     }
 
     /**
@@ -231,8 +225,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Font getFont(int index) {
-        IFont ret = getDelegate().getFont(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getFont(index);
     }
 
     /**
@@ -248,8 +241,7 @@ public class TableItem extends Item {
      * @since 2.0
      */
     public Color getForeground() {
-        IColor ret = getDelegate().getForeground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getForeground();
     }
 
     /**
@@ -266,8 +258,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Color getForeground(int index) {
-        IColor ret = getDelegate().getForeground(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getForeground(index);
     }
 
     /**
@@ -283,12 +274,11 @@ public class TableItem extends Item {
      * </ul>
      */
     public boolean getGrayed() {
-        return getDelegate().getGrayed();
+        return getImpl().getGrayed();
     }
 
     public Image getImage() {
-        IImage ret = getDelegate().getImage();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getImage();
     }
 
     /**
@@ -304,8 +294,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public Image getImage(int index) {
-        IImage ret = getDelegate().getImage(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getImage(index);
     }
 
     /**
@@ -323,8 +312,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public Rectangle getImageBounds(int index) {
-        IRectangle ret = getDelegate().getImageBounds(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getImageBounds(index);
     }
 
     /**
@@ -338,7 +326,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public int getImageIndent() {
-        return getDelegate().getImageIndent();
+        return getImpl().getImageIndent();
     }
 
     /**
@@ -352,12 +340,11 @@ public class TableItem extends Item {
      * </ul>
      */
     public Table getParent() {
-        ITable ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     public String getText() {
-        return getDelegate().getText();
+        return getImpl().getText();
     }
 
     /**
@@ -373,7 +360,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public String getText(int index) {
-        return getDelegate().getText(index);
+        return getImpl().getText(index);
     }
 
     /**
@@ -393,8 +380,7 @@ public class TableItem extends Item {
      * @since 3.3
      */
     public Rectangle getTextBounds(int index) {
-        IRectangle ret = getDelegate().getTextBounds(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getTextBounds(index);
     }
 
     /**
@@ -415,7 +401,7 @@ public class TableItem extends Item {
      * @since 2.0
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground((color != null ? color.getDelegate() : null));
+        getImpl().setBackground(color);
     }
 
     /**
@@ -437,7 +423,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public void setBackground(int index, Color color) {
-        getDelegate().setBackground(index, (color != null ? color.getDelegate() : null));
+        getImpl().setBackground(index, color);
     }
 
     /**
@@ -452,7 +438,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public void setChecked(boolean checked) {
-        getDelegate().setChecked(checked);
+        getImpl().setChecked(checked);
     }
 
     /**
@@ -473,7 +459,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public void setFont(Font font) {
-        getDelegate().setFont((font != null ? font.getDelegate() : null));
+        getImpl().setFont(font);
     }
 
     /**
@@ -496,7 +482,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public void setFont(int index, Font font) {
-        getDelegate().setFont(index, (font != null ? font.getDelegate() : null));
+        getImpl().setFont(index, font);
     }
 
     /**
@@ -517,7 +503,7 @@ public class TableItem extends Item {
      * @since 2.0
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground((color != null ? color.getDelegate() : null));
+        getImpl().setForeground(color);
     }
 
     /**
@@ -539,7 +525,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public void setForeground(int index, Color color) {
-        getDelegate().setForeground(index, (color != null ? color.getDelegate() : null));
+        getImpl().setForeground(index, color);
     }
 
     /**
@@ -554,7 +540,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public void setGrayed(boolean grayed) {
-        getDelegate().setGrayed(grayed);
+        getImpl().setGrayed(grayed);
     }
 
     /**
@@ -572,7 +558,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public void setImage(Image[] images) {
-        getDelegate().setImage(Convert.array(images, Image::getDelegate, IImage[]::new));
+        getImpl().setImage(images);
     }
 
     /**
@@ -590,11 +576,11 @@ public class TableItem extends Item {
      * </ul>
      */
     public void setImage(int index, Image image) {
-        getDelegate().setImage(index, (image != null ? image.getDelegate() : null));
+        getImpl().setImage(index, image);
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -611,7 +597,7 @@ public class TableItem extends Item {
      */
     @Deprecated
     public void setImageIndent(int indent) {
-        getDelegate().setImageIndent(indent);
+        getImpl().setImageIndent(indent);
     }
 
     /**
@@ -631,7 +617,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public void setText(String[] strings) {
-        getDelegate().setText(strings);
+        getImpl().setText(strings);
     }
 
     /**
@@ -652,22 +638,22 @@ public class TableItem extends Item {
      * </ul>
      */
     public void setText(int index, String string) {
-        getDelegate().setText(index, string);
+        getImpl().setText(index, string);
     }
 
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
-    protected TableItem(ITableItem delegate) {
-        super(delegate);
+    protected TableItem(ITableItem impl) {
+        super(impl);
     }
 
-    public static TableItem createApi(ITableItem delegate) {
-        return new TableItem(delegate);
+    public static TableItem createApi(ITableItem impl) {
+        return new TableItem(impl);
     }
 
-    public ITableItem getDelegate() {
-        return (ITableItem) super.getDelegate();
+    public ITableItem getImpl() {
+        return (ITableItem) super.getImpl();
     }
 }

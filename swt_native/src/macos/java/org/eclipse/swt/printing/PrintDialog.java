@@ -53,7 +53,7 @@ public class PrintDialog extends Dialog {
      * @see Widget#getStyle
      */
     public PrintDialog(Shell parent) {
-        this(new nat.org.eclipse.swt.printing.PrintDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
+        this(new SwtPrintDialog(parent));
     }
 
     /**
@@ -85,7 +85,7 @@ public class PrintDialog extends Dialog {
      * @see Widget#getStyle
      */
     public PrintDialog(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.printing.PrintDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtPrintDialog(parent, style));
     }
 
     /**
@@ -101,7 +101,7 @@ public class PrintDialog extends Dialog {
      * @since 3.4
      */
     public void setPrinterData(PrinterData data) {
-        getDelegate().setPrinterData((data != null ? data.getDelegate() : null));
+        getImpl().setPrinterData(data);
     }
 
     /**
@@ -113,8 +113,7 @@ public class PrintDialog extends Dialog {
      * @since 3.4
      */
     public PrinterData getPrinterData() {
-        IPrinterData ret = getDelegate().getPrinterData();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getPrinterData();
     }
 
     /**
@@ -130,8 +129,7 @@ public class PrintDialog extends Dialog {
      * </ul>
      */
     public PrinterData open() {
-        IPrinterData ret = getDelegate().open();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().open();
     }
 
     /**
@@ -150,7 +148,7 @@ public class PrintDialog extends Dialog {
      * @return the scope setting that the user selected
      */
     public int getScope() {
-        return getDelegate().getScope();
+        return getImpl().getScope();
     }
 
     /**
@@ -169,7 +167,7 @@ public class PrintDialog extends Dialog {
      * @param scope the scope setting when the dialog is opened
      */
     public void setScope(int scope) {
-        getDelegate().setScope(scope);
+        getImpl().setScope(scope);
     }
 
     /**
@@ -183,7 +181,7 @@ public class PrintDialog extends Dialog {
      * @return the start page setting that the user selected
      */
     public int getStartPage() {
-        return getDelegate().getStartPage();
+        return getImpl().getStartPage();
     }
 
     /**
@@ -197,7 +195,7 @@ public class PrintDialog extends Dialog {
      * @param startPage the startPage setting when the dialog is opened
      */
     public void setStartPage(int startPage) {
-        getDelegate().setStartPage(startPage);
+        getImpl().setStartPage(startPage);
     }
 
     /**
@@ -211,7 +209,7 @@ public class PrintDialog extends Dialog {
      * @return the end page setting that the user selected
      */
     public int getEndPage() {
-        return getDelegate().getEndPage();
+        return getImpl().getEndPage();
     }
 
     /**
@@ -225,7 +223,7 @@ public class PrintDialog extends Dialog {
      * @param endPage the end page setting when the dialog is opened
      */
     public void setEndPage(int endPage) {
-        getDelegate().setEndPage(endPage);
+        getImpl().setEndPage(endPage);
     }
 
     /**
@@ -235,7 +233,7 @@ public class PrintDialog extends Dialog {
      * @return the 'Print to file' setting that the user selected
      */
     public boolean getPrintToFile() {
-        return getDelegate().getPrintToFile();
+        return getImpl().getPrintToFile();
     }
 
     /**
@@ -245,22 +243,22 @@ public class PrintDialog extends Dialog {
      * @param printToFile the 'Print to file' setting when the dialog is opened
      */
     public void setPrintToFile(boolean printToFile) {
-        getDelegate().setPrintToFile(printToFile);
+        getImpl().setPrintToFile(printToFile);
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
-    protected PrintDialog(IPrintDialog delegate) {
-        super(delegate);
+    protected PrintDialog(IPrintDialog impl) {
+        super(impl);
     }
 
-    public static PrintDialog createApi(IPrintDialog delegate) {
-        return new PrintDialog(delegate);
+    public static PrintDialog createApi(IPrintDialog impl) {
+        return new PrintDialog(impl);
     }
 
-    public IPrintDialog getDelegate() {
-        return (IPrintDialog) super.getDelegate();
+    public IPrintDialog getImpl() {
+        return (IPrintDialog) super.getImpl();
     }
 }

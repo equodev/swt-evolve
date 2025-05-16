@@ -46,7 +46,7 @@ public interface IDragSource extends IWidget {
      *
      * @return the Control which is registered for this DragSource
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Returns an array of listeners who will be notified when a drag and drop
@@ -78,14 +78,14 @@ public interface IDragSource extends IWidget {
      *
      * @since 3.3
      */
-    IDragSourceEffect getDragSourceEffect();
+    DragSourceEffect getDragSourceEffect();
 
     /**
      * Returns the list of data types that can be transferred by this DragSource.
      *
      * @return the list of data types that can be transferred by this DragSource
      */
-    ITransfer[] getTransfer();
+    Transfer[] getTransfer();
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -115,7 +115,7 @@ public interface IDragSource extends IWidget {
      *
      * @since 3.3
      */
-    void setDragSourceEffect(IDragSourceEffect effect);
+    void setDragSourceEffect(DragSourceEffect effect);
 
     /**
      * Specifies the list of data types that can be transferred by this DragSource.
@@ -125,7 +125,7 @@ public interface IDragSource extends IWidget {
      * @param transferAgents a list of Transfer objects which define the types of data that can be
      * dragged from this source
      */
-    void setTransfer(ITransfer... transferAgents);
+    void setTransfer(Transfer... transferAgents);
 
     DragSource getApi();
 }

@@ -17,7 +17,7 @@ public interface IPopupList {
      *     <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * 	</ul>
      */
-    IFont getFont();
+    Font getFont();
 
     /**
      *  Gets the items.
@@ -49,7 +49,7 @@ public interface IPopupList {
      *
      * @return the text of the selected item or null if no item is selected
      */
-    String open(IRectangle rect);
+    String open(Rectangle rect);
 
     /**
      *  Selects an item with text that starts with specified String.
@@ -80,7 +80,7 @@ public interface IPopupList {
      *     <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * 	</ul>
      */
-    void setFont(IFont font);
+    void setFont(Font font);
 
     /**
      *  Sets all items.

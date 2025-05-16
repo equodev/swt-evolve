@@ -104,7 +104,7 @@ public final class FontData {
      * Constructs a new uninitialized font data.
      */
     public FontData() {
-        this(new nat.org.eclipse.swt.graphics.FontData());
+        this(new SwtFontData());
     }
 
     /**
@@ -127,7 +127,7 @@ public final class FontData {
      * @see #toString
      */
     public FontData(String string) {
-        this(new nat.org.eclipse.swt.graphics.FontData(string));
+        this(new SwtFontData(string));
     }
 
     /**
@@ -145,7 +145,7 @@ public final class FontData {
      * </ul>
      */
     public FontData(String name, int height, int style) {
-        this(new nat.org.eclipse.swt.graphics.FontData(name, height, style));
+        this(new SwtFontData(name, height, style));
     }
 
     /**
@@ -159,7 +159,7 @@ public final class FontData {
      * @see #hashCode
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object instanceof FontData ? ((FontData) object).getDelegate() : object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -170,7 +170,7 @@ public final class FontData {
      * @see #setHeight(int)
      */
     public int getHeight() {
-        return getDelegate().getHeight();
+        return getImpl().getHeight();
     }
 
     /**
@@ -191,7 +191,7 @@ public final class FontData {
      * @since 3.0
      */
     public String getLocale() {
-        return getDelegate().getLocale();
+        return getImpl().getLocale();
     }
 
     /**
@@ -204,7 +204,7 @@ public final class FontData {
      * @see #setName
      */
     public String getName() {
-        return getDelegate().getName();
+        return getImpl().getName();
     }
 
     /**
@@ -217,7 +217,7 @@ public final class FontData {
      * @see #setStyle
      */
     public int getStyle() {
-        return getDelegate().getStyle();
+        return getImpl().getStyle();
     }
 
     /**
@@ -231,7 +231,7 @@ public final class FontData {
      * @see #equals
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
     /**
@@ -248,7 +248,7 @@ public final class FontData {
      * @see #getHeight
      */
     public void setHeight(int height) {
-        getDelegate().setHeight(height);
+        getImpl().setHeight(height);
     }
 
     /**
@@ -269,7 +269,7 @@ public final class FontData {
      * @see java.util.Locale#toString
      */
     public void setLocale(String locale) {
-        getDelegate().setLocale(locale);
+        getImpl().setLocale(locale);
     }
 
     /**
@@ -299,7 +299,7 @@ public final class FontData {
      * @see #getName
      */
     public void setName(String name) {
-        getDelegate().setName(name);
+        getImpl().setName(name);
     }
 
     /**
@@ -313,7 +313,7 @@ public final class FontData {
      * @see #getStyle
      */
     public void setStyle(int style) {
-        getDelegate().setStyle(style);
+        getImpl().setStyle(style);
     }
 
     /**
@@ -326,21 +326,21 @@ public final class FontData {
      * @see FontData
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    IFontData delegate;
+    IFontData impl;
 
-    protected FontData(IFontData delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected FontData(IFontData impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static FontData createApi(IFontData delegate) {
-        return new FontData(delegate);
+    public static FontData createApi(IFontData impl) {
+        return new FontData(impl);
     }
 
-    public IFontData getDelegate() {
-        return delegate;
+    public IFontData getImpl() {
+        return impl;
     }
 }

@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class allow the user to select a font
@@ -53,7 +52,7 @@ public class FontDialog extends Dialog {
      * </ul>
      */
     public FontDialog(Shell parent) {
-        this(new nat.org.eclipse.swt.widgets.FontDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
+        this(new SwtFontDialog(parent));
     }
 
     /**
@@ -81,7 +80,7 @@ public class FontDialog extends Dialog {
      * </ul>
      */
     public FontDialog(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.FontDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtFontDialog(parent, style));
     }
 
     /**
@@ -98,7 +97,7 @@ public class FontDialog extends Dialog {
      * @since 3.8
      */
     public boolean getEffectsVisible() {
-        return getDelegate().getEffectsVisible();
+        return getImpl().getEffectsVisible();
     }
 
     /**
@@ -110,8 +109,7 @@ public class FontDialog extends Dialog {
      */
     @Deprecated
     public FontData getFontData() {
-        IFontData ret = getDelegate().getFontData();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getFontData();
     }
 
     /**
@@ -122,7 +120,7 @@ public class FontDialog extends Dialog {
      * @since 2.1.1
      */
     public FontData[] getFontList() {
-        return Convert.array(getDelegate().getFontList(), IFontData::getApi, FontData[]::new);
+        return getImpl().getFontList();
     }
 
     /**
@@ -136,7 +134,7 @@ public class FontDialog extends Dialog {
      * @since 2.1
      */
     public RGB getRGB() {
-        return getDelegate().getRGB();
+        return getImpl().getRGB();
     }
 
     /**
@@ -152,8 +150,7 @@ public class FontDialog extends Dialog {
      * </ul>
      */
     public FontData open() {
-        IFontData ret = getDelegate().open();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().open();
     }
 
     /**
@@ -169,7 +166,7 @@ public class FontDialog extends Dialog {
      * @since 3.8
      */
     public void setEffectsVisible(boolean visible) {
-        getDelegate().setEffectsVisible(visible);
+        getImpl().setEffectsVisible(visible);
     }
 
     /**
@@ -182,7 +179,7 @@ public class FontDialog extends Dialog {
      */
     @Deprecated
     public void setFontData(FontData fontData) {
-        getDelegate().setFontData((fontData != null ? fontData.getDelegate() : null));
+        getImpl().setFontData(fontData);
     }
 
     /**
@@ -198,7 +195,7 @@ public class FontDialog extends Dialog {
      * @since 2.1.1
      */
     public void setFontList(FontData[] fontData) {
-        getDelegate().setFontList(Convert.array(fontData, FontData::getDelegate, IFontData[]::new));
+        getImpl().setFontList(fontData);
     }
 
     /**
@@ -213,18 +210,18 @@ public class FontDialog extends Dialog {
      * @since 2.1
      */
     public void setRGB(RGB rgb) {
-        getDelegate().setRGB(rgb);
+        getImpl().setRGB(rgb);
     }
 
-    protected FontDialog(IFontDialog delegate) {
-        super(delegate);
+    protected FontDialog(IFontDialog impl) {
+        super(impl);
     }
 
-    public static FontDialog createApi(IFontDialog delegate) {
-        return new FontDialog(delegate);
+    public static FontDialog createApi(IFontDialog impl) {
+        return new FontDialog(impl);
     }
 
-    public IFontDialog getDelegate() {
-        return (IFontDialog) super.getDelegate();
+    public IFontDialog getImpl() {
+        return (IFontDialog) super.getImpl();
     }
 }

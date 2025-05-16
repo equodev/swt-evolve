@@ -20,7 +20,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class represent the "windows"
@@ -134,7 +133,7 @@ public class Shell extends Decorations {
      * </ul>
      */
     public Shell() {
-        this(new nat.org.eclipse.swt.widgets.Shell());
+        this(new SwtShell());
     }
 
     /**
@@ -177,7 +176,7 @@ public class Shell extends Decorations {
      * @see SWT#SHEET
      */
     public Shell(int style) {
-        this(new nat.org.eclipse.swt.widgets.Shell(style));
+        this(new SwtShell(style));
     }
 
     /**
@@ -200,7 +199,7 @@ public class Shell extends Decorations {
      * </ul>
      */
     public Shell(Display display) {
-        this(new nat.org.eclipse.swt.widgets.Shell((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null)));
+        this(new SwtShell(display));
     }
 
     /**
@@ -251,7 +250,7 @@ public class Shell extends Decorations {
      * @see SWT#SHEET
      */
     public Shell(Display display, int style) {
-        this(new nat.org.eclipse.swt.widgets.Shell((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null), style));
+        this(new SwtShell(display, style));
     }
 
     /**
@@ -277,7 +276,7 @@ public class Shell extends Decorations {
      * </ul>
      */
     public Shell(Shell parent) {
-        this(new nat.org.eclipse.swt.widgets.Shell((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
+        this(new SwtShell(parent));
     }
 
     /**
@@ -330,7 +329,7 @@ public class Shell extends Decorations {
      * @see SWT#SHEET
      */
     public Shell(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Shell((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtShell(parent, style));
     }
 
     /**
@@ -353,8 +352,7 @@ public class Shell extends Decorations {
      * @since 3.3
      */
     public static Shell internal_new(Display display, long handle) {
-        IShell ret = nat.org.eclipse.swt.widgets.Shell.internal_new((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null), handle);
-        return ret != null ? ret.getApi() : null;
+        return SwtShell.internal_new(display, handle);
     }
 
     /**
@@ -377,7 +375,7 @@ public class Shell extends Decorations {
      * @see #removeShellListener
      */
     public void addShellListener(ShellListener listener) {
-        getDelegate().addShellListener(listener);
+        getImpl().addShellListener(listener);
     }
 
     /**
@@ -396,17 +394,15 @@ public class Shell extends Decorations {
      * @see #dispose
      */
     public void close() {
-        getDelegate().close();
+        getImpl().close();
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeTrim(x, y, width, height);
     }
 
     /**
@@ -431,7 +427,7 @@ public class Shell extends Decorations {
      * @see Shell#setActive
      */
     public void forceActive() {
-        getDelegate().forceActive();
+        getImpl().forceActive();
     }
 
     /**
@@ -448,17 +444,15 @@ public class Shell extends Decorations {
      * @since 3.4
      */
     public int getAlpha() {
-        return getDelegate().getAlpha();
+        return getImpl().getAlpha();
     }
 
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     public Rectangle getClientArea() {
-        IRectangle ret = getDelegate().getClientArea();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getClientArea();
     }
 
     /**
@@ -475,7 +469,7 @@ public class Shell extends Decorations {
      * @since 3.4
      */
     public boolean getFullScreen() {
-        return getDelegate().getFullScreen();
+        return getImpl().getFullScreen();
     }
 
     /**
@@ -496,16 +490,15 @@ public class Shell extends Decorations {
      * @see SWT
      */
     public int getImeInputMode() {
-        return getDelegate().getImeInputMode();
+        return getImpl().getImeInputMode();
     }
 
     public Point getLocation() {
-        IPoint ret = getDelegate().getLocation();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getLocation();
     }
 
     public boolean getMaximized() {
-        return getDelegate().getMaximized();
+        return getImpl().getMaximized();
     }
 
     /**
@@ -521,11 +514,11 @@ public class Shell extends Decorations {
      * @since 3.5
      */
     public boolean getModified() {
-        return getDelegate().getModified();
+        return getImpl().getModified();
     }
 
     public boolean getMinimized() {
-        return getDelegate().getMinimized();
+        return getImpl().getMinimized();
     }
 
     /**
@@ -544,8 +537,7 @@ public class Shell extends Decorations {
      * @since 3.116
      */
     public Point getMaximumSize() {
-        IPoint ret = getDelegate().getMaximumSize();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getMaximumSize();
     }
 
     /**
@@ -564,8 +556,7 @@ public class Shell extends Decorations {
      * @since 3.1
      */
     public Point getMinimumSize() {
-        IPoint ret = getDelegate().getMinimumSize();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getMinimumSize();
     }
 
     /**
@@ -582,13 +573,11 @@ public class Shell extends Decorations {
      * @since 3.0
      */
     public Region getRegion() {
-        IRegion ret = getDelegate().getRegion();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getRegion();
     }
 
     public Shell getShell() {
-        IShell ret = getDelegate().getShell();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getShell();
     }
 
     /**
@@ -603,12 +592,11 @@ public class Shell extends Decorations {
      * </ul>
      */
     public Shell[] getShells() {
-        return Convert.array(getDelegate().getShells(), IShell::getApi, Shell[]::new);
+        return getImpl().getShells();
     }
 
     public Point getSize() {
-        IPoint ret = getDelegate().getSize();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getSize();
     }
 
     /**
@@ -627,16 +615,15 @@ public class Shell extends Decorations {
      * @since 3.7
      */
     public ToolBar getToolBar() {
-        IToolBar ret = getDelegate().getToolBar();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getToolBar();
     }
 
     public boolean isEnabled() {
-        return getDelegate().isEnabled();
+        return getImpl().isEnabled();
     }
 
     public boolean isVisible() {
-        return getDelegate().isVisible();
+        return getImpl().isVisible();
     }
 
     /**
@@ -661,11 +648,11 @@ public class Shell extends Decorations {
      * @see Shell#forceActive
      */
     public void open() {
-        getDelegate().open();
+        getImpl().open();
     }
 
     public boolean print(GC gc) {
-        return getDelegate().print((gc != null ? gc.getDelegate() : null));
+        return getImpl().print(gc);
     }
 
     /**
@@ -686,11 +673,11 @@ public class Shell extends Decorations {
      * @see #addShellListener
      */
     public void removeShellListener(ShellListener listener) {
-        getDelegate().removeShellListener(listener);
+        getImpl().removeShellListener(listener);
     }
 
     public void requestLayout() {
-        getDelegate().requestLayout();
+        getImpl().requestLayout();
     }
 
     /**
@@ -715,7 +702,7 @@ public class Shell extends Decorations {
      * @see Shell#setActive
      */
     public void setActive() {
-        getDelegate().setActive();
+        getImpl().setActive();
     }
 
     /**
@@ -736,11 +723,11 @@ public class Shell extends Decorations {
      * @since 3.4
      */
     public void setAlpha(int alpha) {
-        getDelegate().setAlpha(alpha);
+        getImpl().setAlpha(alpha);
     }
 
     public void setEnabled(boolean enabled) {
-        getDelegate().setEnabled(enabled);
+        getImpl().setEnabled(enabled);
     }
 
     /**
@@ -768,11 +755,11 @@ public class Shell extends Decorations {
      * @since 3.4
      */
     public void setFullScreen(boolean fullScreen) {
-        getDelegate().setFullScreen(fullScreen);
+        getImpl().setFullScreen(fullScreen);
     }
 
     public void setMenuBar(Menu menu) {
-        getDelegate().setMenuBar((menu != null ? menu.getDelegate() : null));
+        getImpl().setMenuBar(menu);
     }
 
     /**
@@ -792,11 +779,11 @@ public class Shell extends Decorations {
      * @see SWT
      */
     public void setImeInputMode(int mode) {
-        getDelegate().setImeInputMode(mode);
+        getImpl().setImeInputMode(mode);
     }
 
     public void setMaximized(boolean maximized) {
-        getDelegate().setMaximized(maximized);
+        getImpl().setMaximized(maximized);
     }
 
     /**
@@ -820,7 +807,7 @@ public class Shell extends Decorations {
      * @since 3.116
      */
     public void setMaximumSize(int width, int height) {
-        getDelegate().setMaximumSize(width, height);
+        getImpl().setMaximumSize(width, height);
     }
 
     /**
@@ -846,11 +833,11 @@ public class Shell extends Decorations {
      * @since 3.116
      */
     public void setMaximumSize(Point size) {
-        getDelegate().setMaximumSize((size != null ? size.getDelegate() : null));
+        getImpl().setMaximumSize(size);
     }
 
     public void setMinimized(boolean minimized) {
-        getDelegate().setMinimized(minimized);
+        getImpl().setMinimized(minimized);
     }
 
     /**
@@ -869,7 +856,7 @@ public class Shell extends Decorations {
      * @since 3.1
      */
     public void setMinimumSize(int width, int height) {
-        getDelegate().setMinimumSize(width, height);
+        getImpl().setMinimumSize(width, height);
     }
 
     /**
@@ -890,7 +877,7 @@ public class Shell extends Decorations {
      * @since 3.1
      */
     public void setMinimumSize(Point size) {
-        getDelegate().setMinimumSize((size != null ? size.getDelegate() : null));
+        getImpl().setMinimumSize(size);
     }
 
     /**
@@ -906,7 +893,7 @@ public class Shell extends Decorations {
      * @since 3.5
      */
     public void setModified(boolean modified) {
-        getDelegate().setModified(modified);
+        getImpl().setModified(modified);
     }
 
     /**
@@ -934,26 +921,26 @@ public class Shell extends Decorations {
      * @since 3.0
      */
     public void setRegion(Region region) {
-        getDelegate().setRegion((region != null ? region.getDelegate() : null));
+        getImpl().setRegion(region);
     }
 
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
     public void setVisible(boolean visible) {
-        getDelegate().setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
-    protected Shell(IShell delegate) {
-        super(delegate);
+    protected Shell(IShell impl) {
+        super(impl);
     }
 
-    public static Shell createApi(IShell delegate) {
-        return new Shell(delegate);
+    public static Shell createApi(IShell impl) {
+        return new Shell(impl);
     }
 
-    public IShell getDelegate() {
-        return (IShell) super.getDelegate();
+    public IShell getImpl() {
+        return (IShell) super.getImpl();
     }
 }

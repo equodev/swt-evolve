@@ -19,7 +19,6 @@ import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class implement the notebook user interface
@@ -84,7 +83,7 @@ public class TabFolder extends Composite {
      * @see Widget#getStyle
      */
     public TabFolder(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.TabFolder((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtTabFolder(parent, style));
     }
 
     /**
@@ -112,26 +111,23 @@ public class TabFolder extends Composite {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeTrim(x, y, width, height);
     }
 
     public Rectangle getClientArea() {
-        IRectangle ret = getDelegate().getClientArea();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getClientArea();
     }
 
     /**
@@ -150,8 +146,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public TabItem getItem(int index) {
-        ITabItem ret = getDelegate().getItem(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getItem(index);
     }
 
     /**
@@ -173,8 +168,7 @@ public class TabFolder extends Composite {
      * @since 3.4
      */
     public TabItem getItem(Point point) {
-        ITabItem ret = getDelegate().getItem((point != null ? point.getDelegate() : null));
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getItem(point);
     }
 
     /**
@@ -188,7 +182,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public int getItemCount() {
-        return getDelegate().getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -208,7 +202,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public TabItem[] getItems() {
-        return Convert.array(getDelegate().getItems(), ITabItem::getApi, TabItem[]::new);
+        return getImpl().getItems();
     }
 
     /**
@@ -228,7 +222,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public TabItem[] getSelection() {
-        return Convert.array(getDelegate().getSelection(), ITabItem::getApi, TabItem[]::new);
+        return getImpl().getSelection();
     }
 
     /**
@@ -243,7 +237,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public int getSelectionIndex() {
-        return getDelegate().getSelectionIndex();
+        return getImpl().getSelectionIndex();
     }
 
     /**
@@ -264,7 +258,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public int indexOf(TabItem item) {
-        return getDelegate().indexOf((item != null ? item.getDelegate() : null));
+        return getImpl().indexOf(item);
     }
 
     /**
@@ -285,7 +279,7 @@ public class TabFolder extends Composite {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -306,7 +300,7 @@ public class TabFolder extends Composite {
      * @since 3.2
      */
     public void setSelection(TabItem item) {
-        getDelegate().setSelection((item != null ? item.getDelegate() : null));
+        getImpl().setSelection(item);
     }
 
     /**
@@ -325,7 +319,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public void setSelection(TabItem[] items) {
-        getDelegate().setSelection(Convert.array(items, TabItem::getDelegate, ITabItem[]::new));
+        getImpl().setSelection(items);
     }
 
     /**
@@ -342,18 +336,18 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public void setSelection(int index) {
-        getDelegate().setSelection(index);
+        getImpl().setSelection(index);
     }
 
-    protected TabFolder(ITabFolder delegate) {
-        super(delegate);
+    protected TabFolder(ITabFolder impl) {
+        super(impl);
     }
 
-    public static TabFolder createApi(ITabFolder delegate) {
-        return new TabFolder(delegate);
+    public static TabFolder createApi(ITabFolder impl) {
+        return new TabFolder(impl);
     }
 
-    public ITabFolder getDelegate() {
-        return (ITabFolder) super.getDelegate();
+    public ITabFolder getImpl() {
+        return (ITabFolder) super.getImpl();
     }
 }

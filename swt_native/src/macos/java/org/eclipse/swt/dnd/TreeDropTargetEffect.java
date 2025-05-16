@@ -59,7 +59,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
      * @param tree the <code>Tree</code> over which the user positions the cursor to drop the data
      */
     public TreeDropTargetEffect(Tree tree) {
-        this(new nat.org.eclipse.swt.dnd.TreeDropTargetEffect((nat.org.eclipse.swt.widgets.Tree) (tree != null ? tree.getDelegate() : null)));
+        this(new SwtTreeDropTargetEffect(tree));
     }
 
     /**
@@ -77,7 +77,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
      * @see DropTargetEvent
      */
     public void dragEnter(DropTargetEvent event) {
-        getDelegate().dragEnter(event);
+        getImpl().dragEnter(event);
     }
 
     /**
@@ -95,7 +95,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
      * @see DropTargetEvent
      */
     public void dragLeave(DropTargetEvent event) {
-        getDelegate().dragLeave(event);
+        getImpl().dragLeave(event);
     }
 
     /**
@@ -117,18 +117,18 @@ public class TreeDropTargetEffect extends DropTargetEffect {
      * @see DND#FEEDBACK_SCROLL
      */
     public void dragOver(DropTargetEvent event) {
-        getDelegate().dragOver(event);
+        getImpl().dragOver(event);
     }
 
-    protected TreeDropTargetEffect(ITreeDropTargetEffect delegate) {
-        super(delegate);
+    protected TreeDropTargetEffect(ITreeDropTargetEffect impl) {
+        super(impl);
     }
 
-    public static TreeDropTargetEffect createApi(ITreeDropTargetEffect delegate) {
-        return new TreeDropTargetEffect(delegate);
+    public static TreeDropTargetEffect createApi(ITreeDropTargetEffect impl) {
+        return new TreeDropTargetEffect(impl);
     }
 
-    public ITreeDropTargetEffect getDelegate() {
-        return (ITreeDropTargetEffect) super.getDelegate();
+    public ITreeDropTargetEffect getImpl() {
+        return (ITreeDropTargetEffect) super.getImpl();
     }
 }

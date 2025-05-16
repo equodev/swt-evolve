@@ -49,7 +49,7 @@ public final class TouchSource {
      * @return <code>true</code> if the input source is direct, or <code>false</code> otherwise
      */
     public boolean isDirect() {
-        return getDelegate().isDirect();
+        return getImpl().isDirect();
     }
 
     /**
@@ -61,8 +61,7 @@ public final class TouchSource {
      * @return the bounding rectangle of the input source
      */
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     /**
@@ -72,21 +71,21 @@ public final class TouchSource {
      * @return a string representation of the event
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    ITouchSource delegate;
+    ITouchSource impl;
 
-    protected TouchSource(ITouchSource delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected TouchSource(ITouchSource impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static TouchSource createApi(ITouchSource delegate) {
-        return new TouchSource(delegate);
+    public static TouchSource createApi(ITouchSource impl) {
+        return new TouchSource(impl);
     }
 
-    public ITouchSource getDelegate() {
-        return delegate;
+    public ITouchSource getImpl() {
+        return impl;
     }
 }

@@ -63,7 +63,7 @@ public class Accessible {
      * @since 3.6
      */
     public Accessible(Accessible parent) {
-        this(new nat.org.eclipse.swt.accessibility.Accessible((nat.org.eclipse.swt.accessibility.Accessible) (parent != null ? parent.getDelegate() : null)));
+        this(new SwtAccessible(parent));
     }
 
     /**
@@ -82,8 +82,7 @@ public class Accessible {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static Accessible internal_new_Accessible(Control control) {
-        IAccessible ret = nat.org.eclipse.swt.accessibility.Accessible.internal_new_Accessible((nat.org.eclipse.swt.widgets.Control) (control != null ? control.getDelegate() : null));
-        return ret != null ? ret.getApi() : null;
+        return SwtAccessible.internal_new_Accessible(control);
     }
 
     /**
@@ -108,7 +107,7 @@ public class Accessible {
      * @see #removeAccessibleListener
      */
     public void addAccessibleListener(AccessibleListener listener) {
-        getDelegate().addAccessibleListener(listener);
+        getImpl().addAccessibleListener(listener);
     }
 
     /**
@@ -133,7 +132,7 @@ public class Accessible {
      * @see #removeAccessibleControlListener
      */
     public void addAccessibleControlListener(AccessibleControlListener listener) {
-        getDelegate().addAccessibleControlListener(listener);
+        getImpl().addAccessibleControlListener(listener);
     }
 
     /**
@@ -161,7 +160,7 @@ public class Accessible {
      * @since 3.0
      */
     public void addAccessibleTextListener(AccessibleTextListener listener) {
-        getDelegate().addAccessibleTextListener(listener);
+        getImpl().addAccessibleTextListener(listener);
     }
 
     /**
@@ -186,7 +185,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addAccessibleActionListener(AccessibleActionListener listener) {
-        getDelegate().addAccessibleActionListener(listener);
+        getImpl().addAccessibleActionListener(listener);
     }
 
     /**
@@ -211,7 +210,7 @@ public class Accessible {
      * @since 3.7
      */
     public void addAccessibleEditableTextListener(AccessibleEditableTextListener listener) {
-        getDelegate().addAccessibleEditableTextListener(listener);
+        getImpl().addAccessibleEditableTextListener(listener);
     }
 
     /**
@@ -236,7 +235,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addAccessibleHyperlinkListener(AccessibleHyperlinkListener listener) {
-        getDelegate().addAccessibleHyperlinkListener(listener);
+        getImpl().addAccessibleHyperlinkListener(listener);
     }
 
     /**
@@ -261,7 +260,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addAccessibleTableListener(AccessibleTableListener listener) {
-        getDelegate().addAccessibleTableListener(listener);
+        getImpl().addAccessibleTableListener(listener);
     }
 
     /**
@@ -286,7 +285,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addAccessibleTableCellListener(AccessibleTableCellListener listener) {
-        getDelegate().addAccessibleTableCellListener(listener);
+        getImpl().addAccessibleTableCellListener(listener);
     }
 
     /**
@@ -311,7 +310,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addAccessibleValueListener(AccessibleValueListener listener) {
-        getDelegate().addAccessibleValueListener(listener);
+        getImpl().addAccessibleValueListener(listener);
     }
 
     /**
@@ -336,7 +335,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addAccessibleAttributeListener(AccessibleAttributeListener listener) {
-        getDelegate().addAccessibleAttributeListener(listener);
+        getImpl().addAccessibleAttributeListener(listener);
     }
 
     /**
@@ -349,7 +348,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addRelation(int type, Accessible target) {
-        getDelegate().addRelation(type, (target != null ? target.getDelegate() : null));
+        getImpl().addRelation(type, target);
     }
 
     /**
@@ -366,7 +365,7 @@ public class Accessible {
      * @noreference This method is not intended to be referenced by clients.
      */
     public boolean internal_accessibilityIsIgnored(int childID) {
-        return getDelegate().internal_accessibilityIsIgnored(childID);
+        return getImpl().internal_accessibilityIsIgnored(childID);
     }
 
     /**
@@ -386,7 +385,7 @@ public class Accessible {
      * @since 3.6
      */
     public void dispose() {
-        getDelegate().dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -396,8 +395,7 @@ public class Accessible {
      * @since 3.0
      */
     public Control getControl() {
-        IControl ret = getDelegate().getControl();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getControl();
     }
 
     /**
@@ -413,7 +411,7 @@ public class Accessible {
      * @noreference This method is not intended to be referenced by clients.
      */
     public void internal_dispose_Accessible() {
-        getDelegate().internal_dispose_Accessible();
+        getImpl().internal_dispose_Accessible();
     }
 
     /**
@@ -436,7 +434,7 @@ public class Accessible {
      * @see #addAccessibleListener
      */
     public void removeAccessibleListener(AccessibleListener listener) {
-        getDelegate().removeAccessibleListener(listener);
+        getImpl().removeAccessibleListener(listener);
     }
 
     /**
@@ -459,7 +457,7 @@ public class Accessible {
      * @see #addAccessibleControlListener
      */
     public void removeAccessibleControlListener(AccessibleControlListener listener) {
-        getDelegate().removeAccessibleControlListener(listener);
+        getImpl().removeAccessibleControlListener(listener);
     }
 
     /**
@@ -485,7 +483,7 @@ public class Accessible {
      * @since 3.0
      */
     public void removeAccessibleTextListener(AccessibleTextListener listener) {
-        getDelegate().removeAccessibleTextListener(listener);
+        getImpl().removeAccessibleTextListener(listener);
     }
 
     /**
@@ -510,7 +508,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeAccessibleActionListener(AccessibleActionListener listener) {
-        getDelegate().removeAccessibleActionListener(listener);
+        getImpl().removeAccessibleActionListener(listener);
     }
 
     /**
@@ -535,7 +533,7 @@ public class Accessible {
      * @since 3.7
      */
     public void removeAccessibleEditableTextListener(AccessibleEditableTextListener listener) {
-        getDelegate().removeAccessibleEditableTextListener(listener);
+        getImpl().removeAccessibleEditableTextListener(listener);
     }
 
     /**
@@ -560,7 +558,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeAccessibleHyperlinkListener(AccessibleHyperlinkListener listener) {
-        getDelegate().removeAccessibleHyperlinkListener(listener);
+        getImpl().removeAccessibleHyperlinkListener(listener);
     }
 
     /**
@@ -585,7 +583,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeAccessibleTableListener(AccessibleTableListener listener) {
-        getDelegate().removeAccessibleTableListener(listener);
+        getImpl().removeAccessibleTableListener(listener);
     }
 
     /**
@@ -610,7 +608,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeAccessibleTableCellListener(AccessibleTableCellListener listener) {
-        getDelegate().removeAccessibleTableCellListener(listener);
+        getImpl().removeAccessibleTableCellListener(listener);
     }
 
     /**
@@ -635,7 +633,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeAccessibleValueListener(AccessibleValueListener listener) {
-        getDelegate().removeAccessibleValueListener(listener);
+        getImpl().removeAccessibleValueListener(listener);
     }
 
     /**
@@ -660,7 +658,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeAccessibleAttributeListener(AccessibleAttributeListener listener) {
-        getDelegate().removeAccessibleAttributeListener(listener);
+        getImpl().removeAccessibleAttributeListener(listener);
     }
 
     /**
@@ -673,7 +671,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeRelation(int type, Accessible target) {
-        getDelegate().removeRelation(type, (target != null ? target.getDelegate() : null));
+        getImpl().removeRelation(type, target);
     }
 
     /**
@@ -725,7 +723,7 @@ public class Accessible {
      * @since 3.6
      */
     public void sendEvent(int event, Object eventData) {
-        getDelegate().sendEvent(event, eventData);
+        getImpl().sendEvent(event, eventData);
     }
 
     /**
@@ -757,7 +755,7 @@ public class Accessible {
      * @since 3.8
      */
     public void sendEvent(int event, Object eventData, int childID) {
-        getDelegate().sendEvent(event, eventData, childID);
+        getImpl().sendEvent(event, eventData, childID);
     }
 
     /**
@@ -772,7 +770,7 @@ public class Accessible {
      * @since 3.0
      */
     public void selectionChanged() {
-        getDelegate().selectionChanged();
+        getImpl().selectionChanged();
     }
 
     /**
@@ -787,7 +785,7 @@ public class Accessible {
      * </ul>
      */
     public void setFocus(int childID) {
-        getDelegate().setFocus(childID);
+        getImpl().setFocus(childID);
     }
 
     /**
@@ -804,7 +802,7 @@ public class Accessible {
      * @since 3.0
      */
     public void textCaretMoved(int index) {
-        getDelegate().textCaretMoved(index);
+        getImpl().textCaretMoved(index);
     }
 
     /**
@@ -827,7 +825,7 @@ public class Accessible {
      * @since 3.0
      */
     public void textChanged(int type, int startIndex, int length) {
-        getDelegate().textChanged(type, startIndex, length);
+        getImpl().textChanged(type, startIndex, length);
     }
 
     /**
@@ -842,7 +840,7 @@ public class Accessible {
      * @since 3.0
      */
     public void textSelectionChanged() {
-        getDelegate().textSelectionChanged();
+        getImpl().textSelectionChanged();
     }
 
     /**
@@ -857,21 +855,21 @@ public class Accessible {
      * @noreference This method is not intended to be referenced by clients.
      */
     public long internal_addRelationAttributes(long defaultAttributes) {
-        return getDelegate().internal_addRelationAttributes(defaultAttributes);
+        return getImpl().internal_addRelationAttributes(defaultAttributes);
     }
 
-    IAccessible delegate;
+    IAccessible impl;
 
-    protected Accessible(IAccessible delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected Accessible(IAccessible impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static Accessible createApi(IAccessible delegate) {
-        return new Accessible(delegate);
+    public static Accessible createApi(IAccessible impl) {
+        return new Accessible(impl);
     }
 
-    public IAccessible getDelegate() {
-        return delegate;
+    public IAccessible getImpl() {
+        return impl;
     }
 }

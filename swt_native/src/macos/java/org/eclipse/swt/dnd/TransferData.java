@@ -65,21 +65,21 @@ public class TransferData {
     public NSObject data;
 
     public TransferData() {
-        this(new nat.org.eclipse.swt.dnd.TransferData());
+        this(new SwtTransferData());
     }
 
-    ITransferData delegate;
+    ITransferData impl;
 
-    protected TransferData(ITransferData delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected TransferData(ITransferData impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static TransferData createApi(ITransferData delegate) {
-        return new TransferData(delegate);
+    public static TransferData createApi(ITransferData impl) {
+        return new TransferData(impl);
     }
 
-    public ITransferData getDelegate() {
-        return delegate;
+    public ITransferData getImpl() {
+        return impl;
     }
 }

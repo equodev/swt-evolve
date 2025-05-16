@@ -36,7 +36,7 @@ public class DragSourceAdapter implements DragSourceListener {
      * @param event the information associated with the drag start event
      */
     public void dragStart(DragSourceEvent event) {
-        getDelegate().dragStart(event);
+        getImpl().dragStart(event);
     }
 
     /**
@@ -46,7 +46,7 @@ public class DragSourceAdapter implements DragSourceListener {
      * @param event the information associated with the drag finished event
      */
     public void dragFinished(DragSourceEvent event) {
-        getDelegate().dragFinished(event);
+        getImpl().dragFinished(event);
     }
 
     /**
@@ -56,25 +56,25 @@ public class DragSourceAdapter implements DragSourceListener {
      * @param event the information associated with the drag set data event
      */
     public void dragSetData(DragSourceEvent event) {
-        getDelegate().dragSetData(event);
+        getImpl().dragSetData(event);
     }
 
     public DragSourceAdapter() {
-        this(new nat.org.eclipse.swt.dnd.DragSourceAdapter());
+        this(new SwtDragSourceAdapter());
     }
 
-    IDragSourceAdapter delegate;
+    IDragSourceAdapter impl;
 
-    protected DragSourceAdapter(IDragSourceAdapter delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected DragSourceAdapter(IDragSourceAdapter impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static DragSourceAdapter createApi(IDragSourceAdapter delegate) {
-        return new DragSourceAdapter(delegate);
+    public static DragSourceAdapter createApi(IDragSourceAdapter impl) {
+        return new DragSourceAdapter(impl);
     }
 
-    public IDragSourceAdapter getDelegate() {
-        return delegate;
+    public IDragSourceAdapter getImpl() {
+        return impl;
     }
 }

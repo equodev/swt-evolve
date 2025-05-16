@@ -99,8 +99,7 @@ public abstract class Scrollable extends Control {
      * @see #getClientArea
      */
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeTrim(x, y, width, height);
     }
 
     /**
@@ -118,8 +117,7 @@ public abstract class Scrollable extends Control {
      * @see #computeTrim
      */
     public Rectangle getClientArea() {
-        IRectangle ret = getDelegate().getClientArea();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getClientArea();
     }
 
     /**
@@ -134,8 +132,7 @@ public abstract class Scrollable extends Control {
      * </ul>
      */
     public ScrollBar getHorizontalBar() {
-        IScrollBar ret = getDelegate().getHorizontalBar();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getHorizontalBar();
     }
 
     /**
@@ -162,7 +159,7 @@ public abstract class Scrollable extends Control {
      * @since 3.8
      */
     public int getScrollbarsMode() {
-        return getDelegate().getScrollbarsMode();
+        return getImpl().getScrollbarsMode();
     }
 
     /**
@@ -187,7 +184,7 @@ public abstract class Scrollable extends Control {
      * @since 3.126
      */
     public void setScrollbarsMode(int mode) {
-        getDelegate().setScrollbarsMode(mode);
+        getImpl().setScrollbarsMode(mode);
     }
 
     /**
@@ -202,15 +199,14 @@ public abstract class Scrollable extends Control {
      * </ul>
      */
     public ScrollBar getVerticalBar() {
-        IScrollBar ret = getDelegate().getVerticalBar();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getVerticalBar();
     }
 
-    protected Scrollable(IScrollable delegate) {
-        super(delegate);
+    protected Scrollable(IScrollable impl) {
+        super(impl);
     }
 
-    public IScrollable getDelegate() {
-        return (IScrollable) super.getDelegate();
+    public IScrollable getImpl() {
+        return (IScrollable) super.getImpl();
     }
 }

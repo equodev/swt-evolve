@@ -49,7 +49,7 @@ public class DropTargetAdapter implements DropTargetListener {
      * @param event the information associated with the drag enter event
      */
     public void dragEnter(DropTargetEvent event) {
-        getDelegate().dragEnter(event);
+        getImpl().dragEnter(event);
     }
 
     /**
@@ -59,7 +59,7 @@ public class DropTargetAdapter implements DropTargetListener {
      * @param event the information associated with the drag leave event
      */
     public void dragLeave(DropTargetEvent event) {
-        getDelegate().dragLeave(event);
+        getImpl().dragLeave(event);
     }
 
     /**
@@ -71,7 +71,7 @@ public class DropTargetAdapter implements DropTargetListener {
      * @param event the information associated with the drag operation changed event
      */
     public void dragOperationChanged(DropTargetEvent event) {
-        getDelegate().dragOperationChanged(event);
+        getImpl().dragOperationChanged(event);
     }
 
     /**
@@ -83,7 +83,7 @@ public class DropTargetAdapter implements DropTargetListener {
      * @param event the information associated with the drag over event
      */
     public void dragOver(DropTargetEvent event) {
-        getDelegate().dragOver(event);
+        getImpl().dragOver(event);
     }
 
     /**
@@ -93,7 +93,7 @@ public class DropTargetAdapter implements DropTargetListener {
      * @param event the information associated with the drop event
      */
     public void drop(DropTargetEvent event) {
-        getDelegate().drop(event);
+        getImpl().drop(event);
     }
 
     /**
@@ -105,25 +105,25 @@ public class DropTargetAdapter implements DropTargetListener {
      * @param event the information associated with the drop accept event
      */
     public void dropAccept(DropTargetEvent event) {
-        getDelegate().dropAccept(event);
+        getImpl().dropAccept(event);
     }
 
     public DropTargetAdapter() {
-        this(new nat.org.eclipse.swt.dnd.DropTargetAdapter());
+        this(new SwtDropTargetAdapter());
     }
 
-    IDropTargetAdapter delegate;
+    IDropTargetAdapter impl;
 
-    protected DropTargetAdapter(IDropTargetAdapter delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected DropTargetAdapter(IDropTargetAdapter impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static DropTargetAdapter createApi(IDropTargetAdapter delegate) {
-        return new DropTargetAdapter(delegate);
+    public static DropTargetAdapter createApi(IDropTargetAdapter impl) {
+        return new DropTargetAdapter(impl);
     }
 
-    public IDropTargetAdapter getDelegate() {
-        return delegate;
+    public IDropTargetAdapter getImpl() {
+        return impl;
     }
 }

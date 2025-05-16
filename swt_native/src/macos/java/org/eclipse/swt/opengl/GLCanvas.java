@@ -44,7 +44,7 @@ public class GLCanvas extends Canvas {
      * </ul>
      */
     public GLCanvas(Composite parent, int style, GLData data) {
-        this(new nat.org.eclipse.swt.opengl.GLCanvas((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style, (nat.org.eclipse.swt.opengl.GLData) (data != null ? data.getDelegate() : null)));
+        this(new SwtGLCanvas(parent, style, data));
     }
 
     /**
@@ -57,8 +57,7 @@ public class GLCanvas extends Canvas {
      * </ul>
      */
     public GLData getGLData() {
-        IGLData ret = getDelegate().getGLData();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getGLData();
     }
 
     /**
@@ -73,7 +72,7 @@ public class GLCanvas extends Canvas {
      * </ul>
      */
     public boolean isCurrent() {
-        return getDelegate().isCurrent();
+        return getImpl().isCurrent();
     }
 
     /**
@@ -86,7 +85,7 @@ public class GLCanvas extends Canvas {
      * </ul>
      */
     public void setCurrent() {
-        getDelegate().setCurrent();
+        getImpl().setCurrent();
     }
 
     /**
@@ -98,18 +97,18 @@ public class GLCanvas extends Canvas {
      * </ul>
      */
     public void swapBuffers() {
-        getDelegate().swapBuffers();
+        getImpl().swapBuffers();
     }
 
-    protected GLCanvas(IGLCanvas delegate) {
-        super(delegate);
+    protected GLCanvas(IGLCanvas impl) {
+        super(impl);
     }
 
-    public static GLCanvas createApi(IGLCanvas delegate) {
-        return new GLCanvas(delegate);
+    public static GLCanvas createApi(IGLCanvas impl) {
+        return new GLCanvas(impl);
     }
 
-    public IGLCanvas getDelegate() {
-        return (IGLCanvas) super.getDelegate();
+    public IGLCanvas getImpl() {
+        return (IGLCanvas) super.getImpl();
     }
 }

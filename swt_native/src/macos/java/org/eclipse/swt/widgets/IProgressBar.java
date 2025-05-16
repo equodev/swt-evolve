@@ -5,7 +5,7 @@ import org.eclipse.swt.*;
 
 public interface IProgressBar extends IControl {
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Returns the maximum value which the receiver will allow.

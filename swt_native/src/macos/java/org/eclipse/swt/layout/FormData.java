@@ -99,7 +99,7 @@ public final class FormData {
      * default values.
      */
     public FormData() {
-        this(new nat.org.eclipse.swt.layout.FormData());
+        this(new SwtFormData());
     }
 
     /**
@@ -111,7 +111,7 @@ public final class FormData {
      * @param height a minimum height for the control
      */
     public FormData(int width, int height) {
-        this(new nat.org.eclipse.swt.layout.FormData(width, height));
+        this(new SwtFormData(width, height));
     }
 
     /**
@@ -121,21 +121,21 @@ public final class FormData {
      * @return a string representation of the FormData object
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    IFormData delegate;
+    IFormData impl;
 
-    protected FormData(IFormData delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected FormData(IFormData impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static FormData createApi(IFormData delegate) {
-        return new FormData(delegate);
+    public static FormData createApi(IFormData impl) {
+        return new FormData(impl);
     }
 
-    public IFormData getDelegate() {
-        return delegate;
+    public IFormData getImpl() {
+        return impl;
     }
 }

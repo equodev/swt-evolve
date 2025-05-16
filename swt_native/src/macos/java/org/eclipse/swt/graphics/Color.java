@@ -68,7 +68,7 @@ public final class Color extends Resource {
      * @see #Color(int, int, int) The equivalent constructor not requiring a Device
      */
     public Color(Device device, int red, int green, int blue) {
-        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), red, green, blue));
+        this(new SwtColor(device, red, green, blue));
     }
 
     /**
@@ -86,7 +86,7 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(int red, int green, int blue) {
-        this(new nat.org.eclipse.swt.graphics.Color(red, green, blue));
+        this(new SwtColor(red, green, blue));
     }
 
     /**
@@ -110,7 +110,7 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public Color(Device device, int red, int green, int blue, int alpha) {
-        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), red, green, blue, alpha));
+        this(new SwtColor(device, red, green, blue, alpha));
     }
 
     /**
@@ -130,7 +130,7 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(int red, int green, int blue, int alpha) {
-        this(new nat.org.eclipse.swt.graphics.Color(red, green, blue, alpha));
+        this(new SwtColor(red, green, blue, alpha));
     }
 
     /**
@@ -149,7 +149,7 @@ public final class Color extends Resource {
      * @see #Color(RGB) The equivalent constructor not requiring a Device
      */
     public Color(Device device, RGB rgb) {
-        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), rgb));
+        this(new SwtColor(device, rgb));
     }
 
     /**
@@ -165,7 +165,7 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(RGB rgb) {
-        this(new nat.org.eclipse.swt.graphics.Color(rgb));
+        this(new SwtColor(rgb));
     }
 
     /**
@@ -186,7 +186,7 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public Color(Device device, RGBA rgba) {
-        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), rgba));
+        this(new SwtColor(device, rgba));
     }
 
     /**
@@ -203,7 +203,7 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(RGBA rgba) {
-        this(new nat.org.eclipse.swt.graphics.Color(rgba));
+        this(new SwtColor(rgba));
     }
 
     /**
@@ -226,7 +226,7 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public Color(Device device, RGB rgb, int alpha) {
-        this(new nat.org.eclipse.swt.graphics.Color((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), rgb, alpha));
+        this(new SwtColor(device, rgb, alpha));
     }
 
     /**
@@ -245,7 +245,7 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(RGB rgb, int alpha) {
-        this(new nat.org.eclipse.swt.graphics.Color(rgb, alpha));
+        this(new SwtColor(rgb, alpha));
     }
 
     /**
@@ -253,7 +253,7 @@ public final class Color extends Resource {
      * with older code, disposing a Color is not an error.
      */
     public void dispose() {
-        getDelegate().dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -270,8 +270,7 @@ public final class Color extends Resource {
      * @since 3.2
      */
     public Device getDevice() {
-        IDevice ret = getDelegate().getDevice();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getDevice();
     }
 
     /**
@@ -285,7 +284,7 @@ public final class Color extends Resource {
      * @see #hashCode
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object instanceof Color ? ((Color) object).getDelegate() : object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -299,7 +298,7 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public int getAlpha() {
-        return getDelegate().getAlpha();
+        return getImpl().getAlpha();
     }
 
     /**
@@ -312,7 +311,7 @@ public final class Color extends Resource {
      * </ul>
      */
     public int getBlue() {
-        return getDelegate().getBlue();
+        return getImpl().getBlue();
     }
 
     /**
@@ -325,7 +324,7 @@ public final class Color extends Resource {
      * </ul>
      */
     public int getGreen() {
-        return getDelegate().getGreen();
+        return getImpl().getGreen();
     }
 
     /**
@@ -338,7 +337,7 @@ public final class Color extends Resource {
      * </ul>
      */
     public int getRed() {
-        return getDelegate().getRed();
+        return getImpl().getRed();
     }
 
     /**
@@ -352,7 +351,7 @@ public final class Color extends Resource {
      * @see #equals
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
     /**
@@ -365,7 +364,7 @@ public final class Color extends Resource {
      * </ul>
      */
     public RGB getRGB() {
-        return getDelegate().getRGB();
+        return getImpl().getRGB();
     }
 
     /**
@@ -379,7 +378,7 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public RGBA getRGBA() {
-        return getDelegate().getRGBA();
+        return getImpl().getRGBA();
     }
 
     /**
@@ -393,7 +392,7 @@ public final class Color extends Resource {
      * @return <code>true</code> when the color is disposed and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return getDelegate().isDisposed();
+        return getImpl().isDisposed();
     }
 
     /**
@@ -403,18 +402,18 @@ public final class Color extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected Color(IColor delegate) {
-        super(delegate);
+    protected Color(IColor impl) {
+        super(impl);
     }
 
-    public static Color createApi(IColor delegate) {
-        return new Color(delegate);
+    public static Color createApi(IColor impl) {
+        return new Color(impl);
     }
 
-    public IColor getDelegate() {
-        return (IColor) super.getDelegate();
+    public IColor getImpl() {
+        return (IColor) super.getImpl();
     }
 }

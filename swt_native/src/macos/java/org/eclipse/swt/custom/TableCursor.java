@@ -72,7 +72,7 @@ public class TableCursor extends Canvas {
      * @see Widget#getStyle()
      */
     public TableCursor(Table parent, int style) {
-        this(new nat.org.eclipse.swt.custom.TableCursor((nat.org.eclipse.swt.widgets.Table) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtTableCursor(parent, style));
     }
 
     /**
@@ -102,11 +102,11 @@ public class TableCursor extends Canvas {
      * @see #removeSelectionListener(SelectionListener)
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     public void setVisible(boolean visible) {
-        getDelegate().setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
     /**
@@ -129,7 +129,7 @@ public class TableCursor extends Canvas {
      * @since 3.0
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -143,7 +143,7 @@ public class TableCursor extends Canvas {
      * </ul>
      */
     public int getColumn() {
-        return getDelegate().getColumn();
+        return getImpl().getColumn();
     }
 
     /**
@@ -152,8 +152,7 @@ public class TableCursor extends Canvas {
      * @return the receiver's background color
      */
     public Color getBackground() {
-        IColor ret = getDelegate().getBackground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBackground();
     }
 
     /**
@@ -162,8 +161,7 @@ public class TableCursor extends Canvas {
      * @return the receiver's foreground color
      */
     public Color getForeground() {
-        IColor ret = getDelegate().getForeground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getForeground();
     }
 
     /**
@@ -177,8 +175,7 @@ public class TableCursor extends Canvas {
      * </ul>
      */
     public TableItem getRow() {
-        ITableItem ret = getDelegate().getRow();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getRow();
     }
 
     /**
@@ -200,7 +197,7 @@ public class TableCursor extends Canvas {
      * </ul>
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground((color != null ? color.getDelegate() : null));
+        getImpl().setBackground(color);
     }
 
     /**
@@ -221,7 +218,7 @@ public class TableCursor extends Canvas {
      * </ul>
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground((color != null ? color.getDelegate() : null));
+        getImpl().setForeground(color);
     }
 
     /**
@@ -236,7 +233,7 @@ public class TableCursor extends Canvas {
      * </ul>
      */
     public void setSelection(int row, int column) {
-        getDelegate().setSelection(row, column);
+        getImpl().setSelection(row, column);
     }
 
     /**
@@ -251,18 +248,18 @@ public class TableCursor extends Canvas {
      * </ul>
      */
     public void setSelection(TableItem row, int column) {
-        getDelegate().setSelection((row != null ? row.getDelegate() : null), column);
+        getImpl().setSelection(row, column);
     }
 
-    protected TableCursor(ITableCursor delegate) {
-        super(delegate);
+    protected TableCursor(ITableCursor impl) {
+        super(impl);
     }
 
-    public static TableCursor createApi(ITableCursor delegate) {
-        return new TableCursor(delegate);
+    public static TableCursor createApi(ITableCursor impl) {
+        return new TableCursor(impl);
     }
 
-    public ITableCursor getDelegate() {
-        return (ITableCursor) super.getDelegate();
+    public ITableCursor getImpl() {
+        return (ITableCursor) super.getImpl();
     }
 }

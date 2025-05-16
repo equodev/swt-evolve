@@ -18,7 +18,6 @@ package org.eclipse.swt.printing;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class are used to print to a printer.
@@ -52,7 +51,7 @@ public final class Printer extends Device {
      * @return an array of PrinterData objects representing the available printers
      */
     public static PrinterData[] getPrinterList() {
-        return Convert.array(nat.org.eclipse.swt.printing.Printer.getPrinterList(), IPrinterData::getApi, PrinterData[]::new);
+        return SwtPrinter.getPrinterList();
     }
 
     /**
@@ -65,8 +64,7 @@ public final class Printer extends Device {
      * @since 2.1
      */
     public static PrinterData getDefaultPrinterData() {
-        IPrinterData ret = nat.org.eclipse.swt.printing.Printer.getDefaultPrinterData();
-        return ret != null ? ret.getApi() : null;
+        return SwtPrinter.getDefaultPrinterData();
     }
 
     /**
@@ -82,7 +80,7 @@ public final class Printer extends Device {
      * @see Device#dispose
      */
     public Printer() {
-        this(new nat.org.eclipse.swt.printing.Printer());
+        this(new SwtPrinter());
     }
 
     /**
@@ -105,7 +103,7 @@ public final class Printer extends Device {
      * @see Device#dispose
      */
     public Printer(PrinterData data) {
-        this(new nat.org.eclipse.swt.printing.Printer((nat.org.eclipse.swt.printing.PrinterData) (data != null ? data.getDelegate() : null)));
+        this(new SwtPrinter(data));
     }
 
     /**
@@ -144,8 +142,7 @@ public final class Printer extends Device {
      * @see #getClientArea
      */
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeTrim(x, y, width, height);
     }
 
     /**
@@ -155,7 +152,7 @@ public final class Printer extends Device {
      * @param deviceData the device data
      */
     protected void create(DeviceData deviceData) {
-        getDelegate().create((deviceData != null ? deviceData.getDelegate() : null));
+        getImpl().create(deviceData);
     }
 
     /**
@@ -164,7 +161,7 @@ public final class Printer extends Device {
      * mechanism of the <code>Device</code> class.
      */
     protected void destroy() {
-        getDelegate().destroy();
+        getImpl().destroy();
     }
 
     /**
@@ -183,7 +180,7 @@ public final class Printer extends Device {
      * @noreference This method is not intended to be referenced by clients.
      */
     public long internal_new_GC(GCData data) {
-        return getDelegate().internal_new_GC(data);
+        return getImpl().internal_new_GC(data);
     }
 
     /**
@@ -199,7 +196,7 @@ public final class Printer extends Device {
      * @see #create
      */
     protected void init() {
-        getDelegate().init();
+        getImpl().init();
     }
 
     /**
@@ -218,14 +215,14 @@ public final class Printer extends Device {
      * @noreference This method is not intended to be referenced by clients.
      */
     public void internal_dispose_GC(long hDC, GCData data) {
-        getDelegate().internal_dispose_GC(hDC, data);
+        getImpl().internal_dispose_GC(hDC, data);
     }
 
     /**
      * @noreference This method is not intended to be referenced by clients.
      */
     public boolean isAutoScalable() {
-        return getDelegate().isAutoScalable();
+        return getImpl().isAutoScalable();
     }
 
     /**
@@ -234,7 +231,7 @@ public final class Printer extends Device {
      * mechanism of the <code>Device</code> class.
      */
     protected void release() {
-        getDelegate().release();
+        getImpl().release();
     }
 
     /**
@@ -259,7 +256,7 @@ public final class Printer extends Device {
      * @see #endJob
      */
     public boolean startJob(String jobName) {
-        return getDelegate().startJob(jobName);
+        return getImpl().startJob(jobName);
     }
 
     /**
@@ -274,7 +271,7 @@ public final class Printer extends Device {
      * @see #endPage
      */
     public void endJob() {
-        getDelegate().endJob();
+        getImpl().endJob();
     }
 
     /**
@@ -285,7 +282,7 @@ public final class Printer extends Device {
      * </ul>
      */
     public void cancelJob() {
-        getDelegate().cancelJob();
+        getImpl().cancelJob();
     }
 
     /**
@@ -307,7 +304,7 @@ public final class Printer extends Device {
      * @see #endJob
      */
     public boolean startPage() {
-        return getDelegate().startPage();
+        return getImpl().startPage();
     }
 
     /**
@@ -322,7 +319,7 @@ public final class Printer extends Device {
      * @see #endJob
      */
     public void endPage() {
-        getDelegate().endPage();
+        getImpl().endPage();
     }
 
     /**
@@ -337,8 +334,7 @@ public final class Printer extends Device {
      * </ul>
      */
     public Point getDPI() {
-        IPoint ret = getDelegate().getDPI();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getDPI();
     }
 
     /**
@@ -357,8 +353,7 @@ public final class Printer extends Device {
      * @see #computeTrim
      */
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     /**
@@ -379,8 +374,7 @@ public final class Printer extends Device {
      * @see #computeTrim
      */
     public Rectangle getClientArea() {
-        IRectangle ret = getDelegate().getClientArea();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getClientArea();
     }
 
     /**
@@ -390,19 +384,18 @@ public final class Printer extends Device {
      * @return a PrinterData object describing the receiver
      */
     public PrinterData getPrinterData() {
-        IPrinterData ret = getDelegate().getPrinterData();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getPrinterData();
     }
 
-    protected Printer(IPrinter delegate) {
-        super(delegate);
+    protected Printer(IPrinter impl) {
+        super(impl);
     }
 
-    public static Printer createApi(IPrinter delegate) {
-        return new Printer(delegate);
+    public static Printer createApi(IPrinter impl) {
+        return new Printer(impl);
     }
 
-    public IPrinter getDelegate() {
-        return (IPrinter) super.getDelegate();
+    public IPrinter getImpl() {
+        return (IPrinter) super.getImpl();
     }
 }

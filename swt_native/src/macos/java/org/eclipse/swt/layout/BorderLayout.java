@@ -127,31 +127,30 @@ public class BorderLayout extends Layout {
     public double heightDistributionFactor = 0.5;
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-        IPoint ret = getDelegate().computeSize((composite != null ? composite.getDelegate() : null), wHint, hHint, flushCache);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(composite, wHint, hHint, flushCache);
     }
 
     protected void layout(Composite composite, boolean flushCache) {
-        getDelegate().layout((composite != null ? composite.getDelegate() : null), flushCache);
+        getImpl().layout(composite, flushCache);
     }
 
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
     public BorderLayout() {
-        this(new nat.org.eclipse.swt.layout.BorderLayout());
+        this(new SwtBorderLayout());
     }
 
-    protected BorderLayout(IBorderLayout delegate) {
-        super(delegate);
+    protected BorderLayout(IBorderLayout impl) {
+        super(impl);
     }
 
-    public static BorderLayout createApi(IBorderLayout delegate) {
-        return new BorderLayout(delegate);
+    public static BorderLayout createApi(IBorderLayout impl) {
+        return new BorderLayout(impl);
     }
 
-    public IBorderLayout getDelegate() {
-        return (IBorderLayout) super.getDelegate();
+    public IBorderLayout getImpl() {
+        return (IBorderLayout) super.getImpl();
     }
 }

@@ -66,7 +66,7 @@ public class TreeCursor extends Canvas {
      * @see Widget#getStyle()
      */
     public TreeCursor(Tree parent, int style) {
-        this(new nat.org.eclipse.swt.custom.TreeCursor((nat.org.eclipse.swt.widgets.Tree) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtTreeCursor(parent, style));
     }
 
     /**
@@ -95,7 +95,7 @@ public class TreeCursor extends Canvas {
      * @see #removeSelectionListener(SelectionListener)
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -104,8 +104,7 @@ public class TreeCursor extends Canvas {
      * @return the receiver's background color
      */
     public Color getBackground() {
-        IColor ret = getDelegate().getBackground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBackground();
     }
 
     /**
@@ -119,7 +118,7 @@ public class TreeCursor extends Canvas {
      * </ul>
      */
     public int getColumn() {
-        return getDelegate().getColumn();
+        return getImpl().getColumn();
     }
 
     /**
@@ -128,8 +127,7 @@ public class TreeCursor extends Canvas {
      * @return the receiver's foreground color
      */
     public Color getForeground() {
-        IColor ret = getDelegate().getForeground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getForeground();
     }
 
     /**
@@ -143,8 +141,7 @@ public class TreeCursor extends Canvas {
      * </ul>
      */
     public TreeItem getRow() {
-        ITreeItem ret = getDelegate().getRow();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getRow();
     }
 
     /**
@@ -165,7 +162,7 @@ public class TreeCursor extends Canvas {
      * @see #addSelectionListener(SelectionListener)
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -187,7 +184,7 @@ public class TreeCursor extends Canvas {
      * </ul>
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground((color != null ? color.getDelegate() : null));
+        getImpl().setBackground(color);
     }
 
     /**
@@ -208,7 +205,7 @@ public class TreeCursor extends Canvas {
      * </ul>
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground((color != null ? color.getDelegate() : null));
+        getImpl().setForeground(color);
     }
 
     /**
@@ -223,7 +220,7 @@ public class TreeCursor extends Canvas {
      * </ul>
      */
     public void setSelection(int row, int column) {
-        getDelegate().setSelection(row, column);
+        getImpl().setSelection(row, column);
     }
 
     /**
@@ -238,22 +235,22 @@ public class TreeCursor extends Canvas {
      * </ul>
      */
     public void setSelection(TreeItem row, int column) {
-        getDelegate().setSelection((row != null ? row.getDelegate() : null), column);
+        getImpl().setSelection(row, column);
     }
 
     public void setVisible(boolean visible) {
-        getDelegate().setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
-    protected TreeCursor(ITreeCursor delegate) {
-        super(delegate);
+    protected TreeCursor(ITreeCursor impl) {
+        super(impl);
     }
 
-    public static TreeCursor createApi(ITreeCursor delegate) {
-        return new TreeCursor(delegate);
+    public static TreeCursor createApi(ITreeCursor impl) {
+        return new TreeCursor(impl);
     }
 
-    public ITreeCursor getDelegate() {
-        return (ITreeCursor) super.getDelegate();
+    public ITreeCursor getImpl() {
+        return (ITreeCursor) super.getImpl();
     }
 }

@@ -56,7 +56,7 @@ public class ColorDialog extends Dialog {
      * @see Widget#getStyle
      */
     public ColorDialog(Shell parent) {
-        this(new nat.org.eclipse.swt.widgets.ColorDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
+        this(new SwtColorDialog(parent));
     }
 
     /**
@@ -88,7 +88,7 @@ public class ColorDialog extends Dialog {
      * @see Widget#getStyle
      */
     public ColorDialog(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.ColorDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtColorDialog(parent, style));
     }
 
     /**
@@ -99,7 +99,7 @@ public class ColorDialog extends Dialog {
      * @see PaletteData#getRGBs
      */
     public RGB getRGB() {
-        return getDelegate().getRGB();
+        return getImpl().getRGB();
     }
 
     /**
@@ -112,7 +112,7 @@ public class ColorDialog extends Dialog {
      * @since 3.8
      */
     public RGB[] getRGBs() {
-        return getDelegate().getRGBs();
+        return getImpl().getRGBs();
     }
 
     /**
@@ -129,7 +129,7 @@ public class ColorDialog extends Dialog {
      * </ul>
      */
     public RGB open() {
-        return getDelegate().open();
+        return getImpl().open();
     }
 
     /**
@@ -141,7 +141,7 @@ public class ColorDialog extends Dialog {
      * @see PaletteData#getRGBs
      */
     public void setRGB(RGB rgb) {
-        getDelegate().setRGB(rgb);
+        getImpl().setRGB(rgb);
     }
 
     /**
@@ -158,18 +158,18 @@ public class ColorDialog extends Dialog {
      * @since 3.8
      */
     public void setRGBs(RGB[] rgbs) {
-        getDelegate().setRGBs(rgbs);
+        getImpl().setRGBs(rgbs);
     }
 
-    protected ColorDialog(IColorDialog delegate) {
-        super(delegate);
+    protected ColorDialog(IColorDialog impl) {
+        super(impl);
     }
 
-    public static ColorDialog createApi(IColorDialog delegate) {
-        return new ColorDialog(delegate);
+    public static ColorDialog createApi(IColorDialog impl) {
+        return new ColorDialog(impl);
     }
 
-    public IColorDialog getDelegate() {
-        return (IColorDialog) super.getDelegate();
+    public IColorDialog getImpl() {
+        return (IColorDialog) super.getImpl();
     }
 }

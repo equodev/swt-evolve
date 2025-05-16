@@ -94,16 +94,15 @@ public class StackLayout extends Layout {
     public Control topControl;
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-        IPoint ret = getDelegate().computeSize((composite != null ? composite.getDelegate() : null), wHint, hHint, flushCache);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(composite, wHint, hHint, flushCache);
     }
 
     protected boolean flushCache(Control control) {
-        return getDelegate().flushCache((control != null ? control.getDelegate() : null));
+        return getImpl().flushCache(control);
     }
 
     protected void layout(Composite composite, boolean flushCache) {
-        getDelegate().layout((composite != null ? composite.getDelegate() : null), flushCache);
+        getImpl().layout(composite, flushCache);
     }
 
     /**
@@ -113,22 +112,22 @@ public class StackLayout extends Layout {
      * @return a string representation of the layout
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
     public StackLayout() {
-        this(new nat.org.eclipse.swt.custom.StackLayout());
+        this(new SwtStackLayout());
     }
 
-    protected StackLayout(IStackLayout delegate) {
-        super(delegate);
+    protected StackLayout(IStackLayout impl) {
+        super(impl);
     }
 
-    public static StackLayout createApi(IStackLayout delegate) {
-        return new StackLayout(delegate);
+    public static StackLayout createApi(IStackLayout impl) {
+        return new StackLayout(impl);
     }
 
-    public IStackLayout getDelegate() {
-        return (IStackLayout) super.getDelegate();
+    public IStackLayout getImpl() {
+        return (IStackLayout) super.getImpl();
     }
 }

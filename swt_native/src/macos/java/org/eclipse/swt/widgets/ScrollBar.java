@@ -122,7 +122,7 @@ public class ScrollBar extends Widget {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -141,7 +141,7 @@ public class ScrollBar extends Widget {
      * @see #isEnabled
      */
     public boolean getEnabled() {
-        return getDelegate().getEnabled();
+        return getImpl().getEnabled();
     }
 
     /**
@@ -157,7 +157,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public int getIncrement() {
-        return getDelegate().getIncrement();
+        return getImpl().getIncrement();
     }
 
     /**
@@ -171,7 +171,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public int getMaximum() {
-        return getDelegate().getMaximum();
+        return getImpl().getMaximum();
     }
 
     /**
@@ -185,7 +185,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public int getMinimum() {
-        return getDelegate().getMinimum();
+        return getImpl().getMinimum();
     }
 
     /**
@@ -201,7 +201,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public int getPageIncrement() {
-        return getDelegate().getPageIncrement();
+        return getImpl().getPageIncrement();
     }
 
     /**
@@ -215,8 +215,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public Scrollable getParent() {
-        IScrollable ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     /**
@@ -230,7 +229,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public int getSelection() {
-        return getDelegate().getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -247,8 +246,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public Point getSize() {
-        IPoint ret = getDelegate().getSize();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getSize();
     }
 
     /**
@@ -264,7 +262,7 @@ public class ScrollBar extends Widget {
      * @see ScrollBar
      */
     public int getThumb() {
-        return getDelegate().getThumb();
+        return getImpl().getThumb();
     }
 
     /**
@@ -281,8 +279,7 @@ public class ScrollBar extends Widget {
      * @since 3.6
      */
     public Rectangle getThumbBounds() {
-        IRectangle ret = getDelegate().getThumbBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getThumbBounds();
     }
 
     /**
@@ -300,8 +297,7 @@ public class ScrollBar extends Widget {
      * @since 3.6
      */
     public Rectangle getThumbTrackBounds() {
-        IRectangle ret = getDelegate().getThumbTrackBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getThumbTrackBounds();
     }
 
     /**
@@ -322,7 +318,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public boolean getVisible() {
-        return getDelegate().getVisible();
+        return getImpl().getVisible();
     }
 
     /**
@@ -341,7 +337,7 @@ public class ScrollBar extends Widget {
      * @see #getEnabled
      */
     public boolean isEnabled() {
-        return getDelegate().isEnabled();
+        return getImpl().isEnabled();
     }
 
     /**
@@ -359,7 +355,7 @@ public class ScrollBar extends Widget {
      * @see #getVisible
      */
     public boolean isVisible() {
-        return getDelegate().isVisible();
+        return getImpl().isVisible();
     }
 
     /**
@@ -380,7 +376,7 @@ public class ScrollBar extends Widget {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -397,7 +393,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setIncrement(int value) {
-        getDelegate().setIncrement(value);
+        getImpl().setIncrement(value);
     }
 
     /**
@@ -414,7 +410,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        getDelegate().setEnabled(enabled);
+        getImpl().setEnabled(enabled);
     }
 
     /**
@@ -431,7 +427,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setMaximum(int value) {
-        getDelegate().setMaximum(value);
+        getImpl().setMaximum(value);
     }
 
     /**
@@ -448,7 +444,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setMinimum(int value) {
-        getDelegate().setMinimum(value);
+        getImpl().setMinimum(value);
     }
 
     /**
@@ -465,7 +461,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setPageIncrement(int value) {
-        getDelegate().setPageIncrement(value);
+        getImpl().setPageIncrement(value);
     }
 
     /**
@@ -481,7 +477,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setSelection(int selection) {
-        getDelegate().setSelection(selection);
+        getImpl().setSelection(selection);
     }
 
     /**
@@ -502,7 +498,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setThumb(int value) {
-        getDelegate().setThumb(value);
+        getImpl().setThumb(value);
     }
 
     /**
@@ -527,7 +523,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
-        getDelegate().setValues(selection, minimum, maximum, thumb, increment, pageIncrement);
+        getImpl().setValues(selection, minimum, maximum, thumb, increment, pageIncrement);
     }
 
     /**
@@ -547,18 +543,18 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        getDelegate().setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
-    protected ScrollBar(IScrollBar delegate) {
-        super(delegate);
+    protected ScrollBar(IScrollBar impl) {
+        super(impl);
     }
 
-    public static ScrollBar createApi(IScrollBar delegate) {
-        return new ScrollBar(delegate);
+    public static ScrollBar createApi(IScrollBar impl) {
+        return new ScrollBar(impl);
     }
 
-    public IScrollBar getDelegate() {
-        return (IScrollBar) super.getDelegate();
+    public IScrollBar getImpl() {
+        return (IScrollBar) super.getImpl();
     }
 }

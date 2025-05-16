@@ -47,7 +47,7 @@ public class BusyIndicator {
      * </ul>
      */
     public static void showWhile(Display display, Runnable runnable) {
-        nat.org.eclipse.swt.custom.BusyIndicator.showWhile((nat.org.eclipse.swt.widgets.Display) (display != null ? display.getDelegate() : null), runnable);
+        SwtBusyIndicator.showWhile(display, runnable);
     }
 
     /**
@@ -68,7 +68,7 @@ public class BusyIndicator {
      *           external event.
      */
     public static void showWhile(Future<?> future) {
-        nat.org.eclipse.swt.custom.BusyIndicator.showWhile(future);
+        SwtBusyIndicator.showWhile(future);
     }
 
     /**
@@ -87,7 +87,7 @@ public class BusyIndicator {
      * @since 3.123
      */
     public static <E extends Exception> CompletableFuture<?> execute(SwtRunnable<E> action) {
-        return nat.org.eclipse.swt.custom.BusyIndicator.execute(action);
+        return SwtBusyIndicator.execute(action);
     }
 
     /**
@@ -108,7 +108,7 @@ public class BusyIndicator {
      * @since 3.123
      */
     public static <E extends Exception> CompletableFuture<?> execute(SwtRunnable<E> action, Executor executor) {
-        return nat.org.eclipse.swt.custom.BusyIndicator.execute(action, executor);
+        return SwtBusyIndicator.execute(action, executor);
     }
 
     /**
@@ -127,7 +127,7 @@ public class BusyIndicator {
      * @since 3.123
      */
     public static <V, E extends Exception> CompletableFuture<V> compute(SwtCallable<V, E> action) {
-        return nat.org.eclipse.swt.custom.BusyIndicator.compute(action);
+        return SwtBusyIndicator.compute(action);
     }
 
     /**
@@ -149,25 +149,25 @@ public class BusyIndicator {
      * @since 3.123
      */
     public static <V, E extends Exception> CompletableFuture<V> compute(SwtCallable<V, E> action, Executor executor) {
-        return nat.org.eclipse.swt.custom.BusyIndicator.compute(action, executor);
+        return SwtBusyIndicator.compute(action, executor);
     }
 
     public BusyIndicator() {
-        this(new nat.org.eclipse.swt.custom.BusyIndicator());
+        this(new SwtBusyIndicator());
     }
 
-    IBusyIndicator delegate;
+    IBusyIndicator impl;
 
-    protected BusyIndicator(IBusyIndicator delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected BusyIndicator(IBusyIndicator impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static BusyIndicator createApi(IBusyIndicator delegate) {
-        return new BusyIndicator(delegate);
+    public static BusyIndicator createApi(IBusyIndicator impl) {
+        return new BusyIndicator(impl);
     }
 
-    public IBusyIndicator getDelegate() {
-        return delegate;
+    public IBusyIndicator getImpl() {
+        return impl;
     }
 }

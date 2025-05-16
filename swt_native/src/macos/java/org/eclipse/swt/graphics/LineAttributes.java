@@ -90,7 +90,7 @@ public class LineAttributes {
      * @param width the line width
      */
     public LineAttributes(float width) {
-        this(new nat.org.eclipse.swt.graphics.LineAttributes(width));
+        this(new SwtLineAttributes(width));
     }
 
     /**
@@ -101,7 +101,7 @@ public class LineAttributes {
      * @param join the line join style
      */
     public LineAttributes(float width, int cap, int join) {
-        this(new nat.org.eclipse.swt.graphics.LineAttributes(width, cap, join));
+        this(new SwtLineAttributes(width, cap, join));
     }
 
     /**
@@ -116,7 +116,7 @@ public class LineAttributes {
      * @param miterLimit the line miter limit
      */
     public LineAttributes(float width, int cap, int join, int style, float[] dash, float dashOffset, float miterLimit) {
-        this(new nat.org.eclipse.swt.graphics.LineAttributes(width, cap, join, style, dash, dashOffset, miterLimit));
+        this(new SwtLineAttributes(width, cap, join, style, dash, dashOffset, miterLimit));
     }
 
     /**
@@ -130,7 +130,7 @@ public class LineAttributes {
      * @see #hashCode()
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object instanceof LineAttributes ? ((LineAttributes) object).getDelegate() : object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -144,21 +144,21 @@ public class LineAttributes {
      * @see #equals(Object)
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
-    ILineAttributes delegate;
+    ILineAttributes impl;
 
-    protected LineAttributes(ILineAttributes delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected LineAttributes(ILineAttributes impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static LineAttributes createApi(ILineAttributes delegate) {
-        return new LineAttributes(delegate);
+    public static LineAttributes createApi(ILineAttributes impl) {
+        return new LineAttributes(impl);
     }
 
-    public ILineAttributes getDelegate() {
-        return delegate;
+    public ILineAttributes getImpl() {
+        return impl;
     }
 }

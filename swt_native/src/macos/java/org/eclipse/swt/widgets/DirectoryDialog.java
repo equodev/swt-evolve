@@ -54,7 +54,7 @@ public class DirectoryDialog extends Dialog {
      * </ul>
      */
     public DirectoryDialog(Shell parent) {
-        this(new nat.org.eclipse.swt.widgets.DirectoryDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null)));
+        this(new SwtDirectoryDialog(parent));
     }
 
     /**
@@ -82,7 +82,7 @@ public class DirectoryDialog extends Dialog {
      * </ul>
      */
     public DirectoryDialog(Shell parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.DirectoryDialog((nat.org.eclipse.swt.widgets.Shell) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtDirectoryDialog(parent, style));
     }
 
     /**
@@ -94,7 +94,7 @@ public class DirectoryDialog extends Dialog {
      * @see #setFilterPath
      */
     public String getFilterPath() {
-        return getDelegate().getFilterPath();
+        return getImpl().getFilterPath();
     }
 
     /**
@@ -105,7 +105,7 @@ public class DirectoryDialog extends Dialog {
      * @return the message
      */
     public String getMessage() {
-        return getDelegate().getMessage();
+        return getImpl().getMessage();
     }
 
     /**
@@ -121,7 +121,7 @@ public class DirectoryDialog extends Dialog {
      * </ul>
      */
     public String open() {
-        return getDelegate().open();
+        return getImpl().open();
     }
 
     /**
@@ -140,7 +140,7 @@ public class DirectoryDialog extends Dialog {
      * @since 3.126
      */
     public Optional<String> openDialog() {
-        return getDelegate().openDialog();
+        return getImpl().openDialog();
     }
 
     /**
@@ -160,7 +160,7 @@ public class DirectoryDialog extends Dialog {
      * </ul>
      */
     public void setMessage(String string) {
-        getDelegate().setMessage(string);
+        getImpl().setMessage(string);
     }
 
     /**
@@ -177,18 +177,18 @@ public class DirectoryDialog extends Dialog {
      * @param string the filter path
      */
     public void setFilterPath(String string) {
-        getDelegate().setFilterPath(string);
+        getImpl().setFilterPath(string);
     }
 
-    protected DirectoryDialog(IDirectoryDialog delegate) {
-        super(delegate);
+    protected DirectoryDialog(IDirectoryDialog impl) {
+        super(impl);
     }
 
-    public static DirectoryDialog createApi(IDirectoryDialog delegate) {
-        return new DirectoryDialog(delegate);
+    public static DirectoryDialog createApi(IDirectoryDialog impl) {
+        return new DirectoryDialog(impl);
     }
 
-    public IDirectoryDialog getDelegate() {
-        return (IDirectoryDialog) super.getDelegate();
+    public IDirectoryDialog getImpl() {
+        return (IDirectoryDialog) super.getImpl();
     }
 }

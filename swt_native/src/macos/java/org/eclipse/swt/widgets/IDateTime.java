@@ -34,9 +34,9 @@ public interface IDateTime extends IComposite {
      */
     void addSelectionListener(SelectionListener listener);
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
-    IControl[] getChildren();
+    Control[] getChildren();
 
     /**
      * Returns the receiver's date, or day of the month.

@@ -17,7 +17,7 @@ public interface IControlEditor {
      *
      * @return the Control that is displayed above the composite being edited
      */
-    IControl getEditor();
+    Control getEditor();
 
     /**
      * Lays out the control within the underlying composite.  This
@@ -36,7 +36,7 @@ public interface IControlEditor {
      *
      * @param editor the Control that is displayed above the composite being edited
      */
-    void setEditor(IControl editor);
+    void setEditor(Control editor);
 
     ControlEditor getApi();
 

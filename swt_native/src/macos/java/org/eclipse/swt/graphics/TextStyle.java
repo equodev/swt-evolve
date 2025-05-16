@@ -157,7 +157,7 @@ public class TextStyle {
      * @since 3.4
      */
     public TextStyle() {
-        this(new nat.org.eclipse.swt.graphics.TextStyle());
+        this(new SwtTextStyle());
     }
 
     /**
@@ -169,7 +169,7 @@ public class TextStyle {
      * @param background the background color of the style, <code>null</code> if none
      */
     public TextStyle(Font font, Color foreground, Color background) {
-        this(new nat.org.eclipse.swt.graphics.TextStyle((nat.org.eclipse.swt.graphics.Font) (font != null ? font.getDelegate() : null), (nat.org.eclipse.swt.graphics.Color) (foreground != null ? foreground.getDelegate() : null), (nat.org.eclipse.swt.graphics.Color) (background != null ? background.getDelegate() : null)));
+        this(new SwtTextStyle(font, foreground, background));
     }
 
     /**
@@ -180,7 +180,7 @@ public class TextStyle {
      * @since 3.4
      */
     public TextStyle(TextStyle style) {
-        this(new nat.org.eclipse.swt.graphics.TextStyle((nat.org.eclipse.swt.graphics.TextStyle) (style != null ? style.getDelegate() : null)));
+        this(new SwtTextStyle(style));
     }
 
     /**
@@ -194,7 +194,7 @@ public class TextStyle {
      * @see #hashCode()
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object instanceof TextStyle ? ((TextStyle) object).getDelegate() : object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -208,7 +208,7 @@ public class TextStyle {
      * @see #equals(Object)
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
     /**
@@ -218,21 +218,21 @@ public class TextStyle {
      * @return a string representation of the <code>TextStyle</code>
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    ITextStyle delegate;
+    ITextStyle impl;
 
-    protected TextStyle(ITextStyle delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected TextStyle(ITextStyle impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static TextStyle createApi(ITextStyle delegate) {
-        return new TextStyle(delegate);
+    public static TextStyle createApi(ITextStyle impl) {
+        return new TextStyle(impl);
     }
 
-    public ITextStyle getDelegate() {
-        return delegate;
+    public ITextStyle getImpl() {
+        return impl;
     }
 }

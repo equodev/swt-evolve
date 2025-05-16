@@ -140,7 +140,7 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, int width, int height) {
-        this(new nat.org.eclipse.swt.graphics.Image((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), width, height));
+        this(new SwtImage(device, width, height));
     }
 
     /**
@@ -180,7 +180,7 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, Image srcImage, int flag) {
-        this(new nat.org.eclipse.swt.graphics.Image((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), (nat.org.eclipse.swt.graphics.Image) (srcImage != null ? srcImage.getDelegate() : null), flag));
+        this(new SwtImage(device, srcImage, flag));
     }
 
     /**
@@ -219,7 +219,7 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, Rectangle bounds) {
-        this(new nat.org.eclipse.swt.graphics.Image((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), (nat.org.eclipse.swt.graphics.Rectangle) (bounds != null ? bounds.getDelegate() : null)));
+        this(new SwtImage(device, bounds));
     }
 
     /**
@@ -246,7 +246,7 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, ImageData data) {
-        this(new nat.org.eclipse.swt.graphics.Image((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), data));
+        this(new SwtImage(device, data));
     }
 
     /**
@@ -280,7 +280,7 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, ImageData source, ImageData mask) {
-        this(new nat.org.eclipse.swt.graphics.Image((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), source, mask));
+        this(new SwtImage(device, source, mask));
     }
 
     /**
@@ -337,7 +337,7 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, InputStream stream) {
-        this(new nat.org.eclipse.swt.graphics.Image((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), stream));
+        this(new SwtImage(device, stream));
     }
 
     /**
@@ -373,7 +373,7 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, String filename) {
-        this(new nat.org.eclipse.swt.graphics.Image((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), filename));
+        this(new SwtImage(device, filename));
     }
 
     /**
@@ -406,7 +406,7 @@ public final class Image extends Resource implements Drawable {
      * @since 3.104
      */
     public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
-        this(new nat.org.eclipse.swt.graphics.Image((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), imageFileNameProvider));
+        this(new SwtImage(device, imageFileNameProvider));
     }
 
     /**
@@ -439,7 +439,7 @@ public final class Image extends Resource implements Drawable {
      * @since 3.104
      */
     public Image(Device device, ImageDataProvider imageDataProvider) {
-        this(new nat.org.eclipse.swt.graphics.Image((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), imageDataProvider));
+        this(new SwtImage(device, imageDataProvider));
     }
 
     /**
@@ -453,7 +453,7 @@ public final class Image extends Resource implements Drawable {
      * @see #hashCode
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object instanceof Image ? ((Image) object).getDelegate() : object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -475,8 +475,7 @@ public final class Image extends Resource implements Drawable {
      * </ul>
      */
     public Color getBackground() {
-        IColor ret = getDelegate().getBackground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBackground();
     }
 
     /**
@@ -492,8 +491,7 @@ public final class Image extends Resource implements Drawable {
      * </ul>
      */
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     /**
@@ -513,8 +511,7 @@ public final class Image extends Resource implements Drawable {
      */
     @Deprecated
     public Rectangle getBoundsInPixels() {
-        IRectangle ret = getDelegate().getBoundsInPixels();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBoundsInPixels();
     }
 
     /**
@@ -533,7 +530,7 @@ public final class Image extends Resource implements Drawable {
      * @see ImageData
      */
     public ImageData getImageData() {
-        return getDelegate().getImageData();
+        return getImpl().getImageData();
     }
 
     /**
@@ -557,7 +554,7 @@ public final class Image extends Resource implements Drawable {
      */
     @Deprecated
     public ImageData getImageDataAtCurrentZoom() {
-        return getDelegate().getImageDataAtCurrentZoom();
+        return getImpl().getImageDataAtCurrentZoom();
     }
 
     /**
@@ -590,7 +587,7 @@ public final class Image extends Resource implements Drawable {
      * @since 3.106
      */
     public ImageData getImageData(int zoom) {
-        return getDelegate().getImageData(zoom);
+        return getImpl().getImageData(zoom);
     }
 
     /**
@@ -604,7 +601,7 @@ public final class Image extends Resource implements Drawable {
      * @see #equals
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
     /**
@@ -623,7 +620,7 @@ public final class Image extends Resource implements Drawable {
      * @noreference This method is not intended to be referenced by clients.
      */
     public long internal_new_GC(GCData data) {
-        return getDelegate().internal_new_GC(data);
+        return getImpl().internal_new_GC(data);
     }
 
     /**
@@ -642,7 +639,7 @@ public final class Image extends Resource implements Drawable {
      * @noreference This method is not intended to be referenced by clients.
      */
     public void internal_dispose_GC(long hDC, GCData data) {
-        getDelegate().internal_dispose_GC(hDC, data);
+        getImpl().internal_dispose_GC(hDC, data);
     }
 
     /**
@@ -656,7 +653,7 @@ public final class Image extends Resource implements Drawable {
      * @return <code>true</code> when the image is disposed and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return getDelegate().isDisposed();
+        return getImpl().isDisposed();
     }
 
     /**
@@ -694,7 +691,7 @@ public final class Image extends Resource implements Drawable {
      * </ul>
      */
     public void setBackground(Color color) {
-        getDelegate().setBackground((color != null ? color.getDelegate() : null));
+        getImpl().setBackground(color);
     }
 
     /**
@@ -704,18 +701,18 @@ public final class Image extends Resource implements Drawable {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected Image(IImage delegate) {
-        super(delegate);
+    protected Image(IImage impl) {
+        super(impl);
     }
 
-    public static Image createApi(IImage delegate) {
-        return new Image(delegate);
+    public static Image createApi(IImage impl) {
+        return new Image(impl);
     }
 
-    public IImage getDelegate() {
-        return (IImage) super.getDelegate();
+    public IImage getImpl() {
+        return (IImage) super.getImpl();
     }
 }

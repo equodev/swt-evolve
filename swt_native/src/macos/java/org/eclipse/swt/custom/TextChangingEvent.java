@@ -68,7 +68,7 @@ public class TextChangingEvent extends TypedEvent {
         super(source);
     }
 
-    public TextChangingEvent(StyledTextContent source, StyledTextEvent e) {
+    TextChangingEvent(StyledTextContent source, StyledTextEvent e) {
         super(source);
         start = e.start;
         replaceCharCount = e.replaceCharCount;

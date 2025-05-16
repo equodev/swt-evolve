@@ -17,7 +17,6 @@ package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class manage operating system resources that
@@ -86,7 +85,7 @@ public final class Font extends Resource {
      * @see #dispose()
      */
     public Font(Device device, FontData fd) {
-        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), (nat.org.eclipse.swt.graphics.FontData) (fd != null ? fd.getDelegate() : null)));
+        this(new SwtFont(device, fd));
     }
 
     /**
@@ -115,7 +114,7 @@ public final class Font extends Resource {
      * @since 2.1
      */
     public Font(Device device, FontData[] fds) {
-        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), (nat.org.eclipse.swt.graphics.FontData[]) Convert.array(fds, FontData::getDelegate, nat.org.eclipse.swt.graphics.FontData[][]::new)));
+        this(new SwtFont(device, fds));
     }
 
     /**
@@ -143,7 +142,7 @@ public final class Font extends Resource {
      * @see #dispose()
      */
     public Font(Device device, String name, int height, int style) {
-        this(new nat.org.eclipse.swt.graphics.Font((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), name, height, style));
+        this(new SwtFont(device, name, height, style));
     }
 
     /**
@@ -157,7 +156,7 @@ public final class Font extends Resource {
      * @see #hashCode
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object instanceof Font ? ((Font) object).getDelegate() : object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -173,7 +172,7 @@ public final class Font extends Resource {
      * </ul>
      */
     public FontData[] getFontData() {
-        return Convert.array(getDelegate().getFontData(), IFontData::getApi, FontData[]::new);
+        return getImpl().getFontData();
     }
 
     /**
@@ -187,7 +186,7 @@ public final class Font extends Resource {
      * @see #equals
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
     /**
@@ -201,7 +200,7 @@ public final class Font extends Resource {
      * @return <code>true</code> when the font is disposed and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return getDelegate().isDisposed();
+        return getImpl().isDisposed();
     }
 
     /**
@@ -211,18 +210,18 @@ public final class Font extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected Font(IFont delegate) {
-        super(delegate);
+    protected Font(IFont impl) {
+        super(impl);
     }
 
-    public static Font createApi(IFont delegate) {
-        return new Font(delegate);
+    public static Font createApi(IFont impl) {
+        return new Font(impl);
     }
 
-    public IFont getDelegate() {
-        return (IFont) super.getDelegate();
+    public IFont getImpl() {
+        return (IFont) super.getImpl();
     }
 }

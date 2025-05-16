@@ -58,7 +58,7 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
      * @param styledText the <code>StyledText</code> over which the user positions the cursor to drop the data
      */
     public StyledTextDropTargetEffect(StyledText styledText) {
-        this(new nat.org.eclipse.swt.custom.StyledTextDropTargetEffect((nat.org.eclipse.swt.custom.StyledText) (styledText != null ? styledText.getDelegate() : null)));
+        this(new SwtStyledTextDropTargetEffect(styledText));
     }
 
     /**
@@ -76,7 +76,7 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
      * @see DropTargetEvent
      */
     public void dragEnter(DropTargetEvent event) {
-        getDelegate().dragEnter(event);
+        getImpl().dragEnter(event);
     }
 
     /**
@@ -94,7 +94,7 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
      * @see DropTargetEvent
      */
     public void dragLeave(DropTargetEvent event) {
-        getDelegate().dragLeave(event);
+        getImpl().dragLeave(event);
     }
 
     /**
@@ -114,7 +114,7 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
      * @see DND#FEEDBACK_SCROLL
      */
     public void dragOver(DropTargetEvent event) {
-        getDelegate().dragOver(event);
+        getImpl().dragOver(event);
     }
 
     /**
@@ -132,18 +132,18 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
      * @see DropTargetEvent
      */
     public void dropAccept(DropTargetEvent event) {
-        getDelegate().dropAccept(event);
+        getImpl().dropAccept(event);
     }
 
-    protected StyledTextDropTargetEffect(IStyledTextDropTargetEffect delegate) {
-        super(delegate);
+    protected StyledTextDropTargetEffect(IStyledTextDropTargetEffect impl) {
+        super(impl);
     }
 
-    public static StyledTextDropTargetEffect createApi(IStyledTextDropTargetEffect delegate) {
-        return new StyledTextDropTargetEffect(delegate);
+    public static StyledTextDropTargetEffect createApi(IStyledTextDropTargetEffect impl) {
+        return new StyledTextDropTargetEffect(impl);
     }
 
-    public IStyledTextDropTargetEffect getDelegate() {
-        return (IStyledTextDropTargetEffect) super.getDelegate();
+    public IStyledTextDropTargetEffect getImpl() {
+        return (IStyledTextDropTargetEffect) super.getImpl();
     }
 }

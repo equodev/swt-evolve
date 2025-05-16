@@ -19,7 +19,7 @@ public interface ITray extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITrayItem getItem(int index);
+    TrayItem getItem(int index);
 
     /**
      * Returns the number of items contained in the receiver.
@@ -49,7 +49,7 @@ public interface ITray extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITrayItem[] getItems();
+    TrayItem[] getItems();
 
     Tray getApi();
 }

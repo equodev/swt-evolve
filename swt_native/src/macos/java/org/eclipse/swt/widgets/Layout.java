@@ -73,7 +73,7 @@ public abstract class Layout {
      * @since 3.1
      */
     protected boolean flushCache(Control control) {
-        return getDelegate().flushCache((control != null ? control.getDelegate() : null));
+        return getImpl().flushCache(control);
     }
 
     /**
@@ -109,14 +109,14 @@ public abstract class Layout {
     public Layout() {
     }
 
-    ILayout delegate;
+    ILayout impl;
 
-    protected Layout(ILayout delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected Layout(ILayout impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public ILayout getDelegate() {
-        return delegate;
+    public ILayout getImpl() {
+        return impl;
     }
 }

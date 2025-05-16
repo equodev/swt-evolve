@@ -18,9 +18,9 @@ public interface ICBanner extends IComposite {
      *
      * @since 3.0
      */
-    IControl getBottom();
+    Control getBottom();
 
-    IRectangle getClientArea();
+    Rectangle getClientArea();
 
     /**
      * Returns the Control that appears on the left side of the banner.
@@ -34,7 +34,7 @@ public interface ICBanner extends IComposite {
      *
      * @since 3.0
      */
-    IControl getLeft();
+    Control getLeft();
 
     /**
      * Returns the Control that appears on the right side of the banner.
@@ -48,7 +48,7 @@ public interface ICBanner extends IComposite {
      *
      * @since 3.0
      */
-    IControl getRight();
+    Control getRight();
 
     /**
      * Returns the minimum size of the control that appears on the right of the banner.
@@ -57,7 +57,7 @@ public interface ICBanner extends IComposite {
      *
      * @since 3.1
      */
-    IPoint getRightMinimumSize();
+    Point getRightMinimumSize();
 
     /**
      * Returns the width of the control that appears on the right of the banner.
@@ -93,7 +93,7 @@ public interface ICBanner extends IComposite {
      *
      * @since 3.0
      */
-    void setBottom(IControl control);
+    void setBottom(Control control);
 
     /**
      * Sets the layout which is associated with the receiver to be
@@ -110,7 +110,7 @@ public interface ICBanner extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setLayout(ILayout layout);
+    void setLayout(Layout layout);
 
     /**
      * Set the control that appears on the left side of the banner.
@@ -127,7 +127,7 @@ public interface ICBanner extends IComposite {
      *
      * @since 3.0
      */
-    void setLeft(IControl control);
+    void setLeft(Control control);
 
     /**
      * Set the control that appears on the right side of the banner.
@@ -144,7 +144,7 @@ public interface ICBanner extends IComposite {
      *
      * @since 3.0
      */
-    void setRight(IControl control);
+    void setRight(Control control);
 
     /**
      * Set the minimum height of the control that appears on the right side of the banner.
@@ -159,7 +159,7 @@ public interface ICBanner extends IComposite {
      *
      * @since 3.1
      */
-    void setRightMinimumSize(IPoint size);
+    void setRightMinimumSize(Point size);
 
     /**
      * Set the width of the control that appears on the right side of the banner.

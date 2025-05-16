@@ -22,7 +22,7 @@ public interface IResource {
      *
      * @since 3.2
      */
-    IDevice getDevice();
+    Device getDevice();
 
     /**
      * Returns <code>true</code> if the resource has been disposed,

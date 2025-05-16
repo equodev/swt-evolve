@@ -23,7 +23,7 @@ public interface IColor extends IResource {
      * @return <code>Device</code> the device of the receiver
      * @since 3.2
      */
-    IDevice getDevice();
+    Device getDevice();
 
     /**
      * Compares the argument to the receiver, and returns true

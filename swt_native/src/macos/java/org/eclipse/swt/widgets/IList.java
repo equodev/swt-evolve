@@ -80,7 +80,7 @@ public interface IList extends IScrollable {
      */
     void addSelectionListener(SelectionListener listener);
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
     /**
      * Deselects the item at the given zero-relative index in the receiver.

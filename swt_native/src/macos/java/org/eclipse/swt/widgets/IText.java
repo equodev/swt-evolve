@@ -144,9 +144,9 @@ public interface IText extends IScrollable {
      */
     void clearSelection();
 
-    IPoint computeSize(int wHint, int hHint, boolean changed);
+    Point computeSize(int wHint, int hHint, boolean changed);
 
-    IRectangle computeTrim(int x, int y, int width, int height);
+    Rectangle computeTrim(int x, int y, int width, int height);
 
     /**
      * Copies the selected text.
@@ -201,7 +201,7 @@ public interface IText extends IScrollable {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IPoint getCaretLocation();
+    Point getCaretLocation();
 
     /**
      * Returns the character position of the caret.
@@ -367,7 +367,7 @@ public interface IText extends IScrollable {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IPoint getSelection();
+    Point getSelection();
 
     /**
      * Returns the number of selected characters.
@@ -826,7 +826,7 @@ public interface IText extends IScrollable {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSelection(IPoint selection);
+    void setSelection(Point selection);
 
     /**
      * Sets the number of tabs.

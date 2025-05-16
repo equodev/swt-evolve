@@ -38,7 +38,7 @@ import org.eclipse.swt.internal.cocoa.*;
 public class TaskItem extends Item {
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -53,8 +53,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public Menu getMenu() {
-        IMenu ret = getDelegate().getMenu();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getMenu();
     }
 
     /**
@@ -69,8 +68,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public Image getOverlayImage() {
-        IImage ret = getDelegate().getOverlayImage();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getOverlayImage();
     }
 
     /**
@@ -85,7 +83,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public String getOverlayText() {
-        return getDelegate().getOverlayText();
+        return getImpl().getOverlayText();
     }
 
     /**
@@ -99,8 +97,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public TaskBar getParent() {
-        ITaskBar ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     /**
@@ -114,7 +111,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public int getProgress() {
-        return getDelegate().getProgress();
+        return getImpl().getProgress();
     }
 
     /**
@@ -128,7 +125,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public int getProgressState() {
-        return getDelegate().getProgressState();
+        return getImpl().getProgressState();
     }
 
     /**
@@ -163,7 +160,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public void setMenu(Menu menu) {
-        getDelegate().setMenu((menu != null ? menu.getDelegate() : null));
+        getImpl().setMenu(menu);
     }
 
     /**
@@ -194,7 +191,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public void setOverlayImage(Image overlayImage) {
-        getDelegate().setOverlayImage((overlayImage != null ? overlayImage.getDelegate() : null));
+        getImpl().setOverlayImage(overlayImage);
     }
 
     /**
@@ -224,7 +221,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public void setOverlayText(String overlayText) {
-        getDelegate().setOverlayText(overlayText);
+        getImpl().setOverlayText(overlayText);
     }
 
     /**
@@ -253,7 +250,7 @@ public class TaskItem extends Item {
      * #see {@link #setProgressState(int)}
      */
     public void setProgress(int progress) {
-        getDelegate().setProgress(progress);
+        getImpl().setProgress(progress);
     }
 
     /**
@@ -292,18 +289,18 @@ public class TaskItem extends Item {
      * #see {@link #setProgress(int)}
      */
     public void setProgressState(int progressState) {
-        getDelegate().setProgressState(progressState);
+        getImpl().setProgressState(progressState);
     }
 
-    protected TaskItem(ITaskItem delegate) {
-        super(delegate);
+    protected TaskItem(ITaskItem impl) {
+        super(impl);
     }
 
-    public static TaskItem createApi(ITaskItem delegate) {
-        return new TaskItem(delegate);
+    public static TaskItem createApi(ITaskItem impl) {
+        return new TaskItem(impl);
     }
 
-    public ITaskItem getDelegate() {
-        return (ITaskItem) super.getDelegate();
+    public ITaskItem getImpl() {
+        return (ITaskItem) super.getImpl();
     }
 }

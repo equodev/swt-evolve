@@ -68,7 +68,7 @@ public class CTabItem extends Item {
      * @see Widget#getStyle()
      */
     public CTabItem(CTabFolder parent, int style) {
-        this(new nat.org.eclipse.swt.custom.CTabItem((nat.org.eclipse.swt.custom.CTabFolder) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtCTabItem(parent, style));
     }
 
     /**
@@ -102,11 +102,11 @@ public class CTabItem extends Item {
      * @see Widget#getStyle()
      */
     public CTabItem(CTabFolder parent, int style, int index) {
-        this(new nat.org.eclipse.swt.custom.CTabItem((nat.org.eclipse.swt.custom.CTabFolder) (parent != null ? parent.getDelegate() : null), style, index));
+        this(new SwtCTabItem(parent, style, index));
     }
 
     public void dispose() {
-        getDelegate().dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -121,8 +121,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     /**
@@ -136,8 +135,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        IControl ret = getDelegate().getControl();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getControl();
     }
 
     /**
@@ -154,8 +152,7 @@ public class CTabItem extends Item {
      */
     @Deprecated
     public Image getDisabledImage() {
-        IImage ret = getDelegate().getDisabledImage();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getDisabledImage();
     }
 
     /**
@@ -170,8 +167,7 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public Color getForeground() {
-        IColor ret = getDelegate().getForeground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getForeground();
     }
 
     /**
@@ -186,8 +182,7 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public Color getSelectionForeground() {
-        IColor ret = getDelegate().getSelectionForeground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getSelectionForeground();
     }
 
     /**
@@ -203,8 +198,7 @@ public class CTabItem extends Item {
      *  @since 3.0
      */
     public Font getFont() {
-        IFont ret = getDelegate().getFont();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getFont();
     }
 
     /**
@@ -218,8 +212,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public CTabFolder getParent() {
-        ICTabFolder ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     /**
@@ -237,7 +230,7 @@ public class CTabItem extends Item {
      * @since 3.4
      */
     public boolean getShowClose() {
-        return getDelegate().getShowClose();
+        return getImpl().getShowClose();
     }
 
     /**
@@ -252,7 +245,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public String getToolTipText() {
-        return getDelegate().getToolTipText();
+        return getImpl().getToolTipText();
     }
 
     /**
@@ -268,7 +261,7 @@ public class CTabItem extends Item {
      * @since 3.0
      */
     public boolean isShowing() {
-        return getDelegate().isShowing();
+        return getImpl().isShowing();
     }
 
     /**
@@ -287,7 +280,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        getDelegate().setControl((control != null ? control.getDelegate() : null));
+        getImpl().setControl(control);
     }
 
     /**
@@ -305,7 +298,7 @@ public class CTabItem extends Item {
      */
     @Deprecated
     public void setDisabledImage(Image image) {
-        getDelegate().setDisabledImage((image != null ? image.getDelegate() : null));
+        getImpl().setDisabledImage(image);
     }
 
     /**
@@ -326,7 +319,7 @@ public class CTabItem extends Item {
      * @since 3.0
      */
     public void setFont(Font font) {
-        getDelegate().setFont((font != null ? font.getDelegate() : null));
+        getImpl().setFont(font);
     }
 
     /**
@@ -346,7 +339,7 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public void setForeground(Color color) {
-        getDelegate().setForeground((color != null ? color.getDelegate() : null));
+        getImpl().setForeground(color);
     }
 
     /**
@@ -366,11 +359,11 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public void setSelectionForeground(Color color) {
-        getDelegate().setSelectionForeground((color != null ? color.getDelegate() : null));
+        getImpl().setSelectionForeground(color);
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -388,7 +381,7 @@ public class CTabItem extends Item {
      * @since 3.4
      */
     public void setShowClose(boolean close) {
-        getDelegate().setShowClose(close);
+        getImpl().setShowClose(close);
     }
 
     /**
@@ -403,7 +396,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -427,18 +420,18 @@ public class CTabItem extends Item {
      * </ul>
      */
     public void setToolTipText(String string) {
-        getDelegate().setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
-    protected CTabItem(ICTabItem delegate) {
-        super(delegate);
+    protected CTabItem(ICTabItem impl) {
+        super(impl);
     }
 
-    public static CTabItem createApi(ICTabItem delegate) {
-        return new CTabItem(delegate);
+    public static CTabItem createApi(ICTabItem impl) {
+        return new CTabItem(impl);
     }
 
-    public ICTabItem getDelegate() {
-        return (ICTabItem) super.getDelegate();
+    public ICTabItem getImpl() {
+        return (ICTabItem) super.getImpl();
     }
 }

@@ -73,7 +73,7 @@ public class List extends Scrollable {
      * @see Widget#getStyle
      */
     public List(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.List((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtList(parent, style));
     }
 
     /**
@@ -95,7 +95,7 @@ public class List extends Scrollable {
      * @see #add(String,int)
      */
     public void add(String string) {
-        getDelegate().add(string);
+        getImpl().add(string);
     }
 
     /**
@@ -125,7 +125,7 @@ public class List extends Scrollable {
      * @see #add(String)
      */
     public void add(String string, int index) {
-        getDelegate().add(string, index);
+        getImpl().add(string, index);
     }
 
     /**
@@ -153,12 +153,11 @@ public class List extends Scrollable {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -174,7 +173,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void deselect(int index) {
-        getDelegate().deselect(index);
+        getImpl().deselect(index);
     }
 
     /**
@@ -193,7 +192,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void deselect(int start, int end) {
-        getDelegate().deselect(start, end);
+        getImpl().deselect(start, end);
     }
 
     /**
@@ -214,7 +213,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void deselect(int[] indices) {
-        getDelegate().deselect(indices);
+        getImpl().deselect(indices);
     }
 
     /**
@@ -226,7 +225,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void deselectAll() {
-        getDelegate().deselectAll();
+        getImpl().deselectAll();
     }
 
     /**
@@ -241,7 +240,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getFocusIndex() {
-        return getDelegate().getFocusIndex();
+        return getImpl().getFocusIndex();
     }
 
     /**
@@ -260,7 +259,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public String getItem(int index) {
-        return getDelegate().getItem(index);
+        return getImpl().getItem(index);
     }
 
     /**
@@ -274,7 +273,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getItemCount() {
-        return getDelegate().getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -289,7 +288,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getItemHeight() {
-        return getDelegate().getItemHeight();
+        return getImpl().getItemHeight();
     }
 
     /**
@@ -309,7 +308,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public String[] getItems() {
-        return getDelegate().getItems();
+        return getImpl().getItems();
     }
 
     /**
@@ -329,7 +328,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public String[] getSelection() {
-        return getDelegate().getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -343,7 +342,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getSelectionCount() {
-        return getDelegate().getSelectionCount();
+        return getImpl().getSelectionCount();
     }
 
     /**
@@ -358,7 +357,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getSelectionIndex() {
-        return getDelegate().getSelectionIndex();
+        return getImpl().getSelectionIndex();
     }
 
     /**
@@ -378,7 +377,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int[] getSelectionIndices() {
-        return getDelegate().getSelectionIndices();
+        return getImpl().getSelectionIndices();
     }
 
     /**
@@ -394,7 +393,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getTopIndex() {
-        return getDelegate().getTopIndex();
+        return getImpl().getTopIndex();
     }
 
     /**
@@ -417,7 +416,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int indexOf(String string) {
-        return getDelegate().indexOf(string);
+        return getImpl().indexOf(string);
     }
 
     /**
@@ -440,7 +439,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int indexOf(String string, int start) {
-        return getDelegate().indexOf(string, start);
+        return getImpl().indexOf(string, start);
     }
 
     /**
@@ -457,7 +456,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public boolean isSelected(int index) {
-        return getDelegate().isSelected(index);
+        return getImpl().isSelected(index);
     }
 
     /**
@@ -475,7 +474,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void remove(int index) {
-        getDelegate().remove(index);
+        getImpl().remove(index);
     }
 
     /**
@@ -495,7 +494,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void remove(int start, int end) {
-        getDelegate().remove(start, end);
+        getImpl().remove(start, end);
     }
 
     /**
@@ -515,7 +514,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void remove(String string) {
-        getDelegate().remove(string);
+        getImpl().remove(string);
     }
 
     /**
@@ -534,7 +533,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void remove(int[] indices) {
-        getDelegate().remove(indices);
+        getImpl().remove(indices);
     }
 
     /**
@@ -546,7 +545,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void removeAll() {
-        getDelegate().removeAll();
+        getImpl().removeAll();
     }
 
     /**
@@ -567,7 +566,7 @@ public class List extends Scrollable {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -583,7 +582,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void select(int index) {
-        getDelegate().select(index);
+        getImpl().select(index);
     }
 
     /**
@@ -609,7 +608,7 @@ public class List extends Scrollable {
      * @see List#setSelection(int,int)
      */
     public void select(int start, int end) {
-        getDelegate().select(start, end);
+        getImpl().select(start, end);
     }
 
     /**
@@ -635,7 +634,7 @@ public class List extends Scrollable {
      * @see List#setSelection(int[])
      */
     public void select(int[] indices) {
-        getDelegate().select(indices);
+        getImpl().select(indices);
     }
 
     /**
@@ -649,7 +648,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void selectAll() {
-        getDelegate().selectAll();
+        getImpl().selectAll();
     }
 
     /**
@@ -669,7 +668,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void setItem(int index, String string) {
-        getDelegate().setItem(index, string);
+        getImpl().setItem(index, string);
     }
 
     /**
@@ -687,7 +686,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void setItems(String... items) {
-        getDelegate().setItems(items);
+        getImpl().setItems(items);
     }
 
     /**
@@ -707,7 +706,7 @@ public class List extends Scrollable {
      * @see List#select(int)
      */
     public void setSelection(int index) {
-        getDelegate().setSelection(index);
+        getImpl().setSelection(index);
     }
 
     /**
@@ -733,7 +732,7 @@ public class List extends Scrollable {
      * @see List#select(int,int)
      */
     public void setSelection(int start, int end) {
-        getDelegate().setSelection(start, end);
+        getImpl().setSelection(start, end);
     }
 
     /**
@@ -759,7 +758,7 @@ public class List extends Scrollable {
      * @see List#select(int[])
      */
     public void setSelection(int[] indices) {
-        getDelegate().setSelection(indices);
+        getImpl().setSelection(indices);
     }
 
     /**
@@ -786,7 +785,7 @@ public class List extends Scrollable {
      * @see List#setSelection(int[])
      */
     public void setSelection(String[] items) {
-        getDelegate().setSelection(items);
+        getImpl().setSelection(items);
     }
 
     /**
@@ -802,7 +801,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void setTopIndex(int index) {
-        getDelegate().setTopIndex(index);
+        getImpl().setTopIndex(index);
     }
 
     /**
@@ -816,18 +815,18 @@ public class List extends Scrollable {
      * </ul>
      */
     public void showSelection() {
-        getDelegate().showSelection();
+        getImpl().showSelection();
     }
 
-    protected List(IList delegate) {
-        super(delegate);
+    protected List(IList impl) {
+        super(impl);
     }
 
-    public static List createApi(IList delegate) {
-        return new List(delegate);
+    public static List createApi(IList impl) {
+        return new List(impl);
     }
 
-    public IList getDelegate() {
-        return (IList) super.getDelegate();
+    public IList getImpl() {
+        return (IList) super.getImpl();
     }
 }

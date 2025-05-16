@@ -137,7 +137,7 @@ public class ViewForm extends Composite {
      * @see #getStyle()
      */
     public ViewForm(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.custom.ViewForm((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtViewForm(parent, style));
     }
 
     //protected void checkSubclass () {
@@ -148,13 +148,11 @@ public class ViewForm extends Composite {
     //	}
     //}
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        IRectangle ret = getDelegate().computeTrim(x, y, width, height);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeTrim(x, y, width, height);
     }
 
     public Rectangle getClientArea() {
-        IRectangle ret = getDelegate().getClientArea();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getClientArea();
     }
 
     /**
@@ -163,8 +161,7 @@ public class ViewForm extends Composite {
      * @return the control in the content area of the pane or null
      */
     public Control getContent() {
-        IControl ret = getDelegate().getContent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getContent();
     }
 
     /**
@@ -174,8 +171,7 @@ public class ViewForm extends Composite {
      * @return the control in the top center of the pane or null
      */
     public Control getTopCenter() {
-        IControl ret = getDelegate().getTopCenter();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getTopCenter();
     }
 
     /**
@@ -185,8 +181,7 @@ public class ViewForm extends Composite {
      * @return the control in the top left corner of the pane or null
      */
     public Control getTopLeft() {
-        IControl ret = getDelegate().getTopLeft();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getTopLeft();
     }
 
     /**
@@ -196,8 +191,7 @@ public class ViewForm extends Composite {
      * @return the control in the top right corner of the pane or null
      */
     public Control getTopRight() {
-        IControl ret = getDelegate().getTopRight();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getTopRight();
     }
 
     /**
@@ -214,7 +208,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setContent(Control content) {
-        getDelegate().setContent((content != null ? content.getDelegate() : null));
+        getImpl().setContent(content);
     }
 
     /**
@@ -233,7 +227,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setLayout(Layout layout) {
-        getDelegate().setLayout((layout != null ? layout.getDelegate() : null));
+        getImpl().setLayout(layout);
     }
 
     /**
@@ -251,7 +245,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopCenter(Control topCenter) {
-        getDelegate().setTopCenter((topCenter != null ? topCenter.getDelegate() : null));
+        getImpl().setTopCenter(topCenter);
     }
 
     /**
@@ -269,7 +263,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopLeft(Control c) {
-        getDelegate().setTopLeft((c != null ? c.getDelegate() : null));
+        getImpl().setTopLeft(c);
     }
 
     /**
@@ -287,7 +281,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopRight(Control c) {
-        getDelegate().setTopRight((c != null ? c.getDelegate() : null));
+        getImpl().setTopRight(c);
     }
 
     /**
@@ -301,7 +295,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setBorderVisible(boolean show) {
-        getDelegate().setBorderVisible(show);
+        getImpl().setBorderVisible(show);
     }
 
     /**
@@ -317,18 +311,18 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopCenterSeparate(boolean show) {
-        getDelegate().setTopCenterSeparate(show);
+        getImpl().setTopCenterSeparate(show);
     }
 
-    protected ViewForm(IViewForm delegate) {
-        super(delegate);
+    protected ViewForm(IViewForm impl) {
+        super(impl);
     }
 
-    public static ViewForm createApi(IViewForm delegate) {
-        return new ViewForm(delegate);
+    public static ViewForm createApi(IViewForm impl) {
+        return new ViewForm(impl);
     }
 
-    public IViewForm getDelegate() {
-        return (IViewForm) super.getDelegate();
+    public IViewForm getImpl() {
+        return (IViewForm) super.getImpl();
     }
 }

@@ -61,7 +61,7 @@ public final class Region extends Resource {
      * @see #dispose()
      */
     public Region() {
-        this(new nat.org.eclipse.swt.graphics.Region());
+        this(new SwtRegion());
     }
 
     /**
@@ -84,7 +84,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public Region(Device device) {
-        this(new nat.org.eclipse.swt.graphics.Region((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null)));
+        this(new SwtRegion(device));
     }
 
     /**
@@ -103,7 +103,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void add(int[] pointArray) {
-        getDelegate().add(pointArray);
+        getImpl().add(pointArray);
     }
 
     /**
@@ -121,7 +121,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public void add(Rectangle rect) {
-        getDelegate().add((rect != null ? rect.getDelegate() : null));
+        getImpl().add(rect);
     }
 
     /**
@@ -143,7 +143,7 @@ public final class Region extends Resource {
      * @since 3.1
      */
     public void add(int x, int y, int width, int height) {
-        getDelegate().add(x, y, width, height);
+        getImpl().add(x, y, width, height);
     }
 
     /**
@@ -162,7 +162,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public void add(Region region) {
-        getDelegate().add((region != null ? region.getDelegate() : null));
+        getImpl().add(region);
     }
 
     /**
@@ -179,7 +179,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public boolean contains(int x, int y) {
-        return getDelegate().contains(x, y);
+        return getImpl().contains(x, y);
     }
 
     /**
@@ -198,7 +198,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public boolean contains(Point pt) {
-        return getDelegate().contains((pt != null ? pt.getDelegate() : null));
+        return getImpl().contains(pt);
     }
 
     /**
@@ -212,7 +212,7 @@ public final class Region extends Resource {
      * @see #hashCode
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object instanceof Region ? ((Region) object).getDelegate() : object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -229,8 +229,7 @@ public final class Region extends Resource {
      * @see Rectangle#union
      */
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     /**
@@ -244,7 +243,7 @@ public final class Region extends Resource {
      * @see #equals
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
     /**
@@ -264,7 +263,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void intersect(Rectangle rect) {
-        getDelegate().intersect((rect != null ? rect.getDelegate() : null));
+        getImpl().intersect(rect);
     }
 
     /**
@@ -286,7 +285,7 @@ public final class Region extends Resource {
      * @since 3.1
      */
     public void intersect(int x, int y, int width, int height) {
-        getDelegate().intersect(x, y, width, height);
+        getImpl().intersect(x, y, width, height);
     }
 
     /**
@@ -307,7 +306,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void intersect(Region region) {
-        getDelegate().intersect((region != null ? region.getDelegate() : null));
+        getImpl().intersect(region);
     }
 
     /**
@@ -328,7 +327,7 @@ public final class Region extends Resource {
      * @see Rectangle#intersects(Rectangle)
      */
     public boolean intersects(int x, int y, int width, int height) {
-        return getDelegate().intersects(x, y, width, height);
+        return getImpl().intersects(x, y, width, height);
     }
 
     /**
@@ -349,7 +348,7 @@ public final class Region extends Resource {
      * @see Rectangle#intersects(Rectangle)
      */
     public boolean intersects(Rectangle rect) {
-        return getDelegate().intersects((rect != null ? rect.getDelegate() : null));
+        return getImpl().intersects(rect);
     }
 
     /**
@@ -363,7 +362,7 @@ public final class Region extends Resource {
      * @return <code>true</code> when the region is disposed, and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return getDelegate().isDisposed();
+        return getImpl().isDisposed();
     }
 
     /**
@@ -378,7 +377,7 @@ public final class Region extends Resource {
      * </ul>
      */
     public boolean isEmpty() {
-        return getDelegate().isEmpty();
+        return getImpl().isEmpty();
     }
 
     /**
@@ -397,7 +396,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void subtract(int[] pointArray) {
-        getDelegate().subtract(pointArray);
+        getImpl().subtract(pointArray);
     }
 
     /**
@@ -417,7 +416,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void subtract(Rectangle rect) {
-        getDelegate().subtract((rect != null ? rect.getDelegate() : null));
+        getImpl().subtract(rect);
     }
 
     /**
@@ -439,7 +438,7 @@ public final class Region extends Resource {
      * @since 3.1
      */
     public void subtract(int x, int y, int width, int height) {
-        getDelegate().subtract(x, y, width, height);
+        getImpl().subtract(x, y, width, height);
     }
 
     /**
@@ -460,7 +459,7 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public void subtract(Region region) {
-        getDelegate().subtract((region != null ? region.getDelegate() : null));
+        getImpl().subtract(region);
     }
 
     /**
@@ -477,7 +476,7 @@ public final class Region extends Resource {
      * @since 3.1
      */
     public void translate(int x, int y) {
-        getDelegate().translate(x, y);
+        getImpl().translate(x, y);
     }
 
     /**
@@ -496,7 +495,7 @@ public final class Region extends Resource {
      * @since 3.1
      */
     public void translate(Point pt) {
-        getDelegate().translate((pt != null ? pt.getDelegate() : null));
+        getImpl().translate(pt);
     }
 
     /**
@@ -506,18 +505,18 @@ public final class Region extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected Region(IRegion delegate) {
-        super(delegate);
+    protected Region(IRegion impl) {
+        super(impl);
     }
 
-    public static Region createApi(IRegion delegate) {
-        return new Region(delegate);
+    public static Region createApi(IRegion impl) {
+        return new Region(impl);
     }
 
-    public IRegion getDelegate() {
-        return (IRegion) super.getDelegate();
+    public IRegion getImpl() {
+        return (IRegion) super.getImpl();
     }
 }

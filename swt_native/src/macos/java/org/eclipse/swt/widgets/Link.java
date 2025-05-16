@@ -74,7 +74,7 @@ public class Link extends Control {
      * @see Widget#getStyle
      */
     public Link(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Link((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtLink(parent, style));
     }
 
     /**
@@ -102,12 +102,11 @@ public class Link extends Control {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -122,8 +121,7 @@ public class Link extends Control {
      * @since 3.105
      */
     public Color getLinkForeground() {
-        IColor ret = getDelegate().getLinkForeground();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getLinkForeground();
     }
 
     /**
@@ -138,7 +136,7 @@ public class Link extends Control {
      * </ul>
      */
     public String getText() {
-        return getDelegate().getText();
+        return getImpl().getText();
     }
 
     /**
@@ -159,7 +157,7 @@ public class Link extends Control {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -181,7 +179,7 @@ public class Link extends Control {
      * @since 3.105
      */
     public void setLinkForeground(Color color) {
-        getDelegate().setLinkForeground((color != null ? color.getDelegate() : null));
+        getImpl().setLinkForeground(color);
     }
 
     /**
@@ -223,18 +221,18 @@ public class Link extends Control {
      * </ul>
      */
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
-    protected Link(ILink delegate) {
-        super(delegate);
+    protected Link(ILink impl) {
+        super(impl);
     }
 
-    public static Link createApi(ILink delegate) {
-        return new Link(delegate);
+    public static Link createApi(ILink impl) {
+        return new Link(impl);
     }
 
-    public ILink getDelegate() {
-        return (ILink) super.getDelegate();
+    public ILink getImpl() {
+        return (ILink) super.getImpl();
     }
 }

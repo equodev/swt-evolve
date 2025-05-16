@@ -98,7 +98,7 @@ public final class FillLayout extends Layout {
      * Constructs a new instance of this class.
      */
     public FillLayout() {
-        this(new nat.org.eclipse.swt.layout.FillLayout());
+        this(new SwtFillLayout());
     }
 
     /**
@@ -109,20 +109,19 @@ public final class FillLayout extends Layout {
      * @since 2.0
      */
     public FillLayout(int type) {
-        this(new nat.org.eclipse.swt.layout.FillLayout(type));
+        this(new SwtFillLayout(type));
     }
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-        IPoint ret = getDelegate().computeSize((composite != null ? composite.getDelegate() : null), wHint, hHint, flushCache);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(composite, wHint, hHint, flushCache);
     }
 
     protected boolean flushCache(Control control) {
-        return getDelegate().flushCache((control != null ? control.getDelegate() : null));
+        return getImpl().flushCache(control);
     }
 
     protected void layout(Composite composite, boolean flushCache) {
-        getDelegate().layout((composite != null ? composite.getDelegate() : null), flushCache);
+        getImpl().layout(composite, flushCache);
     }
 
     /**
@@ -132,18 +131,18 @@ public final class FillLayout extends Layout {
      * @return a string representation of the layout
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected FillLayout(IFillLayout delegate) {
-        super(delegate);
+    protected FillLayout(IFillLayout impl) {
+        super(impl);
     }
 
-    public static FillLayout createApi(IFillLayout delegate) {
-        return new FillLayout(delegate);
+    public static FillLayout createApi(IFillLayout impl) {
+        return new FillLayout(impl);
     }
 
-    public IFillLayout getDelegate() {
-        return (IFillLayout) super.getDelegate();
+    public IFillLayout getImpl() {
+        return (IFillLayout) super.getImpl();
     }
 }

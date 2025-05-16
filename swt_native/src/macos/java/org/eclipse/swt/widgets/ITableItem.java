@@ -19,7 +19,7 @@ public interface ITableItem extends IItem {
      *
      * @since 2.0
      */
-    IColor getBackground();
+    Color getBackground();
 
     /**
      * Returns the background color at the given column index in the receiver.
@@ -34,7 +34,7 @@ public interface ITableItem extends IItem {
      *
      * @since 3.0
      */
-    IColor getBackground(int index);
+    Color getBackground(int index);
 
     /**
      * Returns a rectangle describing the size and location of the receiver's
@@ -49,7 +49,7 @@ public interface ITableItem extends IItem {
      *
      * @since 3.2
      */
-    IRectangle getBounds();
+    Rectangle getBounds();
 
     /**
      * Returns a rectangle describing the receiver's size and location
@@ -63,7 +63,7 @@ public interface ITableItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IRectangle getBounds(int index);
+    Rectangle getBounds(int index);
 
     /**
      * Returns <code>true</code> if the receiver is checked,
@@ -91,7 +91,7 @@ public interface ITableItem extends IItem {
      *
      * @since 3.0
      */
-    IFont getFont();
+    Font getFont();
 
     /**
      * Returns the font that the receiver will use to paint textual information
@@ -107,7 +107,7 @@ public interface ITableItem extends IItem {
      *
      * @since 3.0
      */
-    IFont getFont(int index);
+    Font getFont(int index);
 
     /**
      * Returns the foreground color that the receiver will use to draw.
@@ -121,7 +121,7 @@ public interface ITableItem extends IItem {
      *
      * @since 2.0
      */
-    IColor getForeground();
+    Color getForeground();
 
     /**
      * Returns the foreground color at the given column index in the receiver.
@@ -136,7 +136,7 @@ public interface ITableItem extends IItem {
      *
      * @since 3.0
      */
-    IColor getForeground(int index);
+    Color getForeground(int index);
 
     /**
      * Returns <code>true</code> if the receiver is grayed,
@@ -152,7 +152,7 @@ public interface ITableItem extends IItem {
      */
     boolean getGrayed();
 
-    IImage getImage();
+    Image getImage();
 
     /**
      * Returns the image stored at the given column index in the receiver,
@@ -166,7 +166,7 @@ public interface ITableItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IImage getImage(int index);
+    Image getImage(int index);
 
     /**
      * Returns a rectangle describing the size and location
@@ -182,7 +182,7 @@ public interface ITableItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IRectangle getImageBounds(int index);
+    Rectangle getImageBounds(int index);
 
     /**
      * Gets the image indent.
@@ -206,7 +206,7 @@ public interface ITableItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITable getParent();
+    Table getParent();
 
     String getText();
 
@@ -240,7 +240,7 @@ public interface ITableItem extends IItem {
      *
      * @since 3.3
      */
-    IRectangle getTextBounds(int index);
+    Rectangle getTextBounds(int index);
 
     /**
      * Sets the receiver's background color to the color specified
@@ -259,7 +259,7 @@ public interface ITableItem extends IItem {
      *
      * @since 2.0
      */
-    void setBackground(IColor color);
+    void setBackground(Color color);
 
     /**
      * Sets the background color at the given column index in the receiver
@@ -279,7 +279,7 @@ public interface ITableItem extends IItem {
      *
      * @since 3.0
      */
-    void setBackground(int index, IColor color);
+    void setBackground(int index, Color color);
 
     /**
      * Sets the checked state of the checkbox for this item.  This state change
@@ -311,7 +311,7 @@ public interface ITableItem extends IItem {
      *
      * @since 3.0
      */
-    void setFont(IFont font);
+    void setFont(Font font);
 
     /**
      * Sets the font that the receiver will use to paint textual information
@@ -332,7 +332,7 @@ public interface ITableItem extends IItem {
      *
      * @since 3.0
      */
-    void setFont(int index, IFont font);
+    void setFont(int index, Font font);
 
     /**
      * Sets the receiver's foreground color to the color specified
@@ -351,7 +351,7 @@ public interface ITableItem extends IItem {
      *
      * @since 2.0
      */
-    void setForeground(IColor color);
+    void setForeground(Color color);
 
     /**
      * Sets the foreground color at the given column index in the receiver
@@ -371,7 +371,7 @@ public interface ITableItem extends IItem {
      *
      * @since 3.0
      */
-    void setForeground(int index, IColor color);
+    void setForeground(int index, Color color);
 
     /**
      * Sets the grayed state of the checkbox for this item.  This state change
@@ -400,7 +400,7 @@ public interface ITableItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setImage(IImage[] images);
+    void setImage(Image[] images);
 
     /**
      * Sets the receiver's image at a column.
@@ -416,9 +416,9 @@ public interface ITableItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setImage(int index, IImage image);
+    void setImage(int index, Image image);
 
-    void setImage(IImage image);
+    void setImage(Image image);
 
     /**
      * Sets the indent of the first column's image, expressed in terms of the image's width.

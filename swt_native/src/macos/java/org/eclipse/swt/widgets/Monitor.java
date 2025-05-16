@@ -39,7 +39,7 @@ public final class Monitor {
      * @see #hashCode()
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object instanceof Monitor ? ((Monitor) object).getDelegate() : object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -50,8 +50,7 @@ public final class Monitor {
      * @return the receiver's bounding rectangle
      */
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     /**
@@ -61,8 +60,7 @@ public final class Monitor {
      * @return the client area
      */
     public Rectangle getClientArea() {
-        IRectangle ret = getDelegate().getClientArea();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getClientArea();
     }
 
     /**
@@ -73,7 +71,7 @@ public final class Monitor {
      * @since 3.107
      */
     public int getZoom() {
-        return getDelegate().getZoom();
+        return getImpl().getZoom();
     }
 
     /**
@@ -87,21 +85,21 @@ public final class Monitor {
      * @see #equals(Object)
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
-    IMonitor delegate;
+    IMonitor impl;
 
-    protected Monitor(IMonitor delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected Monitor(IMonitor impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static Monitor createApi(IMonitor delegate) {
-        return new Monitor(delegate);
+    public static Monitor createApi(IMonitor impl) {
+        return new Monitor(impl);
     }
 
-    public IMonitor getDelegate() {
-        return delegate;
+    public IMonitor getImpl() {
+        return impl;
     }
 }

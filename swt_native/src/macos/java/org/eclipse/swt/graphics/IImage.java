@@ -35,7 +35,7 @@ public interface IImage extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    IColor getBackground();
+    Color getBackground();
 
     /**
      * Returns the bounds of the receiver. The rectangle will always
@@ -49,7 +49,7 @@ public interface IImage extends IResource {
      *    <li>ERROR_INVALID_IMAGE - if the image is not a bitmap or an icon</li>
      * </ul>
      */
-    IRectangle getBounds();
+    Rectangle getBounds();
 
     /**
      * Returns the bounds of the receiver. The rectangle will always
@@ -66,7 +66,7 @@ public interface IImage extends IResource {
      * @deprecated This API doesn't serve the purpose in an environment having
      *             multiple monitors with different DPIs, hence deprecated.
      */
-    IRectangle getBoundsInPixels();
+    Rectangle getBoundsInPixels();
 
     /**
      * Returns an <code>ImageData</code> based on the receiver.
@@ -164,7 +164,7 @@ public interface IImage extends IResource {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    long internal_new_GC(org.eclipse.swt.graphics.GCData data);
+    long internal_new_GC(GCData data);
 
     /**
      * Invokes platform specific functionality to dispose a GC handle.
@@ -181,7 +181,7 @@ public interface IImage extends IResource {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    void internal_dispose_GC(long hDC, org.eclipse.swt.graphics.GCData data);
+    void internal_dispose_GC(long hDC, GCData data);
 
     /**
      * Returns <code>true</code> if the image has been disposed,
@@ -229,7 +229,7 @@ public interface IImage extends IResource {
      *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    void setBackground(IColor color);
+    void setBackground(Color color);
 
     /**
      * Returns a string containing a concise, human-readable

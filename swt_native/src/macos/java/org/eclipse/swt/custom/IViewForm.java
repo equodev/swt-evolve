@@ -6,16 +6,16 @@ import org.eclipse.swt.widgets.*;
 
 public interface IViewForm extends IComposite {
 
-    IRectangle computeTrim(int x, int y, int width, int height);
+    Rectangle computeTrim(int x, int y, int width, int height);
 
-    IRectangle getClientArea();
+    Rectangle getClientArea();
 
     /**
      * Returns the content area.
      *
      * @return the control in the content area of the pane or null
      */
-    IControl getContent();
+    Control getContent();
 
     /**
      * Returns Control that appears in the top center of the pane.
@@ -23,7 +23,7 @@ public interface IViewForm extends IComposite {
      *
      * @return the control in the top center of the pane or null
      */
-    IControl getTopCenter();
+    Control getTopCenter();
 
     /**
      * Returns the Control that appears in the top left corner of the pane.
@@ -31,7 +31,7 @@ public interface IViewForm extends IComposite {
      *
      * @return the control in the top left corner of the pane or null
      */
-    IControl getTopLeft();
+    Control getTopLeft();
 
     /**
      * Returns the control in the top right corner of the pane.
@@ -39,7 +39,7 @@ public interface IViewForm extends IComposite {
      *
      * @return the control in the top right corner of the pane or null
      */
-    IControl getTopRight();
+    Control getTopRight();
 
     /**
      * Sets the content.
@@ -54,7 +54,7 @@ public interface IViewForm extends IComposite {
      *    <li>ERROR_INVALID_ARGUMENT - if the control is not a child of this ViewForm</li>
      * </ul>
      */
-    void setContent(IControl content);
+    void setContent(Control content);
 
     /**
      * Sets the layout which is associated with the receiver to be
@@ -71,7 +71,7 @@ public interface IViewForm extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setLayout(ILayout layout);
+    void setLayout(Layout layout);
 
     /**
      * Set the control that appears in the top center of the pane.
@@ -87,7 +87,7 @@ public interface IViewForm extends IComposite {
      *    <li>ERROR_INVALID_ARGUMENT - if the control is not a child of this ViewForm</li>
      * </ul>
      */
-    void setTopCenter(IControl topCenter);
+    void setTopCenter(Control topCenter);
 
     /**
      * Set the control that appears in the top left corner of the pane.
@@ -103,7 +103,7 @@ public interface IViewForm extends IComposite {
      *    <li>ERROR_INVALID_ARGUMENT - if the control is not a child of this ViewForm</li>
      * </ul>
      */
-    void setTopLeft(IControl c);
+    void setTopLeft(Control c);
 
     /**
      * Set the control that appears in the top right corner of the pane.
@@ -119,7 +119,7 @@ public interface IViewForm extends IComposite {
      *    <li>ERROR_INVALID_ARGUMENT - if the control is not a child of this ViewForm</li>
      * </ul>
      */
-    void setTopRight(IControl c);
+    void setTopRight(Control c);
 
     /**
      * Specify whether the border should be displayed or not.

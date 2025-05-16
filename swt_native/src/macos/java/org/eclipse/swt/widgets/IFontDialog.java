@@ -27,7 +27,7 @@ public interface IFontDialog extends IDialog {
      * @return the FontData for the selected font, or null
      * @deprecated use #getFontList ()
      */
-    IFontData getFontData();
+    FontData getFontData();
 
     /**
      * Returns a FontData set describing the font that was
@@ -36,7 +36,7 @@ public interface IFontDialog extends IDialog {
      * @return the FontData for the selected font, or null
      * @since 2.1.1
      */
-    IFontData[] getFontList();
+    FontData[] getFontList();
 
     /**
      * Returns an RGB describing the color that was selected
@@ -62,7 +62,7 @@ public interface IFontDialog extends IDialog {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the dialog</li>
      * </ul>
      */
-    IFontData open();
+    FontData open();
 
     /**
      * Sets the effects selection controls in the dialog visible if the
@@ -86,7 +86,7 @@ public interface IFontDialog extends IDialog {
      * @param fontData the FontData to use initially, or null
      * @deprecated use #setFontList (FontData [])
      */
-    void setFontData(IFontData fontData);
+    void setFontData(FontData fontData);
 
     /**
      * Sets the set of FontData objects describing the font to
@@ -100,7 +100,7 @@ public interface IFontDialog extends IDialog {
      *
      * @since 2.1.1
      */
-    void setFontList(IFontData[] fontData);
+    void setFontList(FontData[] fontData);
 
     /**
      * Sets the RGB describing the color to be selected by default

@@ -17,7 +17,7 @@ public interface IPrintDialog extends IDialog {
      *
      * @since 3.4
      */
-    void setPrinterData(IPrinterData data);
+    void setPrinterData(PrinterData data);
 
     /**
      * Returns the printer data that will be used when the dialog
@@ -27,7 +27,7 @@ public interface IPrintDialog extends IDialog {
      *
      * @since 3.4
      */
-    IPrinterData getPrinterData();
+    PrinterData getPrinterData();
 
     /**
      * Makes the receiver visible and brings it to the front
@@ -41,7 +41,7 @@ public interface IPrintDialog extends IDialog {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IPrinterData open();
+    PrinterData open();
 
     /**
      * Returns the print job scope that the user selected

@@ -115,21 +115,21 @@ public class StyledTextPrintOptions {
     public String[] lineLabels = null;
 
     public StyledTextPrintOptions() {
-        this(new nat.org.eclipse.swt.custom.StyledTextPrintOptions());
+        this(new SwtStyledTextPrintOptions());
     }
 
-    IStyledTextPrintOptions delegate;
+    IStyledTextPrintOptions impl;
 
-    protected StyledTextPrintOptions(IStyledTextPrintOptions delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected StyledTextPrintOptions(IStyledTextPrintOptions impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static StyledTextPrintOptions createApi(IStyledTextPrintOptions delegate) {
-        return new StyledTextPrintOptions(delegate);
+    public static StyledTextPrintOptions createApi(IStyledTextPrintOptions impl) {
+        return new StyledTextPrintOptions(impl);
     }
 
-    public IStyledTextPrintOptions getDelegate() {
-        return delegate;
+    public IStyledTextPrintOptions getImpl() {
+        return impl;
     }
 }

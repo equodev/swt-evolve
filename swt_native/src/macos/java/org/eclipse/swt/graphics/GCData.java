@@ -134,21 +134,21 @@ public final class GCData {
     public boolean restoreContext;
 
     public GCData() {
-        this(new nat.org.eclipse.swt.graphics.GCData());
+        this(new SwtGCData());
     }
 
-    IGCData delegate;
+    IGCData impl;
 
-    protected GCData(IGCData delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected GCData(IGCData impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static GCData createApi(IGCData delegate) {
-        return new GCData(delegate);
+    public static GCData createApi(IGCData impl) {
+        return new GCData(impl);
     }
 
-    public IGCData getDelegate() {
-        return delegate;
+    public IGCData getImpl() {
+        return impl;
     }
 }

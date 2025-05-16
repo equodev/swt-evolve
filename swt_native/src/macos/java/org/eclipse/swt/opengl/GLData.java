@@ -142,25 +142,25 @@ public class GLData {
      * @return a string representation of the data
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
     public GLData() {
-        this(new nat.org.eclipse.swt.opengl.GLData());
+        this(new SwtGLData());
     }
 
-    IGLData delegate;
+    IGLData impl;
 
-    protected GLData(IGLData delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected GLData(IGLData impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static GLData createApi(IGLData delegate) {
-        return new GLData(delegate);
+    public static GLData createApi(IGLData impl) {
+        return new GLData(impl);
     }
 
-    public IGLData getDelegate() {
-        return delegate;
+    public IGLData getImpl() {
+        return impl;
     }
 }

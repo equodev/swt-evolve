@@ -79,7 +79,7 @@ public interface ITreeColumn extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITree getParent();
+    Tree getParent();
 
     /**
      * Gets the moveable attribute. A column that is
@@ -211,7 +211,7 @@ public interface ITreeColumn extends IItem {
      */
     void setAlignment(int alignment);
 
-    void setImage(IImage image);
+    void setImage(Image image);
 
     /**
      * Sets the moveable attribute.  A column that is

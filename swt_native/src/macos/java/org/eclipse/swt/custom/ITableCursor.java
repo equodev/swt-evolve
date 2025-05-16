@@ -76,14 +76,14 @@ public interface ITableCursor extends ICanvas {
      *
      * @return the receiver's background color
      */
-    IColor getBackground();
+    Color getBackground();
 
     /**
      * Returns the foreground color that the receiver will use to draw.
      *
      * @return the receiver's foreground color
      */
-    IColor getForeground();
+    Color getForeground();
 
     /**
      * Returns the row over which the TableCursor is positioned.
@@ -95,7 +95,7 @@ public interface ITableCursor extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITableItem getRow();
+    TableItem getRow();
 
     /**
      * Sets the receiver's background color to the color specified
@@ -115,7 +115,7 @@ public interface ITableCursor extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setBackground(IColor color);
+    void setBackground(Color color);
 
     /**
      * Sets the receiver's foreground color to the color specified
@@ -134,7 +134,7 @@ public interface ITableCursor extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setForeground(IColor color);
+    void setForeground(Color color);
 
     /**
      * Positions the TableCursor over the cell at the given row and column in the parent table.
@@ -160,7 +160,7 @@ public interface ITableCursor extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSelection(ITableItem row, int column);
+    void setSelection(TableItem row, int column);
 
     TableCursor getApi();
 }

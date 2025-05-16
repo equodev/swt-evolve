@@ -46,8 +46,7 @@ public class FileTransfer extends ByteArrayTransfer {
      * @return the singleton instance of the FileTransfer class
      */
     public static FileTransfer getInstance() {
-        IFileTransfer ret = nat.org.eclipse.swt.dnd.FileTransfer.getInstance();
-        return ret != null ? ret.getApi() : null;
+        return SwtFileTransfer.getInstance();
     }
 
     /**
@@ -63,7 +62,7 @@ public class FileTransfer extends ByteArrayTransfer {
      * @see Transfer#nativeToJava
      */
     public void javaToNative(Object object, TransferData transferData) {
-        getDelegate().javaToNative(object, (transferData != null ? transferData.getDelegate() : null));
+        getImpl().javaToNative(object, transferData);
     }
 
     /**
@@ -78,30 +77,30 @@ public class FileTransfer extends ByteArrayTransfer {
      * @see Transfer#javaToNative
      */
     public Object nativeToJava(TransferData transferData) {
-        return getDelegate().nativeToJava((transferData != null ? transferData.getDelegate() : null));
+        return getImpl().nativeToJava(transferData);
     }
 
     protected int[] getTypeIds() {
-        return getDelegate().getTypeIds();
+        return getImpl().getTypeIds();
     }
 
     protected String[] getTypeNames() {
-        return getDelegate().getTypeNames();
+        return getImpl().getTypeNames();
     }
 
     protected boolean validate(Object object) {
-        return getDelegate().validate(object);
+        return getImpl().validate(object);
     }
 
-    protected FileTransfer(IFileTransfer delegate) {
-        super(delegate);
+    protected FileTransfer(IFileTransfer impl) {
+        super(impl);
     }
 
-    public static FileTransfer createApi(IFileTransfer delegate) {
-        return new FileTransfer(delegate);
+    public static FileTransfer createApi(IFileTransfer impl) {
+        return new FileTransfer(impl);
     }
 
-    public IFileTransfer getDelegate() {
-        return (IFileTransfer) super.getDelegate();
+    public IFileTransfer getImpl() {
+        return (IFileTransfer) super.getImpl();
     }
 }

@@ -112,7 +112,7 @@ public abstract class Widget {
      * @since 3.6
      */
     public void reskin(int flags) {
-        getDelegate().reskin(flags);
+        getImpl().reskin(flags);
     }
 
     /**
@@ -138,7 +138,7 @@ public abstract class Widget {
      * @see #notifyListeners
      */
     public void addListener(int eventType, Listener listener) {
-        getDelegate().addListener(eventType, listener);
+        getImpl().addListener(eventType, listener);
     }
 
     /**
@@ -168,7 +168,7 @@ public abstract class Widget {
      * @since 3.126
      */
     protected void addTypedListener(EventListener listener, int... eventTypes) {
-        getDelegate().addTypedListener(listener, eventTypes);
+        getImpl().addTypedListener(listener, eventTypes);
     }
 
     /**
@@ -191,7 +191,7 @@ public abstract class Widget {
      * @see #removeDisposeListener
      */
     public void addDisposeListener(DisposeListener listener) {
-        getDelegate().addDisposeListener(listener);
+        getImpl().addDisposeListener(listener);
     }
 
     /**
@@ -224,7 +224,7 @@ public abstract class Widget {
      * </ul>
      */
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -250,7 +250,7 @@ public abstract class Widget {
      * </ul>
      */
     protected void checkWidget() {
-        getDelegate().checkWidget();
+        getImpl().checkWidget();
     }
 
     /**
@@ -278,7 +278,7 @@ public abstract class Widget {
      * @see #checkWidget
      */
     public void dispose() {
-        getDelegate().dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -304,7 +304,7 @@ public abstract class Widget {
      * @see #setData(Object)
      */
     public Object getData() {
-        return getDelegate().getData();
+        return getImpl().getData();
     }
 
     /**
@@ -332,7 +332,7 @@ public abstract class Widget {
      * @see #setData(String, Object)
      */
     public Object getData(String key) {
-        return getDelegate().getData(key);
+        return getImpl().getData(key);
     }
 
     /**
@@ -351,8 +351,7 @@ public abstract class Widget {
      * </ul>
      */
     public Display getDisplay() {
-        IDisplay ret = getDelegate().getDisplay();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getDisplay();
     }
 
     /**
@@ -375,7 +374,7 @@ public abstract class Widget {
      * @since 3.4
      */
     public Listener[] getListeners(int eventType) {
-        return getDelegate().getListeners(eventType);
+        return getImpl().getListeners(eventType);
     }
 
     /**
@@ -400,7 +399,7 @@ public abstract class Widget {
      * @since 3.126
      */
     public <L extends EventListener> Stream<L> getTypedListeners(int eventType, Class<L> listenerType) {
-        return getDelegate().getTypedListeners(eventType, listenerType);
+        return getImpl().getTypedListeners(eventType, listenerType);
     }
 
     /**
@@ -424,7 +423,7 @@ public abstract class Widget {
      * </ul>
      */
     public int getStyle() {
-        return getDelegate().getStyle();
+        return getImpl().getStyle();
     }
 
     /**
@@ -438,7 +437,7 @@ public abstract class Widget {
      * @since 3.105
      */
     public boolean isAutoDirection() {
-        return getDelegate().isAutoDirection();
+        return getImpl().isAutoDirection();
     }
 
     /**
@@ -453,7 +452,7 @@ public abstract class Widget {
      * @return <code>true</code> when the widget is disposed and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return getDelegate().isDisposed();
+        return getImpl().isDisposed();
     }
 
     /**
@@ -473,7 +472,7 @@ public abstract class Widget {
      * @see SWT
      */
     public boolean isListening(int eventType) {
-        return getDelegate().isListening(eventType);
+        return getImpl().isListening(eventType);
     }
 
     /**
@@ -497,7 +496,7 @@ public abstract class Widget {
      * @see #removeListener(int, Listener)
      */
     public void notifyListeners(int eventType, Event event) {
-        getDelegate().notifyListeners(eventType, event);
+        getImpl().notifyListeners(eventType, event);
     }
 
     /**
@@ -523,7 +522,7 @@ public abstract class Widget {
      * @see #notifyListeners
      */
     public void removeListener(int eventType, Listener listener) {
-        getDelegate().removeListener(eventType, listener);
+        getImpl().removeListener(eventType, listener);
     }
 
     /**
@@ -554,7 +553,7 @@ public abstract class Widget {
      * @nooverride This method is not intended to be re-implemented or extended by clients.
      */
     protected void removeTypedListener(int eventType, EventListener listener) {
-        getDelegate().removeTypedListener(eventType, listener);
+        getImpl().removeTypedListener(eventType, listener);
     }
 
     /**
@@ -575,7 +574,7 @@ public abstract class Widget {
      * @see #addDisposeListener
      */
     public void removeDisposeListener(DisposeListener listener) {
-        getDelegate().removeDisposeListener(listener);
+        getImpl().removeDisposeListener(listener);
     }
 
     /**
@@ -601,7 +600,7 @@ public abstract class Widget {
      * @see #getData()
      */
     public void setData(Object data) {
-        getDelegate().setData(data);
+        getImpl().setData(data);
     }
 
     /**
@@ -629,7 +628,7 @@ public abstract class Widget {
      * @see #getData(String)
      */
     public void setData(String key, Object value) {
-        getDelegate().setData(key, value);
+        getImpl().setData(key, value);
     }
 
     /**
@@ -639,17 +638,17 @@ public abstract class Widget {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    IWidget delegate;
+    IWidget impl;
 
-    protected Widget(IWidget delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected Widget(IWidget impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public IWidget getDelegate() {
-        return delegate;
+    public IWidget getImpl() {
+        return impl;
     }
 }

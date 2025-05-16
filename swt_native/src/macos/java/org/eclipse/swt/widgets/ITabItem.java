@@ -20,7 +20,7 @@ public interface ITabItem extends IItem {
      *
      * @since 3.4
      */
-    IRectangle getBounds();
+    Rectangle getBounds();
 
     /**
      * Returns the control that is used to fill the client area of
@@ -34,7 +34,7 @@ public interface ITabItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Returns the receiver's parent, which must be a <code>TabFolder</code>.
@@ -46,7 +46,7 @@ public interface ITabItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITabFolder getParent();
+    TabFolder getParent();
 
     /**
      * Returns the receiver's tool tip text, or null if it has
@@ -76,9 +76,9 @@ public interface ITabItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setControl(IControl control);
+    void setControl(Control control);
 
-    void setImage(IImage image);
+    void setImage(Image image);
 
     /**
      * Sets the receiver's text.  The string may include

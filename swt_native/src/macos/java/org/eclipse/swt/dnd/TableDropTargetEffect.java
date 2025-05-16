@@ -55,7 +55,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
      * @param table the <code>Table</code> over which the user positions the cursor to drop the data
      */
     public TableDropTargetEffect(Table table) {
-        this(new nat.org.eclipse.swt.dnd.TableDropTargetEffect((nat.org.eclipse.swt.widgets.Table) (table != null ? table.getDelegate() : null)));
+        this(new SwtTableDropTargetEffect(table));
     }
 
     /**
@@ -73,7 +73,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
      * @see DropTargetEvent
      */
     public void dragEnter(DropTargetEvent event) {
-        getDelegate().dragEnter(event);
+        getImpl().dragEnter(event);
     }
 
     /**
@@ -91,7 +91,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
      * @see DropTargetEvent
      */
     public void dragLeave(DropTargetEvent event) {
-        getDelegate().dragLeave(event);
+        getImpl().dragLeave(event);
     }
 
     /**
@@ -112,18 +112,18 @@ public class TableDropTargetEffect extends DropTargetEffect {
      * @see DND#FEEDBACK_SCROLL
      */
     public void dragOver(DropTargetEvent event) {
-        getDelegate().dragOver(event);
+        getImpl().dragOver(event);
     }
 
-    protected TableDropTargetEffect(ITableDropTargetEffect delegate) {
-        super(delegate);
+    protected TableDropTargetEffect(ITableDropTargetEffect impl) {
+        super(impl);
     }
 
-    public static TableDropTargetEffect createApi(ITableDropTargetEffect delegate) {
-        return new TableDropTargetEffect(delegate);
+    public static TableDropTargetEffect createApi(ITableDropTargetEffect impl) {
+        return new TableDropTargetEffect(impl);
     }
 
-    public ITableDropTargetEffect getDelegate() {
-        return (ITableDropTargetEffect) super.getDelegate();
+    public ITableDropTargetEffect getImpl() {
+        return (ITableDropTargetEffect) super.getImpl();
     }
 }

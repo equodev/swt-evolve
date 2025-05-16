@@ -18,53 +18,53 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public class StyledTextEvent extends Event {
+class StyledTextEvent extends Event {
 
     // used by LineStyleEvent
-    public int[] ranges;
+    int[] ranges;
 
-    public StyleRange[] styles;
+    StyleRange[] styles;
 
-    public int alignment;
+    int alignment;
 
-    public int indent;
+    int indent;
 
-    public int verticalIndent;
+    int verticalIndent;
 
-    public int wrapIndent;
+    int wrapIndent;
 
-    public boolean justify;
+    boolean justify;
 
-    public Bullet bullet;
+    Bullet bullet;
 
-    public int bulletIndex;
+    int bulletIndex;
 
-    public int[] tabStops;
+    int[] tabStops;
 
     // used by LineBackgroundEvent
-    public Color lineBackground;
+    Color lineBackground;
 
     // used by TextChangedEvent
-    public int replaceCharCount;
+    int replaceCharCount;
 
-    public int newCharCount;
+    int newCharCount;
 
-    public int replaceLineCount;
+    int replaceLineCount;
 
-    public int newLineCount;
+    int newLineCount;
 
     // used by PaintObjectEvent
-    public int x;
+    int x;
 
-    public int y;
+    int y;
 
-    public int ascent;
+    int ascent;
 
-    public int descent;
+    int descent;
 
-    public StyleRange style;
+    StyleRange style;
 
-    public StyledTextEvent(StyledTextContent content) {
+    StyledTextEvent(StyledTextContent content) {
         super();
         data = content;
     }

@@ -20,7 +20,6 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.ExceptionStash;
 import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class are controls which are capable
@@ -87,7 +86,7 @@ public class Composite extends Scrollable {
      * @see Widget#getStyle
      */
     public Composite(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Composite((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtComposite(parent, style));
     }
 
     /**
@@ -111,16 +110,15 @@ public class Composite extends Scrollable {
      */
     @Deprecated
     public void changed(Control[] changed) {
-        getDelegate().changed(Convert.array(changed, Control::getDelegate, IControl[]::new));
+        getImpl().changed(changed);
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -151,7 +149,7 @@ public class Composite extends Scrollable {
      * @since 3.6
      */
     public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
-        getDelegate().drawBackground((gc != null ? gc.getDelegate() : null), x, y, width, height, offsetX, offsetY);
+        getImpl().drawBackground(gc, x, y, width, height, offsetX, offsetY);
     }
 
     /**
@@ -173,7 +171,7 @@ public class Composite extends Scrollable {
      * @since 3.2
      */
     public int getBackgroundMode() {
-        return getDelegate().getBackgroundMode();
+        return getImpl().getBackgroundMode();
     }
 
     /**
@@ -198,7 +196,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public Control[] getChildren() {
-        return Convert.array(getDelegate().getChildren(), IControl::getApi, Control[]::new);
+        return getImpl().getChildren();
     }
 
     /**
@@ -213,8 +211,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public Layout getLayout() {
-        ILayout ret = getDelegate().getLayout();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getLayout();
     }
 
     /**
@@ -234,7 +231,7 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public boolean getLayoutDeferred() {
-        return getDelegate().getLayoutDeferred();
+        return getImpl().getLayoutDeferred();
     }
 
     /**
@@ -250,7 +247,7 @@ public class Composite extends Scrollable {
      * @see #setTabList
      */
     public Control[] getTabList() {
-        return Convert.array(getDelegate().getTabList(), IControl::getApi, Control[]::new);
+        return getImpl().getTabList();
     }
 
     /**
@@ -272,7 +269,7 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public boolean isLayoutDeferred() {
-        return getDelegate().isLayoutDeferred();
+        return getImpl().isLayoutDeferred();
     }
 
     /**
@@ -303,7 +300,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void layout() {
-        getDelegate().layout();
+        getImpl().layout();
     }
 
     /**
@@ -345,7 +342,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void layout(boolean changed) {
-        getDelegate().layout(changed);
+        getImpl().layout(changed);
     }
 
     /**
@@ -390,7 +387,7 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public void layout(boolean changed, boolean all) {
-        getDelegate().layout(changed, all);
+        getImpl().layout(changed, all);
     }
 
     /**
@@ -429,7 +426,7 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public void layout(Control[] changed) {
-        getDelegate().layout(Convert.array(changed, Control::getDelegate, IControl[]::new));
+        getImpl().layout(changed);
     }
 
     /**
@@ -491,11 +488,11 @@ public class Composite extends Scrollable {
      * @since 3.6
      */
     public void layout(Control[] changed, int flags) {
-        getDelegate().layout(Convert.array(changed, Control::getDelegate, IControl[]::new), flags);
+        getImpl().layout(changed, flags);
     }
 
     public void redraw(int x, int y, int width, int height, boolean all) {
-        getDelegate().redraw(x, y, width, height, all);
+        getImpl().redraw(x, y, width, height, all);
     }
 
     /**
@@ -516,11 +513,11 @@ public class Composite extends Scrollable {
      * @since 3.2
      */
     public void setBackgroundMode(int mode) {
-        getDelegate().setBackgroundMode(mode);
+        getImpl().setBackgroundMode(mode);
     }
 
     public boolean setFocus() {
-        return getDelegate().setFocus();
+        return getImpl().setFocus();
     }
 
     /**
@@ -535,7 +532,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void setLayout(Layout layout) {
-        getDelegate().setLayout((layout != null ? layout.getDelegate() : null));
+        getImpl().setLayout(layout);
     }
 
     /**
@@ -561,7 +558,7 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public void setLayoutDeferred(boolean defer) {
-        getDelegate().setLayoutDeferred(defer);
+        getImpl().setLayoutDeferred(defer);
     }
 
     /**
@@ -580,22 +577,22 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void setTabList(Control[] tabList) {
-        getDelegate().setTabList(Convert.array(tabList, Control::getDelegate, IControl[]::new));
+        getImpl().setTabList(tabList);
     }
 
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected Composite(IComposite delegate) {
-        super(delegate);
+    protected Composite(IComposite impl) {
+        super(impl);
     }
 
-    public static Composite createApi(IComposite delegate) {
-        return new Composite(delegate);
+    public static Composite createApi(IComposite impl) {
+        return new Composite(impl);
     }
 
-    public IComposite getDelegate() {
-        return (IComposite) super.getDelegate();
+    public IComposite getImpl() {
+        return (IComposite) super.getImpl();
     }
 }

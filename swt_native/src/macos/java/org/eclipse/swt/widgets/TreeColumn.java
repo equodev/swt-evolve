@@ -75,7 +75,7 @@ public class TreeColumn extends Item {
      * @see Widget#getStyle
      */
     public TreeColumn(Tree parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.TreeColumn((nat.org.eclipse.swt.widgets.Tree) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtTreeColumn(parent, style));
     }
 
     /**
@@ -116,7 +116,7 @@ public class TreeColumn extends Item {
      * @see Widget#getStyle
      */
     public TreeColumn(Tree parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.TreeColumn((nat.org.eclipse.swt.widgets.Tree) (parent != null ? parent.getDelegate() : null), style, index));
+        this(new SwtTreeColumn(parent, style, index));
     }
 
     /**
@@ -139,7 +139,7 @@ public class TreeColumn extends Item {
      * @see #removeControlListener
      */
     public void addControlListener(ControlListener listener) {
-        getDelegate().addControlListener(listener);
+        getImpl().addControlListener(listener);
     }
 
     /**
@@ -167,11 +167,11 @@ public class TreeColumn extends Item {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -187,7 +187,7 @@ public class TreeColumn extends Item {
      * </ul>
      */
     public int getAlignment() {
-        return getDelegate().getAlignment();
+        return getImpl().getAlignment();
     }
 
     /**
@@ -201,8 +201,7 @@ public class TreeColumn extends Item {
      * </ul>
      */
     public Tree getParent() {
-        ITree ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     /**
@@ -226,7 +225,7 @@ public class TreeColumn extends Item {
      * @since 3.2
      */
     public boolean getMoveable() {
-        return getDelegate().getMoveable();
+        return getImpl().getMoveable();
     }
 
     /**
@@ -242,7 +241,7 @@ public class TreeColumn extends Item {
      * </ul>
      */
     public boolean getResizable() {
-        return getDelegate().getResizable();
+        return getImpl().getResizable();
     }
 
     /**
@@ -259,7 +258,7 @@ public class TreeColumn extends Item {
      * @since 3.2
      */
     public String getToolTipText() {
-        return getDelegate().getToolTipText();
+        return getImpl().getToolTipText();
     }
 
     /**
@@ -273,7 +272,7 @@ public class TreeColumn extends Item {
      * </ul>
      */
     public int getWidth() {
-        return getDelegate().getWidth();
+        return getImpl().getWidth();
     }
 
     /**
@@ -287,7 +286,7 @@ public class TreeColumn extends Item {
      * </ul>
      */
     public void pack() {
-        getDelegate().pack();
+        getImpl().pack();
     }
 
     /**
@@ -308,7 +307,7 @@ public class TreeColumn extends Item {
      * @see #addControlListener
      */
     public void removeControlListener(ControlListener listener) {
-        getDelegate().removeControlListener(listener);
+        getImpl().removeControlListener(listener);
     }
 
     /**
@@ -329,7 +328,7 @@ public class TreeColumn extends Item {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -348,11 +347,11 @@ public class TreeColumn extends Item {
      * </ul>
      */
     public void setAlignment(int alignment) {
-        getDelegate().setAlignment(alignment);
+        getImpl().setAlignment(alignment);
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -377,7 +376,7 @@ public class TreeColumn extends Item {
      * @since 3.2
      */
     public void setMoveable(boolean moveable) {
-        getDelegate().setMoveable(moveable);
+        getImpl().setMoveable(moveable);
     }
 
     /**
@@ -393,11 +392,11 @@ public class TreeColumn extends Item {
      * </ul>
      */
     public void setResizable(boolean resizable) {
-        getDelegate().setResizable(resizable);
+        getImpl().setResizable(resizable);
     }
 
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -428,7 +427,7 @@ public class TreeColumn extends Item {
      * @since 3.2
      */
     public void setToolTipText(String string) {
-        getDelegate().setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
     /**
@@ -442,18 +441,18 @@ public class TreeColumn extends Item {
      * </ul>
      */
     public void setWidth(int width) {
-        getDelegate().setWidth(width);
+        getImpl().setWidth(width);
     }
 
-    protected TreeColumn(ITreeColumn delegate) {
-        super(delegate);
+    protected TreeColumn(ITreeColumn impl) {
+        super(impl);
     }
 
-    public static TreeColumn createApi(ITreeColumn delegate) {
-        return new TreeColumn(delegate);
+    public static TreeColumn createApi(ITreeColumn impl) {
+        return new TreeColumn(impl);
     }
 
-    public ITreeColumn getDelegate() {
-        return (ITreeColumn) super.getDelegate();
+    public ITreeColumn getImpl() {
+        return (ITreeColumn) super.getImpl();
     }
 }

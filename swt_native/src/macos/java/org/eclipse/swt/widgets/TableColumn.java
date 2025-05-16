@@ -73,7 +73,7 @@ public class TableColumn extends Item {
      * @see Widget#getStyle
      */
     public TableColumn(Table parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.TableColumn((nat.org.eclipse.swt.widgets.Table) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtTableColumn(parent, style));
     }
 
     /**
@@ -114,7 +114,7 @@ public class TableColumn extends Item {
      * @see Widget#getStyle
      */
     public TableColumn(Table parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.TableColumn((nat.org.eclipse.swt.widgets.Table) (parent != null ? parent.getDelegate() : null), style, index));
+        this(new SwtTableColumn(parent, style, index));
     }
 
     /**
@@ -137,7 +137,7 @@ public class TableColumn extends Item {
      * @see #removeControlListener
      */
     public void addControlListener(ControlListener listener) {
-        getDelegate().addControlListener(listener);
+        getImpl().addControlListener(listener);
     }
 
     /**
@@ -165,11 +165,11 @@ public class TableColumn extends Item {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     protected void checkSubclass() {
-        getDelegate().checkSubclass();
+        getImpl().checkSubclass();
     }
 
     /**
@@ -185,7 +185,7 @@ public class TableColumn extends Item {
      * </ul>
      */
     public int getAlignment() {
-        return getDelegate().getAlignment();
+        return getImpl().getAlignment();
     }
 
     /**
@@ -199,8 +199,7 @@ public class TableColumn extends Item {
      * </ul>
      */
     public Table getParent() {
-        ITable ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     /**
@@ -224,7 +223,7 @@ public class TableColumn extends Item {
      * @since 3.1
      */
     public boolean getMoveable() {
-        return getDelegate().getMoveable();
+        return getImpl().getMoveable();
     }
 
     /**
@@ -240,7 +239,7 @@ public class TableColumn extends Item {
      * </ul>
      */
     public boolean getResizable() {
-        return getDelegate().getResizable();
+        return getImpl().getResizable();
     }
 
     /**
@@ -257,7 +256,7 @@ public class TableColumn extends Item {
      * @since 3.2
      */
     public String getToolTipText() {
-        return getDelegate().getToolTipText();
+        return getImpl().getToolTipText();
     }
 
     /**
@@ -271,7 +270,7 @@ public class TableColumn extends Item {
      * </ul>
      */
     public int getWidth() {
-        return getDelegate().getWidth();
+        return getImpl().getWidth();
     }
 
     /**
@@ -285,7 +284,7 @@ public class TableColumn extends Item {
      * </ul>
      */
     public void pack() {
-        getDelegate().pack();
+        getImpl().pack();
     }
 
     /**
@@ -306,7 +305,7 @@ public class TableColumn extends Item {
      * @see #addControlListener
      */
     public void removeControlListener(ControlListener listener) {
-        getDelegate().removeControlListener(listener);
+        getImpl().removeControlListener(listener);
     }
 
     /**
@@ -327,7 +326,7 @@ public class TableColumn extends Item {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -346,11 +345,11 @@ public class TableColumn extends Item {
      * </ul>
      */
     public void setAlignment(int alignment) {
-        getDelegate().setAlignment(alignment);
+        getImpl().setAlignment(alignment);
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -375,7 +374,7 @@ public class TableColumn extends Item {
      * @since 3.1
      */
     public void setMoveable(boolean moveable) {
-        getDelegate().setMoveable(moveable);
+        getImpl().setMoveable(moveable);
     }
 
     /**
@@ -393,11 +392,11 @@ public class TableColumn extends Item {
      * </ul>
      */
     public void setResizable(boolean resizable) {
-        getDelegate().setResizable(resizable);
+        getImpl().setResizable(resizable);
     }
 
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -428,7 +427,7 @@ public class TableColumn extends Item {
      * @since 3.2
      */
     public void setToolTipText(String string) {
-        getDelegate().setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
     /**
@@ -442,18 +441,18 @@ public class TableColumn extends Item {
      * </ul>
      */
     public void setWidth(int width) {
-        getDelegate().setWidth(width);
+        getImpl().setWidth(width);
     }
 
-    protected TableColumn(ITableColumn delegate) {
-        super(delegate);
+    protected TableColumn(ITableColumn impl) {
+        super(impl);
     }
 
-    public static TableColumn createApi(ITableColumn delegate) {
-        return new TableColumn(delegate);
+    public static TableColumn createApi(ITableColumn impl) {
+        return new TableColumn(impl);
     }
 
-    public ITableColumn getDelegate() {
-        return (ITableColumn) super.getDelegate();
+    public ITableColumn getImpl() {
+        return (ITableColumn) super.getImpl();
     }
 }

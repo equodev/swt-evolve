@@ -50,7 +50,7 @@ public interface IDropTarget extends IWidget {
      *
      * @return the Control which is registered for this DropTarget
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Returns an array of listeners who will be notified when a drag and drop
@@ -83,14 +83,14 @@ public interface IDropTarget extends IWidget {
      *
      * @since 3.3
      */
-    IDropTargetEffect getDropTargetEffect();
+    DropTargetEffect getDropTargetEffect();
 
     /**
      * Returns a list of the data types that can be transferred to this DropTarget.
      *
      * @return a list of the data types that can be transferred to this DropTarget
      */
-    ITransfer[] getTransfer();
+    Transfer[] getTransfer();
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -121,7 +121,7 @@ public interface IDropTarget extends IWidget {
      *
      * @since 3.3
      */
-    void setDropTargetEffect(IDropTargetEffect effect);
+    void setDropTargetEffect(DropTargetEffect effect);
 
     /**
      *  Specifies the data types that can be transferred to this DropTarget.  If data is
@@ -136,7 +136,7 @@ public interface IDropTarget extends IWidget {
      *     <li>ERROR_NULL_ARGUMENT - if transferAgents is null</li>
      *  </ul>
      */
-    void setTransfer(ITransfer... transferAgents);
+    void setTransfer(Transfer... transferAgents);
 
     DropTarget getApi();
 }

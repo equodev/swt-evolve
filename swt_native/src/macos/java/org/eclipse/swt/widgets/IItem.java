@@ -18,7 +18,7 @@ public interface IItem extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IImage getImage();
+    Image getImage();
 
     /**
      * Returns the receiver's text, which will be an empty
@@ -47,7 +47,7 @@ public interface IItem extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setImage(IImage image);
+    void setImage(Image image);
 
     /**
      * Sets the receiver's text.

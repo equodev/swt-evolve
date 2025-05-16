@@ -88,7 +88,7 @@ public class Button extends Control {
      * @see Widget#getStyle
      */
     public Button(Composite parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.Button((nat.org.eclipse.swt.widgets.Composite) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtButton(parent, style));
     }
 
     /**
@@ -122,12 +122,11 @@ public class Button extends Control {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getDelegate().addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        IPoint ret = getDelegate().computeSize(wHint, hHint, changed);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -147,7 +146,7 @@ public class Button extends Control {
      * </ul>
      */
     public int getAlignment() {
-        return getDelegate().getAlignment();
+        return getImpl().getAlignment();
     }
 
     /**
@@ -165,7 +164,7 @@ public class Button extends Control {
      * @since 3.4
      */
     public boolean getGrayed() {
-        return getDelegate().getGrayed();
+        return getImpl().getGrayed();
     }
 
     /**
@@ -180,8 +179,7 @@ public class Button extends Control {
      * </ul>
      */
     public Image getImage() {
-        IImage ret = getDelegate().getImage();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getImage();
     }
 
     /**
@@ -201,7 +199,7 @@ public class Button extends Control {
      * </ul>
      */
     public boolean getSelection() {
-        return getDelegate().getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -217,7 +215,7 @@ public class Button extends Control {
      * </ul>
      */
     public String getText() {
-        return getDelegate().getText();
+        return getImpl().getText();
     }
 
     /**
@@ -238,7 +236,7 @@ public class Button extends Control {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getDelegate().removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -258,7 +256,7 @@ public class Button extends Control {
      * </ul>
      */
     public void setAlignment(int alignment) {
-        getDelegate().setAlignment(alignment);
+        getImpl().setAlignment(alignment);
     }
 
     /**
@@ -276,7 +274,7 @@ public class Button extends Control {
      * @since 3.4
      */
     public void setGrayed(boolean grayed) {
-        getDelegate().setGrayed(grayed);
+        getImpl().setGrayed(grayed);
     }
 
     /**
@@ -296,7 +294,7 @@ public class Button extends Control {
      * </ul>
      */
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -316,7 +314,7 @@ public class Button extends Control {
      * </ul>
      */
     public void setSelection(boolean selected) {
-        getDelegate().setSelection(selected);
+        getImpl().setSelection(selected);
     }
 
     /**
@@ -354,18 +352,18 @@ public class Button extends Control {
      * </ul>
      */
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
-    protected Button(IButton delegate) {
-        super(delegate);
+    protected Button(IButton impl) {
+        super(impl);
     }
 
-    public static Button createApi(IButton delegate) {
-        return new Button(delegate);
+    public static Button createApi(IButton impl) {
+        return new Button(impl);
     }
 
-    public IButton getDelegate() {
-        return (IButton) super.getDelegate();
+    public IButton getImpl() {
+        return (IButton) super.getImpl();
     }
 }

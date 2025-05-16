@@ -25,7 +25,7 @@ public interface ITableEditor extends IControlEditor {
      *
      * @return the TableItem for the row of the cell being tracked by this editor
      */
-    ITableItem getItem();
+    TableItem getItem();
 
     /**
      * Sets the zero based index of the column of the cell being tracked by this editor.
@@ -39,9 +39,9 @@ public interface ITableEditor extends IControlEditor {
      *
      * @param item the item to be edited
      */
-    void setItem(ITableItem item);
+    void setItem(TableItem item);
 
-    void setEditor(IControl editor);
+    void setEditor(Control editor);
 
     /**
      * Specify the Control that is to be displayed and the cell in the table that it is to be positioned above.
@@ -53,7 +53,7 @@ public interface ITableEditor extends IControlEditor {
      * @param item the TableItem for the row of the cell being tracked by this editor
      * @param column the zero based index of the column of the cell being tracked by this editor
      */
-    void setEditor(IControl editor, ITableItem item, int column);
+    void setEditor(Control editor, TableItem item, int column);
 
     void layout();
 

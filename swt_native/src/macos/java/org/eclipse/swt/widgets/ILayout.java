@@ -36,7 +36,7 @@ public interface ILayout {
      * @see Control#pack(boolean)
      * @see "computeTrim, getClientArea for controls that implement them"
      */
-    abstract IPoint computeSize(IComposite composite, int wHint, int hHint, boolean flushCache);
+    abstract Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache);
 
     /**
      * Instruct the layout to flush any cached values
@@ -48,7 +48,7 @@ public interface ILayout {
      *
      * @since 3.1
      */
-    boolean flushCache(IControl control);
+    boolean flushCache(Control control);
 
     /**
      * Lays out the children of the specified composite
@@ -78,7 +78,7 @@ public interface ILayout {
      * @param composite a composite widget using this layout
      * @param flushCache <code>true</code> means flush cached layout values
      */
-    abstract void layout(IComposite composite, boolean flushCache);
+    abstract void layout(Composite composite, boolean flushCache);
 
     Layout getApi();
 

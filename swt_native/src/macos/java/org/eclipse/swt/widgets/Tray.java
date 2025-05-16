@@ -16,7 +16,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class represent the system tray that is part
@@ -57,8 +56,7 @@ public class Tray extends Widget {
      * </ul>
      */
     public TrayItem getItem(int index) {
-        ITrayItem ret = getDelegate().getItem(index);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getItem(index);
     }
 
     /**
@@ -72,7 +70,7 @@ public class Tray extends Widget {
      * </ul>
      */
     public int getItemCount() {
-        return getDelegate().getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -92,18 +90,18 @@ public class Tray extends Widget {
      * </ul>
      */
     public TrayItem[] getItems() {
-        return Convert.array(getDelegate().getItems(), ITrayItem::getApi, TrayItem[]::new);
+        return getImpl().getItems();
     }
 
-    protected Tray(ITray delegate) {
-        super(delegate);
+    protected Tray(ITray impl) {
+        super(impl);
     }
 
-    public static Tray createApi(ITray delegate) {
-        return new Tray(delegate);
+    public static Tray createApi(ITray impl) {
+        return new Tray(impl);
     }
 
-    public ITray getDelegate() {
-        return (ITray) super.getDelegate();
+    public ITray getImpl() {
+        return (ITray) super.getImpl();
     }
 }

@@ -18,7 +18,6 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.ExceptionStash;
 import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Convert;
 
 /**
  * This class is the abstract superclass of all device objects,
@@ -71,7 +70,7 @@ public abstract class Device implements Drawable {
      * @since 3.115
      */
     public boolean isTracking() {
-        return getDelegate().isTracking();
+        return getImpl().isTracking();
     }
 
     /**
@@ -81,7 +80,7 @@ public abstract class Device implements Drawable {
      * @since 3.115
      */
     public void setTracking(boolean tracking) {
-        getDelegate().setTracking(tracking);
+        getImpl().setTracking(tracking);
     }
 
     /**
@@ -104,7 +103,7 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     protected void checkDevice() {
-        getDelegate().checkDevice();
+        getImpl().checkDevice();
     }
 
     /**
@@ -123,7 +122,7 @@ public abstract class Device implements Drawable {
      * @see #init
      */
     protected void create(DeviceData data) {
-        getDelegate().create((data != null ? data.getDelegate() : null));
+        getImpl().create(data);
     }
 
     /**
@@ -137,11 +136,11 @@ public abstract class Device implements Drawable {
      * @see #checkDevice
      */
     public void dispose() {
-        getDelegate().dispose();
+        getImpl().dispose();
     }
 
     void dispose_Object(Object object) {
-        getDelegate().dispose_Object(object);
+        getImpl().dispose_Object(object);
     }
 
     /**
@@ -159,7 +158,7 @@ public abstract class Device implements Drawable {
      * @see #release
      */
     protected void destroy() {
-        getDelegate().destroy();
+        getImpl().destroy();
     }
 
     /**
@@ -172,8 +171,7 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     public Rectangle getBounds() {
-        IRectangle ret = getDelegate().getBounds();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getBounds();
     }
 
     /**
@@ -190,8 +188,7 @@ public abstract class Device implements Drawable {
      * @see DeviceData
      */
     public DeviceData getDeviceData() {
-        IDeviceData ret = getDelegate().getDeviceData();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getDeviceData();
     }
 
     /**
@@ -207,8 +204,7 @@ public abstract class Device implements Drawable {
      * @see #getBounds
      */
     public Rectangle getClientArea() {
-        IRectangle ret = getDelegate().getClientArea();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getClientArea();
     }
 
     /**
@@ -224,7 +220,7 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     public int getDepth() {
-        return getDelegate().getDepth();
+        return getImpl().getDepth();
     }
 
     /**
@@ -239,8 +235,7 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     public Point getDPI() {
-        IPoint ret = getDelegate().getDPI();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getDPI();
     }
 
     /**
@@ -257,7 +252,7 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     public FontData[] getFontList(String faceName, boolean scalable) {
-        return Convert.array(getDelegate().getFontList(faceName, scalable), IFontData::getApi, FontData[]::new);
+        return getImpl().getFontList(faceName, scalable);
     }
 
     /**
@@ -279,8 +274,7 @@ public abstract class Device implements Drawable {
      * @see SWT
      */
     public Color getSystemColor(int id) {
-        IColor ret = getDelegate().getSystemColor(id);
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getSystemColor(id);
     }
 
     /**
@@ -304,8 +298,7 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     public Font getSystemFont() {
-        IFont ret = getDelegate().getSystemFont();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getSystemFont();
     }
 
     /**
@@ -320,7 +313,7 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     public boolean getWarnings() {
-        return getDelegate().getWarnings();
+        return getImpl().getWarnings();
     }
 
     /**
@@ -336,7 +329,7 @@ public abstract class Device implements Drawable {
      * @see #create
      */
     protected void init() {
-        getDelegate().init();
+        getImpl().init();
     }
 
     /**
@@ -384,7 +377,7 @@ public abstract class Device implements Drawable {
      * @return <code>true</code> when the device is disposed and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return getDelegate().isDisposed();
+        return getImpl().isDisposed();
     }
 
     /**
@@ -404,11 +397,11 @@ public abstract class Device implements Drawable {
      * @since 3.3
      */
     public boolean loadFont(String path) {
-        return getDelegate().loadFont(path);
+        return getImpl().loadFont(path);
     }
 
     void new_Object(Object object) {
-        getDelegate().new_Object(object);
+        getImpl().new_Object(object);
     }
 
     /**
@@ -435,7 +428,7 @@ public abstract class Device implements Drawable {
      * @see #destroy
      */
     protected void release() {
-        getDelegate().release();
+        getImpl().release();
     }
 
     /**
@@ -451,7 +444,7 @@ public abstract class Device implements Drawable {
      * </ul>
      */
     public void setWarnings(boolean warnings) {
-        getDelegate().setWarnings(warnings);
+        getImpl().setWarnings(warnings);
     }
 
     /**
@@ -463,17 +456,17 @@ public abstract class Device implements Drawable {
      * @since 3.105
      */
     protected int getDeviceZoom() {
-        return getDelegate().getDeviceZoom();
+        return getImpl().getDeviceZoom();
     }
 
-    IDevice delegate;
+    IDevice impl;
 
-    protected Device(IDevice delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected Device(IDevice impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public IDevice getDelegate() {
-        return delegate;
+    public IDevice getImpl() {
+        return impl;
     }
 }

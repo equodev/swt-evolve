@@ -67,7 +67,7 @@ public class ExpandItem extends Item {
      * @see Widget#getStyle
      */
     public ExpandItem(ExpandBar parent, int style) {
-        this(new nat.org.eclipse.swt.widgets.ExpandItem((nat.org.eclipse.swt.widgets.ExpandBar) (parent != null ? parent.getDelegate() : null), style));
+        this(new SwtExpandItem(parent, style));
     }
 
     /**
@@ -101,11 +101,11 @@ public class ExpandItem extends Item {
      * @see Widget#getStyle
      */
     public ExpandItem(ExpandBar parent, int style, int index) {
-        this(new nat.org.eclipse.swt.widgets.ExpandItem((nat.org.eclipse.swt.widgets.ExpandBar) (parent != null ? parent.getDelegate() : null), style, index));
+        this(new SwtExpandItem(parent, style, index));
     }
 
     public void dispose() {
-        getDelegate().dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -120,8 +120,7 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        IControl ret = getDelegate().getControl();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getControl();
     }
 
     /**
@@ -136,7 +135,7 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public boolean getExpanded() {
-        return getDelegate().getExpanded();
+        return getImpl().getExpanded();
     }
 
     /**
@@ -150,7 +149,7 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public int getHeaderHeight() {
-        return getDelegate().getHeaderHeight();
+        return getImpl().getHeaderHeight();
     }
 
     /**
@@ -164,7 +163,7 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public int getHeight() {
-        return getDelegate().getHeight();
+        return getImpl().getHeight();
     }
 
     /**
@@ -178,8 +177,7 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public ExpandBar getParent() {
-        IExpandBar ret = getDelegate().getParent();
-        return ret != null ? ret.getApi() : null;
+        return getImpl().getParent();
     }
 
     /**
@@ -197,7 +195,7 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        getDelegate().setControl((control != null ? control.getDelegate() : null));
+        getImpl().setControl(control);
     }
 
     /**
@@ -211,11 +209,11 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public void setExpanded(boolean expanded) {
-        getDelegate().setExpanded(expanded);
+        getImpl().setExpanded(expanded);
     }
 
     public void setImage(Image image) {
-        getDelegate().setImage((image != null ? image.getDelegate() : null));
+        getImpl().setImage(image);
     }
 
     /**
@@ -230,22 +228,22 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public void setHeight(int height) {
-        getDelegate().setHeight(height);
+        getImpl().setHeight(height);
     }
 
     public void setText(String string) {
-        getDelegate().setText(string);
+        getImpl().setText(string);
     }
 
-    protected ExpandItem(IExpandItem delegate) {
-        super(delegate);
+    protected ExpandItem(IExpandItem impl) {
+        super(impl);
     }
 
-    public static ExpandItem createApi(IExpandItem delegate) {
-        return new ExpandItem(delegate);
+    public static ExpandItem createApi(IExpandItem impl) {
+        return new ExpandItem(impl);
     }
 
-    public IExpandItem getDelegate() {
-        return (IExpandItem) super.getDelegate();
+    public IExpandItem getImpl() {
+        return (IExpandItem) super.getImpl();
     }
 }

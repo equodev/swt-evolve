@@ -16,7 +16,6 @@
 package org.eclipse.swt.dnd;
 
 import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Convert;
 
 /**
  *  The class <code>ByteArrayTransfer</code> provides a platform specific
@@ -126,11 +125,11 @@ import dev.equo.swt.Convert;
 public abstract class ByteArrayTransfer extends Transfer {
 
     public TransferData[] getSupportedTypes() {
-        return Convert.array(getDelegate().getSupportedTypes(), ITransferData::getApi, TransferData[]::new);
+        return getImpl().getSupportedTypes();
     }
 
     public boolean isSupportedType(TransferData transferData) {
-        return getDelegate().isSupportedType((transferData != null ? transferData.getDelegate() : null));
+        return getImpl().isSupportedType(transferData);
     }
 
     /**
@@ -144,7 +143,7 @@ public abstract class ByteArrayTransfer extends Transfer {
      * @see Transfer#nativeToJava
      */
     protected void javaToNative(Object object, TransferData transferData) {
-        getDelegate().javaToNative(object, (transferData != null ? transferData.getDelegate() : null));
+        getImpl().javaToNative(object, transferData);
     }
 
     /**
@@ -158,17 +157,17 @@ public abstract class ByteArrayTransfer extends Transfer {
      * @see Transfer#javaToNative
      */
     protected Object nativeToJava(TransferData transferData) {
-        return getDelegate().nativeToJava((transferData != null ? transferData.getDelegate() : null));
+        return getImpl().nativeToJava(transferData);
     }
 
     public ByteArrayTransfer() {
     }
 
-    protected ByteArrayTransfer(IByteArrayTransfer delegate) {
-        super(delegate);
+    protected ByteArrayTransfer(IByteArrayTransfer impl) {
+        super(impl);
     }
 
-    public IByteArrayTransfer getDelegate() {
-        return (IByteArrayTransfer) super.getDelegate();
+    public IByteArrayTransfer getImpl() {
+        return (IByteArrayTransfer) super.getImpl();
     }
 }

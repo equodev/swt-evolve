@@ -22,7 +22,6 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.*;
-import dev.equo.swt.Convert;
 
 /**
  * Instances of this class represent programs and
@@ -48,8 +47,7 @@ public final class Program {
      * 	</ul>
      */
     public static Program findProgram(String extension) {
-        IProgram ret = nat.org.eclipse.swt.program.Program.findProgram(extension);
-        return ret != null ? ret.getApi() : null;
+        return SwtProgram.findProgram(extension);
     }
 
     /**
@@ -60,7 +58,7 @@ public final class Program {
      * @return an array of extensions
      */
     public static String[] getExtensions() {
-        return nat.org.eclipse.swt.program.Program.getExtensions();
+        return SwtProgram.getExtensions();
     }
 
     /**
@@ -71,7 +69,7 @@ public final class Program {
      * @return an array of programs
      */
     public static Program[] getPrograms() {
-        return Convert.array(nat.org.eclipse.swt.program.Program.getPrograms(), IProgram::getApi, Program[]::new);
+        return SwtProgram.getPrograms();
     }
 
     /**
@@ -88,7 +86,7 @@ public final class Program {
      * </ul>
      */
     public static boolean launch(String fileName) {
-        return nat.org.eclipse.swt.program.Program.launch(fileName);
+        return SwtProgram.launch(fileName);
     }
 
     /**
@@ -111,7 +109,7 @@ public final class Program {
      * @since 3.6
      */
     public static boolean launch(String fileName, String workingDir) {
-        return nat.org.eclipse.swt.program.Program.launch(fileName, workingDir);
+        return SwtProgram.launch(fileName, workingDir);
     }
 
     /**
@@ -128,7 +126,7 @@ public final class Program {
      * </ul>
      */
     public boolean execute(String fileName) {
-        return getDelegate().execute(fileName);
+        return getImpl().execute(fileName);
     }
 
     /**
@@ -139,7 +137,7 @@ public final class Program {
      * @return the image data for the program, may be null
      */
     public ImageData getImageData() {
-        return getDelegate().getImageData();
+        return getImpl().getImageData();
     }
 
     /**
@@ -154,7 +152,7 @@ public final class Program {
      * @since 3.125
      */
     public ImageData getImageData(int zoom) {
-        return getDelegate().getImageData(zoom);
+        return getImpl().getImageData(zoom);
     }
 
     /**
@@ -166,7 +164,7 @@ public final class Program {
      * @return the name of the program
      */
     public String getName() {
-        return getDelegate().getName();
+        return getImpl().getName();
     }
 
     /**
@@ -180,7 +178,7 @@ public final class Program {
      * @see #hashCode()
      */
     public boolean equals(Object other) {
-        return getDelegate().equals(other instanceof Program ? ((Program) other).getDelegate() : other);
+        return getImpl().equals(other);
     }
 
     /**
@@ -194,7 +192,7 @@ public final class Program {
      * @see #equals(Object)
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
     /**
@@ -204,21 +202,21 @@ public final class Program {
      * @return a string representation of the program
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    IProgram delegate;
+    IProgram impl;
 
-    protected Program(IProgram delegate) {
-        this.delegate = delegate;
-        delegate.setApi(this);
+    protected Program(IProgram impl) {
+        this.impl = impl;
+        impl.setApi(this);
     }
 
-    public static Program createApi(IProgram delegate) {
-        return new Program(delegate);
+    public static Program createApi(IProgram impl) {
+        return new Program(impl);
     }
 
-    public IProgram getDelegate() {
-        return delegate;
+    public IProgram getImpl() {
+        return impl;
     }
 }

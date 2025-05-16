@@ -21,7 +21,7 @@ public interface IRectangle {
      *    <li>ERROR_NULL_ARGUMENT - if the argument is null</li>
      * </ul>
      */
-    void add(IRectangle rect);
+    void add(Rectangle rect);
 
     /**
      * Returns <code>true</code> if the point specified by the
@@ -46,7 +46,7 @@ public interface IRectangle {
      *    <li>ERROR_NULL_ARGUMENT - if the argument is null</li>
      * </ul>
      */
-    boolean contains(IPoint pt);
+    boolean contains(Point pt);
 
     /**
      * Compares the argument to the receiver, and returns true
@@ -85,7 +85,7 @@ public interface IRectangle {
      *
      * since 3.0
      */
-    void intersect(IRectangle rect);
+    void intersect(Rectangle rect);
 
     /**
      * Returns a new rectangle which represents the intersection
@@ -102,7 +102,7 @@ public interface IRectangle {
      *    <li>ERROR_NULL_ARGUMENT - if the argument is null</li>
      * </ul>
      */
-    IRectangle intersection(IRectangle rect);
+    Rectangle intersection(Rectangle rect);
 
     /**
      * Returns <code>true</code> if the rectangle described by the
@@ -148,7 +148,7 @@ public interface IRectangle {
      * @see #intersection(Rectangle)
      * @see #isEmpty()
      */
-    boolean intersects(IRectangle rect);
+    boolean intersects(Rectangle rect);
 
     /**
      * Returns <code>true</code> if the receiver does not cover any
@@ -190,7 +190,7 @@ public interface IRectangle {
      *
      * @see #add(Rectangle)
      */
-    IRectangle union(IRectangle rect);
+    Rectangle union(Rectangle rect);
 
     Rectangle getApi();
 

@@ -70,7 +70,7 @@ public interface ITrayItem extends IItem {
      *
      * @since 3.8
      */
-    IImage getHighlightImage();
+    Image getHighlightImage();
 
     /**
      * Returns the receiver's parent, which must be a <code>Tray</code>.
@@ -84,7 +84,7 @@ public interface ITrayItem extends IItem {
      *
      * @since 3.2
      */
-    ITray getParent();
+    Tray getParent();
 
     /**
      * Returns the receiver's tool tip, or null if it has
@@ -99,7 +99,7 @@ public interface ITrayItem extends IItem {
      *
      * @since 3.2
      */
-    IToolTip getToolTip();
+    ToolTip getToolTip();
 
     /**
      * Returns the receiver's tool tip text, or null if it has
@@ -181,7 +181,7 @@ public interface ITrayItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setImage(IImage image);
+    void setImage(Image image);
 
     /**
      * Sets the receiver's highlight image.
@@ -198,7 +198,7 @@ public interface ITrayItem extends IItem {
      *
      * @since 3.8
      */
-    void setHighlightImage(IImage image);
+    void setHighlightImage(Image image);
 
     /**
      * Sets the receiver's tool tip to the argument, which
@@ -213,7 +213,7 @@ public interface ITrayItem extends IItem {
      *
      * @since 3.2
      */
-    void setToolTip(IToolTip toolTip);
+    void setToolTip(ToolTip toolTip);
 
     /**
      * Sets the receiver's tool tip text to the argument, which

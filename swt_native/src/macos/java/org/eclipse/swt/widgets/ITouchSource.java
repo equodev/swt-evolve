@@ -19,7 +19,7 @@ public interface ITouchSource {
      *
      * @return the bounding rectangle of the input source
      */
-    IRectangle getBounds();
+    Rectangle getBounds();
 
     /**
      * Returns a string containing a concise, human-readable

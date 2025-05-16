@@ -39,8 +39,7 @@ public class HTMLTransfer extends ByteArrayTransfer {
      * @return the singleton instance of the HTMLTransfer class
      */
     public static HTMLTransfer getInstance() {
-        IHTMLTransfer ret = nat.org.eclipse.swt.dnd.HTMLTransfer.getInstance();
-        return ret != null ? ret.getApi() : null;
+        return SwtHTMLTransfer.getInstance();
     }
 
     /**
@@ -54,7 +53,7 @@ public class HTMLTransfer extends ByteArrayTransfer {
      * @see Transfer#nativeToJava
      */
     public void javaToNative(Object object, TransferData transferData) {
-        getDelegate().javaToNative(object, (transferData != null ? transferData.getDelegate() : null));
+        getImpl().javaToNative(object, transferData);
     }
 
     /**
@@ -68,30 +67,30 @@ public class HTMLTransfer extends ByteArrayTransfer {
      * @see Transfer#javaToNative
      */
     public Object nativeToJava(TransferData transferData) {
-        return getDelegate().nativeToJava((transferData != null ? transferData.getDelegate() : null));
+        return getImpl().nativeToJava(transferData);
     }
 
     protected int[] getTypeIds() {
-        return getDelegate().getTypeIds();
+        return getImpl().getTypeIds();
     }
 
     protected String[] getTypeNames() {
-        return getDelegate().getTypeNames();
+        return getImpl().getTypeNames();
     }
 
     protected boolean validate(Object object) {
-        return getDelegate().validate(object);
+        return getImpl().validate(object);
     }
 
-    protected HTMLTransfer(IHTMLTransfer delegate) {
-        super(delegate);
+    protected HTMLTransfer(IHTMLTransfer impl) {
+        super(impl);
     }
 
-    public static HTMLTransfer createApi(IHTMLTransfer delegate) {
-        return new HTMLTransfer(delegate);
+    public static HTMLTransfer createApi(IHTMLTransfer impl) {
+        return new HTMLTransfer(impl);
     }
 
-    public IHTMLTransfer getDelegate() {
-        return (IHTMLTransfer) super.getDelegate();
+    public IHTMLTransfer getImpl() {
+        return (IHTMLTransfer) super.getImpl();
     }
 }

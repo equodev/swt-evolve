@@ -110,7 +110,7 @@ public final class Cursor extends Resource {
      * @see #dispose()
      */
     public Cursor(Device device, int style) {
-        this(new nat.org.eclipse.swt.graphics.Cursor((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), style));
+        this(new SwtCursor(device, style));
     }
 
     /**
@@ -147,7 +147,7 @@ public final class Cursor extends Resource {
      * @see #dispose()
      */
     public Cursor(Device device, ImageData source, ImageData mask, int hotspotX, int hotspotY) {
-        this(new nat.org.eclipse.swt.graphics.Cursor((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), source, mask, hotspotX, hotspotY));
+        this(new SwtCursor(device, source, mask, hotspotX, hotspotY));
     }
 
     /**
@@ -180,7 +180,7 @@ public final class Cursor extends Resource {
      * @since 3.0
      */
     public Cursor(Device device, ImageData source, int hotspotX, int hotspotY) {
-        this(new nat.org.eclipse.swt.graphics.Cursor((nat.org.eclipse.swt.graphics.Device) (device != null ? device.getDelegate() : null), source, hotspotX, hotspotY));
+        this(new SwtCursor(device, source, hotspotX, hotspotY));
     }
 
     /**
@@ -194,7 +194,7 @@ public final class Cursor extends Resource {
      * @see #hashCode
      */
     public boolean equals(Object object) {
-        return getDelegate().equals(object instanceof Cursor ? ((Cursor) object).getDelegate() : object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -208,7 +208,7 @@ public final class Cursor extends Resource {
      * @see #equals
      */
     public int hashCode() {
-        return getDelegate().hashCode();
+        return getImpl().hashCode();
     }
 
     /**
@@ -222,7 +222,7 @@ public final class Cursor extends Resource {
      * @return <code>true</code> when the cursor is disposed and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return getDelegate().isDisposed();
+        return getImpl().isDisposed();
     }
 
     /**
@@ -232,18 +232,18 @@ public final class Cursor extends Resource {
      * @return a string representation of the receiver
      */
     public String toString() {
-        return getDelegate().toString();
+        return getImpl().toString();
     }
 
-    protected Cursor(ICursor delegate) {
-        super(delegate);
+    protected Cursor(ICursor impl) {
+        super(impl);
     }
 
-    public static Cursor createApi(ICursor delegate) {
-        return new Cursor(delegate);
+    public static Cursor createApi(ICursor impl) {
+        return new Cursor(impl);
     }
 
-    public ICursor getDelegate() {
-        return (ICursor) super.getDelegate();
+    public ICursor getImpl() {
+        return (ICursor) super.getImpl();
     }
 }
