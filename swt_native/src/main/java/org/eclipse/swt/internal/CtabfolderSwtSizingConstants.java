@@ -12,7 +12,7 @@ public final class CtabfolderSwtSizingConstants {
     }
 
     // --- Sizing Constants ---
-    public static final double TAB_BAR_HEIGHT = 28.0;
+    public static final double TAB_BAR_HEIGHT = 26.0;
     public static final double TAB_HORIZONTAL_PADDING = 8.0;
     public static final double TAB_VERTICAL_PADDING = 0.0;
     public static final double TAB_BORDER_WIDTH = 1.0;

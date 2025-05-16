@@ -24,6 +24,8 @@ import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.widgets.TypedListener;
 import org.eclipse.swt.widgets.Widget;
 
+import static org.eclipse.swt.internal.CtabfolderSwtSizingConstants.TAB_BAR_HEIGHT;
+
 import java.util.ArrayList;
 
 /**
@@ -1974,7 +1976,7 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
         // --- Layout-specific calculations for TabFolder ---
         // This part would be custom for TabFolder and not fully auto-generated beyond a template
         double accumulatedWidth = 0;
-        double maxChildHeight = 0;
+        double maxChildHeight = TAB_BAR_HEIGHT;
         int visibleItemCount = 0;
 
         // Assuming getItems() returns the TabItems or equivalent Control objects
@@ -2005,7 +2007,8 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
         width += borderWidth * 2;
         height += borderWidth * 2;
 
-        return new Point(width, height);
+        currentSize = new Point(width, height);
+        return currentSize;
     }
 
     public String toString() {
