@@ -3,6 +3,7 @@
 #include <flutter_linux/flutter_linux.h>
 #include <gdk/gdkx.h>
 #include <gio/gio.h>
+#include <glib-object.h>
 #include <gtk/gtk.h>
 
 #include "flutter/generated_plugin_registrant.h"
@@ -10,8 +11,13 @@
 struct Context {
   FlDartProject *project;
   FlEngine *engine;
-  ExpandPolicy policy;
 } static context = {0};
+
+struct WidgetContext {
+  GtkWidget *widget_container;
+  GtkWidget *widget;
+  ExpandPolicy policy;
+};
 
 JNIEXPORT jlong JNICALL
 Java_org_eclipse_swt_widgets_FlutterSwt_InitializeFlutterWindow(
@@ -20,24 +26,31 @@ Java_org_eclipse_swt_widgets_FlutterSwt_InitializeFlutterWindow(
   if (policy >= EXPAND_POLICY_SIZE || policy < 0) {
     return -1;
   }
-  context.policy = (ExpandPolicy)policy;
   const char *widget_name_cstr = env->GetStringUTFChars(widget_name, NULL);
   jlong result = (jlong)InitializeFlutterWindow(
-      parent, port, widget_id, widget_name_cstr, width, height);
+      parent, port, widget_id, widget_name_cstr, width, height,
+      static_cast<ExpandPolicy>(policy));
   env->ReleaseStringUTFChars(widget_name, widget_name_cstr);
   return result;
 }
 
 JNIEXPORT void JNICALL
-Java_org_eclipse_swt_widgets_FlutterSwt_Main_CloseFlutterWindow(JNIEnv *env,
-                                                                jclass cls) {
-  CloseFlutterWindow();
+Java_org_eclipse_swt_widgets_FlutterSwt_CloseFlutterWindow(
+    JNIEnv *env, jclass cls, void *void_context) {
+  CloseFlutterWindow(void_context);
 }
 
 JNIEXPORT jboolean JNICALL
 Java_org_eclipse_swt_widgets_FlutterSwt_IsFlutterWindowVisible(JNIEnv *env,
                                                                jclass cls) {
   return static_cast<jboolean>(IsFlutterWindowVisible());
+}
+
+JNIEXPORT void JNICALL
+Java_org_eclipse_swt_widgets_FlutterSwt_ResizeFlutterWindow(
+    JNIEnv *env, jclass cls, void *void_context, jint width, jint height) {
+  ResizeFlutterWindow(void_context, static_cast<int32_t>(width),
+                      static_cast<int32_t>(height));
 }
 
 #if 0
@@ -52,25 +65,34 @@ static void on_parent_size_allocate(GtkWidget* widget, GtkAllocation* allocation
 
 void on_parent_size_allocate(GtkWidget *widget, GtkAllocation *allocation,
                              gpointer data) {
-  GtkWidget *child = GTK_WIDGET(data);
-  switch (context.policy) {
+  WidgetContext *widget_context = static_cast<WidgetContext *>(data);
+  GtkWidget *container = widget_context->widget_container;
+  // GtkWidget *child = widget_context->widget;
+  switch (widget_context->policy) {
   case FOLLOW_PARENT: {
-    gtk_widget_set_size_request(child, allocation->width, allocation->height);
+    gtk_widget_set_size_request(container, allocation->width,
+                                allocation->height);
   } break;
   case FOLLOW_W_PARENT: {
-    gtk_widget_set_size_request(child, allocation->width, -1);
+    gtk_widget_set_size_request(container, allocation->width, -1);
   } break;
   case FOLLOW_H_PARENT: {
-    gtk_widget_set_size_request(child, -1, allocation->height);
+    gtk_widget_set_size_request(container, -1, allocation->height);
   } break;
   default:
-    g_print("Unknown policy set: %i\n", context.policy);
+    g_print("Unknown policy set: %i\n", widget_context->policy);
   }
+  /*
+  g_print("on_parent_size_allocate: child=%p\n", child);
+  g_print("on_parent_size_allocate: x=%d, y=%d, width=%d, height=%d\n",
+          allocation->x, allocation->y, allocation->width,
+          allocation->height);
+  */
 }
 
 uintptr_t InitializeFlutterWindow(void *parentWnd, jint port, jlong widget_id,
                                   const char *widget_name, int width,
-                                  int height) {
+                                  int height, ExpandPolicy policy) {
   /*
    * NOTE(elias): SWT initializes GTK using gtk_init_check() and that doesn't
    * create a default instance of GApplication or GtkApplication. So just create
@@ -145,19 +167,27 @@ uintptr_t InitializeFlutterWindow(void *parentWnd, jint port, jlong widget_id,
   // gtk_widget_set_size_request(view_widget, parent_allocation.width,
   //                             parent_allocation.height);
 
-  // Connect the signal
-  g_signal_connect(parent_widget, "size-allocate",
-                   G_CALLBACK(on_parent_size_allocate), view_widget);
-
   GtkWidget *fl_container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  /*
   gtk_widget_set_hexpand(view_widget, TRUE);
   gtk_widget_set_vexpand(view_widget, TRUE);
+  */
   gtk_container_add(GTK_CONTAINER(fl_container), view_widget);
 
   gtk_container_add(GTK_CONTAINER(parent_widget), fl_container);
+
+  // Connect the signal
+  WidgetContext *widget_context = new WidgetContext;
+  widget_context->widget_container = fl_container;
+  widget_context->widget = view_widget;
+  widget_context->policy = policy;
+  g_signal_connect(parent_widget, "size-allocate",
+                   G_CALLBACK(on_parent_size_allocate), widget_context);
+
   // gtk_fixed_put(GTK_FIXED(parent_widget), view_widget, 0, 0);
 
-  gtk_widget_set_size_request(GTK_WIDGET(fl_container), width, height);
+  //gtk_widget_set_size_request(fl_container, width, height);
+  gtk_widget_set_size_request(view_widget, width, height);
 
   GtkAllocation parent_allocation;
   gtk_widget_get_allocation(parent_widget, &parent_allocation);
@@ -184,6 +214,7 @@ uintptr_t InitializeFlutterWindow(void *parentWnd, jint port, jlong widget_id,
 
   GtkAllocation allocation_flutter;
   gtk_widget_get_allocation(view_widget, &allocation_flutter);
+  g_print("Param proportions: width=%d, height=%d\n", width, height);
   g_print("Parent widget type: %s\n", G_OBJECT_TYPE_NAME(parent_widget));
   g_print("Parent widget handle: %p\n", parent_widget);
   g_print("Parent widget allocation: x=%d, y=%d, width=%d, height=%d\n",
@@ -203,10 +234,14 @@ uintptr_t InitializeFlutterWindow(void *parentWnd, jint port, jlong widget_id,
 
   // gtk_widget_grab_focus(view_widget);
 
-  return (uintptr_t)view;
+  return (uintptr_t)widget_context;
 }
 
-void CloseFlutterWindow() {
+void CloseFlutterWindow(void *void_context) {
+  WidgetContext *widget_context = static_cast<WidgetContext *>(void_context);
+  //g_object_unref(widget_context->widget_container);
+  //g_object_unref(widget_context->widget);
+  delete widget_context;
 #if 0 
     GtkWindow *window = gtk_application_get_active_window(context.gtk_application);
     gtk_window_close(window);
@@ -214,5 +249,10 @@ void CloseFlutterWindow() {
 }
 
 bool IsFlutterWindowVisible() { return FALSE; }
+
+void ResizeFlutterWindow(void *void_context, int32_t width, int32_t height) {
+  WidgetContext *widget_context = static_cast<WidgetContext *>(void_context);
+  gtk_widget_set_size_request(widget_context->widget, width, height);
+}
 
 /* vim: set ts=2 sw=2 tw=0 et :*/

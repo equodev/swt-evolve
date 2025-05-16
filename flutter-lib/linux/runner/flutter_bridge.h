@@ -28,19 +28,22 @@ Java_org_eclipse_swt_widgets_FlutterSwt_InitializeFlutterWindow(
 
 // Optional: Other functions following the same pattern
 JNIEXPORT void JNICALL
-Java_org_eclipse_swt_widgets_FlutterSwt_Main_CloseFlutterWindow(JNIEnv *env,
-                                                                jclass cls);
+Java_org_eclipse_swt_widgets_FlutterSwt_CloseFlutterWindow(
+    JNIEnv *env, jclass cls, void *void_context);
 JNIEXPORT jboolean JNICALL
 Java_org_eclipse_swt_widgets_FlutterSwt_IsFlutterWindowVisible(JNIEnv *env,
                                                                jclass cls);
+JNIEXPORT void JNICALL
+Java_org_eclipse_swt_widgets_FlutterSwt_ResizeFlutterWindow(
+    JNIEnv *env, jclass cls, void *void_context, jint width, jint height);
 
-FLUTTER_LIBRARY_API uintptr_t InitializeFlutterWindow(void *parentWnd,
-                                                      jint port,
-                                                      jlong widget_id,
-                                                      const char *widget_name,
-                                                      int width, int height);
-FLUTTER_LIBRARY_API void CloseFlutterWindow();
+FLUTTER_LIBRARY_API uintptr_t InitializeFlutterWindow(
+    void *parentWnd, jint port, jlong widget_id, const char *widget_name,
+    int width, int height, ExpandPolicy policy);
+FLUTTER_LIBRARY_API void CloseFlutterWindow(void *widget_context);
 FLUTTER_LIBRARY_API bool IsFlutterWindowVisible();
+FLUTTER_LIBRARY_API void ResizeFlutterWindow(void *widget_context,
+                                             int32_t width, int32_t height);
 
 #ifdef __cplusplus
 }

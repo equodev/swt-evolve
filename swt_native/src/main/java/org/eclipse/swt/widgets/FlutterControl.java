@@ -84,8 +84,8 @@ public abstract class FlutterControl extends FlutterWidget implements Drawable, 
         handle = parentComposite.handle;
         Composite.getInstance(parentComposite);
         String widget = FlutterSwt.getWidgetName(this);
-        Point size = computeSize(-1, -1, true);
-        FlutterSwt.InitializeFlutterWindow(handle, FlutterSwt.CLIENT.getPort(), this.hashCode(), widget, size.x, size.y, getExpandPolicy().getValue());
+        Point size = computeSize(SWT.DEFAULT, SWT.DEFAULT, true);
+        flutterContext = FlutterSwt.InitializeFlutterWindow(handle, FlutterSwt.CLIENT.getPort(), this.hashCode(), widget, size.x, size.y, getExpandPolicy().getValue());
         FlutterSwt.dirty(this);
     }
 
@@ -493,9 +493,7 @@ public abstract class FlutterControl extends FlutterWidget implements Drawable, 
             FlutterSwt.dirty(flutterParent);
         }
         parentComposite.setBounds(rect);
-//        rect.y += 27;
-//        childComposite.setBounds(rect);
-//        childComposite.moveAbove(parentComposite);
+//        FlutterSwt.ResizeFlutterWindow(flutterContext, rect.width, rect.height);
     }
 
     /**

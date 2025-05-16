@@ -36,7 +36,9 @@ public class FlutterSwt {
     public static native long InitializeFlutterWindow(long hwnd, int port, long widgetId, String widgetName, int width,
             int height, int policy);
 
-    public static native void CloseFlutterWindow();
+    public static native void CloseFlutterWindow(long flutterContext);
+
+    public static native void ResizeFlutterWindow(long flutterContext, int width, int height);
 
     public static String getWidgetName(FlutterWidget w) {
         return w.getClass().getSimpleName().substring("Flutter".length());
