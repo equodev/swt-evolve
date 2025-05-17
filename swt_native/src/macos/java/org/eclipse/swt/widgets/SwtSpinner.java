@@ -61,15 +61,6 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
 
     static int GAP = 0;
 
-    /*
-	* These values can be different on different platforms.
-	* Therefore they are not initialized in the declaration
-	* to stop the compiler from inlining.
-	*/
-    static {
-        Spinner.LIMIT = 0x7FFFFFFF;
-    }
-
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.

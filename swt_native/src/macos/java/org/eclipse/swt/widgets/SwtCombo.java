@@ -76,15 +76,6 @@ public class SwtCombo extends SwtComposite implements ICombo {
 
     static final int VISIBLE_COUNT = 5;
 
-    /*
-	* These values can be different on different platforms.
-	* Therefore they are not initialized in the declaration
-	* to stop the compiler from inlining.
-	*/
-    static {
-        Combo.LIMIT = 0x7FFFFFFF;
-    }
-
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.

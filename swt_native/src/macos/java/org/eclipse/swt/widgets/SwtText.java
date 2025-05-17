@@ -83,16 +83,6 @@ public class SwtText extends SwtScrollable implements IText {
 
     static final char PASSWORD = '\u2022';
 
-    /*
-	* These values can be different on different platforms.
-	* Therefore they are not initialized in the declaration
-	* to stop the compiler from inlining.
-	*/
-    static {
-        Text.LIMIT = 0x7FFFFFFF;
-        Text.DELIMITER = "\r";
-    }
-
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.

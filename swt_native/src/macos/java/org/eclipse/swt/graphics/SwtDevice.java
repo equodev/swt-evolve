@@ -266,7 +266,7 @@ public abstract class SwtDevice implements Drawable, IDevice {
         }
     }
 
-    void dispose_Object(Object object) {
+    public void dispose_Object(Object object) {
         synchronized (trackingLock) {
             for (int i = 0; i < objects.length; i++) {
                 if (objects[i] == object) {
@@ -724,7 +724,7 @@ public abstract class SwtDevice implements Drawable, IDevice {
         return OS.CTFontManagerRegisterFontsForURL(nsUrl.id, OS.kCTFontManagerScopeProcess, 0);
     }
 
-    void new_Object(Object object) {
+    public void new_Object(Object object) {
         synchronized (trackingLock) {
             for (int i = 0; i < objects.length; i++) {
                 if (objects[i] == null) {
