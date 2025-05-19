@@ -26,7 +26,7 @@ import org.eclipse.swt.internal.cocoa.*;
  *
  * @see TableAccessibleDelegate
  */
-class AccessibleTableRow extends Accessible {
+class AccessibleTableRow extends SwtAccessible {
 
     public AccessibleTableRow(Accessible accessible, int childID) {
         super(accessible);

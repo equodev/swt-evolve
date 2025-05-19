@@ -24,10 +24,10 @@ import org.eclipse.swt.widgets.*;
  *
  * @see ViewForm
  */
-class ViewFormLayout extends Layout {
+class ViewFormLayout extends SwtLayout {
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         ViewForm form = (ViewForm) composite;
         Control left = ((SwtViewForm) form.getImpl()).topLeft;
         Control center = ((SwtViewForm) form.getImpl()).topCenter;
@@ -109,7 +109,7 @@ class ViewFormLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(Control control) {
         Object data = control.getLayoutData();
         if (data instanceof CLayoutData)
             ((CLayoutData) data).flushCache();
@@ -117,7 +117,7 @@ class ViewFormLayout extends Layout {
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(Composite composite, boolean flushCache) {
         ViewForm form = (ViewForm) composite;
         Control left = ((SwtViewForm) form.getImpl()).topLeft;
         Control center = ((SwtViewForm) form.getImpl()).topCenter;

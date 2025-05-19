@@ -24,10 +24,10 @@ import org.eclipse.swt.widgets.*;
  *
  * @see SashForm
  */
-class SashFormLayout extends Layout {
+class SashFormLayout extends SwtLayout {
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         SashForm sashForm = (SashForm) composite;
         Control[] cArray = ((SwtSashForm) sashForm.getImpl()).getControls(true);
         int width = 0;
@@ -92,12 +92,12 @@ class SashFormLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(Control control) {
         return true;
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(Composite composite, boolean flushCache) {
         SashForm sashForm = (SashForm) composite;
         Rectangle area = sashForm.getClientArea();
         if (area.width <= 1 || area.height <= 1)

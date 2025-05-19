@@ -155,7 +155,7 @@ public final class SwtFormData implements IFormData {
                 {
                     FormAttachment topAttachment = ((SwtFormData) bottomData.getImpl()).getTopAttachment(bottomControl, spacing, flushCache);
                     FormAttachment bottomHeight = ((SwtFormAttachment) bottomAttachment.getImpl()).minus(topAttachment);
-                    cacheBottom = ((SwtFormAttachment) bottomAttachment.getImpl()).minus(((SwtFormAttachment) bottomHeight.minus(getHeight(control, flushCache)).getImpl()).divide(2));
+                    cacheBottom = ((SwtFormAttachment) bottomAttachment.getImpl()).minus(((SwtFormAttachment) ((SwtFormAttachment) bottomHeight.getImpl()).minus(getHeight(control, flushCache)).getImpl()).divide(2));
                     break;
                 }
             default:
@@ -202,7 +202,7 @@ public final class SwtFormData implements IFormData {
                 {
                     FormAttachment rightAttachment = ((SwtFormData) leftData.getImpl()).getRightAttachment(leftControl, spacing, flushCache);
                     FormAttachment leftWidth = ((SwtFormAttachment) rightAttachment.getImpl()).minus(leftAttachment);
-                    cacheLeft = ((SwtFormAttachment) leftAttachment.getImpl()).plus(((SwtFormAttachment) leftWidth.minus(getWidth(control, flushCache)).getImpl()).divide(2));
+                    cacheLeft = ((SwtFormAttachment) leftAttachment.getImpl()).plus(((SwtFormAttachment) ((SwtFormAttachment) leftWidth.getImpl()).minus(getWidth(control, flushCache)).getImpl()).divide(2));
                     break;
                 }
             default:
@@ -256,7 +256,7 @@ public final class SwtFormData implements IFormData {
                 {
                     FormAttachment leftAttachment = ((SwtFormData) rightData.getImpl()).getLeftAttachment(rightControl, spacing, flushCache);
                     FormAttachment rightWidth = ((SwtFormAttachment) rightAttachment.getImpl()).minus(leftAttachment);
-                    cacheRight = ((SwtFormAttachment) rightAttachment.getImpl()).minus(((SwtFormAttachment) rightWidth.minus(getWidth(control, flushCache)).getImpl()).divide(2));
+                    cacheRight = ((SwtFormAttachment) rightAttachment.getImpl()).minus(((SwtFormAttachment) ((SwtFormAttachment) rightWidth.getImpl()).minus(getWidth(control, flushCache)).getImpl()).divide(2));
                     break;
                 }
             default:
@@ -303,7 +303,7 @@ public final class SwtFormData implements IFormData {
                 {
                     FormAttachment bottomAttachment = ((SwtFormData) topData.getImpl()).getBottomAttachment(topControl, spacing, flushCache);
                     FormAttachment topHeight = ((SwtFormAttachment) bottomAttachment.getImpl()).minus(topAttachment);
-                    cacheTop = ((SwtFormAttachment) topAttachment.getImpl()).plus(((SwtFormAttachment) topHeight.minus(getHeight(control, flushCache)).getImpl()).divide(2));
+                    cacheTop = ((SwtFormAttachment) topAttachment.getImpl()).plus(((SwtFormAttachment) ((SwtFormAttachment) topHeight.getImpl()).minus(getHeight(control, flushCache)).getImpl()).divide(2));
                     break;
                 }
             default:

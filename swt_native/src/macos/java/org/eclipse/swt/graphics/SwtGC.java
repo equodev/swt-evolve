@@ -401,7 +401,7 @@ public final class SwtGC extends SwtResource implements IGC {
                         if (data.visiblePath == null || (data.state & VISIBLE_REGION) == 0) {
                             if (data.visiblePath != null)
                                 data.visiblePath.release();
-                            data.visiblePath = ((SwtRegion) Region.cocoa_new(device, data.visibleRgn).getImpl()).getPath();
+                            data.visiblePath = ((SwtRegion) SwtRegion.cocoa_new(device, data.visibleRgn).getImpl()).getPath();
                         }
                         data.visiblePath.addClip();
                         data.state |= VISIBLE_REGION;

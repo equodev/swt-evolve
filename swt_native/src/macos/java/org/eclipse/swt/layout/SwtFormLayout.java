@@ -288,8 +288,8 @@ public final class SwtFormLayout extends SwtLayout implements IFormLayout {
             Control child = children[i];
             FormData data = (FormData) child.getLayoutData();
             if (height != SWT.DEFAULT) {
-                int y1 = ((SwtFormAttachment) data.getTopAttachment(child, spacing, flushCache).getImpl()).solveX(height);
-                int y2 = ((SwtFormAttachment) data.getBottomAttachment(child, spacing, flushCache).getImpl()).solveX(height);
+                int y1 = ((SwtFormAttachment) ((SwtFormData) data.getImpl()).getTopAttachment(child, getApi().spacing, flushCache).getImpl()).solveX(height);
+                int y2 = ((SwtFormAttachment) ((SwtFormData) data.getImpl()).getBottomAttachment(child, getApi().spacing, flushCache).getImpl()).solveX(height);
                 h = Math.max(y2, h);
                 if (move) {
                     bounds[i].y = y + y1;

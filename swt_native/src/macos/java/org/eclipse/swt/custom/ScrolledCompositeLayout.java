@@ -24,7 +24,7 @@ import org.eclipse.swt.widgets.*;
  *
  * @see ScrolledComposite
  */
-class ScrolledCompositeLayout extends Layout {
+class ScrolledCompositeLayout extends SwtLayout {
 
     boolean inLayout = false;
 
@@ -33,7 +33,7 @@ class ScrolledCompositeLayout extends Layout {
     static final int DEFAULT_HEIGHT = 64;
 
     @Override
-    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    public Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         ScrolledComposite sc = (ScrolledComposite) composite;
         Point size = new Point(DEFAULT_WIDTH, DEFAULT_HEIGHT);
         if (((SwtScrolledComposite) sc.getImpl()).content != null) {
@@ -52,12 +52,12 @@ class ScrolledCompositeLayout extends Layout {
     }
 
     @Override
-    protected boolean flushCache(Control control) {
+    public boolean flushCache(Control control) {
         return true;
     }
 
     @Override
-    protected void layout(Composite composite, boolean flushCache) {
+    public void layout(Composite composite, boolean flushCache) {
         if (inLayout)
             return;
         ScrolledComposite sc = (ScrolledComposite) composite;

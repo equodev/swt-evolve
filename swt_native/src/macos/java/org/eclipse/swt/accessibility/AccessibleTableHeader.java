@@ -28,7 +28,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * and reports the cells in the header so that screen readers (VoiceOver, mainly) can
  * identify the column of the cell that the VoiceOver cursor is reading.
  */
-class AccessibleTableHeader extends Accessible {
+class AccessibleTableHeader extends SwtAccessible {
 
     public AccessibleTableHeader(Accessible accessible, int childID) {
         super(accessible);
