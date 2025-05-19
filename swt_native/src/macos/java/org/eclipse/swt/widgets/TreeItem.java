@@ -167,6 +167,10 @@ public class TreeItem extends Item {
         this(new SwtTreeItem(parentItem, style, index));
     }
 
+    TreeItem(Tree parent, TreeItem parentItem, int style, int index, boolean create) {
+        this(new SwtTreeItem(parent, parentItem, style, index, create));
+    }
+
     protected void checkSubclass() {
         getImpl().checkSubclass();
     }

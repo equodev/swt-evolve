@@ -122,6 +122,10 @@ public class BrowserFunction {
         this(new SwtBrowserFunction(browser, name, top, frameNames));
     }
 
+    BrowserFunction(Browser browser, String name, boolean top, String[] frameNames, boolean create) {
+        this(new SwtBrowserFunction(browser, name, top, frameNames, create));
+    }
+
     /**
      * Disposes of the resources associated with this BrowserFunction.
      * Applications must dispose of all BrowserFunctions that they create.

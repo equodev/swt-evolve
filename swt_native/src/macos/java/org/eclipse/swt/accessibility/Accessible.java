@@ -67,6 +67,19 @@ public class Accessible {
     }
 
     /**
+     * @since 3.5
+     * @deprecated
+     */
+    @Deprecated
+    protected Accessible() {
+        this(new SwtAccessible());
+    }
+
+    Accessible(Control control) {
+        this(new SwtAccessible(control));
+    }
+
+    /**
      * Invokes platform specific functionality to allocate a new accessible object.
      * <p>
      * <b>IMPORTANT:</b> This method is <em>not</em> part of the public

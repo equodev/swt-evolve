@@ -64,6 +64,13 @@ public final class Cursor extends Resource {
     public NSCursor handle;
 
     /**
+     * Prevents uninitialized instances from being created outside the package.
+     */
+    Cursor(Device device) {
+        this(new SwtCursor(device));
+    }
+
+    /**
      * Constructs a new cursor given a device and a style
      * constant describing the desired cursor appearance.
      * <p>

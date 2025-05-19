@@ -68,6 +68,20 @@ public final class Touch {
     public int y;
 
     /**
+     * Constructs a new touch state from the given inputs.
+     *
+     * @param identity Identity of the touch
+     * @param source Object representing the device that generated the touch
+     * @param state One of the state constants representing the state of this touch
+     * @param primary Whether or not the touch is the primary touch
+     * @param x X location of the touch in screen coordinates
+     * @param y Y location of the touch in screen coordinates
+     */
+    Touch(long identity, TouchSource source, int state, boolean primary, int x, int y) {
+        this(new SwtTouch(identity, source, state, primary, x, y));
+    }
+
+    /**
      * Returns a string containing a concise, human-readable
      * description of the receiver.
      *

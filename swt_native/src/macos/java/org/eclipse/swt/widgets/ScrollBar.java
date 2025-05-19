@@ -89,6 +89,10 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class ScrollBar extends Widget {
 
+    ScrollBar() {
+        this(new SwtScrollBar());
+    }
+
     /**
      * Adds the listener to the collection of listeners who will
      * be notified when the user changes the receiver's value, by sending

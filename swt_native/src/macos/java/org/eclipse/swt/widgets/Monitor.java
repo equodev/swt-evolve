@@ -29,6 +29,13 @@ import org.eclipse.swt.graphics.*;
 public final class Monitor {
 
     /**
+     * Prevents uninitialized instances from being created outside the package.
+     */
+    Monitor() {
+        this(new SwtMonitor());
+    }
+
+    /**
      * Compares the argument to the receiver, and returns true
      * if they represent the <em>same</em> object using a class
      * specific comparison.

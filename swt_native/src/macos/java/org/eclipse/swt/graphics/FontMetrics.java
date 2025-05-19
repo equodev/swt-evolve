@@ -27,6 +27,10 @@ package org.eclipse.swt.graphics;
  */
 public final class FontMetrics {
 
+    FontMetrics() {
+        this(new SwtFontMetrics());
+    }
+
     /**
      * Compares the argument to the receiver, and returns true
      * if they represent the <em>same</em> object using a class

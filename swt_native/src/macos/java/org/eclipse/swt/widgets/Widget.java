@@ -51,6 +51,9 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public abstract class Widget {
 
+    Widget() {
+    }
+
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.

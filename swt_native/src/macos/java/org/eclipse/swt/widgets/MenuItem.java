@@ -119,6 +119,10 @@ public class MenuItem extends Item {
         this(new SwtMenuItem(parent, style, index));
     }
 
+    MenuItem(Menu parent, NSMenuItem nsMenuItem) {
+        this(new SwtMenuItem(parent, nsMenuItem));
+    }
+
     /**
      * Adds the listener to the collection of listeners who will
      * be notified when the arm events are generated for the control, by sending

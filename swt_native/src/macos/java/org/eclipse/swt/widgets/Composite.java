@@ -53,6 +53,10 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class Composite extends Scrollable {
 
+    Composite() {
+        this(new SwtComposite());
+    }
+
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.

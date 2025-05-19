@@ -169,6 +169,14 @@ public class Menu extends Widget {
         this(new SwtMenu(parentItem));
     }
 
+    Menu(Display display) {
+        this(new SwtMenu(display));
+    }
+
+    Menu(Display display, NSMenu nativeMenu) {
+        this(new SwtMenu(display, nativeMenu));
+    }
+
     /**
      * Adds the listener to the collection of listeners who will
      * be notified when help events are generated for the control,

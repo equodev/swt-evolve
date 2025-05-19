@@ -104,6 +104,10 @@ public final class Image extends Resource implements Drawable {
     /**
      * The global alpha value to be used for every pixel.
      */
+    Image(Device device) {
+        this(new SwtImage(device));
+    }
+
     /**
      * Constructs an empty instance of this class with the
      * specified width and height. The result may be drawn upon

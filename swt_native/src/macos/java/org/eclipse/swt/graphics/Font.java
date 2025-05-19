@@ -64,6 +64,10 @@ public final class Font extends Resource {
      */
     public int extraTraits;
 
+    Font(Device device) {
+        this(new SwtFont(device));
+    }
+
     /**
      * Constructs a new font given a device and font data
      * which describes the desired font's appearance.
@@ -142,6 +146,11 @@ public final class Font extends Resource {
      * @see #dispose()
      */
     public Font(Device device, String name, int height, int style) {
+        this(new SwtFont(device, name, height, style));
+    }
+
+    /*public*/
+    Font(Device device, String name, float height, int style) {
         this(new SwtFont(device, name, height, style));
     }
 

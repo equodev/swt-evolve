@@ -40,6 +40,10 @@ import org.eclipse.swt.*;
  */
 public class Tray extends Widget {
 
+    Tray(Display display, int style) {
+        this(new SwtTray(display, style));
+    }
+
     /**
      * Returns the item at the given, zero-relative index in the
      * receiver. Throws an exception if the index is out of range.

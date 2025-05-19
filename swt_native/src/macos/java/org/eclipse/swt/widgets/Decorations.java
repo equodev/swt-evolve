@@ -100,6 +100,10 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class Decorations extends Canvas {
 
+    Decorations() {
+        this(new SwtDecorations());
+    }
+
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.

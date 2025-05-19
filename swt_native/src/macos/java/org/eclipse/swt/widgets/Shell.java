@@ -253,6 +253,10 @@ public class Shell extends Decorations {
         this(new SwtShell(display, style));
     }
 
+    Shell(Display display, Shell parent, int style, long handle, boolean embedded) {
+        this(new SwtShell(display, parent, style, handle, embedded));
+    }
+
     /**
      * Constructs a new instance of this class given only its
      * parent. It is created with style <code>SWT.DIALOG_TRIM</code>.

@@ -44,6 +44,13 @@ import org.eclipse.swt.internal.cocoa.*;
 public class IME extends Widget {
 
     /**
+     * Prevents uninitialized instances from being created outside the package.
+     */
+    IME() {
+        this(new SwtIME());
+    }
+
+    /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.
      * <p>

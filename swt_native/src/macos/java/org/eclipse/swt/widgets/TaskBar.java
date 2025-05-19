@@ -36,6 +36,10 @@ import org.eclipse.swt.*;
  */
 public class TaskBar extends Widget {
 
+    TaskBar(Display display, int style) {
+        this(new SwtTaskBar(display, style));
+    }
+
     /**
      * Returns the item at the given, zero-relative index in the
      * receiver. Throws an exception if the index is out of range.

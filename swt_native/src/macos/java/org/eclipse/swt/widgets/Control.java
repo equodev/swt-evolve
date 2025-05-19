@@ -63,6 +63,10 @@ public abstract class Control extends Widget implements Drawable {
      */
     public NSView view;
 
+    Control() {
+        /* Do nothing */
+    }
+
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.

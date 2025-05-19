@@ -87,6 +87,10 @@ public final class Region extends Resource {
         this(new SwtRegion(device));
     }
 
+    Region(Device device, long handle) {
+        this(new SwtRegion(device, handle));
+    }
+
     /**
      * Adds the given polygon to the collection of polygons
      * the receiver maintains to describe its area.

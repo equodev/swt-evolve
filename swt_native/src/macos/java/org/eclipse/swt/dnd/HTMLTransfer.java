@@ -33,6 +33,10 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class HTMLTransfer extends ByteArrayTransfer {
 
+    HTMLTransfer() {
+        this(new SwtHTMLTransfer());
+    }
+
     /**
      * Returns the singleton instance of the HTMLTransfer class.
      *

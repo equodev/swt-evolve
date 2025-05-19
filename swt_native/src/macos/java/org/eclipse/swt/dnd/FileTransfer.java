@@ -40,6 +40,10 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class FileTransfer extends ByteArrayTransfer {
 
+    FileTransfer() {
+        this(new SwtFileTransfer());
+    }
+
     /**
      * Returns the singleton instance of the FileTransfer class.
      *

@@ -45,6 +45,10 @@ import org.eclipse.swt.internal.graphics.*;
  */
 public class Canvas extends Composite {
 
+    Canvas() {
+        this(new SwtCanvas());
+    }
+
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.

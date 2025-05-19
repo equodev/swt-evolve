@@ -148,6 +148,11 @@ public final class FontData {
         this(new SwtFontData(name, height, style));
     }
 
+    /*public*/
+    FontData(String name, float height, int style) {
+        this(new SwtFontData(name, height, style));
+    }
+
     /**
      * Compares the argument to the receiver, and returns true
      * if they represent the <em>same</em> object using a class

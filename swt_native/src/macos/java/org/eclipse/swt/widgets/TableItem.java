@@ -108,6 +108,10 @@ public class TableItem extends Item {
         this(new SwtTableItem(parent, style, index));
     }
 
+    TableItem(Table parent, int style, int index, boolean create) {
+        this(new SwtTableItem(parent, style, index, create));
+    }
+
     protected void checkSubclass() {
         getImpl().checkSubclass();
     }

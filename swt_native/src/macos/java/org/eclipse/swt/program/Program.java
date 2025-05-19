@@ -34,6 +34,13 @@ import org.eclipse.swt.widgets.*;
 public final class Program {
 
     /**
+     * Prevents uninitialized instances from being created outside the package.
+     */
+    Program() {
+        this(new SwtProgram());
+    }
+
+    /**
      *  Finds the program that is associated with an extension.
      *  The extension may or may not begin with a '.'.  Note that
      *  a <code>Display</code> must already exist to guarantee that

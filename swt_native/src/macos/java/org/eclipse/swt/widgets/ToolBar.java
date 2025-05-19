@@ -87,6 +87,10 @@ public class ToolBar extends Composite {
         this(new SwtToolBar(parent, style));
     }
 
+    ToolBar(Composite parent, int style, boolean internal) {
+        this(new SwtToolBar(parent, style, internal));
+    }
+
     protected void checkSubclass() {
         getImpl().checkSubclass();
     }

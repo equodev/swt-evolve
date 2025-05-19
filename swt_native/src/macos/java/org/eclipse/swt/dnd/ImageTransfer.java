@@ -39,6 +39,10 @@ import org.eclipse.swt.widgets.*;
  */
 public class ImageTransfer extends ByteArrayTransfer {
 
+    ImageTransfer() {
+        this(new SwtImageTransfer());
+    }
+
     /**
      * Returns the singleton instance of the ImageTransfer class.
      *

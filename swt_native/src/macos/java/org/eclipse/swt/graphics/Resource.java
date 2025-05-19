@@ -47,6 +47,9 @@ public abstract class Resource {
     public Resource() {
     }
 
+    Resource(Device device) {
+    }
+
     /**
      * Disposes of the operating system resources associated with
      * this resource. Applications must dispose of all resources

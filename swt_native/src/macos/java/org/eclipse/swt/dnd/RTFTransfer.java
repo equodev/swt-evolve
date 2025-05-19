@@ -33,6 +33,10 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class RTFTransfer extends ByteArrayTransfer {
 
+    RTFTransfer() {
+        this(new SwtRTFTransfer());
+    }
+
     /**
      * Returns the singleton instance of the RTFTransfer class.
      *

@@ -76,6 +76,10 @@ public final class GC extends Resource {
      */
     public NSGraphicsContext handle;
 
+    GC() {
+        this(new SwtGC());
+    }
+
     /**
      * Constructs a new instance of this class which has been
      * configured to draw on the specified drawable. Sets the

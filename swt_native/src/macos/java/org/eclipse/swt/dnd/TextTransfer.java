@@ -39,6 +39,10 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class TextTransfer extends ByteArrayTransfer {
 
+    TextTransfer() {
+        this(new SwtTextTransfer());
+    }
+
     /**
      * Returns the singleton instance of the TextTransfer class.
      *

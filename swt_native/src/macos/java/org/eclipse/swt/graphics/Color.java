@@ -50,6 +50,14 @@ public final class Color extends Resource {
      */
     public double[] handle;
 
+    Color() {
+        this(new SwtColor());
+    }
+
+    Color(Device device) {
+        this(new SwtColor(device));
+    }
+
     /**
      * Constructs a new instance of this class given a device and the
      * desired red, green and blue values expressed as ints in the range

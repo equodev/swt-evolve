@@ -38,6 +38,10 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public abstract class Scrollable extends Control {
 
+    Scrollable() {
+        /* Do nothing */
+    }
+
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.

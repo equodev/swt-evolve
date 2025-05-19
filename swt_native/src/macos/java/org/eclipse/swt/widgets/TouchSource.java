@@ -44,6 +44,17 @@ import org.eclipse.swt.graphics.*;
 public final class TouchSource {
 
     /**
+     * Constructs a new touch source from the given inputs.
+     *
+     * @param direct Is the touch source direct or indirect?
+     * @param height height of the source in points.
+     * @param width width of the source in points.
+     */
+    TouchSource(long handle, boolean direct, Rectangle bounds) {
+        this(new SwtTouchSource(handle, direct, bounds));
+    }
+
+    /**
      * Returns the type of touch input this source generates, <code>true</code> for direct or <code>false</code> for indirect.
      *
      * @return <code>true</code> if the input source is direct, or <code>false</code> otherwise

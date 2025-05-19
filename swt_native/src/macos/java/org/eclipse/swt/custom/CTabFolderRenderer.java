@@ -123,6 +123,21 @@ public class CTabFolderRenderer {
     public static final int MINIMUM_SIZE = 1 << 24;
 
     /**
+     * Constructs a new instance of this class given its parent.
+     *
+     * @param parent CTabFolder
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_INVALID_ARGUMENT - if the parent is disposed</li>
+     * </ul>
+     *
+     * @see Widget#getStyle
+     */
+    protected CTabFolderRenderer(CTabFolder parent) {
+        this(new SwtCTabFolderRenderer(parent));
+    }
+
+    /**
      * Returns the preferred size of a part.
      * <p>
      * The <em>preferred size</em> of a part is the size that it would
