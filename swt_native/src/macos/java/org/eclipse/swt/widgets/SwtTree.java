@@ -2332,14 +2332,14 @@ public class SwtTree extends SwtComposite implements ITree {
     boolean outlineView_isItemExpandable(long id, long sel, long outlineView, long item) {
         if (item == 0)
             return true;
-        return ((SwtTreeItem) ((TreeItem) display.getWidget(item)).getImpl()).itemCount != 0;
+        return ((SwtTreeItem) ((TreeItem) ((SwtDisplay) display.getImpl()).getWidget(item)).getImpl()).itemCount != 0;
     }
 
     @Override
     long outlineView_numberOfChildrenOfItem(long id, long sel, long outlineView, long item) {
         if (item == 0)
             return itemCount;
-        return ((SwtTreeItem) ((TreeItem) display.getWidget(item)).getImpl()).itemCount;
+        return ((SwtTreeItem) ((TreeItem) ((SwtDisplay) display.getImpl()).getWidget(item)).getImpl()).itemCount;
     }
 
     @Override

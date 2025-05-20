@@ -34,6 +34,10 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class URLTransfer extends ByteArrayTransfer {
 
+    URLTransfer() {
+        this(new SwtURLTransfer());
+    }
+
     /**
      * Returns the singleton instance of the URLTransfer class.
      *

@@ -44,7 +44,7 @@ public class SwtURLTransfer extends SwtByteArrayTransfer implements IURLTransfer
 
     static final int URL_ID1 = registerType(URL1);
 
-    private SwtURLTransfer() {
+    SwtURLTransfer() {
     }
 
     /**

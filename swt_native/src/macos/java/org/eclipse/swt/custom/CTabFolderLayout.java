@@ -24,10 +24,10 @@ import org.eclipse.swt.widgets.*;
  *
  * @see CTabFolder
  */
-class CTabFolderLayout extends SwtLayout {
+class CTabFolderLayout extends Layout {
 
     @Override
-    public Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+    protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         CTabFolder folder = (CTabFolder) composite;
         CTabItem[] items = ((SwtCTabFolder) folder.getImpl()).items;
         CTabFolderRenderer renderer = ((SwtCTabFolder) folder.getImpl()).renderer;
@@ -112,16 +112,16 @@ class CTabFolderLayout extends SwtLayout {
     }
 
     @Override
-    public boolean flushCache(Control control) {
+    protected boolean flushCache(Control control) {
         return true;
     }
 
     @Override
-    public void layout(Composite composite, boolean flushCache) {
+    protected void layout(Composite composite, boolean flushCache) {
         CTabFolder folder = (CTabFolder) composite;
         // resize content
         if (((SwtCTabFolder) folder.getImpl()).selectedIndex != -1) {
-            Control control = ((SwtCTabItem) folder.items[folder.selectedIndex].getImpl()).control;
+            Control control = ((SwtCTabItem) ((SwtCTabFolder) folder.getImpl()).items[((SwtCTabFolder) folder.getImpl()).selectedIndex].getImpl()).control;
             if (control != null && !control.isDisposed()) {
                 control.setBounds(folder.getClientArea());
             }

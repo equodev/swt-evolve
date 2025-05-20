@@ -241,7 +241,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
     @Override
     void checkParent(Widget parent) {
         // A null parent is okay when the app menu bar is in use.
-        if (parent == null && ((SwtDisplay) Display.getDefault().getImpl()).appMenuBar == null)
+        if (parent == null && ((SwtDisplay) SwtDisplay.getDefault().getImpl()).appMenuBar == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (parent != null) {
             if (parent.isDisposed())
@@ -724,7 +724,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             if (this.getApi() == ((SwtDisplay) display.getImpl()).appMenuBar)
                 return ((SwtDisplay) display.getImpl()).application.isActive();
             else
-                return this.getApi() == ((SwtDecorations) parent.menuShell().getImpl()).menuBar;
+                return this.getApi() == ((SwtDecorations) ((SwtDecorations) parent.getImpl()).menuShell().getImpl()).menuBar;
         }
         if ((style & SWT.POP_UP) != 0) {
             Menu[] popups = ((SwtDisplay) display.getImpl()).popups;

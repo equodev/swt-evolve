@@ -90,7 +90,7 @@ class TableAccessibleDelegate {
                         AccessibleControlEvent e2 = new AccessibleControlEvent(e.getSource());
                         e2.x = (int) testPoint.x;
                         e2.y = (int) testPoint.y;
-                        row.getChildAtPoint(e);
+                        ((SwtAccessibleTableRow) row.getImpl()).getChildAtPoint(e);
                         break;
                     }
                 }

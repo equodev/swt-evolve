@@ -303,7 +303,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
             error(SWT.ERROR_WIDGET_DISPOSED);
         NSTableView widget = (NSTableView) parent.view;
         int rowIndex = parent.indexOf(this.getApi());
-        NSTableColumn column = ((SwtTable) parent.getImpl()).columnCount == 0 ? ((SwtTable) parent.getImpl()).firstColumn : ((SwtTableColumn) parent.columns[0].getImpl()).nsColumn;
+        NSTableColumn column = ((SwtTable) parent.getImpl()).columnCount == 0 ? ((SwtTable) parent.getImpl()).firstColumn : ((SwtTableColumn) ((SwtTable) parent.getImpl()).columns[0].getImpl()).nsColumn;
         int columnIndex = ((SwtTable) parent.getImpl()).indexOf(column);
         NSRect titleRect = widget.frameOfCellAtColumn(columnIndex, rowIndex);
         if (image != null) {
@@ -712,7 +712,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
                 index = (((SwtWidget) parent.getImpl()).style & SWT.CHECK) != 0 ? 1 : 0;
             } else {
                 if (0 <= columnIndex && columnIndex < ((SwtTable) parent.getImpl()).columnCount) {
-                    index = ((SwtTable) parent.getImpl()).indexOf(((SwtTableColumn) parent.columns[columnIndex].getImpl()).nsColumn);
+                    index = ((SwtTable) parent.getImpl()).indexOf(((SwtTableColumn) ((SwtTable) parent.getImpl()).columns[columnIndex].getImpl()).nsColumn);
                 } else {
                     return;
                 }

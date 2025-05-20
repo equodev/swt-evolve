@@ -454,7 +454,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         int rowIndex = (int) widget.rowForItem(getApi().handle);
         if (rowIndex == -1)
             return new Rectangle(0, 0, 0, 0);
-        NSTableColumn column = ((SwtTree) parent.getImpl()).columnCount == 0 ? ((SwtTree) parent.getImpl()).firstColumn : ((SwtTreeColumn) parent.columns[0].getImpl()).nsColumn;
+        NSTableColumn column = ((SwtTree) parent.getImpl()).columnCount == 0 ? ((SwtTree) parent.getImpl()).firstColumn : ((SwtTreeColumn) ((SwtTree) parent.getImpl()).columns[0].getImpl()).nsColumn;
         int columnIndex = ((SwtTree) parent.getImpl()).indexOf(column);
         NSRect titleRect = widget.frameOfCellAtColumn(columnIndex, rowIndex);
         if (image != null) {
@@ -996,7 +996,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
                 index = (((SwtWidget) parent.getImpl()).style & SWT.CHECK) != 0 ? 1 : 0;
             } else {
                 if (0 <= columnIndex && columnIndex < ((SwtTree) parent.getImpl()).columnCount) {
-                    index = ((SwtTree) parent.getImpl()).indexOf(((SwtTreeColumn) parent.columns[columnIndex].getImpl()).nsColumn);
+                    index = ((SwtTree) parent.getImpl()).indexOf(((SwtTreeColumn) ((SwtTree) parent.getImpl()).columns[columnIndex].getImpl()).nsColumn);
                 } else {
                     return;
                 }

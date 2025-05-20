@@ -28,80 +28,21 @@ import org.eclipse.swt.internal.cocoa.*;
  * and reports the cells in the header so that screen readers (VoiceOver, mainly) can
  * identify the column of the cell that the VoiceOver cursor is reading.
  */
-class AccessibleTableHeader extends SwtAccessible {
+class AccessibleTableHeader extends Accessible {
 
     public AccessibleTableHeader(Accessible accessible, int childID) {
-        super(accessible);
-        index = childID;
-        addAccessibleControlListener(new AccessibleControlAdapter() {
+        this(new SwtAccessibleTableHeader(accessible, childID));
+    }
 
-            @Override
-            public void getChildren(AccessibleControlEvent e) {
-                int validColumnCount = Math.max(1, ((SwtAccessible) parent.getImpl()).getColumnCount());
-                Accessible[] children = new Accessible[validColumnCount];
-                AccessibleControlEvent event = new AccessibleControlEvent(this);
-                for (int i = 0; i < validColumnCount; i++) {
-                    event.childID = i;
-                    event.detail = ACC.CHILDID_CHILD_AT_INDEX;
-                    for (int j = 0; j < ((SwtAccessible) parent.getImpl()).accessibleControlListeners.size(); j++) {
-                        AccessibleControlListener listener = ((SwtAccessible) parent.getImpl()).accessibleControlListeners.get(j);
-                        listener.getChild(event);
-                    }
-                    ((SwtAccessible) event.accessible.getImpl()).parent = AccessibleTableHeader.this;
-                    children[i] = event.accessible;
-                }
-                e.children = children;
-            }
+    protected AccessibleTableHeader(IAccessibleTableHeader impl) {
+        super(impl);
+    }
 
-            @Override
-            public void getChildCount(AccessibleControlEvent e) {
-                e.detail = Math.max(1, ((SwtAccessible) parent.getImpl()).getColumnCount());
-            }
+    public static AccessibleTableHeader createApi(IAccessibleTableHeader impl) {
+        return new AccessibleTableHeader(impl);
+    }
 
-            @Override
-            public void getLocation(AccessibleControlEvent e) {
-                int validColumnCount = Math.max(1, ((SwtAccessible) parent.getImpl()).getColumnCount());
-                Accessible[] children = new Accessible[validColumnCount];
-                AccessibleControlEvent event = new AccessibleControlEvent(this);
-                for (int i = 0; i < validColumnCount; i++) {
-                    event.childID = i;
-                    event.detail = ACC.CHILDID_CHILD_AT_INDEX;
-                    for (int j = 0; j < ((SwtAccessible) parent.getImpl()).accessibleControlListeners.size(); j++) {
-                        AccessibleControlListener listener = ((SwtAccessible) parent.getImpl()).accessibleControlListeners.get(j);
-                        listener.getChild(event);
-                    }
-                    ((SwtAccessible) event.accessible.getImpl()).parent = AccessibleTableHeader.this;
-                    children[i] = event.accessible;
-                }
-                // Ask first child for position.
-                NSValue positionObj = (NSValue) ((SwtAccessible) children[0].getImpl()).getPositionAttribute(ACC.CHILDID_SELF);
-                NSPoint position = positionObj.pointValue();
-                // Ask all children for size.
-                int height = 0;
-                int width = 0;
-                for (int j = 0; j < children.length; j++) {
-                    NSValue sizeObj = (NSValue) ((SwtAccessible) children[j].getImpl()).getSizeAttribute(ACC.CHILDID_SELF);
-                    NSSize size = sizeObj.sizeValue();
-                    if (size.height > height)
-                        height = (int) size.height;
-                    width += size.width;
-                }
-                e.x = (int) position.x;
-                // Flip y coordinate for Cocoa.
-                NSArray screens = NSScreen.screens();
-                if (screens == null)
-                    return;
-                NSScreen screen = new NSScreen(screens.objectAtIndex(0));
-                NSRect frame = screen.frame();
-                e.y = (int) (frame.height - position.y - height);
-                e.width = width;
-                e.height = height;
-            }
-
-            @Override
-            public void getRole(AccessibleControlEvent e) {
-                e.detail = ACC.ROLE_TABLECOLUMNHEADER;
-            }
-        });
+    public IAccessibleTableHeader getImpl() {
+        return (IAccessibleTableHeader) super.getImpl();
     }
 }

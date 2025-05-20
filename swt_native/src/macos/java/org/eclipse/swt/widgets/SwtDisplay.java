@@ -25,6 +25,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
+import org.eclipse.swt.widgets.Display.APPEARANCE;
 
 /**
  * Instances of this class are responsible for managing the
@@ -110,12 +111,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     static byte[] types = { '*', '\0' };
 
     static int size = C.PTR_SIZEOF, align = C.PTR_SIZEOF == 4 ? 2 : 3;
-
-    /* Mac Dark and Light appearance */
-    enum APPEARANCE {
-
-        Dark, Light
-    }
 
     APPEARANCE appAppearance;
 
