@@ -75,7 +75,7 @@ public class SwtSynchronizer implements ISynchronizer {
         // queue for backward compatibility:
         java.util.List<RunnableLock> tail = new ArrayList<>();
         ((SwtSynchronizer) toReceiveTheEvents.getImpl()).messages.removeIf(tail::add);
-        messages.removeIf(toReceiveTheEvents.messages::add);
+        messages.removeIf(((SwtSynchronizer) toReceiveTheEvents.getImpl()).messages::add);
         ((SwtSynchronizer) toReceiveTheEvents.getImpl()).messages.addAll(tail);
     }
 

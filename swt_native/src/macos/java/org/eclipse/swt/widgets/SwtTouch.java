@@ -54,7 +54,7 @@ public final class SwtTouch implements ITouch {
      */
     @Override
     public String toString() {
-        return "Touch {id=" + id + " source=" + getApi().source + " state=" + getApi().state + " primary=" + getApi().primary + " x=" + getApi().x + " y=" + getApi().y + "}";
+        return "Touch {id=" + getApi().id + " source=" + getApi().source + " state=" + getApi().state + " primary=" + getApi().primary + " x=" + getApi().x + " y=" + getApi().y + "}";
     }
 
     public Touch getApi() {
