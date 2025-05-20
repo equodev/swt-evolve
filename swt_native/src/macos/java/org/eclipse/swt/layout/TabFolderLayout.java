@@ -38,15 +38,20 @@ public class TabFolderLayout extends Layout {
     }
 
     public TabFolderLayout() {
-        this(new SwtTabFolderLayout());
+        this((ITabFolderLayout) null);
+        setImpl(new SwtTabFolderLayout());
     }
 
     protected TabFolderLayout(ITabFolderLayout impl) {
         super(impl);
     }
 
-    public static TabFolderLayout createApi(ITabFolderLayout impl) {
-        return new TabFolderLayout(impl);
+    static TabFolderLayout createApi(ITabFolderLayout impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TabFolderLayout inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TabFolderLayout(impl);
     }
 
     public ITabFolderLayout getImpl() {

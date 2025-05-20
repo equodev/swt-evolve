@@ -72,7 +72,8 @@ public class TrayItem extends Item {
      * @see Widget#getStyle
      */
     public TrayItem(Tray parent, int style) {
-        this(new SwtTrayItem(parent, style));
+        this((ITrayItem) null);
+        setImpl(new SwtTrayItem(parent, style));
     }
 
     /**
@@ -358,8 +359,12 @@ public class TrayItem extends Item {
         super(impl);
     }
 
-    public static TrayItem createApi(ITrayItem impl) {
-        return new TrayItem(impl);
+    static TrayItem createApi(ITrayItem impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TrayItem inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TrayItem(impl);
     }
 
     public ITrayItem getImpl() {

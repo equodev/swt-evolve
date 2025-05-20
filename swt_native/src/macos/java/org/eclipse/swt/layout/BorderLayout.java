@@ -139,15 +139,20 @@ public class BorderLayout extends Layout {
     }
 
     public BorderLayout() {
-        this(new SwtBorderLayout());
+        this((IBorderLayout) null);
+        setImpl(new SwtBorderLayout());
     }
 
     protected BorderLayout(IBorderLayout impl) {
         super(impl);
     }
 
-    public static BorderLayout createApi(IBorderLayout impl) {
-        return new BorderLayout(impl);
+    static BorderLayout createApi(IBorderLayout impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof BorderLayout inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new BorderLayout(impl);
     }
 
     public IBorderLayout getImpl() {

@@ -69,7 +69,8 @@ public class TableItem extends Item {
      * @see Widget#getStyle
      */
     public TableItem(Table parent, int style) {
-        this(new SwtTableItem(parent, style));
+        this((ITableItem) null);
+        setImpl(new SwtTableItem(parent, style));
     }
 
     /**
@@ -105,11 +106,13 @@ public class TableItem extends Item {
      * @see Widget#getStyle
      */
     public TableItem(Table parent, int style, int index) {
-        this(new SwtTableItem(parent, style, index));
+        this((ITableItem) null);
+        setImpl(new SwtTableItem(parent, style, index));
     }
 
     TableItem(Table parent, int style, int index, boolean create) {
-        this(new SwtTableItem(parent, style, index, create));
+        this((ITableItem) null);
+        setImpl(new SwtTableItem(parent, style, index, create));
     }
 
     protected void checkSubclass() {
@@ -653,8 +656,12 @@ public class TableItem extends Item {
         super(impl);
     }
 
-    public static TableItem createApi(ITableItem impl) {
-        return new TableItem(impl);
+    static TableItem createApi(ITableItem impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TableItem inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TableItem(impl);
     }
 
     public ITableItem getImpl() {

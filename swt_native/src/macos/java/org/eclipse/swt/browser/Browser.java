@@ -76,7 +76,8 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public Browser(Composite parent, int style) {
-        this(new SwtBrowser(parent, style));
+        this((IBrowser) null);
+        setImpl(new SwtBrowser(parent, style));
     }
 
     protected void checkWidget() {
@@ -999,8 +1000,12 @@ public class Browser extends Composite {
         super(impl);
     }
 
-    public static Browser createApi(IBrowser impl) {
-        return new Browser(impl);
+    static Browser createApi(IBrowser impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Browser inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Browser(impl);
     }
 
     public IBrowser getImpl() {

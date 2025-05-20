@@ -54,7 +54,8 @@ public class DirectoryDialog extends Dialog {
      * </ul>
      */
     public DirectoryDialog(Shell parent) {
-        this(new SwtDirectoryDialog(parent));
+        this((IDirectoryDialog) null);
+        setImpl(new SwtDirectoryDialog(parent));
     }
 
     /**
@@ -82,7 +83,8 @@ public class DirectoryDialog extends Dialog {
      * </ul>
      */
     public DirectoryDialog(Shell parent, int style) {
-        this(new SwtDirectoryDialog(parent, style));
+        this((IDirectoryDialog) null);
+        setImpl(new SwtDirectoryDialog(parent, style));
     }
 
     /**
@@ -184,8 +186,12 @@ public class DirectoryDialog extends Dialog {
         super(impl);
     }
 
-    public static DirectoryDialog createApi(IDirectoryDialog impl) {
-        return new DirectoryDialog(impl);
+    static DirectoryDialog createApi(IDirectoryDialog impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof DirectoryDialog inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new DirectoryDialog(impl);
     }
 
     public IDirectoryDialog getImpl() {

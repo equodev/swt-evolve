@@ -68,7 +68,8 @@ public class Caret extends Widget {
      * @see Widget#getStyle
      */
     public Caret(Canvas parent, int style) {
-        this(new SwtCaret(parent, style));
+        this((ICaret) null);
+        setImpl(new SwtCaret(parent, style));
     }
 
     /**
@@ -360,8 +361,12 @@ public class Caret extends Widget {
         super(impl);
     }
 
-    public static Caret createApi(ICaret impl) {
-        return new Caret(impl);
+    static Caret createApi(ICaret impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Caret inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Caret(impl);
     }
 
     public ICaret getImpl() {

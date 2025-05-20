@@ -149,7 +149,8 @@ public class CTabFolder extends Composite {
      * @see #getStyle()
      */
     public CTabFolder(Composite parent, int style) {
-        this(new SwtCTabFolder(parent, style));
+        this((ICTabFolder) null);
+        setImpl(new SwtCTabFolder(parent, style));
     }
 
     /**
@@ -1509,8 +1510,12 @@ public class CTabFolder extends Composite {
         super(impl);
     }
 
-    public static CTabFolder createApi(ICTabFolder impl) {
-        return new CTabFolder(impl);
+    static CTabFolder createApi(ICTabFolder impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof CTabFolder inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new CTabFolder(impl);
     }
 
     public ICTabFolder getImpl() {

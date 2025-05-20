@@ -75,7 +75,8 @@ public class TreeColumn extends Item {
      * @see Widget#getStyle
      */
     public TreeColumn(Tree parent, int style) {
-        this(new SwtTreeColumn(parent, style));
+        this((ITreeColumn) null);
+        setImpl(new SwtTreeColumn(parent, style));
     }
 
     /**
@@ -116,7 +117,8 @@ public class TreeColumn extends Item {
      * @see Widget#getStyle
      */
     public TreeColumn(Tree parent, int style, int index) {
-        this(new SwtTreeColumn(parent, style, index));
+        this((ITreeColumn) null);
+        setImpl(new SwtTreeColumn(parent, style, index));
     }
 
     /**
@@ -448,8 +450,12 @@ public class TreeColumn extends Item {
         super(impl);
     }
 
-    public static TreeColumn createApi(ITreeColumn impl) {
-        return new TreeColumn(impl);
+    static TreeColumn createApi(ITreeColumn impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TreeColumn inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TreeColumn(impl);
     }
 
     public ITreeColumn getImpl() {

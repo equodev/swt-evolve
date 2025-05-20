@@ -53,7 +53,8 @@ public class DragSourceEffect extends DragSourceAdapter {
      * </ul>
      */
     public DragSourceEffect(Control control) {
-        this(new SwtDragSourceEffect(control));
+        this((IDragSourceEffect) null);
+        setImpl(new SwtDragSourceEffect(control));
     }
 
     /**
@@ -70,8 +71,12 @@ public class DragSourceEffect extends DragSourceAdapter {
         super(impl);
     }
 
-    public static DragSourceEffect createApi(IDragSourceEffect impl) {
-        return new DragSourceEffect(impl);
+    static DragSourceEffect createApi(IDragSourceEffect impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof DragSourceEffect inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new DragSourceEffect(impl);
     }
 
     public IDragSourceEffect getImpl() {

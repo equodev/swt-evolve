@@ -37,7 +37,8 @@ import org.eclipse.swt.*;
 public class TaskBar extends Widget {
 
     TaskBar(Display display, int style) {
-        this(new SwtTaskBar(display, style));
+        this((ITaskBar) null);
+        setImpl(new SwtTaskBar(display, style));
     }
 
     /**
@@ -114,8 +115,12 @@ public class TaskBar extends Widget {
         super(impl);
     }
 
-    public static TaskBar createApi(ITaskBar impl) {
-        return new TaskBar(impl);
+    static TaskBar createApi(ITaskBar impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TaskBar inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TaskBar(impl);
     }
 
     public ITaskBar getImpl() {

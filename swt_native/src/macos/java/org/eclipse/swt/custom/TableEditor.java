@@ -84,7 +84,8 @@ public class TableEditor extends ControlEditor {
      * @param table the Table Control above which this editor will be displayed
      */
     public TableEditor(Table table) {
-        this(new SwtTableEditor(table));
+        this((ITableEditor) null);
+        setImpl(new SwtTableEditor(table));
     }
 
     /**
@@ -157,8 +158,12 @@ public class TableEditor extends ControlEditor {
         super(impl);
     }
 
-    public static TableEditor createApi(ITableEditor impl) {
-        return new TableEditor(impl);
+    static TableEditor createApi(ITableEditor impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TableEditor inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TableEditor(impl);
     }
 
     public ITableEditor getImpl() {

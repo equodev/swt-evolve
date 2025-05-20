@@ -48,7 +48,8 @@ public class TableDragSourceEffect extends DragSourceEffect {
      * @param table the <code>Table</code> that the user clicks on to initiate the drag
      */
     public TableDragSourceEffect(Table table) {
-        this(new SwtTableDragSourceEffect(table));
+        this((ITableDragSourceEffect) null);
+        setImpl(new SwtTableDragSourceEffect(table));
     }
 
     /**
@@ -83,8 +84,12 @@ public class TableDragSourceEffect extends DragSourceEffect {
         super(impl);
     }
 
-    public static TableDragSourceEffect createApi(ITableDragSourceEffect impl) {
-        return new TableDragSourceEffect(impl);
+    static TableDragSourceEffect createApi(ITableDragSourceEffect impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TableDragSourceEffect inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TableDragSourceEffect(impl);
     }
 
     public ITableDragSourceEffect getImpl() {

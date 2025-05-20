@@ -189,7 +189,8 @@ public final class RowLayout extends Layout {
      * Constructs a new instance of this class with type HORIZONTAL.
      */
     public RowLayout() {
-        this(new SwtRowLayout());
+        this((IRowLayout) null);
+        setImpl(new SwtRowLayout());
     }
 
     /**
@@ -200,7 +201,8 @@ public final class RowLayout extends Layout {
      * @since 2.0
      */
     public RowLayout(int type) {
-        this(new SwtRowLayout(type));
+        this((IRowLayout) null);
+        setImpl(new SwtRowLayout(type));
     }
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
@@ -229,8 +231,12 @@ public final class RowLayout extends Layout {
         super(impl);
     }
 
-    public static RowLayout createApi(IRowLayout impl) {
-        return new RowLayout(impl);
+    static RowLayout createApi(IRowLayout impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof RowLayout inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new RowLayout(impl);
     }
 
     public IRowLayout getImpl() {

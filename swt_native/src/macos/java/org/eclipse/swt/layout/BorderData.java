@@ -38,7 +38,8 @@ public final class BorderData {
      * creates a {@link BorderData} with default options
      */
     public BorderData() {
-        this(new SwtBorderData());
+        this((IBorderData) null);
+        setImpl(new SwtBorderData());
     }
 
     /**
@@ -51,7 +52,8 @@ public final class BorderData {
      *               {@link SWT#BOTTOM}
      */
     public BorderData(int region) {
-        this(new SwtBorderData(region));
+        this((IBorderData) null);
+        setImpl(new SwtBorderData(region));
     }
 
     /**
@@ -65,25 +67,39 @@ public final class BorderData {
      * @param heightHint he default hint for the height
      */
     public BorderData(int region, int widthHint, int heightHint) {
-        this(new SwtBorderData(region, widthHint, heightHint));
+        this((IBorderData) null);
+        setImpl(new SwtBorderData(region, widthHint, heightHint));
     }
 
     public String toString() {
         return getImpl().toString();
     }
 
-    IBorderData impl;
+    protected IBorderData impl;
 
     protected BorderData(IBorderData impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static BorderData createApi(IBorderData impl) {
-        return new BorderData(impl);
+    static BorderData createApi(IBorderData impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof BorderData inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new BorderData(impl);
     }
 
     public IBorderData getImpl() {
         return impl;
+    }
+
+    protected BorderData setImpl(IBorderData impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

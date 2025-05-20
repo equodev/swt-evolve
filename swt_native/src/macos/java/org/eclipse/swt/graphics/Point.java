@@ -60,7 +60,8 @@ public final class Point implements Serializable {
      * @param y the y coordinate of the new point
      */
     public Point(int x, int y) {
-        this(new SwtPoint(x, y));
+        this((IPoint) null);
+        setImpl(new SwtPoint(x, y));
     }
 
     /**
@@ -101,18 +102,31 @@ public final class Point implements Serializable {
         return getImpl().toString();
     }
 
-    IPoint impl;
+    protected IPoint impl;
 
     protected Point(IPoint impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static Point createApi(IPoint impl) {
-        return new Point(impl);
+    static Point createApi(IPoint impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Point inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Point(impl);
     }
 
     public IPoint getImpl() {
         return impl;
+    }
+
+    protected Point setImpl(IPoint impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

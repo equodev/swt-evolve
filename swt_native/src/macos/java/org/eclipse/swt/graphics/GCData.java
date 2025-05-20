@@ -134,21 +134,35 @@ public final class GCData {
     public boolean restoreContext;
 
     public GCData() {
-        this(new SwtGCData());
+        this((IGCData) null);
+        setImpl(new SwtGCData());
     }
 
-    IGCData impl;
+    protected IGCData impl;
 
     protected GCData(IGCData impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static GCData createApi(IGCData impl) {
-        return new GCData(impl);
+    static GCData createApi(IGCData impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof GCData inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new GCData(impl);
     }
 
     public IGCData getImpl() {
         return impl;
+    }
+
+    protected GCData setImpl(IGCData impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

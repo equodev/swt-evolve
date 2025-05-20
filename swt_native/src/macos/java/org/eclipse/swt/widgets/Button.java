@@ -88,7 +88,8 @@ public class Button extends Control {
      * @see Widget#getStyle
      */
     public Button(Composite parent, int style) {
-        this(new SwtButton(parent, style));
+        this((IButton) null);
+        setImpl(new SwtButton(parent, style));
     }
 
     /**
@@ -359,8 +360,12 @@ public class Button extends Control {
         super(impl);
     }
 
-    public static Button createApi(IButton impl) {
-        return new Button(impl);
+    static Button createApi(IButton impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Button inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Button(impl);
     }
 
     public IButton getImpl() {

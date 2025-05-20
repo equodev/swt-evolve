@@ -87,7 +87,8 @@ public class DateTime extends Composite {
      * @see Widget#getStyle
      */
     public DateTime(Composite parent, int style) {
-        this(new SwtDateTime(parent, style));
+        this((IDateTime) null);
+        setImpl(new SwtDateTime(parent, style));
     }
 
     protected void checkSubclass() {
@@ -408,8 +409,12 @@ public class DateTime extends Composite {
         super(impl);
     }
 
-    public static DateTime createApi(IDateTime impl) {
-        return new DateTime(impl);
+    static DateTime createApi(IDateTime impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof DateTime inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new DateTime(impl);
     }
 
     public IDateTime getImpl() {

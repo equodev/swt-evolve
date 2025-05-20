@@ -90,7 +90,8 @@ public class LineAttributes {
      * @param width the line width
      */
     public LineAttributes(float width) {
-        this(new SwtLineAttributes(width));
+        this((ILineAttributes) null);
+        setImpl(new SwtLineAttributes(width));
     }
 
     /**
@@ -101,7 +102,8 @@ public class LineAttributes {
      * @param join the line join style
      */
     public LineAttributes(float width, int cap, int join) {
-        this(new SwtLineAttributes(width, cap, join));
+        this((ILineAttributes) null);
+        setImpl(new SwtLineAttributes(width, cap, join));
     }
 
     /**
@@ -116,7 +118,8 @@ public class LineAttributes {
      * @param miterLimit the line miter limit
      */
     public LineAttributes(float width, int cap, int join, int style, float[] dash, float dashOffset, float miterLimit) {
-        this(new SwtLineAttributes(width, cap, join, style, dash, dashOffset, miterLimit));
+        this((ILineAttributes) null);
+        setImpl(new SwtLineAttributes(width, cap, join, style, dash, dashOffset, miterLimit));
     }
 
     /**
@@ -147,18 +150,31 @@ public class LineAttributes {
         return getImpl().hashCode();
     }
 
-    ILineAttributes impl;
+    protected ILineAttributes impl;
 
     protected LineAttributes(ILineAttributes impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static LineAttributes createApi(ILineAttributes impl) {
-        return new LineAttributes(impl);
+    static LineAttributes createApi(ILineAttributes impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof LineAttributes inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new LineAttributes(impl);
     }
 
     public ILineAttributes getImpl() {
         return impl;
+    }
+
+    protected LineAttributes setImpl(ILineAttributes impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

@@ -78,7 +78,8 @@ public class ToolItem extends Item {
      * @see Widget#getStyle
      */
     public ToolItem(ToolBar parent, int style) {
-        this(new SwtToolItem(parent, style));
+        this((IToolItem) null);
+        setImpl(new SwtToolItem(parent, style));
     }
 
     /**
@@ -118,7 +119,8 @@ public class ToolItem extends Item {
      * @see Widget#getStyle
      */
     public ToolItem(ToolBar parent, int style, int index) {
-        this(new SwtToolItem(parent, style, index));
+        this((IToolItem) null);
+        setImpl(new SwtToolItem(parent, style, index));
     }
 
     /**
@@ -633,8 +635,12 @@ public class ToolItem extends Item {
         super(impl);
     }
 
-    public static ToolItem createApi(IToolItem impl) {
-        return new ToolItem(impl);
+    static ToolItem createApi(IToolItem impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof ToolItem inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new ToolItem(impl);
     }
 
     public IToolItem getImpl() {

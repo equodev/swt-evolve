@@ -459,14 +459,23 @@ public abstract class Device implements Drawable {
         return getImpl().getDeviceZoom();
     }
 
-    IDevice impl;
+    protected IDevice impl;
 
     protected Device(IDevice impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
     public IDevice getImpl() {
         return impl;
+    }
+
+    protected Device setImpl(IDevice impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

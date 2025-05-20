@@ -41,7 +41,8 @@ import org.eclipse.swt.internal.cocoa.*;
 public class FileTransfer extends ByteArrayTransfer {
 
     FileTransfer() {
-        this(new SwtFileTransfer());
+        this((IFileTransfer) null);
+        setImpl(new SwtFileTransfer());
     }
 
     /**
@@ -100,8 +101,12 @@ public class FileTransfer extends ByteArrayTransfer {
         super(impl);
     }
 
-    public static FileTransfer createApi(IFileTransfer impl) {
-        return new FileTransfer(impl);
+    static FileTransfer createApi(IFileTransfer impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof FileTransfer inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new FileTransfer(impl);
     }
 
     public IFileTransfer getImpl() {

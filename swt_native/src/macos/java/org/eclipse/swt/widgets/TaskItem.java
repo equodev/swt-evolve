@@ -68,7 +68,8 @@ public class TaskItem extends Item {
      * @see Widget#getStyle
      */
     TaskItem(TaskBar parent, int style) {
-        this(new SwtTaskItem(parent, style));
+        this((ITaskItem) null);
+        setImpl(new SwtTaskItem(parent, style));
     }
 
     protected void checkSubclass() {
@@ -330,8 +331,12 @@ public class TaskItem extends Item {
         super(impl);
     }
 
-    public static TaskItem createApi(ITaskItem impl) {
-        return new TaskItem(impl);
+    static TaskItem createApi(ITaskItem impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TaskItem inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TaskItem(impl);
     }
 
     public ITaskItem getImpl() {

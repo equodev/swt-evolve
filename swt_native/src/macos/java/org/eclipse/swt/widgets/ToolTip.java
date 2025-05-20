@@ -76,7 +76,8 @@ public class ToolTip extends Widget {
      * @see Widget#getStyle
      */
     public ToolTip(Shell parent, int style) {
-        this(new SwtToolTip(parent, style));
+        this((IToolTip) null);
+        setImpl(new SwtToolTip(parent, style));
     }
 
     /**
@@ -349,8 +350,12 @@ public class ToolTip extends Widget {
         super(impl);
     }
 
-    public static ToolTip createApi(IToolTip impl) {
-        return new ToolTip(impl);
+    static ToolTip createApi(IToolTip impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof ToolTip inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new ToolTip(impl);
     }
 
     public IToolTip getImpl() {

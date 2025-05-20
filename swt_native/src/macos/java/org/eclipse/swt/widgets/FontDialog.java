@@ -52,7 +52,8 @@ public class FontDialog extends Dialog {
      * </ul>
      */
     public FontDialog(Shell parent) {
-        this(new SwtFontDialog(parent));
+        this((IFontDialog) null);
+        setImpl(new SwtFontDialog(parent));
     }
 
     /**
@@ -80,7 +81,8 @@ public class FontDialog extends Dialog {
      * </ul>
      */
     public FontDialog(Shell parent, int style) {
-        this(new SwtFontDialog(parent, style));
+        this((IFontDialog) null);
+        setImpl(new SwtFontDialog(parent, style));
     }
 
     /**
@@ -217,8 +219,12 @@ public class FontDialog extends Dialog {
         super(impl);
     }
 
-    public static FontDialog createApi(IFontDialog impl) {
-        return new FontDialog(impl);
+    static FontDialog createApi(IFontDialog impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof FontDialog inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new FontDialog(impl);
     }
 
     public IFontDialog getImpl() {

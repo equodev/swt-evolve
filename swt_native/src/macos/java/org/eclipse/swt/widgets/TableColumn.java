@@ -73,7 +73,8 @@ public class TableColumn extends Item {
      * @see Widget#getStyle
      */
     public TableColumn(Table parent, int style) {
-        this(new SwtTableColumn(parent, style));
+        this((ITableColumn) null);
+        setImpl(new SwtTableColumn(parent, style));
     }
 
     /**
@@ -114,7 +115,8 @@ public class TableColumn extends Item {
      * @see Widget#getStyle
      */
     public TableColumn(Table parent, int style, int index) {
-        this(new SwtTableColumn(parent, style, index));
+        this((ITableColumn) null);
+        setImpl(new SwtTableColumn(parent, style, index));
     }
 
     /**
@@ -448,8 +450,12 @@ public class TableColumn extends Item {
         super(impl);
     }
 
-    public static TableColumn createApi(ITableColumn impl) {
-        return new TableColumn(impl);
+    static TableColumn createApi(ITableColumn impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TableColumn inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TableColumn(impl);
     }
 
     public ITableColumn getImpl() {

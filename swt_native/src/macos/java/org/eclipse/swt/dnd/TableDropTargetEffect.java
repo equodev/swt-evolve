@@ -55,7 +55,8 @@ public class TableDropTargetEffect extends DropTargetEffect {
      * @param table the <code>Table</code> over which the user positions the cursor to drop the data
      */
     public TableDropTargetEffect(Table table) {
-        this(new SwtTableDropTargetEffect(table));
+        this((ITableDropTargetEffect) null);
+        setImpl(new SwtTableDropTargetEffect(table));
     }
 
     /**
@@ -119,8 +120,12 @@ public class TableDropTargetEffect extends DropTargetEffect {
         super(impl);
     }
 
-    public static TableDropTargetEffect createApi(ITableDropTargetEffect impl) {
-        return new TableDropTargetEffect(impl);
+    static TableDropTargetEffect createApi(ITableDropTargetEffect impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TableDropTargetEffect inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TableDropTargetEffect(impl);
     }
 
     public ITableDropTargetEffect getImpl() {

@@ -129,7 +129,8 @@ public class Text extends Scrollable {
      * @see Widget#getStyle
      */
     public Text(Composite parent, int style) {
-        this(new SwtText(parent, style));
+        this((IText) null);
+        setImpl(new SwtText(parent, style));
     }
 
     /**
@@ -1183,8 +1184,12 @@ public class Text extends Scrollable {
         super(impl);
     }
 
-    public static Text createApi(IText impl) {
-        return new Text(impl);
+    static Text createApi(IText impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Text inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Text(impl);
     }
 
     public IText getImpl() {

@@ -150,14 +150,23 @@ public abstract class Transfer {
     public Transfer() {
     }
 
-    ITransfer impl;
+    protected ITransfer impl;
 
     protected Transfer(ITransfer impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
     public ITransfer getImpl() {
         return impl;
+    }
+
+    protected Transfer setImpl(ITransfer impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

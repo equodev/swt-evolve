@@ -87,7 +87,8 @@ public class CCombo extends Composite {
      * @see Widget#getStyle()
      */
     public CCombo(Composite parent, int style) {
-        this(new SwtCCombo(parent, style));
+        this((ICCombo) null);
+        setImpl(new SwtCCombo(parent, style));
     }
 
     /**
@@ -1023,8 +1024,12 @@ public class CCombo extends Composite {
         super(impl);
     }
 
-    public static CCombo createApi(ICCombo impl) {
-        return new CCombo(impl);
+    static CCombo createApi(ICCombo impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof CCombo inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new CCombo(impl);
     }
 
     public ICCombo getImpl() {

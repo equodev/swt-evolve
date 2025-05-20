@@ -84,11 +84,13 @@ public class ToolBar extends Composite {
      * @see Widget#getStyle()
      */
     public ToolBar(Composite parent, int style) {
-        this(new SwtToolBar(parent, style));
+        this((IToolBar) null);
+        setImpl(new SwtToolBar(parent, style));
     }
 
     ToolBar(Composite parent, int style, boolean internal) {
-        this(new SwtToolBar(parent, style, internal));
+        this((IToolBar) null);
+        setImpl(new SwtToolBar(parent, style, internal));
     }
 
     protected void checkSubclass() {
@@ -231,8 +233,12 @@ public class ToolBar extends Composite {
         super(impl);
     }
 
-    public static ToolBar createApi(IToolBar impl) {
-        return new ToolBar(impl);
+    static ToolBar createApi(IToolBar impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof ToolBar inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new ToolBar(impl);
     }
 
     public IToolBar getImpl() {

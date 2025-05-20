@@ -644,14 +644,23 @@ public abstract class Widget {
         return getImpl().toString();
     }
 
-    IWidget impl;
+    protected IWidget impl;
 
     protected Widget(IWidget impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
     public IWidget getImpl() {
         return impl;
+    }
+
+    protected Widget setImpl(IWidget impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

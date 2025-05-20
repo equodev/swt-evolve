@@ -37,7 +37,8 @@ public final class Program {
      * Prevents uninitialized instances from being created outside the package.
      */
     Program() {
-        this(new SwtProgram());
+        this((IProgram) null);
+        setImpl(new SwtProgram());
     }
 
     /**
@@ -212,18 +213,31 @@ public final class Program {
         return getImpl().toString();
     }
 
-    IProgram impl;
+    protected IProgram impl;
 
     protected Program(IProgram impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static Program createApi(IProgram impl) {
-        return new Program(impl);
+    static Program createApi(IProgram impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Program inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Program(impl);
     }
 
     public IProgram getImpl() {
         return impl;
+    }
+
+    protected Program setImpl(IProgram impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

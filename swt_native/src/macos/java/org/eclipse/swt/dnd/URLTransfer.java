@@ -35,7 +35,8 @@ import org.eclipse.swt.internal.cocoa.*;
 public class URLTransfer extends ByteArrayTransfer {
 
     URLTransfer() {
-        this(new SwtURLTransfer());
+        this((IURLTransfer) null);
+        setImpl(new SwtURLTransfer());
     }
 
     /**
@@ -91,8 +92,12 @@ public class URLTransfer extends ByteArrayTransfer {
         super(impl);
     }
 
-    public static URLTransfer createApi(IURLTransfer impl) {
-        return new URLTransfer(impl);
+    static URLTransfer createApi(IURLTransfer impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof URLTransfer inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new URLTransfer(impl);
     }
 
     public IURLTransfer getImpl() {

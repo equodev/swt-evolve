@@ -78,7 +78,8 @@ public class BrowserFunction {
      * @see org.eclipse.swt.browser.LocationListener#changed(LocationEvent)
      */
     public BrowserFunction(Browser browser, String name) {
-        this(new SwtBrowserFunction(browser, name));
+        this((IBrowserFunction) null);
+        setImpl(new SwtBrowserFunction(browser, name));
     }
 
     /**
@@ -119,11 +120,13 @@ public class BrowserFunction {
      * @since 3.8
      */
     public BrowserFunction(Browser browser, String name, boolean top, String[] frameNames) {
-        this(new SwtBrowserFunction(browser, name, top, frameNames));
+        this((IBrowserFunction) null);
+        setImpl(new SwtBrowserFunction(browser, name, top, frameNames));
     }
 
     BrowserFunction(Browser browser, String name, boolean top, String[] frameNames, boolean create) {
-        this(new SwtBrowserFunction(browser, name, top, frameNames, create));
+        this((IBrowserFunction) null);
+        setImpl(new SwtBrowserFunction(browser, name, top, frameNames, create));
     }
 
     /**
@@ -218,18 +221,31 @@ public class BrowserFunction {
         return getImpl().isDisposed();
     }
 
-    IBrowserFunction impl;
+    protected IBrowserFunction impl;
 
     protected BrowserFunction(IBrowserFunction impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static BrowserFunction createApi(IBrowserFunction impl) {
-        return new BrowserFunction(impl);
+    static BrowserFunction createApi(IBrowserFunction impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof BrowserFunction inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new BrowserFunction(impl);
     }
 
     public IBrowserFunction getImpl() {
         return impl;
+    }
+
+    protected BrowserFunction setImpl(IBrowserFunction impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

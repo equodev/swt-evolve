@@ -65,7 +65,8 @@ public final class Font extends Resource {
     public int extraTraits;
 
     Font(Device device) {
-        this(new SwtFont(device));
+        this((IFont) null);
+        setImpl(new SwtFont(device));
     }
 
     /**
@@ -89,7 +90,8 @@ public final class Font extends Resource {
      * @see #dispose()
      */
     public Font(Device device, FontData fd) {
-        this(new SwtFont(device, fd));
+        this((IFont) null);
+        setImpl(new SwtFont(device, fd));
     }
 
     /**
@@ -118,7 +120,8 @@ public final class Font extends Resource {
      * @since 2.1
      */
     public Font(Device device, FontData[] fds) {
-        this(new SwtFont(device, fds));
+        this((IFont) null);
+        setImpl(new SwtFont(device, fds));
     }
 
     /**
@@ -146,12 +149,14 @@ public final class Font extends Resource {
      * @see #dispose()
      */
     public Font(Device device, String name, int height, int style) {
-        this(new SwtFont(device, name, height, style));
+        this((IFont) null);
+        setImpl(new SwtFont(device, name, height, style));
     }
 
     /*public*/
     Font(Device device, String name, float height, int style) {
-        this(new SwtFont(device, name, height, style));
+        this((IFont) null);
+        setImpl(new SwtFont(device, name, height, style));
     }
 
     /**
@@ -226,8 +231,12 @@ public final class Font extends Resource {
         super(impl);
     }
 
-    public static Font createApi(IFont impl) {
-        return new Font(impl);
+    static Font createApi(IFont impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Font inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Font(impl);
     }
 
     public IFont getImpl() {

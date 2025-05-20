@@ -57,7 +57,8 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @since 3.2
      */
     public StyleRange() {
-        this(new SwtStyleRange());
+        this((IStyleRange) null);
+        setImpl(new SwtStyleRange());
     }
 
     /**
@@ -68,7 +69,8 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @since 3.4
      */
     public StyleRange(TextStyle style) {
-        this(new SwtStyleRange(style));
+        this((IStyleRange) null);
+        setImpl(new SwtStyleRange(style));
     }
 
     /**
@@ -80,7 +82,8 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @param background background color of the style, null if none
      */
     public StyleRange(int start, int length, Color foreground, Color background) {
-        this(new SwtStyleRange(start, length, foreground, background));
+        this((IStyleRange) null);
+        setImpl(new SwtStyleRange(start, length, foreground, background));
     }
 
     /**
@@ -93,7 +96,8 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @param fontStyle font style of the style, may be SWT.NORMAL, SWT.ITALIC or SWT.BOLD
      */
     public StyleRange(int start, int length, Color foreground, Color background, int fontStyle) {
-        this(new SwtStyleRange(start, length, foreground, background, fontStyle));
+        this((IStyleRange) null);
+        setImpl(new SwtStyleRange(start, length, foreground, background, fontStyle));
     }
 
     /**
@@ -169,8 +173,12 @@ public class StyleRange extends TextStyle implements Cloneable {
         super(impl);
     }
 
-    public static StyleRange createApi(IStyleRange impl) {
-        return new StyleRange(impl);
+    static StyleRange createApi(IStyleRange impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof StyleRange inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new StyleRange(impl);
     }
 
     public IStyleRange getImpl() {

@@ -78,7 +78,8 @@ public class ExpandBar extends Composite {
      * @see Widget#getStyle
      */
     public ExpandBar(Composite parent, int style) {
-        this(new SwtExpandBar(parent, style));
+        this((IExpandBar) null);
+        setImpl(new SwtExpandBar(parent, style));
     }
 
     /**
@@ -253,8 +254,12 @@ public class ExpandBar extends Composite {
         super(impl);
     }
 
-    public static ExpandBar createApi(IExpandBar impl) {
-        return new ExpandBar(impl);
+    static ExpandBar createApi(IExpandBar impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof ExpandBar inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new ExpandBar(impl);
     }
 
     public IExpandBar getImpl() {

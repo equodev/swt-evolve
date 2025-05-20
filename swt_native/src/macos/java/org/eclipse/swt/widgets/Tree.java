@@ -113,7 +113,8 @@ public class Tree extends Composite {
      * @see Widget#getStyle
      */
     public Tree(Composite parent, int style) {
-        this(new SwtTree(parent, style));
+        this((ITree) null);
+        setImpl(new SwtTree(parent, style));
     }
 
     /**
@@ -1179,8 +1180,12 @@ public class Tree extends Composite {
         super(impl);
     }
 
-    public static Tree createApi(ITree impl) {
-        return new Tree(impl);
+    static Tree createApi(ITree impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Tree inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Tree(impl);
     }
 
     public ITree getImpl() {

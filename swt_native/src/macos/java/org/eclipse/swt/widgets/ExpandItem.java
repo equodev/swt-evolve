@@ -67,7 +67,8 @@ public class ExpandItem extends Item {
      * @see Widget#getStyle
      */
     public ExpandItem(ExpandBar parent, int style) {
-        this(new SwtExpandItem(parent, style));
+        this((IExpandItem) null);
+        setImpl(new SwtExpandItem(parent, style));
     }
 
     /**
@@ -101,7 +102,8 @@ public class ExpandItem extends Item {
      * @see Widget#getStyle
      */
     public ExpandItem(ExpandBar parent, int style, int index) {
-        this(new SwtExpandItem(parent, style, index));
+        this((IExpandItem) null);
+        setImpl(new SwtExpandItem(parent, style, index));
     }
 
     public void dispose() {
@@ -239,8 +241,12 @@ public class ExpandItem extends Item {
         super(impl);
     }
 
-    public static ExpandItem createApi(IExpandItem impl) {
-        return new ExpandItem(impl);
+    static ExpandItem createApi(IExpandItem impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof ExpandItem inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new ExpandItem(impl);
     }
 
     public IExpandItem getImpl() {

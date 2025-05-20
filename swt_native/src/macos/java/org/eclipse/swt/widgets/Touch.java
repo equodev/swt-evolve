@@ -78,7 +78,8 @@ public final class Touch {
      * @param y Y location of the touch in screen coordinates
      */
     Touch(long identity, TouchSource source, int state, boolean primary, int x, int y) {
-        this(new SwtTouch(identity, source, state, primary, x, y));
+        this((ITouch) null);
+        setImpl(new SwtTouch(identity, source, state, primary, x, y));
     }
 
     /**
@@ -91,18 +92,31 @@ public final class Touch {
         return getImpl().toString();
     }
 
-    ITouch impl;
+    protected ITouch impl;
 
     protected Touch(ITouch impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static Touch createApi(ITouch impl) {
-        return new Touch(impl);
+    static Touch createApi(ITouch impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Touch inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Touch(impl);
     }
 
     public ITouch getImpl() {
         return impl;
+    }
+
+    protected Touch setImpl(ITouch impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

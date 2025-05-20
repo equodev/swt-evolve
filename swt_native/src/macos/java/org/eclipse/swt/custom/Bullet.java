@@ -72,7 +72,8 @@ public class Bullet {
      * </ul>
      */
     public Bullet(StyleRange style) {
-        this(new SwtBullet(style));
+        this((IBullet) null);
+        setImpl(new SwtBullet(style));
     }
 
     /**
@@ -87,25 +88,39 @@ public class Bullet {
      * </ul>
      */
     public Bullet(int type, StyleRange style) {
-        this(new SwtBullet(type, style));
+        this((IBullet) null);
+        setImpl(new SwtBullet(type, style));
     }
 
     public int hashCode() {
         return getImpl().hashCode();
     }
 
-    IBullet impl;
+    protected IBullet impl;
 
     protected Bullet(IBullet impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static Bullet createApi(IBullet impl) {
-        return new Bullet(impl);
+    static Bullet createApi(IBullet impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Bullet inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Bullet(impl);
     }
 
     public IBullet getImpl() {
         return impl;
+    }
+
+    protected Bullet setImpl(IBullet impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

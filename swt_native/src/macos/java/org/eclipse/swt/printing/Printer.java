@@ -80,7 +80,8 @@ public final class Printer extends Device {
      * @see Device#dispose
      */
     public Printer() {
-        this(new SwtPrinter());
+        this((IPrinter) null);
+        setImpl(new SwtPrinter());
     }
 
     /**
@@ -103,7 +104,8 @@ public final class Printer extends Device {
      * @see Device#dispose
      */
     public Printer(PrinterData data) {
-        this(new SwtPrinter(data));
+        this((IPrinter) null);
+        setImpl(new SwtPrinter(data));
     }
 
     /**
@@ -391,8 +393,12 @@ public final class Printer extends Device {
         super(impl);
     }
 
-    public static Printer createApi(IPrinter impl) {
-        return new Printer(impl);
+    static Printer createApi(IPrinter impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Printer inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Printer(impl);
     }
 
     public IPrinter getImpl() {

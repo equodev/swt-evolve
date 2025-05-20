@@ -71,7 +71,8 @@ public class CBanner extends Composite {
      * </ul>
      */
     public CBanner(Composite parent, int style) {
-        this(new SwtCBanner(parent, style));
+        this((ICBanner) null);
+        setImpl(new SwtCBanner(parent, style));
     }
 
     /*
@@ -301,8 +302,12 @@ public class CBanner extends Composite {
         super(impl);
     }
 
-    public static CBanner createApi(ICBanner impl) {
-        return new CBanner(impl);
+    static CBanner createApi(ICBanner impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof CBanner inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new CBanner(impl);
     }
 
     public ICBanner getImpl() {

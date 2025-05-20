@@ -153,21 +153,35 @@ public class BusyIndicator {
     }
 
     public BusyIndicator() {
-        this(new SwtBusyIndicator());
+        this((IBusyIndicator) null);
+        setImpl(new SwtBusyIndicator());
     }
 
-    IBusyIndicator impl;
+    protected IBusyIndicator impl;
 
     protected BusyIndicator(IBusyIndicator impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static BusyIndicator createApi(IBusyIndicator impl) {
-        return new BusyIndicator(impl);
+    static BusyIndicator createApi(IBusyIndicator impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof BusyIndicator inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new BusyIndicator(impl);
     }
 
     public IBusyIndicator getImpl() {
         return impl;
+    }
+
+    protected BusyIndicator setImpl(IBusyIndicator impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

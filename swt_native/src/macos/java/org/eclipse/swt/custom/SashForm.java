@@ -72,7 +72,8 @@ public class SashForm extends Composite {
      * @see #getStyle()
      */
     public SashForm(Composite parent, int style) {
-        this(new SwtSashForm(parent, style));
+        this((ISashForm) null);
+        setImpl(new SwtSashForm(parent, style));
     }
 
     /**
@@ -252,8 +253,12 @@ public class SashForm extends Composite {
         super(impl);
     }
 
-    public static SashForm createApi(ISashForm impl) {
-        return new SashForm(impl);
+    static SashForm createApi(ISashForm impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof SashForm inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new SashForm(impl);
     }
 
     public ISashForm getImpl() {

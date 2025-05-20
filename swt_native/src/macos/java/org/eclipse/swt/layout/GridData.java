@@ -406,7 +406,8 @@ public final class GridData {
      * default values.
      */
     public GridData() {
-        this(new SwtGridData());
+        this((IGridData) null);
+        setImpl(new SwtGridData());
     }
 
     /**
@@ -416,7 +417,8 @@ public final class GridData {
      * @param style the GridData style
      */
     public GridData(int style) {
-        this(new SwtGridData(style));
+        this((IGridData) null);
+        setImpl(new SwtGridData(style));
     }
 
     /**
@@ -432,7 +434,8 @@ public final class GridData {
      * @since 3.0
      */
     public GridData(int horizontalAlignment, int verticalAlignment, boolean grabExcessHorizontalSpace, boolean grabExcessVerticalSpace) {
-        this(new SwtGridData(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace));
+        this((IGridData) null);
+        setImpl(new SwtGridData(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace));
     }
 
     /**
@@ -450,7 +453,8 @@ public final class GridData {
      * @since 3.0
      */
     public GridData(int horizontalAlignment, int verticalAlignment, boolean grabExcessHorizontalSpace, boolean grabExcessVerticalSpace, int horizontalSpan, int verticalSpan) {
-        this(new SwtGridData(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace, horizontalSpan, verticalSpan));
+        this((IGridData) null);
+        setImpl(new SwtGridData(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace, horizontalSpan, verticalSpan));
     }
 
     /**
@@ -464,7 +468,8 @@ public final class GridData {
      * @since 3.0
      */
     public GridData(int width, int height) {
-        this(new SwtGridData(width, height));
+        this((IGridData) null);
+        setImpl(new SwtGridData(width, height));
     }
 
     /**
@@ -477,18 +482,31 @@ public final class GridData {
         return getImpl().toString();
     }
 
-    IGridData impl;
+    protected IGridData impl;
 
     protected GridData(IGridData impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static GridData createApi(IGridData impl) {
-        return new GridData(impl);
+    static GridData createApi(IGridData impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof GridData inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new GridData(impl);
     }
 
     public IGridData getImpl() {
         return impl;
+    }
+
+    protected GridData setImpl(IGridData impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

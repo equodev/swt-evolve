@@ -76,7 +76,8 @@ public final class Rectangle implements Serializable {
      * @param height the height of the rectangle
      */
     public Rectangle(int x, int y, int width, int height) {
-        this(new SwtRectangle(x, y, width, height));
+        this((IRectangle) null);
+        setImpl(new SwtRectangle(x, y, width, height));
     }
 
     /**
@@ -290,18 +291,31 @@ public final class Rectangle implements Serializable {
         return getImpl().union(rect);
     }
 
-    IRectangle impl;
+    protected IRectangle impl;
 
     protected Rectangle(IRectangle impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static Rectangle createApi(IRectangle impl) {
-        return new Rectangle(impl);
+    static Rectangle createApi(IRectangle impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Rectangle inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Rectangle(impl);
     }
 
     public IRectangle getImpl() {
         return impl;
+    }
+
+    protected Rectangle setImpl(IRectangle impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

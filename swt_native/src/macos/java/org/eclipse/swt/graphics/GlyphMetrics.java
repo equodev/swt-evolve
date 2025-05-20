@@ -67,7 +67,8 @@ public final class GlyphMetrics {
      * </ul>
      */
     public GlyphMetrics(int ascent, int descent, int width) {
-        this(new SwtGlyphMetrics(ascent, descent, width));
+        this((IGlyphMetrics) null);
+        setImpl(new SwtGlyphMetrics(ascent, descent, width));
     }
 
     /**
@@ -108,18 +109,31 @@ public final class GlyphMetrics {
         return getImpl().toString();
     }
 
-    IGlyphMetrics impl;
+    protected IGlyphMetrics impl;
 
     protected GlyphMetrics(IGlyphMetrics impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static GlyphMetrics createApi(IGlyphMetrics impl) {
-        return new GlyphMetrics(impl);
+    static GlyphMetrics createApi(IGlyphMetrics impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof GlyphMetrics inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new GlyphMetrics(impl);
     }
 
     public IGlyphMetrics getImpl() {
         return impl;
+    }
+
+    protected GlyphMetrics setImpl(IGlyphMetrics impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

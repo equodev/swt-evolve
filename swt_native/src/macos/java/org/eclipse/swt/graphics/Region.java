@@ -61,7 +61,8 @@ public final class Region extends Resource {
      * @see #dispose()
      */
     public Region() {
-        this(new SwtRegion());
+        this((IRegion) null);
+        setImpl(new SwtRegion());
     }
 
     /**
@@ -84,11 +85,13 @@ public final class Region extends Resource {
      * @since 3.0
      */
     public Region(Device device) {
-        this(new SwtRegion(device));
+        this((IRegion) null);
+        setImpl(new SwtRegion(device));
     }
 
     Region(Device device, long handle) {
-        this(new SwtRegion(device, handle));
+        this((IRegion) null);
+        setImpl(new SwtRegion(device, handle));
     }
 
     /**
@@ -516,8 +519,12 @@ public final class Region extends Resource {
         super(impl);
     }
 
-    public static Region createApi(IRegion impl) {
-        return new Region(impl);
+    static Region createApi(IRegion impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Region inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Region(impl);
     }
 
     public IRegion getImpl() {

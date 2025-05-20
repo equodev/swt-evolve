@@ -40,7 +40,8 @@ import org.eclipse.swt.widgets.*;
 public class ImageTransfer extends ByteArrayTransfer {
 
     ImageTransfer() {
-        this(new SwtImageTransfer());
+        this((IImageTransfer) null);
+        setImpl(new SwtImageTransfer());
     }
 
     /**
@@ -96,8 +97,12 @@ public class ImageTransfer extends ByteArrayTransfer {
         super(impl);
     }
 
-    public static ImageTransfer createApi(IImageTransfer impl) {
-        return new ImageTransfer(impl);
+    static ImageTransfer createApi(IImageTransfer impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof ImageTransfer inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new ImageTransfer(impl);
     }
 
     public IImageTransfer getImpl() {

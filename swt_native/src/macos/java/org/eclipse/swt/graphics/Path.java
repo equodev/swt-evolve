@@ -82,7 +82,8 @@ public class Path extends Resource {
      * @see #dispose()
      */
     public Path(Device device) {
-        this(new SwtPath(device));
+        this((IPath) null);
+        setImpl(new SwtPath(device));
     }
 
     /**
@@ -120,7 +121,8 @@ public class Path extends Resource {
      * @since 3.4
      */
     public Path(Device device, Path path, float flatness) {
-        this(new SwtPath(device, path, flatness));
+        this((IPath) null);
+        setImpl(new SwtPath(device, path, flatness));
     }
 
     /**
@@ -152,7 +154,8 @@ public class Path extends Resource {
      * @since 3.4
      */
     public Path(Device device, PathData data) {
-        this(new SwtPath(device, data));
+        this((IPath) null);
+        setImpl(new SwtPath(device, data));
     }
 
     /**
@@ -427,8 +430,12 @@ public class Path extends Resource {
         super(impl);
     }
 
-    public static Path createApi(IPath impl) {
-        return new Path(impl);
+    static Path createApi(IPath impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Path inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Path(impl);
     }
 
     public IPath getImpl() {

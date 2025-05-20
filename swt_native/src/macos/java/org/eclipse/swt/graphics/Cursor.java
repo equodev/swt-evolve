@@ -67,7 +67,8 @@ public final class Cursor extends Resource {
      * Prevents uninitialized instances from being created outside the package.
      */
     Cursor(Device device) {
-        this(new SwtCursor(device));
+        this((ICursor) null);
+        setImpl(new SwtCursor(device));
     }
 
     /**
@@ -117,7 +118,8 @@ public final class Cursor extends Resource {
      * @see #dispose()
      */
     public Cursor(Device device, int style) {
-        this(new SwtCursor(device, style));
+        this((ICursor) null);
+        setImpl(new SwtCursor(device, style));
     }
 
     /**
@@ -154,7 +156,8 @@ public final class Cursor extends Resource {
      * @see #dispose()
      */
     public Cursor(Device device, ImageData source, ImageData mask, int hotspotX, int hotspotY) {
-        this(new SwtCursor(device, source, mask, hotspotX, hotspotY));
+        this((ICursor) null);
+        setImpl(new SwtCursor(device, source, mask, hotspotX, hotspotY));
     }
 
     /**
@@ -187,7 +190,8 @@ public final class Cursor extends Resource {
      * @since 3.0
      */
     public Cursor(Device device, ImageData source, int hotspotX, int hotspotY) {
-        this(new SwtCursor(device, source, hotspotX, hotspotY));
+        this((ICursor) null);
+        setImpl(new SwtCursor(device, source, hotspotX, hotspotY));
     }
 
     /**
@@ -246,8 +250,12 @@ public final class Cursor extends Resource {
         super(impl);
     }
 
-    public static Cursor createApi(ICursor impl) {
-        return new Cursor(impl);
+    static Cursor createApi(ICursor impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Cursor inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Cursor(impl);
     }
 
     public ICursor getImpl() {

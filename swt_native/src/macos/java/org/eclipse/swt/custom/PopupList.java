@@ -39,7 +39,8 @@ public class PopupList {
      * @param parent a Shell control which will be the parent of the new instance (cannot be null)
      */
     public PopupList(Shell parent) {
-        this(new SwtPopupList(parent));
+        this((IPopupList) null);
+        setImpl(new SwtPopupList(parent));
     }
 
     /**
@@ -51,7 +52,8 @@ public class PopupList {
      * @since 3.0
      */
     public PopupList(Shell parent, int style) {
-        this(new SwtPopupList(parent, style));
+        this((IPopupList) null);
+        setImpl(new SwtPopupList(parent, style));
     }
 
     /**
@@ -176,18 +178,31 @@ public class PopupList {
         getImpl().setMinimumWidth(width);
     }
 
-    IPopupList impl;
+    protected IPopupList impl;
 
     protected PopupList(IPopupList impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static PopupList createApi(IPopupList impl) {
-        return new PopupList(impl);
+    static PopupList createApi(IPopupList impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof PopupList inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new PopupList(impl);
     }
 
     public IPopupList getImpl() {
         return impl;
+    }
+
+    protected PopupList setImpl(IPopupList impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

@@ -47,7 +47,8 @@ public class IME extends Widget {
      * Prevents uninitialized instances from being created outside the package.
      */
     IME() {
-        this(new SwtIME());
+        this((IIME) null);
+        setImpl(new SwtIME());
     }
 
     /**
@@ -78,7 +79,8 @@ public class IME extends Widget {
      * @see Widget#getStyle
      */
     public IME(Canvas parent, int style) {
-        this(new SwtIME(parent, style));
+        this((IIME) null);
+        setImpl(new SwtIME(parent, style));
     }
 
     /**
@@ -238,8 +240,12 @@ public class IME extends Widget {
         super(impl);
     }
 
-    public static IME createApi(IIME impl) {
-        return new IME(impl);
+    static IME createApi(IIME impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof IME inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new IME(impl);
     }
 
     public IIME getImpl() {

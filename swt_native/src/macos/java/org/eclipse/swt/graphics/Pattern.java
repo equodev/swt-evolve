@@ -68,7 +68,8 @@ public class Pattern extends Resource {
      * @see #dispose()
      */
     public Pattern(Device device, Image image) {
-        this(new SwtPattern(device, image));
+        this((IPattern) null);
+        setImpl(new SwtPattern(device, image));
     }
 
     /**
@@ -107,7 +108,8 @@ public class Pattern extends Resource {
      * @see #dispose()
      */
     public Pattern(Device device, float x1, float y1, float x2, float y2, Color color1, Color color2) {
-        this(new SwtPattern(device, x1, y1, x2, y2, color1, color2));
+        this((IPattern) null);
+        setImpl(new SwtPattern(device, x1, y1, x2, y2, color1, color2));
     }
 
     /**
@@ -150,7 +152,8 @@ public class Pattern extends Resource {
      * @since 3.2
      */
     public Pattern(Device device, float x1, float y1, float x2, float y2, Color color1, int alpha1, Color color2, int alpha2) {
-        this(new SwtPattern(device, x1, y1, x2, y2, color1, alpha1, color2, alpha2));
+        this((IPattern) null);
+        setImpl(new SwtPattern(device, x1, y1, x2, y2, color1, alpha1, color2, alpha2));
     }
 
     /**
@@ -181,8 +184,12 @@ public class Pattern extends Resource {
         super(impl);
     }
 
-    public static Pattern createApi(IPattern impl) {
-        return new Pattern(impl);
+    static Pattern createApi(IPattern impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Pattern inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Pattern(impl);
     }
 
     public IPattern getImpl() {

@@ -104,7 +104,8 @@ public final class FontData {
      * Constructs a new uninitialized font data.
      */
     public FontData() {
-        this(new SwtFontData());
+        this((IFontData) null);
+        setImpl(new SwtFontData());
     }
 
     /**
@@ -127,7 +128,8 @@ public final class FontData {
      * @see #toString
      */
     public FontData(String string) {
-        this(new SwtFontData(string));
+        this((IFontData) null);
+        setImpl(new SwtFontData(string));
     }
 
     /**
@@ -145,12 +147,14 @@ public final class FontData {
      * </ul>
      */
     public FontData(String name, int height, int style) {
-        this(new SwtFontData(name, height, style));
+        this((IFontData) null);
+        setImpl(new SwtFontData(name, height, style));
     }
 
     /*public*/
     FontData(String name, float height, int style) {
-        this(new SwtFontData(name, height, style));
+        this((IFontData) null);
+        setImpl(new SwtFontData(name, height, style));
     }
 
     /**
@@ -334,18 +338,31 @@ public final class FontData {
         return getImpl().toString();
     }
 
-    IFontData impl;
+    protected IFontData impl;
 
     protected FontData(IFontData impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static FontData createApi(IFontData impl) {
-        return new FontData(impl);
+    static FontData createApi(IFontData impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof FontData inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new FontData(impl);
     }
 
     public IFontData getImpl() {
         return impl;
+    }
+
+    protected FontData setImpl(IFontData impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

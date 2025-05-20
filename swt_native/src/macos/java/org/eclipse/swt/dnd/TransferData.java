@@ -65,21 +65,35 @@ public class TransferData {
     public NSObject data;
 
     public TransferData() {
-        this(new SwtTransferData());
+        this((ITransferData) null);
+        setImpl(new SwtTransferData());
     }
 
-    ITransferData impl;
+    protected ITransferData impl;
 
     protected TransferData(ITransferData impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static TransferData createApi(ITransferData impl) {
-        return new TransferData(impl);
+    static TransferData createApi(ITransferData impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TransferData inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TransferData(impl);
     }
 
     public ITransferData getImpl() {
         return impl;
+    }
+
+    protected TransferData setImpl(ITransferData impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

@@ -74,7 +74,8 @@ public class Scale extends Control {
      * @see Widget#getStyle
      */
     public Scale(Composite parent, int style) {
-        this(new SwtScale(parent, style));
+        this((IScale) null);
+        setImpl(new SwtScale(parent, style));
     }
 
     /**
@@ -290,8 +291,12 @@ public class Scale extends Control {
         super(impl);
     }
 
-    public static Scale createApi(IScale impl) {
-        return new Scale(impl);
+    static Scale createApi(IScale impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Scale inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Scale(impl);
     }
 
     public IScale getImpl() {

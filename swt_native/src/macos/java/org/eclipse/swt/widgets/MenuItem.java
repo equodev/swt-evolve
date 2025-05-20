@@ -76,7 +76,8 @@ public class MenuItem extends Item {
      * @see Widget#getStyle
      */
     public MenuItem(Menu parent, int style) {
-        this(new SwtMenuItem(parent, style));
+        this((IMenuItem) null);
+        setImpl(new SwtMenuItem(parent, style));
     }
 
     /**
@@ -116,11 +117,13 @@ public class MenuItem extends Item {
      * @see Widget#getStyle
      */
     public MenuItem(Menu parent, int style, int index) {
-        this(new SwtMenuItem(parent, style, index));
+        this((IMenuItem) null);
+        setImpl(new SwtMenuItem(parent, style, index));
     }
 
     MenuItem(Menu parent, NSMenuItem nsMenuItem) {
-        this(new SwtMenuItem(parent, nsMenuItem));
+        this((IMenuItem) null);
+        setImpl(new SwtMenuItem(parent, nsMenuItem));
     }
 
     /**
@@ -606,8 +609,12 @@ public class MenuItem extends Item {
         super(impl);
     }
 
-    public static MenuItem createApi(IMenuItem impl) {
-        return new MenuItem(impl);
+    static MenuItem createApi(IMenuItem impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof MenuItem inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new MenuItem(impl);
     }
 
     public IMenuItem getImpl() {

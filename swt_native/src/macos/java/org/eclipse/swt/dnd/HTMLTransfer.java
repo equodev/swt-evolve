@@ -34,7 +34,8 @@ import org.eclipse.swt.internal.cocoa.*;
 public class HTMLTransfer extends ByteArrayTransfer {
 
     HTMLTransfer() {
-        this(new SwtHTMLTransfer());
+        this((IHTMLTransfer) null);
+        setImpl(new SwtHTMLTransfer());
     }
 
     /**
@@ -90,8 +91,12 @@ public class HTMLTransfer extends ByteArrayTransfer {
         super(impl);
     }
 
-    public static HTMLTransfer createApi(IHTMLTransfer impl) {
-        return new HTMLTransfer(impl);
+    static HTMLTransfer createApi(IHTMLTransfer impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof HTMLTransfer inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new HTMLTransfer(impl);
     }
 
     public IHTMLTransfer getImpl() {

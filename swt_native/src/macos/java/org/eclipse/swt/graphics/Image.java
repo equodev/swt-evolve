@@ -105,7 +105,8 @@ public final class Image extends Resource implements Drawable {
      * The global alpha value to be used for every pixel.
      */
     Image(Device device) {
-        this(new SwtImage(device));
+        this((IImage) null);
+        setImpl(new SwtImage(device));
     }
 
     /**
@@ -144,7 +145,8 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, int width, int height) {
-        this(new SwtImage(device, width, height));
+        this((IImage) null);
+        setImpl(new SwtImage(device, width, height));
     }
 
     /**
@@ -184,7 +186,8 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, Image srcImage, int flag) {
-        this(new SwtImage(device, srcImage, flag));
+        this((IImage) null);
+        setImpl(new SwtImage(device, srcImage, flag));
     }
 
     /**
@@ -223,7 +226,8 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, Rectangle bounds) {
-        this(new SwtImage(device, bounds));
+        this((IImage) null);
+        setImpl(new SwtImage(device, bounds));
     }
 
     /**
@@ -250,7 +254,8 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, ImageData data) {
-        this(new SwtImage(device, data));
+        this((IImage) null);
+        setImpl(new SwtImage(device, data));
     }
 
     /**
@@ -284,7 +289,8 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, ImageData source, ImageData mask) {
-        this(new SwtImage(device, source, mask));
+        this((IImage) null);
+        setImpl(new SwtImage(device, source, mask));
     }
 
     /**
@@ -341,7 +347,8 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, InputStream stream) {
-        this(new SwtImage(device, stream));
+        this((IImage) null);
+        setImpl(new SwtImage(device, stream));
     }
 
     /**
@@ -377,7 +384,8 @@ public final class Image extends Resource implements Drawable {
      * @see #dispose()
      */
     public Image(Device device, String filename) {
-        this(new SwtImage(device, filename));
+        this((IImage) null);
+        setImpl(new SwtImage(device, filename));
     }
 
     /**
@@ -410,7 +418,8 @@ public final class Image extends Resource implements Drawable {
      * @since 3.104
      */
     public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
-        this(new SwtImage(device, imageFileNameProvider));
+        this((IImage) null);
+        setImpl(new SwtImage(device, imageFileNameProvider));
     }
 
     /**
@@ -443,7 +452,8 @@ public final class Image extends Resource implements Drawable {
      * @since 3.104
      */
     public Image(Device device, ImageDataProvider imageDataProvider) {
-        this(new SwtImage(device, imageDataProvider));
+        this((IImage) null);
+        setImpl(new SwtImage(device, imageDataProvider));
     }
 
     /**
@@ -712,8 +722,12 @@ public final class Image extends Resource implements Drawable {
         super(impl);
     }
 
-    public static Image createApi(IImage impl) {
-        return new Image(impl);
+    static Image createApi(IImage impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Image inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Image(impl);
     }
 
     public IImage getImpl() {

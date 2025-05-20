@@ -41,7 +41,8 @@ import org.eclipse.swt.*;
 public class Tray extends Widget {
 
     Tray(Display display, int style) {
-        this(new SwtTray(display, style));
+        this((ITray) null);
+        setImpl(new SwtTray(display, style));
     }
 
     /**
@@ -101,8 +102,12 @@ public class Tray extends Widget {
         super(impl);
     }
 
-    public static Tray createApi(ITray impl) {
-        return new Tray(impl);
+    static Tray createApi(ITray impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Tray inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Tray(impl);
     }
 
     public ITray getImpl() {

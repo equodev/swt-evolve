@@ -40,7 +40,8 @@ import org.eclipse.swt.internal.cocoa.*;
 public class TextTransfer extends ByteArrayTransfer {
 
     TextTransfer() {
-        this(new SwtTextTransfer());
+        this((ITextTransfer) null);
+        setImpl(new SwtTextTransfer());
     }
 
     /**
@@ -95,8 +96,12 @@ public class TextTransfer extends ByteArrayTransfer {
         super(impl);
     }
 
-    public static TextTransfer createApi(ITextTransfer impl) {
-        return new TextTransfer(impl);
+    static TextTransfer createApi(ITextTransfer impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TextTransfer inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TextTransfer(impl);
     }
 
     public ITextTransfer getImpl() {

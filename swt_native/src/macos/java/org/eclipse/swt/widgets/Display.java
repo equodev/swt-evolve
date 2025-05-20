@@ -295,7 +295,8 @@ public class Display extends Device implements Executor {
      * @see Shell
      */
     public Display() {
-        this(new SwtDisplay());
+        this((IDisplay) null);
+        setImpl(new SwtDisplay());
     }
 
     /**
@@ -304,7 +305,8 @@ public class Display extends Device implements Executor {
      * @param data the device data
      */
     public Display(DeviceData data) {
-        this(new SwtDisplay(data));
+        this((IDisplay) null);
+        setImpl(new SwtDisplay(data));
     }
 
     /**
@@ -1843,8 +1845,12 @@ public class Display extends Device implements Executor {
         super(impl);
     }
 
-    public static Display createApi(IDisplay impl) {
-        return new Display(impl);
+    static Display createApi(IDisplay impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Display inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Display(impl);
     }
 
     public IDisplay getImpl() {

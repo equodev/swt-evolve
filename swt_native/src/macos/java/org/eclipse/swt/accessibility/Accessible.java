@@ -63,7 +63,8 @@ public class Accessible {
      * @since 3.6
      */
     public Accessible(Accessible parent) {
-        this(new SwtAccessible(parent));
+        this((IAccessible) null);
+        setImpl(new SwtAccessible(parent));
     }
 
     /**
@@ -72,11 +73,13 @@ public class Accessible {
      */
     @Deprecated
     protected Accessible() {
-        this(new SwtAccessible());
+        this((IAccessible) null);
+        setImpl(new SwtAccessible());
     }
 
     Accessible(Control control) {
-        this(new SwtAccessible(control));
+        this((IAccessible) null);
+        setImpl(new SwtAccessible(control));
     }
 
     /**
@@ -871,18 +874,31 @@ public class Accessible {
         return getImpl().internal_addRelationAttributes(defaultAttributes);
     }
 
-    IAccessible impl;
+    protected IAccessible impl;
 
     protected Accessible(IAccessible impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static Accessible createApi(IAccessible impl) {
-        return new Accessible(impl);
+    static Accessible createApi(IAccessible impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Accessible inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Accessible(impl);
     }
 
     public IAccessible getImpl() {
         return impl;
+    }
+
+    protected Accessible setImpl(IAccessible impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

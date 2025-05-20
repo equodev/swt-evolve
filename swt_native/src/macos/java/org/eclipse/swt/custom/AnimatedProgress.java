@@ -63,7 +63,8 @@ public class AnimatedProgress extends Canvas {
      * @see #getStyle()
      */
     public AnimatedProgress(Composite parent, int style) {
-        this(new SwtAnimatedProgress(parent, style));
+        this((IAnimatedProgress) null);
+        setImpl(new SwtAnimatedProgress(parent, style));
     }
 
     /**
@@ -106,8 +107,12 @@ public class AnimatedProgress extends Canvas {
         super(impl);
     }
 
-    public static AnimatedProgress createApi(IAnimatedProgress impl) {
-        return new AnimatedProgress(impl);
+    static AnimatedProgress createApi(IAnimatedProgress impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof AnimatedProgress inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new AnimatedProgress(impl);
     }
 
     public IAnimatedProgress getImpl() {

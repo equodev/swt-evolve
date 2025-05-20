@@ -146,7 +146,8 @@ public final class FormAttachment {
      * @since 3.2
      */
     public FormAttachment() {
-        this(new SwtFormAttachment());
+        this((IFormAttachment) null);
+        setImpl(new SwtFormAttachment());
     }
 
     /**
@@ -160,7 +161,8 @@ public final class FormAttachment {
      * @since 3.0
      */
     public FormAttachment(int numerator) {
-        this(new SwtFormAttachment(numerator));
+        this((IFormAttachment) null);
+        setImpl(new SwtFormAttachment(numerator));
     }
 
     /**
@@ -173,7 +175,8 @@ public final class FormAttachment {
      * @param offset the offset of the side from the position
      */
     public FormAttachment(int numerator, int offset) {
-        this(new SwtFormAttachment(numerator, offset));
+        this((IFormAttachment) null);
+        setImpl(new SwtFormAttachment(numerator, offset));
     }
 
     /**
@@ -187,7 +190,8 @@ public final class FormAttachment {
      * @param offset the offset of the side from the position
      */
     public FormAttachment(int numerator, int denominator, int offset) {
-        this(new SwtFormAttachment(numerator, denominator, offset));
+        this((IFormAttachment) null);
+        setImpl(new SwtFormAttachment(numerator, denominator, offset));
     }
 
     /**
@@ -200,7 +204,8 @@ public final class FormAttachment {
      * @param control the control the side is attached to
      */
     public FormAttachment(Control control) {
-        this(new SwtFormAttachment(control));
+        this((IFormAttachment) null);
+        setImpl(new SwtFormAttachment(control));
     }
 
     /**
@@ -213,7 +218,8 @@ public final class FormAttachment {
      * @param offset the offset of the side from the control
      */
     public FormAttachment(Control control, int offset) {
-        this(new SwtFormAttachment(control, offset));
+        this((IFormAttachment) null);
+        setImpl(new SwtFormAttachment(control, offset));
     }
 
     /**
@@ -240,7 +246,8 @@ public final class FormAttachment {
      * 		one of TOP, BOTTOM, LEFT, RIGHT, CENTER, or DEFAULT
      */
     public FormAttachment(Control control, int offset, int alignment) {
-        this(new SwtFormAttachment(control, offset, alignment));
+        this((IFormAttachment) null);
+        setImpl(new SwtFormAttachment(control, offset, alignment));
     }
 
     /**
@@ -253,18 +260,31 @@ public final class FormAttachment {
         return getImpl().toString();
     }
 
-    IFormAttachment impl;
+    protected IFormAttachment impl;
 
     protected FormAttachment(IFormAttachment impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static FormAttachment createApi(IFormAttachment impl) {
-        return new FormAttachment(impl);
+    static FormAttachment createApi(IFormAttachment impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof FormAttachment inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new FormAttachment(impl);
     }
 
     public IFormAttachment getImpl() {
         return impl;
+    }
+
+    protected FormAttachment setImpl(IFormAttachment impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

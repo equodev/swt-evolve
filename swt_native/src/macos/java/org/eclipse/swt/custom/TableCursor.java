@@ -72,7 +72,8 @@ public class TableCursor extends Canvas {
      * @see Widget#getStyle()
      */
     public TableCursor(Table parent, int style) {
-        this(new SwtTableCursor(parent, style));
+        this((ITableCursor) null);
+        setImpl(new SwtTableCursor(parent, style));
     }
 
     /**
@@ -255,8 +256,12 @@ public class TableCursor extends Canvas {
         super(impl);
     }
 
-    public static TableCursor createApi(ITableCursor impl) {
-        return new TableCursor(impl);
+    static TableCursor createApi(ITableCursor impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TableCursor inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TableCursor(impl);
     }
 
     public ITableCursor getImpl() {

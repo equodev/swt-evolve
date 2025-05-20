@@ -115,21 +115,35 @@ public class StyledTextPrintOptions {
     public String[] lineLabels = null;
 
     public StyledTextPrintOptions() {
-        this(new SwtStyledTextPrintOptions());
+        this((IStyledTextPrintOptions) null);
+        setImpl(new SwtStyledTextPrintOptions());
     }
 
-    IStyledTextPrintOptions impl;
+    protected IStyledTextPrintOptions impl;
 
     protected StyledTextPrintOptions(IStyledTextPrintOptions impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static StyledTextPrintOptions createApi(IStyledTextPrintOptions impl) {
-        return new StyledTextPrintOptions(impl);
+    static StyledTextPrintOptions createApi(IStyledTextPrintOptions impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof StyledTextPrintOptions inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new StyledTextPrintOptions(impl);
     }
 
     public IStyledTextPrintOptions getImpl() {
         return impl;
+    }
+
+    protected StyledTextPrintOptions setImpl(IStyledTextPrintOptions impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

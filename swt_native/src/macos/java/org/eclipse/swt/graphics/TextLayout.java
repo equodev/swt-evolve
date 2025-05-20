@@ -55,7 +55,8 @@ public final class TextLayout extends Resource {
      * @see #dispose()
      */
     public TextLayout(Device device) {
-        this(new SwtTextLayout(device));
+        this((ITextLayout) null);
+        setImpl(new SwtTextLayout(device));
     }
 
     /**
@@ -1083,8 +1084,12 @@ public final class TextLayout extends Resource {
         super(impl);
     }
 
-    public static TextLayout createApi(ITextLayout impl) {
-        return new TextLayout(impl);
+    static TextLayout createApi(ITextLayout impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TextLayout inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TextLayout(impl);
     }
 
     public ITextLayout getImpl() {

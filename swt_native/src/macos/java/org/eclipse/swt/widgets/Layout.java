@@ -109,14 +109,23 @@ public abstract class Layout {
     public Layout() {
     }
 
-    ILayout impl;
+    protected ILayout impl;
 
     protected Layout(ILayout impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
     public ILayout getImpl() {
         return impl;
+    }
+
+    protected Layout setImpl(ILayout impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

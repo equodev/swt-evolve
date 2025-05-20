@@ -36,21 +36,35 @@ public final class PathData {
     public float[] points;
 
     public PathData() {
-        this(new SwtPathData());
+        this((IPathData) null);
+        setImpl(new SwtPathData());
     }
 
-    IPathData impl;
+    protected IPathData impl;
 
     protected PathData(IPathData impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static PathData createApi(IPathData impl) {
-        return new PathData(impl);
+    static PathData createApi(IPathData impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof PathData inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new PathData(impl);
     }
 
     public IPathData getImpl() {
         return impl;
+    }
+
+    protected PathData setImpl(IPathData impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

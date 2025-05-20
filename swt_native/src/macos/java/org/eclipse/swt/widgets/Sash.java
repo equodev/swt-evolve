@@ -75,7 +75,8 @@ public class Sash extends Control {
      * @see Widget#getStyle
      */
     public Sash(Composite parent, int style) {
-        this(new SwtSash(parent, style));
+        this((ISash) null);
+        setImpl(new SwtSash(parent, style));
     }
 
     /**
@@ -136,8 +137,12 @@ public class Sash extends Control {
         super(impl);
     }
 
-    public static Sash createApi(ISash impl) {
-        return new Sash(impl);
+    static Sash createApi(ISash impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Sash inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Sash(impl);
     }
 
     public ISash getImpl() {

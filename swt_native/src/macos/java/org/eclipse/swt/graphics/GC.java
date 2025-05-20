@@ -77,7 +77,8 @@ public final class GC extends Resource {
     public NSGraphicsContext handle;
 
     GC() {
-        this(new SwtGC());
+        this((IGC) null);
+        setImpl(new SwtGC());
     }
 
     /**
@@ -104,7 +105,8 @@ public final class GC extends Resource {
      * @see #dispose()
      */
     public GC(Drawable drawable) {
-        this(new SwtGC(drawable));
+        this((IGC) null);
+        setImpl(new SwtGC(drawable));
     }
 
     /**
@@ -137,7 +139,8 @@ public final class GC extends Resource {
      * @since 2.1.2
      */
     public GC(Drawable drawable, int style) {
-        this(new SwtGC(drawable, style));
+        this((IGC) null);
+        setImpl(new SwtGC(drawable, style));
     }
 
     /**
@@ -2041,8 +2044,12 @@ public final class GC extends Resource {
         super(impl);
     }
 
-    public static GC createApi(IGC impl) {
-        return new GC(impl);
+    static GC createApi(IGC impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof GC inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new GC(impl);
     }
 
     public IGC getImpl() {

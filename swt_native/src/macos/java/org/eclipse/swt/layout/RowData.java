@@ -80,7 +80,8 @@ public final class RowData {
      * default values.
      */
     public RowData() {
-        this(new SwtRowData());
+        this((IRowData) null);
+        setImpl(new SwtRowData());
     }
 
     /**
@@ -92,7 +93,8 @@ public final class RowData {
      * @param height a minimum height for the control
      */
     public RowData(int width, int height) {
-        this(new SwtRowData(width, height));
+        this((IRowData) null);
+        setImpl(new SwtRowData(width, height));
     }
 
     /**
@@ -104,7 +106,8 @@ public final class RowData {
      * and y coordinate specifies a minimum height for the control
      */
     public RowData(Point point) {
-        this(new SwtRowData(point));
+        this((IRowData) null);
+        setImpl(new SwtRowData(point));
     }
 
     /**
@@ -117,18 +120,31 @@ public final class RowData {
         return getImpl().toString();
     }
 
-    IRowData impl;
+    protected IRowData impl;
 
     protected RowData(IRowData impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static RowData createApi(IRowData impl) {
-        return new RowData(impl);
+    static RowData createApi(IRowData impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof RowData inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new RowData(impl);
     }
 
     public IRowData getImpl() {
         return impl;
+    }
+
+    protected RowData setImpl(IRowData impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

@@ -51,11 +51,13 @@ public final class Color extends Resource {
     public double[] handle;
 
     Color() {
-        this(new SwtColor());
+        this((IColor) null);
+        setImpl(new SwtColor());
     }
 
     Color(Device device) {
-        this(new SwtColor(device));
+        this((IColor) null);
+        setImpl(new SwtColor(device));
     }
 
     /**
@@ -76,7 +78,8 @@ public final class Color extends Resource {
      * @see #Color(int, int, int) The equivalent constructor not requiring a Device
      */
     public Color(Device device, int red, int green, int blue) {
-        this(new SwtColor(device, red, green, blue));
+        this((IColor) null);
+        setImpl(new SwtColor(device, red, green, blue));
     }
 
     /**
@@ -94,7 +97,8 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(int red, int green, int blue) {
-        this(new SwtColor(red, green, blue));
+        this((IColor) null);
+        setImpl(new SwtColor(red, green, blue));
     }
 
     /**
@@ -118,7 +122,8 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public Color(Device device, int red, int green, int blue, int alpha) {
-        this(new SwtColor(device, red, green, blue, alpha));
+        this((IColor) null);
+        setImpl(new SwtColor(device, red, green, blue, alpha));
     }
 
     /**
@@ -138,7 +143,8 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(int red, int green, int blue, int alpha) {
-        this(new SwtColor(red, green, blue, alpha));
+        this((IColor) null);
+        setImpl(new SwtColor(red, green, blue, alpha));
     }
 
     /**
@@ -157,7 +163,8 @@ public final class Color extends Resource {
      * @see #Color(RGB) The equivalent constructor not requiring a Device
      */
     public Color(Device device, RGB rgb) {
-        this(new SwtColor(device, rgb));
+        this((IColor) null);
+        setImpl(new SwtColor(device, rgb));
     }
 
     /**
@@ -173,7 +180,8 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(RGB rgb) {
-        this(new SwtColor(rgb));
+        this((IColor) null);
+        setImpl(new SwtColor(rgb));
     }
 
     /**
@@ -194,7 +202,8 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public Color(Device device, RGBA rgba) {
-        this(new SwtColor(device, rgba));
+        this((IColor) null);
+        setImpl(new SwtColor(device, rgba));
     }
 
     /**
@@ -211,7 +220,8 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(RGBA rgba) {
-        this(new SwtColor(rgba));
+        this((IColor) null);
+        setImpl(new SwtColor(rgba));
     }
 
     /**
@@ -234,7 +244,8 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public Color(Device device, RGB rgb, int alpha) {
-        this(new SwtColor(device, rgb, alpha));
+        this((IColor) null);
+        setImpl(new SwtColor(device, rgb, alpha));
     }
 
     /**
@@ -253,7 +264,8 @@ public final class Color extends Resource {
      * @since 3.115
      */
     public Color(RGB rgb, int alpha) {
-        this(new SwtColor(rgb, alpha));
+        this((IColor) null);
+        setImpl(new SwtColor(rgb, alpha));
     }
 
     /**
@@ -417,8 +429,12 @@ public final class Color extends Resource {
         super(impl);
     }
 
-    public static Color createApi(IColor impl) {
-        return new Color(impl);
+    static Color createApi(IColor impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Color inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Color(impl);
     }
 
     public IColor getImpl() {

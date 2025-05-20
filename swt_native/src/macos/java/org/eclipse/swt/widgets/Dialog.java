@@ -212,14 +212,23 @@ public abstract class Dialog {
         getImpl().setText(string);
     }
 
-    IDialog impl;
+    protected IDialog impl;
 
     protected Dialog(IDialog impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
     public IDialog getImpl() {
         return impl;
+    }
+
+    protected Dialog setImpl(IDialog impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

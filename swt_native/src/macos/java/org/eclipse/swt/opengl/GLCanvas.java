@@ -44,7 +44,8 @@ public class GLCanvas extends Canvas {
      * </ul>
      */
     public GLCanvas(Composite parent, int style, GLData data) {
-        this(new SwtGLCanvas(parent, style, data));
+        this((IGLCanvas) null);
+        setImpl(new SwtGLCanvas(parent, style, data));
     }
 
     /**
@@ -104,8 +105,12 @@ public class GLCanvas extends Canvas {
         super(impl);
     }
 
-    public static GLCanvas createApi(IGLCanvas impl) {
-        return new GLCanvas(impl);
+    static GLCanvas createApi(IGLCanvas impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof GLCanvas inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new GLCanvas(impl);
     }
 
     public IGLCanvas getImpl() {

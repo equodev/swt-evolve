@@ -89,7 +89,8 @@ public class CLabel extends Canvas {
      * @see #getStyle()
      */
     public CLabel(Composite parent, int style) {
-        this(new SwtCLabel(parent, style));
+        this((ICLabel) null);
+        setImpl(new SwtCLabel(parent, style));
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
@@ -425,8 +426,12 @@ public class CLabel extends Canvas {
         super(impl);
     }
 
-    public static CLabel createApi(ICLabel impl) {
-        return new CLabel(impl);
+    static CLabel createApi(ICLabel impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof CLabel inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new CLabel(impl);
     }
 
     public ICLabel getImpl() {

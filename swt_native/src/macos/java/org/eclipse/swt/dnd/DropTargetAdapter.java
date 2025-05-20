@@ -109,21 +109,35 @@ public class DropTargetAdapter implements DropTargetListener {
     }
 
     public DropTargetAdapter() {
-        this(new SwtDropTargetAdapter());
+        this((IDropTargetAdapter) null);
+        setImpl(new SwtDropTargetAdapter());
     }
 
-    IDropTargetAdapter impl;
+    protected IDropTargetAdapter impl;
 
     protected DropTargetAdapter(IDropTargetAdapter impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static DropTargetAdapter createApi(IDropTargetAdapter impl) {
-        return new DropTargetAdapter(impl);
+    static DropTargetAdapter createApi(IDropTargetAdapter impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof DropTargetAdapter inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new DropTargetAdapter(impl);
     }
 
     public IDropTargetAdapter getImpl() {
         return impl;
+    }
+
+    protected DropTargetAdapter setImpl(IDropTargetAdapter impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

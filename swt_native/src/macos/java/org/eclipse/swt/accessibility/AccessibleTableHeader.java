@@ -31,15 +31,20 @@ import org.eclipse.swt.internal.cocoa.*;
 class AccessibleTableHeader extends Accessible {
 
     public AccessibleTableHeader(Accessible accessible, int childID) {
-        this(new SwtAccessibleTableHeader(accessible, childID));
+        this((IAccessibleTableHeader) null);
+        setImpl(new SwtAccessibleTableHeader(accessible, childID));
     }
 
     protected AccessibleTableHeader(IAccessibleTableHeader impl) {
         super(impl);
     }
 
-    public static AccessibleTableHeader createApi(IAccessibleTableHeader impl) {
-        return new AccessibleTableHeader(impl);
+    static AccessibleTableHeader createApi(IAccessibleTableHeader impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof AccessibleTableHeader inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new AccessibleTableHeader(impl);
     }
 
     public IAccessibleTableHeader getImpl() {

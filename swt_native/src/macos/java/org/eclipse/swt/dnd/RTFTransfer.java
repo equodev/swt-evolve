@@ -34,7 +34,8 @@ import org.eclipse.swt.internal.cocoa.*;
 public class RTFTransfer extends ByteArrayTransfer {
 
     RTFTransfer() {
-        this(new SwtRTFTransfer());
+        this((IRTFTransfer) null);
+        setImpl(new SwtRTFTransfer());
     }
 
     /**
@@ -90,8 +91,12 @@ public class RTFTransfer extends ByteArrayTransfer {
         super(impl);
     }
 
-    public static RTFTransfer createApi(IRTFTransfer impl) {
-        return new RTFTransfer(impl);
+    static RTFTransfer createApi(IRTFTransfer impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof RTFTransfer inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new RTFTransfer(impl);
     }
 
     public IRTFTransfer getImpl() {

@@ -153,7 +153,8 @@ public class DropTarget extends Widget {
      *  @see DND#DROP_LINK
      */
     public DropTarget(Control control, int style) {
-        this(new SwtDropTarget(control, style));
+        this((IDropTarget) null);
+        setImpl(new SwtDropTarget(control, style));
     }
 
     /**
@@ -268,8 +269,12 @@ public class DropTarget extends Widget {
         super(impl);
     }
 
-    public static DropTarget createApi(IDropTarget impl) {
-        return new DropTarget(impl);
+    static DropTarget createApi(IDropTarget impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof DropTarget inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new DropTarget(impl);
     }
 
     public IDropTarget getImpl() {

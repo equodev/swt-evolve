@@ -59,7 +59,8 @@ public class MessageBox extends Dialog {
      * </ul>
      */
     public MessageBox(Shell parent) {
-        this(new SwtMessageBox(parent));
+        this((IMessageBox) null);
+        setImpl(new SwtMessageBox(parent));
     }
 
     /**
@@ -99,7 +100,8 @@ public class MessageBox extends Dialog {
      * @see SWT#IGNORE
      */
     public MessageBox(Shell parent, int style) {
-        this(new SwtMessageBox(parent, style));
+        this((IMessageBox) null);
+        setImpl(new SwtMessageBox(parent, style));
     }
 
     /**
@@ -170,8 +172,12 @@ public class MessageBox extends Dialog {
         super(impl);
     }
 
-    public static MessageBox createApi(IMessageBox impl) {
-        return new MessageBox(impl);
+    static MessageBox createApi(IMessageBox impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof MessageBox inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new MessageBox(impl);
     }
 
     public IMessageBox getImpl() {

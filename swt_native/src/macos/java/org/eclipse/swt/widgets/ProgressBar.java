@@ -74,7 +74,8 @@ public class ProgressBar extends Control {
      * @see Widget#getStyle
      */
     public ProgressBar(Composite parent, int style) {
-        this(new SwtProgressBar(parent, style));
+        this((IProgressBar) null);
+        setImpl(new SwtProgressBar(parent, style));
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
@@ -223,8 +224,12 @@ public class ProgressBar extends Control {
         super(impl);
     }
 
-    public static ProgressBar createApi(IProgressBar impl) {
-        return new ProgressBar(impl);
+    static ProgressBar createApi(IProgressBar impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof ProgressBar inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new ProgressBar(impl);
     }
 
     public IProgressBar getImpl() {

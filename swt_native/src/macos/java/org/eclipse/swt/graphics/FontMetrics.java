@@ -28,7 +28,8 @@ package org.eclipse.swt.graphics;
 public final class FontMetrics {
 
     FontMetrics() {
-        this(new SwtFontMetrics());
+        this((IFontMetrics) null);
+        setImpl(new SwtFontMetrics());
     }
 
     /**
@@ -136,18 +137,31 @@ public final class FontMetrics {
         return getImpl().toString();
     }
 
-    IFontMetrics impl;
+    protected IFontMetrics impl;
 
     protected FontMetrics(IFontMetrics impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static FontMetrics createApi(IFontMetrics impl) {
-        return new FontMetrics(impl);
+    static FontMetrics createApi(IFontMetrics impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof FontMetrics inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new FontMetrics(impl);
     }
 
     public IFontMetrics getImpl() {
         return impl;
+    }
+
+    protected FontMetrics setImpl(IFontMetrics impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

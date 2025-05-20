@@ -99,7 +99,8 @@ public final class FormData {
      * default values.
      */
     public FormData() {
-        this(new SwtFormData());
+        this((IFormData) null);
+        setImpl(new SwtFormData());
     }
 
     /**
@@ -111,7 +112,8 @@ public final class FormData {
      * @param height a minimum height for the control
      */
     public FormData(int width, int height) {
-        this(new SwtFormData(width, height));
+        this((IFormData) null);
+        setImpl(new SwtFormData(width, height));
     }
 
     /**
@@ -124,18 +126,31 @@ public final class FormData {
         return getImpl().toString();
     }
 
-    IFormData impl;
+    protected IFormData impl;
 
     protected FormData(IFormData impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static FormData createApi(IFormData impl) {
-        return new FormData(impl);
+    static FormData createApi(IFormData impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof FormData inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new FormData(impl);
     }
 
     public IFormData getImpl() {
         return impl;
+    }
+
+    protected FormData setImpl(IFormData impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

@@ -102,14 +102,23 @@ public abstract class Resource {
         SwtResource.setNonDisposeHandler(reporter);
     }
 
-    IResource impl;
+    protected IResource impl;
 
     protected Resource(IResource impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
     public IResource getImpl() {
         return impl;
+    }
+
+    protected Resource setImpl(IResource impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

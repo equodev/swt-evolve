@@ -51,7 +51,8 @@ public final class TouchSource {
      * @param width width of the source in points.
      */
     TouchSource(long handle, boolean direct, Rectangle bounds) {
-        this(new SwtTouchSource(handle, direct, bounds));
+        this((ITouchSource) null);
+        setImpl(new SwtTouchSource(handle, direct, bounds));
     }
 
     /**
@@ -85,18 +86,31 @@ public final class TouchSource {
         return getImpl().toString();
     }
 
-    ITouchSource impl;
+    protected ITouchSource impl;
 
     protected TouchSource(ITouchSource impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static TouchSource createApi(ITouchSource impl) {
-        return new TouchSource(impl);
+    static TouchSource createApi(ITouchSource impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TouchSource inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TouchSource(impl);
     }
 
     public ITouchSource getImpl() {
         return impl;
+    }
+
+    protected TouchSource setImpl(ITouchSource impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

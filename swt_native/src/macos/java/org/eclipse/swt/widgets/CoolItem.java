@@ -69,7 +69,8 @@ public class CoolItem extends Item {
      * @see Widget#getStyle
      */
     public CoolItem(CoolBar parent, int style) {
-        this(new SwtCoolItem(parent, style));
+        this((ICoolItem) null);
+        setImpl(new SwtCoolItem(parent, style));
     }
 
     /**
@@ -105,7 +106,8 @@ public class CoolItem extends Item {
      * @see Widget#getStyle
      */
     public CoolItem(CoolBar parent, int style, int index) {
-        this(new SwtCoolItem(parent, style, index));
+        this((ICoolItem) null);
+        setImpl(new SwtCoolItem(parent, style, index));
     }
 
     /**
@@ -432,8 +434,12 @@ public class CoolItem extends Item {
         super(impl);
     }
 
-    public static CoolItem createApi(ICoolItem impl) {
-        return new CoolItem(impl);
+    static CoolItem createApi(ICoolItem impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof CoolItem inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new CoolItem(impl);
     }
 
     public ICoolItem getImpl() {

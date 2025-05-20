@@ -147,7 +147,8 @@ public final class GridLayout extends Layout {
      * with a single column.
      */
     public GridLayout() {
-        this(new SwtGridLayout());
+        this((IGridLayout) null);
+        setImpl(new SwtGridLayout());
     }
 
     /**
@@ -163,7 +164,8 @@ public final class GridLayout extends Layout {
      * @since 2.0
      */
     public GridLayout(int numColumns, boolean makeColumnsEqualWidth) {
-        this(new SwtGridLayout(numColumns, makeColumnsEqualWidth));
+        this((IGridLayout) null);
+        setImpl(new SwtGridLayout(numColumns, makeColumnsEqualWidth));
     }
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
@@ -192,8 +194,12 @@ public final class GridLayout extends Layout {
         super(impl);
     }
 
-    public static GridLayout createApi(IGridLayout impl) {
-        return new GridLayout(impl);
+    static GridLayout createApi(IGridLayout impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof GridLayout inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new GridLayout(impl);
     }
 
     public IGridLayout getImpl() {

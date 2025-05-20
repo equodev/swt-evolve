@@ -56,7 +56,8 @@ public class ColorDialog extends Dialog {
      * @see Widget#getStyle
      */
     public ColorDialog(Shell parent) {
-        this(new SwtColorDialog(parent));
+        this((IColorDialog) null);
+        setImpl(new SwtColorDialog(parent));
     }
 
     /**
@@ -88,7 +89,8 @@ public class ColorDialog extends Dialog {
      * @see Widget#getStyle
      */
     public ColorDialog(Shell parent, int style) {
-        this(new SwtColorDialog(parent, style));
+        this((IColorDialog) null);
+        setImpl(new SwtColorDialog(parent, style));
     }
 
     /**
@@ -165,8 +167,12 @@ public class ColorDialog extends Dialog {
         super(impl);
     }
 
-    public static ColorDialog createApi(IColorDialog impl) {
-        return new ColorDialog(impl);
+    static ColorDialog createApi(IColorDialog impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof ColorDialog inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new ColorDialog(impl);
     }
 
     public IColorDialog getImpl() {

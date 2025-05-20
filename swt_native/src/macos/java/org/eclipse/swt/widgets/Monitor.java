@@ -32,7 +32,8 @@ public final class Monitor {
      * Prevents uninitialized instances from being created outside the package.
      */
     Monitor() {
-        this(new SwtMonitor());
+        this((IMonitor) null);
+        setImpl(new SwtMonitor());
     }
 
     /**
@@ -95,18 +96,31 @@ public final class Monitor {
         return getImpl().hashCode();
     }
 
-    IMonitor impl;
+    protected IMonitor impl;
 
     protected Monitor(IMonitor impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static Monitor createApi(IMonitor impl) {
-        return new Monitor(impl);
+    static Monitor createApi(IMonitor impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Monitor inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Monitor(impl);
     }
 
     public IMonitor getImpl() {
         return impl;
+    }
+
+    protected Monitor setImpl(IMonitor impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

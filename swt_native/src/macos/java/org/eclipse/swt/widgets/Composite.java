@@ -54,7 +54,8 @@ import org.eclipse.swt.internal.cocoa.*;
 public class Composite extends Scrollable {
 
     Composite() {
-        this(new SwtComposite());
+        this((IComposite) null);
+        setImpl(new SwtComposite());
     }
 
     /**
@@ -90,7 +91,8 @@ public class Composite extends Scrollable {
      * @see Widget#getStyle
      */
     public Composite(Composite parent, int style) {
-        this(new SwtComposite(parent, style));
+        this((IComposite) null);
+        setImpl(new SwtComposite(parent, style));
     }
 
     /**
@@ -592,8 +594,12 @@ public class Composite extends Scrollable {
         super(impl);
     }
 
-    public static Composite createApi(IComposite impl) {
-        return new Composite(impl);
+    static Composite createApi(IComposite impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Composite inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Composite(impl);
     }
 
     public IComposite getImpl() {

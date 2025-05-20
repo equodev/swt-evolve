@@ -46,7 +46,8 @@ import org.eclipse.swt.internal.graphics.*;
 public class Canvas extends Composite {
 
     Canvas() {
-        this(new SwtCanvas());
+        this((ICanvas) null);
+        setImpl(new SwtCanvas());
     }
 
     /**
@@ -76,7 +77,8 @@ public class Canvas extends Composite {
      * @see Widget#getStyle
      */
     public Canvas(Composite parent, int style) {
-        this(new SwtCanvas(parent, style));
+        this((ICanvas) null);
+        setImpl(new SwtCanvas(parent, style));
     }
 
     /**
@@ -219,8 +221,12 @@ public class Canvas extends Composite {
         super(impl);
     }
 
-    public static Canvas createApi(ICanvas impl) {
-        return new Canvas(impl);
+    static Canvas createApi(ICanvas impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Canvas inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Canvas(impl);
     }
 
     public ICanvas getImpl() {

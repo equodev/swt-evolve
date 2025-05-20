@@ -68,7 +68,8 @@ public class CTabItem extends Item {
      * @see Widget#getStyle()
      */
     public CTabItem(CTabFolder parent, int style) {
-        this(new SwtCTabItem(parent, style));
+        this((ICTabItem) null);
+        setImpl(new SwtCTabItem(parent, style));
     }
 
     /**
@@ -102,7 +103,8 @@ public class CTabItem extends Item {
      * @see Widget#getStyle()
      */
     public CTabItem(CTabFolder parent, int style, int index) {
-        this(new SwtCTabItem(parent, style, index));
+        this((ICTabItem) null);
+        setImpl(new SwtCTabItem(parent, style, index));
     }
 
     public void dispose() {
@@ -427,8 +429,12 @@ public class CTabItem extends Item {
         super(impl);
     }
 
-    public static CTabItem createApi(ICTabItem impl) {
-        return new CTabItem(impl);
+    static CTabItem createApi(ICTabItem impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof CTabItem inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new CTabItem(impl);
     }
 
     public ICTabItem getImpl() {

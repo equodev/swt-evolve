@@ -90,7 +90,8 @@ import org.eclipse.swt.internal.cocoa.*;
 public class ScrollBar extends Widget {
 
     ScrollBar() {
-        this(new SwtScrollBar());
+        this((IScrollBar) null);
+        setImpl(new SwtScrollBar());
     }
 
     /**
@@ -554,8 +555,12 @@ public class ScrollBar extends Widget {
         super(impl);
     }
 
-    public static ScrollBar createApi(IScrollBar impl) {
-        return new ScrollBar(impl);
+    static ScrollBar createApi(IScrollBar impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof ScrollBar inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new ScrollBar(impl);
     }
 
     public IScrollBar getImpl() {

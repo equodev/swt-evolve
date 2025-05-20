@@ -116,15 +116,20 @@ public class StackLayout extends Layout {
     }
 
     public StackLayout() {
-        this(new SwtStackLayout());
+        this((IStackLayout) null);
+        setImpl(new SwtStackLayout());
     }
 
     protected StackLayout(IStackLayout impl) {
         super(impl);
     }
 
-    public static StackLayout createApi(IStackLayout impl) {
-        return new StackLayout(impl);
+    static StackLayout createApi(IStackLayout impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof StackLayout inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new StackLayout(impl);
     }
 
     public IStackLayout getImpl() {

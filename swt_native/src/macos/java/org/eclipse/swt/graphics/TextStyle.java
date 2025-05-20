@@ -157,7 +157,8 @@ public class TextStyle {
      * @since 3.4
      */
     public TextStyle() {
-        this(new SwtTextStyle());
+        this((ITextStyle) null);
+        setImpl(new SwtTextStyle());
     }
 
     /**
@@ -169,7 +170,8 @@ public class TextStyle {
      * @param background the background color of the style, <code>null</code> if none
      */
     public TextStyle(Font font, Color foreground, Color background) {
-        this(new SwtTextStyle(font, foreground, background));
+        this((ITextStyle) null);
+        setImpl(new SwtTextStyle(font, foreground, background));
     }
 
     /**
@@ -180,7 +182,8 @@ public class TextStyle {
      * @since 3.4
      */
     public TextStyle(TextStyle style) {
-        this(new SwtTextStyle(style));
+        this((ITextStyle) null);
+        setImpl(new SwtTextStyle(style));
     }
 
     /**
@@ -221,18 +224,31 @@ public class TextStyle {
         return getImpl().toString();
     }
 
-    ITextStyle impl;
+    protected ITextStyle impl;
 
     protected TextStyle(ITextStyle impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static TextStyle createApi(ITextStyle impl) {
-        return new TextStyle(impl);
+    static TextStyle createApi(ITextStyle impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TextStyle inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TextStyle(impl);
     }
 
     public ITextStyle getImpl() {
         return impl;
+    }
+
+    protected TextStyle setImpl(ITextStyle impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

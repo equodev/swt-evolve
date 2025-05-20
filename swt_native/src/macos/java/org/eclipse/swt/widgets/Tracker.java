@@ -80,7 +80,8 @@ public class Tracker extends Widget {
      * @see Widget#getStyle
      */
     public Tracker(Composite parent, int style) {
-        this(new SwtTracker(parent, style));
+        this((ITracker) null);
+        setImpl(new SwtTracker(parent, style));
     }
 
     /**
@@ -119,7 +120,8 @@ public class Tracker extends Widget {
      * @see SWT#RESIZE
      */
     public Tracker(Display display, int style) {
-        this(new SwtTracker(display, style));
+        this((ITracker) null);
+        setImpl(new SwtTracker(display, style));
     }
 
     /**
@@ -320,8 +322,12 @@ public class Tracker extends Widget {
         super(impl);
     }
 
-    public static Tracker createApi(ITracker impl) {
-        return new Tracker(impl);
+    static Tracker createApi(ITracker impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Tracker inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Tracker(impl);
     }
 
     public ITracker getImpl() {

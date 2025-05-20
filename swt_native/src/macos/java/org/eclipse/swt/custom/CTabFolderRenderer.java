@@ -134,7 +134,8 @@ public class CTabFolderRenderer {
      * @see Widget#getStyle
      */
     protected CTabFolderRenderer(CTabFolder parent) {
-        this(new SwtCTabFolderRenderer(parent));
+        this((ICTabFolderRenderer) null);
+        setImpl(new SwtCTabFolderRenderer(parent));
     }
 
     /**
@@ -258,18 +259,31 @@ public class CTabFolderRenderer {
         getImpl().draw(part, state, bounds, gc);
     }
 
-    ICTabFolderRenderer impl;
+    protected ICTabFolderRenderer impl;
 
     protected CTabFolderRenderer(ICTabFolderRenderer impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static CTabFolderRenderer createApi(ICTabFolderRenderer impl) {
-        return new CTabFolderRenderer(impl);
+    static CTabFolderRenderer createApi(ICTabFolderRenderer impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof CTabFolderRenderer inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new CTabFolderRenderer(impl);
     }
 
     public ICTabFolderRenderer getImpl() {
         return impl;
+    }
+
+    protected CTabFolderRenderer setImpl(ICTabFolderRenderer impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

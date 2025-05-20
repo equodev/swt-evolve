@@ -48,7 +48,8 @@ public class Clipboard {
      * @see Clipboard#checkSubclass
      */
     public Clipboard(Display display) {
-        this(new SwtClipboard(display));
+        this((IClipboard) null);
+        setImpl(new SwtClipboard(display));
     }
 
     /**
@@ -452,18 +453,31 @@ public class Clipboard {
         return getImpl().getAvailableTypeNames();
     }
 
-    IClipboard impl;
+    protected IClipboard impl;
 
     protected Clipboard(IClipboard impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static Clipboard createApi(IClipboard impl) {
-        return new Clipboard(impl);
+    static Clipboard createApi(IClipboard impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Clipboard inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Clipboard(impl);
     }
 
     public IClipboard getImpl() {
         return impl;
+    }
+
+    protected Clipboard setImpl(IClipboard impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

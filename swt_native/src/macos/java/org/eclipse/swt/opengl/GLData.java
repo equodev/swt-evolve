@@ -146,21 +146,35 @@ public class GLData {
     }
 
     public GLData() {
-        this(new SwtGLData());
+        this((IGLData) null);
+        setImpl(new SwtGLData());
     }
 
-    IGLData impl;
+    protected IGLData impl;
 
     protected GLData(IGLData impl) {
-        this.impl = impl;
-        impl.setApi(this);
+        if (impl == null)
+            dev.equo.swt.Creation.creating.push(this);
+        else
+            setImpl(impl);
     }
 
-    public static GLData createApi(IGLData impl) {
-        return new GLData(impl);
+    static GLData createApi(IGLData impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof GLData inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new GLData(impl);
     }
 
     public IGLData getImpl() {
         return impl;
+    }
+
+    protected GLData setImpl(IGLData impl) {
+        this.impl = impl;
+        impl.setApi(this);
+        dev.equo.swt.Creation.creating.pop();
+        return this;
     }
 }

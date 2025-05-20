@@ -133,7 +133,8 @@ public class DragSource extends Widget {
      *  @see DND#DROP_LINK
      */
     public DragSource(Control control, int style) {
-        this(new SwtDragSource(control, style));
+        this((IDragSource) null);
+        setImpl(new SwtDragSource(control, style));
     }
 
     /**
@@ -279,8 +280,12 @@ public class DragSource extends Widget {
         super(impl);
     }
 
-    public static DragSource createApi(IDragSource impl) {
-        return new DragSource(impl);
+    static DragSource createApi(IDragSource impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof DragSource inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new DragSource(impl);
     }
 
     public IDragSource getImpl() {

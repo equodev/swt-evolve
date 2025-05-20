@@ -78,7 +78,8 @@ public class Group extends Composite {
      * @see Widget#getStyle
      */
     public Group(Composite parent, int style) {
-        this(new SwtGroup(parent, style));
+        this((IGroup) null);
+        setImpl(new SwtGroup(parent, style));
     }
 
     protected void checkSubclass() {
@@ -144,8 +145,12 @@ public class Group extends Composite {
         super(impl);
     }
 
-    public static Group createApi(IGroup impl) {
-        return new Group(impl);
+    static Group createApi(IGroup impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Group inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Group(impl);
     }
 
     public IGroup getImpl() {

@@ -133,7 +133,8 @@ public class Shell extends Decorations {
      * </ul>
      */
     public Shell() {
-        this(new SwtShell());
+        this((IShell) null);
+        setImpl(new SwtShell());
     }
 
     /**
@@ -176,7 +177,8 @@ public class Shell extends Decorations {
      * @see SWT#SHEET
      */
     public Shell(int style) {
-        this(new SwtShell(style));
+        this((IShell) null);
+        setImpl(new SwtShell(style));
     }
 
     /**
@@ -199,7 +201,8 @@ public class Shell extends Decorations {
      * </ul>
      */
     public Shell(Display display) {
-        this(new SwtShell(display));
+        this((IShell) null);
+        setImpl(new SwtShell(display));
     }
 
     /**
@@ -250,11 +253,13 @@ public class Shell extends Decorations {
      * @see SWT#SHEET
      */
     public Shell(Display display, int style) {
-        this(new SwtShell(display, style));
+        this((IShell) null);
+        setImpl(new SwtShell(display, style));
     }
 
     Shell(Display display, Shell parent, int style, long handle, boolean embedded) {
-        this(new SwtShell(display, parent, style, handle, embedded));
+        this((IShell) null);
+        setImpl(new SwtShell(display, parent, style, handle, embedded));
     }
 
     /**
@@ -280,7 +285,8 @@ public class Shell extends Decorations {
      * </ul>
      */
     public Shell(Shell parent) {
-        this(new SwtShell(parent));
+        this((IShell) null);
+        setImpl(new SwtShell(parent));
     }
 
     /**
@@ -333,7 +339,8 @@ public class Shell extends Decorations {
      * @see SWT#SHEET
      */
     public Shell(Shell parent, int style) {
-        this(new SwtShell(parent, style));
+        this((IShell) null);
+        setImpl(new SwtShell(parent, style));
     }
 
     /**
@@ -940,8 +947,12 @@ public class Shell extends Decorations {
         super(impl);
     }
 
-    public static Shell createApi(IShell impl) {
-        return new Shell(impl);
+    static Shell createApi(IShell impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Shell inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Shell(impl);
     }
 
     public IShell getImpl() {

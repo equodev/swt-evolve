@@ -59,7 +59,8 @@ public class TreeDropTargetEffect extends DropTargetEffect {
      * @param tree the <code>Tree</code> over which the user positions the cursor to drop the data
      */
     public TreeDropTargetEffect(Tree tree) {
-        this(new SwtTreeDropTargetEffect(tree));
+        this((ITreeDropTargetEffect) null);
+        setImpl(new SwtTreeDropTargetEffect(tree));
     }
 
     /**
@@ -124,8 +125,12 @@ public class TreeDropTargetEffect extends DropTargetEffect {
         super(impl);
     }
 
-    public static TreeDropTargetEffect createApi(ITreeDropTargetEffect impl) {
-        return new TreeDropTargetEffect(impl);
+    static TreeDropTargetEffect createApi(ITreeDropTargetEffect impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof TreeDropTargetEffect inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new TreeDropTargetEffect(impl);
     }
 
     public ITreeDropTargetEffect getImpl() {

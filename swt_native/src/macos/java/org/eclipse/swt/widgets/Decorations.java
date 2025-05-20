@@ -101,7 +101,8 @@ import org.eclipse.swt.internal.cocoa.*;
 public class Decorations extends Canvas {
 
     Decorations() {
-        this(new SwtDecorations());
+        this((IDecorations) null);
+        setImpl(new SwtDecorations());
     }
 
     /**
@@ -144,7 +145,8 @@ public class Decorations extends Canvas {
      * @see Widget#getStyle
      */
     public Decorations(Composite parent, int style) {
-        this(new SwtDecorations(parent, style));
+        this((IDecorations) null);
+        setImpl(new SwtDecorations(parent, style));
     }
 
     protected void checkSubclass() {
@@ -472,8 +474,12 @@ public class Decorations extends Canvas {
         super(impl);
     }
 
-    public static Decorations createApi(IDecorations impl) {
-        return new Decorations(impl);
+    static Decorations createApi(IDecorations impl) {
+        if (dev.equo.swt.Creation.creating.peek() instanceof Decorations inst) {
+            inst.impl = impl;
+            return inst;
+        } else
+            return new Decorations(impl);
     }
 
     public IDecorations getImpl() {
