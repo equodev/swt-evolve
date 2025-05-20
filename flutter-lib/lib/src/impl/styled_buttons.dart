@@ -6,67 +6,163 @@ import 'icons_map.dart';
 // DROP DOWN BUTTON
 class MaterialDropdownButton extends StatelessWidget {
   final String text;
+  final String? image;
   final VoidCallback? onPressed;
   final bool enabled;
   final double borderRadius;
   final double height;
   final double minWidth;
   final bool useDarkTheme;
+  final VoidCallback? onMouseEnter;
+  final VoidCallback? onMouseExit;
+  final VoidCallback? onFocusIn;
+  final VoidCallback? onFocusOut;
 
   const MaterialDropdownButton({
     Key? key,
     required this.text,
+    this.image,
     this.onPressed,
     this.enabled = true,
     this.borderRadius = 5.0,
     this.height = 30.0,
     this.minWidth = 70.0,
     this.useDarkTheme = false,
+    this.onMouseEnter,
+    this.onMouseExit,
+    this.onFocusIn,
+    this.onFocusOut,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-
+    // Colors for buttons without image
     const Color darkButtonColor = Color(0xFF6366F1);
     const Color darkTextColor = Color(0xFFFFFFFF);
 
     const Color lightButtonColor = Color(0xFF6366F1);
     const Color lightTextColor = Color(0xFF595858);
 
-    final Color buttonColor = useDarkTheme ? darkButtonColor : lightButtonColor;
+    // Determine if we should use transparent background based on image presence
+    final bool hasImage = image != null;
+    final Color buttonColor = hasImage
+        ? Colors.transparent
+        : (useDarkTheme ? darkButtonColor : lightButtonColor);
+
     final Color textColor = useDarkTheme ? darkTextColor : lightTextColor;
 
-    return MaterialButton(
-      onPressed: enabled ? onPressed : null,
-      elevation: 0,
-      focusElevation: 0,
-      hoverElevation: 0,
-      highlightElevation: 0,
-      disabledElevation: 0,
-      height: height,
-      minWidth: minWidth,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      color: enabled ? buttonColor : buttonColor.withOpacity(0.5),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            text,
-            style: TextStyle(
-              color: textColor.withOpacity(enabled ? 1.0 : 0.5),
-              fontWeight: FontWeight.w500,
+    const double iconSize = 24.0;
+
+    if (hasImage) {
+      return MouseRegion(
+        onEnter: (_) => onMouseEnter?.call(),
+        onExit: (_) => onMouseExit?.call(),
+        child: Focus(
+          onFocusChange: (hasFocus) {
+            if (hasFocus) {
+              onFocusIn?.call();
+            } else {
+              onFocusOut?.call();
+            }
+          },
+          child: InkWell(
+            onTap: enabled ? onPressed : null,
+            child: Container(
+              height: height,
+              // No minimum width constraints
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(borderRadius),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min, // Critical for making it as compact as possible
+                children: [
+                  // Image
+                  !materialIconMap.containsKey(image)
+                      ? (image!.toLowerCase().endsWith('.svg')
+                      ? SvgPicture.file(
+                    File(image!),
+                    width: iconSize * 1.3,
+                    height: iconSize * 1.3,
+                  )
+                      : Image.file(
+                    File(image!),
+                    width: iconSize * 1.3,
+                    height: iconSize * 1.3,
+                  ))
+                      : Icon(
+                    getMaterialIconByName(image!),
+                    size: iconSize * 1.3,
+                    color: textColor.withOpacity(enabled ? 1.0 : 0.5),
+                  ),
+                  // Minimal space
+                  const SizedBox(width: 2),
+                  // Text
+                  Text(
+                    text,
+                    style: TextStyle(
+                      color: textColor.withOpacity(enabled ? 1.0 : 0.5),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  // Arrow right next to the text
+                  Icon(
+                    Icons.keyboard_arrow_down,
+                    color: textColor.withOpacity(enabled ? 1.0 : 0.5),
+                    size: 18,
+                  ),
+                ],
+              ),
             ),
           ),
-          Icon(
-            Icons.arrow_drop_down,
-            color: textColor.withOpacity(enabled ? 1.0 : 0.5),
-            size: 20,
+        ),
+      );
+    }
+
+    return MouseRegion(
+      onEnter: (_) => onMouseEnter?.call(),
+      onExit: (_) => onMouseExit?.call(),
+      child: Focus(
+        onFocusChange: (hasFocus) {
+          if (hasFocus) {
+            onFocusIn?.call();
+          } else {
+            onFocusOut?.call();
+          }
+        },
+        child: MaterialButton(
+          onPressed: enabled ? onPressed : null,
+          elevation: 0,
+          focusElevation: 0,
+          hoverElevation: 0,
+          highlightElevation: 0,
+          disabledElevation: 0,
+          height: height,
+          minWidth: minWidth,
+          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          color: enabled ? buttonColor : buttonColor.withOpacity(0.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
           ),
-        ],
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                text,
+                style: TextStyle(
+                  color: textColor.withOpacity(enabled ? 1.0 : 0.5),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Icon(
+                Icons.keyboard_arrow_down,
+                color: textColor.withOpacity(enabled ? 1.0 : 0.5),
+                size: 18,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
