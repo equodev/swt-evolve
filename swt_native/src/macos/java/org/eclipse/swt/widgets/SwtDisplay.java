@@ -2523,7 +2523,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (prefsItem != null)
             prefsItem.setTag(SWT.ID_PREFERENCES);
         //$NON-NLS-1$
-        observerCallback = new Callback(this.getApi(), "observerProc", 3);
+        observerCallback = new Callback(this, "observerProc", 3);
         long observerProc = observerCallback.getAddress();
         int activities = OS.kCFRunLoopBeforeWaiting;
         runLoopObserver = OS.CFRunLoopObserverCreate(0, activities, true, 0, observerProc, 0);
@@ -2535,7 +2535,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (javaRunLoopMode != null) {
             OS.CFRunLoopAddObserver(OS.CFRunLoopGetCurrent(), runLoopObserver, javaRunLoopMode.id);
         }
-        cursorSetCallback = new Callback(this.getApi(), "cursorSetProc", 2);
+        cursorSetCallback = new Callback(this, "cursorSetProc", 2);
         long cursorSetProc = cursorSetCallback.getAddress();
         long method = OS.class_getInstanceMethod(OS.class_NSCursor, OS.sel_set);
         if (method != 0)

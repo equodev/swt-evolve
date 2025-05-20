@@ -1008,7 +1008,7 @@ public final class SwtGC extends SwtResource implements IGC {
     }
 
     NSBezierPath createNSBezierPath(long cgPath) {
-        Callback callback = new Callback(this.getApi(), "applierFunc", 2);
+        Callback callback = new Callback(this, "applierFunc", 2);
         long proc = callback.getAddress();
         count = typeCount = 0;
         element = new CGPathElement();

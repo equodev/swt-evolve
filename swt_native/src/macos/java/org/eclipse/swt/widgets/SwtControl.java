@@ -1917,7 +1917,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     NSBezierPath getPath(long region) {
-        Callback callback = new Callback(this.getApi(), "regionToRects", 4);
+        Callback callback = new Callback(this, "regionToRects", 4);
         NSBezierPath path = NSBezierPath.bezierPath();
         path.retain();
         OS.QDRegionToRects(region, OS.kQDParseRegionFromTopLeft, callback.getAddress(), path.id);

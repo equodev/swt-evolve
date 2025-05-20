@@ -254,7 +254,7 @@ public class SwtMessageBox extends SwtDialog implements IMessageBox {
                 error(SWT.ERROR_NO_HANDLES);
             OS.object_setInstanceVariable(delegate.id, SwtDisplay.SWT_OBJECT, jniRef);
             ((SwtDisplay) display.getImpl()).setModalDialog(this.getApi(), panel);
-            callback_completion_handler = new Callback(this.getApi(), "_completionHandler", 1);
+            callback_completion_handler = new Callback(this, "_completionHandler", 1);
             long handler = callback_completion_handler.getAddress();
             OS.beginSheetModalForWindow(alert, ((SwtShell) parent.getImpl()).window, handler);
             if ((style & SWT.APPLICATION_MODAL) != 0) {

@@ -203,7 +203,7 @@ public class SwtDirectoryDialog extends SwtDialog implements IDirectoryDialog {
         if (panel == null) {
             return null;
         }
-        callback_performKeyEquivalent = new Callback(this.getApi(), "_performKeyEquivalent", 3);
+        callback_performKeyEquivalent = new Callback(this, "_performKeyEquivalent", 3);
         long proc = callback_performKeyEquivalent.getAddress();
         method_performKeyEquivalent = OS.class_getInstanceMethod(OS.class_NSSavePanel, OS.sel_performKeyEquivalent_);
         if (method_performKeyEquivalent != 0) {
@@ -226,7 +226,7 @@ public class SwtDirectoryDialog extends SwtDialog implements IDirectoryDialog {
         Display display = parent != null ? parent.getDisplay() : SwtDisplay.getCurrent();
         ((SwtDisplay) display.getImpl()).setModalDialog(this.getApi(), panel);
         if (parent != null && (style & SWT.SHEET) != 0) {
-            completion_handler_callback = new Callback(this.getApi(), "_completionHandler", 1);
+            completion_handler_callback = new Callback(this, "_completionHandler", 1);
             long handler = completion_handler_callback.getAddress();
             OS.beginSheetModalForWindow(panel, parent.view.window(), handler);
             NSApplication.sharedApplication().runModalForWindow(parent.view.window());
