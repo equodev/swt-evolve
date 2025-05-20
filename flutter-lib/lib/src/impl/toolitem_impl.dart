@@ -45,6 +45,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends ToolItemValue>
       ),
       SWT.DROP_DOWN => MaterialDropdownButton(
         text: text ?? "",
+        image: image,
         height: 50.0,
         enabled: enabled,
         useDarkTheme: useDarkTheme,
