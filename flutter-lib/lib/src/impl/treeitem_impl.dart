@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'dart:io';
 import 'package:swtflutter/src/impl/tree_impl.dart';
 import '../swt/treeitem.dart';
 import '../impl/item_impl.dart';
 import '../impl/widget_config.dart';
+import 'icons_map.dart';
 
 class TreeItemImpl<T extends TreeItemSwt, V extends TreeItemValue>
     extends ItemImpl<T, V> {
@@ -35,6 +38,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends TreeItemValue>
     final bool checked = state.checked ?? false;
     final bool grayed = state.grayed ?? false;
     final int level = _context?.level ?? 0;
+    final String? image = state.image;
 
     final Color textColor = useDarkTheme ? Colors.white : Colors.black87;
     final Color bgColor = selected
@@ -137,10 +141,29 @@ class TreeItemImpl<T extends TreeItemSwt, V extends TreeItemValue>
                       ),
                     ),
 
-                  // Item icon
+                  // Item icon - Modificado para usar la variable image
                   Container(
                     margin: const EdgeInsets.only(right: 4),
-                    child: Icon(
+                    child: (image != null)
+                        ? (materialIconMap.containsKey(image)
+                        ? Icon(
+                      getMaterialIconByName(image),
+                      size: 16,
+                      color: useDarkTheme ? Colors.white70 : Colors.grey.shade700,
+                    )
+                        : (image.toLowerCase().endsWith('.svg')
+                        ? SvgPicture.file(
+                      File(image),
+                      width: 16,
+                      height: 16,
+                      color: useDarkTheme ? Colors.white70 : Colors.grey.shade700,
+                    )
+                        : Image.file(
+                      File(image),
+                      width: 16,
+                      height: 16,
+                    )))
+                        : Icon(
                       hasChildren
                           ? (expanded ? Icons.folder_open : Icons.folder)
                           : Icons.insert_drive_file,
