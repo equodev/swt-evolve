@@ -92,7 +92,7 @@ public class SwtClipboard implements IClipboard {
      */
     public void checkSubclass() {
         String name = getClass().getName();
-        String validName = Clipboard.class.getName();
+        String validName = SwtClipboard.class.getName();
         if (!validName.equals(name)) {
             DND.error(SWT.ERROR_INVALID_SUBCLASS);
         }

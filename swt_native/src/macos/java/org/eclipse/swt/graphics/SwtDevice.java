@@ -118,7 +118,7 @@ public abstract class SwtDevice implements Drawable, IDevice {
      * @see DeviceData
      */
     public SwtDevice(DeviceData data) {
-        synchronized (Device.class) {
+        synchronized (SwtDevice.class) {
             if (data != null) {
                 debug = data.debug;
                 tracking = data.tracking;
@@ -242,7 +242,7 @@ public abstract class SwtDevice implements Drawable, IDevice {
      * @see #checkDevice
      */
     public void dispose() {
-        synchronized (Device.class) {
+        synchronized (SwtDevice.class) {
             try (ExceptionStash exceptions = new ExceptionStash()) {
                 if (isDisposed())
                     return;

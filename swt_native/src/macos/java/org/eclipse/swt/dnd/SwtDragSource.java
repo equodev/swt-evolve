@@ -120,7 +120,7 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
 
     static {
         String className = "SWTDragSourceDelegate";
-        Class<?> clazz = DragSource.class;
+        Class<?> clazz = SwtDragSource.class;
         dragSource2Args = new Callback(clazz, "dragSourceProc", 2);
         proc2 = dragSource2Args.getAddress();
         dragSource3Args = new Callback(clazz, "dragSourceProc", 3);
@@ -321,7 +321,7 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
     @Override
     public void checkSubclass() {
         String name = getClass().getName();
-        String validName = DragSource.class.getName();
+        String validName = SwtDragSource.class.getName();
         if (!validName.equals(name)) {
             DND.error(SWT.ERROR_INVALID_SUBCLASS);
         }

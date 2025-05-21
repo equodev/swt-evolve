@@ -169,7 +169,7 @@ public class SwtSynchronizer implements ISynchronizer {
      */
     public void syncExec(Runnable runnable) {
         RunnableLock lock = null;
-        synchronized (Device.class) {
+        synchronized (SwtSynchronizer.class) {
             if (display == null || display.isDisposed())
                 SWT.error(SWT.ERROR_DEVICE_DISPOSED);
             if (!((SwtDisplay) display.getImpl()).isValidThread()) {

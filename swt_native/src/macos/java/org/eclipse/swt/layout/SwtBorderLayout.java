@@ -61,7 +61,7 @@ import org.eclipse.swt.widgets.*;
  */
 public class SwtBorderLayout extends SwtLayout implements IBorderLayout {
 
-    private static final String LAYOUT_KEY = BorderLayout.class.getName() + ".layoutData";
+    private static final String LAYOUT_KEY = SwtBorderLayout.class.getName() + ".layoutData";
 
     private static final ToIntFunction<Point> WIDTH = p -> p.x;
 

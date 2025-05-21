@@ -88,7 +88,7 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
     static final String LOCK_CURSOR = "org.eclipse.swt.internal.lockCursor";
 
     static {
-        Class<?> clazz = DropTarget.class;
+        Class<?> clazz = SwtDropTarget.class;
         dropTarget2Args = new Callback(clazz, "dropTargetProc", 2);
         proc2Args = dropTarget2Args.getAddress();
         dropTarget3Args = new Callback(clazz, "dropTargetProc", 3);
@@ -255,7 +255,7 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
     @Override
     public void checkSubclass() {
         String name = getClass().getName();
-        String validName = DropTarget.class.getName();
+        String validName = SwtDropTarget.class.getName();
         if (!validName.equals(name)) {
             DND.error(SWT.ERROR_INVALID_SUBCLASS);
         }

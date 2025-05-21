@@ -156,7 +156,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @return a shallow copy of this StyleRange
      */
     public Object clone() {
-        return getImpl().clone();
+        return ((SwtStyleRange) getImpl().clone()).getApi();
     }
 
     /**
