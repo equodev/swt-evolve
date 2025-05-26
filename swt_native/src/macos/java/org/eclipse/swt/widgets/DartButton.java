@@ -18,8 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a selectable user interface object that
@@ -48,7 +46,7 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Button extends Control {
+public class DartButton extends DartControl implements IButton {
 
     /**
      * Constructs a new instance of this class given its parent
@@ -88,9 +86,8 @@ public class Button extends Control {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public Button(Composite parent, int style) {
-        this((IButton) null);
-        setImpl(Config.isEquo(Button.class) ? new DartButton(parent, style) : new SwtButton(parent, style));
+    public DartButton(Composite parent, int style) {
+        super(parent, checkStyle(style));
     }
 
     /**
@@ -124,11 +121,27 @@ public class Button extends Control {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getImpl().addSelectionListener(listener);
+        addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
     }
 
+    static int checkStyle(int style) {
+        style = checkBits(style, SWT.PUSH, SWT.ARROW, SWT.CHECK, SWT.RADIO, SWT.TOGGLE, 0);
+        if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0) {
+            return checkBits(style, SWT.CENTER, SWT.LEFT, SWT.RIGHT, 0, 0, 0);
+        }
+        if ((style & (SWT.CHECK | SWT.RADIO)) != 0) {
+            return checkBits(style, SWT.LEFT, SWT.RIGHT, SWT.CENTER, 0, 0, 0);
+        }
+        if ((style & SWT.ARROW) != 0) {
+            style |= SWT.NO_FOCUS;
+            return checkBits(style, SWT.UP, SWT.DOWN, SWT.LEFT, SWT.RIGHT, 0, 0);
+        }
+        return style;
+    }
+
+    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getImpl().computeSize(wHint, hHint, changed);
+        return super.computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -148,7 +161,7 @@ public class Button extends Control {
      * </ul>
      */
     public int getAlignment() {
-        return getImpl().getAlignment();
+        return getValue().alignment;
     }
 
     /**
@@ -166,7 +179,7 @@ public class Button extends Control {
      * @since 3.4
      */
     public boolean getGrayed() {
-        return getImpl().getGrayed();
+        return getValue().grayed;
     }
 
     /**
@@ -181,7 +194,7 @@ public class Button extends Control {
      * </ul>
      */
     public Image getImage() {
-        return getImpl().getImage();
+        return getValue().image;
     }
 
     /**
@@ -201,7 +214,7 @@ public class Button extends Control {
      * </ul>
      */
     public boolean getSelection() {
-        return getImpl().getSelection();
+        return getValue().selection;
     }
 
     /**
@@ -217,7 +230,7 @@ public class Button extends Control {
      * </ul>
      */
     public String getText() {
-        return getImpl().getText();
+        return getValue().text;
     }
 
     /**
@@ -238,7 +251,13 @@ public class Button extends Control {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getImpl().removeSelectionListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Selection, listener);
+        eventTable.unhook(SWT.DefaultSelection, listener);
     }
 
     /**
@@ -258,7 +277,7 @@ public class Button extends Control {
      * </ul>
      */
     public void setAlignment(int alignment) {
-        getImpl().setAlignment(alignment);
+        getValue().alignment = alignment;
     }
 
     /**
@@ -276,7 +295,7 @@ public class Button extends Control {
      * @since 3.4
      */
     public void setGrayed(boolean grayed) {
-        getImpl().setGrayed(grayed);
+        getValue().grayed = grayed;
     }
 
     /**
@@ -296,7 +315,7 @@ public class Button extends Control {
      * </ul>
      */
     public void setImage(Image image) {
-        getImpl().setImage(image);
+        getValue().image = image;
     }
 
     /**
@@ -316,7 +335,7 @@ public class Button extends Control {
      * </ul>
      */
     public void setSelection(boolean selected) {
-        getImpl().setSelection(selected);
+        getValue().selection = selected;
     }
 
     /**
@@ -354,22 +373,28 @@ public class Button extends Control {
      * </ul>
      */
     public void setText(String string) {
-        getImpl().setText(string);
+        getValue().text = string;
     }
 
-    protected Button(IButton impl) {
-        super(impl);
+    @Override
+    int traversalCode(int key, Object theEvent) {
+        int code = super.traversalCode(key, theEvent);
+        if ((style & SWT.ARROW) != 0)
+            code &= ~(SWT.TRAVERSE_TAB_NEXT | SWT.TRAVERSE_TAB_PREVIOUS);
+        if ((style & SWT.RADIO) != 0)
+            code |= SWT.TRAVERSE_ARROW_NEXT | SWT.TRAVERSE_ARROW_PREVIOUS;
+        return code;
     }
 
-    static Button createApi(IButton impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Button inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Button(impl);
+    public Button getApi() {
+        if (api == null)
+            api = Button.createApi(this);
+        return (Button) api;
     }
 
-    public IButton getImpl() {
-        return (IButton) super.getImpl();
+    public VButton getValue() {
+        if (value == null)
+            value = new VButton();
+        return (VButton) value;
     }
 }

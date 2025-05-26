@@ -16,7 +16,6 @@
 package org.eclipse.swt.graphics;
 
 import java.io.*;
-import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent places on the (x, y)
@@ -42,17 +41,7 @@ import dev.equo.swt.Config;
  * @see Rectangle
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public final class Point implements Serializable {
-
-    /**
-     * the x coordinate of the point
-     */
-    public int x;
-
-    /**
-     * the y coordinate of the point
-     */
-    public int y;
+public final class DartPoint implements Serializable, IPoint {
 
     /**
      * Constructs a new point with the given x and y coordinates.
@@ -60,9 +49,9 @@ public final class Point implements Serializable {
      * @param x the x coordinate of the new point
      * @param y the y coordinate of the new point
      */
-    public Point(int x, int y) {
-        this((IPoint) null);
-        setImpl(Config.isEquo(Point.class) ? new DartPoint(x, y) : new SwtPoint(x, y));
+    public DartPoint(int x, int y) {
+        this.getApi().x = x;
+        this.getApi().y = y;
     }
 
     /**
@@ -75,8 +64,13 @@ public final class Point implements Serializable {
      *
      * @see #hashCode()
      */
+    @Override
     public boolean equals(Object object) {
-        return getImpl().equals(object);
+        if (object == this.getApi())
+            return true;
+        if (!(object instanceof Point p))
+            return false;
+        return (p.x == this.getApi().x) && (p.y == this.getApi().y);
     }
 
     /**
@@ -89,8 +83,9 @@ public final class Point implements Serializable {
      *
      * @see #equals(Object)
      */
+    @Override
     public int hashCode() {
-        return getImpl().hashCode();
+        return getApi().x ^ getApi().y;
     }
 
     /**
@@ -99,35 +94,29 @@ public final class Point implements Serializable {
      *
      * @return a string representation of the point
      */
+    @Override
     public String toString() {
-        return getImpl().toString();
+        //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        return "Point {" + getApi().x + ", " + getApi().y + "}";
     }
 
-    protected IPoint impl;
-
-    protected Point(IPoint impl) {
-        if (impl == null)
-            dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+    public Point getApi() {
+        if (api == null)
+            api = Point.createApi(this);
+        return (Point) api;
     }
 
-    static Point createApi(IPoint impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Point inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Point(impl);
+    protected Point api;
+
+    public void setApi(Point api) {
+        this.api = api;
     }
 
-    public IPoint getImpl() {
-        return impl;
-    }
+    protected VPoint value;
 
-    protected Point setImpl(IPoint impl) {
-        this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
-        return this;
+    public VPoint getValue() {
+        if (value == null)
+            value = new VPoint();
+        return (VPoint) value;
     }
 }

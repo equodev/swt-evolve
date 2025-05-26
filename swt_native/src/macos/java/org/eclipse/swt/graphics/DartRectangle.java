@@ -17,7 +17,6 @@ package org.eclipse.swt.graphics;
 
 import java.io.*;
 import org.eclipse.swt.*;
-import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent rectangular areas in an
@@ -45,27 +44,7 @@ import dev.equo.swt.Config;
  * @see Point
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public final class Rectangle implements Serializable {
-
-    /**
-     * the x coordinate of the rectangle
-     */
-    public int x;
-
-    /**
-     * the y coordinate of the rectangle
-     */
-    public int y;
-
-    /**
-     * the width of the rectangle
-     */
-    public int width;
-
-    /**
-     * the height of the rectangle
-     */
-    public int height;
+public final class DartRectangle implements Serializable, IRectangle {
 
     /**
      * Construct a new instance of this class given the
@@ -76,9 +55,11 @@ public final class Rectangle implements Serializable {
      * @param width the width of the rectangle
      * @param height the height of the rectangle
      */
-    public Rectangle(int x, int y, int width, int height) {
-        this((IRectangle) null);
-        setImpl(Config.isEquo(Rectangle.class) ? new DartRectangle(x, y, width, height) : new SwtRectangle(x, y, width, height));
+    public DartRectangle(int x, int y, int width, int height) {
+        this.getApi().x = x;
+        this.getApi().y = y;
+        this.getApi().width = width;
+        this.getApi().height = height;
     }
 
     /**
@@ -98,7 +79,20 @@ public final class Rectangle implements Serializable {
      * </ul>
      */
     public void add(Rectangle rect) {
-        getImpl().add(rect);
+        if (rect == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        int left = getApi().x < rect.x ? getApi().x : rect.x;
+        int top = getApi().y < rect.y ? getApi().y : rect.y;
+        int lhs = getApi().x + getApi().width;
+        int rhs = rect.x + rect.width;
+        int right = lhs > rhs ? lhs : rhs;
+        lhs = getApi().y + getApi().height;
+        rhs = rect.y + rect.height;
+        int bottom = lhs > rhs ? lhs : rhs;
+        getApi().x = left;
+        getApi().y = top;
+        getApi().width = right - left;
+        getApi().height = bottom - top;
     }
 
     /**
@@ -111,7 +105,7 @@ public final class Rectangle implements Serializable {
      * @return <code>true</code> if the rectangle contains the point and <code>false</code> otherwise
      */
     public boolean contains(int x, int y) {
-        return getImpl().contains(x, y);
+        return (x >= this.getApi().x) && (y >= this.getApi().y) && x < (this.getApi().x + getApi().width) && y < (this.getApi().y + getApi().height);
     }
 
     /**
@@ -127,7 +121,9 @@ public final class Rectangle implements Serializable {
      * </ul>
      */
     public boolean contains(Point pt) {
-        return getImpl().contains(pt);
+        if (pt == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        return contains(pt.x, pt.y);
     }
 
     /**
@@ -140,8 +136,13 @@ public final class Rectangle implements Serializable {
      *
      * @see #hashCode()
      */
+    @Override
     public boolean equals(Object object) {
-        return getImpl().equals(object);
+        if (object == this.getApi())
+            return true;
+        if (!(object instanceof Rectangle r))
+            return false;
+        return (r.x == this.getApi().x) && (r.y == this.getApi().y) && (r.width == this.getApi().width) && (r.height == this.getApi().height);
     }
 
     /**
@@ -154,8 +155,9 @@ public final class Rectangle implements Serializable {
      *
      * @see #equals(Object)
      */
+    @Override
     public int hashCode() {
-        return getImpl().hashCode();
+        return getApi().x ^ getApi().y ^ getApi().width ^ getApi().height;
     }
 
     /**
@@ -172,7 +174,22 @@ public final class Rectangle implements Serializable {
      * since 3.0
      */
     public void intersect(Rectangle rect) {
-        getImpl().intersect(rect);
+        if (rect == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (this.getApi() == rect)
+            return;
+        int left = getApi().x > rect.x ? getApi().x : rect.x;
+        int top = getApi().y > rect.y ? getApi().y : rect.y;
+        int lhs = getApi().x + getApi().width;
+        int rhs = rect.x + rect.width;
+        int right = lhs < rhs ? lhs : rhs;
+        lhs = getApi().y + getApi().height;
+        rhs = rect.y + rect.height;
+        int bottom = lhs < rhs ? lhs : rhs;
+        getApi().x = right < left ? 0 : left;
+        getApi().y = bottom < top ? 0 : top;
+        getApi().width = right < left ? 0 : right - left;
+        getApi().height = bottom < top ? 0 : bottom - top;
     }
 
     /**
@@ -191,7 +208,19 @@ public final class Rectangle implements Serializable {
      * </ul>
      */
     public Rectangle intersection(Rectangle rect) {
-        return getImpl().intersection(rect);
+        if (rect == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (this.getApi() == rect)
+            return new Rectangle(getApi().x, getApi().y, getApi().width, getApi().height);
+        int left = getApi().x > rect.x ? getApi().x : rect.x;
+        int top = getApi().y > rect.y ? getApi().y : rect.y;
+        int lhs = getApi().x + getApi().width;
+        int rhs = rect.x + rect.width;
+        int right = lhs < rhs ? lhs : rhs;
+        lhs = getApi().y + getApi().height;
+        rhs = rect.y + rect.height;
+        int bottom = lhs < rhs ? lhs : rhs;
+        return new Rectangle(right < left ? 0 : left, bottom < top ? 0 : top, right < left ? 0 : right - left, bottom < top ? 0 : bottom - top);
     }
 
     /**
@@ -219,7 +248,7 @@ public final class Rectangle implements Serializable {
      * @since 3.0
      */
     public boolean intersects(int x, int y, int width, int height) {
-        return getImpl().intersects(x, y, width, height);
+        return (x < this.getApi().x + this.getApi().width) && (y < this.getApi().y + this.getApi().height) && (x + width > this.getApi().x) && (y + height > this.getApi().y);
     }
 
     /**
@@ -241,7 +270,9 @@ public final class Rectangle implements Serializable {
      * @see #isEmpty()
      */
     public boolean intersects(Rectangle rect) {
-        return getImpl().intersects(rect);
+        if (rect == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        return rect == this.getApi() || intersects(rect.x, rect.y, rect.width, rect.height);
     }
 
     /**
@@ -257,7 +288,7 @@ public final class Rectangle implements Serializable {
      * @return <code>true</code> if the receiver is empty, and <code>false</code> otherwise
      */
     public boolean isEmpty() {
-        return getImpl().isEmpty();
+        return (getApi().width <= 0) || (getApi().height <= 0);
     }
 
     /**
@@ -266,8 +297,10 @@ public final class Rectangle implements Serializable {
      *
      * @return a string representation of the rectangle
      */
+    @Override
     public String toString() {
-        return getImpl().toString();
+        //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+        return "Rectangle {" + getApi().x + ", " + getApi().y + ", " + getApi().width + ", " + getApi().height + "}";
     }
 
     /**
@@ -289,34 +322,36 @@ public final class Rectangle implements Serializable {
      * @see #add(Rectangle)
      */
     public Rectangle union(Rectangle rect) {
-        return getImpl().union(rect);
+        if (rect == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        int left = getApi().x < rect.x ? getApi().x : rect.x;
+        int top = getApi().y < rect.y ? getApi().y : rect.y;
+        int lhs = getApi().x + getApi().width;
+        int rhs = rect.x + rect.width;
+        int right = lhs > rhs ? lhs : rhs;
+        lhs = getApi().y + getApi().height;
+        rhs = rect.y + rect.height;
+        int bottom = lhs > rhs ? lhs : rhs;
+        return new Rectangle(left, top, right - left, bottom - top);
     }
 
-    protected IRectangle impl;
-
-    protected Rectangle(IRectangle impl) {
-        if (impl == null)
-            dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+    public Rectangle getApi() {
+        if (api == null)
+            api = Rectangle.createApi(this);
+        return (Rectangle) api;
     }
 
-    static Rectangle createApi(IRectangle impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Rectangle inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Rectangle(impl);
+    protected Rectangle api;
+
+    public void setApi(Rectangle api) {
+        this.api = api;
     }
 
-    public IRectangle getImpl() {
-        return impl;
-    }
+    protected VRectangle value;
 
-    protected Rectangle setImpl(IRectangle impl) {
-        this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
-        return this;
+    public VRectangle getValue() {
+        if (value == null)
+            value = new VRectangle();
+        return (VRectangle) value;
     }
 }

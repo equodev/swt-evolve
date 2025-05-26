@@ -78,6 +78,13 @@ dependencies {
 
     implementation("com.google.auto.value:auto-value-annotations:1.10.4")
     annotationProcessor("com.google.auto.value:auto-value:1.10.4")
+    implementation("com.dslplatform:dsl-json:2.0.2")
+    annotationProcessor("com.dslplatform:dsl-json:2.0.2")
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.assertj:assertj-core:3.25.3")
+    testImplementation("org.mockito:mockito-core:5.18.0")
 }
 
 
