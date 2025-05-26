@@ -16,7 +16,6 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
-import dev.equo.swt.Config;
 
 /**
  * Instances of this store color information. To create a color you can either
@@ -35,30 +34,14 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: PaintExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public final class Color extends Resource {
+public final class DartColor extends DartResource implements IColor {
 
-    /**
-     * the handle to the OS color resource
-     * (Warning: This field is platform dependent)
-     * <p>
-     * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
-     * public API. It is marked public only so that it can be shared
-     * within the packages provided by SWT. It is not available on all
-     * platforms and should never be accessed from application code.
-     * </p>
-     *
-     * @noreference This field is not intended to be referenced by clients.
-     */
-    public double[] handle;
-
-    Color() {
-        this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor() : new SwtColor());
+    DartColor() {
+        super();
     }
 
-    Color(Device device) {
-        this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(device) : new SwtColor(device));
+    DartColor(Device device) {
+        super(device);
     }
 
     /**
@@ -78,9 +61,10 @@ public final class Color extends Resource {
      *
      * @see #Color(int, int, int) The equivalent constructor not requiring a Device
      */
-    public Color(Device device, int red, int green, int blue) {
-        this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(device, red, green, blue) : new SwtColor(device, red, green, blue));
+    public DartColor(Device device, int red, int green, int blue) {
+        super(device);
+        init(red, green, blue, 255);
+        init();
     }
 
     /**
@@ -97,9 +81,9 @@ public final class Color extends Resource {
      * </ul>
      * @since 3.115
      */
-    public Color(int red, int green, int blue) {
-        this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(red, green, blue) : new SwtColor(red, green, blue));
+    public DartColor(int red, int green, int blue) {
+        super();
+        init(red, green, blue, 255);
     }
 
     /**
@@ -122,9 +106,10 @@ public final class Color extends Resource {
      *
      * @since 3.104
      */
-    public Color(Device device, int red, int green, int blue, int alpha) {
-        this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(device, red, green, blue, alpha) : new SwtColor(device, red, green, blue, alpha));
+    public DartColor(Device device, int red, int green, int blue, int alpha) {
+        super(device);
+        init(red, green, blue, alpha);
+        init();
     }
 
     /**
@@ -143,9 +128,9 @@ public final class Color extends Resource {
      *
      * @since 3.115
      */
-    public Color(int red, int green, int blue, int alpha) {
-        this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(red, green, blue, alpha) : new SwtColor(red, green, blue, alpha));
+    public DartColor(int red, int green, int blue, int alpha) {
+        super();
+        init(red, green, blue, alpha);
     }
 
     /**
@@ -163,9 +148,12 @@ public final class Color extends Resource {
      *
      * @see #Color(RGB) The equivalent constructor not requiring a Device
      */
-    public Color(Device device, RGB rgb) {
-        this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(device, rgb) : new SwtColor(device, rgb));
+    public DartColor(Device device, RGB rgb) {
+        super(device);
+        if (rgb == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        init(rgb.red, rgb.green, rgb.blue, 255);
+        init();
     }
 
     /**
@@ -180,9 +168,11 @@ public final class Color extends Resource {
      * </ul>
      * @since 3.115
      */
-    public Color(RGB rgb) {
-        this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(rgb) : new SwtColor(rgb));
+    public DartColor(RGB rgb) {
+        super();
+        if (rgb == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        init(rgb.red, rgb.green, rgb.blue, 255);
     }
 
     /**
@@ -202,9 +192,12 @@ public final class Color extends Resource {
      *
      * @since 3.104
      */
-    public Color(Device device, RGBA rgba) {
-        this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(device, rgba) : new SwtColor(device, rgba));
+    public DartColor(Device device, RGBA rgba) {
+        super(device);
+        if (rgba == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        init(rgba.rgb.red, rgba.rgb.green, rgba.rgb.blue, rgba.alpha);
+        init();
     }
 
     /**
@@ -220,9 +213,11 @@ public final class Color extends Resource {
      *
      * @since 3.115
      */
-    public Color(RGBA rgba) {
-        this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(rgba) : new SwtColor(rgba));
+    public DartColor(RGBA rgba) {
+        super();
+        if (rgba == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        init(rgba.rgb.red, rgba.rgb.green, rgba.rgb.blue, rgba.alpha);
     }
 
     /**
@@ -244,9 +239,12 @@ public final class Color extends Resource {
      *
      * @since 3.104
      */
-    public Color(Device device, RGB rgb, int alpha) {
-        this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(device, rgb, alpha) : new SwtColor(device, rgb, alpha));
+    public DartColor(Device device, RGB rgb, int alpha) {
+        super(device);
+        if (rgb == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        init(rgb.red, rgb.green, rgb.blue, alpha);
+        init();
     }
 
     /**
@@ -264,17 +262,25 @@ public final class Color extends Resource {
      *
      * @since 3.115
      */
-    public Color(RGB rgb, int alpha) {
-        this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(rgb, alpha) : new SwtColor(rgb, alpha));
+    public DartColor(RGB rgb, int alpha) {
+        super();
+        if (rgb == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        init(rgb.red, rgb.green, rgb.blue, alpha);
     }
 
     /**
      * Colors do not need to be disposed, however to maintain compatibility
      * with older code, disposing a Color is not an error.
      */
+    @Override
     public void dispose() {
-        getImpl().dispose();
+        // Does as below to maintain API contract with Resource. Does
+        // not use super.dispose() because that untracks the Color
+        // from the Device tracking, however init() is overridden
+        // to prevent the tracking in the first place.
+        destroy();
+        device = null;
     }
 
     /**
@@ -290,8 +296,13 @@ public final class Color extends Resource {
      * @return <code>Device</code> the device of the receiver
      * @since 3.2
      */
+    @Override
     public Device getDevice() {
-        return getImpl().getDevice();
+        // Fall back on Device.getDevice only if we haven't been disposed
+        // already.
+        if (this.device == null && this.getApi().handle != null)
+            return SwtDevice.getDevice();
+        return super.getDevice();
     }
 
     /**
@@ -304,8 +315,18 @@ public final class Color extends Resource {
      *
      * @see #hashCode
      */
+    @Override
     public boolean equals(Object object) {
-        return getImpl().equals(object);
+        if (object == this.getApi())
+            return true;
+        if (!(object instanceof Color color))
+            return false;
+        if (isDisposed() || color.isDisposed())
+            return false;
+        double[] rgbColor = color.handle;
+        if (getApi().handle == rgbColor)
+            return true;
+        return (int) (getApi().handle[0] * 255) == (int) (rgbColor[0] * 255) && (int) (getApi().handle[1] * 255) == (int) (rgbColor[1] * 255) && (int) (getApi().handle[2] * 255) == (int) (rgbColor[2] * 255) && (int) (getApi().handle[3] * 255) == (int) (rgbColor[3] * 255);
     }
 
     /**
@@ -319,7 +340,9 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public int getAlpha() {
-        return getImpl().getAlpha();
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return (int) (getApi().handle[3] * 255);
     }
 
     /**
@@ -332,7 +355,9 @@ public final class Color extends Resource {
      * </ul>
      */
     public int getBlue() {
-        return getImpl().getBlue();
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return (int) (getApi().handle[2] * 255);
     }
 
     /**
@@ -345,7 +370,9 @@ public final class Color extends Resource {
      * </ul>
      */
     public int getGreen() {
-        return getImpl().getGreen();
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return (int) (getApi().handle[1] * 255);
     }
 
     /**
@@ -358,7 +385,9 @@ public final class Color extends Resource {
      * </ul>
      */
     public int getRed() {
-        return getImpl().getRed();
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return (int) (getApi().handle[0] * 255);
     }
 
     /**
@@ -371,8 +400,11 @@ public final class Color extends Resource {
      *
      * @see #equals
      */
+    @Override
     public int hashCode() {
-        return getImpl().hashCode();
+        if (isDisposed())
+            return 0;
+        return (int) (getApi().handle[0] * 255) ^ (int) (getApi().handle[1] * 255) ^ (int) (getApi().handle[2] * 255) ^ (int) (getApi().handle[3] * 255);
     }
 
     /**
@@ -385,7 +417,9 @@ public final class Color extends Resource {
      * </ul>
      */
     public RGB getRGB() {
-        return getImpl().getRGB();
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return new RGB(getRed(), getGreen(), getBlue());
     }
 
     /**
@@ -399,7 +433,43 @@ public final class Color extends Resource {
      * @since 3.104
      */
     public RGBA getRGBA() {
-        return getImpl().getRGBA();
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return new RGBA(getRed(), getGreen(), getBlue(), getAlpha());
+    }
+
+    /**
+     * Allocates the operating system resources associated
+     * with the receiver.
+     *
+     * @param device the device on which to allocate the color
+     * @param red the amount of red in the color
+     * @param green the amount of green in the color
+     * @param blue the amount of blue in the color
+     * @param alpha the amount of alpha in the color
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_INVALID_ARGUMENT - if the red, green, blue or alpha argument is not between 0 and 255</li>
+     * </ul>
+     */
+    void init(int red, int green, int blue, int alpha) {
+        if ((red > 255) || (red < 0) || (green > 255) || (green < 0) || (blue > 255) || (blue < 0) || (alpha > 255) || (alpha < 0)) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        double[] rgbColor = new double[4];
+        rgbColor[0] = red / 255f;
+        rgbColor[1] = green / 255f;
+        rgbColor[2] = blue / 255f;
+        rgbColor[3] = alpha / 255f;
+        getApi().handle = rgbColor;
+    }
+
+    @Override
+    void init() {
+        // Resource init simply tracks this resource in the Device
+        // if DEBUG is on. Since Colors don't require disposal,
+        // the tracking would be a memory leak and a misreport
+        // on what resources are in use.
     }
 
     /**
@@ -412,8 +482,9 @@ public final class Color extends Resource {
      *
      * @return <code>true</code> when the color is disposed and <code>false</code> otherwise
      */
+    @Override
     public boolean isDisposed() {
-        return getImpl().isDisposed();
+        return getApi().handle == null;
     }
 
     /**
@@ -422,23 +493,22 @@ public final class Color extends Resource {
      *
      * @return a string representation of the receiver
      */
+    @Override
     public String toString() {
-        return getImpl().toString();
+        if (isDisposed())
+            return "Color {*DISPOSED*}";
+        return "Color {" + getRed() + ", " + getGreen() + ", " + getBlue() + ", " + getAlpha() + "}";
     }
 
-    protected Color(IColor impl) {
-        super(impl);
+    public Color getApi() {
+        if (api == null)
+            api = Color.createApi(this);
+        return (Color) api;
     }
 
-    static Color createApi(IColor impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Color inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Color(impl);
-    }
-
-    public IColor getImpl() {
-        return (IColor) super.getImpl();
+    public VColor getValue() {
+        if (value == null)
+            value = new VColor();
+        return (VColor) value;
     }
 }

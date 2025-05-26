@@ -85,6 +85,7 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.assertj:assertj-core:3.25.3")
     testImplementation("org.mockito:mockito-core:5.18.0")
+    testImplementation("org.instancio:instancio-junit:5.4.0")
 }
 
 

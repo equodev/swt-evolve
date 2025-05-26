@@ -8,9 +8,8 @@ import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 
 @CompiledJson()
-class VControl extends VWidget {
+public class VControl extends VWidget {
 
-    @JsonAttribute(ignore = true)
     public Color background;
 
     @JsonAttribute(ignore = true)
@@ -28,7 +27,6 @@ class VControl extends VWidget {
     @JsonAttribute(ignore = true)
     public Font font;
 
-    @JsonAttribute(ignore = true)
     public Color foreground;
 
     @JsonAttribute(ignore = true)
@@ -49,4 +47,21 @@ class VControl extends VWidget {
     public boolean touchEnabled;
 
     public boolean visible;
+
+    @JsonConverter(target = Control.class)
+    public abstract static class ControlJson {
+
+        public static Control read(JsonReader<?> reader) {
+            return null;
+        }
+
+        public static void write(JsonWriter writer, Control api) {
+            if (api == null)
+                writer.writeNull();
+            else {
+                VControl value = ((DartControl) api.getImpl()).getValue();
+                writer.serializeObject(value);
+            }
+        }
+    }
 }

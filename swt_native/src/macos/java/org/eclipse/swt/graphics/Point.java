@@ -16,7 +16,6 @@
 package org.eclipse.swt.graphics;
 
 import java.io.*;
-import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent places on the (x, y)
@@ -54,6 +53,8 @@ public final class Point implements Serializable {
      */
     public int y;
 
+    static final long serialVersionUID = 3257002163938146354L;
+
     /**
      * Constructs a new point with the given x and y coordinates.
      *
@@ -61,8 +62,8 @@ public final class Point implements Serializable {
      * @param y the y coordinate of the new point
      */
     public Point(int x, int y) {
-        this((IPoint) null);
-        setImpl(Config.isEquo(Point.class) ? new DartPoint(x, y) : new SwtPoint(x, y));
+        this.x = x;
+        this.y = y;
     }
 
     /**
@@ -75,8 +76,13 @@ public final class Point implements Serializable {
      *
      * @see #hashCode()
      */
+    @Override
     public boolean equals(Object object) {
-        return getImpl().equals(object);
+        if (object == this)
+            return true;
+        if (!(object instanceof Point p))
+            return false;
+        return (p.x == this.x) && (p.y == this.y);
     }
 
     /**
@@ -89,8 +95,9 @@ public final class Point implements Serializable {
      *
      * @see #equals(Object)
      */
+    @Override
     public int hashCode() {
-        return getImpl().hashCode();
+        return x ^ y;
     }
 
     /**
@@ -99,35 +106,9 @@ public final class Point implements Serializable {
      *
      * @return a string representation of the point
      */
+    @Override
     public String toString() {
-        return getImpl().toString();
-    }
-
-    protected IPoint impl;
-
-    protected Point(IPoint impl) {
-        if (impl == null)
-            dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
-    }
-
-    static Point createApi(IPoint impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Point inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Point(impl);
-    }
-
-    public IPoint getImpl() {
-        return impl;
-    }
-
-    protected Point setImpl(IPoint impl) {
-        this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
-        return this;
+        //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        return "Point {" + x + ", " + y + "}";
     }
 }
