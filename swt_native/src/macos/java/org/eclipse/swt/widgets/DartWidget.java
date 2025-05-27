@@ -372,6 +372,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     void createHandle() {
+
     }
 
     void createJNIRef() {

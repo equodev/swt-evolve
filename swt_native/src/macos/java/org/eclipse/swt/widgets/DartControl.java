@@ -22,6 +22,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.cocoa.NSView;
 
 /**
  * Control is the abstract superclass of all windowed user interface classes.
@@ -49,6 +50,7 @@ import org.eclipse.swt.internal.*;
 public abstract class DartControl extends DartWidget implements Drawable, IControl {
 
     Composite parent;
+    private SwtComposite parentComposite;
 
     DartControl() {
         /* Do nothing */
@@ -88,6 +90,15 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         super(parent, style);
         this.parent = parent;
         createWidget();
+    }
+
+    @Override
+    void createHandle() {
+//        state |= HANDLE;
+
+        parentComposite = new SwtComposite(parent, SWT.NONE);
+//        FlutterSwt.initializeFlutterView(parent.view.id, this);
+        FlutterSwt.initializeFlutterView(parentComposite.getApi().view.id, this);
     }
 
     /**

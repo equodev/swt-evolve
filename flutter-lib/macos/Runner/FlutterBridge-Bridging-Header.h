@@ -7,6 +7,6 @@
 #define JNIEXPORT __attribute__((visibility("default")))
 
 // JNI function declarations
-JNIEXPORT void JNICALL Java_dev_equo_Main_InitializeFlutterWindow(JNIEnv* env, jclass cls, jlong hwnd);
+JNIEXPORT void JNICALL Java_org_eclipse_swt_widgets_FlutterSwt_InitializeFlutterWindow(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name);
 
 #endif /* BridgingHeader_h */
