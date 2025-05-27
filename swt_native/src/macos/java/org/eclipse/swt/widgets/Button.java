@@ -90,7 +90,7 @@ public class Button extends Control {
      */
     public Button(Composite parent, int style) {
         this((IButton) null);
-        setImpl(Config.isEquo(Button.class) ? new DartButton(parent, style) : new SwtButton(parent, style));
+        setImpl(Config.isEquo(Button.class, parent) ? new DartButton(parent, style) : new SwtButton(parent, style));
     }
 
     /**

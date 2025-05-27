@@ -1,10 +1,10 @@
 package dev.equo.swt;
 
-import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Composite;
 
 public class Config {
 
-    enum Impl { eclipse, equo }
+    public enum Impl { eclipse, equo }
 
     static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.eclipse.name()));
 
@@ -38,6 +38,16 @@ public class Config {
         if (defaultImpl == Impl.eclipse && !notNegatedDefault(clazz))
             return true;
         return false;
+    }
+
+    public static boolean isEquo(Class<?> clazz, Composite parent) {
+        Object data = parent.getData(getKey(clazz));
+        if (data != null) {
+            if (Impl.equo.equals(data)) return true;
+            else if (Impl.eclipse.equals(data)) return false;
+            else if (data instanceof String) return Impl.equo.name().equals(data);
+        }
+        return isEquo(clazz);
     }
 
     private static boolean notNegatedDefault(Class<?> clazz) {
