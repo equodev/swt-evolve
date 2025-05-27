@@ -581,4 +581,9 @@ public class SWTCTabItem extends SWTItem implements ICTabItem {
         checkWidget();
         toolTipText = string;
     }
+
+    @Override
+    public Point computeSize() {
+        return null;
+    }
 }

@@ -1,8 +1,9 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:swtflutter/src/styles.dart';
 import 'package:swtflutter/src/swt/treecolumn.dart';
 import 'package:swtflutter/src/swt/widget.dart';
 import '../impl/composite_impl.dart';
+import '../impl/widget_config.dart';
 import '../swt/swt.dart';
 import '../swt/tree.dart';
 import '../swt/treeitem.dart';
@@ -10,23 +11,16 @@ import '../comm/comm.dart';
 
 class TreeImpl<T extends TreeSwt, V extends TreeValue>
     extends CompositeImpl<T, V> {
-  final List<TreeColumnValue> columns = [];
+  final Map<dynamic, String> treeItemExpanders = {};
   final List<String> eventNames = [];
+  final bool useDarkTheme = getCurrentTheme();
 
   @override
   Widget build(BuildContext context) {
-    extractAndRemoveTreeColumns();
-    return super.wrap(createTreeWithHeader());
+    return super.wrap(createTreeView());
   }
 
-  List<Expanded> buildHeaders() {
-    return columns
-        .map((treeColumnValue) =>
-            Expanded(child: Row(children: [Text(treeColumnValue.text ?? "")])))
-        .toList();
-  }
-
-  Widget createTreeWithHeader() {
+  Widget createTreeView() {
     return LayoutBuilder(
       builder: (context, constraints) {
         final double maxWidth = constraints.maxWidth.isFinite
@@ -35,101 +29,103 @@ class TreeImpl<T extends TreeSwt, V extends TreeValue>
         final double maxHeight = constraints.maxHeight.isFinite
             ? constraints.maxHeight
             : MediaQuery.of(context).size.height;
-        return SizedBox(
+
+        // Extract columns from children
+        final columns = getTreeColumns();
+        final treeItems = getTreeItems();
+
+        return Container(
           width: maxWidth,
           height: maxHeight,
-          child: ListView(shrinkWrap: true, children: [
-            if (state.headerVisible == true)
-              Row(
-                children: buildHeaders(),
-              ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [buildTreeView()],
-            )
-          ]),
+          color: useDarkTheme ? const Color(0xFF1E1E1E) : Colors.white,
+          child: Column(
+            children: [
+              // Header row with TreeColumn widgets
+              if (state.headerVisible == true && columns.isNotEmpty)
+                Row(
+                  children: columns.map((column) =>
+                      Expanded(
+                        child: getWidgetForTreeColumn(column),
+                      )
+                  ).toList(),
+                ),
+              // Tree content
+              Expanded(
+                child: Material(
+                  color: Colors.transparent,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: treeItems,
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
         );
       },
     );
   }
 
-  TreeViewSelectionMode getTreeViewSelectionMode() {
-    return StyleBits(state.style).has(SWT.CHECK)
-        ? TreeViewSelectionMode.multiple
-        : TreeViewSelectionMode.single;
-  }
-
-  Widget buildTreeView() {
-    onSelectionChanged(Iterable<TreeViewItem> selectedItems) async {
-      List<dynamic> selectedIds = selectedItems
-          .map((item) => item.value)
-          .toList();
-      widget.sendSelectionSelection(state, selectedIds);
+  List<TreeColumnValue> getTreeColumns() {
+    if (state.children == null) {
+      return [];
     }
-
-    return Expanded(
-      child: TreeView(
-        selectionMode: getTreeViewSelectionMode(),
-        items: buildTreeViewItemsWithColumns(state.children),
-        onSelectionChanged: onSelectionChanged,
-      ),
-    );
-  }
-
-  List<TreeViewItem> buildTreeViewItemsWithColumns(List<WidgetValue>? items) {
-    if (items == null || items.isEmpty) return [];
-
-    return items
-        .whereType<TreeItemValue>()
-        .map((treeItemDynamic) => buildTreeViewItemWithColumns(treeItemDynamic))
+    return state.children!
+        .whereType<TreeColumnValue>()
         .toList();
   }
 
-  List<String> getTreeColumns(TreeItemValue treeItemValue) {
-    final List<String>? treeItemTexts = treeItemValue.texts;
-    if (treeItemTexts != null) {
-      return treeItemTexts;
+  List<Widget> getTreeItems() {
+    if (state.children == null) {
+      return [];
     }
-    final String? treeItemText = treeItemValue.text;
-    if (treeItemText != null) {
-      return [treeItemText];
-    }
-    return [];
+    return state.children!
+        .whereType<TreeItemValue>()
+        .map((treeItem) => getWidgetForTreeItem(treeItem, 0))
+        .toList();
   }
 
-  bool isExpanded(WidgetValue widgetValue) {
-    return (widgetValue as TreeItemValue).expanded ?? false;
+  Widget getWidgetForTreeColumn(TreeColumnValue column) {
+    return TreeColumnSwt(value: column);
   }
 
-  TreeViewItem buildTreeViewItemWithColumns(TreeItemValue treeItemValue) {
-    addTreeItemExpandListener(treeItemValue);
+  Widget getWidgetForTreeItem(TreeItemValue treeItem, int level) {
+    // Set up expansion listener
+    setupTreeItemExpandListener(treeItem);
 
-    final content = super.applyMenu(Row(
-      children: buildTreeColumns(getTreeColumns(treeItemValue)),
-    ));
-    onExpandToggle(_, expanded) async {
-      if (expanded) {
-        widget.sendTreeExpand(state, treeItemValue.id);
-      } else {
-        setState(() {
-          treeItemValue.children = [TreeItemValue()];
-          treeItemValue.expanded = false;
-        });
-        widget.sendTreeCollapse(state, treeItemValue.id);
-      }
-    }
-
-    final children = buildTreeViewItemsWithColumns(treeItemValue.children);
-
-    return TreeViewItem(
-      value: treeItemValue.id,
-      content: content,
-      expanded: isExpanded(treeItemValue),
-      lazy: isVirtual(),
-      onExpandToggle: onExpandToggle,
-      children: children,
-      selected: treeItemValue.selected
+    // Create the item UI wrapper with data needed for rendering
+    return TreeItemSwtWrapper(
+      treeItem: treeItem,
+      level: level,
+      isCheckMode: getTreeViewSelectionMode(),
+      parentTree: widget,
+      parentTreeValue: state,
     );
+  }
+
+  bool getTreeViewSelectionMode() {
+    return StyleBits(state.style).has(SWT.CHECK);
+  }
+
+  void setupTreeItemExpandListener(TreeItemValue treeItemValue) {
+    String eventName = "TreeItem/${treeItemValue.id}/TreeItem/Expand";
+
+    // Don't set up the same listener twice
+    if (treeItemExpanders.containsKey(treeItemValue.id)) {
+      return;
+    }
+
+    eventNames.add(eventName);
+    treeItemExpanders[treeItemValue.id] = eventName;
+
+    EquoCommService.on<TreeItemValue>(eventName, (TreeItemValue payload) {
+      setState(() {
+        treeItemValue.children = filterNonEmptyTreeItems(payload.children);
+        treeItemValue.expanded = true;
+      });
+    });
   }
 
   List<WidgetValue> filterNonEmptyTreeItems(List<WidgetValue>? items) {
@@ -141,37 +137,11 @@ class TreeImpl<T extends TreeSwt, V extends TreeValue>
         .toList();
 
     for (WidgetValue item in newItems) {
-      if (isExpanded(item)) {
+      if (item is TreeItemValue && (item.expanded ?? false)) {
         item.children = filterNonEmptyTreeItems(item.children);
       }
     }
     return newItems;
-  }
-
-  void addTreeItemExpandListener(TreeItemValue treeItemValue) {
-    String eventName = "TreeItem/${treeItemValue.id}/TreeItem/Expand";
-    eventNames.add(eventName);
-    EquoCommService.on<TreeItemValue>(eventName, (TreeItemValue payload) {
-      setState(() {
-        treeItemValue.children = filterNonEmptyTreeItems(payload.children);
-        treeItemValue.expanded = true;
-      });
-    });
-  }
-
-  List<Widget> buildTreeColumns(List<String>? items) {
-    if (items == null) return [];
-    return items.map((item) => Expanded(child: Text(item))).toList();
-  }
-
-  void extractAndRemoveTreeColumns() {
-    state.children?.removeWhere((child) {
-      if (child is TreeColumnValue) {
-        columns.add(child);
-        return true;
-      }
-      return false;
-    });
   }
 
   bool isVirtual() {
@@ -184,5 +154,83 @@ class TreeImpl<T extends TreeSwt, V extends TreeValue>
     for (String eventName in eventNames) {
       EquoCommService.remove(eventName);
     }
+  }
+}
+
+
+class TreeItemSwtWrapper extends StatelessWidget {
+  final TreeItemValue treeItem;
+  final int level;
+  final bool isCheckMode;
+  final TreeSwt parentTree;
+  final TreeValue parentTreeValue;
+
+  const TreeItemSwtWrapper({
+    Key? key,
+    required this.treeItem,
+    required this.level,
+    required this.isCheckMode,
+    required this.parentTree,
+    required this.parentTreeValue,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Store context data in InheritedWidget
+    return TreeItemContextProvider(
+      level: level,
+      isCheckMode: isCheckMode,
+      parentTree: parentTree,
+      parentTreeValue: parentTreeValue,
+      child: TreeItemSwt(
+        value: treeItem,
+        key: ValueKey('tree_item_${treeItem.id}'),
+      ),
+    );
+  }
+}
+
+class TreeItemContext {
+  final int level;
+  final bool isCheckMode;
+  final TreeSwt parentTree;
+  final TreeValue parentTreeValue;
+
+  TreeItemContext({
+    required this.level,
+    required this.isCheckMode,
+    required this.parentTree,
+    required this.parentTreeValue,
+  });
+
+  static TreeItemContext? of(BuildContext context) {
+    final provider = context.dependOnInheritedWidgetOfExactType<TreeItemContextProvider>();
+    return provider?.context;
+  }
+}
+
+// InheritedWidget to provide context down the tree
+class TreeItemContextProvider extends InheritedWidget {
+  final TreeItemContext context;
+
+  TreeItemContextProvider({
+    Key? key,
+    required int level,
+    required bool isCheckMode,
+    required TreeSwt parentTree,
+    required TreeValue parentTreeValue,
+    required Widget child,
+  }) : context = TreeItemContext(
+    level: level,
+    isCheckMode: isCheckMode,
+    parentTree: parentTree,
+    parentTreeValue: parentTreeValue,
+  ),
+        super(key: key, child: child);
+
+  @override
+  bool updateShouldNotify(TreeItemContextProvider oldWidget) {
+    return context.level != oldWidget.context.level ||
+        context.isCheckMode != oldWidget.context.isCheckMode;
   }
 }

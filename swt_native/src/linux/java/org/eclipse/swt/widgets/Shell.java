@@ -769,7 +769,7 @@ public class Shell extends Decorations {
 
     @Override
     public void setMenuBar(Menu menu) {
-        ((IShell) this.delegate).setMenuBar((IMenu) menu.delegate);
+        ((IShell) this.delegate).setMenuBar((IMenu) (menu != null ? menu.delegate : null));
     }
 
     @Override

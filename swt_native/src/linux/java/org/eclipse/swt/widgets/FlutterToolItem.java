@@ -6,7 +6,9 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.internal.ToolitemSwtSizingConstants;
 import org.eclipse.swt.values.ToolItemValue;
 
 /**
@@ -678,9 +680,71 @@ public class FlutterToolItem extends FlutterItem implements IToolItem {
         FlutterSwt.dirty(this);
     }
 
+    @Override
+    public Point computeSize() {
+        checkWidget();
+        int width = 0;
+        int height = 0;
+
+        // --- Parameter initializations
+        boolean hasText = getText() != null && !getText().isEmpty();
+        double textLength = hasText ? getText().length() : 0.0;
+        boolean hasImage = getImage() != null;
+
+        // --- Style-based calculations ---
+        // Note for Push: Standard push button with optional text and image. For icon-only buttons, a circular container with padding is used.
+        if ((SWT.PUSH != 0 && (style & SWT.PUSH) == SWT.PUSH)) {
+            width = (int) (Math.max(ToolitemSwtSizingConstants.PUSH_BUTTON_MIN_WIDTH, (hasText ? (textLength * ToolitemSwtSizingConstants.AVERAGE_CHAR_WIDTH) : 0.0) + (hasImage ? (ToolitemSwtSizingConstants.SMALL_ICON_SIZE + (hasText ? ToolitemSwtSizingConstants.ICON_SPACING : 0.0)) : 0.0) + (2 * ToolitemSwtSizingConstants.HORIZONTAL_PADDING)));
+            height = (int) (ToolitemSwtSizingConstants.PUSH_BUTTON_HEIGHT);
+        }
+//        // Note for PushIconOnly: Icon-only push button uses a circular container with the icon centered.
+//        else if ((SWT.PUSHICONONLY != 0 && (style & SWT.PUSHICONONLY) == SWT.PUSHICONONLY)) {
+//            width = (int) (ToolitemSwtSizingConstants.ICON_BUTTON_SIZE);
+//            height = (int) (ToolitemSwtSizingConstants.ICON_BUTTON_SIZE);
+//        }
+        // Note for Check: Checkbox with optional text label. The checkbox itself has a fixed size.
+        else if ((SWT.CHECK != 0 && (style & SWT.CHECK) == SWT.CHECK)) {
+            width = (int) (ToolitemSwtSizingConstants.CHECK_BOX_SIZE + (hasText ? (ToolitemSwtSizingConstants.CHECK_BOX_TEXT_SPACING + (textLength * ToolitemSwtSizingConstants.AVERAGE_CHAR_WIDTH)) : 0.0) + (2 * ToolitemSwtSizingConstants.CHECK_BOX_HORIZONTAL_PADDING));
+            height = (int) (Math.max(ToolitemSwtSizingConstants.CHECK_BOX_SIZE, ToolitemSwtSizingConstants.DEFAULT_FONT_SIZE) + (2 * ToolitemSwtSizingConstants.CHECK_BOX_VERTICAL_PADDING));
+        }
+        // Note for Radio: Radio button with optional text label. The radio button itself has a fixed size.
+        else if ((SWT.RADIO != 0 && (style & SWT.RADIO) == SWT.RADIO)) {
+            width = (int) (ToolitemSwtSizingConstants.RADIO_BUTTON_SIZE + (hasText ? (ToolitemSwtSizingConstants.RADIO_BUTTON_TEXT_SPACING + (textLength * ToolitemSwtSizingConstants.AVERAGE_CHAR_WIDTH)) : 0.0) + (2 * ToolitemSwtSizingConstants.RADIO_BUTTON_HORIZONTAL_PADDING));
+            height = (int) (Math.max(ToolitemSwtSizingConstants.RADIO_BUTTON_SIZE, ToolitemSwtSizingConstants.DEFAULT_FONT_SIZE) + (2 * ToolitemSwtSizingConstants.RADIO_BUTTON_VERTICAL_PADDING));
+        }
+        // Note for DropDown: Dropdown button with text and a dropdown arrow icon. Has a fixed height.
+        else if ((SWT.DROP_DOWN != 0 && (style & SWT.DROP_DOWN) == SWT.DROP_DOWN)) {
+            width = (int) (Math.max(ToolitemSwtSizingConstants.DROPDOWN_BUTTON_MIN_WIDTH, (textLength * ToolitemSwtSizingConstants.AVERAGE_CHAR_WIDTH) + ToolitemSwtSizingConstants.DROPDOWN_ARROW_SIZE + ToolitemSwtSizingConstants.DROPDOWN_ARROW_SPACING + (2 * ToolitemSwtSizingConstants.HORIZONTAL_PADDING)));
+            height = (int) (ToolitemSwtSizingConstants.DROPDOWN_BUTTON_HEIGHT);
+        }
+        // Note for Separator: Simple separator with fixed dimensions and customizable thickness.
+        else if ((SWT.SEPARATOR != 0 && (style & SWT.SEPARATOR) == SWT.SEPARATOR)) {
+            width = (int) (ToolitemSwtSizingConstants.SEPARATOR_WIDTH);
+            height = (int) (ToolitemSwtSizingConstants.SEPARATOR_HEIGHT);
+        }
+        else {
+            width = (int) (textLength * ToolitemSwtSizingConstants.AVERAGE_CHAR_WIDTH);
+            height = (int) (ToolitemSwtSizingConstants.DEFAULT_FONT_SIZE * 1.2);
+        }
+
+        // --- Apply hints and border ---
+        if (width == 0) {
+            width = SWT.DEFAULT;
+        }
+        if (height == 0) {
+            width = SWT.DEFAULT; // TODO: Define appropriate DEFAULT_HEIGHT for Toolitem if needed
+        }
+
+        int borderWidth = (int) ToolitemSwtSizingConstants.BORDER_RADIUS;
+        width += borderWidth * 2;
+        height += borderWidth * 2;
+
+        return new Point(width, height);
+    }
+
     public ToolItemValue.Builder builder() {
         if (builder == null)
-            builder = ToolItemValue.builder().setId(handle).setStyle(style);
+            builder = ToolItemValue.builder().setId(hashCode()).setStyle(style);
         return (ToolItemValue.Builder) builder;
     }
 }

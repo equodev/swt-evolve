@@ -1640,6 +1640,9 @@ public class SWTComposite extends SWTScrollable implements IComposite {
 						exceptions.stash(ex);
 					}
 				}
+                if (child instanceof FlutterControl control) {
+                    control.dispose();
+                }
             }
             super.releaseChildren(destroy);
         }

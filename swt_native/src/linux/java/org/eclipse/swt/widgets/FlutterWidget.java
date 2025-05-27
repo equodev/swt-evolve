@@ -44,7 +44,8 @@ import java.util.stream.Stream;
 public abstract class FlutterWidget implements IWidget {
     public void addTypedListener(EventListener listener, int... eventTypes) {
     }
-    
+
+    protected long flutterContext;
 
     /**
      * the handle to the OS resource (Warning: This field is platform dependent)
@@ -416,6 +417,7 @@ public abstract class FlutterWidget implements IWidget {
         if (!isValidThread())
             error(SWT.ERROR_THREAD_INVALID_ACCESS);
         release(true);
+        FlutterSwt.CloseFlutterWindow(flutterContext);
     }
 
     void error(int code) {

@@ -5968,6 +5968,7 @@ public abstract class SWTControl extends SWTWidget implements Drawable, IControl
      * 	</ul>
      */
     public boolean setParent(IComposite parent_) {
+        if (!(parent_ instanceof SWTComposite)) return false;
         SWTComposite parent = (SWTComposite) parent_;
         checkWidget();
         if (parent == null)

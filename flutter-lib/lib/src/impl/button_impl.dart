@@ -1,27 +1,26 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart';
+import 'package:swtflutter/src/styles.dart';
 import '../swt/swt.dart';
 import '../swt/button.dart';
 import '../impl/control_impl.dart';
 import 'styled_buttons.dart';
+import 'widget_config.dart';
 
 
 class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
     extends ControlImpl<T, V> {
-  final bool useDarkTheme;
-
-  ButtonImpl({this.useDarkTheme = false});
+  final bool useDarkTheme = getCurrentTheme();
 
   @override
   Widget build(BuildContext context) {
-
-    var bits = SWT.ARROW | SWT.TOGGLE | SWT.CHECK | SWT.RADIO | SWT.PUSH | SWT.DROP_DOWN;
-
     var text = state.text;
     var image = state.image;
-    var enabled = state.enabled ?? true;
+    var enabled = state.enabled?? true;
 
-    return switch (state.style & bits) {
-      SWT.TOGGLE => SelectableButton(
+    print('STYLE ${state.style}');
+
+    if (state.style.has(SWT.TOGGLE)) {
+      return SelectableButton(
         text: state.text,
         isSelected: state.selection ?? false,
         enabled: enabled,
@@ -32,38 +31,45 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
             setState(() => state.selection = !(state.selection ?? false));
           }
         },
-      ),
-      SWT.CHECK => Checkbox(
+        onMouseEnter: () => handleMouseEnter(),
+        onMouseExit: () => handleMouseExit(),
+        onFocusIn: () => handleFocusIn(),
+        onFocusOut: () => handleFocusOut(),
+      );
+    } else if (state.style.has(SWT.CHECK)) {
+      return MaterialCheckBox(
+        text: state.text,
         checked: state.selection ?? false,
+        useDarkTheme: useDarkTheme,
         onChanged: !enabled
             ? null
             : (checked) {
           onPressed();
           setState(() => state.selection = checked);
         },
-        content: Text(state.text ?? ""),
-      ),
-      SWT.RADIO => RadioButton(
+        onMouseEnter: () => handleMouseEnter(),
+        onMouseExit: () => handleMouseExit(),
+        onFocusIn: () => handleFocusIn(),
+        onFocusOut: () => handleFocusOut(),
+      );
+    } else if (state.style.has(SWT.RADIO) || state.style.has(SWT.NONE)) {
+      return MaterialRadioButton(
+        text: state.text,
         checked: state.selection ?? false,
+        useDarkTheme: useDarkTheme,
         onChanged: !enabled
             ? null
             : (checked) {
           onPressed();
           setState(() => state.selection = checked);
         },
-        content: Text(state.text ?? ""),
-      ),
-      SWT.NONE => RadioButton(
-        checked: state.selection ?? false,
-        onChanged: !enabled
-            ? null
-            : (checked) {
-          onPressed();
-          setState(() => state.selection = checked);
-        },
-        content: Text(state.text ?? ""),
-      ),
-      SWT.DROP_DOWN => MaterialDropdownButton(
+        onMouseEnter: () => handleMouseEnter(),
+        onMouseExit: () => handleMouseExit(),
+        onFocusIn: () => handleFocusIn(),
+        onFocusOut: () => handleFocusOut(),
+      );
+    } else if (state.style.has(SWT.DROP_DOWN)) {
+      return MaterialDropdownButton(
         text: text ?? "",
         height: 50.0,
         enabled: enabled,
@@ -73,40 +79,48 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
             onPressed();
           }
         },
-      ),
-      SWT.PUSH => PushButton(
+      );
+    } else if (state.style.has(SWT.PUSH)) {
+      return PushButton(
         text: state.text,
+        image: image,
         enabled: enabled,
         useDarkTheme: useDarkTheme,
         onPressed: () {
           onPressed();
           setState(() => state.selection = !(state.selection ?? false));
         },
-      ),
-      _ => Button(
+        onMouseEnter: () => handleMouseEnter(),
+        onMouseExit: () => handleMouseExit(),
+        onFocusIn: () => handleFocusIn(),
+        onFocusOut: () => handleFocusOut(),
+      );
+    } else {
+      // Default case
+      return ElevatedButton(
         onPressed: enabled ? onPressed : null,
         child: Text(state.text ?? ""),
-      )
-    };
+      );
+    }
   }
-
-
-
-//    return ElevatedButton(onPressed: onPressed, child: Text(state.text ?? ""));
-//     if (state.style & SWT.CHECK == 0)
-//     return Button(
-//       onPressed: state.enabled ? onPressed : null,
-//       child: Text(state.text ?? ""),
-//     );
-//     bool checked = false;
-  // Checkbox(
-  //   checked: checked,
-  //   onPressed: state.enabled ? null : (v) => setState(() => checked = v),
-  // )
-
 
   void onPressed() {
     widget.sendSelectionSelection(state, null);
   }
 
+  void handleMouseEnter() {
+    widget.sendMouseTrackMouseEnter(state, null);
+  }
+
+  void handleMouseExit() {
+    widget.sendMouseTrackMouseExit(state, null);
+  }
+
+  void handleFocusIn() {
+    widget.sendFocusFocusIn(state, null);
+  }
+
+  void handleFocusOut() {
+    widget.sendFocusFocusOut(state, null);
+  }
 }

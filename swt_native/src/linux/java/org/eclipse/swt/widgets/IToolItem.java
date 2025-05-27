@@ -464,4 +464,6 @@ public interface IToolItem extends IItem {
      * </ul>
      */
     void setWidth(int width);
+
+    Point computeSize();
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/styles.dart';
 import 'package:swtflutter/src/swt/coolitem.dart';
 import 'package:swtflutter/src/swt/swt.dart';
@@ -9,9 +10,7 @@ import '../impl/composite_impl.dart';
 class CoolBarImpl<T extends CoolBarSwt, V extends CoolBarValue>
     extends CompositeImpl<T, V> {
 
-  final bool useDarkTheme;
-
-  CoolBarImpl({this.useDarkTheme = true});
+  final bool useDarkTheme = getCurrentTheme();
 
   @override
   Widget build(BuildContext context) {

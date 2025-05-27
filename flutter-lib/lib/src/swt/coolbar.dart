@@ -14,7 +14,7 @@ class CoolBarSwt<V extends CoolBarValue> extends CompositeSwt<V> {
   const CoolBarSwt({super.key, required super.value});
 
   @override
-  State createState() => CoolBarImpl<CoolBarSwt<CoolBarValue>, CoolBarValue>(useDarkTheme: true);
+  State createState() => CoolBarImpl<CoolBarSwt<CoolBarValue>, CoolBarValue>();
 }
 
 @JsonSerializable()

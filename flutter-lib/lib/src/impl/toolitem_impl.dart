@@ -1,5 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:swtflutter/src/impl/separator.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 import '../impl/item_impl.dart';
 import '../swt/swt.dart';
 import '../swt/toolitem.dart';
@@ -8,55 +9,43 @@ import 'styled_buttons.dart';
 class ToolItemImpl<T extends ToolItemSwt, V extends ToolItemValue>
     extends ItemImpl<T, V> {
 
-  final bool useDarkTheme;
-
-  ToolItemImpl({this.useDarkTheme = false});
+  final bool useDarkTheme = getCurrentTheme();
 
   @override
   Widget build(BuildContext context) {
 
     var text = state.text;
     var image = state.image;
-    var enabled = state.enabled?? false;
+    var enabled = state.enabled?? true;
 
     var bits = SWT.PUSH | SWT.CHECK | SWT.RADIO | SWT.SEPARATOR | SWT.DROP_DOWN;
 
     return switch (state.style & bits) {
-      SWT.CHECK => ToggleButton(
+      SWT.CHECK => MaterialCheckBox(
+        text: state.text,
         checked: state.selection ?? false,
-        // style: ToggleButtonThemeData(
-        //     uncheckedButtonStyle: ButtonStyle(
-        //         padding: ButtonState.all(EdgeInsets.zero),
-        //         shape: ButtonState.all(RoundedRectangleBorder(
-        //           side: BorderSide.none,
-        //           borderRadius: BorderRadius.circular(0),
-        //         ))),
-        //     checkedButtonStyle: ButtonStyle(
-        //         padding: ButtonState.all(EdgeInsets.zero),
-        //         shape: ButtonState.all(RoundedRectangleBorder(
-        //           side: BorderSide.none,
-        //           borderRadius: BorderRadius.circular(0),
-        //         )))),
+        useDarkTheme: useDarkTheme,
         onChanged: !enabled
             ? null
             : (checked) {
-          // onPressed();
+          onPressed();
           setState(() => state.selection = checked);
         },
-        child: Text(state.text ?? ""),
       ),
-      SWT.RADIO => ToggleButton(
+      SWT.RADIO => MaterialRadioButton(
+        text: state.text,
         checked: state.selection ?? false,
+        useDarkTheme: useDarkTheme,
         onChanged: !enabled
             ? null
             : (checked) {
-          // onPressed();
+          onPressed();
           setState(() => state.selection = checked);
         },
-        child: Text(state.text ?? ""),
       ),
       SWT.DROP_DOWN => MaterialDropdownButton(
         text: text ?? "",
+        image: image,
         height: 50.0,
         enabled: enabled,
         useDarkTheme: useDarkTheme,
@@ -76,7 +65,6 @@ class ToolItemImpl<T extends ToolItemSwt, V extends ToolItemValue>
           setState(() => state.selection = !(state.selection ?? false));
         },
       ),
-    //todo manejar los size
       SWT.SEPARATOR => MaterialSeparator(
         height: 10,        // Alto personalizado
         width: 10,          // Ancho total (incluyendo márgenes)

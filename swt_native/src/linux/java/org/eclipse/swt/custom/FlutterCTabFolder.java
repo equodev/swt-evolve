@@ -9,17 +9,22 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.internal.CtabfolderSwtSizingConstants;
+import org.eclipse.swt.internal.TabfolderSwtSizingConstants;
 import org.eclipse.swt.values.CTabFolderValue;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FlutterComposite;
 import org.eclipse.swt.widgets.FlutterSwt;
+import org.eclipse.swt.widgets.FlutterSwt.ExpandPolicy;
 import org.eclipse.swt.widgets.FlutterWidget;
 import org.eclipse.swt.widgets.IComposite;
 import org.eclipse.swt.widgets.IControl;
 import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.widgets.TypedListener;
 import org.eclipse.swt.widgets.Widget;
+
+import static org.eclipse.swt.internal.CtabfolderSwtSizingConstants.TAB_BAR_HEIGHT;
 
 import java.util.ArrayList;
 
@@ -72,6 +77,10 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
      * The default value is 0.
      */
     public int marginHeight = 0;
+
+    protected ExpandPolicy getExpandPolicy() {
+        return ExpandPolicy.FOLLOW_W_PARENT;
+    }
 
     /**
      * A multiple of the tab height that specifies the minimum width to which a tab
@@ -344,24 +353,12 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
         return builder().getBorderVisible().orElse(false);
     }
 
-    /**
-     * Returns <code>true</code> if the chevron button is visible when necessary.
-     *
-     * @return the visibility of the chevron button
-     *
-     * @exception SWTException
-     *                         <ul>
-     *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-     *                         disposed</li>
-     *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-     *                         the thread that created the receiver</li>
-     *                         </ul>
-     */
     @Override
     public Rectangle getClientArea() {
-        Point parentSize = childComposite.getSize();
-//        Point thisSize_FIX = new Point(0, 50);
-        return new Rectangle(0, 0, parentSize.x, parentSize.y);
+        Point parentSize = parentComposite.getSize();
+        Point childSize = childComposite.computeSize(-1, -1, false);
+        Rectangle clientArea = new Rectangle(0, 0, Math.max(parentSize.x, childSize.x), Math.max(parentSize.y, childSize.y));
+        return clientArea;
     }
 
     /**
@@ -1965,6 +1962,53 @@ public class FlutterCTabFolder extends FlutterComposite implements ICTabFolder {
     @Override
     public void setSelectedImageVisible(boolean visible) {
         // TODO Auto-generated method stub
+    }
+
+    // --- Generated computeSize method for Tabfolder ---
+    // IMPORTANT: Review and adjust the parameter initializations (TODO sections)
+    // and SWT style checks below to match the specific behavior of Tabfolder.
+    @Override
+    public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
+        int width = 0;
+        int height = 0;
+
+        // --- Layout-specific calculations for TabFolder ---
+        // This part would be custom for TabFolder and not fully auto-generated beyond a template
+        double accumulatedWidth = 0;
+        double maxChildHeight = TAB_BAR_HEIGHT;
+        int visibleItemCount = 0;
+
+        // Assuming getItems() returns the TabItems or equivalent Control objects
+        ICTabItem[] items = getItems();
+
+        for (ICTabItem item : items) {
+            if (!item.getControl().getVisible()) continue; // Or however visibility is handled
+
+            Point itemSize = item.computeSize(); // Get preferred size of child
+
+            if (visibleItemCount > 0) {
+                accumulatedWidth += TabfolderSwtSizingConstants.TAB_SPACING; // Constant for spacing
+            }
+            accumulatedWidth += itemSize.x;
+            maxChildHeight = Math.max(maxChildHeight, itemSize.y);
+            visibleItemCount++;
+        }
+
+        // Add TabFolder's own padding
+        width = (int) (accumulatedWidth + 2 * TabfolderSwtSizingConstants.TAB_HORIZONTAL_PADDING);
+        height = (int) (maxChildHeight + 2 * TabfolderSwtSizingConstants.TAB_VERTICAL_PADDING);
+
+        // --- Apply hints and border (standard part from your generator) ---
+        if (wHint != SWT.DEFAULT) width = wHint;
+        if (hHint != SWT.DEFAULT) height = hHint;
+
+        int borderWidth = (int) TabfolderSwtSizingConstants.BORDER_WIDTH; // Assuming this method exists
+        width += borderWidth * 2;
+        height += borderWidth * 2;
+
+        currentSize = new Point(width, height);
+        return currentSize;
     }
 
     public String toString() {

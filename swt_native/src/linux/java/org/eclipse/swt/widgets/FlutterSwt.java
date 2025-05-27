@@ -10,18 +10,35 @@ import java.util.stream.Collectors;
 
 public class FlutterSwt {
 
+    public static enum ExpandPolicy {
+        FOLLOW_H_PARENT(0), FOLLOW_W_PARENT(1), FOLLOW_PARENT(2);
+
+        private final int value;
+
+        ExpandPolicy(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
+    }
+
     public static Serializer SERIALIZER = new Serializer();
     public static FlutterClient CLIENT = null;
     static {
         System.load(
-                "/home/elias/Documents/Equo/swt-flutter/flutter-lib/build/linux/x64/release/runner/libflutter_library.so");
+                "/home/elias/Documents/Equo/swt-flutter/flutter-lib/build/linux/x64/debug/runner/libflutter_library.so");
         CLIENT = new FlutterClient();
         CLIENT.createComm();
     }
 
-    public static native long InitializeFlutterWindow(long hwnd, int port, long widgetId, String widgetName);
+    public static native long InitializeFlutterWindow(long hwnd, int port, long widgetId, String widgetName, int width,
+            int height, int policy);
 
-    public static native void CloseFlutterWindow();
+    public static native void CloseFlutterWindow(long flutterContext);
+
+    public static native void ResizeFlutterWindow(long flutterContext, int width, int height);
 
     public static String getWidgetName(FlutterWidget w) {
         return w.getClass().getSimpleName().substring("Flutter".length());

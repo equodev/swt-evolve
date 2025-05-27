@@ -1,5 +1,7 @@
 package org.eclipse.swt.widgets;
 
+import static org.eclipse.swt.widgets.FlutterSwt.ExpandPolicy.FOLLOW_W_PARENT;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.accessibility.Accessible;
@@ -22,13 +24,16 @@ import org.eclipse.swt.events.TouchListener;
 import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Cursor;
+import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.GCData;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.values.ControlValue;
+import org.eclipse.swt.widgets.FlutterSwt.ExpandPolicy;
 
 /**
  * Control is the abstract superclass of all windowed user interface classes.
@@ -58,7 +63,7 @@ import org.eclipse.swt.values.ControlValue;
  *      information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public abstract class FlutterControl extends FlutterWidget implements IControl {
+public abstract class FlutterControl extends FlutterWidget implements Drawable, IControl {
 
     IComposite parent;
 
@@ -67,17 +72,21 @@ public abstract class FlutterControl extends FlutterWidget implements IControl {
     IMenu menu;
 
     public SWTComposite parentComposite;
-    public SWTComposite childComposite;
+    protected Point currentSize;
+
+    protected ExpandPolicy getExpandPolicy() {
+        return ExpandPolicy.FOLLOW_PARENT;
+    }
 
     @Override
     void createHandle(int index) {
         state |= HANDLE;
         parentComposite = new SWTComposite((SWTComposite) parent, SWT.NONE);
         handle = parentComposite.handle;
-        childComposite = new SWTComposite(parentComposite, SWT.NONE);
-        childComposite.setLayout(new StackLayout());
+        Composite.getInstance(parentComposite);
         String widget = FlutterSwt.getWidgetName(this);
-        FlutterSwt.InitializeFlutterWindow(handle, FlutterSwt.CLIENT.getPort(), this.hashCode(), widget);
+        Point size = computeSize(SWT.DEFAULT, SWT.DEFAULT, true);
+        flutterContext = FlutterSwt.InitializeFlutterWindow(handle, FlutterSwt.CLIENT.getPort(), this.hashCode(), widget, size.x, size.y, getExpandPolicy().getValue());
         FlutterSwt.dirty(this);
     }
 
@@ -485,10 +494,7 @@ public abstract class FlutterControl extends FlutterWidget implements IControl {
             FlutterSwt.dirty(flutterParent);
         }
         parentComposite.setBounds(rect);
-        rect.x = 0;
-        rect.y = 27;
-        childComposite.setBounds(rect);
-        childComposite.moveAbove(parentComposite);
+//        FlutterSwt.ResizeFlutterWindow(flutterContext, rect.width, rect.height);
     }
 
     /**
@@ -598,7 +604,9 @@ public abstract class FlutterControl extends FlutterWidget implements IControl {
      *                         </ul>
      */
     public Point getSize() {
-        return parentComposite.getSize();
+        return currentSize != null ? currentSize : computeSize(SWT.DEFAULT, SWT.DEFAULT, false);
+//        Rectangle bounds = builder().getBounds().get();
+//        return new Point(bounds.width, bounds.height);
     }
 
     /**
@@ -3140,6 +3148,15 @@ public abstract class FlutterControl extends FlutterWidget implements IControl {
         if (builder == null)
             builder = ControlValue.builder().setId(hashCode()).setStyle(style);
         return (ControlValue.Builder) builder;
+    }
+
+    @Override
+    public long internal_new_GC(GCData data) {
+        return 0;
+    }
+
+    @Override
+    public void internal_dispose_GC(long handle, GCData data) {
     }
 
 }

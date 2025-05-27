@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/swt/toolitem.dart';
 import '../impl/composite_impl.dart';
 import '../styles.dart';
@@ -9,9 +10,7 @@ import '../swt/toolbar.dart';
 class ToolBarImpl<T extends ToolBarSwt, V extends ToolBarValue>
     extends CompositeImpl<T, V> {
 
-  final bool useDarkTheme;
-
-  ToolBarImpl({this.useDarkTheme = true});
+  final bool useDarkTheme = getCurrentTheme();
 
   @override
   Widget build(BuildContext context) {
