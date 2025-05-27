@@ -12,12 +12,12 @@ import FlutterMacOS
 // Class to hold our Flutter instances
 @MainActor
 class FlutterBridgeController {
-    static let shared = FlutterBridgeController()
+//     static let shared = FlutterBridgeController()
     
     private var flutterViewController: FlutterViewController?
     private var window: NSWindow? // Keep for standalone window case if needed
     
-    private init() {
+    init() {
         print("FlutterBridgeController.init")
     }
     
@@ -73,12 +73,15 @@ class FlutterBridgeController {
 }
 
 // JNI bridge function
-@MainActor @_cdecl("Java_org_eclipse_swt_widgets_FlutterSwt_InitializeFlutterWindow")
-public func InitializeFlutterWindow(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, port: jint, parent: jlong, widget_id: jlong, widget_name: jstring) {
+@MainActor @_cdecl("Java_dev_equo_swt_FlutterBridge_InitializeFlutterWindow")
+public func InitializeFlutterWindow(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, port: jint, parent: jlong, widget_id: jlong, widget_name: jstring) -> jlong {
     let parentView = parent != 0 ? unsafeBitCast(UInt(parent), to: NSView.self) : nil
-   
     let cString = env.pointee!.pointee.GetStringUTFChars(env, widget_name, nil)
     let swiftString = String(cString: cString!)
     env.pointee?.pointee.ReleaseStringUTFChars(env, widget_name, cString)
-    FlutterBridgeController.shared.initialize(parentView: parentView, port: port, widgetId: Int64(widget_id), widgetName: swiftString)
+    let controller = FlutterBridgeController()
+    controller.initialize(parentView: parentView, port: port, widgetId: Int64(widget_id), widgetName: swiftString)
+    let pointer = Unmanaged.passRetained(controller).toOpaque()
+    return jlong(Int(bitPattern: pointer))
+//     FlutterBridgeController.shared.initialize(parentView: parentView, port: port, widgetId: Int64(widget_id), widgetName: swiftString)
 }

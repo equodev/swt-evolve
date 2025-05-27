@@ -18,6 +18,7 @@ package org.eclipse.swt.graphics;
 import java.util.*;
 import java.util.function.*;
 import org.eclipse.swt.*;
+import dev.equo.swt.*;
 
 /**
  * This class is the abstract superclass of all graphics resource objects.

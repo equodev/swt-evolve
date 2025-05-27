@@ -647,9 +647,9 @@ public abstract class Widget {
     protected IWidget impl;
 
     protected Widget(IWidget impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else {
+        } else {
             this.impl = impl;
             impl.setApi(this);
         }

@@ -1,9 +1,6 @@
 package dev.equo.swt;
 
 import com.dslplatform.json.DslJson;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.DartButton;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

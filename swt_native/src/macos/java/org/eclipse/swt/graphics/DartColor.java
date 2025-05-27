@@ -16,6 +16,7 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this store color information. To create a color you can either

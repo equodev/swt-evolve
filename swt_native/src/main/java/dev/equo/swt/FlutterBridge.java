@@ -1,8 +1,12 @@
-package org.eclipse.swt.widgets;
+package dev.equo.swt;
+
+import org.eclipse.swt.widgets.DartControl;
+import org.eclipse.swt.widgets.DartWidget;
+import org.eclipse.swt.widgets.FlutterClient;
 
 import java.nio.file.Paths;
 
-public class FlutterSwt {
+public class FlutterBridge {
     static boolean isMac = System.getProperty("os.name").toLowerCase().contains("mac");
     private static final FlutterClient client;
 
@@ -21,13 +25,15 @@ public class FlutterSwt {
         client.createComm();
     }
 
-    public static void initializeFlutterView(long parent, DartControl control) {
-        InitializeFlutterWindow(client.getPort(), parent, control.hashCode(), getWidgetName(control));
+    private long context;
+
+    public void initFlutterView(long parent, DartControl control) {
+        context = InitializeFlutterWindow(client.getPort(), parent, control.hashCode(), getWidgetName(control));
     }
 
     public static String getWidgetName(DartWidget w) {
         return w.getClass().getSimpleName().substring(4);
     }
 
-    static native void InitializeFlutterWindow(int port, long parentHandle, long widgetId, String widgetName);
+    static native long InitializeFlutterWindow(int port, long parentHandle, long widgetId, String widgetName);
 }

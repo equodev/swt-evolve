@@ -20,6 +20,7 @@ import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.internal.*;
+import dev.equo.swt.*;
 
 /**
  * This class is the abstract superclass of all user interface objects.
@@ -372,7 +373,6 @@ public abstract class DartWidget implements IWidget {
     }
 
     void createHandle() {
-
     }
 
     void createJNIRef() {
