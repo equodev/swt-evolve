@@ -93,10 +93,15 @@ sourceSets {
     main {
         java {
             // Include the shared sources and current OS-specific sources for IDE
-            setSrcDirs(listOf(
-                "src/main/java",
-                "src/${currentOs}/java"
-            ))
+            if (currentOs != "macos") // temp exclude src/main from linux
+                setSrcDirs(listOf(
+                    "src/${currentOs}/java"
+                ))
+            else
+                setSrcDirs(listOf(
+                    "src/main/java",
+                    "src/${currentOs}/java"
+                ))
         }
     }
 
@@ -104,10 +109,15 @@ sourceSets {
     oss.forEach { os ->
         create(os) {
             java {
-                setSrcDirs(listOf(
-                    "src/main/java",
-                    "src/${os}/java"
-                ))
+                if (os != "macos") // temp exclude src/main from linux
+                    setSrcDirs(listOf(
+                        "src/${os}/java"
+                    ))
+                else
+                    setSrcDirs(listOf(
+                        "src/main/java",
+                        "src/${os}/java"
+                    ))
             }
             annotationProcessorPath += sourceSets.main.get().annotationProcessorPath
             compileClasspath += sourceSets.main.get().compileClasspath
@@ -264,12 +274,30 @@ platforms.forEach { platform ->
         from(sourceSets[osArch[0]].output)
         from(layout.buildDirectory.dir("natives/$platform"))
 
+            // Add all dependencies to the JAR
+        from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+        exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "OSGI-OPT/")
+
         // Add manifest attributes if needed
         manifest {
             attributes(
-                "Implementation-Title" to project.name,
-                "Implementation-Version" to project.version,
-                "Target-Platform" to platform
+                "Fragment-Host" to "org.eclipse.swt;bundle-version=\"[3.128.0,4.0.0)\"",
+                "Bundle-Name" to "Equo SWT for ${osArch[0]} on ${osArch[1]}",
+                "Bundle-Vendor" to "Equo Tech, Inc.",
+                "Bundle-SymbolicName" to "org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}; singleton:=true",
+                "Bundle-Version" to "3.128.0.v20241113-2009",
+                "Bundle-ManifestVersion" to 2,
+                "Export-Package" to "org.eclipse.swt,org.eclipse.swt.accessibility,"+
+                    "org.eclipse.swt.awt,org.eclipse.swt.browser,org.eclipse.swt.custom,"+
+                    "org.eclipse.swt.dnd,org.eclipse.swt.events,org.eclipse.swt.graphics,"+
+                    "org.eclipse.swt.layout,org.eclipse.swt.opengl,org.eclipse.swt.printing,"+
+                    "org.eclipse.swt.program,org.eclipse.swt.widgets,org.eclipse.swt.internal; x-friends:=\"org.eclipse.ui\","+
+                    "org.eclipse.swt.internal.image; x-internal:=true,org.eclipse.swt.internal.$swtWs; x-friends:=\"org.eclipse.ui\"",
+                "Eclipse-PlatformFilter" to "(& (osgi.ws=$swtWs) (osgi.os=$swtOs) (osgi.arch=${osArch[1]}) )",
+                "SWT-WS" to swtWs,
+                "SWT-OS" to swtOs,
+                "SWT-Arch" to osArch[1],
+                "Automatic-Module-Name" to "org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}",
             )
         }
         dependsOn("${platform}ExtractNatives")
