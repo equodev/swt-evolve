@@ -791,8 +791,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				HEADER_SEARCH_PATHS = (
-					/Users/guillez/.jenv/versions/17/include/darwin,
-					/Users/guillez/.jenv/versions/17/include,
+					"$(JAVA_HEADER_SEARCH_PATHS)",
 				);
 				INSTALL_PATH = "@rpath";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
@@ -833,8 +832,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				HEADER_SEARCH_PATHS = (
-					/Users/guillez/.jenv/versions/17/include/darwin,
-					/Users/guillez/.jenv/versions/17/include,
+					"$(JAVA_HEADER_SEARCH_PATHS)",
 				);
 				INSTALL_PATH = "@rpath";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
@@ -872,8 +870,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				HEADER_SEARCH_PATHS = (
-					/Users/guillez/.jenv/versions/17/include/darwin,
-					/Users/guillez/.jenv/versions/17/include,
+					"$(JAVA_HEADER_SEARCH_PATHS)",
 				);
 				INSTALL_PATH = "@rpath";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
