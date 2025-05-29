@@ -1,6 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import static org.assertj.core.api.Assertions.*;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.json;
 
@@ -10,14 +9,12 @@ import dev.equo.swt.MockFlutterBridge;
 import dev.equo.swt.Serializer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.internal.cocoa.NSObject;
-import org.eclipse.swt.internal.cocoa.NSView;
 import org.instancio.Instancio;
 import org.instancio.Select;
 import org.instancio.settings.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -50,15 +47,7 @@ public class SerializerTest {
     void should_serialize_button() throws IOException {
         FlutterBridge.set(new MockFlutterBridge());
 
-        Display display = Mockito.mock(Display.class);
-        SwtDisplay swtDisplay = Mockito.mock(SwtDisplay.class);
-        swtDisplay.thread = Thread.currentThread();
-        Mockito.when(display.getImpl()).thenReturn(swtDisplay);
-
-        Shell shell = Mockito.mock(Shell.class);
-        SwtShell swtShell = Mockito.mock(SwtShell.class);
-        Mockito.when(shell.getImpl()).thenReturn(swtShell);
-        swtShell.display = display;
+        Shell shell = Mocks.shell();
 
         Button w = new Button(shell, SWT.PUSH);
         w.setBounds(10, 20, 30, 40);

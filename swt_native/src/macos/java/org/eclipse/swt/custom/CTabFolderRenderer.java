@@ -30,6 +30,8 @@ import org.eclipse.swt.widgets.*;
  */
 public class CTabFolderRenderer {
 
+    protected CTabFolder parent;
+
     /* Selected item appearance */
     //Although we are given new colours all the time to show different states (active, etc),
     //some of which may have a highlight and some not, we'd like to retain the highlight colours
@@ -262,10 +264,12 @@ public class CTabFolderRenderer {
     protected ICTabFolderRenderer impl;
 
     protected CTabFolderRenderer(ICTabFolderRenderer impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static CTabFolderRenderer createApi(ICTabFolderRenderer impl) {

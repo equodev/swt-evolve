@@ -30,8 +30,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
 
-    protected CTabFolder parent;
-
     int[] curve;
 
     int[] topCurveHighlightStart;
@@ -163,29 +161,29 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             return;
         if (parent.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        this.parent = parent;
+        this.getApi().parent = parent;
     }
 
     void antialias(int[] shape, Color innerColor, Color outerColor, GC gc) {
         // Don't perform anti-aliasing on Mac because the platform
         // already does it.  The simple style also does not require anti-aliasing.
-        if (((SwtCTabFolder) parent.getImpl()).simple)
+        if (((SwtCTabFolder) getApi().parent.getImpl()).simple)
             return;
         String platform = SWT.getPlatform();
         //$NON-NLS-1$
         if ("cocoa".equals(platform))
             return;
         // Don't perform anti-aliasing on low resolution displays
-        if (parent.getDisplay().getDepth() < 15)
+        if (getApi().parent.getDisplay().getDepth() < 15)
             return;
         if (outerColor != null) {
             int index = 0;
             boolean left = true;
-            int oldY = ((SwtCTabFolder) parent.getImpl()).onBottom ? 0 : parent.getSize().y;
+            int oldY = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? 0 : getApi().parent.getSize().y;
             int[] outer = new int[shape.length];
             for (int i = 0; i < shape.length / 2; i++) {
                 if (left && (index + 3 < shape.length)) {
-                    left = ((SwtCTabFolder) parent.getImpl()).onBottom ? oldY <= shape[index + 3] : oldY >= shape[index + 3];
+                    left = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? oldY <= shape[index + 3] : oldY >= shape[index + 3];
                     oldY = shape[index + 1];
                 }
                 outer[index] = shape[index++] + (left ? -1 : +1);
@@ -198,10 +196,10 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             int[] inner = new int[shape.length];
             int index = 0;
             boolean left = true;
-            int oldY = ((SwtCTabFolder) parent.getImpl()).onBottom ? 0 : parent.getSize().y;
+            int oldY = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? 0 : getApi().parent.getSize().y;
             for (int i = 0; i < shape.length / 2; i++) {
                 if (left && (index + 3 < shape.length)) {
-                    left = ((SwtCTabFolder) parent.getImpl()).onBottom ? oldY <= shape[index + 3] : oldY >= shape[index + 3];
+                    left = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? oldY <= shape[index + 3] : oldY >= shape[index + 3];
                     oldY = shape[index + 1];
                 }
                 inner[index] = shape[index++] + (left ? +1 : -1);
@@ -256,11 +254,11 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
         int width = 0, height = 0;
         switch(part) {
             case CTabFolderRenderer.PART_HEADER:
-                if (((SwtCTabFolder) parent.getImpl()).fixedTabHeight != SWT.DEFAULT) {
+                if (((SwtCTabFolder) getApi().parent.getImpl()).fixedTabHeight != SWT.DEFAULT) {
                     // +1 for line drawn across top of tab
-                    height = ((SwtCTabFolder) parent.getImpl()).fixedTabHeight == 0 ? 0 : ((SwtCTabFolder) parent.getImpl()).fixedTabHeight + 1;
+                    height = ((SwtCTabFolder) getApi().parent.getImpl()).fixedTabHeight == 0 ? 0 : ((SwtCTabFolder) getApi().parent.getImpl()).fixedTabHeight + 1;
                 } else {
-                    CTabItem[] items = ((SwtCTabFolder) parent.getImpl()).items;
+                    CTabItem[] items = ((SwtCTabFolder) getApi().parent.getImpl()).items;
                     if (items.length == 0) {
                         //$NON-NLS-1$
                         height = gc.textExtent("Default", FLAGS).y + ITEM_TOP_MARGIN + ITEM_BOTTOM_MARGIN;
@@ -279,7 +277,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                 break;
             case CTabFolderRenderer.PART_CHEVRON_BUTTON:
                 Font prevFont = gc.getFont();
-                gc.setFont(getChevronFont(parent.getDisplay()));
+                gc.setFont(getChevronFont(getApi().parent.getDisplay()));
                 // see drawChevron method
                 int widthOfDoubleArrows = 8;
                 width = gc.textExtent(CHEVRON_ELLIPSIS).x + widthOfDoubleArrows;
@@ -287,22 +285,22 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                 gc.setFont(prevFont);
                 break;
             default:
-                if (0 <= part && part < parent.getItemCount()) {
+                if (0 <= part && part < getApi().parent.getItemCount()) {
                     updateCurves();
-                    CTabItem item = ((SwtCTabFolder) parent.getImpl()).items[part];
+                    CTabItem item = ((SwtCTabFolder) getApi().parent.getImpl()).items[part];
                     if (item.isDisposed())
                         return new Point(0, 0);
                     Image image = item.getImage();
                     if (image != null && !image.isDisposed()) {
                         Rectangle bounds = image.getBounds();
-                        if (((state & SWT.SELECTED) != 0 && ((SwtCTabFolder) parent.getImpl()).showSelectedImage) || ((state & SWT.SELECTED) == 0 && ((SwtCTabFolder) parent.getImpl()).showUnselectedImage)) {
+                        if (((state & SWT.SELECTED) != 0 && ((SwtCTabFolder) getApi().parent.getImpl()).showSelectedImage) || ((state & SWT.SELECTED) == 0 && ((SwtCTabFolder) getApi().parent.getImpl()).showUnselectedImage)) {
                             width += bounds.width;
                         }
                         height = bounds.height;
                     }
                     String text = null;
                     if ((state & CTabFolderRenderer.MINIMUM_SIZE) != 0) {
-                        int minChars = ((SwtCTabFolder) parent.getImpl()).minChars;
+                        int minChars = ((SwtCTabFolder) getApi().parent.getImpl()).minChars;
                         text = minChars == 0 ? null : item.getText();
                         if (text != null && text.length() > minChars) {
                             if (useEllipses()) {
@@ -334,7 +332,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                             gc.setFont(gcFont);
                         }
                     }
-                    if (shouldApplyLargeTextPadding(parent)) {
+                    if (shouldApplyLargeTextPadding(getApi().parent)) {
                         width += getLargeTextPadding(item) * 2;
                     } else if (shouldDrawCloseIcon(item)) {
                         if (width > 0)
@@ -400,28 +398,28 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
      * @since 3.6
      */
     public Rectangle computeTrim(int part, int state, int x, int y, int width, int height) {
-        int borderLeft = ((SwtCTabFolder) parent.getImpl()).borderVisible ? 1 : 0;
+        int borderLeft = ((SwtCTabFolder) getApi().parent.getImpl()).borderVisible ? 1 : 0;
         int borderRight = borderLeft;
-        int borderTop = ((SwtCTabFolder) parent.getImpl()).onBottom ? borderLeft : 0;
-        int borderBottom = ((SwtCTabFolder) parent.getImpl()).onBottom ? 0 : borderLeft;
-        int tabHeight = ((SwtCTabFolder) parent.getImpl()).tabHeight;
+        int borderTop = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? borderLeft : 0;
+        int borderBottom = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? 0 : borderLeft;
+        int tabHeight = ((SwtCTabFolder) getApi().parent.getImpl()).tabHeight;
         switch(part) {
             case CTabFolderRenderer.PART_BODY:
-                int style = parent.getStyle();
+                int style = getApi().parent.getStyle();
                 int highlight_header = (style & SWT.FLAT) != 0 ? 1 : 3;
                 int highlight_margin = (style & SWT.FLAT) != 0 ? 0 : 2;
-                if (((SwtCTabFolder) parent.getImpl()).fixedTabHeight == 0 && (style & SWT.FLAT) != 0 && (style & SWT.BORDER) == 0) {
+                if (((SwtCTabFolder) getApi().parent.getImpl()).fixedTabHeight == 0 && (style & SWT.FLAT) != 0 && (style & SWT.BORDER) == 0) {
                     highlight_header = 0;
                 }
-                int marginWidth = parent.marginWidth;
-                int marginHeight = parent.marginHeight;
+                int marginWidth = getApi().parent.marginWidth;
+                int marginHeight = getApi().parent.marginHeight;
                 x = x - marginWidth - highlight_margin - borderLeft;
                 width = width + borderLeft + borderRight + 2 * marginWidth + 2 * highlight_margin;
-                if (((SwtCTabFolder) parent.getImpl()).minimized) {
-                    y = ((SwtCTabFolder) parent.getImpl()).onBottom ? y - borderTop : y - highlight_header - tabHeight - borderTop;
+                if (((SwtCTabFolder) getApi().parent.getImpl()).minimized) {
+                    y = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? y - borderTop : y - highlight_header - tabHeight - borderTop;
                     height = borderTop + borderBottom + tabHeight + highlight_header;
                 } else {
-                    y = ((SwtCTabFolder) parent.getImpl()).onBottom ? y - marginHeight - highlight_margin - borderTop : y - marginHeight - highlight_header - tabHeight - borderTop;
+                    y = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? y - marginHeight - highlight_margin - borderTop : y - marginHeight - highlight_header - tabHeight - borderTop;
                     height = height + borderTop + borderBottom + 2 * marginHeight + tabHeight + highlight_header + highlight_margin;
                 }
                 break;
@@ -441,17 +439,17 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                 x = x - borderLeft;
                 width = width + borderLeft + borderRight;
                 // TOP_RIGHT_CORNER needs more space
-                if (!((SwtCTabFolder) parent.getImpl()).simple)
+                if (!((SwtCTabFolder) getApi().parent.getImpl()).simple)
                     width += 2;
                 y = y - borderTop;
                 height = height + borderTop + borderBottom;
                 break;
             default:
-                if (0 <= part && part < parent.getItemCount()) {
+                if (0 <= part && part < getApi().parent.getItemCount()) {
                     updateCurves();
                     x = x - ITEM_LEFT_MARGIN;
                     width = width + ITEM_LEFT_MARGIN + ITEM_RIGHT_MARGIN;
-                    if (!((SwtCTabFolder) parent.getImpl()).simple && !((SwtCTabFolder) parent.getImpl()).single && (state & SWT.SELECTED) != 0) {
+                    if (!((SwtCTabFolder) getApi().parent.getImpl()).simple && !((SwtCTabFolder) getApi().parent.getImpl()).single && (state & SWT.SELECTED) != 0) {
                         width += curveWidth - curveIndent;
                     }
                     y = y - ITEM_TOP_MARGIN;
@@ -464,15 +462,15 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
 
     void createAntialiasColors() {
         disposeAntialiasColors();
-        lastBorderColor = parent.getDisplay().getSystemColor(BORDER1_COLOR);
+        lastBorderColor = getApi().parent.getDisplay().getSystemColor(BORDER1_COLOR);
         RGB lineRGB = lastBorderColor.getRGB();
         /* compute the selected color */
-        RGB innerRGB = ((SwtCTabFolder) parent.getImpl()).selectionBackground.getRGB();
-        if (((SwtCTabFolder) parent.getImpl()).selectionBgImage != null || (((SwtCTabFolder) parent.getImpl()).selectionGradientColors != null && ((SwtCTabFolder) parent.getImpl()).selectionGradientColors.length > 1)) {
+        RGB innerRGB = ((SwtCTabFolder) getApi().parent.getImpl()).selectionBackground.getRGB();
+        if (((SwtCTabFolder) getApi().parent.getImpl()).selectionBgImage != null || (((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientColors != null && ((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientColors.length > 1)) {
             innerRGB = null;
         }
-        RGB outerRGB = parent.getBackground().getRGB();
-        if (((SwtCTabFolder) parent.getImpl()).gradientColors != null && ((SwtCTabFolder) parent.getImpl()).gradientColors.length > 1) {
+        RGB outerRGB = getApi().parent.getBackground().getRGB();
+        if (((SwtCTabFolder) getApi().parent.getImpl()).gradientColors != null && ((SwtCTabFolder) getApi().parent.getImpl()).gradientColors.length > 1) {
             outerRGB = null;
         }
         if (outerRGB != null) {
@@ -492,7 +490,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             selectedInnerColor = new Color(red, green, blue);
         }
         /* compute the tabArea color */
-        outerRGB = parent.getParent().getBackground().getRGB();
+        outerRGB = getApi().parent.getParent().getBackground().getRGB();
         if (outerRGB != null) {
             RGB from = lineRGB;
             RGB to = outerRGB;
@@ -517,9 +515,9 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
         start == null)
             return;
         //alloc colours for entire height to ensure it matches wherever we stop drawing
-        int fadeGradientSize = ((SwtCTabFolder) parent.getImpl()).tabHeight;
+        int fadeGradientSize = ((SwtCTabFolder) getApi().parent.getImpl()).tabHeight;
         RGB from = start.getRGB();
-        RGB to = ((SwtCTabFolder) parent.getImpl()).selectionBackground.getRGB();
+        RGB to = ((SwtCTabFolder) getApi().parent.getImpl()).selectionBackground.getRGB();
         selectionHighlightGradientColorsCache = new Color[fadeGradientSize];
         int denom = fadeGradientSize - 1;
         for (int i = 0; i < fadeGradientSize; i++) {
@@ -610,7 +608,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                 drawChevron(gc, bounds, state);
                 break;
             default:
-                if (0 <= part && part < parent.getItemCount()) {
+                if (0 <= part && part < getApi().parent.getItemCount()) {
                     if (bounds.width == 0 || bounds.height == 0)
                         return;
                     if ((state & SWT.SELECTED) != 0) {
@@ -625,32 +623,32 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
 
     void drawBackground(GC gc, Rectangle bounds, int state) {
         boolean selected = (state & SWT.SELECTED) != 0;
-        Color defaultBackground = selected && ((SwtCTabFolder) parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) parent.getImpl()).selectionBackground : parent.getBackground();
-        Image image = selected ? ((SwtCTabFolder) parent.getImpl()).selectionBgImage : null;
-        Color[] colors = selected & ((SwtCTabFolder) parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) parent.getImpl()).selectionGradientColors : ((SwtCTabFolder) parent.getImpl()).gradientColors;
-        int[] percents = selected ? ((SwtCTabFolder) parent.getImpl()).selectionGradientPercents : ((SwtCTabFolder) parent.getImpl()).gradientPercents;
-        boolean vertical = selected ? ((SwtCTabFolder) parent.getImpl()).selectionGradientVertical : ((SwtCTabFolder) parent.getImpl()).gradientVertical;
+        Color defaultBackground = selected && ((SwtCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) getApi().parent.getImpl()).selectionBackground : getApi().parent.getBackground();
+        Image image = selected ? ((SwtCTabFolder) getApi().parent.getImpl()).selectionBgImage : null;
+        Color[] colors = selected & ((SwtCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientColors : ((SwtCTabFolder) getApi().parent.getImpl()).gradientColors;
+        int[] percents = selected ? ((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientPercents : ((SwtCTabFolder) getApi().parent.getImpl()).gradientPercents;
+        boolean vertical = selected ? ((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientVertical : ((SwtCTabFolder) getApi().parent.getImpl()).gradientVertical;
         drawBackground(gc, null, bounds.x, bounds.y, bounds.width, bounds.height, defaultBackground, image, colors, percents, vertical);
     }
 
     void drawBackground(GC gc, int[] shape, boolean selected) {
-        Color defaultBackground = selected && ((SwtCTabFolder) parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) parent.getImpl()).selectionBackground : parent.getBackground();
-        Image image = selected ? ((SwtCTabFolder) parent.getImpl()).selectionBgImage : null;
-        Color[] colors = selected && ((SwtCTabFolder) parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) parent.getImpl()).selectionGradientColors : ((SwtCTabFolder) parent.getImpl()).gradientColors;
-        int[] percents = selected ? ((SwtCTabFolder) parent.getImpl()).selectionGradientPercents : ((SwtCTabFolder) parent.getImpl()).gradientPercents;
-        boolean vertical = selected ? ((SwtCTabFolder) parent.getImpl()).selectionGradientVertical : ((SwtCTabFolder) parent.getImpl()).gradientVertical;
-        Point size = parent.getSize();
+        Color defaultBackground = selected && ((SwtCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) getApi().parent.getImpl()).selectionBackground : getApi().parent.getBackground();
+        Image image = selected ? ((SwtCTabFolder) getApi().parent.getImpl()).selectionBgImage : null;
+        Color[] colors = selected && ((SwtCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientColors : ((SwtCTabFolder) getApi().parent.getImpl()).gradientColors;
+        int[] percents = selected ? ((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientPercents : ((SwtCTabFolder) getApi().parent.getImpl()).gradientPercents;
+        boolean vertical = selected ? ((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientVertical : ((SwtCTabFolder) getApi().parent.getImpl()).gradientVertical;
+        Point size = getApi().parent.getSize();
         int width = size.x;
-        int height = ((SwtCTabFolder) parent.getImpl()).tabHeight + ((parent.getStyle() & SWT.FLAT) != 0 ? 1 : 3);
+        int height = ((SwtCTabFolder) getApi().parent.getImpl()).tabHeight + ((getApi().parent.getStyle() & SWT.FLAT) != 0 ? 1 : 3);
         int x = 0;
-        int borderLeft = ((SwtCTabFolder) parent.getImpl()).borderVisible ? 1 : 0;
-        int borderTop = ((SwtCTabFolder) parent.getImpl()).onBottom ? borderLeft : 0;
-        int borderBottom = ((SwtCTabFolder) parent.getImpl()).onBottom ? 0 : borderLeft;
+        int borderLeft = ((SwtCTabFolder) getApi().parent.getImpl()).borderVisible ? 1 : 0;
+        int borderTop = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? borderLeft : 0;
+        int borderBottom = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? 0 : borderLeft;
         if (borderLeft > 0) {
             x += 1;
             width -= 2;
         }
-        int y = ((SwtCTabFolder) parent.getImpl()).onBottom ? size.y - borderBottom - height : borderTop;
+        int y = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? size.y - borderBottom - height : borderTop;
         drawBackground(gc, shape, x, y, width, height, defaultBackground, image, colors, percents, vertical);
     }
 
@@ -678,7 +676,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                 gc.fillRectangle(x, y, width, height);
             } else {
                 if (vertical) {
-                    if (((SwtCTabFolder) parent.getImpl()).onBottom) {
+                    if (((SwtCTabFolder) getApi().parent.getImpl()).onBottom) {
                         int pos = 0;
                         if (percents[percents.length - 1] < 100) {
                             pos = (100 - percents[percents.length - 1]) * height / 100;
@@ -723,7 +721,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                 } else {
                     //horizontal gradient
                     y = 0;
-                    height = parent.getSize().y;
+                    height = getApi().parent.getSize().y;
                     Color lastColor = colors[0];
                     if (lastColor == null)
                         lastColor = defaultBackground;
@@ -746,7 +744,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             }
         } else {
             // draw a solid background using default background in shape
-            if ((parent.getStyle() & SWT.NO_BACKGROUND) != 0 || !defaultBackground.equals(parent.getBackground())) {
+            if ((getApi().parent.getStyle() & SWT.NO_BACKGROUND) != 0 || !defaultBackground.equals(getApi().parent.getBackground())) {
                 gc.setBackground(defaultBackground);
                 gc.fillRectangle(x, y, width, height);
             }
@@ -762,29 +760,29 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
 	 * Draw the border of the tab
 	 */
     void drawBorder(GC gc, int[] shape) {
-        gc.setForeground(parent.getDisplay().getSystemColor(BORDER1_COLOR));
+        gc.setForeground(getApi().parent.getDisplay().getSystemColor(BORDER1_COLOR));
         gc.drawPolyline(shape);
     }
 
     void drawBody(GC gc, Rectangle bounds, int state) {
         Point size = new Point(bounds.width, bounds.height);
-        int selectedIndex = ((SwtCTabFolder) parent.getImpl()).selectedIndex;
-        int tabHeight = ((SwtCTabFolder) parent.getImpl()).tabHeight;
-        int borderLeft = ((SwtCTabFolder) parent.getImpl()).borderVisible ? 1 : 0;
+        int selectedIndex = ((SwtCTabFolder) getApi().parent.getImpl()).selectedIndex;
+        int tabHeight = ((SwtCTabFolder) getApi().parent.getImpl()).tabHeight;
+        int borderLeft = ((SwtCTabFolder) getApi().parent.getImpl()).borderVisible ? 1 : 0;
         int borderRight = borderLeft;
-        int borderTop = ((SwtCTabFolder) parent.getImpl()).onBottom ? borderLeft : 0;
-        int borderBottom = ((SwtCTabFolder) parent.getImpl()).onBottom ? 0 : borderLeft;
-        int style = parent.getStyle();
+        int borderTop = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? borderLeft : 0;
+        int borderBottom = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? 0 : borderLeft;
+        int style = getApi().parent.getStyle();
         int highlight_header = (style & SWT.FLAT) != 0 ? 1 : 3;
         int highlight_margin = (style & SWT.FLAT) != 0 ? 0 : 2;
         // fill in body
-        if (!((SwtCTabFolder) parent.getImpl()).minimized) {
+        if (!((SwtCTabFolder) getApi().parent.getImpl()).minimized) {
             int width = size.x - borderLeft - borderRight - 2 * highlight_margin;
             int height = size.y - borderTop - borderBottom - tabHeight - highlight_header - highlight_margin;
             // Draw highlight margin
             if (highlight_margin > 0) {
                 int[] shape = null;
-                if (((SwtCTabFolder) parent.getImpl()).onBottom) {
+                if (((SwtCTabFolder) getApi().parent.getImpl()).onBottom) {
                     int x1 = borderLeft;
                     int y1 = borderTop;
                     int x2 = size.x - borderRight;
@@ -798,22 +796,22 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                     shape = new int[] { x1, y1, x1 + highlight_margin, y1, x1 + highlight_margin, y2 - highlight_margin, x2 - highlight_margin, y2 - highlight_margin, x2 - highlight_margin, y1, x2, y1, x2, y2, x1, y2 };
                 }
                 // If horizontal gradient, show gradient across the whole area
-                if (selectedIndex != -1 && ((SwtCTabFolder) parent.getImpl()).selectionGradientColors != null && ((SwtCTabFolder) parent.getImpl()).selectionGradientColors.length > 1 && !((SwtCTabFolder) parent.getImpl()).selectionGradientVertical) {
+                if (selectedIndex != -1 && ((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientColors != null && ((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientColors.length > 1 && !((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientVertical) {
                     drawBackground(gc, shape, true);
-                } else if (selectedIndex == -1 && ((SwtCTabFolder) parent.getImpl()).gradientColors != null && ((SwtCTabFolder) parent.getImpl()).gradientColors.length > 1 && !((SwtCTabFolder) parent.getImpl()).gradientVertical) {
+                } else if (selectedIndex == -1 && ((SwtCTabFolder) getApi().parent.getImpl()).gradientColors != null && ((SwtCTabFolder) getApi().parent.getImpl()).gradientColors.length > 1 && !((SwtCTabFolder) getApi().parent.getImpl()).gradientVertical) {
                     drawBackground(gc, shape, false);
                 } else {
-                    gc.setBackground(selectedIndex != -1 && ((SwtCTabFolder) parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) parent.getImpl()).selectionBackground : parent.getBackground());
+                    gc.setBackground(selectedIndex != -1 && ((SwtCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) getApi().parent.getImpl()).selectionBackground : getApi().parent.getBackground());
                     gc.fillPolygon(shape);
                 }
             }
             //Draw client area
-            if ((parent.getStyle() & SWT.NO_BACKGROUND) != 0) {
-                gc.setBackground(parent.getBackground());
-                int marginWidth = parent.marginWidth;
-                int marginHeight = parent.marginHeight;
+            if ((getApi().parent.getStyle() & SWT.NO_BACKGROUND) != 0) {
+                gc.setBackground(getApi().parent.getBackground());
+                int marginWidth = getApi().parent.marginWidth;
+                int marginHeight = getApi().parent.marginHeight;
                 int xClient = borderLeft + marginWidth + highlight_margin, yClient;
-                if (((SwtCTabFolder) parent.getImpl()).onBottom) {
+                if (((SwtCTabFolder) getApi().parent.getImpl()).onBottom) {
                     yClient = borderTop + highlight_margin + marginHeight;
                 } else {
                     yClient = borderTop + tabHeight + highlight_header + marginHeight;
@@ -821,26 +819,26 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                 gc.fillRectangle(xClient - marginWidth, yClient - marginHeight, width, height);
             }
         } else {
-            if ((parent.getStyle() & SWT.NO_BACKGROUND) != 0) {
+            if ((getApi().parent.getStyle() & SWT.NO_BACKGROUND) != 0) {
                 int height = borderTop + tabHeight + highlight_header + borderBottom;
                 if (size.y > height) {
-                    gc.setBackground(parent.getParent().getBackground());
+                    gc.setBackground(getApi().parent.getParent().getBackground());
                     gc.fillRectangle(0, height, size.x, size.y - height);
                 }
             }
         }
         //draw 1 pixel border around outside
         if (borderLeft > 0) {
-            gc.setForeground(parent.getDisplay().getSystemColor(BORDER1_COLOR));
+            gc.setForeground(getApi().parent.getDisplay().getSystemColor(BORDER1_COLOR));
             int x1 = borderLeft - 1;
             int x2 = size.x - borderRight;
-            int y1 = ((SwtCTabFolder) parent.getImpl()).onBottom ? borderTop - 1 : borderTop + tabHeight;
-            int y2 = ((SwtCTabFolder) parent.getImpl()).onBottom ? size.y - tabHeight - borderBottom - 1 : size.y - borderBottom;
+            int y1 = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? borderTop - 1 : borderTop + tabHeight;
+            int y2 = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? size.y - tabHeight - borderBottom - 1 : size.y - borderBottom;
             // left
             gc.drawLine(x1, y1, x1, y2);
             // right
             gc.drawLine(x2, y1, x2, y2);
-            if (((SwtCTabFolder) parent.getImpl()).onBottom) {
+            if (((SwtCTabFolder) getApi().parent.getImpl()).onBottom) {
                 // top
                 gc.drawLine(x1, y1, x2, y1);
             } else {
@@ -857,7 +855,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
         final int lineLength = 8;
         int x = closeRect.x + Math.max(1, (closeRect.width - lineLength) / 2);
         int y = closeRect.y + Math.max(1, (closeRect.height - lineLength) / 2);
-        y += ((SwtCTabFolder) parent.getImpl()).onBottom ? -1 : 1;
+        y += ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? -1 : 1;
         int originalLineWidth = gc.getLineWidth();
         Color originalForeground = gc.getForeground();
         switch(closeImageState & (SWT.HOT | SWT.SELECTED | SWT.BACKGROUND)) {
@@ -901,18 +899,18 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
         if (chevronRect.width == 0 || chevronRect.height == 0)
             return;
         // draw chevron (10x7)
-        Display display = parent.getDisplay();
+        Display display = getApi().parent.getDisplay();
         Font font = getChevronFont(display);
         int fontHeight = font.getFontData()[0].getHeight();
         int indent = Math.max(2, (chevronRect.height - fontHeight - 4) / 2);
         int x = chevronRect.x + 2;
         int y = chevronRect.y + indent;
-        int count = ((SwtCTabFolder) parent.getImpl()).getChevronCount();
+        int count = ((SwtCTabFolder) getApi().parent.getImpl()).getChevronCount();
         String chevronString = count > 99 ? CHEVRON_ELLIPSIS : String.valueOf(count);
         switch(chevronImageState & (SWT.HOT | SWT.SELECTED)) {
             case SWT.NONE:
                 {
-                    Color chevronBorder = ((SwtCTabFolder) parent.getImpl()).single ? parent.getSelectionForeground() : parent.getForeground();
+                    Color chevronBorder = ((SwtCTabFolder) getApi().parent.getImpl()).single ? getApi().parent.getSelectionForeground() : getApi().parent.getForeground();
                     gc.setForeground(chevronBorder);
                     gc.setFont(font);
                     drawChevronContent(gc, x, y, chevronString);
@@ -963,7 +961,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
 	 */
     void drawHighlight(GC gc, Rectangle bounds, int state, int rightEdge) {
         //only draw for curvy tabs and only draw for top tabs
-        if (((SwtCTabFolder) parent.getImpl()).simple || ((SwtCTabFolder) parent.getImpl()).onBottom)
+        if (((SwtCTabFolder) getApi().parent.getImpl()).simple || ((SwtCTabFolder) getApi().parent.getImpl()).onBottom)
             return;
         if (selectionHighlightGradientBegin == null)
             return;
@@ -981,7 +979,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
         gc.drawLine(//rely on fact that first pair is top/right of curve
         TOP_LEFT_CORNER_HILITE[0] + x + 1, 1 + y, rightEdge - curveIndent, 1 + y);
         int[] leftHighlightCurve = TOP_LEFT_CORNER_HILITE;
-        int d = ((SwtCTabFolder) parent.getImpl()).tabHeight - topCurveHighlightEnd.length / 2;
+        int d = ((SwtCTabFolder) getApi().parent.getImpl()).tabHeight - topCurveHighlightEnd.length / 2;
         int lastX = 0;
         int lastY = 0;
         int lastColorIndex = 0;
@@ -1047,8 +1045,8 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
         int y = bounds.y;
         int height = bounds.height;
         int[] shape = null;
-        if (((SwtCTabFolder) parent.getImpl()).onBottom) {
-            int[] left = ((SwtCTabFolder) parent.getImpl()).simple ? SIMPLE_UNSELECTED_INNER_CORNER : BOTTOM_LEFT_CORNER;
+        if (((SwtCTabFolder) getApi().parent.getImpl()).onBottom) {
+            int[] left = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? SIMPLE_UNSELECTED_INNER_CORNER : BOTTOM_LEFT_CORNER;
             shape = new int[left.length + 2];
             int index = 0;
             shape[index++] = x;
@@ -1058,7 +1056,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                 shape[index++] = y + height + left[2 * i + 1] - 1;
             }
         } else {
-            int[] left = ((SwtCTabFolder) parent.getImpl()).simple ? SIMPLE_UNSELECTED_INNER_CORNER : TOP_LEFT_CORNER;
+            int[] left = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? SIMPLE_UNSELECTED_INNER_CORNER : TOP_LEFT_CORNER;
             shape = new int[left.length + 2];
             int index = 0;
             shape[index++] = x;
@@ -1077,11 +1075,11 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
         // 5x4 or 7x9
         int x = maxRect.x + (maxRect.width - 10) / 2;
         int y = maxRect.y + 3;
-        gc.setForeground(parent.getForeground());
+        gc.setForeground(getApi().parent.getForeground());
         switch(maxImageState & (SWT.HOT | SWT.SELECTED)) {
             case SWT.NONE:
                 {
-                    if (!parent.getMaximized()) {
+                    if (!getApi().parent.getMaximized()) {
                         gc.drawRectangle(x, y, 9, 9);
                         gc.drawLine(x, y + 2, x + 9, y + 2);
                     } else {
@@ -1095,7 +1093,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             case SWT.HOT:
                 {
                     drawRoundRectangle(gc, maxRect);
-                    if (!parent.getMaximized()) {
+                    if (!getApi().parent.getMaximized()) {
                         gc.drawRectangle(x, y, 9, 9);
                         gc.drawLine(x, y + 2, x + 9, y + 2);
                     } else {
@@ -1109,7 +1107,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             case SWT.SELECTED:
                 {
                     drawRoundRectangle(gc, maxRect);
-                    if (!parent.getMaximized()) {
+                    if (!getApi().parent.getMaximized()) {
                         gc.drawRectangle(x + 1, y + 1, 9, 9);
                         gc.drawLine(x + 1, y + 3, x + 10, y + 3);
                     } else {
@@ -1129,11 +1127,11 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
         // 5x4 or 9x3
         int x = minRect.x + (minRect.width - 10) / 2;
         int y = minRect.y + 3;
-        gc.setForeground(parent.getForeground());
+        gc.setForeground(getApi().parent.getForeground());
         switch(minImageState & (SWT.HOT | SWT.SELECTED)) {
             case SWT.NONE:
                 {
-                    if (!parent.getMinimized()) {
+                    if (!getApi().parent.getMinimized()) {
                         gc.drawRectangle(x, y, 9, 3);
                     } else {
                         gc.drawRectangle(x, y + 3, 5, 4);
@@ -1146,7 +1144,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             case SWT.HOT:
                 {
                     drawRoundRectangle(gc, minRect);
-                    if (!parent.getMinimized()) {
+                    if (!getApi().parent.getMinimized()) {
                         gc.drawRectangle(x, y, 9, 3);
                     } else {
                         gc.drawRectangle(x, y + 3, 5, 4);
@@ -1159,7 +1157,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             case SWT.SELECTED:
                 {
                     drawRoundRectangle(gc, minRect);
-                    if (!parent.getMinimized()) {
+                    if (!getApi().parent.getMinimized()) {
                         gc.drawRectangle(x + 1, y + 1, 9, 3);
                     } else {
                         gc.drawRectangle(x + 1, y + 4, 5, 4);
@@ -1182,8 +1180,8 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
         int height = bounds.height;
         int[] shape = null;
         int startX = x + width - 1;
-        if (((SwtCTabFolder) parent.getImpl()).onBottom) {
-            int[] right = ((SwtCTabFolder) parent.getImpl()).simple ? SIMPLE_UNSELECTED_INNER_CORNER : BOTTOM_RIGHT_CORNER;
+        if (((SwtCTabFolder) getApi().parent.getImpl()).onBottom) {
+            int[] right = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? SIMPLE_UNSELECTED_INNER_CORNER : BOTTOM_RIGHT_CORNER;
             shape = new int[right.length + 2];
             int index = 0;
             for (int i = 0; i < right.length / 2; i++) {
@@ -1193,7 +1191,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             shape[index++] = startX;
             shape[index++] = y - 1;
         } else {
-            int[] right = ((SwtCTabFolder) parent.getImpl()).simple ? SIMPLE_UNSELECTED_INNER_CORNER : TOP_RIGHT_CORNER;
+            int[] right = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? SIMPLE_UNSELECTED_INNER_CORNER : TOP_RIGHT_CORNER;
             shape = new int[right.length + 2];
             int index = 0;
             for (int i = 0; i < right.length / 2; i++) {
@@ -1207,34 +1205,34 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
     }
 
     void drawSelected(int itemIndex, GC gc, Rectangle bounds, int state) {
-        CTabItem item = ((SwtCTabFolder) parent.getImpl()).items[itemIndex];
+        CTabItem item = ((SwtCTabFolder) getApi().parent.getImpl()).items[itemIndex];
         int x = bounds.x;
         int y = bounds.y;
         int height = bounds.height;
         int width = bounds.width;
-        if (!((SwtCTabFolder) parent.getImpl()).simple && !((SwtCTabFolder) parent.getImpl()).single)
+        if (!((SwtCTabFolder) getApi().parent.getImpl()).simple && !((SwtCTabFolder) getApi().parent.getImpl()).single)
             width -= (curveWidth - curveIndent);
-        int borderLeft = ((SwtCTabFolder) parent.getImpl()).borderVisible ? 1 : 0;
+        int borderLeft = ((SwtCTabFolder) getApi().parent.getImpl()).borderVisible ? 1 : 0;
         int borderRight = borderLeft;
-        int borderTop = ((SwtCTabFolder) parent.getImpl()).onBottom ? borderLeft : 0;
-        int borderBottom = ((SwtCTabFolder) parent.getImpl()).onBottom ? 0 : borderLeft;
-        Point size = parent.getSize();
-        int rightEdge = Math.min(x + width, ((SwtCTabFolder) parent.getImpl()).getRightItemEdge(gc));
+        int borderTop = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? borderLeft : 0;
+        int borderBottom = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? 0 : borderLeft;
+        Point size = getApi().parent.getSize();
+        int rightEdge = Math.min(x + width, ((SwtCTabFolder) getApi().parent.getImpl()).getRightItemEdge(gc));
         //	 Draw selection border across all tabs
         if ((state & SWT.BACKGROUND) != 0) {
-            int highlight_header = (parent.getStyle() & SWT.FLAT) != 0 ? 1 : 3;
+            int highlight_header = (getApi().parent.getStyle() & SWT.FLAT) != 0 ? 1 : 3;
             int xx = borderLeft;
-            int yy = ((SwtCTabFolder) parent.getImpl()).onBottom ? size.y - borderBottom - ((SwtCTabFolder) parent.getImpl()).tabHeight - highlight_header : borderTop + ((SwtCTabFolder) parent.getImpl()).tabHeight + 1;
+            int yy = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? size.y - borderBottom - ((SwtCTabFolder) getApi().parent.getImpl()).tabHeight - highlight_header : borderTop + ((SwtCTabFolder) getApi().parent.getImpl()).tabHeight + 1;
             int ww = size.x - borderLeft - borderRight;
             int hh = highlight_header - 1;
             int[] shape = new int[] { xx, yy, xx + ww, yy, xx + ww, yy + hh, xx, yy + hh };
-            if (((SwtCTabFolder) parent.getImpl()).selectionGradientColors != null && !((SwtCTabFolder) parent.getImpl()).selectionGradientVertical) {
-                drawBackground(gc, shape, ((SwtCTabFolder) parent.getImpl()).shouldHighlight());
+            if (((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientColors != null && !((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientVertical) {
+                drawBackground(gc, shape, ((SwtCTabFolder) getApi().parent.getImpl()).shouldHighlight());
             } else {
-                gc.setBackground(((SwtCTabFolder) parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) parent.getImpl()).selectionBackground : parent.getBackground());
+                gc.setBackground(((SwtCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) getApi().parent.getImpl()).selectionBackground : getApi().parent.getBackground());
                 gc.fillRectangle(xx, yy, ww, hh);
             }
-            if (((SwtCTabFolder) parent.getImpl()).single) {
+            if (((SwtCTabFolder) getApi().parent.getImpl()).single) {
                 if (!((SwtCTabItem) item.getImpl()).showing)
                     return;
             } else {
@@ -1242,18 +1240,18 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                 // just draw bottom line
                 if (!((SwtCTabItem) item.getImpl()).showing) {
                     int x1 = Math.max(0, borderLeft - 1);
-                    int y1 = (((SwtCTabFolder) parent.getImpl()).onBottom) ? y - 1 : y + height;
+                    int y1 = (((SwtCTabFolder) getApi().parent.getImpl()).onBottom) ? y - 1 : y + height;
                     int x2 = size.x - borderRight;
-                    gc.setForeground(parent.getDisplay().getSystemColor(BORDER1_COLOR));
+                    gc.setForeground(getApi().parent.getDisplay().getSystemColor(BORDER1_COLOR));
                     gc.drawLine(x1, y1, x2, y1);
                     return;
                 }
                 // draw selected tab background and outline
                 shape = null;
-                if (((SwtCTabFolder) parent.getImpl()).onBottom) {
-                    int[] left = ((SwtCTabFolder) parent.getImpl()).simple ? SIMPLE_BOTTOM_LEFT_CORNER : BOTTOM_LEFT_CORNER;
-                    int[] right = ((SwtCTabFolder) parent.getImpl()).simple ? SIMPLE_BOTTOM_RIGHT_CORNER : curve;
-                    if (borderLeft == 0 && itemIndex == ((SwtCTabFolder) parent.getImpl()).firstIndex) {
+                if (((SwtCTabFolder) getApi().parent.getImpl()).onBottom) {
+                    int[] left = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? SIMPLE_BOTTOM_LEFT_CORNER : BOTTOM_LEFT_CORNER;
+                    int[] right = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? SIMPLE_BOTTOM_RIGHT_CORNER : curve;
+                    if (borderLeft == 0 && itemIndex == ((SwtCTabFolder) getApi().parent.getImpl()).firstIndex) {
                         left = new int[] { x, y + height };
                     }
                     shape = new int[left.length + right.length + 8];
@@ -1268,17 +1266,17 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                         shape[index++] = y + height + left[2 * i + 1] - 1;
                     }
                     for (int i = 0; i < right.length / 2; i++) {
-                        shape[index++] = ((SwtCTabFolder) parent.getImpl()).simple ? rightEdge - 1 + right[2 * i] : rightEdge - curveIndent + right[2 * i];
-                        shape[index++] = ((SwtCTabFolder) parent.getImpl()).simple ? y + height + right[2 * i + 1] - 1 : y + right[2 * i + 1] - 2;
+                        shape[index++] = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? rightEdge - 1 + right[2 * i] : rightEdge - curveIndent + right[2 * i];
+                        shape[index++] = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? y + height + right[2 * i + 1] - 1 : y + right[2 * i + 1] - 2;
                     }
-                    shape[index++] = ((SwtCTabFolder) parent.getImpl()).simple ? rightEdge - 1 : rightEdge + curveWidth - curveIndent;
+                    shape[index++] = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? rightEdge - 1 : rightEdge + curveWidth - curveIndent;
                     shape[index++] = y - 1;
-                    shape[index++] = ((SwtCTabFolder) parent.getImpl()).simple ? rightEdge - 1 : rightEdge + curveWidth - curveIndent;
+                    shape[index++] = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? rightEdge - 1 : rightEdge + curveWidth - curveIndent;
                     shape[index++] = y - 1;
                 } else {
-                    int[] left = ((SwtCTabFolder) parent.getImpl()).simple ? SIMPLE_TOP_LEFT_CORNER : TOP_LEFT_CORNER;
-                    int[] right = ((SwtCTabFolder) parent.getImpl()).simple ? SIMPLE_TOP_RIGHT_CORNER : curve;
-                    if (borderLeft == 0 && itemIndex == ((SwtCTabFolder) parent.getImpl()).firstIndex) {
+                    int[] left = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? SIMPLE_TOP_LEFT_CORNER : TOP_LEFT_CORNER;
+                    int[] right = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? SIMPLE_TOP_RIGHT_CORNER : curve;
+                    if (borderLeft == 0 && itemIndex == ((SwtCTabFolder) getApi().parent.getImpl()).firstIndex) {
                         left = new int[] { x, y };
                     }
                     shape = new int[left.length + right.length + 8];
@@ -1293,35 +1291,35 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                         shape[index++] = y + left[2 * i + 1];
                     }
                     for (int i = 0; i < right.length / 2; i++) {
-                        shape[index++] = ((SwtCTabFolder) parent.getImpl()).simple ? rightEdge - 1 + right[2 * i] : rightEdge - curveIndent + right[2 * i];
+                        shape[index++] = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? rightEdge - 1 + right[2 * i] : rightEdge - curveIndent + right[2 * i];
                         shape[index++] = y + right[2 * i + 1];
                     }
-                    shape[index++] = ((SwtCTabFolder) parent.getImpl()).simple ? rightEdge - 1 : rightEdge + curveWidth - curveIndent;
+                    shape[index++] = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? rightEdge - 1 : rightEdge + curveWidth - curveIndent;
                     shape[index++] = y + height + 1;
-                    shape[index++] = ((SwtCTabFolder) parent.getImpl()).simple ? rightEdge - 1 : rightEdge + curveWidth - curveIndent;
+                    shape[index++] = ((SwtCTabFolder) getApi().parent.getImpl()).simple ? rightEdge - 1 : rightEdge + curveWidth - curveIndent;
                     shape[index++] = y + height + 1;
                 }
                 Rectangle clipping = gc.getClipping();
                 Rectangle clipBounds = item.getBounds();
                 clipBounds.height += 1;
-                if (((SwtCTabFolder) parent.getImpl()).onBottom)
+                if (((SwtCTabFolder) getApi().parent.getImpl()).onBottom)
                     clipBounds.y -= 1;
                 boolean tabInPaint = clipping.intersects(clipBounds);
                 if (tabInPaint) {
                     // fill in tab background
-                    if (((SwtCTabFolder) parent.getImpl()).selectionGradientColors != null && !((SwtCTabFolder) parent.getImpl()).selectionGradientVertical) {
+                    if (((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientColors != null && !((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientVertical) {
                         drawBackground(gc, shape, true);
                     } else {
-                        Color defaultBackground = ((SwtCTabFolder) parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) parent.getImpl()).selectionBackground : parent.getBackground();
-                        Image image = ((SwtCTabFolder) parent.getImpl()).selectionBgImage;
-                        Color[] colors = ((SwtCTabFolder) parent.getImpl()).selectionGradientColors;
-                        int[] percents = ((SwtCTabFolder) parent.getImpl()).selectionGradientPercents;
-                        boolean vertical = ((SwtCTabFolder) parent.getImpl()).selectionGradientVertical;
+                        Color defaultBackground = ((SwtCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) getApi().parent.getImpl()).selectionBackground : getApi().parent.getBackground();
+                        Image image = ((SwtCTabFolder) getApi().parent.getImpl()).selectionBgImage;
+                        Color[] colors = ((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientColors;
+                        int[] percents = ((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientPercents;
+                        boolean vertical = ((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientVertical;
                         xx = x;
-                        yy = ((SwtCTabFolder) parent.getImpl()).onBottom ? y - 1 : y + 1;
+                        yy = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? y - 1 : y + 1;
                         ww = width;
                         hh = height;
-                        if (!((SwtCTabFolder) parent.getImpl()).single && !((SwtCTabFolder) parent.getImpl()).simple)
+                        if (!((SwtCTabFolder) getApi().parent.getImpl()).single && !((SwtCTabFolder) getApi().parent.getImpl()).simple)
                             ww += curveWidth - curveIndent;
                         drawBackground(gc, shape, xx, yy, ww, hh, defaultBackground, image, colors, percents, vertical);
                     }
@@ -1330,17 +1328,17 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                 //otherwise the curve looks jagged
                 drawHighlight(gc, bounds, state, rightEdge);
                 // draw highlight marker of selected tab
-                if (((SwtCTabFolder) parent.getImpl()).selectionHighlightBarThickness > 0 && ((SwtCTabFolder) parent.getImpl()).simple) {
+                if (((SwtCTabFolder) getApi().parent.getImpl()).selectionHighlightBarThickness > 0 && ((SwtCTabFolder) getApi().parent.getImpl()).simple) {
                     Color previousColor = gc.getBackground();
-                    gc.setBackground(item.getDisplay().getSystemColor(((SwtCTabFolder) parent.getImpl()).shouldHighlight() ? SWT.COLOR_LIST_SELECTION : SWT.COLOR_WIDGET_DISABLED_FOREGROUND));
+                    gc.setBackground(item.getDisplay().getSystemColor(((SwtCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? SWT.COLOR_LIST_SELECTION : SWT.COLOR_WIDGET_DISABLED_FOREGROUND));
                     gc.fillRectangle(x + 1, /* outline */
-                    ((SwtCTabFolder) parent.getImpl()).onBottom ? y + height - 1 - ((SwtCTabFolder) parent.getImpl()).selectionHighlightBarThickness : y + 1, width - 2, ((SwtCTabFolder) parent.getImpl()).selectionHighlightBarThickness);
+                    ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? y + height - 1 - ((SwtCTabFolder) getApi().parent.getImpl()).selectionHighlightBarThickness : y + 1, width - 2, ((SwtCTabFolder) getApi().parent.getImpl()).selectionHighlightBarThickness);
                     gc.setBackground(previousColor);
                 }
                 // draw outline
                 shape[0] = Math.max(0, borderLeft - 1);
-                if (borderLeft == 0 && itemIndex == ((SwtCTabFolder) parent.getImpl()).firstIndex) {
-                    shape[1] = ((SwtCTabFolder) parent.getImpl()).onBottom ? y + height - 1 : y;
+                if (borderLeft == 0 && itemIndex == ((SwtCTabFolder) getApi().parent.getImpl()).firstIndex) {
+                    shape[1] = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? y + height - 1 : y;
                     shape[5] = shape[3] = shape[1];
                 }
                 shape[shape.length - 2] = size.x - borderRight + 1;
@@ -1348,7 +1346,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                     if (shape[2 * i + 1] == y + height + 1)
                         shape[2 * i + 1] -= 1;
                 }
-                Color borderColor = parent.getDisplay().getSystemColor(BORDER1_COLOR);
+                Color borderColor = getApi().parent.getDisplay().getSystemColor(BORDER1_COLOR);
                 if (!borderColor.equals(lastBorderColor))
                     createAntialiasColors();
                 antialias(shape, selectedInnerColor, selectedOuterColor, gc);
@@ -1362,19 +1360,19 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             // draw Image
             Rectangle trim = computeTrim(itemIndex, SWT.NONE, 0, 0, 0, 0);
             int xDraw = x - trim.x;
-            if (((SwtCTabFolder) parent.getImpl()).single && shouldDrawCloseIcon(item))
+            if (((SwtCTabFolder) getApi().parent.getImpl()).single && shouldDrawCloseIcon(item))
                 xDraw += ((SwtCTabItem) item.getImpl()).closeRect.width;
             Image image = item.getImage();
-            if (image != null && !image.isDisposed() && ((SwtCTabFolder) parent.getImpl()).showSelectedImage) {
+            if (image != null && !image.isDisposed() && ((SwtCTabFolder) getApi().parent.getImpl()).showSelectedImage) {
                 Rectangle imageBounds = image.getBounds();
                 // only draw image if it won't overlap with close button
                 int maxImageWidth = rightEdge - xDraw - (trim.width + trim.x);
-                if (!((SwtCTabFolder) parent.getImpl()).single && ((SwtCTabItem) item.getImpl()).closeRect.width > 0)
+                if (!((SwtCTabFolder) getApi().parent.getImpl()).single && ((SwtCTabItem) item.getImpl()).closeRect.width > 0)
                     maxImageWidth -= ((SwtCTabItem) item.getImpl()).closeRect.width + INTERNAL_SPACING;
                 if (imageBounds.width < maxImageWidth) {
                     int imageX = xDraw;
                     int imageY = y + (height - imageBounds.height) / 2;
-                    imageY += ((SwtCTabFolder) parent.getImpl()).onBottom ? -1 : 1;
+                    imageY += ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? -1 : 1;
                     gc.drawImage(image, imageX, imageY);
                     xDraw += imageBounds.width + INTERNAL_SPACING;
                 }
@@ -1382,27 +1380,27 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             // draw Text
             xDraw += getLeftTextMargin(item);
             int textWidth = rightEdge - xDraw - (trim.width + trim.x);
-            if (!((SwtCTabFolder) parent.getImpl()).single && ((SwtCTabItem) item.getImpl()).closeRect.width > 0)
+            if (!((SwtCTabFolder) getApi().parent.getImpl()).single && ((SwtCTabItem) item.getImpl()).closeRect.width > 0)
                 textWidth -= ((SwtCTabItem) item.getImpl()).closeRect.width + INTERNAL_SPACING;
             if (textWidth > 0) {
                 Font gcFont = gc.getFont();
-                gc.setFont(((SwtCTabItem) item.getImpl()).font == null ? parent.getFont() : ((SwtCTabItem) item.getImpl()).font);
+                gc.setFont(((SwtCTabItem) item.getImpl()).font == null ? getApi().parent.getFont() : ((SwtCTabItem) item.getImpl()).font);
                 if (((SwtCTabItem) item.getImpl()).shortenedText == null || ((SwtCTabItem) item.getImpl()).shortenedTextWidth != textWidth) {
                     ((SwtCTabItem) item.getImpl()).shortenedText = shortenText(gc, item.getText(), textWidth);
                     ((SwtCTabItem) item.getImpl()).shortenedTextWidth = textWidth;
                 }
                 Point extent = gc.textExtent(((SwtCTabItem) item.getImpl()).shortenedText, FLAGS);
                 int textY = y + (height - extent.y) / 2;
-                textY += ((SwtCTabFolder) parent.getImpl()).onBottom ? -1 : 1;
-                gc.setForeground(((SwtCTabItem) item.getImpl()).selectionForeground == null ? parent.getSelectionForeground() : ((SwtCTabItem) item.getImpl()).selectionForeground);
+                textY += ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? -1 : 1;
+                gc.setForeground(((SwtCTabItem) item.getImpl()).selectionForeground == null ? getApi().parent.getSelectionForeground() : ((SwtCTabItem) item.getImpl()).selectionForeground);
                 gc.drawText(((SwtCTabItem) item.getImpl()).shortenedText, xDraw, textY, FLAGS);
                 gc.setFont(gcFont);
                 // draw a Focus rectangle
-                if (parent.isFocusControl()) {
+                if (getApi().parent.isFocusControl()) {
                     Color orginalForeground = gc.getForeground();
                     Color orginalBackground = gc.getBackground();
-                    Display display = parent.getDisplay();
-                    if (((SwtCTabFolder) parent.getImpl()).simple || ((SwtCTabFolder) parent.getImpl()).single) {
+                    Display display = getApi().parent.getDisplay();
+                    if (((SwtCTabFolder) getApi().parent.getImpl()).simple || ((SwtCTabFolder) getApi().parent.getImpl()).single) {
                         gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
                         gc.setForeground(display.getSystemColor(SWT.COLOR_WHITE));
                         gc.drawFocus(xDraw - 1, textY - 1, extent.x + 2, extent.y + 2);
@@ -1421,7 +1419,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
 
     private int getLeftTextMargin(CTabItem item) {
         int margin = 0;
-        if (shouldApplyLargeTextPadding(parent)) {
+        if (shouldApplyLargeTextPadding(getApi().parent)) {
             margin += getLargeTextPadding(item);
             if (shouldDrawCloseIcon(item)) {
                 margin -= ((SwtCTabItem) item.getImpl()).closeRect.width / 2;
@@ -1431,34 +1429,34 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
     }
 
     void drawTabArea(GC gc, Rectangle bounds, int state) {
-        Point size = parent.getSize();
+        Point size = getApi().parent.getSize();
         int[] shape = null;
-        Color borderColor = parent.getDisplay().getSystemColor(BORDER1_COLOR);
-        int tabHeight = ((SwtCTabFolder) parent.getImpl()).tabHeight;
-        int style = parent.getStyle();
-        int borderLeft = ((SwtCTabFolder) parent.getImpl()).borderVisible ? 1 : 0;
+        Color borderColor = getApi().parent.getDisplay().getSystemColor(BORDER1_COLOR);
+        int tabHeight = ((SwtCTabFolder) getApi().parent.getImpl()).tabHeight;
+        int style = getApi().parent.getStyle();
+        int borderLeft = ((SwtCTabFolder) getApi().parent.getImpl()).borderVisible ? 1 : 0;
         int borderRight = borderLeft;
-        int borderTop = ((SwtCTabFolder) parent.getImpl()).onBottom ? borderLeft : 0;
-        int borderBottom = ((SwtCTabFolder) parent.getImpl()).onBottom ? 0 : borderLeft;
-        int selectedIndex = ((SwtCTabFolder) parent.getImpl()).selectedIndex;
+        int borderTop = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? borderLeft : 0;
+        int borderBottom = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? 0 : borderLeft;
+        int selectedIndex = ((SwtCTabFolder) getApi().parent.getImpl()).selectedIndex;
         int highlight_header = (style & SWT.FLAT) != 0 ? 1 : 3;
         if (tabHeight == 0) {
             if ((style & SWT.FLAT) != 0 && (style & SWT.BORDER) == 0)
                 return;
             int x1 = borderLeft - 1;
             int x2 = size.x - borderRight;
-            int y1 = ((SwtCTabFolder) parent.getImpl()).onBottom ? size.y - borderBottom - highlight_header - 1 : borderTop + highlight_header;
-            int y2 = ((SwtCTabFolder) parent.getImpl()).onBottom ? size.y - borderBottom : borderTop;
-            if (borderLeft > 0 && ((SwtCTabFolder) parent.getImpl()).onBottom)
+            int y1 = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? size.y - borderBottom - highlight_header - 1 : borderTop + highlight_header;
+            int y2 = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? size.y - borderBottom : borderTop;
+            if (borderLeft > 0 && ((SwtCTabFolder) getApi().parent.getImpl()).onBottom)
                 y2 -= 1;
             shape = new int[] { x1, y1, x1, y2, x2, y2, x2, y1 };
             // If horizontal gradient, show gradient across the whole area
-            if (selectedIndex != -1 && ((SwtCTabFolder) parent.getImpl()).selectionGradientColors != null && ((SwtCTabFolder) parent.getImpl()).selectionGradientColors.length > 1 && !((SwtCTabFolder) parent.getImpl()).selectionGradientVertical) {
+            if (selectedIndex != -1 && ((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientColors != null && ((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientColors.length > 1 && !((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientVertical) {
                 drawBackground(gc, shape, true);
-            } else if (selectedIndex == -1 && ((SwtCTabFolder) parent.getImpl()).gradientColors != null && ((SwtCTabFolder) parent.getImpl()).gradientColors.length > 1 && !((SwtCTabFolder) parent.getImpl()).gradientVertical) {
+            } else if (selectedIndex == -1 && ((SwtCTabFolder) getApi().parent.getImpl()).gradientColors != null && ((SwtCTabFolder) getApi().parent.getImpl()).gradientColors.length > 1 && !((SwtCTabFolder) getApi().parent.getImpl()).gradientVertical) {
                 drawBackground(gc, shape, false);
             } else {
-                gc.setBackground(selectedIndex != -1 && ((SwtCTabFolder) parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) parent.getImpl()).selectionBackground : parent.getBackground());
+                gc.setBackground(selectedIndex != -1 && ((SwtCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? ((SwtCTabFolder) getApi().parent.getImpl()).selectionBackground : getApi().parent.getBackground());
                 gc.fillPolygon(shape);
             }
             //draw 1 pixel border
@@ -1469,12 +1467,12 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             return;
         }
         int x = Math.max(0, borderLeft - 1);
-        int y = ((SwtCTabFolder) parent.getImpl()).onBottom ? size.y - borderBottom - tabHeight : borderTop;
+        int y = ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? size.y - borderBottom - tabHeight : borderTop;
         int width = size.x - borderLeft - borderRight + 1;
         int height = tabHeight - 1;
-        boolean simple = ((SwtCTabFolder) parent.getImpl()).simple;
+        boolean simple = ((SwtCTabFolder) getApi().parent.getImpl()).simple;
         // Draw Tab Header
-        if (((SwtCTabFolder) parent.getImpl()).onBottom) {
+        if (((SwtCTabFolder) getApi().parent.getImpl()).onBottom) {
             int[] left, right;
             if ((style & SWT.BORDER) != 0) {
                 left = simple ? SIMPLE_BOTTOM_LEFT_CORNER : BOTTOM_LEFT_CORNER;
@@ -1526,21 +1524,21 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             shape[index++] = y + height + highlight_header + 1;
         }
         // Fill in background
-        boolean single = ((SwtCTabFolder) parent.getImpl()).single;
+        boolean single = ((SwtCTabFolder) getApi().parent.getImpl()).single;
         boolean bkSelected = single && selectedIndex != -1;
         drawBackground(gc, shape, bkSelected);
         // Fill in parent background for non-rectangular shape
         Region r = new Region();
         r.add(new Rectangle(x, y, width + 1, height + 1));
         r.subtract(shape);
-        gc.setBackground(parent.getParent().getBackground());
+        gc.setBackground(getApi().parent.getParent().getBackground());
         fillRegion(gc, r);
         r.dispose();
         // Draw selected tab
         if (selectedIndex == -1) {
             // if no selected tab - draw line across bottom of all tabs
             int x1 = borderLeft;
-            int y1 = (((SwtCTabFolder) parent.getImpl()).onBottom) ? size.y - borderBottom - tabHeight - 1 : borderTop + tabHeight;
+            int y1 = (((SwtCTabFolder) getApi().parent.getImpl()).onBottom) ? size.y - borderBottom - tabHeight - 1 : borderTop + tabHeight;
             int x2 = size.x - borderRight;
             gc.setForeground(borderColor);
             gc.drawLine(x1, y1, x2, y1);
@@ -1556,7 +1554,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
     }
 
     void drawUnselected(int index, GC gc, Rectangle bounds, int state) {
-        CTabItem item = ((SwtCTabFolder) parent.getImpl()).items[index];
+        CTabItem item = ((SwtCTabFolder) getApi().parent.getImpl()).items[index];
         int x = bounds.x;
         int y = bounds.y;
         int height = bounds.height;
@@ -1568,10 +1566,10 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
         if (!clipping.intersects(bounds))
             return;
         if ((state & SWT.BACKGROUND) != 0) {
-            if (index > 0 && index < ((SwtCTabFolder) parent.getImpl()).selectedIndex)
+            if (index > 0 && index < ((SwtCTabFolder) getApi().parent.getImpl()).selectedIndex)
                 drawLeftUnselectedBorder(gc, bounds, state);
             // If it is the last one then draw a line
-            if (index > ((SwtCTabFolder) parent.getImpl()).selectedIndex)
+            if (index > ((SwtCTabFolder) getApi().parent.getImpl()).selectedIndex)
                 drawRightUnselectedBorder(gc, bounds, state);
         }
         if ((state & SWT.FOREGROUND) != 0) {
@@ -1579,7 +1577,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             Rectangle trim = computeTrim(index, SWT.NONE, 0, 0, 0, 0);
             int xDraw = x - trim.x;
             Image image = item.getImage();
-            if (image != null && !image.isDisposed() && ((SwtCTabFolder) parent.getImpl()).showUnselectedImage) {
+            if (image != null && !image.isDisposed() && ((SwtCTabFolder) getApi().parent.getImpl()).showUnselectedImage) {
                 Rectangle imageBounds = image.getBounds();
                 // only draw image if it won't overlap with close button
                 int maxImageWidth = x + width - xDraw - (trim.width + trim.x);
@@ -1590,7 +1588,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                     int imageX = xDraw;
                     int imageHeight = imageBounds.height;
                     int imageY = y + (height - imageHeight) / 2;
-                    imageY += ((SwtCTabFolder) parent.getImpl()).onBottom ? -1 : 1;
+                    imageY += ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? -1 : 1;
                     int imageWidth = imageBounds.width * imageHeight / imageBounds.height;
                     gc.drawImage(image, imageBounds.x, imageBounds.y, imageBounds.width, imageBounds.height, imageX, imageY, imageWidth, imageHeight);
                     xDraw += imageWidth + INTERNAL_SPACING;
@@ -1604,15 +1602,15 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             }
             if (textWidth > 0) {
                 Font gcFont = gc.getFont();
-                gc.setFont(((SwtCTabItem) item.getImpl()).font == null ? parent.getFont() : ((SwtCTabItem) item.getImpl()).font);
+                gc.setFont(((SwtCTabItem) item.getImpl()).font == null ? getApi().parent.getFont() : ((SwtCTabItem) item.getImpl()).font);
                 if (((SwtCTabItem) item.getImpl()).shortenedText == null || ((SwtCTabItem) item.getImpl()).shortenedTextWidth != textWidth) {
                     ((SwtCTabItem) item.getImpl()).shortenedText = shortenText(gc, item.getText(), textWidth);
                     ((SwtCTabItem) item.getImpl()).shortenedTextWidth = textWidth;
                 }
                 Point extent = gc.textExtent(((SwtCTabItem) item.getImpl()).shortenedText, FLAGS);
                 int textY = y + (height - extent.y) / 2;
-                textY += ((SwtCTabFolder) parent.getImpl()).onBottom ? -1 : 1;
-                gc.setForeground(((SwtCTabItem) item.getImpl()).foreground == null ? parent.getForeground() : ((SwtCTabItem) item.getImpl()).foreground);
+                textY += ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? -1 : 1;
+                gc.setForeground(((SwtCTabItem) item.getImpl()).foreground == null ? getApi().parent.getForeground() : ((SwtCTabItem) item.getImpl()).foreground);
                 gc.drawText(((SwtCTabItem) item.getImpl()).shortenedText, xDraw, textY, FLAGS);
                 gc.setFont(gcFont);
             }
@@ -1644,7 +1642,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
         if (chevronFont == null) {
             Point dpi = display.getDPI();
             int fontHeight = 72 * CHEVRON_FONT_HEIGHT / dpi.y;
-            FontData fd = parent.getFont().getFontData()[0];
+            FontData fd = getApi().parent.getFont().getFontData()[0];
             fd.setHeight(fontHeight);
             chevronFont = new Font(display, fd);
         }
@@ -1666,10 +1664,10 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
         if (!highlightBegin.equals(start))
             return false;
         //Compare number of colours we have vs. we'd compute
-        if (selectionHighlightGradientColorsCache.length != ((SwtCTabFolder) parent.getImpl()).tabHeight)
+        if (selectionHighlightGradientColorsCache.length != ((SwtCTabFolder) getApi().parent.getImpl()).tabHeight)
             return false;
         //Compare existing highlight end to what it would be (selectionBackground)
-        if (!highlightEnd.equals(((SwtCTabFolder) parent.getImpl()).selectionBackground))
+        if (!highlightEnd.equals(((SwtCTabFolder) getApi().parent.getImpl()).selectionBackground))
             return false;
         return true;
     }
@@ -1689,10 +1687,10 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
         if (start == null)
             return;
         //don't bother on low colour
-        if (parent.getDisplay().getDepth() < 15)
+        if (getApi().parent.getDisplay().getDepth() < 15)
             return;
         //don't bother if we don't have a background gradient
-        if (((SwtCTabFolder) parent.getImpl()).selectionGradientColors.length < 2)
+        if (((SwtCTabFolder) getApi().parent.getImpl()).selectionGradientColors.length < 2)
             return;
         //OK we know its a valid gradient now
         selectionHighlightGradientBegin = start;
@@ -1711,7 +1709,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             return text;
         int ellipseWidth = gc.textExtent(ellipses, FLAGS).x;
         int length = text.length();
-        TextLayout layout = new TextLayout(parent.getDisplay());
+        TextLayout layout = new TextLayout(getApi().parent.getDisplay());
         layout.setText(text);
         int end = layout.getPreviousOffset(length, SWT.MOVEMENT_CLUSTER);
         while (end > 0) {
@@ -1730,11 +1728,11 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
         //Temp fix for Bug 384743
         if (this.getClass().getName().equals("org.eclipse.e4.ui.workbench.renderers.swt.CTabRendering"))
             return;
-        int tabHeight = ((SwtCTabFolder) parent.getImpl()).tabHeight;
+        int tabHeight = ((SwtCTabFolder) getApi().parent.getImpl()).tabHeight;
         if (tabHeight == lastTabHeight)
             return;
         lastTabHeight = tabHeight;
-        if (((SwtCTabFolder) parent.getImpl()).onBottom) {
+        if (((SwtCTabFolder) getApi().parent.getImpl()).onBottom) {
             int d = tabHeight - 12;
             curve = new int[] { 0, 13 + d, 0, 12 + d, 2, 12 + d, 3, 11 + d, 5, 11 + d, 6, 10 + d, 7, 10 + d, 9, 8 + d, 10, 8 + d, 11, 7 + d, 11 + d, 7, 12 + d, 6, 13 + d, 6, 15 + d, 4, 16 + d, 4, 17 + d, 3, 19 + d, 3, 20 + d, 2, 22 + d, 2, 23 + d, 1 };
             curveWidth = 26 + d;
@@ -1755,7 +1753,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
 	 * Return whether to use ellipses or just truncate labels
 	 */
     boolean useEllipses() {
-        return ((SwtCTabFolder) parent.getImpl()).simple;
+        return ((SwtCTabFolder) getApi().parent.getImpl()).simple;
     }
 
     public CTabFolderRenderer getApi() {

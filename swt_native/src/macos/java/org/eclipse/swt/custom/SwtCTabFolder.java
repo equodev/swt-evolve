@@ -755,7 +755,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
             Rectangle trim = renderer.computeTrim(button, SWT.NONE, 0, 0, 0, 0);
             Image image = new Image(display, size.x - trim.width, size.y - trim.height);
             GC gc = new GC(image);
-            Color transColor = ((SwtCTabFolderRenderer) renderer.getImpl()).parent.getBackground();
+            Color transColor = renderer.parent.getBackground();
             gc.setBackground(transColor);
             gc.fillRectangle(image.getBounds());
             renderer.draw(button, SWT.NONE, new Rectangle(trim.x, trim.y, size.x, size.y), gc);
