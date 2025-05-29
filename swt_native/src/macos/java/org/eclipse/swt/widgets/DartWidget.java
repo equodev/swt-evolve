@@ -298,6 +298,8 @@ public abstract class DartWidget implements IWidget {
     }
 
     void checkParent(Widget parent) {
+        if (parent != null && !(parent.getImpl() instanceof SwtWidget))
+            return;
         if (parent == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (parent.isDisposed())

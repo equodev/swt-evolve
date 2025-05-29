@@ -1353,6 +1353,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus) {
+        if (oldDecorations != null && !(oldDecorations.getImpl() instanceof SwtDecorations))
+            return;
+        if (oldShell != null && !(oldShell.getImpl() instanceof SwtShell))
+            return;
         ((SwtShell) oldShell.getImpl()).fixShell(newShell, this.getApi());
         ((SwtDecorations) oldDecorations.getImpl()).fixDecorations(newDecorations, this.getApi(), menus);
     }
@@ -4614,6 +4618,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     void setZOrder(Control sibling, boolean above) {
+        if (sibling != null && !(sibling.getImpl() instanceof SwtControl))
+            return;
         int index = 0, siblingIndex = 0, oldNextIndex = -1;
         Control[] children = null;
         /* determine the receiver's and sibling's indexes in the parent */

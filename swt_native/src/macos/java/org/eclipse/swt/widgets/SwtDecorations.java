@@ -503,6 +503,8 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
      * </ul>
      */
     public void setDefaultButton(Button button) {
+        if (button != null && !(button.getImpl() instanceof SwtControl))
+            return;
         checkWidget();
         if (button != null) {
             if (button.isDisposed())

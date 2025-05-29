@@ -726,6 +726,8 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     void checkEnterExit(Control control, NSEvent nsEvent, boolean send) {
+        if (control != null && !(control.getImpl() instanceof SwtControl))
+            return;
         if (control != currentControl) {
             if (currentControl != null && !currentControl.isDisposed()) {
                 ((SwtControl) currentControl.getImpl()).sendMouseEvent(nsEvent, SWT.MouseExit, send);
@@ -4920,6 +4922,8 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     void setCursor(Control control) {
+        if (control != null && !(control.getImpl() instanceof SwtControl))
+            return;
         Cursor cursor = null;
         if (control != null && !control.isDisposed())
             cursor = ((SwtControl) control.getImpl()).findCursor();
@@ -5701,6 +5705,8 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     void applicationSendTrackingEvent(NSEvent nsEvent, Control trackingControl) {
+        if (trackingControl != null && !(trackingControl.getImpl() instanceof SwtControl))
+            return;
         int type = (int) nsEvent.type();
         boolean runEnterExit = false;
         Control runEnterExitControl = null;
