@@ -279,6 +279,7 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setAlignment(int alignment) {
         getValue().alignment = alignment;
+        getBridge().dirty(this);
     }
 
     /**
@@ -297,6 +298,7 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setGrayed(boolean grayed) {
         getValue().grayed = grayed;
+        getBridge().dirty(this);
     }
 
     /**
@@ -317,6 +319,7 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setImage(Image image) {
         getValue().image = image;
+        getBridge().dirty(this);
     }
 
     /**
@@ -337,6 +340,7 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setSelection(boolean selected) {
         getValue().selection = selected;
+        getBridge().dirty(this);
     }
 
     /**
@@ -375,6 +379,7 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setText(String string) {
         getValue().text = string;
+        getBridge().dirty(this);
     }
 
     @Override

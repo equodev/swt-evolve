@@ -16,10 +16,12 @@
  */
 package org.eclipse.swt.widgets;
 
+import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.*;
 import dev.equo.swt.*;
 
 /**
@@ -1859,6 +1861,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBackground(Color color) {
         getValue().background = color;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1885,6 +1888,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBackgroundImage(Image image) {
         getValue().backgroundImage = image;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1944,6 +1948,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBounds(Rectangle rect) {
         getValue().bounds = rect;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1984,6 +1989,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setCursor(Cursor cursor) {
         getValue().cursor = cursor;
+        getBridge().dirty(this);
     }
 
     /**
@@ -2002,6 +2008,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setDragDetect(boolean dragDetect) {
         getValue().dragDetect = dragDetect;
+        getBridge().dirty(this);
     }
 
     /**
@@ -2019,6 +2026,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setEnabled(boolean enabled) {
         getValue().enabled = enabled;
+        getBridge().dirty(this);
     }
 
     /**
@@ -2059,6 +2067,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setFont(Font font) {
         getValue().font = font;
+        getBridge().dirty(this);
     }
 
     /**
@@ -2080,6 +2089,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setForeground(Color color) {
         getValue().foreground = color;
+        getBridge().dirty(this);
     }
 
     /**
@@ -2094,6 +2104,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setLayoutData(Object layoutData) {
         getValue().layoutData = layoutData;
+        getBridge().dirty(this);
     }
 
     /**
@@ -2160,6 +2171,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setMenu(Menu menu) {
         getValue().menu = menu;
+        getBridge().dirty(this);
     }
 
     /**
@@ -2177,6 +2189,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setOrientation(int orientation) {
         getValue().orientation = orientation;
+        getBridge().dirty(this);
     }
 
     /**
@@ -2245,6 +2258,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setRegion(Region region) {
         getValue().region = region;
+        getBridge().dirty(this);
     }
 
     /**
@@ -2328,6 +2342,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setTextDirection(int textDirection) {
         getValue().textDirection = textDirection;
+        getBridge().dirty(this);
     }
 
     /**
@@ -2357,6 +2372,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setToolTipText(String string) {
         getValue().toolTipText = string;
+        getBridge().dirty(this);
     }
 
     /**
@@ -2378,6 +2394,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setTouchEnabled(boolean enabled) {
         getValue().touchEnabled = enabled;
+        getBridge().dirty(this);
     }
 
     /**
@@ -2398,6 +2415,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setVisible(boolean visible) {
         getValue().visible = visible;
+        getBridge().dirty(this);
     }
 
     void setZOrder() {
@@ -2863,11 +2881,15 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     FlutterBridge bridge;
 
+    public FlutterBridge getBridge() {
+        if (bridge != null)
+            return bridge;
+        return ((DartControl) parent.getImpl()).getBridge();
+    }
+
     @Override
     void createHandle() {
-        SwtComposite parentComposite = new SwtComposite(parent, SWT.NONE);
-        bridge = new FlutterBridge();
-        bridge.initFlutterView(parentComposite.getApi().view.id, this);
+        bridge = FlutterBridge.of(this);
     }
 
     public Control getApi() {

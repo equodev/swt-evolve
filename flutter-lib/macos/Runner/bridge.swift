@@ -73,7 +73,7 @@ class FlutterBridgeController {
 }
 
 // JNI bridge function
-@MainActor @_cdecl("Java_dev_equo_swt_FlutterBridge_InitializeFlutterWindow")
+@MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridge_InitializeFlutterWindow")
 public func InitializeFlutterWindow(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, port: jint, parent: jlong, widget_id: jlong, widget_name: jstring) -> jlong {
     let parentView = parent != 0 ? unsafeBitCast(UInt(parent), to: NSView.self) : nil
     let cString = env.pointee!.pointee.GetStringUTFChars(env, widget_name, nil)

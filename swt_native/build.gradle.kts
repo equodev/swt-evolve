@@ -84,10 +84,10 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.assertj:assertj-core:3.25.3")
+    testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.1.1")
     testImplementation("org.mockito:mockito-core:5.18.0")
     testImplementation("org.instancio:instancio-junit:5.4.0")
 }
-
 
 sourceSets {
     main {
@@ -130,6 +130,13 @@ sourceSets {
 ////        }
 //    }
 //}
+
+
+tasks.test {
+    useJUnitPlatform()
+//    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
+//        jvmArgs = listOf("-XstartOnFirstThread")
+}
 
 //val extractNatives by tasks.registering {
 //    dependsOn(configurations["swtImplementation"])
@@ -192,6 +199,7 @@ val extractSources by tasks.registering {
 
 tasks.compileJava {
 //    dependsOn(extractSources)
+//    options.setIncremental(false) // dsl-json processor seems to get crazy
 }
 
 //tasks.jar {

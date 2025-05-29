@@ -4584,6 +4584,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     boolean runSettings() {
+        dev.equo.swt.FlutterBridge.update();
         if (!runSettings)
             return false;
         runSettings = false;

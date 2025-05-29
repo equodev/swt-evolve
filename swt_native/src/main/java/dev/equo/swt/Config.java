@@ -1,6 +1,9 @@
 package dev.equo.swt;
 
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+
+import java.util.Map;
 
 public class Config {
 
@@ -8,7 +11,10 @@ public class Config {
 
     static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.eclipse.name()));
 
+    static final Map<Class<?>, Impl> equoDefaults = Map.of(Button.class, Impl.equo);
+
     static final String PROPERTY_PREFIX = "dev.equo.swt.";
+
 
     public static void defaultToEquo() {
         defaultImpl = Impl.equo;
@@ -26,16 +32,13 @@ public class Config {
     }
 
     public static void useEclipse(Class<?> clazz) {
-        if (defaultImpl == Impl.equo)
-           System.setProperty(getKey(clazz), "");
-        else if (defaultImpl == Impl.eclipse)
-           System.clearProperty(getKey(clazz));
+       System.setProperty(getKey(clazz), Impl.eclipse.name());
     }
 
     public static boolean isEquo(Class<?> clazz) {
-        if (defaultImpl == Impl.equo && notNegatedDefault(clazz))
+        if ((defaultImpl == Impl.equo || equoDefaults.containsKey(clazz)) && notNegatedDefault(clazz, Impl.equo))
             return true;
-        if (defaultImpl == Impl.eclipse && !notNegatedDefault(clazz))
+        if ((defaultImpl == Impl.eclipse && !notNegatedDefault(clazz, Impl.eclipse)))
             return true;
         return false;
     }
@@ -50,8 +53,9 @@ public class Config {
         return isEquo(clazz);
     }
 
-    private static boolean notNegatedDefault(Class<?> clazz) {
-        return System.getProperty(getKey(clazz)) == null;
+    private static boolean notNegatedDefault(Class<?> clazz, Impl def) {
+        String property = System.getProperty(getKey(clazz));
+        return property == null || def.name().equals(property);
     }
 
     private static String getKey(Class<?> clazz) {

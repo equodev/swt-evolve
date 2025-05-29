@@ -1,39 +1,102 @@
 package dev.equo.swt;
 
-import org.eclipse.swt.widgets.DartControl;
-import org.eclipse.swt.widgets.DartWidget;
-import org.eclipse.swt.widgets.FlutterClient;
+import org.eclipse.swt.widgets.*;
 
-import java.nio.file.Paths;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
-public class FlutterBridge {
-    static boolean isMac = System.getProperty("os.name").toLowerCase().contains("mac");
-    private static final FlutterClient client;
+public abstract class FlutterBridge {
+    private static final String DEV_EQU_SWT_NEW = "dev.equ.swt.new";
+    protected static final FlutterClient client;
+    private static final Serializer serializer = new Serializer();
+    private static final Set<DartControl> dirty = new HashSet<>();
+    private static FlutterBridge bridge;
 
     static {
-//        System.load(
-//                "/Users/guillez/ws/equoswt/flutter-lib/build/macos/Build/Products/Release/swtflutter.app");
-
-        if (isMac) {
-            String app = "/Users/guillez/ws/equoswt/flutter-lib/build/macos/Build/Products/Release";
-            System.load(Paths.get(app, "FlutterMacOS.framework/FlutterMacOS").toAbsolutePath().toString());
-            System.load(Paths.get(app, "libFlutterBridge.dylib").toAbsolutePath().toString());
-        } else
-            System.loadLibrary("flutter_library");
-
         client = new FlutterClient();
         client.createComm();
     }
 
-    private long context;
+    private final CompletableFuture<Boolean> clientReady = new CompletableFuture<>();
 
-    public void initFlutterView(long parent, DartControl control) {
-        context = InitializeFlutterWindow(client.getPort(), parent, control.hashCode(), getWidgetName(control));
+    public static FlutterBridge of(DartControl dartControl) {
+        if (bridge != null)
+            return bridge;
+        //if (isWeb) {}
+//        if (isSwt)
+        return SwtFlutterBridge.of(dartControl);
     }
 
-    public static String getWidgetName(DartWidget w) {
+    protected FlutterBridge() {
+    }
+
+    public static void update() {
+        for (DartControl widget : dirty) {
+            widget.getBridge().clientReady.thenRun(() -> {
+                if (!isNew(widget)) { // send with the parent
+                    String event = event(widget);
+                    System.out.println("will send: " + event);
+                    try {
+                        ByteArrayOutputStream out = new ByteArrayOutputStream();
+                        serializer.to(widget.getApi(), out);
+                        String payload = out.toString(StandardCharsets.UTF_8);
+                        System.out.println("send: " + event + ": " + payload);
+                        client.getComm().send(event, payload);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    setNotNew(widget);
+                }
+            });
+        }
+        dirty.clear();
+    }
+
+    private static boolean isNew(DartControl widget) {
+        return widget.getData("dev.equ.swt.new") == null;
+    }
+
+    private static void setNotNew(DartControl control) {
+        control.setData(DEV_EQU_SWT_NEW, false);
+    }
+
+    public static void set(FlutterBridge staticBridge) {
+        bridge = staticBridge;
+    }
+
+    protected void onReady(DartControl control) {
+        setNotNew(control);
+        client.getComm().on(event(control,"ClientReady"), p -> {
+            if (!clientReady.isDone()) {
+                System.out.println("ClientReady "+event(control));
+                clientReady.complete(true);
+            } else { // hot reload
+                dirty(control);
+                update();
+            }
+        });
+    }
+
+    public void dirty(DartControl widget) {
+        if (widget == null)
+            return;
+        synchronized (dirty) {
+            dirty.add(widget);
+        }
+    }
+
+    public static String widgetName(DartWidget w) {
         return w.getClass().getSimpleName().substring(4);
     }
 
-    static native long InitializeFlutterWindow(int port, long parentHandle, long widgetId, String widgetName);
+    public static String event(DartWidget w, String... events) {
+        String ev = widgetName(w) + "/" + w.hashCode();
+        if (events.length > 0)
+            ev += "/" + String.join("/", events);
+        return ev;
+    }
 }

@@ -1,8 +1,12 @@
 package org.eclipse.swt.widgets;
 
 import static org.assertj.core.api.Assertions.*;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.json;
 
 import dev.equo.swt.Config;
+import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.MockFlutterBridge;
 import dev.equo.swt.Serializer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.internal.cocoa.NSObject;
@@ -44,8 +48,11 @@ public class SerializerTest {
 
     @Test
     void should_serialize_button() throws IOException {
+        FlutterBridge.set(new MockFlutterBridge());
+
         Display display = Mockito.mock(Display.class);
         SwtDisplay swtDisplay = Mockito.mock(SwtDisplay.class);
+        swtDisplay.thread = Thread.currentThread();
         Mockito.when(display.getImpl()).thenReturn(swtDisplay);
 
         Shell shell = Mockito.mock(Shell.class);
@@ -59,7 +66,7 @@ public class SerializerTest {
 
         String json = serialize(w);
 
-        assertThat(json).isEqualTo("{\"text\":\"l alal a\",\"bounds\":{\"x\":10,\"y\":20,\"width\":30,\"height\":40}}");
+        assertThatJson(json).isEqualTo("{id:"+w.hashCode()+",swt:'Button',style:"+w.getStyle()+",text:'l alal a',bounds:{x:10,y:20,width:30,height:40}}");
 
         Button b = new Button(shell, SWT.PUSH);
         Settings settings = Settings.defaults()
@@ -73,7 +80,14 @@ public class SerializerTest {
                .fill();
         json = serialize(b);
 
-        assertThat(json).isEqualTo("{\"text\":\"l alal a\",\"bounds\":{\"x\":10,\"y\":20,\"width\":30,\"height\":40}}");}
+        assertThatJson(json).isObject()
+                .containsEntry("swt", "Button")
+                .containsEntry("id", b.hashCode())
+                .containsEntry("style", b.getStyle())
+                .containsEntry("bounds", json(b.getBounds()))
+                .doesNotContainKey("parent")
+                .containsEntry("text", b.getText());
+    }
 
     private <T> String serialize(Button p) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();

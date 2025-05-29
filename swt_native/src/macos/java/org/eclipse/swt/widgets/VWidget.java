@@ -5,12 +5,25 @@ import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import com.dslplatform.json.*;
+import dev.equo.swt.Serializer;
 
-@CompiledJson()
 public class VWidget {
 
     @JsonConverter(target = Widget.class)
-    public abstract static class WidgetJson {
+    public static class WidgetJson implements Configuration {
+
+        @Override
+        public void configure(DslJson json) {
+            json.registerWriter(DartWidget.class, (JsonWriter.WriteObject<DartWidget>) (writer, impl) -> {
+                if (impl == null)
+                    writer.writeNull();
+                else
+                    writer.serializeObject(impl.getValue());
+            });
+            json.registerReader(DartWidget.class, (JsonReader.ReadObject<DartWidget>) reader -> {
+                return null;
+            });
+        }
 
         public static Widget read(JsonReader<?> reader) {
             return null;
@@ -19,10 +32,8 @@ public class VWidget {
         public static void write(JsonWriter writer, Widget api) {
             if (api == null)
                 writer.writeNull();
-            else {
-                VWidget value = ((DartWidget) api.getImpl()).getValue();
-                writer.serializeObject(value);
-            }
+            else
+                writer.serializeObject(api.getImpl());
         }
     }
 }

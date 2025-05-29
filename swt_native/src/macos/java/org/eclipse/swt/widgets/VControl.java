@@ -6,8 +6,8 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
+import dev.equo.swt.Serializer;
 
-@CompiledJson()
 public class VControl extends VWidget {
 
     public Color background;
@@ -49,7 +49,17 @@ public class VControl extends VWidget {
     public boolean visible;
 
     @JsonConverter(target = Control.class)
-    public abstract static class ControlJson {
+    public static class ControlJson implements Configuration {
+
+        @Override
+        public void configure(DslJson json) {
+            json.registerWriter(DartControl.class, (JsonWriter.WriteObject<DartControl>) (writer, impl) -> {
+                Serializer.writeWithId(json, writer, impl);
+            });
+            json.registerReader(DartControl.class, (JsonReader.ReadObject<DartControl>) reader -> {
+                return null;
+            });
+        }
 
         public static Control read(JsonReader<?> reader) {
             return null;
@@ -58,10 +68,8 @@ public class VControl extends VWidget {
         public static void write(JsonWriter writer, Control api) {
             if (api == null)
                 writer.writeNull();
-            else {
-                VControl value = ((DartControl) api.getImpl()).getValue();
-                writer.serializeObject(value);
-            }
+            else
+                writer.serializeObject(api.getImpl());
         }
     }
 }
