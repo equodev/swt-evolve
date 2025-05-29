@@ -16,6 +16,7 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.graphics.*;
+import dev.equo.swt.*;
 
 /**
  * A layout controls the position and size
@@ -26,7 +27,7 @@ import org.eclipse.swt.graphics.*;
  * @see Composite#setLayout(Layout)
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public abstract class Layout {
+public abstract class DartLayout implements ILayout {
 
     /**
      * Computes and returns the size of the specified
@@ -60,7 +61,7 @@ public abstract class Layout {
      * @see Control#pack(boolean)
      * @see "computeTrim, getClientArea for controls that implement them"
      */
-    protected abstract Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache);
+    abstract public Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache);
 
     /**
      * Instruct the layout to flush any cached values
@@ -72,8 +73,8 @@ public abstract class Layout {
      *
      * @since 3.1
      */
-    protected boolean flushCache(Control control) {
-        return getImpl().flushCache(control);
+    public boolean flushCache(Control control) {
+        return false;
     }
 
     /**
@@ -104,41 +105,23 @@ public abstract class Layout {
      * @param composite a composite widget using this layout
      * @param flushCache <code>true</code> means flush cached layout values
      */
-    protected abstract void layout(Composite composite, boolean flushCache);
+    abstract public void layout(Composite composite, boolean flushCache);
 
-    public Layout() {
+    public Layout getApi() {
+        return (Layout) api;
     }
 
-    protected ILayout impl;
+    protected Layout api;
 
-    protected Layout(ILayout impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
-            impl.setApi(this);
-        }
+    public void setApi(Layout api) {
+        this.api = api;
     }
 
-    public ILayout getImpl() {
-        if (impl == null)
-            impl = new SwtLayout() {
+    protected VLayout value;
 
-                public Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-                    return Layout.this.computeSize(composite, wHint, hHint, flushCache);
-                }
-
-                public void layout(Composite composite, boolean flushCache) {
-                    Layout.this.layout(composite, flushCache);
-                }
-            };
-        return impl;
-    }
-
-    protected Layout setImpl(ILayout impl) {
-        this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
-        return this;
+    public VLayout getValue() {
+        if (value == null)
+            value = new VLayout();
+        return (VLayout) value;
     }
 }
