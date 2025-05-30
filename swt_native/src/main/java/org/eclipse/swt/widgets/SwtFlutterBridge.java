@@ -11,8 +11,8 @@ public class SwtFlutterBridge extends FlutterBridge {
         FlutterLibraryLoader.initialize();
     }
 
-    public static SwtFlutterBridge of(DartControl dartControl) {
-        if (dartControl.parent.getImpl() instanceof SwtComposite) {
+    public static SwtFlutterBridge of(DartWidget widget) {
+        if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof SwtComposite) {
             SwtComposite parentComposite = new SwtComposite(dartControl.parent, SWT.NONE);
             SwtFlutterBridge bridge = new SwtFlutterBridge();
             bridge.initFlutterView(parentComposite.getApi().view.id, dartControl);

@@ -62,7 +62,18 @@ public abstract class DartWidget implements IWidget {
     /* Global state flags */
     static final int DISPOSED = 1 << 0;
 
+    static final int CANVAS = 1 << 1;
+
     static final int KEYED_DATA = 1 << 2;
+
+    /* A layout was requested on this widget */
+    static final int LAYOUT_NEEDED = 1 << 12;
+
+    /* The preferred size of a child has changed */
+    static final int LAYOUT_CHANGED = 1 << 13;
+
+    /* A layout was requested in this widget hierachy */
+    static final int LAYOUT_CHILD = 1 << 14;
 
     /* More global state flags */
     static final int RELEASED = 1 << 15;
@@ -375,6 +386,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     void createHandle() {
+        bridge = FlutterBridge.of(this);
     }
 
     void createJNIRef() {
@@ -1039,6 +1051,12 @@ public abstract class DartWidget implements IWidget {
         if (WidgetSpy.isEnabled) {
             WidgetSpy.getInstance().widgetDisposed(this.getApi());
         }
+    }
+
+    FlutterBridge bridge;
+
+    public FlutterBridge getBridge() {
+        return bridge;
     }
 
     public Widget getApi() {

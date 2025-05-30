@@ -566,6 +566,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return ((SwtControl) parent.getImpl()).computeTabRoot();
     }
 
+    @Override
+    void createWidget() {
+        if (parent.getImpl() instanceof DartComposite c)
+            c.getValue().children.add(this.getApi());
+    }
+
     /**
      * Detects a drag and drop gesture.  This method is used
      * to detect a drag gesture when called from within a mouse
@@ -1241,6 +1247,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public boolean isVisible() {
         checkWidget();
         return getVisible() && parent.isVisible();
+    }
+
+    void markLayout(boolean changed, boolean all) {
+        /* Do nothing */
     }
 
     /**
@@ -2879,17 +2889,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void update() {
     }
 
-    FlutterBridge bridge;
+    void updateLayout(boolean all) {
+        /* Do nothing */
+    }
 
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
-        return ((DartControl) parent.getImpl()).getBridge();
-    }
-
-    @Override
-    void createHandle() {
-        bridge = FlutterBridge.of(this);
+        return ((DartWidget) parent.getImpl()).getBridge();
     }
 
     public Control getApi() {

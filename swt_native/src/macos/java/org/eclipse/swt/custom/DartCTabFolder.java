@@ -20,7 +20,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import dev.equo.swt.Config;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class implement the notebook user interface
@@ -53,68 +53,10 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CTabFolder extends Composite {
+public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
-    /**
-     * marginWidth specifies the number of points of horizontal margin
-     * that will be placed along the left and right edges of the form.
-     *
-     * The default value is 0.
-     */
-    public int marginWidth = 0;
-
-    /**
-     * marginHeight specifies the number of points of vertical margin
-     * that will be placed along the top and bottom edges of the form.
-     *
-     * The default value is 0.
-     */
-    public int marginHeight = 0;
-
-    /**
-     * A multiple of the tab height that specifies the minimum width to which a tab
-     * will be compressed before scrolling arrows are used to navigate the tabs.
-     *
-     * NOTE This field is badly named and can not be fixed for backwards compatibility.
-     * It should not be capitalized.
-     *
-     * @deprecated This field is no longer used.  See setMinimumCharacters(int)
-     */
-    @Deprecated
-    public int MIN_TAB_WIDTH = 4;
-
-    /**
-     * Color of innermost line of drop shadow border.
-     *
-     * NOTE This field is badly named and can not be fixed for backwards compatibility.
-     * It should be capitalized.
-     *
-     * @deprecated drop shadow border is no longer drawn in 3.0
-     */
-    @Deprecated
-    public static RGB borderInsideRGB = new RGB(132, 130, 132);
-
-    /**
-     * Color of middle line of drop shadow border.
-     *
-     * NOTE This field is badly named and can not be fixed for backwards compatibility.
-     * It should be capitalized.
-     *
-     * @deprecated drop shadow border is no longer drawn in 3.0
-     */
-    @Deprecated
-    public static RGB borderMiddleRGB = new RGB(143, 141, 138);
-
-    /**
-     * Color of outermost line of drop shadow border.
-     *
-     * NOTE This field is badly named and can not be fixed for backwards compatibility.
-     * It should be capitalized.
-     *
-     * @deprecated drop shadow border is no longer drawn in 3.0
-     */
-    @Deprecated
-    public static RGB borderOutsideRGB = new RGB(171, 168, 165);
+    /* External Listener management */
+    CTabFolder2Listener[] folderListeners = new CTabFolder2Listener[0];
 
     // when disposing CTabFolder, don't try to layout the items or
     // keep track of size changes in order to redraw only affected area
@@ -149,9 +91,99 @@ public class CTabFolder extends Composite {
      * @see SWT#MULTI
      * @see #getStyle()
      */
-    public CTabFolder(Composite parent, int style) {
-        this((ICTabFolder) null);
-        setImpl(Config.isEquo(CTabFolder.class, parent) ? new DartCTabFolder(parent, style) : new SwtCTabFolder(parent, style));
+    public DartCTabFolder(Composite parent, int style) {
+        super(parent, checkStyle(parent, style));
+        init(style);
+    }
+
+    void init(int style) {
+        super.setLayout(new CTabFolderLayout());
+        int style2 = super.getStyle();
+        oldFont = getFont();
+        onBottom = (style2 & SWT.BOTTOM) != 0;
+        showClose = (style2 & SWT.CLOSE) != 0;
+        //	showMin = (style2 & SWT.MIN) != 0; - conflicts with SWT.TOP
+        //	showMax = (style2 & SWT.MAX) != 0; - conflicts with SWT.BOTTOM
+        single = (style2 & SWT.SINGLE) != 0;
+        borderVisible = (style & SWT.BORDER) != 0;
+        //set up default colors
+        Display display = getDisplay();
+        selectionForeground = display.getSystemColor(SELECTION_FOREGROUND);
+        selectionBackground = display.getSystemColor(SELECTION_BACKGROUND);
+        renderer = new CTabFolderRenderer(this.getApi());
+        useDefaultRenderer = true;
+        controls = new Control[0];
+        controlAlignments = new int[0];
+        controlRects = new Rectangle[0];
+        controlBkImages = new Image[0];
+        updateTabHeight(false);
+        // Add all listeners
+        listener = event -> {
+            switch(event.type) {
+                case SWT.Dispose:
+                    onDispose(event);
+                    break;
+                case SWT.DragDetect:
+                    onDragDetect(event);
+                    break;
+                case SWT.FocusIn:
+                    onFocus(event);
+                    break;
+                case SWT.FocusOut:
+                    onFocus(event);
+                    break;
+                case SWT.KeyDown:
+                    onKeyDown(event);
+                    break;
+                case SWT.MenuDetect:
+                    onMenuDetect(event);
+                    break;
+                case SWT.MouseDoubleClick:
+                    onMouseDoubleClick(event);
+                    break;
+                case SWT.MouseDown:
+                    onMouse(event);
+                    break;
+                case SWT.MouseEnter:
+                    onMouse(event);
+                    break;
+                case SWT.MouseExit:
+                    onMouse(event);
+                    break;
+                case SWT.MouseHover:
+                    onMouse(event);
+                    break;
+                case SWT.MouseMove:
+                    onMouse(event);
+                    break;
+                case SWT.MouseUp:
+                    onMouse(event);
+                    break;
+                case SWT.Paint:
+                    onPaint(event);
+                    break;
+                case SWT.Resize:
+                    onResize(event);
+                    break;
+                case SWT.Traverse:
+                    onTraverse(event);
+                    break;
+                case SWT.Selection:
+                    onSelection(event);
+                    break;
+                case SWT.Activate:
+                    onActivate(event);
+                    break;
+                case SWT.Deactivate:
+                    onDeactivate(event);
+                    break;
+            }
+        };
+        int[] folderEvents = new int[] { SWT.Dispose, SWT.DragDetect, SWT.FocusIn, SWT.FocusOut, SWT.KeyDown, SWT.MenuDetect, SWT.MouseDoubleClick, SWT.MouseDown, SWT.MouseEnter, SWT.MouseExit, SWT.MouseHover, SWT.MouseMove, SWT.MouseUp, SWT.Paint, SWT.Resize, SWT.Traverse, SWT.Activate, SWT.Deactivate };
+        for (int folderEvent : folderEvents) {
+            addListener(folderEvent, listener);
+        }
+        initAccessible();
     }
 
     /**
@@ -177,7 +209,14 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void addCTabFolder2Listener(CTabFolder2Listener listener) {
-        getImpl().addCTabFolder2Listener(listener);
+        checkWidget();
+        if (listener == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        // add to array
+        CTabFolder2Listener[] newListeners = new CTabFolder2Listener[folderListeners.length + 1];
+        System.arraycopy(folderListeners, 0, newListeners, 0, folderListeners.length);
+        folderListeners = newListeners;
+        folderListeners[folderListeners.length - 1] = listener;
     }
 
     /**
@@ -201,7 +240,19 @@ public class CTabFolder extends Composite {
      */
     @Deprecated
     public void addCTabFolderListener(CTabFolderListener listener) {
-        getImpl().addCTabFolderListener(listener);
+        checkWidget();
+        if (listener == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        // add to array
+        CTabFolderListener[] newTabListeners = new CTabFolderListener[tabListeners.length + 1];
+        System.arraycopy(tabListeners, 0, newTabListeners, 0, tabListeners.length);
+        tabListeners = newTabListeners;
+        tabListeners[tabListeners.length - 1] = listener;
+        // display close button to be backwards compatible
+        if (!showClose) {
+            showClose = true;
+            updateFolder(REDRAW);
+        }
     }
 
     /**
@@ -229,7 +280,7 @@ public class CTabFolder extends Composite {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getImpl().addSelectionListener(listener);
+        addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
     }
 
     /*
@@ -243,8 +294,19 @@ public class CTabFolder extends Composite {
     //		SWT.error (SWT.ERROR_INVALID_SUBCLASS);
     //	}
     //}
+    @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getImpl().computeTrim(x, y, width, height);
+        checkWidget();
+        Rectangle trim = renderer.computeTrim(CTabFolderRenderer.PART_BODY, SWT.NONE, x, y, width, height);
+        Point size = new Point(width, height);
+        int wrapHeight = getWrappedHeight(size);
+        if (onBottom) {
+            trim.height += wrapHeight;
+        } else {
+            trim.y -= wrapHeight;
+            trim.height += wrapHeight;
+        }
+        return trim;
     }
 
     /**
@@ -260,7 +322,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getBorderVisible() {
-        return getImpl().getBorderVisible();
+        return getValue().borderVisible;
     }
 
     /**
@@ -274,8 +336,24 @@ public class CTabFolder extends Composite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
+    @Override
     public Rectangle getClientArea() {
-        return getImpl().getClientArea();
+        checkWidget();
+        //TODO: HACK - find a better way to get padding
+        Rectangle trim = renderer.computeTrim(CTabFolderRenderer.PART_BODY, SWT.FILL, 0, 0, 0, 0);
+        Point size = getSize();
+        int wrapHeight = getWrappedHeight(size);
+        if (onBottom) {
+            trim.height += wrapHeight;
+        } else {
+            trim.y -= wrapHeight;
+            trim.height += wrapHeight;
+        }
+        if (minimized)
+            return new Rectangle(-trim.x, -trim.y, 0, 0);
+        int width = size.x - trim.width;
+        int height = size.y - trim.height;
+        return new Rectangle(-trim.x, -trim.y, width, height);
     }
 
     /**
@@ -293,7 +371,14 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public CTabItem getItem(int index) {
-        return getImpl().getItem(index);
+        /*
+	 * This call is intentionally commented out, to allow this getter method to be
+	 * called from a thread which is different from one that created the widget.
+	 */
+        //checkWidget();
+        if (index < 0 || index >= items.length)
+            SWT.error(SWT.ERROR_INVALID_RANGE);
+        return items[index];
     }
 
     /**
@@ -308,7 +393,25 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public CTabItem getItem(Point pt) {
-        return getImpl().getItem(pt);
+        /*
+	 * This call is intentionally commented out, to allow this getter method to be
+	 * called from a thread which is different from one that created the widget.
+	 */
+        //checkWidget();
+        if (items.length == 0)
+            return null;
+        runUpdate();
+        Point size = getSize();
+        Rectangle trim = renderer.computeTrim(CTabFolderRenderer.PART_BORDER, SWT.NONE, 0, 0, 0, 0);
+        if (size.x <= trim.width)
+            return null;
+        for (int element : priority) {
+            CTabItem item = items[element];
+            Rectangle rect = item.getBounds();
+            if (rect.contains(pt))
+                return item;
+        }
+        return null;
     }
 
     /**
@@ -322,7 +425,8 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public int getItemCount() {
-        return getImpl().getItemCount();
+        //checkWidget();
+        return items.length;
     }
 
     /**
@@ -336,7 +440,14 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public CTabItem[] getItems() {
-        return getImpl().getItems();
+        /*
+	 * This call is intentionally commented out, to allow this getter method to be
+	 * called from a thread which is different from one that created the widget.
+	 */
+        //checkWidget();
+        CTabItem[] tabItems = new CTabItem[items.length];
+        System.arraycopy(items, 0, tabItems, 0, items.length);
+        return tabItems;
     }
 
     /**
@@ -352,7 +463,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getMinimized() {
-        return getImpl().getMinimized();
+        return getValue().minimized;
     }
 
     /**
@@ -369,7 +480,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getMinimizeVisible() {
-        return getImpl().getMinimizeVisible();
+        return getValue().minimizeVisible;
     }
 
     /**
@@ -381,7 +492,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public int getMinimumCharacters() {
-        return getImpl().getMinimumCharacters();
+        return getValue().minimumCharacters;
     }
 
     /**
@@ -397,7 +508,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getMaximized() {
-        return getImpl().getMaximized();
+        return getValue().maximized;
     }
 
     /**
@@ -414,7 +525,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getMaximizeVisible() {
-        return getImpl().getMaximizeVisible();
+        return getValue().maximizeVisible;
     }
 
     /**
@@ -447,7 +558,7 @@ public class CTabFolder extends Composite {
      * @since 3.1
      */
     public boolean getMRUVisible() {
-        return getImpl().getMRUVisible();
+        return getValue().mRUVisible;
     }
 
     /**
@@ -466,7 +577,7 @@ public class CTabFolder extends Composite {
      *  @since 3.6
      */
     public CTabFolderRenderer getRenderer() {
-        return getImpl().getRenderer();
+        return getValue().renderer;
     }
 
     /**
@@ -480,7 +591,11 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public CTabItem getSelection() {
-        return getImpl().getSelection();
+        return getValue().selection;
+        /*
+	 * This call is intentionally commented out, to allow this getter method to be
+	 * called from a thread which is different from one that created the widget.
+	 */
     }
 
     /**
@@ -496,7 +611,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public Color getSelectionBackground() {
-        return getImpl().getSelectionBackground();
+        return getValue().selectionBackground;
     }
 
     /**
@@ -512,7 +627,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public Color getSelectionForeground() {
-        return getImpl().getSelectionForeground();
+        return getValue().selectionForeground;
     }
 
     /**
@@ -527,7 +642,12 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public int getSelectionIndex() {
-        return getImpl().getSelectionIndex();
+        /*
+	 * This call is intentionally commented out, to allow this getter method to be
+	 * called from a thread which is different from one that created the widget.
+	 */
+        //checkWidget();
+        return selectedIndex;
     }
 
     /**
@@ -539,7 +659,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getSimple() {
-        return getImpl().getSimple();
+        return getValue().simple;
     }
 
     /**
@@ -551,11 +671,22 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getSingle() {
-        return getImpl().getSingle();
+        return getValue().single;
     }
 
+    @Override
     public int getStyle() {
-        return getImpl().getStyle();
+        int style = super.getStyle();
+        style &= ~(SWT.TOP | SWT.BOTTOM);
+        style |= onBottom ? SWT.BOTTOM : SWT.TOP;
+        style &= ~(SWT.SINGLE | SWT.MULTI);
+        style |= single ? SWT.SINGLE : SWT.MULTI;
+        if (borderVisible)
+            style |= SWT.BORDER;
+        style &= ~SWT.CLOSE;
+        if (showClose)
+            style |= SWT.CLOSE;
+        return style;
     }
 
     /**
@@ -569,7 +700,7 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public int getTabHeight() {
-        return getImpl().getTabHeight();
+        return getValue().tabHeight;
     }
 
     /**
@@ -583,7 +714,7 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public int getTabPosition() {
-        return getImpl().getTabPosition();
+        return getValue().tabPosition;
     }
 
     /**
@@ -600,7 +731,7 @@ public class CTabFolder extends Composite {
      *  @since 2.1
      */
     public Control getTopRight() {
-        return getImpl().getTopRight();
+        return getValue().topRight;
     }
 
     /**
@@ -617,7 +748,8 @@ public class CTabFolder extends Composite {
      *  @since 3.6
      */
     public int getTopRightAlignment() {
-        return getImpl().getTopRightAlignment();
+        checkWidget();
+        return topRightAlignment;
     }
 
     /**
@@ -629,7 +761,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getUnselectedCloseVisible() {
-        return getImpl().getUnselectedCloseVisible();
+        return getValue().unselectedCloseVisible;
     }
 
     /**
@@ -641,7 +773,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getUnselectedImageVisible() {
-        return getImpl().getUnselectedImageVisible();
+        return getValue().unselectedImageVisible;
     }
 
     /**
@@ -653,7 +785,7 @@ public class CTabFolder extends Composite {
      * @since 3.125
      */
     public boolean getSelectedImageVisible() {
-        return getImpl().getSelectedImageVisible();
+        return getValue().selectedImageVisible;
     }
 
     /**
@@ -674,7 +806,15 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public int indexOf(CTabItem item) {
-        return getImpl().indexOf(item);
+        checkWidget();
+        if (item == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] == item)
+                return i;
+        }
+        return -1;
     }
 
     /**
@@ -696,7 +836,28 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void removeCTabFolder2Listener(CTabFolder2Listener listener) {
-        getImpl().removeCTabFolder2Listener(listener);
+        checkWidget();
+        if (listener == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (folderListeners.length == 0)
+            return;
+        int index = -1;
+        for (int i = 0; i < folderListeners.length; i++) {
+            if (listener == folderListeners[i]) {
+                index = i;
+                break;
+            }
+        }
+        if (index == -1)
+            return;
+        if (folderListeners.length == 1) {
+            folderListeners = new CTabFolder2Listener[0];
+            return;
+        }
+        CTabFolder2Listener[] newTabListeners = new CTabFolder2Listener[folderListeners.length - 1];
+        System.arraycopy(folderListeners, 0, newTabListeners, 0, index);
+        System.arraycopy(folderListeners, index + 1, newTabListeners, index, folderListeners.length - index - 1);
+        folderListeners = newTabListeners;
     }
 
     /**
@@ -717,7 +878,28 @@ public class CTabFolder extends Composite {
      */
     @Deprecated
     public void removeCTabFolderListener(CTabFolderListener listener) {
-        getImpl().removeCTabFolderListener(listener);
+        checkWidget();
+        if (listener == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (tabListeners.length == 0)
+            return;
+        int index = -1;
+        for (int i = 0; i < tabListeners.length; i++) {
+            if (listener == tabListeners[i]) {
+                index = i;
+                break;
+            }
+        }
+        if (index == -1)
+            return;
+        if (tabListeners.length == 1) {
+            tabListeners = new CTabFolderListener[0];
+            return;
+        }
+        CTabFolderListener[] newTabListeners = new CTabFolderListener[tabListeners.length - 1];
+        System.arraycopy(tabListeners, 0, newTabListeners, 0, index);
+        System.arraycopy(tabListeners, index + 1, newTabListeners, index, tabListeners.length - index - 1);
+        tabListeners = newTabListeners;
     }
 
     /**
@@ -738,15 +920,29 @@ public class CTabFolder extends Composite {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getImpl().removeSelectionListener(listener);
+        checkWidget();
+        if (listener == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
+        removeTypedListener(SWT.Selection, listener);
+        removeTypedListener(SWT.DefaultSelection, listener);
     }
 
+    @Override
     public void reskin(int flags) {
-        getImpl().reskin(flags);
+        super.reskin(flags);
+        for (CTabItem item : items) {
+            item.reskin(flags);
+        }
     }
 
+    @Override
     public void setBackground(Color color) {
-        getImpl().setBackground(color);
+        super.setBackground(color);
+        //TODO: need better caching strategy
+        ((SwtCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
+        updateBkImages(true);
+        redraw();
     }
 
     /**
@@ -777,7 +973,7 @@ public class CTabFolder extends Composite {
      *  @since 3.6
      */
     public void setBackground(Color[] colors, int[] percents) {
-        getImpl().setBackground(colors, percents);
+        setBackground(colors, percents, false);
     }
 
     /**
@@ -810,11 +1006,75 @@ public class CTabFolder extends Composite {
      *  @since 3.6
      */
     public void setBackground(Color[] colors, int[] percents, boolean vertical) {
-        getImpl().setBackground(colors, percents, vertical);
+        checkWidget();
+        if (colors != null) {
+            if (percents == null || percents.length != colors.length - 1) {
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+            for (int i = 0; i < percents.length; i++) {
+                if (percents[i] < 0 || percents[i] > 100) {
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                }
+                if (i > 0 && percents[i] < percents[i - 1]) {
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                }
+            }
+            if (getDisplay().getDepth() < 15) {
+                // Don't use gradients on low color displays
+                colors = new Color[] { colors[colors.length - 1] };
+                percents = new int[] {};
+            }
+        }
+        // Are these settings the same as before?
+        if ((gradientColors != null) && (colors != null) && (gradientColors.length == colors.length)) {
+            boolean same = false;
+            for (int i = 0; i < gradientColors.length; i++) {
+                if (gradientColors[i] == null) {
+                    same = colors[i] == null;
+                } else {
+                    same = gradientColors[i].equals(colors[i]);
+                }
+                if (!same)
+                    break;
+            }
+            if (same) {
+                for (int i = 0; i < gradientPercents.length; i++) {
+                    same = gradientPercents[i] == percents[i];
+                    if (!same)
+                        break;
+                }
+            }
+            if (same && this.gradientVertical == vertical)
+                return;
+        }
+        // Store the new settings
+        if (colors == null) {
+            gradientColors = null;
+            gradientPercents = null;
+            gradientVertical = false;
+            setBackground((Color) null);
+        } else {
+            gradientColors = new Color[colors.length];
+            for (int i = 0; i < colors.length; ++i) {
+                gradientColors[i] = colors[i];
+            }
+            gradientPercents = new int[percents.length];
+            for (int i = 0; i < percents.length; ++i) {
+                gradientPercents[i] = percents[i];
+            }
+            gradientVertical = vertical;
+            setBackground(gradientColors[gradientColors.length - 1]);
+        }
+        // Refresh with the new settings
+        redraw();
     }
 
+    @Override
     public void setBackgroundImage(Image image) {
-        getImpl().setBackgroundImage(image);
+        super.setBackgroundImage(image);
+        //TODO: need better caching strategy
+        ((SwtCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
+        redraw();
     }
 
     /**
@@ -828,19 +1088,60 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setBorderVisible(boolean show) {
-        getImpl().setBorderVisible(show);
+        getValue().borderVisible = show;
+        getBridge().dirty(this);
     }
 
+    @Override
     public boolean setFocus() {
-        return getImpl().setFocus();
+        checkWidget();
+        /*
+	* Feature in SWT.  When a new tab item is selected
+	* and the previous tab item had focus, removing focus
+	* from the previous tab item causes fixFocus() to give
+	* focus to the first child, which is usually one of the
+	* toolbars. This is unexpected.
+	* The fix is to try to set focus on the first tab item
+	* if fixFocus() is called.
+	*/
+        Control focusControl = getDisplay().getFocusControl();
+        boolean fixFocus = isAncestor(focusControl);
+        if (fixFocus) {
+            CTabItem item = getSelection();
+            if (item != null) {
+                if (((SwtCTabItem) item.getImpl()).setFocus())
+                    return true;
+            }
+        }
+        return super.setFocus();
     }
 
+    @Override
     public void setFont(Font font) {
-        getImpl().setFont(font);
+        checkWidget();
+        if (font != null && font.equals(getFont()))
+            return;
+        super.setFont(font);
+        oldFont = getFont();
+        // Chevron painting is cached as image and only recreated if number of hidden tabs changed.
+        // To apply the new font the cached image must be recreated with new font.
+        // Redraw request alone would only redraw the cached image with old font.
+        // renderer will pickup and adjust(!) the new font automatically
+        ((SwtCTabFolderRenderer) renderer.getImpl()).resetChevronFont();
+        updateChevronImage(true);
+        updateFolder(REDRAW);
     }
 
+    @Override
     public void setForeground(Color color) {
-        getImpl().setForeground(color);
+        super.setForeground(color);
+        // Chevron painting is cached as image and only recreated if number of hidden tabs changed.
+        // To apply the new foreground color the image must be recreated with new foreground color.
+        // redraw() alone would only redraw the cached image with old color.
+        updateChevronImage(true);
+        updateMaxImage();
+        updateMinImage();
+        redraw();
     }
 
     /**
@@ -858,7 +1159,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setInsertMark(CTabItem item, boolean after) {
-        getImpl().setInsertMark(item, after);
+        checkWidget();
     }
 
     /**
@@ -880,7 +1181,10 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setInsertMark(int index, boolean after) {
-        getImpl().setInsertMark(index, after);
+        checkWidget();
+        if (index < -1 || index >= getItemCount()) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
     }
 
     /**
@@ -912,7 +1216,8 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setMaximizeVisible(boolean visible) {
-        getImpl().setMaximizeVisible(visible);
+        getValue().maximizeVisible = visible;
+        getBridge().dirty(this);
     }
 
     /**
@@ -930,8 +1235,10 @@ public class CTabFolder extends Composite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
+    @Override
     public void setLayout(Layout layout) {
-        getImpl().setLayout(layout);
+        checkWidget();
+        return;
     }
 
     /**
@@ -947,7 +1254,8 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setMaximized(boolean maximize) {
-        getImpl().setMaximized(maximize);
+        getValue().maximized = maximize;
+        getBridge().dirty(this);
     }
 
     /**
@@ -964,7 +1272,8 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setMinimizeVisible(boolean visible) {
-        getImpl().setMinimizeVisible(visible);
+        getValue().minimizeVisible = visible;
+        getBridge().dirty(this);
     }
 
     /**
@@ -980,7 +1289,8 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setMinimized(boolean minimize) {
-        getImpl().setMinimized(minimize);
+        getValue().minimized = minimize;
+        getBridge().dirty(this);
     }
 
     /**
@@ -998,7 +1308,8 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setMinimumCharacters(int count) {
-        getImpl().setMinimumCharacters(count);
+        getValue().minimumCharacters = count;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1028,7 +1339,8 @@ public class CTabFolder extends Composite {
      * @since 3.1
      */
     public void setMRUVisible(boolean show) {
-        getImpl().setMRUVisible(show);
+        getValue().mRUVisible = show;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1048,7 +1360,8 @@ public class CTabFolder extends Composite {
      *  @since 3.6
      */
     public void setRenderer(CTabFolderRenderer renderer) {
-        getImpl().setRenderer(renderer);
+        getValue().renderer = renderer;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1066,7 +1379,8 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setSelection(CTabItem item) {
-        getImpl().setSelection(item);
+        getValue().selection = item;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1080,7 +1394,8 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setSelection(int index) {
-        getImpl().setSelection(index);
+        getValue().selection = index;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1101,7 +1416,8 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setSelectionBackground(Color color) {
-        getImpl().setSelectionBackground(color);
+        getValue().selectionBackground = color;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1130,7 +1446,8 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public void setSelectionBackground(Color[] colors, int[] percents) {
-        getImpl().setSelectionBackground(colors, percents);
+        getValue().selectionBackground = colors;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1163,7 +1480,8 @@ public class CTabFolder extends Composite {
      *  @since 3.0
      */
     public void setSelectionBackground(Color[] colors, int[] percents, boolean vertical) {
-        getImpl().setSelectionBackground(colors, percents, vertical);
+        getValue().selectionBackground = colors;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1178,7 +1496,8 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setSelectionBackground(Image image) {
-        getImpl().setSelectionBackground(image);
+        getValue().selectionBackground = image;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1192,7 +1511,8 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setSelectionForeground(Color color) {
-        getImpl().setSelectionForeground(color);
+        getValue().selectionForeground = color;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1209,7 +1529,11 @@ public class CTabFolder extends Composite {
      * @since 3.121
      */
     public void setSelectionBarThickness(int thickness) {
-        getImpl().setSelectionBarThickness(thickness);
+        checkWidget();
+        if (thickness < 0) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        this.selectionHighlightBarThickness = thickness;
     }
 
     /**
@@ -1225,7 +1549,8 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setSimple(boolean simple) {
-        getImpl().setSimple(simple);
+        getValue().simple = simple;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1241,7 +1566,8 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setSingle(boolean single) {
-        getImpl().setSingle(single);
+        getValue().single = single;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1258,7 +1584,8 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setTabHeight(int height) {
-        getImpl().setTabHeight(height);
+        getValue().tabHeight = height;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1276,7 +1603,8 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setTabPosition(int position) {
-        getImpl().setTabPosition(position);
+        getValue().tabPosition = position;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1296,7 +1624,8 @@ public class CTabFolder extends Composite {
      * @since 2.1
      */
     public void setTopRight(Control control) {
-        getImpl().setTopRight(control);
+        getValue().topRight = control;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1326,7 +1655,8 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setTopRight(Control control, int alignment) {
-        getImpl().setTopRight(control, alignment);
+        getValue().topRight = control;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1343,7 +1673,8 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setUnselectedCloseVisible(boolean visible) {
-        getImpl().setUnselectedCloseVisible(visible);
+        getValue().unselectedCloseVisible = visible;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1359,7 +1690,8 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setUnselectedImageVisible(boolean visible) {
-        getImpl().setUnselectedImageVisible(visible);
+        getValue().unselectedImageVisible = visible;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1375,7 +1707,8 @@ public class CTabFolder extends Composite {
      * @since 3.125
      */
     public void setSelectedImageVisible(boolean visible) {
-        getImpl().setSelectedImageVisible(visible);
+        getValue().selectedImageVisible = visible;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1399,7 +1732,32 @@ public class CTabFolder extends Composite {
      * @since 2.0
      */
     public void showItem(CTabItem item) {
-        getImpl().showItem(item);
+        checkWidget();
+        if (item == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (item.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        int index = indexOf(item);
+        if (index == -1)
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        int idx = -1;
+        for (int i = 0; i < priority.length; i++) {
+            if (priority[i] == index) {
+                idx = i;
+                break;
+            }
+        }
+        if (mru) {
+            // move to front of mru order
+            int[] newPriority = new int[priority.length];
+            System.arraycopy(priority, 0, newPriority, 1, idx);
+            System.arraycopy(priority, idx + 1, newPriority, idx + 1, priority.length - idx - 1);
+            newPriority[0] = index;
+            priority = newPriority;
+        }
+        if (((SwtCTabItem) item.getImpl()).showing)
+            return;
+        updateFolder(REDRAW_TABS);
     }
 
     /**
@@ -1417,7 +1775,10 @@ public class CTabFolder extends Composite {
      * @since 2.0
      */
     public void showSelection() {
-        getImpl().showSelection();
+        checkWidget();
+        if (selectedIndex != -1) {
+            showItem(getSelection());
+        }
     }
 
     /**
@@ -1484,7 +1845,8 @@ public class CTabFolder extends Composite {
      * @since 3.106
      */
     public void setHighlightEnabled(boolean enabled) {
-        getImpl().setHighlightEnabled(enabled);
+        getValue().highlightEnabled = enabled;
+        getBridge().dirty(this);
     }
 
     /**
@@ -1504,22 +1866,18 @@ public class CTabFolder extends Composite {
      * @since 3.106
      */
     public boolean getHighlightEnabled() {
-        return getImpl().getHighlightEnabled();
+        return getValue().highlightEnabled;
     }
 
-    protected CTabFolder(ICTabFolder impl) {
-        super(impl);
+    public CTabFolder getApi() {
+        if (api == null)
+            api = CTabFolder.createApi(this);
+        return (CTabFolder) api;
     }
 
-    static CTabFolder createApi(ICTabFolder impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof CTabFolder inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new CTabFolder(impl);
-    }
-
-    public ICTabFolder getImpl() {
-        return (ICTabFolder) super.getImpl();
+    public VCTabFolder getValue() {
+        if (value == null)
+            value = new VCTabFolder();
+        return (VCTabFolder) value;
     }
 }

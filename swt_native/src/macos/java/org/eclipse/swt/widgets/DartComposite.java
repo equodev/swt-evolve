@@ -19,8 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.ExceptionStash;
-import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Config;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class are controls which are capable
@@ -52,11 +51,14 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/snippets/#composite">Composite snippets</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Composite extends Scrollable {
+public class DartComposite extends DartScrollable implements IComposite {
 
-    Composite() {
-        this((IComposite) null);
-        setImpl(Config.isEquo(Composite.class) ? new DartComposite() : new SwtComposite());
+    Layout layout;
+
+    int layoutCount, backgroundMode;
+
+    DartComposite() {
+        /* Do nothing */
     }
 
     /**
@@ -91,9 +93,12 @@ public class Composite extends Scrollable {
      * @see SWT#DOUBLE_BUFFERED
      * @see Widget#getStyle
      */
-    public Composite(Composite parent, int style) {
-        this((IComposite) null);
-        setImpl(Config.isEquo(Composite.class, parent) ? new DartComposite(parent, style) : new SwtComposite(parent, style));
+    public DartComposite(Composite parent, int style) {
+        super(parent, style);
+    }
+
+    Control[] _getChildren() {
+        return getValue().children.toArray(Control[]::new);
     }
 
     /**
@@ -117,15 +122,40 @@ public class Composite extends Scrollable {
      */
     @Deprecated
     public void changed(Control[] changed) {
-        getImpl().changed(changed);
+        layout(changed, SWT.DEFER);
     }
 
+    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getImpl().computeSize(wHint, hHint, changed);
+        checkWidget();
+        ((SwtDisplay) display.getImpl()).runSkin();
+        Point size;
+        if (layout != null) {
+            if ((wHint == SWT.DEFAULT) || (hHint == SWT.DEFAULT)) {
+                changed |= (state & LAYOUT_CHANGED) != 0;
+                size = layout.computeSize(this.getApi(), wHint, hHint, changed);
+                state &= ~LAYOUT_CHANGED;
+            } else {
+                size = new Point(wHint, hHint);
+            }
+        } else {
+            size = minimumSize(wHint, hHint, changed);
+            if (size.x == 0)
+                size.x = DEFAULT_WIDTH;
+            if (size.y == 0)
+                size.y = DEFAULT_HEIGHT;
+        }
+        if (wHint != SWT.DEFAULT)
+            size.x = wHint;
+        if (hHint != SWT.DEFAULT)
+            size.y = hHint;
+        Rectangle trim = computeTrim(0, 0, size.x, size.y);
+        return new Point(trim.width, trim.height);
     }
 
-    protected void checkSubclass() {
-        getImpl().checkSubclass();
+    @Override
+    public void checkSubclass() {
+        /* Do nothing - Subclassing is allowed */
     }
 
     /**
@@ -156,7 +186,10 @@ public class Composite extends Scrollable {
      * @since 3.6
      */
     public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
-        getImpl().drawBackground(gc, x, y, width, height, offsetX, offsetY);
+    }
+
+    Composite findDeferredControl() {
+        return layoutCount > 0 ? this.getApi() : ((SwtComposite) parent.getImpl()).findDeferredControl();
     }
 
     /**
@@ -178,7 +211,7 @@ public class Composite extends Scrollable {
      * @since 3.2
      */
     public int getBackgroundMode() {
-        return getImpl().getBackgroundMode();
+        return getValue().backgroundMode;
     }
 
     /**
@@ -203,7 +236,8 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public Control[] getChildren() {
-        return getImpl().getChildren();
+        checkWidget();
+        return _getChildren();
     }
 
     /**
@@ -218,7 +252,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public Layout getLayout() {
-        return getImpl().getLayout();
+        return getValue().layout;
     }
 
     /**
@@ -238,7 +272,7 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public boolean getLayoutDeferred() {
-        return getImpl().getLayoutDeferred();
+        return getValue().layoutDeferred;
     }
 
     /**
@@ -254,7 +288,12 @@ public class Composite extends Scrollable {
      * @see #setTabList
      */
     public Control[] getTabList() {
-        return getImpl().getTabList();
+        return getValue().tabList;
+    }
+
+    @Override
+    boolean hooksKeys() {
+        return hooks(SWT.KeyDown) || hooks(SWT.KeyUp);
     }
 
     /**
@@ -276,7 +315,8 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public boolean isLayoutDeferred() {
-        return getImpl().isLayoutDeferred();
+        checkWidget();
+        return findDeferredControl() != null;
     }
 
     /**
@@ -307,7 +347,8 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void layout() {
-        getImpl().layout();
+        checkWidget();
+        layout(true);
     }
 
     /**
@@ -349,7 +390,10 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void layout(boolean changed) {
-        getImpl().layout(changed);
+        checkWidget();
+        if (layout == null)
+            return;
+        layout(changed, false);
     }
 
     /**
@@ -394,7 +438,11 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public void layout(boolean changed, boolean all) {
-        getImpl().layout(changed, all);
+        checkWidget();
+        if (layout == null && !all)
+            return;
+        markLayout(changed, all);
+        updateLayout(all);
     }
 
     /**
@@ -433,7 +481,10 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public void layout(Control[] changed) {
-        getImpl().layout(changed);
+        checkWidget();
+        if (changed == null)
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        layout(changed, SWT.NONE);
     }
 
     /**
@@ -495,11 +546,97 @@ public class Composite extends Scrollable {
      * @since 3.6
      */
     public void layout(Control[] changed, int flags) {
-        getImpl().layout(changed, flags);
+        checkWidget();
+        if (changed != null) {
+            for (int i = 0; i < changed.length; i++) {
+                Control control = changed[i];
+                if (control == null)
+                    error(SWT.ERROR_INVALID_ARGUMENT);
+                if (control.isDisposed())
+                    error(SWT.ERROR_INVALID_ARGUMENT);
+                boolean ancestor = false;
+                Composite composite = ((SwtControl) control.getImpl()).parent;
+                while (composite != null) {
+                    ancestor = composite == this.getApi();
+                    if (ancestor)
+                        break;
+                    composite = ((SwtControl) composite.getImpl()).parent;
+                }
+                if (!ancestor)
+                    error(SWT.ERROR_INVALID_PARENT);
+            }
+            int updateCount = 0;
+            Composite[] update = new Composite[16];
+            for (int i = 0; i < changed.length; i++) {
+                Control child = changed[i];
+                Composite composite = ((SwtControl) child.getImpl()).parent;
+                // Update layout when the list of children has changed.
+                // See bug 497812.
+                ((SwtControl) child.getImpl()).markLayout(false, false);
+                while (child != this.getApi()) {
+                    if (((SwtComposite) composite.getImpl()).layout != null) {
+                        ((SwtWidget) composite.getImpl()).state |= LAYOUT_NEEDED;
+                        if (!((SwtComposite) composite.getImpl()).layout.flushCache(child)) {
+                            ((SwtWidget) composite.getImpl()).state |= LAYOUT_CHANGED;
+                        }
+                    }
+                    if (updateCount == update.length) {
+                        Composite[] newUpdate = new Composite[update.length + 16];
+                        System.arraycopy(update, 0, newUpdate, 0, update.length);
+                        update = newUpdate;
+                    }
+                    child = update[updateCount++] = composite;
+                    composite = ((SwtControl) child.getImpl()).parent;
+                }
+            }
+            if ((flags & SWT.DEFER) != 0) {
+                setLayoutDeferred(true);
+                ((SwtDisplay) display.getImpl()).addLayoutDeferred(this.getApi());
+            }
+            for (int i = updateCount - 1; i >= 0; i--) {
+                ((SwtComposite) update[i].getImpl()).updateLayout(false);
+            }
+        } else {
+            if (layout == null && (flags & SWT.ALL) == 0)
+                return;
+            markLayout((flags & SWT.CHANGED) != 0, (flags & SWT.ALL) != 0);
+            if ((flags & SWT.DEFER) != 0) {
+                setLayoutDeferred(true);
+                ((SwtDisplay) display.getImpl()).addLayoutDeferred(this.getApi());
+            }
+            updateLayout((flags & SWT.ALL) != 0);
+        }
     }
 
+    @Override
+    void markLayout(boolean changed, boolean all) {
+        if (layout != null) {
+            state |= LAYOUT_NEEDED;
+            if (changed)
+                state |= LAYOUT_CHANGED;
+        }
+        if (all) {
+            Control[] children = _getChildren();
+            for (int i = 0; i < children.length; i++) {
+                ((SwtControl) children[i].getImpl()).markLayout(changed, all);
+            }
+        }
+    }
+
+    Point minimumSize(int wHint, int Hint, boolean changed) {
+        Control[] children = _getChildren();
+        Rectangle clientArea = getClientArea();
+        int width = 0, height = 0;
+        for (int i = 0; i < children.length; i++) {
+            Rectangle rect = children[i].getBounds();
+            width = Math.max(width, rect.x - clientArea.x + rect.width);
+            height = Math.max(height, rect.y - clientArea.y + rect.height);
+        }
+        return new Point(width, height);
+    }
+
+    @Override
     public void redraw(int x, int y, int width, int height, boolean all) {
-        getImpl().redraw(x, y, width, height, all);
     }
 
     /**
@@ -520,11 +657,19 @@ public class Composite extends Scrollable {
      * @since 3.2
      */
     public void setBackgroundMode(int mode) {
-        getImpl().setBackgroundMode(mode);
+        getValue().backgroundMode = mode;
+        getBridge().dirty(this);
     }
 
+    @Override
     public boolean setFocus() {
-        return getImpl().setFocus();
+        checkWidget();
+        Control[] children = _getChildren();
+        for (int i = 0; i < children.length; i++) {
+            if (children[i].getVisible() && children[i].setFocus())
+                return true;
+        }
+        return super.setFocus();
     }
 
     /**
@@ -539,7 +684,8 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void setLayout(Layout layout) {
-        getImpl().setLayout(layout);
+        getValue().layout = layout;
+        getBridge().dirty(this);
     }
 
     /**
@@ -565,7 +711,8 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public void setLayoutDeferred(boolean defer) {
-        getImpl().setLayoutDeferred(defer);
+        getValue().layoutDeferred = defer;
+        getBridge().dirty(this);
     }
 
     /**
@@ -584,26 +731,57 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void setTabList(Control[] tabList) {
-        getImpl().setTabList(tabList);
+        getValue().tabList = tabList;
+        getBridge().dirty(this);
     }
 
+    @Override
+    int traversalCode(int key, Object theEvent) {
+        if ((state & CANVAS) != 0) {
+            if ((style & SWT.NO_FOCUS) != 0)
+                return 0;
+            if (hooksKeys())
+                return 0;
+        }
+        return super.traversalCode(key, theEvent);
+    }
+
+    @Override
+    void updateLayout(boolean all) {
+        Composite parent = findDeferredControl();
+        if (parent != null) {
+            ((SwtWidget) parent.getImpl()).state |= LAYOUT_CHILD;
+            return;
+        }
+        if ((state & LAYOUT_NEEDED) != 0) {
+            boolean changed = (state & LAYOUT_CHANGED) != 0;
+            state &= ~(LAYOUT_NEEDED | LAYOUT_CHANGED);
+            ((SwtDisplay) display.getImpl()).runSkin();
+            layout.layout(this.getApi(), changed);
+        }
+        if (all) {
+            state &= ~LAYOUT_CHILD;
+            Control[] children = _getChildren();
+            for (int i = 0; i < children.length; i++) {
+                ((SwtControl) children[i].getImpl()).updateLayout(all);
+            }
+        }
+    }
+
+    @Override
     public String toString() {
-        return getImpl().toString();
+        return super.toString() + " [layout=" + layout + "]";
     }
 
-    protected Composite(IComposite impl) {
-        super(impl);
+    public Composite getApi() {
+        if (api == null)
+            api = Composite.createApi(this);
+        return (Composite) api;
     }
 
-    static Composite createApi(IComposite impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Composite inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Composite(impl);
-    }
-
-    public IComposite getImpl() {
-        return (IComposite) super.getImpl();
+    public VComposite getValue() {
+        if (value == null)
+            value = new VComposite();
+        return (VComposite) value;
     }
 }

@@ -171,12 +171,12 @@ public abstract class ByteArrayTransfer extends Transfer {
         if (impl == null)
             impl = new SwtByteArrayTransfer() {
 
-                public String[] getTypeNames() {
-                    return ByteArrayTransfer.this.getTypeNames();
-                }
-
                 public int[] getTypeIds() {
                     return ByteArrayTransfer.this.getTypeIds();
+                }
+
+                public String[] getTypeNames() {
+                    return ByteArrayTransfer.this.getTypeNames();
                 }
             };
         return (IByteArrayTransfer) super.getImpl();

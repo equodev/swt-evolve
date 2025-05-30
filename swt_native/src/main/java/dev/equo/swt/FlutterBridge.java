@@ -12,7 +12,7 @@ public abstract class FlutterBridge {
     private static final String DEV_EQU_SWT_NEW = "dev.equ.swt.new";
     protected static final FlutterClient client;
     private static final Serializer serializer = new Serializer();
-    private static final Set<DartControl> dirty = new HashSet<>();
+    private static final Set<DartWidget> dirty = new HashSet<>();
     private static FlutterBridge bridge;
 
     static {
@@ -22,7 +22,7 @@ public abstract class FlutterBridge {
 
     private final CompletableFuture<Boolean> clientReady = new CompletableFuture<>();
 
-    public static FlutterBridge of(DartControl dartControl) {
+    public static FlutterBridge of(DartWidget dartControl) {
         if (bridge != null)
             return bridge;
         //if (isWeb) {}
@@ -34,7 +34,7 @@ public abstract class FlutterBridge {
     }
 
     public static void update() {
-        for (DartControl widget : dirty) {
+        for (DartWidget widget : dirty) {
             widget.getBridge().clientReady.thenRun(() -> {
                 if (!isNew(widget)) { // send with the parent
                     String event = event(widget);
@@ -56,11 +56,11 @@ public abstract class FlutterBridge {
         dirty.clear();
     }
 
-    private static boolean isNew(DartControl widget) {
+    private static boolean isNew(DartWidget widget) {
         return widget.getData("dev.equ.swt.new") == null;
     }
 
-    private static void setNotNew(DartControl control) {
+    private static void setNotNew(DartWidget control) {
         control.setData(DEV_EQU_SWT_NEW, false);
     }
 
@@ -81,7 +81,7 @@ public abstract class FlutterBridge {
         });
     }
 
-    public void dirty(DartControl widget) {
+    public void dirty(DartWidget widget) {
         if (widget == null)
             return;
         synchronized (dirty) {
