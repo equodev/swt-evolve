@@ -116,10 +116,12 @@ public class DropTargetAdapter implements DropTargetListener {
     protected IDropTargetAdapter impl;
 
     protected DropTargetAdapter(IDropTargetAdapter impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static DropTargetAdapter createApi(IDropTargetAdapter impl) {

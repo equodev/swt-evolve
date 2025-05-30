@@ -488,6 +488,8 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     void destroyItem(CoolItem item) {
+        if (item != null && !(item.getImpl() instanceof SwtCoolItem))
+            return;
         if (inDispose)
             return;
         int row = findItem(item).y;
@@ -511,6 +513,8 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     void moveDown(CoolItem item, int x_root) {
+        if (item != null && !(item.getImpl() instanceof SwtCoolItem))
+            return;
         int oldRowIndex = findItem(item).y;
         if (items[oldRowIndex].length == 1) {
             /* If this is the only item in the bottom row, don't move it. */
@@ -530,6 +534,8 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     void moveLeft(CoolItem item, int pixels) {
+        if (item != null && !(item.getImpl() instanceof SwtCoolItem))
+            return;
         Point point = findItem(item);
         int row = point.y;
         int index = point.x;
@@ -561,6 +567,8 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     void moveRight(CoolItem item, int pixels) {
+        if (item != null && !(item.getImpl() instanceof SwtCoolItem))
+            return;
         Point point = findItem(item);
         int row = point.y;
         int index = point.x;
@@ -600,6 +608,8 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     void moveUp(CoolItem item, int x_root) {
+        if (item != null && !(item.getImpl() instanceof SwtCoolItem))
+            return;
         Point point = findItem(item);
         int oldRowIndex = point.y;
         if (items[oldRowIndex].length == 1) {

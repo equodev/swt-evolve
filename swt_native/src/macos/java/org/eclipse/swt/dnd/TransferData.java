@@ -72,10 +72,12 @@ public class TransferData {
     protected ITransferData impl;
 
     protected TransferData(ITransferData impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static TransferData createApi(ITransferData impl) {

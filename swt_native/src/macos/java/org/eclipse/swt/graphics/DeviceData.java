@@ -37,10 +37,12 @@ public class DeviceData {
     protected IDeviceData impl;
 
     protected DeviceData(IDeviceData impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static DeviceData createApi(IDeviceData impl) {

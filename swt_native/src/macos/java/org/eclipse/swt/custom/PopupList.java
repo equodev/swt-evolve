@@ -181,10 +181,12 @@ public class PopupList {
     protected IPopupList impl;
 
     protected PopupList(IPopupList impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static PopupList createApi(IPopupList impl) {

@@ -123,10 +123,12 @@ public final class RowData {
     protected IRowData impl;
 
     protected RowData(IRowData impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static RowData createApi(IRowData impl) {

@@ -112,10 +112,12 @@ public final class GlyphMetrics {
     protected IGlyphMetrics impl;
 
     protected GlyphMetrics(IGlyphMetrics impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static GlyphMetrics createApi(IGlyphMetrics impl) {

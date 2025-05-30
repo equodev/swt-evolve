@@ -174,6 +174,8 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
     }
 
     void createItem(TabItem item, int index) {
+        if (item != null && !(item.getImpl() instanceof SwtWidget))
+            return;
         int count = itemCount;
         if (!(0 <= index && index <= count))
             error(SWT.ERROR_INVALID_RANGE);

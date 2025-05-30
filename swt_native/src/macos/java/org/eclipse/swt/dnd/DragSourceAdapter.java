@@ -67,10 +67,12 @@ public class DragSourceAdapter implements DragSourceListener {
     protected IDragSourceAdapter impl;
 
     protected DragSourceAdapter(IDragSourceAdapter impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static DragSourceAdapter createApi(IDragSourceAdapter impl) {

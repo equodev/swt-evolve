@@ -140,10 +140,12 @@ public final class FontMetrics {
     protected IFontMetrics impl;
 
     protected FontMetrics(IFontMetrics impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static FontMetrics createApi(IFontMetrics impl) {

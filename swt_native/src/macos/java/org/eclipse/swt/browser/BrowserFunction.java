@@ -224,10 +224,12 @@ public class BrowserFunction {
     protected IBrowserFunction impl;
 
     protected BrowserFunction(IBrowserFunction impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static BrowserFunction createApi(IBrowserFunction impl) {

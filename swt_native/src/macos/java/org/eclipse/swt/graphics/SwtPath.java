@@ -373,6 +373,8 @@ public class SwtPath extends SwtResource implements IPath {
      * </ul>
      */
     public void addString(String string, float x, float y, Font font) {
+        if (font != null && !(font.getImpl() instanceof SwtFont))
+            return;
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (font == null)

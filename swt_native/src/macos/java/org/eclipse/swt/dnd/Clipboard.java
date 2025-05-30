@@ -456,10 +456,12 @@ public class Clipboard {
     protected IClipboard impl;
 
     protected Clipboard(IClipboard impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static Clipboard createApi(IClipboard impl) {

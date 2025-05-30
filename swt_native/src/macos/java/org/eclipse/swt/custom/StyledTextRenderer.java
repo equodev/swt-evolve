@@ -1698,6 +1698,8 @@ class StyledTextRenderer {
     }
 
     void setLineBullet(int startLine, int count, Bullet bullet) {
+        if (bullet != null && !(bullet.getImpl() instanceof SwtBullet))
+            return;
         if (bulletsIndices != null) {
             bulletsIndices = null;
             bullets = null;

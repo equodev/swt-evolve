@@ -153,10 +153,12 @@ public class GLData {
     protected IGLData impl;
 
     protected GLData(IGLData impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static GLData createApi(IGLData impl) {

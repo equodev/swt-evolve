@@ -288,6 +288,8 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     }
 
     void createItem(ToolItem item, int index) {
+        if (item != null && !(item.getImpl() instanceof SwtWidget))
+            return;
         if (!(0 <= index && index <= itemCount))
             error(SWT.ERROR_INVALID_RANGE);
         if (itemCount == items.length) {

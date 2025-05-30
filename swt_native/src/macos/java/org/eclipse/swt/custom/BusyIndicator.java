@@ -160,10 +160,12 @@ public class BusyIndicator {
     protected IBusyIndicator impl;
 
     protected BusyIndicator(IBusyIndicator impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static BusyIndicator createApi(IBusyIndicator impl) {

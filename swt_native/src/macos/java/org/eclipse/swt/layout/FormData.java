@@ -129,10 +129,12 @@ public final class FormData {
     protected IFormData impl;
 
     protected FormData(IFormData impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static FormData createApi(IFormData impl) {

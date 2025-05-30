@@ -341,10 +341,12 @@ public final class FontData {
     protected IFontData impl;
 
     protected FontData(IFontData impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static FontData createApi(IFontData impl) {

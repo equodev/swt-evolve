@@ -99,10 +99,12 @@ public class Bullet {
     protected IBullet impl;
 
     protected Bullet(IBullet impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static Bullet createApi(IBullet impl) {

@@ -649,6 +649,8 @@ public class SwtTable extends SwtComposite implements ITable {
     }
 
     void createItem(TableColumn column, int index) {
+        if (column != null && !(column.getImpl() instanceof SwtWidget))
+            return;
         if (!(0 <= index && index <= columnCount))
             error(SWT.ERROR_INVALID_RANGE);
         if (columnCount == columns.length) {
@@ -3720,6 +3722,8 @@ public class SwtTable extends SwtComposite implements ITable {
     }
 
     private void toggleCheckedItem(TableItem item, long rowIndex) {
+        if (item != null && !(item.getImpl() instanceof SwtTableItem))
+            return;
         ((SwtTableItem) item.getImpl()).checked = !((SwtTableItem) item.getImpl()).checked;
         Event event = new Event();
         event.detail = SWT.CHECK;

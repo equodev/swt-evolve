@@ -43,10 +43,12 @@ public final class PathData {
     protected IPathData impl;
 
     protected PathData(IPathData impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static PathData createApi(IPathData impl) {

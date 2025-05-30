@@ -153,13 +153,42 @@ public abstract class Transfer {
     protected ITransfer impl;
 
     protected Transfer(ITransfer impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     public ITransfer getImpl() {
+        if (impl == null)
+            impl = new SwtTransfer() {
+
+                public boolean isSupportedType(TransferData transferData) {
+                    return Transfer.this.isSupportedType(transferData);
+                }
+
+                public Object nativeToJava(TransferData transferData) {
+                    return Transfer.this.nativeToJava(transferData);
+                }
+
+                public String[] getTypeNames() {
+                    return Transfer.this.getTypeNames();
+                }
+
+                public int[] getTypeIds() {
+                    return Transfer.this.getTypeIds();
+                }
+
+                public void javaToNative(Object object, TransferData transferData) {
+                    Transfer.this.javaToNative(object, transferData);
+                }
+
+                public TransferData[] getSupportedTypes() {
+                    return Transfer.this.getSupportedTypes();
+                }
+            };
         return impl;
     }
 

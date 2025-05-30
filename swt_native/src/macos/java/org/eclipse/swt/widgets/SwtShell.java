@@ -1662,6 +1662,8 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     void setActiveControl(Control control, int type) {
+        if (control != null && !(control.getImpl() instanceof SwtControl))
+            return;
         if (control != null && control.isDisposed())
             control = null;
         if (lastActive != null && lastActive.isDisposed())

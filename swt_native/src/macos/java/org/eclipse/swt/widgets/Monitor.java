@@ -99,10 +99,12 @@ public final class Monitor {
     protected IMonitor impl;
 
     protected Monitor(IMonitor impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static Monitor createApi(IMonitor impl) {

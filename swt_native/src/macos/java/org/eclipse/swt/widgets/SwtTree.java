@@ -687,6 +687,8 @@ public class SwtTree extends SwtComposite implements ITree {
     }
 
     void createItem(TreeColumn column, int index) {
+        if (column != null && !(column.getImpl() instanceof SwtWidget))
+            return;
         if (!(0 <= index && index <= columnCount))
             error(SWT.ERROR_INVALID_RANGE);
         if (index == 0) {
@@ -750,6 +752,8 @@ public class SwtTree extends SwtComposite implements ITree {
      * and {@link TreeItem#setItemCount}
      */
     void createItem(TreeItem item, TreeItem parentItem, int index) {
+        if (item != null && !(item.getImpl() instanceof SwtWidget))
+            return;
         int count;
         TreeItem[] items;
         if (parentItem != null) {
@@ -2759,6 +2763,8 @@ public class SwtTree extends SwtComposite implements ITree {
      *  </ul>
      */
     public void setInsertMark(TreeItem item, boolean before) {
+        if (item != null && !(item.getImpl() instanceof SwtTreeItem))
+            return;
         checkWidget();
         if (item != null && item.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);

@@ -78,10 +78,12 @@ public final class BorderData {
     protected IBorderData impl;
 
     protected BorderData(IBorderData impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static BorderData createApi(IBorderData impl) {

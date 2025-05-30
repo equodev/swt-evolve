@@ -120,6 +120,8 @@ public class SwtLabel extends SwtControl implements ILabel {
 
     @Override
     void addRelation(Control control) {
+        if (control != null && !(control.getImpl() instanceof SwtControl))
+            return;
         if (!((SwtControl) control.getImpl()).isDescribedByLabel())
             return;
         if (textView != null) {

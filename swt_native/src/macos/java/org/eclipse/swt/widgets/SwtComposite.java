@@ -1052,6 +1052,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     }
 
     void removeControl(Control control) {
+        if (control != null && !(control.getImpl() instanceof SwtControl))
+            return;
         if (((SwtControl) control.getImpl()).hasFocus())
             redrawWidget(getApi().view, true);
         fixTabList(control);

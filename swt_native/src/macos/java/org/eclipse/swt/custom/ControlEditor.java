@@ -160,10 +160,12 @@ public class ControlEditor {
     protected IControlEditor impl;
 
     protected ControlEditor(IControlEditor impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static ControlEditor createApi(IControlEditor impl) {

@@ -240,6 +240,8 @@ public class SwtMenu extends SwtWidget implements IMenu {
 
     @Override
     void checkParent(Widget parent) {
+        if (parent != null && !(parent.getImpl() instanceof SwtWidget))
+            return;
         // A null parent is okay when the app menu bar is in use.
         if (parent == null && ((SwtDisplay) SwtDisplay.getDefault().getImpl()).appMenuBar == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -360,6 +362,8 @@ public class SwtMenu extends SwtWidget implements IMenu {
     }
 
     void createItem(MenuItem item, int index) {
+        if (item != null && !(item.getImpl() instanceof SwtWidget))
+            return;
         if (!(0 <= index && index <= itemCount))
             error(SWT.ERROR_INVALID_RANGE);
         boolean add = true;

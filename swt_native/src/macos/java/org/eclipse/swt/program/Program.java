@@ -216,10 +216,12 @@ public final class Program {
     protected IProgram impl;
 
     protected Program(IProgram impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static Program createApi(IProgram impl) {

@@ -122,10 +122,12 @@ public class StyledTextPrintOptions {
     protected IStyledTextPrintOptions impl;
 
     protected StyledTextPrintOptions(IStyledTextPrintOptions impl) {
-        if (impl == null)
+        if (impl == null) {
             dev.equo.swt.Creation.creating.push(this);
-        else
-            setImpl(impl);
+        } else {
+            this.impl = impl;
+            impl.setApi(this);
+        }
     }
 
     static StyledTextPrintOptions createApi(IStyledTextPrintOptions impl) {
