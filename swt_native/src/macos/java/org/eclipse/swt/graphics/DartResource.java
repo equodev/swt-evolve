@@ -133,6 +133,17 @@ public abstract class DartResource implements IResource {
     }
 
     /**
+     * Destroy all handles of the resource which are not necessary for the given
+     * zoom levels. This method is supposed to be overridden by sub-classes that
+     * retain handles for different zoom levels.
+     *
+     * @param zoomLevels The zoom levels for which the handles are supposed to be
+     *                   retained.
+     */
+    void destroyHandlesExcept(Set<Integer> zoomLevels) {
+    }
+
+    /**
      * Disposes of the operating system resources associated with
      * this resource. Applications must dispose of all resources
      * which they allocate.
@@ -236,7 +247,7 @@ public abstract class DartResource implements IResource {
 
     public VResource getValue() {
         if (value == null)
-            value = new VResource();
+            value = new VResource(this);
         return (VResource) value;
     }
 }

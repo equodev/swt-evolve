@@ -66,6 +66,24 @@ public abstract class DartWidget implements IWidget {
 
     static final int KEYED_DATA = 1 << 2;
 
+    static final int DISABLED = 1 << 3;
+
+    static final int HIDDEN = 1 << 4;
+
+    static final int HOT = 1 << 5;
+
+    static final int MOVED = 1 << 6;
+
+    static final int RESIZED = 1 << 7;
+
+    static final int EXPANDING = 1 << 8;
+
+    static final int IGNORE_WHEEL = 1 << 9;
+
+    static final int PARENT_BACKGROUND = 1 << 10;
+
+    static final int THEME_BACKGROUND = 1 << 11;
+
     /* A layout was requested on this widget */
     static final int LAYOUT_NEEDED = 1 << 12;
 
@@ -79,6 +97,12 @@ public abstract class DartWidget implements IWidget {
     static final int RELEASED = 1 << 15;
 
     static final int DISPOSE_SENT = 1 << 16;
+
+    static final int FOREIGN_HANDLE = 1 << 17;
+
+    static final int DRAG_DETECT = 1 << 18;
+
+    static final int RESIZING = 1 << 19;
 
     /* WebKit fixes */
     static final int WEBKIT_EVENTS_FIX = 1 << 20;
@@ -97,6 +121,12 @@ public abstract class DartWidget implements IWidget {
 
     /* Notify of the opportunity to skin this widget */
     static final int SKIN_NEEDED = 1 << 21;
+
+    /* Bidi "auto" text direction */
+    static final int HAS_AUTO_DIRECTION = 0;
+
+    /* Bidi flag and for auto text direction */
+    static final int AUTO_TEXT_DIRECTION = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
 
     /* Default size for widgets */
     static final int DEFAULT_WIDTH = 64;
@@ -143,6 +173,14 @@ public abstract class DartWidget implements IWidget {
         display = ((SwtWidget) parent.getImpl()).display;
         reskinWidget();
         notifyCreationTracker();
+    }
+
+    long accessibleHandle() {
+        return 0;
+    }
+
+    String getClipboardText() {
+        return null;
     }
 
     /**
@@ -308,6 +346,19 @@ public abstract class DartWidget implements IWidget {
         /* Do nothing */
     }
 
+    void checkOrientation(Widget parent) {
+        style &= ~SWT.MIRRORED;
+        if ((style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT)) == 0) {
+            if (parent != null) {
+                if ((((SwtWidget) parent.getImpl()).style & SWT.LEFT_TO_RIGHT) != 0)
+                    style |= SWT.LEFT_TO_RIGHT;
+                if ((((SwtWidget) parent.getImpl()).style & SWT.RIGHT_TO_LEFT) != 0)
+                    style |= SWT.RIGHT_TO_LEFT;
+            }
+        }
+        style = checkBits(style, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, 0, 0, 0, 0);
+    }
+
     void checkParent(Widget parent) {
         if (parent != null && !(parent.getImpl() instanceof SwtWidget))
             return;
@@ -385,8 +436,12 @@ public abstract class DartWidget implements IWidget {
             error(SWT.ERROR_WIDGET_DISPOSED);
     }
 
+    void copyToClipboard(char[] buffer) {
+        if (buffer.length == 0)
+            return;
+    }
+
     void createHandle() {
-        bridge = FlutterBridge.of(this);
     }
 
     void createJNIRef() {
@@ -445,8 +500,33 @@ public abstract class DartWidget implements IWidget {
         release(true);
     }
 
+    long imageView() {
+        return 0;
+    }
+
     void error(int code) {
         SWT.error(code);
+    }
+
+    boolean filters(int eventType) {
+        return ((SwtDisplay) display.getImpl()).filters(eventType);
+    }
+
+    int fixMnemonic(char[] buffer) {
+        int i = 0, j = 0;
+        while (i < buffer.length) {
+            if ((buffer[j++] = buffer[i++]) == '&') {
+                if (i == buffer.length) {
+                    continue;
+                }
+                if (buffer[i] == '&') {
+                    i++;
+                    continue;
+                }
+                j--;
+            }
+        }
+        return j;
     }
 
     /**
@@ -472,6 +552,7 @@ public abstract class DartWidget implements IWidget {
      * @see #setData(Object)
      */
     public Object getData() {
+        checkWidget();
         return (state & KEYED_DATA) != 0 ? ((Object[]) data)[0] : data;
     }
 
@@ -500,6 +581,7 @@ public abstract class DartWidget implements IWidget {
      * @see #setData(String, Object)
      */
     public Object getData(String key) {
+        checkWidget();
         if (key == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (key.equals(IS_ACTIVE))
@@ -534,6 +616,10 @@ public abstract class DartWidget implements IWidget {
         if (display == null)
             error(SWT.ERROR_WIDGET_DISPOSED);
         return display;
+    }
+
+    boolean getDrawing() {
+        return true;
     }
 
     /**
@@ -621,6 +707,7 @@ public abstract class DartWidget implements IWidget {
      * </ul>
      */
     public int getStyle() {
+        checkWidget();
         return style;
     }
 
@@ -661,6 +748,10 @@ public abstract class DartWidget implements IWidget {
      */
     public boolean isDisposed() {
         return (state & DISPOSED) != 0;
+    }
+
+    boolean isDrawing() {
+        return true;
     }
 
     /**
@@ -719,38 +810,18 @@ public abstract class DartWidget implements IWidget {
         sendEvent(eventType, event);
     }
 
+    void postEvent(int eventType) {
+        sendEvent(eventType, null, false);
+    }
+
+    void postEvent(int eventType, Event event) {
+        sendEvent(eventType, event, false);
+    }
+
     void register() {
     }
 
     void release(boolean destroy) {
-        try (ExceptionStash exceptions = new ExceptionStash()) {
-            if ((state & DISPOSE_SENT) == 0) {
-                state |= DISPOSE_SENT;
-                try {
-                    sendEvent(SWT.Dispose);
-                } catch (Error | RuntimeException ex) {
-                    exceptions.stash(ex);
-                }
-            }
-            if ((state & DISPOSED) == 0) {
-                try {
-                    releaseChildren(destroy);
-                } catch (Error | RuntimeException ex) {
-                    exceptions.stash(ex);
-                }
-            }
-            if ((state & RELEASED) == 0) {
-                state |= RELEASED;
-                if (destroy) {
-                    releaseParent();
-                    releaseWidget();
-                    destroyWidget();
-                } else {
-                    releaseWidget();
-                    releaseHandle();
-                }
-            }
-        }
         notifyDisposalTracker();
     }
 
@@ -868,6 +939,9 @@ public abstract class DartWidget implements IWidget {
         eventTable.unhook(SWT.Dispose, listener);
     }
 
+    void sendDoubleSelection() {
+    }
+
     void sendEvent(Event event) {
         ((SwtDisplay) display.getImpl()).sendEvent(eventTable, event);
     }
@@ -897,6 +971,48 @@ public abstract class DartWidget implements IWidget {
         } else {
             ((SwtDisplay) display.getImpl()).postEvent(event);
         }
+    }
+
+    boolean sendKeyEvent(int type, Event event) {
+        sendEvent(type, event);
+        // widget could be disposed at this point
+        /*
+	* It is possible (but unlikely), that application
+	* code could have disposed the widget in the key
+	* events.  If this happens, end the processing of
+	* the key by returning false.
+	*/
+        if (isDisposed())
+            return false;
+        return event.doit;
+    }
+
+    void sendHorizontalSelection() {
+    }
+
+    void sendCancelSelection() {
+    }
+
+    void sendSearchSelection() {
+    }
+
+    void sendSelection() {
+    }
+
+    void sendSelectionEvent(int eventType) {
+        sendSelectionEvent(eventType, null, false);
+    }
+
+    void sendSelectionEvent(int eventType, Event event, boolean send) {
+        if (eventTable == null && !((SwtDisplay) display.getImpl()).filters(eventType)) {
+            return;
+        }
+        if (event == null)
+            event = new Event();
+        sendEvent(eventType, event, send);
+    }
+
+    void sendVerticalSelection() {
     }
 
     /**
@@ -1024,6 +1140,18 @@ public abstract class DartWidget implements IWidget {
     void setOrientation() {
     }
 
+    boolean setTabGroupFocus() {
+        return setTabItemFocus();
+    }
+
+    boolean setTabItemFocus() {
+        return false;
+    }
+
+    String tooltipText() {
+        return null;
+    }
+
     /**
      * Returns a string containing a concise, human-readable
      * description of the receiver.
@@ -1042,15 +1170,9 @@ public abstract class DartWidget implements IWidget {
     }
 
     void notifyCreationTracker() {
-        if (WidgetSpy.isEnabled) {
-            WidgetSpy.getInstance().widgetCreated(this.getApi());
-        }
     }
 
     void notifyDisposalTracker() {
-        if (WidgetSpy.isEnabled) {
-            WidgetSpy.getInstance().widgetDisposed(this.getApi());
-        }
     }
 
     FlutterBridge bridge;
@@ -1073,7 +1195,7 @@ public abstract class DartWidget implements IWidget {
 
     public VWidget getValue() {
         if (value == null)
-            value = new VWidget();
+            value = new VWidget(this);
         return (VWidget) value;
     }
 }

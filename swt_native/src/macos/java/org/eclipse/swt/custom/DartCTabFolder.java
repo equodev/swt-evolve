@@ -55,11 +55,217 @@ import dev.equo.swt.*;
  */
 public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
+    /* sizing, positioning */
+    boolean onBottom = false;
+
+    boolean single = false;
+
+    boolean simple = true;
+
+    int fixedTabHeight = SWT.DEFAULT;
+
+    int tabHeight;
+
+    int minChars = 20;
+
+    boolean borderVisible = false;
+
+    /* item management */
+    CTabFolderRenderer renderer;
+
+    CTabItem[] items = new CTabItem[0];
+
+    /**
+     * index of the left most visible tab.
+     */
+    int firstIndex = -1;
+
+    int selectedIndex = -1;
+
+    /**
+     * Indices of the elements in the {@link #items} array, used to manage tab
+     * visibility and candidates to be hidden/shown next.
+     * <p>
+     * If there is not enough place for all tabs, tabs starting from the end of
+     * the {@link #priority} array will be hidden first (independently from the
+     * {@link #mru} flag!) =&gt; the right most elements have the highest priority
+     * to be hidden.
+     * <p>
+     * If there is more place to show previously hidden tabs, tabs starting from
+     * the beginning of the {@link #priority} array will be made visible first
+     * (independently from the {@link #mru} flag!) =&gt; the left most elements
+     * have the highest priority to be shown.
+     * <p>
+     * The update strategy of the {@link #priority} array however depends on the
+     * {@link #mru} flag.
+     * <p>
+     * If {@link #mru} flag is set, the first index is always the index of the
+     * currently selected tab, next one is the tab selected before current
+     * etc...
+     * <p>
+     * Example: [4,2,5,1,3,0], just representing the last selection order.
+     * <p>
+     * If {@link #mru} flag is not set, the first index is always the index of
+     * the left most visible tab ({@link #firstIndex} field), next indices are
+     * incremented by one up to <code>priority.length-1</code>, and the rest
+     * filled with indices starting with <code>firstIndex-1</code> and
+     * decremented by one until 0 index is reached.
+     * <p>
+     * The tabs between first index and the index of the currently selected tab
+     * are always visible.
+     * <p>
+     * Example: 6 tabs, 2 and 3 are indices of currently shown tabs:
+     * [2,3,4,5,1,0]. The array consists of two blocks: sorted ascending from
+     * first visible (2) to last available (5), and the rest sorted descending
+     * (1,0). 4 and 5 are the hidden tabs on the right side, 0 and 1 are the
+     * hidden tabs on the left side from the visible tabs 2 and 3.
+     *
+     * @see #updateItems(int)
+     * @see #setItemLocation(GC)
+     */
+    int[] priority = new int[0];
+
+    boolean mru = false;
+
+    Listener listener;
+
+    boolean ignoreTraverse;
+
+    boolean useDefaultRenderer;
+
     /* External Listener management */
     CTabFolder2Listener[] folderListeners = new CTabFolder2Listener[0];
 
+    // support for deprecated listener mechanism
+    CTabFolderListener[] tabListeners = new CTabFolderListener[0];
+
+    /* Selected item appearance */
+    Image selectionBgImage;
+
+    Color[] selectionGradientColors;
+
+    int[] selectionGradientPercents;
+
+    boolean selectionGradientVertical;
+
+    Color selectionForeground;
+
+    Color selectionBackground;
+
+    int selectionHighlightBarThickness = 2;
+
+    /* Unselected item appearance */
+    Color[] gradientColors;
+
+    int[] gradientPercents;
+
+    boolean gradientVertical;
+
+    boolean showUnselectedImage = true;
+
+    boolean showSelectedImage = true;
+
+    // close, min/max and chevron buttons
+    boolean showClose = false;
+
+    boolean showUnselectedClose = true;
+
+    boolean showMin = false;
+
+    boolean minimized = false;
+
+    boolean showMax = false;
+
+    boolean maximized = false;
+
+    ToolBar minMaxTb;
+
+    ToolItem maxItem;
+
+    ToolItem minItem;
+
+    Image maxImage;
+
+    Image minImage;
+
+    boolean hoverTb;
+
+    Rectangle hoverRect = new Rectangle(0, 0, 0, 0);
+
+    boolean hovering;
+
+    boolean hoverTimerRunning;
+
+    boolean highlight;
+
+    boolean highlightEnabled = true;
+
+    boolean showChevron = false;
+
+    Menu showMenu;
+
+    ToolBar chevronTb;
+
+    ToolItem chevronItem;
+
+    int chevronCount;
+
+    boolean chevronVisible = true;
+
+    Image chevronImage;
+
+    Control topRight;
+
+    int topRightAlignment = SWT.RIGHT;
+
+    boolean ignoreResize;
+
+    Control[] controls;
+
+    int[] controlAlignments;
+
+    Rectangle[] controlRects;
+
+    Rectangle[] bkImageBounds;
+
+    Image[] controlBkImages;
+
+    int updateFlags;
+
+    final static int REDRAW = 1 << 1;
+
+    final static int REDRAW_TABS = 1 << 2;
+
+    final static int UPDATE_TAB_HEIGHT = 1 << 3;
+
+    Runnable updateRun;
+
     // when disposing CTabFolder, don't try to layout the items or
+    // change the selection as each child is destroyed.
+    boolean inDispose = false;
+
     // keep track of size changes in order to redraw only affected area
+    // on Resize
+    Point oldSize;
+
+    Font oldFont;
+
+    // internal constants
+    static final int DEFAULT_WIDTH = 64;
+
+    static final int DEFAULT_HEIGHT = 64;
+
+    static final int SELECTION_FOREGROUND = SWT.COLOR_LIST_FOREGROUND;
+
+    static final int SELECTION_BACKGROUND = SWT.COLOR_LIST_BACKGROUND;
+
+    static final int FOREGROUND = SWT.COLOR_WIDGET_FOREGROUND;
+
+    static final int BACKGROUND = SWT.COLOR_WIDGET_BACKGROUND;
+
+    //TODO: add setter for spacing?
+    static final int SPACING = 3;
+
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.
@@ -186,6 +392,49 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         initAccessible();
     }
 
+    void onDeactivate(Event event) {
+        if (!highlightEnabled) {
+            return;
+        }
+        this.highlight = false;
+        redraw();
+    }
+
+    void onActivate(Event event) {
+        if (!highlightEnabled) {
+            return;
+        }
+        this.highlight = true;
+        redraw();
+    }
+
+    static int checkStyle(Composite parent, int style) {
+        int mask = SWT.CLOSE | SWT.TOP | SWT.BOTTOM | SWT.FLAT | SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT | SWT.SINGLE | SWT.MULTI;
+        style = style & mask;
+        // TOP and BOTTOM are mutually exclusive.
+        // TOP is the default
+        if ((style & SWT.TOP) != 0)
+            style = style & ~SWT.BOTTOM;
+        // SINGLE and MULTI are mutually exclusive.
+        // MULTI is the default
+        if ((style & SWT.MULTI) != 0)
+            style = style & ~SWT.SINGLE;
+        // reduce the flash by not redrawing the entire area on a Resize event
+        style |= SWT.NO_REDRAW_RESIZE;
+        //TEMPORARY CODE
+        /*
+	 * In Right To Left orientation on Windows, all GC calls that use a brush are drawing
+	 * offset by one pixel.  This results in some parts of the CTabFolder not drawing correctly.
+	 * To alleviate some of the appearance problems, allow the OS to draw the background.
+	 * This does not draw correctly but the result is less obviously wrong.
+	 */
+        if ((style & SWT.RIGHT_TO_LEFT) != 0)
+            return style;
+        if ((parent.getStyle() & SWT.MIRRORED) != 0 && (style & SWT.LEFT_TO_RIGHT) == 0)
+            return style;
+        return style | SWT.DOUBLE_BUFFERED;
+    }
+
     /**
      * Adds the listener to the collection of listeners who will
      * be notified when a tab item is closed, minimized, maximized,
@@ -283,6 +532,196 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
     }
 
+    Rectangle[] computeControlBounds(Point size, boolean[][] position) {
+        if (controls == null || controls.length == 0)
+            return new Rectangle[0];
+        Rectangle[] rects = new Rectangle[controls.length];
+        for (int i = 0; i < rects.length; i++) {
+            rects[i] = new Rectangle(0, 0, 0, 0);
+        }
+        Rectangle trim = renderer.computeTrim(CTabFolderRenderer.PART_BORDER, SWT.NONE, 0, 0, 0, 0);
+        int borderRight = trim.width + trim.x;
+        int borderLeft = -trim.x;
+        int borderBottom = trim.height + trim.y;
+        int borderTop = -trim.y;
+        Point[] tabControlSize = new Point[controls.length];
+        boolean[] overflow = new boolean[controls.length];
+        //Left Control
+        int leftWidth = 0;
+        int x = borderLeft + SPACING;
+        int rightWidth = 0;
+        int allWidth = 0;
+        boolean spacingRight = false;
+        for (int i = 0; i < controls.length; i++) {
+            Point ctrlSize = tabControlSize[i] = !controls[i].isDisposed() && controls[i].getVisible() ? controls[i].computeSize(SWT.DEFAULT, SWT.DEFAULT) : new Point(0, 0);
+            int alignment = controlAlignments[i];
+            if ((alignment & SWT.LEAD) != 0) {
+                rects[i].width = ctrlSize.x;
+                rects[i].height = getControlHeight(ctrlSize);
+                rects[i].x = x;
+                rects[i].y = getControlY(size, rects, borderBottom, borderTop, i);
+                x += ctrlSize.x;
+                leftWidth += ctrlSize.x;
+            } else {
+                if ((alignment & SWT.WRAP) == 0 && ctrlSize.x > 0) {
+                    spacingRight = true;
+                }
+                if ((alignment & (SWT.FILL | SWT.WRAP)) == 0) {
+                    rightWidth += ctrlSize.x;
+                }
+                allWidth += ctrlSize.x;
+            }
+        }
+        if (leftWidth > 0)
+            leftWidth += SPACING * 2;
+        int itemWidth = 0;
+        for (CTabItem item : items) {
+            if (((SwtCTabItem) item.getImpl()).showing)
+                itemWidth += ((SwtCTabItem) item.getImpl()).width;
+        }
+        int maxWidth = size.x - borderLeft - leftWidth - borderRight;
+        int availableWidth = Math.max(0, maxWidth - itemWidth - rightWidth);
+        if (spacingRight)
+            availableWidth -= SPACING * 2;
+        x = size.x - borderRight - SPACING;
+        if (itemWidth + allWidth <= maxWidth) {
+            //Everything fits
+            for (int i = 0; i < controls.length; i++) {
+                int alignment = controlAlignments[i];
+                if ((alignment & SWT.TRAIL) != 0) {
+                    Point ctrlSize = tabControlSize[i];
+                    x -= ctrlSize.x;
+                    rects[i].width = ctrlSize.x;
+                    rects[i].height = getControlHeight(ctrlSize);
+                    rects[i].x = x;
+                    rects[i].y = getControlY(size, rects, borderBottom, borderTop, i);
+                    if ((alignment & (SWT.FILL | SWT.WRAP)) != 0)
+                        availableWidth -= ctrlSize.x;
+                }
+                if (tabControlSize[i].y >= tabHeight && fixedTabHeight == SWT.DEFAULT) {
+                    overflow[i] = true;
+                }
+            }
+        } else {
+            for (int i = 0; i < controls.length; i++) {
+                int alignment = controlAlignments[i];
+                Point ctrlSize = tabControlSize[i];
+                if ((alignment & SWT.TRAIL) != 0) {
+                    if ((alignment & (SWT.FILL | SWT.WRAP)) == 0) {
+                        x -= ctrlSize.x;
+                        rects[i].width = ctrlSize.x;
+                        rects[i].height = getControlHeight(ctrlSize);
+                        rects[i].x = x;
+                        rects[i].y = getControlY(size, rects, borderBottom, borderTop, i);
+                    } else if (((alignment & (SWT.WRAP)) != 0 && ctrlSize.x < availableWidth)) {
+                        x -= ctrlSize.x;
+                        rects[i].width = ctrlSize.x;
+                        rects[i].height = getControlHeight(ctrlSize);
+                        rects[i].x = x;
+                        rects[i].y = getControlY(size, rects, borderBottom, borderTop, i);
+                        availableWidth -= ctrlSize.x;
+                    } else if ((alignment & (SWT.FILL)) != 0 && (alignment & (SWT.WRAP)) == 0) {
+                        rects[i].width = 0;
+                        rects[i].height = getControlHeight(ctrlSize);
+                        rects[i].x = x;
+                        rects[i].y = getControlY(size, rects, borderBottom, borderTop, i);
+                    } else {
+                        if ((alignment & (SWT.WRAP)) != 0) {
+                            overflow[i] = true;
+                        }
+                    }
+                }
+            }
+        }
+        //Any space, distribute amongst FILL
+        if (availableWidth > 0) {
+            int fillCount = 0;
+            for (int i = 0; i < controls.length; i++) {
+                int alignment = controlAlignments[i];
+                if ((alignment & SWT.TRAIL) != 0 && (alignment & SWT.FILL) != 0 && !overflow[i]) {
+                    fillCount++;
+                }
+            }
+            if (fillCount != 0) {
+                int extraSpace = availableWidth / fillCount;
+                int addedSpace = 0;
+                for (int i = 0; i < controls.length; i++) {
+                    int alignment = controlAlignments[i];
+                    if ((alignment & SWT.TRAIL) != 0) {
+                        if ((alignment & SWT.FILL) != 0 && !overflow[i]) {
+                            rects[i].width += extraSpace;
+                            addedSpace += extraSpace;
+                        }
+                        if (!overflow[i]) {
+                            rects[i].x -= addedSpace;
+                        }
+                    }
+                }
+            }
+        }
+        //Go through overflow laying out all wrapped controls
+        Rectangle bodyTrim = renderer.computeTrim(CTabFolderRenderer.PART_BODY, SWT.NONE, 0, 0, 0, 0);
+        int bodyRight = bodyTrim.width + bodyTrim.x;
+        int bodyLeft = -bodyTrim.x;
+        int bodyWidth = size.x - bodyLeft - bodyRight;
+        x = size.x - bodyRight;
+        int y = onBottom ? this.getSize().y - getTabHeight() + 2 * bodyTrim.y : -bodyTrim.y;
+        availableWidth = bodyWidth;
+        int maxHeight = 0;
+        for (int i = 0; i < controls.length; i++) {
+            Point ctrlSize = tabControlSize[i];
+            if (overflow[i]) {
+                if (availableWidth > ctrlSize.x) {
+                    x -= ctrlSize.x;
+                    rects[i].width = ctrlSize.x;
+                    rects[i].y = onBottom ? y - ctrlSize.y : y;
+                    rects[i].height = ctrlSize.y;
+                    rects[i].x = x;
+                    availableWidth -= ctrlSize.x;
+                    maxHeight = Math.max(maxHeight, ctrlSize.y);
+                } else {
+                    x = size.x - bodyRight;
+                    y += maxHeight;
+                    maxHeight = 0;
+                    availableWidth = bodyWidth;
+                    if (availableWidth > ctrlSize.x) {
+                        //Relayout this control in the next line
+                        i--;
+                    } else {
+                        ctrlSize = controls[i].isDisposed() ? new Point(0, 0) : controls[i].computeSize(bodyWidth, SWT.DEFAULT);
+                        rects[i].width = bodyWidth;
+                        rects[i].y = onBottom ? y - ctrlSize.y : y;
+                        rects[i].height = ctrlSize.y;
+                        rects[i].x = size.x - ctrlSize.x - bodyRight;
+                        y += ctrlSize.y;
+                    }
+                }
+            }
+        }
+        if (showChevron) {
+            int i = 0, lastIndex = -1;
+            while (i < priority.length && ((SwtCTabItem) items[priority[i]].getImpl()).showing) {
+                lastIndex = Math.max(lastIndex, priority[i++]);
+            }
+            if (lastIndex == -1)
+                lastIndex = selectedIndex;
+            if (lastIndex != -1) {
+                CTabItem lastItem = items[lastIndex];
+                int w = ((SwtCTabItem) lastItem.getImpl()).x + ((SwtCTabItem) lastItem.getImpl()).width + SPACING;
+                if (!simple && lastIndex == selectedIndex)
+                    w -= (((SwtCTabFolderRenderer) renderer.getImpl()).curveIndent - 7);
+                rects[controls.length - 1].x = w;
+            }
+        }
+        if (position != null)
+            position[0] = overflow;
+        return rects;
+    }
+
+    int getControlHeight(Point ctrlSize) {
+        return fixedTabHeight == SWT.DEFAULT ? Math.max(tabHeight - 1, ctrlSize.y) : ctrlSize.y;
+    }
+
     /*
 * This class was not intended to be subclassed but this restriction
 * cannot be enforced without breaking backward compatibility.
@@ -309,6 +748,113 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         return trim;
     }
 
+    Image createButtonImage(Display display, int button) {
+        return new Image(display, (ImageDataProvider) zoom -> {
+            GC tempGC = new GC(DartCTabFolder.this.getApi());
+            Point size = renderer.computeSize(button, SWT.NONE, tempGC, SWT.DEFAULT, SWT.DEFAULT);
+            tempGC.dispose();
+            Rectangle trim = renderer.computeTrim(button, SWT.NONE, 0, 0, 0, 0);
+            Image image = new Image(display, size.x - trim.width, size.y - trim.height);
+            GC gc = new GC(image);
+            Color transColor = renderer.parent.getBackground();
+            gc.setBackground(transColor);
+            gc.fillRectangle(image.getBounds());
+            renderer.draw(button, SWT.NONE, new Rectangle(trim.x, trim.y, size.x, size.y), gc);
+            gc.dispose();
+            final ImageData imageData = image.getImageData(zoom);
+            imageData.transparentPixel = imageData.palette.getPixel(transColor.getRGB());
+            image.dispose();
+            return imageData;
+        });
+    }
+
+    private void notifyItemCountChange() {
+        CTabFolderEvent e = new CTabFolderEvent(this.getApi());
+        for (CTabFolder2Listener listener : folderListeners) {
+            listener.itemsCount(e);
+        }
+    }
+
+    void createItem(CTabItem item, int index) {
+        if (0 > index || index > getItemCount())
+            SWT.error(SWT.ERROR_INVALID_RANGE);
+        ((SwtCTabItem) item.getImpl()).parent = this.getApi();
+        CTabItem[] newItems = new CTabItem[items.length + 1];
+        System.arraycopy(items, 0, newItems, 0, index);
+        newItems[index] = item;
+        System.arraycopy(items, index, newItems, index + 1, items.length - index);
+        items = newItems;
+        if (selectedIndex >= index)
+            selectedIndex++;
+        int[] newPriority = new int[priority.length + 1];
+        int next = 0, priorityIndex = priority.length;
+        for (int element : priority) {
+            if (!mru && element == index) {
+                priorityIndex = next++;
+            }
+            newPriority[next++] = element >= index ? element + 1 : element;
+        }
+        newPriority[priorityIndex] = index;
+        priority = newPriority;
+        if (items.length == 1) {
+            updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
+        } else {
+            updateFolder(REDRAW_TABS);
+        }
+        notifyItemCountChange();
+    }
+
+    void destroyItem(CTabItem item) {
+        if (inDispose)
+            return;
+        int index = indexOf(item);
+        if (index == -1)
+            return;
+        if (items.length == 1) {
+            items = new CTabItem[0];
+            priority = new int[0];
+            firstIndex = -1;
+            selectedIndex = -1;
+            Control control = ((SwtCTabItem) item.getImpl()).control;
+            if (control != null && !control.isDisposed()) {
+                control.setVisible(false);
+            }
+            setToolTipText(null);
+            updateButtons();
+            setButtonBounds();
+            redraw();
+            notifyItemCountChange();
+            return;
+        }
+        CTabItem[] newItems = new CTabItem[items.length - 1];
+        System.arraycopy(items, 0, newItems, 0, index);
+        System.arraycopy(items, index + 1, newItems, index, items.length - index - 1);
+        items = newItems;
+        int[] newPriority = new int[priority.length - 1];
+        int next = 0;
+        for (int element : priority) {
+            if (element == index)
+                continue;
+            newPriority[next++] = element > index ? element - 1 : element;
+        }
+        priority = newPriority;
+        // move the selection if this item is selected
+        if (selectedIndex == index) {
+            Control control = item.getControl();
+            selectedIndex = -1;
+            int nextSelection = mru ? priority[0] : Math.max(0, index - 1);
+            setSelection(nextSelection, true);
+            if (control != null && !control.isDisposed()) {
+                control.setVisible(false);
+            }
+        } else if (selectedIndex > index) {
+            selectedIndex--;
+        }
+        requestLayout();
+        updateFolder(UPDATE_TAB_HEIGHT | REDRAW_TABS);
+        notifyItemCountChange();
+    }
+
     /**
      * Returns <code>true</code> if the receiver's border is visible.
      *
@@ -322,7 +868,22 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public boolean getBorderVisible() {
-        return getValue().borderVisible;
+        checkWidget();
+        return borderVisible;
+    }
+
+    ToolBar getChevron() {
+        if (chevronTb == null) {
+            chevronTb = new ToolBar(this.getApi(), SWT.FLAT);
+            initAccessibleChevronTb();
+            addTabControl(chevronTb, SWT.TRAIL, -1, false);
+        }
+        if (chevronItem == null) {
+            chevronItem = new ToolItem(chevronTb, SWT.PUSH);
+            chevronItem.setToolTipText(SWT.getMessage("SWT_ShowList"));
+            chevronItem.addListener(SWT.Selection, listener);
+        }
+        return chevronTb;
     }
 
     /**
@@ -336,6 +897,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
+    /*public*/
+    boolean getChevronVisible() {
+        checkWidget();
+        return chevronVisible;
+    }
+
     @Override
     public Rectangle getClientArea() {
         checkWidget();
@@ -450,6 +1017,57 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         return tabItems;
     }
 
+    int getLeftItemEdge(GC gc, int part) {
+        Rectangle trim = renderer.computeTrim(part, SWT.NONE, 0, 0, 0, 0);
+        int x = -trim.x;
+        int width = 0;
+        for (int i = 0; i < controls.length; i++) {
+            if ((controlAlignments[i] & SWT.LEAD) != 0 && !controls[i].isDisposed() && controls[i].getVisible()) {
+                width += controls[i].computeSize(SWT.DEFAULT, SWT.DEFAULT).x;
+            }
+        }
+        if (width != 0)
+            width += SPACING * 2;
+        x += width;
+        return Math.max(0, x);
+    }
+
+    /*
+ * Return the lowercase of the first non-'&' character following
+ * an '&' character in the given string. If there are no '&'
+ * characters in the given string, return '\0'.
+ */
+    char _findMnemonic(String string) {
+        if (string == null)
+            return '\0';
+        int index = 0;
+        int length = string.length();
+        do {
+            while (index < length && string.charAt(index) != '&') index++;
+            if (++index >= length)
+                return '\0';
+            if (string.charAt(index) != '&')
+                return Character.toLowerCase(string.charAt(index));
+            index++;
+        } while (index < length);
+        return '\0';
+    }
+
+    String stripMnemonic(String string) {
+        int index = 0;
+        int length = string.length();
+        do {
+            while ((index < length) && (string.charAt(index) != '&')) index++;
+            if (++index >= length)
+                return string;
+            if (string.charAt(index) != '&') {
+                return string.substring(0, index - 1) + string.substring(index, length);
+            }
+            index++;
+        } while (index < length);
+        return string;
+    }
+
     /**
      * Returns <code>true</code> if the receiver is minimized.
      *
@@ -463,7 +1081,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public boolean getMinimized() {
-        return getValue().minimized;
+        checkWidget();
+        return minimized;
     }
 
     /**
@@ -480,7 +1099,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public boolean getMinimizeVisible() {
-        return getValue().minimizeVisible;
+        checkWidget();
+        return showMin;
     }
 
     /**
@@ -492,7 +1112,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public int getMinimumCharacters() {
-        return getValue().minimumCharacters;
+        checkWidget();
+        return minChars;
     }
 
     /**
@@ -508,7 +1129,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public boolean getMaximized() {
-        return getValue().maximized;
+        checkWidget();
+        return maximized;
     }
 
     /**
@@ -525,7 +1147,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public boolean getMaximizeVisible() {
-        return getValue().maximizeVisible;
+        checkWidget();
+        return showMax;
     }
 
     /**
@@ -558,7 +1181,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.1
      */
     public boolean getMRUVisible() {
-        return getValue().mRUVisible;
+        checkWidget();
+        return mru;
     }
 
     /**
@@ -577,7 +1201,25 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      *  @since 3.6
      */
     public CTabFolderRenderer getRenderer() {
-        return getValue().renderer;
+        checkWidget();
+        return renderer;
+    }
+
+    int getRightItemEdge(GC gc) {
+        Rectangle trim = renderer.computeTrim(CTabFolderRenderer.PART_BORDER, SWT.NONE, 0, 0, 0, 0);
+        int x = getSize().x - (trim.width + trim.x);
+        int width = 0;
+        for (int i = 0; i < controls.length; i++) {
+            int align = controlAlignments[i];
+            if ((align & SWT.WRAP) == 0 && (align & SWT.LEAD) == 0 && !controls[i].isDisposed() && controls[i].getVisible()) {
+                Point rightSize = controls[i].computeSize(SWT.DEFAULT, SWT.DEFAULT);
+                width += rightSize.x;
+            }
+        }
+        if (width != 0)
+            width += SPACING * 2;
+        x -= width;
+        return Math.max(0, x);
     }
 
     /**
@@ -591,11 +1233,14 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * 	</ul>
      */
     public CTabItem getSelection() {
-        return getValue().selection;
         /*
 	 * This call is intentionally commented out, to allow this getter method to be
 	 * called from a thread which is different from one that created the widget.
 	 */
+        //checkWidget();
+        if (selectedIndex == -1)
+            return null;
+        return items[selectedIndex];
     }
 
     /**
@@ -611,7 +1256,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public Color getSelectionBackground() {
-        return getValue().selectionBackground;
+        checkWidget();
+        return selectionBackground;
     }
 
     /**
@@ -627,7 +1273,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public Color getSelectionForeground() {
-        return getValue().selectionForeground;
+        checkWidget();
+        return selectionForeground;
     }
 
     /**
@@ -659,7 +1306,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public boolean getSimple() {
-        return getValue().simple;
+        checkWidget();
+        return simple;
     }
 
     /**
@@ -671,7 +1319,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public boolean getSingle() {
-        return getValue().single;
+        checkWidget();
+        return single;
     }
 
     @Override
@@ -700,7 +1349,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * 	</ul>
      */
     public int getTabHeight() {
-        return getValue().tabHeight;
+        checkWidget();
+        if (fixedTabHeight != SWT.DEFAULT)
+            return fixedTabHeight;
+        // -1 for line drawn across top of tab //TODO: replace w/ computeTrim of tab area?
+        return tabHeight - 1;
     }
 
     /**
@@ -714,7 +1367,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * 	</ul>
      */
     public int getTabPosition() {
-        return getValue().tabPosition;
+        checkWidget();
+        return onBottom ? SWT.BOTTOM : SWT.TOP;
     }
 
     /**
@@ -731,7 +1385,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      *  @since 2.1
      */
     public Control getTopRight() {
-        return getValue().topRight;
+        checkWidget();
+        return topRight;
     }
 
     /**
@@ -761,7 +1416,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public boolean getUnselectedCloseVisible() {
-        return getValue().unselectedCloseVisible;
+        checkWidget();
+        return showUnselectedClose;
     }
 
     /**
@@ -773,7 +1429,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public boolean getUnselectedImageVisible() {
-        return getValue().unselectedImageVisible;
+        checkWidget();
+        return showUnselectedImage;
     }
 
     /**
@@ -785,7 +1442,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.125
      */
     public boolean getSelectedImageVisible() {
-        return getValue().selectedImageVisible;
+        checkWidget();
+        return showSelectedImage;
     }
 
     /**
@@ -815,6 +1473,886 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                 return i;
         }
         return -1;
+    }
+
+    void initAccessible() {
+        final Accessible accessible = getAccessible();
+        accessible.addAccessibleListener(new AccessibleAdapter() {
+
+            @Override
+            public void getName(AccessibleEvent e) {
+                CTabItem item = null;
+                int childID = e.childID;
+                if (childID == ACC.CHILDID_SELF) {
+                    if (selectedIndex != -1) {
+                        item = items[selectedIndex];
+                    }
+                } else if (childID >= 0 && childID < items.length) {
+                    item = items[childID];
+                }
+                e.result = item == null ? null : stripMnemonic(item.getText());
+            }
+
+            @Override
+            public void getHelp(AccessibleEvent e) {
+                String help = null;
+                int childID = e.childID;
+                if (childID == ACC.CHILDID_SELF) {
+                    help = getToolTipText();
+                } else if (childID >= 0 && childID < items.length) {
+                    help = items[childID].getToolTipText();
+                }
+                e.result = help;
+            }
+
+            @Override
+            public void getKeyboardShortcut(AccessibleEvent e) {
+                String shortcut = null;
+                int childID = e.childID;
+                if (childID >= 0 && childID < items.length) {
+                    String text = items[childID].getText();
+                    if (text != null) {
+                        char mnemonic = _findMnemonic(text);
+                        if (mnemonic != '\0') {
+                            //$NON-NLS-1$
+                            shortcut = SWT.getMessage("SWT_Page_Mnemonic", new Object[] { Character.valueOf(mnemonic) });
+                        }
+                    }
+                }
+                if (childID == ACC.CHILDID_SELF) {
+                    //$NON-NLS-1$
+                    shortcut = SWT.getMessage("SWT_SwitchPage_Shortcut");
+                }
+                e.result = shortcut;
+            }
+        });
+        accessible.addAccessibleControlListener(new AccessibleControlAdapter() {
+
+            @Override
+            public void getChildAtPoint(AccessibleControlEvent e) {
+                Point testPoint = toControl(e.x, e.y);
+                int childID = ACC.CHILDID_NONE;
+                for (int i = 0; i < items.length; i++) {
+                    if (items[i].getBounds().contains(testPoint)) {
+                        childID = i;
+                        break;
+                    }
+                }
+                if (childID == ACC.CHILDID_NONE) {
+                    Rectangle location = getBounds();
+                    location.x = location.y = 0;
+                    location.height = location.height - getClientArea().height;
+                    if (location.contains(testPoint)) {
+                        childID = ACC.CHILDID_SELF;
+                    }
+                }
+                e.childID = childID;
+            }
+
+            @Override
+            public void getLocation(AccessibleControlEvent e) {
+                Rectangle location = null;
+                Point pt = null;
+                int childID = e.childID;
+                if (childID == ACC.CHILDID_SELF) {
+                    location = getBounds();
+                    pt = getParent().toDisplay(location.x, location.y);
+                } else {
+                    if (childID >= 0 && childID < items.length && ((SwtCTabItem) items[childID].getImpl()).showing) {
+                        if (!items[childID].isDisposed()) {
+                            location = items[childID].getBounds();
+                        }
+                    }
+                    if (location != null) {
+                        pt = toDisplay(location.x, location.y);
+                    }
+                }
+                if (location != null && pt != null) {
+                    e.x = pt.x;
+                    e.y = pt.y;
+                    e.width = location.width;
+                    e.height = location.height;
+                }
+            }
+
+            @Override
+            public void getChildCount(AccessibleControlEvent e) {
+                e.detail = items.length;
+            }
+
+            @Override
+            public void getDefaultAction(AccessibleControlEvent e) {
+                String action = null;
+                int childID = e.childID;
+                if (childID >= 0 && childID < items.length) {
+                    //$NON-NLS-1$
+                    action = SWT.getMessage("SWT_Switch");
+                }
+                e.result = action;
+            }
+
+            @Override
+            public void getFocus(AccessibleControlEvent e) {
+                int childID = ACC.CHILDID_NONE;
+                if (isFocusControl()) {
+                    if (selectedIndex == -1) {
+                        childID = ACC.CHILDID_SELF;
+                    } else {
+                        childID = selectedIndex;
+                    }
+                }
+                e.childID = childID;
+            }
+
+            @Override
+            public void getRole(AccessibleControlEvent e) {
+                int role = 0;
+                int childID = e.childID;
+                if (childID == ACC.CHILDID_SELF) {
+                    role = ACC.ROLE_TABFOLDER;
+                } else if (childID >= 0 && childID < items.length) {
+                    role = ACC.ROLE_TABITEM;
+                }
+                e.detail = role;
+            }
+
+            @Override
+            public void getSelection(AccessibleControlEvent e) {
+                e.childID = (selectedIndex == -1) ? ACC.CHILDID_NONE : selectedIndex;
+            }
+
+            @Override
+            public void getState(AccessibleControlEvent e) {
+                int state = 0;
+                int childID = e.childID;
+                if (childID == ACC.CHILDID_SELF) {
+                    state = ACC.STATE_NORMAL;
+                } else if (childID >= 0 && childID < items.length) {
+                    state = ACC.STATE_SELECTABLE;
+                    if (isFocusControl()) {
+                        state |= ACC.STATE_FOCUSABLE;
+                    }
+                    if (selectedIndex == childID) {
+                        state |= ACC.STATE_SELECTED;
+                        if (isFocusControl()) {
+                            state |= ACC.STATE_FOCUSED;
+                        }
+                    }
+                }
+                e.detail = state;
+            }
+
+            @Override
+            public void getChildren(AccessibleControlEvent e) {
+                int childIdCount = items.length;
+                Object[] children = new Object[childIdCount];
+                for (int i = 0; i < childIdCount; i++) {
+                    children[i] = Integer.valueOf(i);
+                }
+                e.children = children;
+            }
+        });
+        addListener(SWT.Selection, event -> {
+            if (isFocusControl()) {
+                if (selectedIndex == -1) {
+                    accessible.setFocus(ACC.CHILDID_SELF);
+                } else {
+                    accessible.setFocus(selectedIndex);
+                }
+            }
+        });
+        addListener(SWT.FocusIn, event -> {
+            if (selectedIndex == -1) {
+                accessible.setFocus(ACC.CHILDID_SELF);
+            } else {
+                accessible.setFocus(selectedIndex);
+            }
+        });
+    }
+
+    void initAccessibleMinMaxTb() {
+        minMaxTb.getAccessible().addAccessibleListener(new AccessibleAdapter() {
+
+            @Override
+            public void getName(AccessibleEvent e) {
+                if (e.childID != ACC.CHILDID_SELF) {
+                    if (minItem != null && e.childID == minMaxTb.indexOf(minItem)) {
+                        e.result = minItem.getToolTipText();
+                    } else if (maxItem != null && e.childID == minMaxTb.indexOf(maxItem)) {
+                        e.result = maxItem.getToolTipText();
+                    }
+                }
+            }
+        });
+    }
+
+    void initAccessibleChevronTb() {
+        chevronTb.getAccessible().addAccessibleListener(new AccessibleAdapter() {
+
+            @Override
+            public void getName(AccessibleEvent e) {
+                if (e.childID != ACC.CHILDID_SELF) {
+                    if (chevronItem != null && e.childID == chevronTb.indexOf(chevronItem)) {
+                        e.result = chevronItem.getToolTipText();
+                    }
+                }
+            }
+        });
+    }
+
+    void onKeyDown(Event event) {
+        runUpdate();
+        switch(event.keyCode) {
+            case SWT.ARROW_LEFT:
+            case SWT.ARROW_RIGHT:
+                int count = items.length;
+                if (count == 0)
+                    return;
+                if (selectedIndex == -1)
+                    return;
+                int leadKey = (getStyle() & SWT.RIGHT_TO_LEFT) != 0 ? SWT.ARROW_RIGHT : SWT.ARROW_LEFT;
+                int offset = event.keyCode == leadKey ? -1 : 1;
+                int index;
+                if (!mru) {
+                    index = selectedIndex + offset;
+                } else {
+                    int[] visible = new int[items.length];
+                    int idx = 0;
+                    int current = -1;
+                    for (int i = 0; i < items.length; i++) {
+                        if (((SwtCTabItem) items[i].getImpl()).showing) {
+                            if (i == selectedIndex)
+                                current = idx;
+                            visible[idx++] = i;
+                        }
+                    }
+                    if (current + offset >= 0 && current + offset < idx) {
+                        index = visible[current + offset];
+                    } else {
+                        if (showChevron) {
+                            Rectangle chevronRect = chevronItem.getBounds();
+                            chevronRect = event.display.map(chevronTb, this.getApi(), chevronRect);
+                            CTabFolderEvent e = new CTabFolderEvent(this.getApi());
+                            e.time = event.time;
+                            e.x = chevronRect.x;
+                            e.y = chevronRect.y;
+                            e.width = chevronRect.width;
+                            e.height = chevronRect.height;
+                            e.doit = true;
+                            for (CTabFolder2Listener folderListener : folderListeners) {
+                                folderListener.showList(e);
+                            }
+                            if (e.doit && !isDisposed()) {
+                                showList(chevronRect);
+                            }
+                        }
+                        return;
+                    }
+                }
+                if (index < 0 || index >= count)
+                    return;
+                setSelection(index, true);
+                forceFocus();
+        }
+    }
+
+    void onDispose(Event event) {
+        removeListener(SWT.Dispose, listener);
+        notifyListeners(SWT.Dispose, event);
+        event.type = SWT.None;
+        /*
+	 * Usually when an item is disposed, destroyItem will change the size of the items array,
+	 * reset the bounds of all the tabs and manage the widget associated with the tab.
+	 * Since the whole folder is being disposed, this is not necessary.  For speed
+	 * the inDispose flag is used to skip over this part of the item dispose.
+	 */
+        inDispose = true;
+        if (showMenu != null && !showMenu.isDisposed()) {
+            showMenu.dispose();
+            showMenu = null;
+        }
+        int length = items.length;
+        for (int i = 0; i < length; i++) {
+            if (items[i] != null) {
+                items[i].dispose();
+            }
+        }
+        gradientColors = null;
+        selectionGradientColors = null;
+        selectionGradientPercents = null;
+        selectionBgImage = null;
+        selectionBackground = null;
+        selectionForeground = null;
+        if (controlBkImages != null) {
+            for (int i = 0; i < controlBkImages.length; i++) {
+                if (controlBkImages[i] != null) {
+                    controlBkImages[i].dispose();
+                    controlBkImages[i] = null;
+                }
+            }
+            controlBkImages = null;
+        }
+        controls = null;
+        controlAlignments = null;
+        controlRects = null;
+        if (maxImage != null)
+            maxImage.dispose();
+        maxImage = null;
+        if (minImage != null)
+            minImage.dispose();
+        minImage = null;
+        if (chevronImage != null)
+            chevronImage.dispose();
+        chevronImage = null;
+        if (renderer != null)
+            renderer.dispose();
+        renderer = null;
+        minItem = null;
+        maxItem = null;
+        minMaxTb = null;
+        chevronItem = null;
+        chevronTb = null;
+        if (folderListeners.length != 0)
+            folderListeners = new CTabFolder2Listener[0];
+        if (tabListeners.length != 0)
+            tabListeners = new CTabFolderListener[0];
+    }
+
+    void onDragDetect(Event event) {
+        boolean consume = false;
+        for (CTabItem item : items) {
+            if (((SwtCTabItem) item.getImpl()).closeRect.contains(event.x, event.y)) {
+                consume = true;
+                break;
+            }
+        }
+        if (consume) {
+            event.type = SWT.None;
+        }
+    }
+
+    void onFocus(Event event) {
+        checkWidget();
+        if (selectedIndex >= 0) {
+            redraw();
+        } else {
+            setSelection(0, true);
+        }
+    }
+
+    boolean onMnemonic(Event event, boolean doit) {
+        char key = event.character;
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] != null) {
+                char mnemonic = _findMnemonic(items[i].getText());
+                if (mnemonic != '\0') {
+                    if (Character.toLowerCase(key) == mnemonic) {
+                        if (doit) {
+                            setSelection(i, true);
+                            forceFocus();
+                        }
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    void onMenuDetect(Event event) {
+        if (event.detail == SWT.MENU_KEYBOARD) {
+            if (selectedIndex != -1) {
+                CTabItem item = items[selectedIndex];
+                Rectangle rect = getDisplay().map(this.getApi(), null, item.getBounds());
+                if (!rect.contains(event.x, event.y)) {
+                    /* If the mouse is not in the currently-selected tab,
+				 * then pop up the menu near the top-right corner of the current tab.
+				 */
+                    Rectangle itemTrim = renderer.computeTrim(selectedIndex, SWT.NONE, 0, 0, 0, 0);
+                    Rectangle closeTrim = renderer.computeTrim(CTabFolderRenderer.PART_CLOSE_BUTTON, SWT.NONE, 0, 0, 0, 0);
+                    event.x = rect.x + rect.width - ((SwtCTabItem) item.getImpl()).closeRect.width + itemTrim.x - closeTrim.width;
+                    event.y = rect.y - itemTrim.y - closeTrim.y;
+                }
+            }
+        }
+    }
+
+    void onMouseDoubleClick(Event event) {
+        if (event.button != 1 || (event.stateMask & SWT.BUTTON2) != 0 || (event.stateMask & SWT.BUTTON3) != 0)
+            return;
+        Event e = new Event();
+        e.item = getItem(new Point(event.x, event.y));
+        if (e.item != null) {
+            notifyListeners(SWT.DefaultSelection, e);
+        }
+    }
+
+    void onMouse(Event event) {
+        if (isDisposed()) {
+            return;
+        }
+        int x = event.x, y = event.y;
+        switch(event.type) {
+            case SWT.MouseEnter:
+                {
+                    setToolTipText(null);
+                    break;
+                }
+            case SWT.MouseExit:
+                {
+                    for (int i = 0; i < items.length; i++) {
+                        CTabItem item = items[i];
+                        if (i != selectedIndex && ((SwtCTabItem) item.getImpl()).closeImageState != SWT.BACKGROUND) {
+                            ((SwtCTabItem) item.getImpl()).closeImageState = SWT.BACKGROUND;
+                            redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                        }
+                        if ((((SwtCTabItem) item.getImpl()).state & SWT.HOT) != 0) {
+                            ((SwtCTabItem) item.getImpl()).state &= ~SWT.HOT;
+                            redraw(((SwtCTabItem) item.getImpl()).x, ((SwtCTabItem) item.getImpl()).y, ((SwtCTabItem) item.getImpl()).width, ((SwtCTabItem) item.getImpl()).height, false);
+                        }
+                        if (i == selectedIndex && ((SwtCTabItem) item.getImpl()).closeImageState != SWT.NONE) {
+                            ((SwtCTabItem) item.getImpl()).closeImageState = SWT.NONE;
+                            redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                        }
+                    }
+                    break;
+                }
+            case SWT.MouseHover:
+            case SWT.MouseDown:
+                {
+                    if (hoverTb && hoverRect.contains(x, y) && !hovering) {
+                        hovering = true;
+                        updateItems();
+                        hoverTimerRunning = true;
+                        event.display.timerExec(2000, new Runnable() {
+
+                            @Override
+                            public void run() {
+                                if (isDisposed())
+                                    return;
+                                if (hovering) {
+                                    Display display = getDisplay();
+                                    Control c = display.getCursorControl();
+                                    boolean reschedule = false;
+                                    if (c != null) {
+                                        for (Control control : controls) {
+                                            Control temp = c;
+                                            do {
+                                                if (temp.equals(control)) {
+                                                    reschedule = true;
+                                                } else {
+                                                    temp = temp.getParent();
+                                                    if (temp == null || temp.equals(DartCTabFolder.this.getApi()))
+                                                        break;
+                                                }
+                                            } while (!reschedule);
+                                            if (reschedule)
+                                                break;
+                                        }
+                                    }
+                                    if (reschedule && hoverTimerRunning) {
+                                        display.timerExec(2000, this);
+                                    } else {
+                                        hovering = false;
+                                        updateItems();
+                                    }
+                                }
+                            }
+                        });
+                        return;
+                    }
+                    if (event.button != 1)
+                        return;
+                    CTabItem item = null;
+                    if (single) {
+                        if (selectedIndex != -1) {
+                            Rectangle bounds = items[selectedIndex].getBounds();
+                            if (bounds.contains(x, y)) {
+                                item = items[selectedIndex];
+                            }
+                        }
+                    } else {
+                        for (CTabItem tabItem : items) {
+                            Rectangle bounds = tabItem.getBounds();
+                            if (bounds.contains(x, y)) {
+                                item = tabItem;
+                            }
+                        }
+                    }
+                    if (item != null) {
+                        if (((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
+                            ((SwtCTabItem) item.getImpl()).closeImageState = SWT.SELECTED;
+                            redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                            update();
+                            return;
+                        }
+                        int index = indexOf(item);
+                        if (((SwtCTabItem) item.getImpl()).showing) {
+                            int oldSelectedIndex = selectedIndex;
+                            setSelection(index, true);
+                            if (oldSelectedIndex == selectedIndex) {
+                                /* If the click is on the selected tabitem, then set focus to the tabfolder */
+                                forceFocus();
+                            }
+                        }
+                        return;
+                    }
+                    break;
+                }
+            case SWT.MouseMove:
+                {
+                    _setToolTipText(event.x, event.y);
+                    boolean close = false;
+                    for (int i = 0; i < items.length; i++) {
+                        CTabItem item = items[i];
+                        close = false;
+                        if (item.getBounds().contains(x, y)) {
+                            close = true;
+                            if (((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
+                                if (((SwtCTabItem) item.getImpl()).closeImageState != SWT.SELECTED && ((SwtCTabItem) item.getImpl()).closeImageState != SWT.HOT) {
+                                    ((SwtCTabItem) item.getImpl()).closeImageState = SWT.HOT;
+                                    redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                                }
+                            } else {
+                                if (((SwtCTabItem) item.getImpl()).closeImageState != SWT.NONE) {
+                                    ((SwtCTabItem) item.getImpl()).closeImageState = SWT.NONE;
+                                    redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                                }
+                            }
+                            if ((((SwtCTabItem) item.getImpl()).state & SWT.HOT) == 0) {
+                                ((SwtCTabItem) item.getImpl()).state |= SWT.HOT;
+                                redraw(((SwtCTabItem) item.getImpl()).x, ((SwtCTabItem) item.getImpl()).y, ((SwtCTabItem) item.getImpl()).width, ((SwtCTabItem) item.getImpl()).height, false);
+                            }
+                        }
+                        if (i != selectedIndex && ((SwtCTabItem) item.getImpl()).closeImageState != SWT.BACKGROUND && !close) {
+                            ((SwtCTabItem) item.getImpl()).closeImageState = SWT.BACKGROUND;
+                            redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                        }
+                        if ((((SwtCTabItem) item.getImpl()).state & SWT.HOT) != 0 && !close) {
+                            ((SwtCTabItem) item.getImpl()).state &= ~SWT.HOT;
+                            redraw(((SwtCTabItem) item.getImpl()).x, ((SwtCTabItem) item.getImpl()).y, ((SwtCTabItem) item.getImpl()).width, ((SwtCTabItem) item.getImpl()).height, false);
+                        }
+                        if (i == selectedIndex && ((SwtCTabItem) item.getImpl()).closeImageState != SWT.NONE && !close) {
+                            ((SwtCTabItem) item.getImpl()).closeImageState = SWT.NONE;
+                            redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                        }
+                    }
+                    break;
+                }
+            case SWT.MouseUp:
+                {
+                    if (event.button != 1)
+                        return;
+                    CTabItem item = null;
+                    if (single) {
+                        if (selectedIndex != -1) {
+                            Rectangle bounds = items[selectedIndex].getBounds();
+                            if (bounds.contains(x, y)) {
+                                item = items[selectedIndex];
+                            }
+                        }
+                    } else {
+                        for (CTabItem tabItem : items) {
+                            Rectangle bounds = tabItem.getBounds();
+                            if (bounds.contains(x, y)) {
+                                item = tabItem;
+                            }
+                        }
+                    }
+                    if (item != null) {
+                        if (((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
+                            boolean selected = ((SwtCTabItem) item.getImpl()).closeImageState == SWT.SELECTED;
+                            ((SwtCTabItem) item.getImpl()).closeImageState = SWT.HOT;
+                            redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                            if (!selected)
+                                return;
+                            CTabFolderEvent e = new CTabFolderEvent(this.getApi());
+                            e.time = event.time;
+                            e.item = item;
+                            e.doit = true;
+                            for (CTabFolder2Listener listener : folderListeners) {
+                                listener.close(e);
+                            }
+                            for (CTabFolderListener listener : tabListeners) {
+                                listener.itemClosed(e);
+                            }
+                            if (e.doit)
+                                item.dispose();
+                            if (!isDisposed() && item.isDisposed()) {
+                                Display display = getDisplay();
+                                Point pt = display.getCursorLocation();
+                                pt = display.map(null, this.getApi(), pt.x, pt.y);
+                                CTabItem nextItem = getItem(pt);
+                                if (nextItem != null) {
+                                    if (((SwtCTabItem) nextItem.getImpl()).closeRect.contains(pt)) {
+                                        if (((SwtCTabItem) nextItem.getImpl()).closeImageState != SWT.SELECTED && ((SwtCTabItem) nextItem.getImpl()).closeImageState != SWT.HOT) {
+                                            ((SwtCTabItem) nextItem.getImpl()).closeImageState = SWT.HOT;
+                                            redraw(((SwtCTabItem) nextItem.getImpl()).closeRect.x, ((SwtCTabItem) nextItem.getImpl()).closeRect.y, ((SwtCTabItem) nextItem.getImpl()).closeRect.width, ((SwtCTabItem) nextItem.getImpl()).closeRect.height, false);
+                                        }
+                                    } else {
+                                        if (((SwtCTabItem) nextItem.getImpl()).closeImageState != SWT.NONE) {
+                                            ((SwtCTabItem) nextItem.getImpl()).closeImageState = SWT.NONE;
+                                            redraw(((SwtCTabItem) nextItem.getImpl()).closeRect.x, ((SwtCTabItem) nextItem.getImpl()).closeRect.y, ((SwtCTabItem) nextItem.getImpl()).closeRect.width, ((SwtCTabItem) nextItem.getImpl()).closeRect.height, false);
+                                        }
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                    }
+                }
+        }
+    }
+
+    void onPageTraversal(Event event) {
+        int count = items.length;
+        if (count == 0)
+            return;
+        int index = selectedIndex;
+        if (index == -1) {
+            index = 0;
+        } else {
+            int offset = (event.detail == SWT.TRAVERSE_PAGE_NEXT) ? 1 : -1;
+            if (!mru) {
+                index = (selectedIndex + offset + count) % count;
+            } else {
+                int[] visible = new int[items.length];
+                int idx = 0;
+                int current = -1;
+                for (int i = 0; i < items.length; i++) {
+                    if (((SwtCTabItem) items[i].getImpl()).showing) {
+                        if (i == selectedIndex)
+                            current = idx;
+                        visible[idx++] = i;
+                    }
+                }
+                if (current + offset >= 0 && current + offset < idx) {
+                    index = visible[current + offset];
+                } else {
+                    if (showChevron) {
+                        Rectangle chevronRect = chevronItem.getBounds();
+                        chevronRect = event.display.map(chevronTb, this.getApi(), chevronRect);
+                        CTabFolderEvent e = new CTabFolderEvent(this.getApi());
+                        e.time = event.time;
+                        e.x = chevronRect.x;
+                        e.y = chevronRect.y;
+                        e.width = chevronRect.width;
+                        e.height = chevronRect.height;
+                        e.doit = true;
+                        for (CTabFolder2Listener folderListener : folderListeners) {
+                            folderListener.showList(e);
+                        }
+                        if (e.doit && !isDisposed()) {
+                            showList(chevronRect);
+                        }
+                    }
+                }
+            }
+        }
+        setSelection(index, true);
+    }
+
+    void onPaint(Event event) {
+        if (inDispose)
+            return;
+        Font font = getFont();
+        if (oldFont == null || !oldFont.equals(font)) {
+            // handle case where  default font changes
+            oldFont = font;
+            if (!updateTabHeight(false)) {
+                updateItems();
+                redraw();
+                return;
+            }
+        }
+        GC gc = event.gc;
+        Font gcFont = gc.getFont();
+        Color gcBackground = gc.getBackground();
+        Color gcForeground = gc.getForeground();
+        // Useful for debugging paint problems
+        //{
+        //Point size = getSize();
+        //gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_GREEN));
+        //gc.fillRectangle(-10, -10, size.x + 20, size.y+20);
+        //}
+        Point size = getSize();
+        Rectangle bodyRect = new Rectangle(0, 0, size.x, size.y);
+        renderer.draw(CTabFolderRenderer.PART_BODY, SWT.BACKGROUND | SWT.FOREGROUND, bodyRect, gc);
+        gc.setFont(gcFont);
+        gc.setForeground(gcForeground);
+        gc.setBackground(gcBackground);
+        renderer.draw(CTabFolderRenderer.PART_HEADER, SWT.BACKGROUND | SWT.FOREGROUND, bodyRect, gc);
+        gc.setFont(gcFont);
+        gc.setForeground(gcForeground);
+        gc.setBackground(gcBackground);
+        if (!single) {
+            for (int i = 0; i < items.length; i++) {
+                Rectangle itemBounds = items[i].getBounds();
+                if (i != selectedIndex && event.getBounds().intersects(itemBounds)) {
+                    renderer.draw(i, SWT.BACKGROUND | SWT.FOREGROUND | ((SwtCTabItem) items[i].getImpl()).state, itemBounds, gc);
+                }
+            }
+        }
+        gc.setFont(gcFont);
+        gc.setForeground(gcForeground);
+        gc.setBackground(gcBackground);
+        if (selectedIndex != -1) {
+            renderer.draw(selectedIndex, ((SwtCTabItem) items[selectedIndex].getImpl()).state | SWT.BACKGROUND | SWT.FOREGROUND, items[selectedIndex].getBounds(), gc);
+        }
+        gc.setFont(gcFont);
+        gc.setForeground(gcForeground);
+        gc.setBackground(gcBackground);
+        if (hoverTb) {
+            Rectangle trim = renderer.computeTrim(CTabFolderRenderer.PART_BORDER, SWT.NONE, 0, 0, 0, 0);
+            int x = getSize().x - (trim.width + trim.x);
+            hoverRect = new Rectangle(x - 16 - SPACING, 2, 16, getTabHeight() - 2);
+            gc.setForeground(gc.getDevice().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
+            x = hoverRect.x;
+            int y = hoverRect.y;
+            gc.setBackground(gc.getDevice().getSystemColor(SWT.COLOR_WHITE));
+            gc.fillRectangle(x + hoverRect.width - 6, y, 5, 5);
+            gc.drawRectangle(x + hoverRect.width - 6, y, 5, 5);
+            gc.drawLine(x + hoverRect.width - 6, y + 2, x + hoverRect.width - 6 + 5, y + 2);
+            gc.fillRectangle(x, y, 5, 2);
+            gc.drawRectangle(x, y, 5, 2);
+        }
+        gc.setFont(gcFont);
+        gc.setForeground(gcForeground);
+        gc.setBackground(gcBackground);
+    }
+
+    void onResize(Event event) {
+        if (inDispose)
+            return;
+        if (ignoreResize)
+            return;
+        if (updateItems()) {
+            redrawTabs();
+        }
+        Point size = getSize();
+        if (oldSize == null) {
+            redraw();
+        } else {
+            if (onBottom && size.y != oldSize.y) {
+                redraw();
+            } else {
+                int x1 = Math.min(size.x, oldSize.x);
+                Rectangle trim = renderer.computeTrim(CTabFolderRenderer.PART_BODY, SWT.NONE, 0, 0, 0, 0);
+                if (size.x != oldSize.x)
+                    x1 -= trim.width + trim.x - getApi().marginWidth + 2;
+                // rounded top right corner
+                if (!simple)
+                    x1 -= 5;
+                int y1 = Math.min(size.y, oldSize.y);
+                if (size.y != oldSize.y)
+                    y1 -= trim.height + trim.y - getApi().marginHeight;
+                int x2 = Math.max(size.x, oldSize.x);
+                int y2 = Math.max(size.y, oldSize.y);
+                redraw(0, y1, x2, y2 - y1, false);
+                redraw(x1, 0, x2 - x1, y2, false);
+                if (hoverTb) {
+                    redraw(hoverRect.x, hoverRect.y, hoverRect.width, hoverRect.height, false);
+                }
+            }
+        }
+        oldSize = size;
+    }
+
+    void onSelection(Event event) {
+        if (hovering) {
+            hovering = false;
+            updateItems();
+        }
+        if (event.widget == maxItem) {
+            CTabFolderEvent e = new CTabFolderEvent(this.getApi());
+            e.time = event.time;
+            for (CTabFolder2Listener folderListener : folderListeners) {
+                if (maximized) {
+                    folderListener.restore(e);
+                } else {
+                    folderListener.maximize(e);
+                }
+            }
+        } else if (event.widget == minItem) {
+            CTabFolderEvent e = new CTabFolderEvent(this.getApi());
+            e.time = event.time;
+            for (CTabFolder2Listener folderListener : folderListeners) {
+                if (minimized) {
+                    folderListener.restore(e);
+                } else {
+                    folderListener.minimize(e);
+                }
+            }
+        } else if (event.widget == chevronItem) {
+            Rectangle chevronRect = chevronItem.getBounds();
+            chevronRect = event.display.map(chevronTb, this.getApi(), chevronRect);
+            CTabFolderEvent e = new CTabFolderEvent(this.getApi());
+            e.time = event.time;
+            e.x = chevronRect.x;
+            e.y = chevronRect.y;
+            e.width = chevronRect.width;
+            e.height = chevronRect.height;
+            e.doit = true;
+            for (CTabFolder2Listener folderListener : folderListeners) {
+                folderListener.showList(e);
+            }
+            if (e.doit && !isDisposed()) {
+                showList(chevronRect);
+            }
+        }
+    }
+
+    void onTraverse(Event event) {
+        if (ignoreTraverse)
+            return;
+        runUpdate();
+        switch(event.detail) {
+            case SWT.TRAVERSE_ESCAPE:
+            case SWT.TRAVERSE_RETURN:
+            case SWT.TRAVERSE_TAB_NEXT:
+            case SWT.TRAVERSE_TAB_PREVIOUS:
+                Control focusControl = getDisplay().getFocusControl();
+                if (focusControl == this.getApi())
+                    event.doit = true;
+                break;
+            case SWT.TRAVERSE_MNEMONIC:
+                event.doit = onMnemonic(event, false);
+                break;
+            case SWT.TRAVERSE_PAGE_NEXT:
+            case SWT.TRAVERSE_PAGE_PREVIOUS:
+                event.doit = items.length > 0;
+                break;
+        }
+        ignoreTraverse = true;
+        notifyListeners(SWT.Traverse, event);
+        ignoreTraverse = false;
+        event.type = SWT.None;
+        if (isDisposed())
+            return;
+        if (!event.doit)
+            return;
+        switch(event.detail) {
+            case SWT.TRAVERSE_MNEMONIC:
+                onMnemonic(event, true);
+                event.detail = SWT.TRAVERSE_NONE;
+                break;
+            case SWT.TRAVERSE_PAGE_NEXT:
+            case SWT.TRAVERSE_PAGE_PREVIOUS:
+                onPageTraversal(event);
+                event.detail = SWT.TRAVERSE_NONE;
+                break;
+        }
+    }
+
+    void redrawTabs() {
+        Point size = getSize();
+        Rectangle trim = renderer.computeTrim(CTabFolderRenderer.PART_BODY, SWT.NONE, 0, 0, 0, 0);
+        if (onBottom) {
+            int h = trim.height + trim.y - getApi().marginHeight;
+            redraw(0, size.y - h - 1, size.x, h + 1, false);
+        } else {
+            redraw(0, 0, size.x, -trim.y - getApi().marginHeight + 1, false);
+        }
     }
 
     /**
@@ -1088,8 +2626,180 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setBorderVisible(boolean show) {
-        getValue().borderVisible = show;
-        getBridge().dirty(this);
+        checkWidget();
+        if (borderVisible == show)
+            return;
+        this.borderVisible = show;
+        updateFolder(REDRAW);
+    }
+
+    /**
+     * Create or dispose min/max buttons.
+     */
+    void updateButtons() {
+        // max button
+        Display display = getDisplay();
+        if (showMax) {
+            if (minMaxTb == null) {
+                minMaxTb = new ToolBar(this.getApi(), SWT.FLAT);
+                initAccessibleMinMaxTb();
+                addTabControl(minMaxTb, SWT.TRAIL, 0, false);
+            }
+            if (maxItem == null) {
+                maxItem = new ToolItem(minMaxTb, SWT.PUSH);
+                if (maxImage == null) {
+                    maxImage = createButtonImage(display, CTabFolderRenderer.PART_MAX_BUTTON);
+                }
+                maxItem.setImage(maxImage);
+                //$NON-NLS-1$ //$NON-NLS-2$
+                maxItem.setToolTipText(maximized ? SWT.getMessage("SWT_Restore") : SWT.getMessage("SWT_Maximize"));
+                maxItem.addListener(SWT.Selection, listener);
+            }
+        } else {
+            //might need to remove it if already there
+            if (maxItem != null) {
+                maxItem.dispose();
+                maxItem = null;
+            }
+        }
+        // min button
+        if (showMin) {
+            if (minMaxTb == null) {
+                minMaxTb = new ToolBar(this.getApi(), SWT.FLAT);
+                initAccessibleMinMaxTb();
+                addTabControl(minMaxTb, SWT.TRAIL, 0, false);
+            }
+            if (minItem == null) {
+                minItem = new ToolItem(minMaxTb, SWT.PUSH, 0);
+                if (minImage == null) {
+                    minImage = createButtonImage(display, CTabFolderRenderer.PART_MIN_BUTTON);
+                }
+                minItem.setImage(minImage);
+                //$NON-NLS-1$ //$NON-NLS-2$
+                minItem.setToolTipText(minimized ? SWT.getMessage("SWT_Restore") : SWT.getMessage("SWT_Minimize"));
+                minItem.addListener(SWT.Selection, listener);
+            }
+        } else {
+            //might need to remove it if already there
+            if (minItem != null) {
+                minItem.dispose();
+                minItem = null;
+            }
+        }
+        if (minMaxTb != null && minMaxTb.getItemCount() == 0) {
+            removeTabControl(minMaxTb, false);
+            minMaxTb.dispose();
+            minMaxTb = null;
+        }
+    }
+
+    /**
+     * Update button bounds for min/max and update chevron button.
+     */
+    void setButtonBounds() {
+        if (showChevron) {
+            updateChevronImage(false);
+        }
+        Point size = getSize();
+        boolean[][] overflow = new boolean[1][0];
+        Rectangle[] rects = computeControlBounds(size, overflow);
+        if (fixedTabHeight != SWT.DEFAULT) {
+            int height = fixedTabHeight;
+            if (!hovering) {
+                hoverTb = false;
+                Rectangle tabBounds = this.getBounds();
+                for (int i = 0; i < rects.length; i++) {
+                    if (!(overflow[0][i])) {
+                        if (rects[i].height > height) {
+                            hoverTb = true;
+                            break;
+                        }
+                    }
+                }
+                if (hoverTb) {
+                    for (int i = 0; i < rects.length; i++) {
+                        if (!(overflow[0][i])) {
+                            if (rects[i].height > height) {
+                                rects[i].x = tabBounds.width + 20;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        int headerHeight = 0;
+        for (int i = 0; i < rects.length; i++) {
+            if (!overflow[0][i])
+                headerHeight = Math.max(rects[i].height, headerHeight);
+        }
+        boolean changed = false;
+        ignoreResize = true;
+        for (int i = 0; i < controls.length; i++) {
+            if (!controls[i].isDisposed()) {
+                if (overflow[0][i]) {
+                    controls[i].setBounds(rects[i]);
+                } else {
+                    controls[i].moveAbove(null);
+                    controls[i].setBounds(rects[i].x, rects[i].y, rects[i].width, headerHeight);
+                }
+            }
+            if (!changed && !rects[i].equals(controlRects[i])) {
+                // also updateBkImages after translation
+                changed = true;
+            }
+        }
+        ignoreResize = false;
+        controlRects = rects;
+        if (changed || hovering) {
+            updateBkImages(false);
+        }
+    }
+
+    /**
+     * Get the number of hidden items or the number which is to be drawn in the
+     * chevon item.
+     * <p>
+     * Note: do not confuse this with {@link #chevronCount} which contains the count
+     * from the last time the cached chevron image was drawn. It can be different
+     * from the value returned by this method.
+     * </p>
+     *
+     * @return the chevron count
+     */
+    int getChevronCount() {
+        int itemCount = items.length;
+        int count;
+        if (single) {
+            count = selectedIndex == -1 ? itemCount : itemCount - 1;
+        } else {
+            int showCount = 0;
+            while (showCount < priority.length && ((SwtCTabItem) items[priority[showCount]].getImpl()).showing) {
+                showCount++;
+            }
+            count = itemCount - showCount;
+        }
+        return count;
+    }
+
+    /**
+     * Update the cached chevron image.
+     *
+     * @param styleChange <code>true</code> if the update is required for changed
+     *                    appearance of the chevron. In this case the image is not
+     *                    created if it does not already exist and is updated even
+     *                    if the drawn number (chevonCount) has not changed.
+     */
+    private void updateChevronImage(boolean styleChange) {
+        if (styleChange && chevronImage == null)
+            return;
+        int newCount = getChevronCount();
+        if (!styleChange && chevronCount == newCount)
+            return;
+        if (chevronImage != null)
+            chevronImage.dispose();
+        chevronImage = createButtonImage(getDisplay(), CTabFolderRenderer.PART_CHEVRON_BUTTON);
+        chevronItem.setImage(chevronImage);
+        chevronCount = newCount;
     }
 
     @Override
@@ -1114,6 +2824,14 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             }
         }
         return super.setFocus();
+    }
+
+    /* Copy of isFocusAncestor from Control. */
+    boolean isAncestor(Control control) {
+        while (control != null && control != this.getApi() && !(control instanceof Shell)) {
+            control = control.getParent();
+        }
+        return control == this.getApi();
     }
 
     @Override
@@ -1187,6 +2905,80 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         }
     }
 
+    boolean setItemLocation(GC gc) {
+        boolean changed = false;
+        if (items.length == 0)
+            return false;
+        Rectangle trim = renderer.computeTrim(CTabFolderRenderer.PART_BORDER, SWT.NONE, 0, 0, 0, 0);
+        int borderBottom = trim.height + trim.y;
+        int borderTop = -trim.y;
+        Point size = getSize();
+        int y = onBottom ? Math.max(borderBottom, size.y - borderBottom - tabHeight) : borderTop;
+        Point closeButtonSize = renderer.computeSize(CTabFolderRenderer.PART_CLOSE_BUTTON, 0, gc, SWT.DEFAULT, SWT.DEFAULT);
+        int leftItemEdge = getLeftItemEdge(gc, CTabFolderRenderer.PART_BORDER);
+        if (single) {
+            // off screen
+            int defaultX = getDisplay().getBounds().width + 10;
+            for (int i = 0; i < items.length; i++) {
+                CTabItem item = items[i];
+                if (i == selectedIndex) {
+                    firstIndex = selectedIndex;
+                    int oldX = ((SwtCTabItem) item.getImpl()).x, oldY = ((SwtCTabItem) item.getImpl()).y;
+                    ((SwtCTabItem) item.getImpl()).x = leftItemEdge;
+                    ((SwtCTabItem) item.getImpl()).y = y;
+                    ((SwtCTabItem) item.getImpl()).showing = true;
+                    if (showClose || ((SwtCTabItem) item.getImpl()).showClose) {
+                        ((SwtCTabItem) item.getImpl()).closeRect.x = leftItemEdge - renderer.computeTrim(i, SWT.NONE, 0, 0, 0, 0).x;
+                        ((SwtCTabItem) item.getImpl()).closeRect.y = onBottom ? size.y - borderBottom - tabHeight + (tabHeight - closeButtonSize.y) / 2 : borderTop + (tabHeight - closeButtonSize.y) / 2;
+                    }
+                    if (((SwtCTabItem) item.getImpl()).x != oldX || ((SwtCTabItem) item.getImpl()).y != oldY)
+                        changed = true;
+                } else {
+                    ((SwtCTabItem) item.getImpl()).x = defaultX;
+                    ((SwtCTabItem) item.getImpl()).showing = false;
+                }
+            }
+        } else {
+            int rightItemEdge = getRightItemEdge(gc);
+            int maxWidth = rightItemEdge - leftItemEdge;
+            int width = 0;
+            for (int i = 0; i < priority.length; i++) {
+                CTabItem item = items[priority[i]];
+                width += ((SwtCTabItem) item.getImpl()).width;
+                ((SwtCTabItem) item.getImpl()).showing = i == 0 ? true : ((SwtCTabItem) item.getImpl()).width > 0 && width <= maxWidth;
+            }
+            int x = getLeftItemEdge(gc, CTabFolderRenderer.PART_HEADER);
+            // off screen
+            int defaultX = getDisplay().getBounds().width + 10;
+            firstIndex = items.length - 1;
+            for (int i = 0; i < items.length; i++) {
+                CTabItem item = items[i];
+                if (!((SwtCTabItem) item.getImpl()).showing) {
+                    if (((SwtCTabItem) item.getImpl()).x != defaultX)
+                        changed = true;
+                    ((SwtCTabItem) item.getImpl()).x = defaultX;
+                } else {
+                    firstIndex = Math.min(firstIndex, i);
+                    if (((SwtCTabItem) item.getImpl()).x != x || ((SwtCTabItem) item.getImpl()).y != y)
+                        changed = true;
+                    ((SwtCTabItem) item.getImpl()).x = x;
+                    ((SwtCTabItem) item.getImpl()).y = y;
+                    int state = SWT.NONE;
+                    if (i == selectedIndex)
+                        state |= SWT.SELECTED;
+                    Rectangle edgeTrim = renderer.computeTrim(i, state, 0, 0, 0, 0);
+                    ((SwtCTabItem) item.getImpl()).closeRect.x = ((SwtCTabItem) item.getImpl()).x + ((SwtCTabItem) item.getImpl()).width - (edgeTrim.width + edgeTrim.x) - closeButtonSize.x;
+                    ((SwtCTabItem) item.getImpl()).closeRect.y = onBottom ? size.y - borderBottom - tabHeight + (tabHeight - closeButtonSize.y) / 2 : borderTop + (tabHeight - closeButtonSize.y) / 2;
+                    x = x + ((SwtCTabItem) item.getImpl()).width;
+                    //TODO: fix next item position
+                    if (!simple && i == selectedIndex)
+                        x -= ((SwtCTabFolderRenderer) renderer.getImpl()).curveIndent;
+                }
+            }
+        }
+        return changed;
+    }
+
     /**
      * Reorder the items of the receiver.
      * @param indices an array containing the new indices for all items
@@ -1202,6 +2994,157 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
+    /*public*/
+    void setItemOrder(int[] indices) {
+        checkWidget();
+        if (indices == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (indices.length != items.length)
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        int newSelectedIndex = -1;
+        boolean[] seen = new boolean[items.length];
+        CTabItem[] temp = new CTabItem[items.length];
+        for (int i = 0; i < indices.length; i++) {
+            int index = indices[i];
+            if (!(0 <= index && index < items.length))
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            if (seen[index])
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            seen[index] = true;
+            if (index == selectedIndex)
+                newSelectedIndex = i;
+            temp[i] = items[index];
+        }
+        items = temp;
+        selectedIndex = newSelectedIndex;
+        updateFolder(REDRAW);
+    }
+
+    boolean setItemSize(GC gc) {
+        boolean changed = false;
+        if (isDisposed())
+            return changed;
+        Point size = getSize();
+        if (size.x <= 0 || size.y <= 0)
+            return changed;
+        ToolBar chevron = getChevron();
+        if (chevron != null)
+            chevron.setVisible(false);
+        showChevron = false;
+        if (single) {
+            showChevron = chevronVisible && items.length > 1;
+            if (showChevron) {
+                chevron.setVisible(true);
+            }
+            if (selectedIndex != -1) {
+                CTabItem tab = items[selectedIndex];
+                int width = renderer.computeSize(selectedIndex, SWT.SELECTED, gc, SWT.DEFAULT, SWT.DEFAULT).x;
+                width = Math.min(width, getRightItemEdge(gc) - getLeftItemEdge(gc, CTabFolderRenderer.PART_BORDER));
+                if (((SwtCTabItem) tab.getImpl()).height != tabHeight || ((SwtCTabItem) tab.getImpl()).width != width) {
+                    changed = true;
+                    ((SwtCTabItem) tab.getImpl()).shortenedText = null;
+                    ((SwtCTabItem) tab.getImpl()).shortenedTextWidth = 0;
+                    ((SwtCTabItem) tab.getImpl()).height = tabHeight;
+                    ((SwtCTabItem) tab.getImpl()).width = width;
+                    ((SwtCTabItem) tab.getImpl()).closeRect.width = ((SwtCTabItem) tab.getImpl()).closeRect.height = 0;
+                    if (showClose || ((SwtCTabItem) tab.getImpl()).showClose) {
+                        Point closeSize = renderer.computeSize(CTabFolderRenderer.PART_CLOSE_BUTTON, SWT.SELECTED, gc, SWT.DEFAULT, SWT.DEFAULT);
+                        ((SwtCTabItem) tab.getImpl()).closeRect.width = closeSize.x;
+                        ((SwtCTabItem) tab.getImpl()).closeRect.height = closeSize.y;
+                    }
+                }
+            }
+            return changed;
+        }
+        if (items.length == 0)
+            return changed;
+        int[] widths;
+        int tabAreaWidth = Math.max(0, getRightItemEdge(gc) - getLeftItemEdge(gc, CTabFolderRenderer.PART_BORDER));
+        // First, try the minimum tab size at full compression.
+        int minWidth = 0;
+        int[] minWidths = new int[items.length];
+        for (int element : priority) {
+            int index = element;
+            int state = CTabFolderRenderer.MINIMUM_SIZE;
+            if (index == selectedIndex)
+                state |= SWT.SELECTED;
+            minWidths[index] = renderer.computeSize(index, state, gc, SWT.DEFAULT, SWT.DEFAULT).x;
+            minWidth += minWidths[index];
+            if (minWidth > tabAreaWidth)
+                break;
+        }
+        if (minWidth > tabAreaWidth) {
+            // full compression required and a chevron
+            showChevron = chevronVisible && items.length > 1;
+            if (showChevron) {
+                tabAreaWidth -= chevron.computeSize(SWT.DEFAULT, SWT.DEFAULT).x;
+                chevron.setVisible(true);
+            }
+            widths = minWidths;
+            int index = selectedIndex != -1 ? selectedIndex : 0;
+            if (tabAreaWidth < widths[index]) {
+                widths[index] = Math.max(0, tabAreaWidth);
+            }
+        } else {
+            int maxWidth = 0;
+            int[] maxWidths = new int[items.length];
+            for (int i = 0; i < items.length; i++) {
+                int state = 0;
+                if (i == selectedIndex)
+                    state |= SWT.SELECTED;
+                maxWidths[i] = renderer.computeSize(i, state, gc, SWT.DEFAULT, SWT.DEFAULT).x;
+                maxWidth += maxWidths[i];
+            }
+            if (maxWidth <= tabAreaWidth) {
+                // no compression required
+                widths = maxWidths;
+            } else {
+                // determine compression for each item
+                int extra = (tabAreaWidth - minWidth) / items.length;
+                while (true) {
+                    int large = 0, totalWidth = 0;
+                    for (int i = 0; i < items.length; i++) {
+                        if (maxWidths[i] > minWidths[i] + extra) {
+                            totalWidth += minWidths[i] + extra;
+                            large++;
+                        } else {
+                            totalWidth += maxWidths[i];
+                        }
+                    }
+                    if (totalWidth >= tabAreaWidth) {
+                        extra--;
+                        break;
+                    }
+                    if (large == 0 || tabAreaWidth - totalWidth < large)
+                        break;
+                    extra++;
+                }
+                widths = new int[items.length];
+                for (int i = 0; i < items.length; i++) {
+                    widths[i] = Math.min(maxWidths[i], minWidths[i] + extra);
+                }
+            }
+        }
+        for (int i = 0; i < items.length; i++) {
+            CTabItem tab = items[i];
+            int width = widths[i];
+            changed = true;
+            ((SwtCTabItem) tab.getImpl()).shortenedText = null;
+            ((SwtCTabItem) tab.getImpl()).shortenedTextWidth = 0;
+            ((SwtCTabItem) tab.getImpl()).height = tabHeight;
+            ((SwtCTabItem) tab.getImpl()).width = width;
+            ((SwtCTabItem) tab.getImpl()).closeRect.width = ((SwtCTabItem) tab.getImpl()).closeRect.height = 0;
+            if (showClose || ((SwtCTabItem) tab.getImpl()).showClose) {
+                if (i == selectedIndex || showUnselectedClose) {
+                    Point closeSize = renderer.computeSize(CTabFolderRenderer.PART_CLOSE_BUTTON, SWT.NONE, gc, SWT.DEFAULT, SWT.DEFAULT);
+                    ((SwtCTabItem) tab.getImpl()).closeRect.width = closeSize.x;
+                    ((SwtCTabItem) tab.getImpl()).closeRect.height = closeSize.y;
+                }
+            }
+        }
+        return changed;
+    }
+
     /**
      * Marks the receiver's maximize button as visible if the argument is <code>true</code>,
      * and marks it invisible otherwise.
@@ -1216,8 +3159,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMaximizeVisible(boolean visible) {
-        getValue().maximizeVisible = visible;
-        getBridge().dirty(this);
+        checkWidget();
+        if (showMax == visible)
+            return;
+        // display maximize button
+        showMax = visible;
+        updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
     }
 
     /**
@@ -1254,8 +3201,20 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMaximized(boolean maximize) {
-        getValue().maximized = maximize;
-        getBridge().dirty(this);
+        checkWidget();
+        if (this.maximized == maximize)
+            return;
+        if (maximize && this.minimized)
+            setMinimized(false);
+        this.maximized = maximize;
+        if (minMaxTb != null && maxItem != null) {
+            if (maxImage != null)
+                maxImage.dispose();
+            maxImage = createButtonImage(getDisplay(), CTabFolderRenderer.PART_MAX_BUTTON);
+            maxItem.setImage(maxImage);
+            //$NON-NLS-1$ //$NON-NLS-2$
+            maxItem.setToolTipText(maximized ? SWT.getMessage("SWT_Restore") : SWT.getMessage("SWT_Maximize"));
+        }
     }
 
     /**
@@ -1272,8 +3231,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMinimizeVisible(boolean visible) {
-        getValue().minimizeVisible = visible;
-        getBridge().dirty(this);
+        checkWidget();
+        if (showMin == visible)
+            return;
+        // display minimize button
+        showMin = visible;
+        updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
     }
 
     /**
@@ -1289,8 +3252,20 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMinimized(boolean minimize) {
-        getValue().minimized = minimize;
-        getBridge().dirty(this);
+        checkWidget();
+        if (this.minimized == minimize)
+            return;
+        if (minimize && this.maximized)
+            setMaximized(false);
+        this.minimized = minimize;
+        if (minMaxTb != null && minItem != null) {
+            if (minImage != null)
+                minImage.dispose();
+            minImage = createButtonImage(getDisplay(), CTabFolderRenderer.PART_MIN_BUTTON);
+            minItem.setImage(minImage);
+            //$NON-NLS-1$ //$NON-NLS-2$
+            minItem.setToolTipText(minimized ? SWT.getMessage("SWT_Restore") : SWT.getMessage("SWT_Minimize"));
+        }
     }
 
     /**
@@ -1308,8 +3283,13 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMinimumCharacters(int count) {
-        getValue().minimumCharacters = count;
-        getBridge().dirty(this);
+        checkWidget();
+        if (count < 0)
+            SWT.error(SWT.ERROR_INVALID_RANGE);
+        if (minChars == count)
+            return;
+        minChars = count;
+        updateFolder(REDRAW_TABS);
     }
 
     /**
@@ -1339,8 +3319,23 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.1
      */
     public void setMRUVisible(boolean show) {
-        getValue().mRUVisible = show;
-        getBridge().dirty(this);
+        checkWidget();
+        if (mru == show)
+            return;
+        mru = show;
+        if (!mru) {
+            if (firstIndex == -1)
+                return;
+            int idx = firstIndex;
+            int next = 0;
+            for (int i = firstIndex; i < items.length; i++) {
+                priority[next++] = i;
+            }
+            for (int i = 0; i < idx; i++) {
+                priority[next++] = i;
+            }
+            updateFolder(REDRAW_TABS);
+        }
     }
 
     /**
@@ -1360,8 +3355,16 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      *  @since 3.6
      */
     public void setRenderer(CTabFolderRenderer renderer) {
-        getValue().renderer = renderer;
-        getBridge().dirty(this);
+        checkWidget();
+        if (this.renderer == renderer || (useDefaultRenderer && renderer == null))
+            return;
+        if (this.renderer != null)
+            this.renderer.dispose();
+        useDefaultRenderer = renderer == null;
+        if (useDefaultRenderer)
+            renderer = new CTabFolderRenderer(this.getApi());
+        this.renderer = renderer;
+        updateFolder(REDRAW);
     }
 
     /**
@@ -1379,8 +3382,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setSelection(CTabItem item) {
-        getValue().selection = item;
-        getBridge().dirty(this);
+        checkWidget();
+        if (item == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        int index = indexOf(item);
+        setSelection(index);
     }
 
     /**
@@ -1394,8 +3400,49 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setSelection(int index) {
-        getValue().selection = index;
-        getBridge().dirty(this);
+        checkWidget();
+        if (index < 0 || index >= items.length)
+            return;
+        CTabItem selection = items[index];
+        if (selectedIndex == index) {
+            showItem(selection);
+            return;
+        }
+        int oldIndex = selectedIndex;
+        selectedIndex = index;
+        if (oldIndex != -1) {
+            ((SwtCTabItem) items[oldIndex].getImpl()).closeImageState = SWT.BACKGROUND;
+            ((SwtCTabItem) items[oldIndex].getImpl()).state &= ~SWT.SELECTED;
+        }
+        ((SwtCTabItem) selection.getImpl()).closeImageState = SWT.NONE;
+        ((SwtCTabItem) selection.getImpl()).showing = false;
+        ((SwtCTabItem) selection.getImpl()).state |= SWT.SELECTED;
+        Control newControl = ((SwtCTabItem) selection.getImpl()).control;
+        Control oldControl = null;
+        if (oldIndex != -1) {
+            oldControl = ((SwtCTabItem) items[oldIndex].getImpl()).control;
+        }
+        if (newControl != oldControl) {
+            if (newControl != null && !newControl.isDisposed()) {
+                newControl.setBounds(getClientArea());
+                newControl.setVisible(true);
+            }
+            if (oldControl != null && !oldControl.isDisposed()) {
+                oldControl.setVisible(false);
+            }
+        }
+        showItem(selection);
+        redraw();
+    }
+
+    void setSelection(int index, boolean notify) {
+        int oldSelectedIndex = selectedIndex;
+        setSelection(index);
+        if (notify && selectedIndex != oldSelectedIndex && selectedIndex != -1) {
+            Event event = new Event();
+            event.item = getItem(selectedIndex);
+            notifyListeners(SWT.Selection, event);
+        }
     }
 
     /**
@@ -1416,8 +3463,19 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setSelectionBackground(Color color) {
-        getValue().selectionBackground = color;
-        getBridge().dirty(this);
+        if (inDispose)
+            return;
+        checkWidget();
+        setSelectionHighlightGradientColor(null);
+        if (selectionBackground == color)
+            return;
+        if (color == null)
+            color = getDisplay().getSystemColor(SELECTION_BACKGROUND);
+        selectionBackground = color;
+        //TODO:  need better caching strategy
+        ((SwtCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
+        if (selectedIndex > -1)
+            redraw();
     }
 
     /**
@@ -1446,8 +3504,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * 	</ul>
      */
     public void setSelectionBackground(Color[] colors, int[] percents) {
-        getValue().selectionBackground = colors;
-        getBridge().dirty(this);
+        setSelectionBackground(colors, percents, false);
     }
 
     /**
@@ -1480,8 +3537,101 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      *  @since 3.0
      */
     public void setSelectionBackground(Color[] colors, int[] percents, boolean vertical) {
-        getValue().selectionBackground = colors;
-        getBridge().dirty(this);
+        checkWidget();
+        int colorsLength;
+        //null == no highlight
+        Color highlightBeginColor = null;
+        if (colors != null) {
+            //The colors array can optionally have an extra entry which describes the highlight top color
+            //Thus its either one or two larger than the percents array
+            if (percents == null || !((percents.length == colors.length - 1) || (percents.length == colors.length - 2))) {
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+            for (int i = 0; i < percents.length; i++) {
+                if (percents[i] < 0 || percents[i] > 100) {
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                }
+                if (i > 0 && percents[i] < percents[i - 1]) {
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                }
+            }
+            //If the colors is exactly two more than percents then last is highlight
+            //Keep track of *real* colorsLength (minus the highlight)
+            if (percents.length == colors.length - 2) {
+                highlightBeginColor = colors[colors.length - 1];
+                colorsLength = colors.length - 1;
+            } else {
+                colorsLength = colors.length;
+            }
+            if (getDisplay().getDepth() < 15) {
+                // Don't use gradients on low color displays
+                colors = new Color[] { colors[colorsLength - 1] };
+                colorsLength = colors.length;
+                percents = new int[] {};
+            }
+        } else {
+            colorsLength = 0;
+        }
+        // Are these settings the same as before?
+        if (selectionBgImage == null) {
+            if ((selectionGradientColors != null) && (colors != null) && (selectionGradientColors.length == colorsLength)) {
+                boolean same = false;
+                for (int i = 0; i < selectionGradientColors.length; i++) {
+                    if (selectionGradientColors[i] == null) {
+                        same = colors[i] == null;
+                    } else {
+                        same = selectionGradientColors[i].equals(colors[i]);
+                    }
+                    if (!same)
+                        break;
+                }
+                if (same) {
+                    for (int i = 0; i < selectionGradientPercents.length; i++) {
+                        same = selectionGradientPercents[i] == percents[i];
+                        if (!same)
+                            break;
+                    }
+                }
+                if (same && this.selectionGradientVertical == vertical)
+                    return;
+            }
+        } else {
+            selectionBgImage = null;
+        }
+        // Store the new settings
+        if (colors == null) {
+            selectionGradientColors = null;
+            selectionGradientPercents = null;
+            selectionGradientVertical = false;
+            setSelectionBackground((Color) null);
+            setSelectionHighlightGradientColor(null);
+        } else {
+            selectionGradientColors = new Color[colorsLength];
+            for (int i = 0; i < colorsLength; ++i) {
+                selectionGradientColors[i] = colors[i];
+            }
+            selectionGradientPercents = new int[percents.length];
+            for (int i = 0; i < percents.length; ++i) {
+                selectionGradientPercents[i] = percents[i];
+            }
+            selectionGradientVertical = vertical;
+            setSelectionBackground(selectionGradientColors[selectionGradientColors.length - 1]);
+            setSelectionHighlightGradientColor(highlightBeginColor);
+        }
+        // Refresh with the new settings
+        if (selectedIndex > -1)
+            redraw();
+    }
+
+    /*
+ * Set the color for the highlight start for selected tabs.
+ * Update the cache of highlight gradient colors if required.
+ */
+    void setSelectionHighlightGradientColor(Color start) {
+        if (inDispose)
+            return;
+        //TODO: need better caching strategy
+        ((SwtCTabFolderRenderer) renderer.getImpl()).setSelectionHighlightGradientColor(start);
     }
 
     /**
@@ -1496,8 +3646,21 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setSelectionBackground(Image image) {
-        getValue().selectionBackground = image;
-        getBridge().dirty(this);
+        checkWidget();
+        setSelectionHighlightGradientColor(null);
+        if (image == selectionBgImage)
+            return;
+        if (image != null) {
+            selectionGradientColors = null;
+            selectionGradientPercents = null;
+            //TODO: need better caching strategy
+            ((SwtCTabFolderRenderer) renderer.getImpl()).disposeSelectionHighlightGradientColors();
+        }
+        selectionBgImage = image;
+        //TODO:  need better caching strategy
+        ((SwtCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
+        if (selectedIndex > -1)
+            redraw();
     }
 
     /**
@@ -1511,8 +3674,14 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setSelectionForeground(Color color) {
-        getValue().selectionForeground = color;
-        getBridge().dirty(this);
+        checkWidget();
+        if (selectionForeground == color)
+            return;
+        if (color == null)
+            color = getDisplay().getSystemColor(SELECTION_FOREGROUND);
+        selectionForeground = color;
+        if (selectedIndex > -1)
+            redraw();
     }
 
     /**
@@ -1549,8 +3718,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setSimple(boolean simple) {
-        getValue().simple = simple;
-        getBridge().dirty(this);
+        checkWidget();
+        if (this.simple != simple) {
+            this.simple = simple;
+            updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
+        }
     }
 
     /**
@@ -1566,8 +3738,23 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setSingle(boolean single) {
-        getValue().single = single;
-        getBridge().dirty(this);
+        checkWidget();
+        if (this.single != single) {
+            this.single = single;
+            if (!single) {
+                for (int i = 0; i < items.length; i++) {
+                    if (i != selectedIndex && ((SwtCTabItem) items[i].getImpl()).closeImageState == SWT.NONE) {
+                        ((SwtCTabItem) items[i].getImpl()).closeImageState = SWT.BACKGROUND;
+                    }
+                }
+            }
+            updateFolder(REDRAW);
+        }
+    }
+
+    int getControlY(Point size, Rectangle[] rects, int borderBottom, int borderTop, int i) {
+        int center = fixedTabHeight != SWT.DEFAULT ? 0 : (tabHeight - rects[i].height) / 2;
+        return onBottom ? size.y - borderBottom - tabHeight + center : 1 + borderTop + center;
     }
 
     /**
@@ -1584,8 +3771,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setTabHeight(int height) {
-        getValue().tabHeight = height;
-        getBridge().dirty(this);
+        checkWidget();
+        if (height < -1) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        fixedTabHeight = height;
+        updateFolder(UPDATE_TAB_HEIGHT);
     }
 
     /**
@@ -1603,8 +3794,14 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setTabPosition(int position) {
-        getValue().tabPosition = position;
-        getBridge().dirty(this);
+        checkWidget();
+        if (position != SWT.TOP && position != SWT.BOTTOM) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        if (onBottom != (position == SWT.BOTTOM)) {
+            onBottom = position == SWT.BOTTOM;
+            updateFolder(REDRAW);
+        }
     }
 
     /**
@@ -1624,8 +3821,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 2.1
      */
     public void setTopRight(Control control) {
-        getValue().topRight = control;
-        getBridge().dirty(this);
+        setTopRight(control, SWT.RIGHT);
     }
 
     /**
@@ -1655,8 +3851,23 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setTopRight(Control control, int alignment) {
-        getValue().topRight = control;
-        getBridge().dirty(this);
+        checkWidget();
+        if (alignment != SWT.RIGHT && alignment != SWT.FILL && alignment != (SWT.RIGHT | SWT.WRAP)) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        if (control != null && (control.isDisposed() || control.getParent() != this.getApi())) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        if (topRight == control && topRightAlignment == alignment)
+            return;
+        if (topRight != null && !topRight.isDisposed())
+            removeTabControl(topRight, false);
+        topRight = control;
+        topRightAlignment = alignment;
+        alignment &= ~SWT.RIGHT;
+        if (control != null)
+            addTabControl(control, SWT.TRAIL | alignment, -1, false);
+        updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
     }
 
     /**
@@ -1673,8 +3884,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setUnselectedCloseVisible(boolean visible) {
-        getValue().unselectedCloseVisible = visible;
-        getBridge().dirty(this);
+        checkWidget();
+        if (showUnselectedClose == visible)
+            return;
+        // display close button when mouse hovers
+        showUnselectedClose = visible;
+        updateFolder(REDRAW);
     }
 
     /**
@@ -1690,8 +3905,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setUnselectedImageVisible(boolean visible) {
-        getValue().unselectedImageVisible = visible;
-        getBridge().dirty(this);
+        checkWidget();
+        if (showUnselectedImage == visible)
+            return;
+        // display image on unselected items
+        showUnselectedImage = visible;
+        updateFolder(REDRAW);
     }
 
     /**
@@ -1707,8 +3926,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.125
      */
     public void setSelectedImageVisible(boolean visible) {
-        getValue().selectedImageVisible = visible;
-        getBridge().dirty(this);
+        checkWidget();
+        if (showSelectedImage == visible)
+            return;
+        // display image on selected items
+        showSelectedImage = visible;
+        updateFolder(REDRAW);
     }
 
     /**
@@ -1760,6 +3983,40 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         updateFolder(REDRAW_TABS);
     }
 
+    void showList(Rectangle rect) {
+        if (items.length == 0 || !showChevron)
+            return;
+        if (showMenu == null || showMenu.isDisposed()) {
+            showMenu = new Menu(getShell(), getStyle() & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT));
+        } else {
+            for (MenuItem item : showMenu.getItems()) {
+                item.dispose();
+            }
+        }
+        //$NON-NLS-1$
+        final String id = "CTabFolder_showList_Index";
+        for (CTabItem tab : items) {
+            if (((SwtCTabItem) tab.getImpl()).showing)
+                continue;
+            MenuItem item = new MenuItem(showMenu, SWT.NONE);
+            // Bug 533124 In the case where you have multi line tab text, we force the drop-down menu to have single line entries to ensure consistent behavior across platforms.
+            item.setText(tab.getText().replace("\n", " "));
+            item.setImage(tab.getImage());
+            item.addSelectionListener(new SelectionAdapter() {
+
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    MenuItem menuItem = (MenuItem) e.widget;
+                }
+            });
+        }
+        int x = rect.x;
+        int y = rect.y + rect.height;
+        Point location = getDisplay().map(this.getApi(), null, x, y);
+        showMenu.setLocation(location.x, location.y);
+        showMenu.setVisible(true);
+    }
+
     /**
      * Shows the selection.  If the selection is already showing in the receiver,
      * this method simply returns.  Otherwise, the items are scrolled until
@@ -1779,6 +4036,234 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         if (selectedIndex != -1) {
             showItem(getSelection());
         }
+    }
+
+    void _setToolTipText(int x, int y) {
+        String oldTip = getToolTipText();
+        String newTip = _getToolTip(x, y);
+        if (newTip == null || !newTip.equals(oldTip)) {
+            setToolTipText(newTip);
+        }
+    }
+
+    boolean updateItems() {
+        return updateItems(selectedIndex);
+    }
+
+    boolean updateItems(int showIndex) {
+        GC gc = new GC(this.getApi());
+        if (!single && !mru && showIndex != -1) {
+            // make sure selected item will be showing
+            int firstIndex = showIndex;
+            if (priority[0] < showIndex) {
+                int maxWidth = getRightItemEdge(gc) - getLeftItemEdge(gc, CTabFolderRenderer.PART_BORDER);
+                int width = 0;
+                int[] widths = new int[items.length];
+                for (int i = priority[0]; i <= showIndex; i++) {
+                    int state = CTabFolderRenderer.MINIMUM_SIZE;
+                    if (i == selectedIndex)
+                        state |= SWT.SELECTED;
+                    widths[i] = renderer.computeSize(i, state, gc, SWT.DEFAULT, SWT.DEFAULT).x;
+                    width += widths[i];
+                    if (width > maxWidth)
+                        break;
+                }
+                if (width > maxWidth) {
+                    width = 0;
+                    for (int i = showIndex; i >= 0; i--) {
+                        int state = CTabFolderRenderer.MINIMUM_SIZE;
+                        if (i == selectedIndex)
+                            state |= SWT.SELECTED;
+                        if (widths[i] == 0)
+                            widths[i] = renderer.computeSize(i, state, gc, SWT.DEFAULT, SWT.DEFAULT).x;
+                        width += widths[i];
+                        if (width > maxWidth)
+                            break;
+                        firstIndex = i;
+                    }
+                } else {
+                    firstIndex = priority[0];
+                    for (int i = showIndex + 1; i < items.length; i++) {
+                        int state = CTabFolderRenderer.MINIMUM_SIZE;
+                        if (i == selectedIndex)
+                            state |= SWT.SELECTED;
+                        widths[i] = renderer.computeSize(i, state, gc, SWT.DEFAULT, SWT.DEFAULT).x;
+                        width += widths[i];
+                        if (width >= maxWidth)
+                            break;
+                    }
+                    if (width < maxWidth) {
+                        for (int i = priority[0] - 1; i >= 0; i--) {
+                            int state = CTabFolderRenderer.MINIMUM_SIZE;
+                            if (i == selectedIndex)
+                                state |= SWT.SELECTED;
+                            if (widths[i] == 0)
+                                widths[i] = renderer.computeSize(i, state, gc, SWT.DEFAULT, SWT.DEFAULT).x;
+                            width += widths[i];
+                            if (width > maxWidth)
+                                break;
+                            firstIndex = i;
+                        }
+                    }
+                }
+            }
+            if (firstIndex != priority[0]) {
+                int index = 0;
+                // enumerate tabs from first visible to the last existing one (sorted ascending)
+                for (int i = firstIndex; i < items.length; i++) {
+                    priority[index++] = i;
+                }
+                // enumerate hidden tabs on the left hand from first visible one
+                // in the inverse order (sorted descending) so that the originally
+                // first opened tab is always at the end of the list
+                for (int i = firstIndex - 1; i >= 0; i--) {
+                    priority[index++] = i;
+                }
+            }
+        }
+        boolean oldShowChevron = showChevron;
+        boolean changed = setItemSize(gc);
+        updateButtons();
+        boolean chevronChanged = showChevron != oldShowChevron;
+        if (chevronChanged) {
+            if (updateTabHeight(false)) {
+                // Tab height has changed. Item sizes have to be set again.
+                changed |= setItemSize(gc);
+            }
+        }
+        changed |= setItemLocation(gc);
+        setButtonBounds();
+        changed |= chevronChanged;
+        if (changed && getToolTipText() != null) {
+            Point pt = getDisplay().getCursorLocation();
+            pt = toControl(pt);
+            _setToolTipText(pt.x, pt.y);
+        }
+        gc.dispose();
+        return changed;
+    }
+
+    boolean updateTabHeight(boolean force) {
+        int oldHeight = tabHeight;
+        GC gc = new GC(this.getApi());
+        tabHeight = renderer.computeSize(CTabFolderRenderer.PART_HEADER, SWT.NONE, gc, SWT.DEFAULT, SWT.DEFAULT).y;
+        gc.dispose();
+        if (fixedTabHeight == SWT.DEFAULT && controls != null && controls.length > 0) {
+            for (int i = 0; i < controls.length; i++) {
+                if ((controlAlignments[i] & SWT.WRAP) == 0 && !controls[i].isDisposed() && controls[i].getVisible()) {
+                    int topHeight = controls[i].computeSize(SWT.DEFAULT, SWT.DEFAULT).y;
+                    topHeight += renderer.computeTrim(CTabFolderRenderer.PART_HEADER, SWT.NONE, 0, 0, 0, 0).height + 1;
+                    tabHeight = Math.max(topHeight, tabHeight);
+                }
+            }
+        }
+        if (!force && tabHeight == oldHeight)
+            return false;
+        oldSize = null;
+        return true;
+    }
+
+    void updateFolder(int flags) {
+        updateFlags |= flags;
+        if (updateRun != null)
+            return;
+        updateRun = () -> {
+            updateRun = null;
+            if (isDisposed())
+                return;
+            runUpdate();
+        };
+        getDisplay().asyncExec(updateRun);
+    }
+
+    void runUpdate() {
+        if (updateFlags == 0)
+            return;
+        int flags = updateFlags;
+        updateFlags = 0;
+        Rectangle rectBefore = getClientArea();
+        updateButtons();
+        updateTabHeight(false);
+        updateItems(selectedIndex);
+        if ((flags & REDRAW) != 0) {
+            redraw();
+        } else if ((flags & REDRAW_TABS) != 0) {
+            redrawTabs();
+        }
+        Rectangle rectAfter = getClientArea();
+        if (!rectBefore.equals(rectAfter)) {
+            notifyListeners(SWT.Resize, new Event());
+            layout();
+        }
+    }
+
+    void updateBkImages(boolean colorChanged) {
+        if (controls != null && controls.length > 0) {
+            if (bkImageBounds == null) {
+                bkImageBounds = new Rectangle[controls.length];
+            }
+            if (bkImageBounds.length != controls.length) {
+                bkImageBounds = new Rectangle[controls.length];
+            }
+            for (int i = 0; i < controls.length; i++) {
+                Control control = controls[i];
+                if (!control.isDisposed()) {
+                    if (hovering) {
+                        if (control instanceof Composite)
+                            ((Composite) control).setBackgroundMode(SWT.INHERIT_NONE);
+                        control.setBackgroundImage(null);
+                        control.setBackground(getBackground());
+                    } else {
+                        if (control instanceof Composite)
+                            ((Composite) control).setBackgroundMode(SWT.INHERIT_DEFAULT);
+                        Rectangle bounds = control.getBounds();
+                        int tabHeight = getTabHeight();
+                        int height = this.getSize().y;
+                        boolean wrapped = onBottom ? bounds.y + bounds.height < height - tabHeight : bounds.y > tabHeight;
+                        if (wrapped || gradientColors == null) {
+                            bkImageBounds[i] = null;
+                            control.setBackgroundImage(null);
+                            control.setBackground(getBackground());
+                        } else {
+                            bounds.width = 10;
+                            if (!onBottom) {
+                                bounds.y = -bounds.y;
+                                bounds.height -= 2 * bounds.y - 1;
+                            } else {
+                                bounds.height += height - (bounds.y + bounds.height);
+                                bounds.y = -1;
+                            }
+                            bounds.x = 0;
+                            // do not redraw when only translated:
+                            if (colorChanged || !bounds.equals(bkImageBounds[i])) {
+                                bkImageBounds[i] = bounds;
+                                if (controlBkImages[i] != null)
+                                    controlBkImages[i].dispose();
+                                controlBkImages[i] = new Image(control.getDisplay(), bounds);
+                                GC gc = new GC(controlBkImages[i]);
+                                renderer.draw(CTabFolderRenderer.PART_BACKGROUND, 0, bounds, gc);
+                                gc.dispose();
+                                control.setBackground(null);
+                                control.setBackgroundImage(controlBkImages[i]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    String _getToolTip(int x, int y) {
+        CTabItem item = getItem(new Point(x, y));
+        if (item == null)
+            return null;
+        if (!((SwtCTabItem) item.getImpl()).showing)
+            return null;
+        if ((showClose || ((SwtCTabItem) item.getImpl()).showClose) && ((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
+            //$NON-NLS-1$
+            return SWT.getMessage("SWT_Close");
+        }
+        return item.getToolTipText();
     }
 
     /**
@@ -1807,6 +4292,65 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      *    <li>ERROR_INVALID_ARGUMENT - if the control is not a child of this CTabFolder</li>
      * </ul>
      */
+    /*public*/
+    void addTabControl(Control control, int flags) {
+        checkWidget();
+        addTabControl(control, flags, -1, true);
+    }
+
+    void addTabControl(Control control, int flags, int index, boolean update) {
+        switch(flags) {
+            case SWT.TRAIL:
+            case SWT.TRAIL | SWT.WRAP:
+            case SWT.TRAIL | SWT.FILL:
+            case SWT.TRAIL | SWT.FILL | SWT.WRAP:
+            case SWT.LEAD:
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                break;
+        }
+        if (control != null && control.getParent() != this.getApi()) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        //check for duplicates
+        for (Control ctrl : controls) {
+            if (ctrl == control) {
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+        }
+        int length = controls.length;
+        control.addListener(SWT.Resize, listener);
+        //Grow all 4 arrays
+        Control[] newControls = new Control[length + 1];
+        System.arraycopy(controls, 0, newControls, 0, length);
+        controls = newControls;
+        int[] newAlignment = new int[length + 1];
+        System.arraycopy(controlAlignments, 0, newAlignment, 0, length);
+        controlAlignments = newAlignment;
+        Rectangle[] newRect = new Rectangle[length + 1];
+        System.arraycopy(controlRects, 0, newRect, 0, length);
+        controlRects = newRect;
+        Image[] newImage = new Image[length + 1];
+        System.arraycopy(controlBkImages, 0, newImage, 0, length);
+        controlBkImages = newImage;
+        if (index == -1) {
+            index = length;
+            if (chevronTb != null && control != chevronTb)
+                index--;
+        }
+        System.arraycopy(controls, index, controls, index + 1, length - index);
+        System.arraycopy(controlAlignments, index, controlAlignments, index + 1, length - index);
+        System.arraycopy(controlRects, index, controlRects, index + 1, length - index);
+        System.arraycopy(controlBkImages, index, controlBkImages, index + 1, length - index);
+        controls[index] = control;
+        controlAlignments[index] = flags;
+        controlRects[index] = new Rectangle(0, 0, 0, 0);
+        if (update) {
+            updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
+        }
+    }
+
     /**
      * Removes the control from the list of tab controls.
      *
@@ -1818,6 +4362,76 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      *    <li>ERROR_INVALID_ARGUMENT - if the control is not a child of this CTabFolder</li>
      * </ul>
      */
+    /*public*/
+    void removeTabControl(Control control) {
+        checkWidget();
+        removeTabControl(control, true);
+    }
+
+    void removeTabControl(Control control, boolean update) {
+        if (control != null && control.getParent() != this.getApi()) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        int index = -1;
+        for (int i = 0; i < controls.length; i++) {
+            if (controls[i] == control) {
+                index = i;
+                break;
+            }
+        }
+        if (index == -1)
+            return;
+        if (!control.isDisposed()) {
+            control.removeListener(SWT.Resize, listener);
+            control.setBackground(null);
+            control.setBackgroundImage(null);
+            if (control instanceof Composite)
+                ((Composite) control).setBackgroundMode(SWT.INHERIT_NONE);
+        }
+        if (controlBkImages[index] != null && !controlBkImages[index].isDisposed())
+            controlBkImages[index].dispose();
+        if (controls.length == 1) {
+            controls = new Control[0];
+            controlAlignments = new int[0];
+            controlRects = new Rectangle[0];
+            controlBkImages = new Image[0];
+        } else {
+            Control[] newControls = new Control[controls.length - 1];
+            System.arraycopy(controls, 0, newControls, 0, index);
+            System.arraycopy(controls, index + 1, newControls, index, controls.length - index - 1);
+            controls = newControls;
+            int[] newAlignments = new int[controls.length];
+            System.arraycopy(controlAlignments, 0, newAlignments, 0, index);
+            System.arraycopy(controlAlignments, index + 1, newAlignments, index, controls.length - index);
+            controlAlignments = newAlignments;
+            Rectangle[] newRects = new Rectangle[controls.length];
+            System.arraycopy(controlRects, 0, newRects, 0, index);
+            System.arraycopy(controlRects, index + 1, newRects, index, controls.length - index);
+            controlRects = newRects;
+            Image[] newBkImages = new Image[controls.length];
+            System.arraycopy(controlBkImages, 0, newBkImages, 0, index);
+            System.arraycopy(controlBkImages, index + 1, newBkImages, index, controls.length - index);
+            controlBkImages = newBkImages;
+        }
+        if (update) {
+            updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
+        }
+    }
+
+    int getWrappedHeight(Point size) {
+        boolean[][] positions = new boolean[1][];
+        Rectangle[] rects = computeControlBounds(size, positions);
+        int minY = Integer.MAX_VALUE, maxY = 0, wrapHeight = 0;
+        for (int i = 0; i < rects.length; i++) {
+            if (positions[0][i]) {
+                minY = Math.min(minY, rects[i].y);
+                maxY = Math.max(maxY, rects[i].y + rects[i].height);
+                wrapHeight = maxY - minY;
+            }
+        }
+        return wrapHeight;
+    }
+
     /**
      * Sets whether a chevron is shown when there are more items to be displayed.
      *
@@ -1829,6 +4443,19 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      *    <li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
      * </ul>
      */
+    /*public*/
+    void setChevronVisible(boolean visible) {
+        checkWidget();
+        if (chevronVisible == visible)
+            return;
+        chevronVisible = visible;
+        updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
+    }
+
+    boolean shouldHighlight() {
+        return this.highlight && highlightEnabled;
+    }
+
     /**
      * Sets whether the selected tab is rendered as highlighted.
      *
@@ -1845,8 +4472,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.106
      */
     public void setHighlightEnabled(boolean enabled) {
-        getValue().highlightEnabled = enabled;
-        getBridge().dirty(this);
+        checkWidget();
+        if (highlightEnabled == enabled) {
+            return;
+        }
+        highlightEnabled = enabled;
+        updateFolder(REDRAW);
     }
 
     /**
@@ -1866,7 +4497,32 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.106
      */
     public boolean getHighlightEnabled() {
-        return getValue().highlightEnabled;
+        checkWidget();
+        return highlightEnabled;
+    }
+
+    /**
+     * Update the cached minimize button image when color is changed.
+     */
+    private void updateMinImage() {
+        if (showMin && minMaxTb != null && minItem != null) {
+            if (minImage != null)
+                minImage.dispose();
+            minImage = createButtonImage(getDisplay(), CTabFolderRenderer.PART_MIN_BUTTON);
+            minItem.setImage(minImage);
+        }
+    }
+
+    /**
+     * Update the cached maximize button image when color is changed.
+     */
+    private void updateMaxImage() {
+        if (showMax && minMaxTb != null && maxItem != null) {
+            if (maxImage != null)
+                maxImage.dispose();
+            maxImage = createButtonImage(getDisplay(), CTabFolderRenderer.PART_MAX_BUTTON);
+            maxItem.setImage(maxImage);
+        }
     }
 
     public CTabFolder getApi() {
@@ -1877,7 +4533,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     public VCTabFolder getValue() {
         if (value == null)
-            value = new VCTabFolder();
+            value = new VCTabFolder(this);
         return (VCTabFolder) value;
     }
 }

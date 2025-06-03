@@ -8,6 +8,15 @@ import dev.equo.swt.Serializer;
 
 public class VResource {
 
+    protected VResource() {
+    }
+
+    protected VResource(DartResource impl) {
+        this.impl = impl;
+    }
+
+    protected DartResource impl;
+
     @JsonConverter(target = Resource.class)
     public static class ResourceJson implements Configuration {
 

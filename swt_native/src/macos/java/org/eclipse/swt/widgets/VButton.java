@@ -9,16 +9,53 @@ import dev.equo.swt.Serializer;
 @CompiledJson()
 public class VButton extends VControl {
 
-    public int alignment;
+    protected VButton() {
+    }
 
-    public boolean grayed;
+    protected VButton(DartButton impl) {
+        super(impl);
+    }
+
+    public int getAlignment() {
+        return ((DartButton) impl).alignment;
+    }
+
+    public void setAlignment(int value) {
+        ((DartButton) impl).alignment = value;
+    }
+
+    public boolean getGrayed() {
+        return ((DartButton) impl).grayed;
+    }
+
+    public void setGrayed(boolean value) {
+        ((DartButton) impl).grayed = value;
+    }
 
     @JsonAttribute(ignore = true)
-    public Image image;
+    public Image getImage() {
+        return ((DartButton) impl).image;
+    }
 
-    public boolean selection;
+    public void setImage(Image value) {
+        ((DartButton) impl).image = value;
+    }
 
-    public String text;
+    public boolean getSelection() {
+        return ((DartButton) impl).selection;
+    }
+
+    public void setSelection(boolean value) {
+        ((DartButton) impl).selection = value;
+    }
+
+    public String getText() {
+        return ((DartButton) impl).text;
+    }
+
+    public void setText(String value) {
+        ((DartButton) impl).text = value;
+    }
 
     @JsonConverter(target = Button.class)
     public static class ButtonJson implements Configuration {

@@ -165,28 +165,28 @@ public abstract class Transfer {
         if (impl == null)
             impl = new SwtTransfer() {
 
-                public boolean isSupportedType(TransferData transferData) {
-                    return Transfer.this.isSupportedType(transferData);
-                }
-
-                public Object nativeToJava(TransferData transferData) {
-                    return Transfer.this.nativeToJava(transferData);
-                }
-
-                public String[] getTypeNames() {
-                    return Transfer.this.getTypeNames();
+                public TransferData[] getSupportedTypes() {
+                    return Transfer.this.getSupportedTypes();
                 }
 
                 public int[] getTypeIds() {
                     return Transfer.this.getTypeIds();
                 }
 
+                public String[] getTypeNames() {
+                    return Transfer.this.getTypeNames();
+                }
+
+                public boolean isSupportedType(TransferData transferData) {
+                    return Transfer.this.isSupportedType(transferData);
+                }
+
                 public void javaToNative(Object object, TransferData transferData) {
                     Transfer.this.javaToNative(object, transferData);
                 }
 
-                public TransferData[] getSupportedTypes() {
-                    return Transfer.this.getSupportedTypes();
+                public Object nativeToJava(TransferData transferData) {
+                    return Transfer.this.nativeToJava(transferData);
                 }
             };
         return impl;

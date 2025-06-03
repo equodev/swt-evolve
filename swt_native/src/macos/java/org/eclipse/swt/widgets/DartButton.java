@@ -49,6 +49,26 @@ import dev.equo.swt.*;
  */
 public class DartButton extends DartControl implements IButton {
 
+    String text;
+
+    Image image;
+
+    boolean grayed;
+
+    private static final double[] DEFAULT_DISABLED_FOREGROUND = new double[] { 0.6745f, 0.6745f, 0.6745f, 1.0f };
+
+    static final int EXTRA_HEIGHT = 2;
+
+    static final int EXTRA_WIDTH = 6;
+
+    static final int IMAGE_GAP = 2;
+
+    static final int SMALL_BUTTON_HEIGHT = 28;
+
+    static final int REGULAR_BUTTON_HEIGHT = 32;
+
+    static final int MAX_SIZE = 40000;
+
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.
@@ -140,9 +160,72 @@ public class DartButton extends DartControl implements IButton {
         return style;
     }
 
+    void click() {
+        sendSelectionEvent(SWT.Selection);
+    }
+
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return super.computeSize(wHint, hHint, changed);
+        checkWidget();
+        if ((style & SWT.ARROW) != 0) {
+            // TODO use some OS metric instead of hardcoded values
+            int width = wHint != SWT.DEFAULT ? wHint : 14;
+            int height = hHint != SWT.DEFAULT ? hHint : 14;
+            return new Point(width, height);
+        }
+        if ((style & SWT.WRAP) != 0 && wHint != SWT.DEFAULT) {
+        } else {
+        }
+        return null;
+    }
+
+    @Override
+    void createHandle() {
+        if ((style & SWT.PUSH) == 0)
+            state |= THEME_BACKGROUND;
+        if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (style & SWT.FLAT) == 0) {
+        }
+        if ((style & SWT.PUSH) != 0) {
+            if ((style & SWT.FLAT) != 0) {
+            } else {
+            }
+        } else if ((style & SWT.CHECK) != 0) {
+        } else if ((style & SWT.RADIO) != 0) {
+        } else if ((style & SWT.TOGGLE) != 0) {
+            if ((style & SWT.FLAT) != 0) {
+            } else {
+            }
+        } else if ((style & SWT.ARROW) != 0) {
+        }
+        _setAlignment(style);
+    }
+
+    @Override
+    void createWidget() {
+        text = "";
+        super.createWidget();
+    }
+
+    @Override
+    Font defaultFont() {
+        return null;
+    }
+
+    @Override
+    void deregister() {
+        super.deregister();
+    }
+
+    @Override
+    boolean dragDetect(int x, int y, boolean filter, boolean[] consume) {
+        boolean dragging = super.dragDetect(x, y, filter, consume);
+        consume[0] = dragging;
+        return dragging;
+    }
+
+    @Override
+    boolean drawsBackground() {
+        return background != null || backgroundImage != null;
     }
 
     /**
@@ -162,7 +245,25 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public int getAlignment() {
-        return getValue().alignment;
+        checkWidget();
+        if ((style & SWT.ARROW) != 0) {
+            if ((style & SWT.UP) != 0)
+                return SWT.UP;
+            if ((style & SWT.DOWN) != 0)
+                return SWT.DOWN;
+            if ((style & SWT.LEFT) != 0)
+                return SWT.LEFT;
+            if ((style & SWT.RIGHT) != 0)
+                return SWT.RIGHT;
+            return SWT.UP;
+        }
+        if ((style & SWT.LEFT) != 0)
+            return SWT.LEFT;
+        if ((style & SWT.CENTER) != 0)
+            return SWT.CENTER;
+        if ((style & SWT.RIGHT) != 0)
+            return SWT.RIGHT;
+        return SWT.LEFT;
     }
 
     /**
@@ -180,7 +281,10 @@ public class DartButton extends DartControl implements IButton {
      * @since 3.4
      */
     public boolean getGrayed() {
-        return getValue().grayed;
+        checkWidget();
+        if ((style & SWT.CHECK) == 0)
+            return false;
+        return grayed;
     }
 
     /**
@@ -195,7 +299,13 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public Image getImage() {
-        return getValue().image;
+        checkWidget();
+        return image;
+    }
+
+    @Override
+    String getNameText() {
+        return getText();
     }
 
     /**
@@ -215,7 +325,10 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public boolean getSelection() {
-        return getValue().selection;
+        checkWidget();
+        if ((style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
+            return false;
+        return selection;
     }
 
     /**
@@ -231,7 +344,25 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public String getText() {
-        return getValue().text;
+        checkWidget();
+        return text;
+    }
+
+    @Override
+    boolean isDescribedByLabel() {
+        return false;
+    }
+
+    @Override
+    void register() {
+        super.register();
+    }
+
+    @Override
+    void releaseWidget() {
+        super.releaseWidget();
+        image = null;
+        text = null;
     }
 
     /**
@@ -261,6 +392,44 @@ public class DartButton extends DartControl implements IButton {
         eventTable.unhook(SWT.DefaultSelection, listener);
     }
 
+    void selectRadio() {
+        /*
+	* This code is intentionally commented.  When two groups
+	* of radio buttons with the same parent are separated by
+	* another control, the correct behavior should be that
+	* the two groups act independently.  This is consistent
+	* with radio tool and menu items.  The commented code
+	* implements this behavior.
+	*/
+        //	int index = 0;
+        //	Control [] children = parent._getChildren ();
+        //	while (index < children.length && children [index] != this) index++;
+        //	int i = index - 1;
+        //	while (i >= 0 && children [i].setRadioSelection (false)) --i;
+        //	int j = index + 1;
+        //	while (j < children.length && children [j].setRadioSelection (false)) j++;
+        //	setSelection (true);
+        Control[] children = ((SwtComposite) parent.getImpl())._getChildren();
+        for (int i = 0; i < children.length; i++) {
+            Control child = children[i];
+            if (this.getApi() != child)
+                ((SwtControl) child.getImpl()).setRadioSelection(false);
+        }
+        setSelection(true);
+    }
+
+    @Override
+    void sendSelection() {
+        if ((style & SWT.RADIO) != 0) {
+            if ((parent.getStyle() & SWT.NO_RADIO_GROUP) == 0) {
+                selectRadio();
+            }
+        }
+        if ((style & SWT.CHECK) != 0) {
+        }
+        sendSelectionEvent(SWT.Selection);
+    }
+
     /**
      * Controls how text, images and arrows will be displayed
      * in the receiver. The argument should be one of
@@ -278,8 +447,41 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setAlignment(int alignment) {
-        getValue().alignment = alignment;
-        getBridge().dirty(this);
+        checkWidget();
+        _setAlignment(alignment);
+        redraw();
+    }
+
+    void _setAlignment(int alignment) {
+        if ((style & SWT.ARROW) != 0) {
+            if ((style & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT)) == 0)
+                return;
+            style &= ~(SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT);
+            style |= alignment & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT);
+            return;
+        }
+        if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
+            return;
+        style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+        style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+        /* text is still null when this is called from createHandle() */
+        if (text != null) {
+        }
+    }
+
+    @Override
+    void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
+        if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (style & (SWT.FLAT | SWT.WRAP)) == 0) {
+            int heightThreshold = REGULAR_BUTTON_HEIGHT;
+            if (height > heightThreshold) {
+            } else {
+            }
+        }
+        super.setBounds(x, y, width, height, move, resize);
+    }
+
+    @Override
+    void setForeground(double[] color) {
     }
 
     /**
@@ -297,8 +499,16 @@ public class DartButton extends DartControl implements IButton {
      * @since 3.4
      */
     public void setGrayed(boolean grayed) {
-        getValue().grayed = grayed;
-        getBridge().dirty(this);
+        checkWidget();
+        if ((style & SWT.CHECK) == 0)
+            return;
+        boolean checked = getSelection();
+        this.grayed = grayed;
+        if (checked) {
+            if (grayed) {
+            } else {
+            }
+        }
     }
 
     /**
@@ -318,8 +528,32 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setImage(Image image) {
-        getValue().image = image;
-        getBridge().dirty(this);
+        checkWidget();
+        if (image != null && image.isDisposed()) {
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        if ((style & SWT.ARROW) != 0)
+            return;
+        this.image = image;
+        if ((style & (SWT.RADIO | SWT.CHECK)) == 0) {
+        } else {
+        }
+        if (image != null) {
+            if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (style & (SWT.FLAT | SWT.WRAP)) == 0) {
+            }
+        }
+        updateAlignment();
+    }
+
+    @Override
+    boolean setRadioSelection(boolean value) {
+        if ((style & SWT.RADIO) == 0)
+            return false;
+        if (getSelection() != value) {
+            setSelection(value);
+            sendSelectionEvent(SWT.Selection);
+        }
+        return true;
     }
 
     /**
@@ -339,8 +573,12 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setSelection(boolean selected) {
-        getValue().selection = selected;
-        getBridge().dirty(this);
+        checkWidget();
+        if ((style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
+            return;
+        if (grayed) {
+        } else {
+        }
     }
 
     /**
@@ -378,19 +616,31 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setText(String string) {
-        getValue().text = string;
-        getBridge().dirty(this);
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if ((style & SWT.ARROW) != 0)
+            return;
+        text = string;
+        updateAlignment();
+    }
+
+    void updateAlignment() {
+        if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0) {
+            if (text.length() != 0 && image != null) {
+            } else {
+            }
+        }
     }
 
     @Override
-    int traversalCode(int key, Object theEvent) {
-        int code = super.traversalCode(key, theEvent);
-        if ((style & SWT.ARROW) != 0)
-            code &= ~(SWT.TRAVERSE_TAB_NEXT | SWT.TRAVERSE_TAB_PREVIOUS);
-        if ((style & SWT.RADIO) != 0)
-            code |= SWT.TRAVERSE_ARROW_NEXT | SWT.TRAVERSE_ARROW_PREVIOUS;
-        return code;
+    void setZOrder() {
+        super.setZOrder();
     }
+
+    int alignment;
+
+    boolean selection;
 
     public Button getApi() {
         if (api == null)
@@ -400,7 +650,7 @@ public class DartButton extends DartControl implements IButton {
 
     public VButton getValue() {
         if (value == null)
-            value = new VButton();
+            value = new VButton(this);
         return (VButton) value;
     }
 }

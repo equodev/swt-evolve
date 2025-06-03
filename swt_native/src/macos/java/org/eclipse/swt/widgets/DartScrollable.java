@@ -105,14 +105,29 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      * @see #getClientArea
      */
     public Rectangle computeTrim(int x, int y, int width, int height) {
+        checkWidget();
         return new Rectangle(x, y, width, height);
     }
 
     ScrollBar createScrollBar(int style) {
         ScrollBar bar = new ScrollBar();
-        ((DartScrollBar) bar.getImpl()).parent = this.getApi();
-        ((DartWidget) bar.getImpl()).style = style;
-        ((DartWidget) bar.getImpl()).display = display;
+        ((SwtScrollBar) bar.getImpl()).parent = this.getApi();
+        ((SwtWidget) bar.getImpl()).style = style;
+        ((SwtWidget) bar.getImpl()).display = display;
+        long actionSelector;
+        if ((style & SWT.H_SCROLL) != 0) {
+        } else {
+        }
+        if ((style & SWT.H_SCROLL) != 0) {
+        } else {
+        }
+        ((SwtWidget) bar.getImpl()).createJNIRef();
+        ((SwtScrollBar) bar.getImpl()).register();
+        if ((state & CANVAS) == 0) {
+        }
+        if ((state & CANVAS) != 0) {
+            ((SwtScrollBar) bar.getImpl()).updateBar(0, 0, 100, 10);
+        }
         return bar;
     }
 
@@ -123,6 +138,11 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
             horizontalBar = createScrollBar(SWT.H_SCROLL);
         if ((style & SWT.V_SCROLL) != 0)
             verticalBar = createScrollBar(SWT.V_SCROLL);
+    }
+
+    @Override
+    void deregister() {
+        super.deregister();
     }
 
     /**
@@ -140,7 +160,8 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      * @see #computeTrim
      */
     public Rectangle getClientArea() {
-        return getBounds();
+        checkWidget();
+        return null;
     }
 
     /**
@@ -183,7 +204,9 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      * @since 3.8
      */
     public int getScrollbarsMode() {
-        return getValue().scrollbarsMode;
+        checkWidget();
+        int style = SWT.NONE;
+        return style;
     }
 
     /**
@@ -208,8 +231,7 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      * @since 3.126
      */
     public void setScrollbarsMode(int mode) {
-        getValue().scrollbarsMode = mode;
-        getBridge().dirty(this);
+        checkWidget();
     }
 
     /**
@@ -232,13 +254,112 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
         return hooks(SWT.KeyDown) || hooks(SWT.KeyUp) || hooks(SWT.Traverse);
     }
 
+    @Override
+    boolean isEventView(long id) {
+        return false;
+    }
+
+    boolean isNeeded(ScrollBar scrollbar) {
+        return true;
+    }
+
+    void redrawBackgroundImage() {
+    }
+
+    @Override
+    void register() {
+        super.register();
+    }
+
+    @Override
+    void releaseHandle() {
+        super.releaseHandle();
+    }
+
+    @Override
+    void releaseChildren(boolean destroy) {
+        if (horizontalBar != null) {
+            ((SwtWidget) horizontalBar.getImpl()).release(false);
+            horizontalBar = null;
+        }
+        if (verticalBar != null) {
+            ((SwtWidget) verticalBar.getImpl()).release(false);
+            verticalBar = null;
+        }
+        super.releaseChildren(destroy);
+    }
+
+    @Override
+    void reskinChildren(int flags) {
+        if (horizontalBar != null)
+            horizontalBar.reskin(flags);
+        if (verticalBar != null)
+            verticalBar.reskin(flags);
+        super.reskinChildren(flags);
+    }
+
+    @Override
+    void sendHorizontalSelection() {
+        if (((SwtScrollBar) horizontalBar.getImpl()).view.isHiddenOrHasHiddenAncestor())
+            return;
+        ((SwtScrollBar) horizontalBar.getImpl()).sendSelection();
+    }
+
+    @Override
+    void sendVerticalSelection() {
+        if (((SwtScrollBar) verticalBar.getImpl()).view.isHiddenOrHasHiddenAncestor())
+            return;
+        ((SwtScrollBar) verticalBar.getImpl()).sendSelection();
+    }
+
+    @Override
+    void enableWidget(boolean enabled) {
+        super.enableWidget(enabled);
+        if (horizontalBar != null)
+            ((SwtScrollBar) horizontalBar.getImpl()).enableWidget(enabled && isNeeded(horizontalBar));
+        if (verticalBar != null)
+            ((SwtScrollBar) verticalBar.getImpl()).enableWidget(enabled && isNeeded(verticalBar));
+    }
+
+    boolean setScrollBarVisible(ScrollBar bar, boolean visible) {
+        if ((state & CANVAS) == 0)
+            return false;
+        if (visible) {
+            if ((((SwtWidget) bar.getImpl()).state & HIDDEN) == 0)
+                return false;
+            ((SwtWidget) bar.getImpl()).state &= ~HIDDEN;
+        } else {
+            if ((((SwtWidget) bar.getImpl()).state & HIDDEN) != 0)
+                return false;
+            ((SwtWidget) bar.getImpl()).state |= HIDDEN;
+        }
+        if ((((SwtWidget) bar.getImpl()).style & SWT.HORIZONTAL) != 0) {
+        } else {
+        }
+        ((SwtWidget) bar.getImpl()).sendEvent(visible ? SWT.Show : SWT.Hide);
+        sendEvent(SWT.Resize);
+        return true;
+    }
+
+    @Override
+    void setZOrder() {
+        super.setZOrder();
+    }
+
+    @Override
+    void updateCursorRects(boolean enabled) {
+        super.updateCursorRects(enabled);
+    }
+
+    int scrollbarsMode;
+
     public Scrollable getApi() {
         return (Scrollable) api;
     }
 
     public VScrollable getValue() {
         if (value == null)
-            value = new VScrollable();
+            value = new VScrollable(this);
         return (VScrollable) value;
     }
 }

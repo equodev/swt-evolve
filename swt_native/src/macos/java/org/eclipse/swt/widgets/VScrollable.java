@@ -7,7 +7,20 @@ import dev.equo.swt.Serializer;
 
 public class VScrollable extends VControl {
 
-    public int scrollbarsMode;
+    protected VScrollable() {
+    }
+
+    protected VScrollable(DartScrollable impl) {
+        super(impl);
+    }
+
+    public int getScrollbarsMode() {
+        return ((DartScrollable) impl).scrollbarsMode;
+    }
+
+    public void setScrollbarsMode(int value) {
+        ((DartScrollable) impl).scrollbarsMode = value;
+    }
 
     @JsonConverter(target = Scrollable.class)
     public static class ScrollableJson implements Configuration {

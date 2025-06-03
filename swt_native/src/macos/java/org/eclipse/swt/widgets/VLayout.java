@@ -6,6 +6,15 @@ import dev.equo.swt.Serializer;
 
 public class VLayout {
 
+    protected VLayout() {
+    }
+
+    protected VLayout(DartLayout impl) {
+        this.impl = impl;
+    }
+
+    protected DartLayout impl;
+
     @JsonConverter(target = Layout.class)
     public static class LayoutJson implements Configuration {
 

@@ -5,22 +5,48 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
-import java.util.List;
-import java.util.ArrayList;
 
 @CompiledJson()
 public class VComposite extends VScrollable {
 
-    public int backgroundMode;
+    protected VComposite() {
+    }
 
-    public List<Control> children = new ArrayList<>();
+    protected VComposite(DartComposite impl) {
+        super(impl);
+    }
 
-    @JsonAttribute(ignore = true)
-    public Layout layout;
+    public int getBackgroundMode() {
+        return ((DartComposite) impl).backgroundMode;
+    }
 
-    public boolean layoutDeferred;
+    public void setBackgroundMode(int value) {
+        ((DartComposite) impl).backgroundMode = value;
+    }
 
-    public Control[] tabList;
+    public Control[] getChildren() {
+        return ((DartComposite) impl).children;
+    }
+
+    public void setChildren(Control[] value) {
+        ((DartComposite) impl).children = value;
+    }
+
+    public boolean getLayoutDeferred() {
+        return ((DartComposite) impl).layoutDeferred;
+    }
+
+    public void setLayoutDeferred(boolean value) {
+        ((DartComposite) impl).layoutDeferred = value;
+    }
+
+    public Control[] getTabList() {
+        return ((DartComposite) impl).tabList;
+    }
+
+    public void setTabList(Control[] value) {
+        ((DartComposite) impl).tabList = value;
+    }
 
     @JsonConverter(target = Composite.class)
     public static class CompositeJson implements Configuration {

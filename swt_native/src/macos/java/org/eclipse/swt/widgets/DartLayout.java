@@ -121,7 +121,7 @@ public abstract class DartLayout implements ILayout {
 
     public VLayout getValue() {
         if (value == null)
-            value = new VLayout();
+            value = new VLayout(this);
         return (VLayout) value;
     }
 }

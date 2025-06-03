@@ -270,6 +270,11 @@ public final class DartColor extends DartResource implements IColor {
         init(rgb.red, rgb.green, rgb.blue, alpha);
     }
 
+    @Override
+    void destroy() {
+        getApi().handle = null;
+    }
+
     /**
      * Colors do not need to be disposed, however to maintain compatibility
      * with older code, disposing a Color is not an error.
@@ -509,7 +514,7 @@ public final class DartColor extends DartResource implements IColor {
 
     public VColor getValue() {
         if (value == null)
-            value = new VColor();
+            value = new VColor(this);
         return (VColor) value;
     }
 }

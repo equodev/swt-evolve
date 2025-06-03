@@ -7,7 +7,12 @@ import dev.equo.swt.Serializer;
 @CompiledJson()
 public class VColor extends VResource {
 
-    public double[] handle;
+    protected VColor() {
+    }
+
+    protected VColor(DartColor impl) {
+        super(impl);
+    }
 
     @JsonConverter(target = Color.class)
     public static class ColorJson implements Configuration {

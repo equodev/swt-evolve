@@ -14,6 +14,7 @@ public class Mocks {
         Mockito.when(shell.getImpl()).thenReturn(swtShell);
         swtShell.display = display;
         Mockito.when(shell.getShell()).thenReturn(shell);
+        Mockito.when(swtShell._getChildren()).thenReturn(new Control[0]);
         return shell;
     }
 

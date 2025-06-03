@@ -10,43 +10,137 @@ import dev.equo.swt.Serializer;
 
 public class VControl extends VWidget {
 
-    public Color background;
+    protected VControl() {
+    }
+
+    protected VControl(DartControl impl) {
+        super(impl);
+    }
+
+    public double[] getBackground() {
+        return ((DartControl) impl).background;
+    }
+
+    public void setBackground(double[] value) {
+        ((DartControl) impl).background = value;
+    }
 
     @JsonAttribute(ignore = true)
-    public Image backgroundImage;
+    public Image getBackgroundImage() {
+        return ((DartControl) impl).backgroundImage;
+    }
 
-    public Rectangle bounds;
+    public void setBackgroundImage(Image value) {
+        ((DartControl) impl).backgroundImage = value;
+    }
 
-    public boolean dragDetect;
+    public Rectangle getBounds() {
+        return ((DartControl) impl).bounds;
+    }
 
-    @JsonAttribute(ignore = true)
-    public Cursor cursor;
-
-    public boolean enabled;
-
-    @JsonAttribute(ignore = true)
-    public Font font;
-
-    public Color foreground;
-
-    @JsonAttribute(ignore = true)
-    public Object layoutData;
+    public void setBounds(Rectangle value) {
+        ((DartControl) impl).bounds = value;
+    }
 
     @JsonAttribute(ignore = true)
-    public Menu menu;
+    public Cursor getCursor() {
+        return ((DartControl) impl).cursor;
+    }
 
-    public int orientation;
+    public void setCursor(Cursor value) {
+        ((DartControl) impl).cursor = value;
+    }
 
     @JsonAttribute(ignore = true)
-    public Region region;
+    public Font getFont() {
+        return ((DartControl) impl).font;
+    }
 
-    public int textDirection;
+    public void setFont(Font value) {
+        ((DartControl) impl).font = value;
+    }
 
-    public String toolTipText;
+    public double[] getForeground() {
+        return ((DartControl) impl).foreground;
+    }
 
-    public boolean touchEnabled;
+    public void setForeground(double[] value) {
+        ((DartControl) impl).foreground = value;
+    }
 
-    public boolean visible;
+    @JsonAttribute(ignore = true)
+    public Menu getMenu() {
+        return ((DartControl) impl).menu;
+    }
+
+    public void setMenu(Menu value) {
+        ((DartControl) impl).menu = value;
+    }
+
+    public int getOrientation() {
+        return ((DartControl) impl).orientation;
+    }
+
+    public void setOrientation(int value) {
+        ((DartControl) impl).orientation = value;
+    }
+
+    @JsonAttribute(ignore = true)
+    public Region getRegion() {
+        return ((DartControl) impl).region;
+    }
+
+    public void setRegion(Region value) {
+        ((DartControl) impl).region = value;
+    }
+
+    public int getTextDirection() {
+        return ((DartControl) impl).textDirection;
+    }
+
+    public void setTextDirection(int value) {
+        ((DartControl) impl).textDirection = value;
+    }
+
+    public String getToolTipText() {
+        return ((DartControl) impl).toolTipText;
+    }
+
+    public void setToolTipText(String value) {
+        ((DartControl) impl).toolTipText = value;
+    }
+
+    public boolean getTouchEnabled() {
+        return ((DartControl) impl).touchEnabled;
+    }
+
+    public void setTouchEnabled(boolean value) {
+        ((DartControl) impl).touchEnabled = value;
+    }
+
+    public boolean getCapture() {
+        return ((DartControl) impl).capture;
+    }
+
+    public void setCapture(boolean value) {
+        ((DartControl) impl).capture = value;
+    }
+
+    public int getState() {
+        return ((DartControl) impl).state;
+    }
+
+    public void setState(int value) {
+        ((DartControl) impl).state = value;
+    }
+
+    public boolean getRedraw() {
+        return ((DartControl) impl).redraw;
+    }
+
+    public void setRedraw(boolean value) {
+        ((DartControl) impl).redraw = value;
+    }
 
     @JsonConverter(target = Control.class)
     public static class ControlJson implements Configuration {

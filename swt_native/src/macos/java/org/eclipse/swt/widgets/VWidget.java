@@ -9,6 +9,15 @@ import dev.equo.swt.Serializer;
 
 public class VWidget {
 
+    protected VWidget() {
+    }
+
+    protected VWidget(DartWidget impl) {
+        this.impl = impl;
+    }
+
+    protected DartWidget impl;
+
     @JsonConverter(target = Widget.class)
     public static class WidgetJson implements Configuration {
 
