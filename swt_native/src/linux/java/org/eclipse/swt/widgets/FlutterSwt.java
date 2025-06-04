@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class FlutterSwt {
-
     public static enum ExpandPolicy {
         FOLLOW_H_PARENT(0), FOLLOW_W_PARENT(1), FOLLOW_PARENT(2);
 
@@ -26,6 +25,7 @@ public class FlutterSwt {
 
     public static Serializer SERIALIZER = new Serializer();
     public static FlutterClient CLIENT = null;
+
     static {
         System.load(
                 "/home/elias/Documents/Equo/swt-flutter/flutter-lib/build/linux/x64/debug/runner/libflutter_library.so");
@@ -90,5 +90,4 @@ public class FlutterSwt {
             DIRTY.add(control);
         }
     }
-
 }

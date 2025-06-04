@@ -34,6 +34,7 @@
 		DFEEAE252D5ED55B0019684D /* bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFEEAE232D5ED55B0019684D /* bridge.swift */; };
 		DFEEAE2D2D5F22C20019684D /* FlutterBridge-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = DFEEAE222D5ED55A0019684D /* FlutterBridge-Bridging-Header.h */; };
 		DFEEAE2E2D60EE820019684D /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */; };
+		DFEEAE2F2D61000000000001 /* libFlutterBridge.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = DFEEAE112D5C2B770019684D /* libFlutterBridge.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,6 +87,17 @@
 			files = (
 				DFEEAE1D2D5C2E430019684D /* libFlutterBridge.dylib in CopyFiles */,
 			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DFEEAE302D61000000000002 /* Copy FlutterBridge Library */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "Contents";
+			dstSubfolderSpec = 1;
+			files = (
+				DFEEAE2F2D61000000000001 /* libFlutterBridge.dylib in CopyFiles */,
+			);
+			name = "Copy FlutterBridge Library";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -272,6 +284,7 @@
 				33CC10EB2044A3C60003C045 /* Resources */,
 				33CC110E2044A8840003C045 /* Bundle Framework */,
 				3399D490228B24CF009A79C7 /* ShellScript */,
+				DFEEAE302D61000000000002 /* Copy FlutterBridge Library */,
 			);
 			buildRules = (
 			);
