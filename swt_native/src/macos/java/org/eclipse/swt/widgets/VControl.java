@@ -42,6 +42,14 @@ public class VControl extends VWidget {
         ((DartControl) impl).bounds = value;
     }
 
+    public boolean getDragDetect() {
+        return ((DartControl) impl).dragDetect;
+    }
+
+    public void setDragDetect(boolean value) {
+        ((DartControl) impl).dragDetect = value;
+    }
+
     @JsonAttribute(ignore = true)
     public Cursor getCursor() {
         return ((DartControl) impl).cursor;
@@ -49,6 +57,14 @@ public class VControl extends VWidget {
 
     public void setCursor(Cursor value) {
         ((DartControl) impl).cursor = value;
+    }
+
+    public boolean getEnabled() {
+        return ((DartControl) impl).enabled;
+    }
+
+    public void setEnabled(boolean value) {
+        ((DartControl) impl).enabled = value;
     }
 
     @JsonAttribute(ignore = true)
@@ -118,20 +134,20 @@ public class VControl extends VWidget {
         ((DartControl) impl).touchEnabled = value;
     }
 
+    public boolean getVisible() {
+        return ((DartControl) impl).visible;
+    }
+
+    public void setVisible(boolean value) {
+        ((DartControl) impl).visible = value;
+    }
+
     public boolean getCapture() {
         return ((DartControl) impl).capture;
     }
 
     public void setCapture(boolean value) {
         ((DartControl) impl).capture = value;
-    }
-
-    public int getState() {
-        return ((DartControl) impl).state;
-    }
-
-    public void setState(int value) {
-        ((DartControl) impl).state = value;
     }
 
     public boolean getRedraw() {

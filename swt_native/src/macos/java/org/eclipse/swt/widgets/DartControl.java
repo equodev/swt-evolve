@@ -1058,7 +1058,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Rectangle getBounds() {
         checkWidget();
-        return bounds;
+        return this.bounds;
     }
 
     /**
@@ -1189,7 +1189,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point getLocation() {
         checkWidget();
-        return location;
+        return new Point(bounds.x, bounds.y);
     }
 
     /**
@@ -1367,7 +1367,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point getSize() {
         checkWidget();
-        return size;
+        return new Point(bounds.width, bounds.height);
     }
 
     /**
@@ -2607,6 +2607,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setBounds(int x, int y, int width, int height) {
         checkWidget();
         setBounds(x, y, Math.max(0, width), Math.max(0, height), true, true);
+        this.bounds = new Rectangle(x, y, width, height);
     }
 
     void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
@@ -2652,6 +2653,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(rect.x, rect.y, Math.max(0, rect.width), Math.max(0, rect.height), true, true);
+        this.bounds = rect;
     }
 
     /**
@@ -2669,6 +2671,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setCapture(boolean capture) {
         checkWidget();
+        this.capture = capture;
     }
 
     /**
@@ -2727,6 +2730,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else {
             state &= ~DRAG_DETECT;
         }
+        this.dragDetect = dragDetect;
     }
 
     /**
@@ -2762,6 +2766,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         enableWidget(enabled);
         if (fixFocus)
             fixFocus(control);
+        this.enabled = enabled;
     }
 
     /**
@@ -2875,6 +2880,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setLocation(int x, int y) {
         checkWidget();
         setBounds(x, y, 0, 0, true, false);
+        this.bounds = new Rectangle(x, y, bounds.width, bounds.height);
     }
 
     /**
@@ -2896,6 +2902,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(location.x, location.y, 0, 0, true, false);
+        this.bounds = new Rectangle(location.x, location.y, bounds.width, bounds.height);
     }
 
     /**
@@ -2953,6 +2960,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setOrientation(int orientation) {
         checkWidget();
+        this.orientation = orientation;
     }
 
     /**
@@ -3028,6 +3036,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             }
             drawCount++;
         }
+        this.redraw = redraw;
     }
 
     /**
@@ -3099,6 +3108,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setSize(int width, int height) {
         checkWidget();
         setBounds(0, 0, Math.max(0, width), Math.max(0, height), false, true);
+        this.bounds = new Rectangle(bounds.x, bounds.y, width, height);
     }
 
     /**
@@ -3129,6 +3139,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(0, 0, Math.max(0, size.x), Math.max(0, size.y), false, true);
+        this.bounds = new Rectangle(bounds.x, bounds.y, size.x, size.y);
     }
 
     void setSmallSize() {
@@ -3170,6 +3181,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setTextDirection(int textDirection) {
         checkWidget();
+        this.textDirection = textDirection;
     }
 
     /**
@@ -3295,6 +3307,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         }
         if (fixFocus)
             fixFocus(control);
+        this.visible = visible;
     }
 
     void setZOrder() {
@@ -3911,13 +3924,15 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     Rectangle bounds;
 
-    Point location;
+    boolean dragDetect;
+
+    boolean enabled;
 
     int orientation;
 
-    Point size;
-
     int textDirection;
+
+    boolean visible;
 
     boolean capture;
 

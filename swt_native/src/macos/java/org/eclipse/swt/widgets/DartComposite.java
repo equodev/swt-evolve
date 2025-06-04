@@ -952,6 +952,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         } else {
             layoutCount++;
         }
+        this.layoutDeferred = defer;
     }
 
     @Override

@@ -328,7 +328,7 @@ public class DartButton extends DartControl implements IButton {
         checkWidget();
         if ((style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
             return false;
-        return selection;
+        return this.selection;
     }
 
     /**
@@ -450,6 +450,7 @@ public class DartButton extends DartControl implements IButton {
         checkWidget();
         _setAlignment(alignment);
         redraw();
+        this.alignment = alignment;
     }
 
     void _setAlignment(int alignment) {
@@ -579,6 +580,7 @@ public class DartButton extends DartControl implements IButton {
         if (grayed) {
         } else {
         }
+        this.selection = selected;
     }
 
     /**

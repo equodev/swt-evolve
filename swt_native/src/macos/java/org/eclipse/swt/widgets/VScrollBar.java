@@ -16,6 +16,14 @@ public class VScrollBar extends VWidget {
         super(impl);
     }
 
+    public boolean getEnabled() {
+        return ((DartScrollBar) impl).enabled;
+    }
+
+    public void setEnabled(boolean value) {
+        ((DartScrollBar) impl).enabled = value;
+    }
+
     public int getIncrement() {
         return ((DartScrollBar) impl).increment;
     }
@@ -70,14 +78,6 @@ public class VScrollBar extends VWidget {
 
     public void setVisible(boolean value) {
         ((DartScrollBar) impl).visible = value;
-    }
-
-    public int getState() {
-        return ((DartScrollBar) impl).state;
-    }
-
-    public void setState(int value) {
-        ((DartScrollBar) impl).state = value;
     }
 
     @JsonConverter(target = ScrollBar.class)

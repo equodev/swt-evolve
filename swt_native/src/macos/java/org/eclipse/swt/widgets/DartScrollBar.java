@@ -264,7 +264,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public int getSelection() {
         checkWidget();
-        return selection;
+        return this.selection;
     }
 
     /**
@@ -358,7 +358,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public boolean getVisible() {
         checkWidget();
-        return visible;
+        return this.visible;
     }
 
     /**
@@ -509,6 +509,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
             state |= DISABLED;
         }
         enableWidget(enabled);
+        this.enabled = enabled;
     }
 
     void enableWidget(boolean enabled) {
@@ -605,6 +606,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setSelection(int selection) {
         checkWidget();
         updateBar(selection, minimum, maximum, thumb);
+        this.selection = selection;
     }
 
     /**
@@ -693,6 +695,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setVisible(boolean visible) {
         checkWidget();
         ((SwtScrollable) parent.getImpl()).setScrollBarVisible(this.getApi(), visible);
+        this.visible = visible;
     }
 
     void updateBar(int selection, int minimum, int maximum, int thumb) {
@@ -701,6 +704,8 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         float fraction = range <= 0 ? 1 : (float) (selection - minimum) / range;
         float knob = range <= 0 ? 1 : (float) thumb / (maximum - minimum);
     }
+
+    boolean enabled;
 
     int selection;
 
