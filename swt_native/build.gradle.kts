@@ -265,7 +265,6 @@ platforms.forEach { platform ->
         group = "build"
         description = "Builds Flutter lib for $platform"
         workingDir = file("../flutter-lib")
-
         when (osArch[0]) {
             "macos" -> {
                 val arch = when (osArch[1]) {
@@ -279,6 +278,39 @@ platforms.forEach { platform ->
                 commandLine = listOf("flutter", "build", osArch[0])
             }
         }
+    }
+
+    tasks.register<Copy>("${platform}CopyFlutterBinaries") {
+        group = "build"
+        description = "Copies Flutter binaries for $platform"
+        
+        when (osArch[0]) {
+            "macos" -> {
+                from("../flutter-lib/build/macos/Build/Products/Release/swtflutter.app") {
+                    into("swtflutter.app")
+                }
+            }
+            "linux" -> {
+                val linuxArch = if (osArch[1] == "aarch64") "arm64" else "x64"
+                from("../flutter-lib/build/linux/$linuxArch/release/runner") {
+                    include("libflutter_library.so")
+                    into("runner")
+                }
+                from("../flutter-lib/build/linux/$linuxArch/release/bundle/lib") {
+                    include("libapp.so", "libflutter_linux_gtk.so")
+                    into("bundle/lib")
+                }
+                from("../flutter-lib/build/linux/$linuxArch/release/bundle/data") {
+                    include("icudtl.dat", "flutter_assets/**")
+                    into("bundle/data")
+                }
+            }
+            "windows" -> {
+                // Add Windows binaries when needed
+            }
+        }
+        
+        into(layout.buildDirectory.dir("natives/$platform"))
     }
 
     tasks.register<Copy>("${platform}ExtractNatives") {
@@ -321,6 +353,7 @@ platforms.forEach { platform ->
             )
         }
         dependsOn("${platform}ExtractNatives")
+        dependsOn("${platform}CopyFlutterBinaries")
     }
 }
 
