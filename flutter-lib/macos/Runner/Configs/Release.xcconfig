@@ -1,2 +1,4 @@
 #include "../../Flutter/Flutter-Release.xcconfig"
 #include "Warnings.xcconfig"
+#include "JavaPaths.xcconfig"
+#include "Architecture.xcconfig"

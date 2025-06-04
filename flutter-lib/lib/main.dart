@@ -31,7 +31,7 @@ void main(List<String> args) async {
   ));
 
   EquoCommService.send("${widgetName}/${widgetId}/ClientReady");
-  print("Sent ClientReady");
+  print("Sent ${widgetName}/${widgetId}/ClientReady");
 }
 
 Widget createContentWidget(String widgetName, int widgetId) {

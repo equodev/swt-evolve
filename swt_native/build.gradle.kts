@@ -78,17 +78,30 @@ dependencies {
 
     implementation("com.google.auto.value:auto-value-annotations:1.10.4")
     annotationProcessor("com.google.auto.value:auto-value:1.10.4")
-}
+    implementation("com.dslplatform:dsl-json:2.0.2")
+    annotationProcessor("com.dslplatform:dsl-json:2.0.2")
 
+    testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.assertj:assertj-core:3.25.3")
+    testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.1.1")
+    testImplementation("org.mockito:mockito-core:5.18.0")
+    testImplementation("org.instancio:instancio-junit:5.4.0")
+}
 
 sourceSets {
     main {
         java {
             // Include the shared sources and current OS-specific sources for IDE
-            setSrcDirs(listOf(
-                "src/main/java",
-                "src/${currentOs}/java"
-            ))
+            if (currentOs != "macos") // temp exclude src/main from linux
+                setSrcDirs(listOf(
+                    "src/${currentOs}/java"
+                ))
+            else
+                setSrcDirs(listOf(
+                    "src/main/java",
+                    "src/${currentOs}/java"
+                ))
         }
     }
 
@@ -96,10 +109,15 @@ sourceSets {
     oss.forEach { os ->
         create(os) {
             java {
-                setSrcDirs(listOf(
-                    "src/main/java",
-                    "src/${os}/java"
-                ))
+                if (os != "macos") // temp exclude src/main from linux
+                    setSrcDirs(listOf(
+                        "src/${os}/java"
+                    ))
+                else
+                    setSrcDirs(listOf(
+                        "src/main/java",
+                        "src/${os}/java"
+                    ))
             }
             annotationProcessorPath += sourceSets.main.get().annotationProcessorPath
             compileClasspath += sourceSets.main.get().compileClasspath
@@ -122,6 +140,13 @@ sourceSets {
 ////        }
 //    }
 //}
+
+
+tasks.test {
+    useJUnitPlatform()
+//    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
+//        jvmArgs = listOf("-XstartOnFirstThread")
+}
 
 //val extractNatives by tasks.registering {
 //    dependsOn(configurations["swtImplementation"])
@@ -157,7 +182,7 @@ val extractSources by tasks.registering {
     dependsOn(configurations["swtSources"])
 
     doLast {
-        val sourcesDir = file("src/$os/java")
+        val sourcesDir = file("build/swt/$os")
         sourcesDir.mkdirs()
 
         configurations["swtSources"].files.forEach { jar ->
@@ -184,6 +209,7 @@ val extractSources by tasks.registering {
 
 tasks.compileJava {
 //    dependsOn(extractSources)
+//    options.setIncremental(false) // dsl-json processor seems to get crazy
 }
 
 //tasks.jar {
@@ -235,6 +261,58 @@ platforms.forEach { platform ->
         configurations["${platform}SwtImpl"]("org.eclipse.platform:org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}:$swtVersion")
     }
 
+    tasks.register<Exec>("${platform}FlutterLib") {
+        group = "build"
+        description = "Builds Flutter lib for $platform"
+        workingDir = file("../flutter-lib")
+        when (osArch[0]) {
+            "macos" -> {
+                val arch = when (osArch[1]) {
+                    "x86_64" -> "x86_64"
+                    "aarch64" -> "arm64"
+                    else -> throw GradleException("Unsupported macOS architecture: ${osArch[1]}")
+                }
+                commandLine = listOf("bash", "-c", "./set-arch.sh $arch && flutter build macos")
+            }
+            else -> {
+                commandLine = listOf("flutter", "build", osArch[0])
+            }
+        }
+    }
+
+    tasks.register<Copy>("${platform}CopyFlutterBinaries") {
+        group = "build"
+        description = "Copies Flutter binaries for $platform"
+        
+        when (osArch[0]) {
+            "macos" -> {
+                from("../flutter-lib/build/macos/Build/Products/Release/swtflutter.app") {
+                    into("swtflutter.app")
+                }
+            }
+            "linux" -> {
+                val linuxArch = if (osArch[1] == "aarch64") "arm64" else "x64"
+                from("../flutter-lib/build/linux/$linuxArch/release/runner") {
+                    include("libflutter_library.so")
+                    into("runner")
+                }
+                from("../flutter-lib/build/linux/$linuxArch/release/bundle/lib") {
+                    include("libapp.so", "libflutter_linux_gtk.so")
+                    into("bundle/lib")
+                }
+                from("../flutter-lib/build/linux/$linuxArch/release/bundle/data") {
+                    include("icudtl.dat", "flutter_assets/**")
+                    into("bundle/data")
+                }
+            }
+            "windows" -> {
+                // Add Windows binaries when needed
+            }
+        }
+        
+        into(layout.buildDirectory.dir("natives/$platform"))
+    }
+
     tasks.register<Copy>("${platform}ExtractNatives") {
         from(configurations["${platform}SwtImpl"].map { zipTree(it) })
         into(layout.buildDirectory.dir("natives/$platform"))
@@ -248,15 +326,34 @@ platforms.forEach { platform ->
         from(sourceSets[osArch[0]].output)
         from(layout.buildDirectory.dir("natives/$platform"))
 
+        // Add all dependencies to the JAR
+        from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+        exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "OSGI-OPT/")
+
         // Add manifest attributes if needed
         manifest {
             attributes(
-                "Implementation-Title" to project.name,
-                "Implementation-Version" to project.version,
-                "Target-Platform" to platform
+                "Fragment-Host" to "org.eclipse.swt;bundle-version=\"[3.128.0,4.0.0)\"",
+                "Bundle-Name" to "Equo SWT for ${osArch[0]} on ${osArch[1]}",
+                "Bundle-Vendor" to "Equo Tech, Inc.",
+                "Bundle-SymbolicName" to "org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}; singleton:=true",
+                "Bundle-Version" to "3.128.0.v20241113-2009",
+                "Bundle-ManifestVersion" to 2,
+                "Export-Package" to "org.eclipse.swt,org.eclipse.swt.accessibility,"+
+                        "org.eclipse.swt.awt,org.eclipse.swt.browser,org.eclipse.swt.custom,"+
+                        "org.eclipse.swt.dnd,org.eclipse.swt.events,org.eclipse.swt.graphics,"+
+                        "org.eclipse.swt.layout,org.eclipse.swt.opengl,org.eclipse.swt.printing,"+
+                        "org.eclipse.swt.program,org.eclipse.swt.widgets,org.eclipse.swt.internal; x-friends:=\"org.eclipse.ui\","+
+                        "org.eclipse.swt.internal.image; x-internal:=true,org.eclipse.swt.internal.$swtWs; x-friends:=\"org.eclipse.ui\"",
+                "Eclipse-PlatformFilter" to "(& (osgi.ws=$swtWs) (osgi.os=$swtOs) (osgi.arch=${osArch[1]}) )",
+                "SWT-WS" to swtWs,
+                "SWT-OS" to swtOs,
+                "SWT-Arch" to osArch[1],
+                "Automatic-Module-Name" to "org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}",
             )
         }
         dependsOn("${platform}ExtractNatives")
+        dependsOn("${platform}CopyFlutterBinaries")
     }
 }
 
