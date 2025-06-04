@@ -1,0 +1,10 @@
+// Architecture configuration for macOS builds
+// This file controls which architecture(s) to build for
+// Valid values: x86_64, arm64, or x86_64 arm64 (universal)
+
+// Default to universal build if not specified
+ARCHS = $(FLUTTER_MACOS_ARCHS)
+ONLY_ACTIVE_ARCH = NO
+
+// Force the architecture if FLUTTER_MACOS_ARCHS is set
+VALID_ARCHS = x86_64 arm64
