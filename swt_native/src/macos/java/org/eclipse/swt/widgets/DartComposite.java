@@ -885,6 +885,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         for (int i = 0; i < children.length; i++) {
             ((SwtControl) children[i].getImpl()).updateBackgroundMode();
         }
+        getBridge().dirty(this);
     }
 
     @Override
@@ -953,6 +954,7 @@ public class DartComposite extends DartScrollable implements IComposite {
             layoutCount++;
         }
         this.layoutDeferred = defer;
+        getBridge().dirty(this);
     }
 
     @Override
@@ -1019,6 +1021,7 @@ public class DartComposite extends DartScrollable implements IComposite {
             tabList = newList;
         }
         this.tabList = tabList;
+        getBridge().dirty(this);
     }
 
     @Override

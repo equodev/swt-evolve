@@ -482,6 +482,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         if (value < 1)
             return;
         increment = value;
+        getBridge().dirty(this);
     }
 
     /**
@@ -510,6 +511,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         }
         enableWidget(enabled);
         this.enabled = enabled;
+        getBridge().dirty(this);
     }
 
     void enableWidget(boolean enabled) {
@@ -542,6 +544,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         int selection = Math.max(minimum, Math.min(getSelection(), value - thumb));
         this.maximum = value;
         updateBar(selection, minimum, value, thumb);
+        getBridge().dirty(this);
     }
 
     /**
@@ -569,6 +572,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         int selection = Math.min(maximum - thumb, Math.max(getSelection(), value));
         this.minimum = value;
         updateBar(selection, value, maximum, thumb);
+        getBridge().dirty(this);
     }
 
     /**
@@ -589,6 +593,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         if (value < 1)
             return;
         pageIncrement = value;
+        getBridge().dirty(this);
     }
 
     /**
@@ -607,6 +612,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         checkWidget();
         updateBar(selection, minimum, maximum, thumb);
         this.selection = selection;
+        getBridge().dirty(this);
     }
 
     /**
@@ -633,6 +639,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         value = Math.min(value, maximum - minimum);
         updateBar(getSelection(), minimum, maximum, value);
         this.thumb = value;
+        getBridge().dirty(this);
     }
 
     /**
@@ -674,6 +681,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         this.increment = increment;
         this.pageIncrement = pageIncrement;
         updateBar(selection, minimum, maximum, thumb);
+        getBridge().dirty(this);
     }
 
     /**
@@ -696,6 +704,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         checkWidget();
         ((SwtScrollable) parent.getImpl()).setScrollBarVisible(this.getApi(), visible);
         this.visible = visible;
+        getBridge().dirty(this);
     }
 
     void updateBar(int selection, int minimum, int maximum, int thumb) {

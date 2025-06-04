@@ -445,6 +445,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     void createJNIRef() {
+        bridge = FlutterBridge.of(this);
     }
 
     void createWidget() {
@@ -552,7 +553,6 @@ public abstract class DartWidget implements IWidget {
      * @see #setData(Object)
      */
     public Object getData() {
-        checkWidget();
         return (state & KEYED_DATA) != 0 ? ((Object[]) data)[0] : data;
     }
 
@@ -581,7 +581,6 @@ public abstract class DartWidget implements IWidget {
      * @see #setData(String, Object)
      */
     public Object getData(String key) {
-        checkWidget();
         if (key == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (key.equals(IS_ACTIVE))
@@ -707,7 +706,6 @@ public abstract class DartWidget implements IWidget {
      * </ul>
      */
     public int getStyle() {
-        checkWidget();
         return style;
     }
 

@@ -36,20 +36,24 @@ public abstract class FlutterBridge {
     public static void update() {
         for (DartWidget widget : dirty) {
             widget.getBridge().clientReady.thenRun(() -> {
-                if (!isNew(widget)) { // send with the parent
-                    String event = event(widget);
-                    System.out.println("will send: " + event);
-                    try {
-                        ByteArrayOutputStream out = new ByteArrayOutputStream();
-                        serializer.to(widget.getApi(), out);
-                        String payload = out.toString(StandardCharsets.UTF_8);
-                        System.out.println("send: " + event + ": " + payload);
-                        client.getComm().send(event, payload);
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                try {
+                    if (!isNew(widget)) { // send with the parent
+                        String event = event(widget);
+                        System.out.println("will send: " + event);
+                        try {
+                            ByteArrayOutputStream out = new ByteArrayOutputStream();
+                            serializer.to(widget.getApi(), out);
+                            String payload = out.toString(StandardCharsets.UTF_8);
+                            System.out.println("send: " + event + ": " + payload);
+                            client.getComm().send(event, payload);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        setNotNew(widget);
                     }
-                } else {
-                    setNotNew(widget);
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
                 }
             });
         }

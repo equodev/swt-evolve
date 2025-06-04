@@ -451,6 +451,7 @@ public class DartButton extends DartControl implements IButton {
         _setAlignment(alignment);
         redraw();
         this.alignment = alignment;
+        getBridge().dirty(this);
     }
 
     void _setAlignment(int alignment) {
@@ -510,6 +511,7 @@ public class DartButton extends DartControl implements IButton {
             } else {
             }
         }
+        getBridge().dirty(this);
     }
 
     /**
@@ -544,6 +546,7 @@ public class DartButton extends DartControl implements IButton {
             }
         }
         updateAlignment();
+        getBridge().dirty(this);
     }
 
     @Override
@@ -581,6 +584,7 @@ public class DartButton extends DartControl implements IButton {
         } else {
         }
         this.selection = selected;
+        getBridge().dirty(this);
     }
 
     /**
@@ -625,6 +629,7 @@ public class DartButton extends DartControl implements IButton {
             return;
         text = string;
         updateAlignment();
+        getBridge().dirty(this);
     }
 
     void updateAlignment() {
