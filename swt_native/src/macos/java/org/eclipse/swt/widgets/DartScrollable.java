@@ -112,7 +112,7 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
 
     ScrollBar createScrollBar(int style) {
         ScrollBar bar = new ScrollBar();
-        ((SwtScrollBar) bar.getImpl()).parent = this.getApi();
+        ((DartScrollBar) bar.getImpl()).parent = this.getApi();
         ((SwtWidget) bar.getImpl()).style = style;
         ((SwtWidget) bar.getImpl()).display = display;
         long actionSelector;
@@ -123,11 +123,11 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
         } else {
         }
         ((SwtWidget) bar.getImpl()).createJNIRef();
-        ((SwtScrollBar) bar.getImpl()).register();
+        ((DartScrollBar) bar.getImpl()).register();
         if ((state & CANVAS) == 0) {
         }
         if ((state & CANVAS) != 0) {
-            ((SwtScrollBar) bar.getImpl()).updateBar(0, 0, 100, 10);
+            ((DartScrollBar) bar.getImpl()).updateBar(0, 0, 100, 10);
         }
         return bar;
     }
@@ -303,25 +303,21 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
 
     @Override
     void sendHorizontalSelection() {
-        if (((SwtScrollBar) horizontalBar.getImpl()).view.isHiddenOrHasHiddenAncestor())
-            return;
-        ((SwtScrollBar) horizontalBar.getImpl()).sendSelection();
+        ((DartScrollBar) horizontalBar.getImpl()).sendSelection();
     }
 
     @Override
     void sendVerticalSelection() {
-        if (((SwtScrollBar) verticalBar.getImpl()).view.isHiddenOrHasHiddenAncestor())
-            return;
-        ((SwtScrollBar) verticalBar.getImpl()).sendSelection();
+        ((DartScrollBar) verticalBar.getImpl()).sendSelection();
     }
 
     @Override
     void enableWidget(boolean enabled) {
         super.enableWidget(enabled);
         if (horizontalBar != null)
-            ((SwtScrollBar) horizontalBar.getImpl()).enableWidget(enabled && isNeeded(horizontalBar));
+            ((DartScrollBar) horizontalBar.getImpl()).enableWidget(enabled && isNeeded(horizontalBar));
         if (verticalBar != null)
-            ((SwtScrollBar) verticalBar.getImpl()).enableWidget(enabled && isNeeded(verticalBar));
+            ((DartScrollBar) verticalBar.getImpl()).enableWidget(enabled && isNeeded(verticalBar));
     }
 
     boolean setScrollBarVisible(ScrollBar bar, boolean visible) {

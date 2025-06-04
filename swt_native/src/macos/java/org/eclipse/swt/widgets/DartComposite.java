@@ -255,10 +255,6 @@ public class DartComposite extends DartScrollable implements IComposite {
             GCData data = gc.getGCData();
             if (data.image != null)
                 imgHeight = data.image.getBounds().height;
-            if (data.flippedContext != null) {
-            }
-            if (data.flippedContext != null) {
-            }
         } else {
             gc.fillRectangle(x, y, width, height);
         }

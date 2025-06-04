@@ -172,7 +172,7 @@ public abstract class DartWidget implements IWidget {
         checkSubclass();
         checkParent(parent);
         this.style = style;
-        display = ((SwtWidget) parent.getImpl()).display;
+        display = (parent.getImpl() instanceof DartWidget) ? ((DartWidget) parent.getImpl()).display : ((SwtWidget) parent.getImpl()).display;
         reskinWidget();
         notifyCreationTracker();
     }
@@ -1175,7 +1175,7 @@ public abstract class DartWidget implements IWidget {
     void notifyDisposalTracker() {
     }
 
-    FlutterBridge bridge;
+    protected FlutterBridge bridge;
 
     public FlutterBridge getBridge() {
         return bridge;

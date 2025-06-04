@@ -322,7 +322,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         controlAlignments = new int[0];
         controlRects = new Rectangle[0];
         controlBkImages = new Image[0];
-        updateTabHeight(false);
+//        updateTabHeight(false);
         // Add all listeners
         listener = event -> {
             switch(event.type) {
@@ -576,8 +576,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             leftWidth += SPACING * 2;
         int itemWidth = 0;
         for (CTabItem item : items) {
-            if (((SwtCTabItem) item.getImpl()).showing)
-                itemWidth += ((SwtCTabItem) item.getImpl()).width;
+            if (((DartCTabItem) item.getImpl()).showing)
+                itemWidth += ((DartCTabItem) item.getImpl()).width;
         }
         int maxWidth = size.x - borderLeft - leftWidth - borderRight;
         int availableWidth = Math.max(0, maxWidth - itemWidth - rightWidth);
@@ -700,14 +700,14 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         }
         if (showChevron) {
             int i = 0, lastIndex = -1;
-            while (i < priority.length && ((SwtCTabItem) items[priority[i]].getImpl()).showing) {
+            while (i < priority.length && ((DartCTabItem) items[priority[i]].getImpl()).showing) {
                 lastIndex = Math.max(lastIndex, priority[i++]);
             }
             if (lastIndex == -1)
                 lastIndex = selectedIndex;
             if (lastIndex != -1) {
                 CTabItem lastItem = items[lastIndex];
-                int w = ((SwtCTabItem) lastItem.getImpl()).x + ((SwtCTabItem) lastItem.getImpl()).width + SPACING;
+                int w = ((DartCTabItem) lastItem.getImpl()).x + ((DartCTabItem) lastItem.getImpl()).width + SPACING;
                 if (!simple && lastIndex == selectedIndex)
                     w -= (((SwtCTabFolderRenderer) renderer.getImpl()).curveIndent - 7);
                 rects[controls.length - 1].x = w;
@@ -778,7 +778,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     void createItem(CTabItem item, int index) {
         if (0 > index || index > getItemCount())
             SWT.error(SWT.ERROR_INVALID_RANGE);
-        ((SwtCTabItem) item.getImpl()).parent = this.getApi();
+        ((DartCTabItem) item.getImpl()).parent = this.getApi();
         CTabItem[] newItems = new CTabItem[items.length + 1];
         System.arraycopy(items, 0, newItems, 0, index);
         newItems[index] = item;
@@ -815,7 +815,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             priority = new int[0];
             firstIndex = -1;
             selectedIndex = -1;
-            Control control = ((SwtCTabItem) item.getImpl()).control;
+            Control control = ((DartCTabItem) item.getImpl()).control;
             if (control != null && !control.isDisposed()) {
                 control.setVisible(false);
             }
@@ -1558,7 +1558,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                     location = getBounds();
                     pt = getParent().toDisplay(location.x, location.y);
                 } else {
-                    if (childID >= 0 && childID < items.length && ((SwtCTabItem) items[childID].getImpl()).showing) {
+                    if (childID >= 0 && childID < items.length && ((DartCTabItem) items[childID].getImpl()).showing) {
                         if (!items[childID].isDisposed()) {
                             location = items[childID].getBounds();
                         }
@@ -1720,7 +1720,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                     int idx = 0;
                     int current = -1;
                     for (int i = 0; i < items.length; i++) {
-                        if (((SwtCTabItem) items[i].getImpl()).showing) {
+                        if (((DartCTabItem) items[i].getImpl()).showing) {
                             if (i == selectedIndex)
                                 current = idx;
                             visible[idx++] = i;
@@ -1821,7 +1821,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     void onDragDetect(Event event) {
         boolean consume = false;
         for (CTabItem item : items) {
-            if (((SwtCTabItem) item.getImpl()).closeRect.contains(event.x, event.y)) {
+            if (((DartCTabItem) item.getImpl()).closeRect.contains(event.x, event.y)) {
                 consume = true;
                 break;
             }
@@ -1870,7 +1870,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 				 */
                     Rectangle itemTrim = renderer.computeTrim(selectedIndex, SWT.NONE, 0, 0, 0, 0);
                     Rectangle closeTrim = renderer.computeTrim(CTabFolderRenderer.PART_CLOSE_BUTTON, SWT.NONE, 0, 0, 0, 0);
-                    event.x = rect.x + rect.width - ((SwtCTabItem) item.getImpl()).closeRect.width + itemTrim.x - closeTrim.width;
+                    event.x = rect.x + rect.width - ((DartCTabItem) item.getImpl()).closeRect.width + itemTrim.x - closeTrim.width;
                     event.y = rect.y - itemTrim.y - closeTrim.y;
                 }
             }
@@ -1902,17 +1902,17 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                 {
                     for (int i = 0; i < items.length; i++) {
                         CTabItem item = items[i];
-                        if (i != selectedIndex && ((SwtCTabItem) item.getImpl()).closeImageState != SWT.BACKGROUND) {
-                            ((SwtCTabItem) item.getImpl()).closeImageState = SWT.BACKGROUND;
-                            redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                        if (i != selectedIndex && ((DartCTabItem) item.getImpl()).closeImageState != SWT.BACKGROUND) {
+                            ((DartCTabItem) item.getImpl()).closeImageState = SWT.BACKGROUND;
+                            redraw(((DartCTabItem) item.getImpl()).closeRect.x, ((DartCTabItem) item.getImpl()).closeRect.y, ((DartCTabItem) item.getImpl()).closeRect.width, ((DartCTabItem) item.getImpl()).closeRect.height, false);
                         }
-                        if ((((SwtCTabItem) item.getImpl()).state & SWT.HOT) != 0) {
-                            ((SwtCTabItem) item.getImpl()).state &= ~SWT.HOT;
-                            redraw(((SwtCTabItem) item.getImpl()).x, ((SwtCTabItem) item.getImpl()).y, ((SwtCTabItem) item.getImpl()).width, ((SwtCTabItem) item.getImpl()).height, false);
+                        if ((((DartCTabItem) item.getImpl()).state & SWT.HOT) != 0) {
+                            ((DartCTabItem) item.getImpl()).state &= ~SWT.HOT;
+                            redraw(((DartCTabItem) item.getImpl()).x, ((DartCTabItem) item.getImpl()).y, ((DartCTabItem) item.getImpl()).width, ((DartCTabItem) item.getImpl()).height, false);
                         }
-                        if (i == selectedIndex && ((SwtCTabItem) item.getImpl()).closeImageState != SWT.NONE) {
-                            ((SwtCTabItem) item.getImpl()).closeImageState = SWT.NONE;
-                            redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                        if (i == selectedIndex && ((DartCTabItem) item.getImpl()).closeImageState != SWT.NONE) {
+                            ((DartCTabItem) item.getImpl()).closeImageState = SWT.NONE;
+                            redraw(((DartCTabItem) item.getImpl()).closeRect.x, ((DartCTabItem) item.getImpl()).closeRect.y, ((DartCTabItem) item.getImpl()).closeRect.width, ((DartCTabItem) item.getImpl()).closeRect.height, false);
                         }
                     }
                     break;
@@ -1980,14 +1980,14 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                         }
                     }
                     if (item != null) {
-                        if (((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
-                            ((SwtCTabItem) item.getImpl()).closeImageState = SWT.SELECTED;
-                            redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                        if (((DartCTabItem) item.getImpl()).closeRect.contains(x, y)) {
+                            ((DartCTabItem) item.getImpl()).closeImageState = SWT.SELECTED;
+                            redraw(((DartCTabItem) item.getImpl()).closeRect.x, ((DartCTabItem) item.getImpl()).closeRect.y, ((DartCTabItem) item.getImpl()).closeRect.width, ((DartCTabItem) item.getImpl()).closeRect.height, false);
                             update();
                             return;
                         }
                         int index = indexOf(item);
-                        if (((SwtCTabItem) item.getImpl()).showing) {
+                        if (((DartCTabItem) item.getImpl()).showing) {
                             int oldSelectedIndex = selectedIndex;
                             setSelection(index, true);
                             if (oldSelectedIndex == selectedIndex) {
@@ -2008,33 +2008,33 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                         close = false;
                         if (item.getBounds().contains(x, y)) {
                             close = true;
-                            if (((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
-                                if (((SwtCTabItem) item.getImpl()).closeImageState != SWT.SELECTED && ((SwtCTabItem) item.getImpl()).closeImageState != SWT.HOT) {
-                                    ((SwtCTabItem) item.getImpl()).closeImageState = SWT.HOT;
-                                    redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                            if (((DartCTabItem) item.getImpl()).closeRect.contains(x, y)) {
+                                if (((DartCTabItem) item.getImpl()).closeImageState != SWT.SELECTED && ((DartCTabItem) item.getImpl()).closeImageState != SWT.HOT) {
+                                    ((DartCTabItem) item.getImpl()).closeImageState = SWT.HOT;
+                                    redraw(((DartCTabItem) item.getImpl()).closeRect.x, ((DartCTabItem) item.getImpl()).closeRect.y, ((DartCTabItem) item.getImpl()).closeRect.width, ((DartCTabItem) item.getImpl()).closeRect.height, false);
                                 }
                             } else {
-                                if (((SwtCTabItem) item.getImpl()).closeImageState != SWT.NONE) {
-                                    ((SwtCTabItem) item.getImpl()).closeImageState = SWT.NONE;
-                                    redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                                if (((DartCTabItem) item.getImpl()).closeImageState != SWT.NONE) {
+                                    ((DartCTabItem) item.getImpl()).closeImageState = SWT.NONE;
+                                    redraw(((DartCTabItem) item.getImpl()).closeRect.x, ((DartCTabItem) item.getImpl()).closeRect.y, ((DartCTabItem) item.getImpl()).closeRect.width, ((DartCTabItem) item.getImpl()).closeRect.height, false);
                                 }
                             }
-                            if ((((SwtCTabItem) item.getImpl()).state & SWT.HOT) == 0) {
-                                ((SwtCTabItem) item.getImpl()).state |= SWT.HOT;
-                                redraw(((SwtCTabItem) item.getImpl()).x, ((SwtCTabItem) item.getImpl()).y, ((SwtCTabItem) item.getImpl()).width, ((SwtCTabItem) item.getImpl()).height, false);
+                            if ((((DartCTabItem) item.getImpl()).state & SWT.HOT) == 0) {
+                                ((DartCTabItem) item.getImpl()).state |= SWT.HOT;
+                                redraw(((DartCTabItem) item.getImpl()).x, ((DartCTabItem) item.getImpl()).y, ((DartCTabItem) item.getImpl()).width, ((DartCTabItem) item.getImpl()).height, false);
                             }
                         }
-                        if (i != selectedIndex && ((SwtCTabItem) item.getImpl()).closeImageState != SWT.BACKGROUND && !close) {
-                            ((SwtCTabItem) item.getImpl()).closeImageState = SWT.BACKGROUND;
-                            redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                        if (i != selectedIndex && ((DartCTabItem) item.getImpl()).closeImageState != SWT.BACKGROUND && !close) {
+                            ((DartCTabItem) item.getImpl()).closeImageState = SWT.BACKGROUND;
+                            redraw(((DartCTabItem) item.getImpl()).closeRect.x, ((DartCTabItem) item.getImpl()).closeRect.y, ((DartCTabItem) item.getImpl()).closeRect.width, ((DartCTabItem) item.getImpl()).closeRect.height, false);
                         }
-                        if ((((SwtCTabItem) item.getImpl()).state & SWT.HOT) != 0 && !close) {
-                            ((SwtCTabItem) item.getImpl()).state &= ~SWT.HOT;
-                            redraw(((SwtCTabItem) item.getImpl()).x, ((SwtCTabItem) item.getImpl()).y, ((SwtCTabItem) item.getImpl()).width, ((SwtCTabItem) item.getImpl()).height, false);
+                        if ((((DartCTabItem) item.getImpl()).state & SWT.HOT) != 0 && !close) {
+                            ((DartCTabItem) item.getImpl()).state &= ~SWT.HOT;
+                            redraw(((DartCTabItem) item.getImpl()).x, ((DartCTabItem) item.getImpl()).y, ((DartCTabItem) item.getImpl()).width, ((DartCTabItem) item.getImpl()).height, false);
                         }
-                        if (i == selectedIndex && ((SwtCTabItem) item.getImpl()).closeImageState != SWT.NONE && !close) {
-                            ((SwtCTabItem) item.getImpl()).closeImageState = SWT.NONE;
-                            redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                        if (i == selectedIndex && ((DartCTabItem) item.getImpl()).closeImageState != SWT.NONE && !close) {
+                            ((DartCTabItem) item.getImpl()).closeImageState = SWT.NONE;
+                            redraw(((DartCTabItem) item.getImpl()).closeRect.x, ((DartCTabItem) item.getImpl()).closeRect.y, ((DartCTabItem) item.getImpl()).closeRect.width, ((DartCTabItem) item.getImpl()).closeRect.height, false);
                         }
                     }
                     break;
@@ -2060,10 +2060,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                         }
                     }
                     if (item != null) {
-                        if (((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
-                            boolean selected = ((SwtCTabItem) item.getImpl()).closeImageState == SWT.SELECTED;
-                            ((SwtCTabItem) item.getImpl()).closeImageState = SWT.HOT;
-                            redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
+                        if (((DartCTabItem) item.getImpl()).closeRect.contains(x, y)) {
+                            boolean selected = ((DartCTabItem) item.getImpl()).closeImageState == SWT.SELECTED;
+                            ((DartCTabItem) item.getImpl()).closeImageState = SWT.HOT;
+                            redraw(((DartCTabItem) item.getImpl()).closeRect.x, ((DartCTabItem) item.getImpl()).closeRect.y, ((DartCTabItem) item.getImpl()).closeRect.width, ((DartCTabItem) item.getImpl()).closeRect.height, false);
                             if (!selected)
                                 return;
                             CTabFolderEvent e = new CTabFolderEvent(this.getApi());
@@ -2084,15 +2084,15 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                                 pt = display.map(null, this.getApi(), pt.x, pt.y);
                                 CTabItem nextItem = getItem(pt);
                                 if (nextItem != null) {
-                                    if (((SwtCTabItem) nextItem.getImpl()).closeRect.contains(pt)) {
-                                        if (((SwtCTabItem) nextItem.getImpl()).closeImageState != SWT.SELECTED && ((SwtCTabItem) nextItem.getImpl()).closeImageState != SWT.HOT) {
-                                            ((SwtCTabItem) nextItem.getImpl()).closeImageState = SWT.HOT;
-                                            redraw(((SwtCTabItem) nextItem.getImpl()).closeRect.x, ((SwtCTabItem) nextItem.getImpl()).closeRect.y, ((SwtCTabItem) nextItem.getImpl()).closeRect.width, ((SwtCTabItem) nextItem.getImpl()).closeRect.height, false);
+                                    if (((DartCTabItem) nextItem.getImpl()).closeRect.contains(pt)) {
+                                        if (((DartCTabItem) nextItem.getImpl()).closeImageState != SWT.SELECTED && ((DartCTabItem) nextItem.getImpl()).closeImageState != SWT.HOT) {
+                                            ((DartCTabItem) nextItem.getImpl()).closeImageState = SWT.HOT;
+                                            redraw(((DartCTabItem) nextItem.getImpl()).closeRect.x, ((DartCTabItem) nextItem.getImpl()).closeRect.y, ((DartCTabItem) nextItem.getImpl()).closeRect.width, ((DartCTabItem) nextItem.getImpl()).closeRect.height, false);
                                         }
                                     } else {
-                                        if (((SwtCTabItem) nextItem.getImpl()).closeImageState != SWT.NONE) {
-                                            ((SwtCTabItem) nextItem.getImpl()).closeImageState = SWT.NONE;
-                                            redraw(((SwtCTabItem) nextItem.getImpl()).closeRect.x, ((SwtCTabItem) nextItem.getImpl()).closeRect.y, ((SwtCTabItem) nextItem.getImpl()).closeRect.width, ((SwtCTabItem) nextItem.getImpl()).closeRect.height, false);
+                                        if (((DartCTabItem) nextItem.getImpl()).closeImageState != SWT.NONE) {
+                                            ((DartCTabItem) nextItem.getImpl()).closeImageState = SWT.NONE;
+                                            redraw(((DartCTabItem) nextItem.getImpl()).closeRect.x, ((DartCTabItem) nextItem.getImpl()).closeRect.y, ((DartCTabItem) nextItem.getImpl()).closeRect.width, ((DartCTabItem) nextItem.getImpl()).closeRect.height, false);
                                         }
                                     }
                                 }
@@ -2120,7 +2120,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                 int idx = 0;
                 int current = -1;
                 for (int i = 0; i < items.length; i++) {
-                    if (((SwtCTabItem) items[i].getImpl()).showing) {
+                    if (((DartCTabItem) items[i].getImpl()).showing) {
                         if (i == selectedIndex)
                             current = idx;
                         visible[idx++] = i;
@@ -2189,7 +2189,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             for (int i = 0; i < items.length; i++) {
                 Rectangle itemBounds = items[i].getBounds();
                 if (i != selectedIndex && event.getBounds().intersects(itemBounds)) {
-                    renderer.draw(i, SWT.BACKGROUND | SWT.FOREGROUND | ((SwtCTabItem) items[i].getImpl()).state, itemBounds, gc);
+                    renderer.draw(i, SWT.BACKGROUND | SWT.FOREGROUND | ((DartCTabItem) items[i].getImpl()).state, itemBounds, gc);
                 }
             }
         }
@@ -2197,7 +2197,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         gc.setForeground(gcForeground);
         gc.setBackground(gcBackground);
         if (selectedIndex != -1) {
-            renderer.draw(selectedIndex, ((SwtCTabItem) items[selectedIndex].getImpl()).state | SWT.BACKGROUND | SWT.FOREGROUND, items[selectedIndex].getBounds(), gc);
+            renderer.draw(selectedIndex, ((DartCTabItem) items[selectedIndex].getImpl()).state | SWT.BACKGROUND | SWT.FOREGROUND, items[selectedIndex].getBounds(), gc);
         }
         gc.setFont(gcFont);
         gc.setForeground(gcForeground);
@@ -2777,7 +2777,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             count = selectedIndex == -1 ? itemCount : itemCount - 1;
         } else {
             int showCount = 0;
-            while (showCount < priority.length && ((SwtCTabItem) items[priority[showCount]].getImpl()).showing) {
+            while (showCount < priority.length && ((DartCTabItem) items[priority[showCount]].getImpl()).showing) {
                 showCount++;
             }
             count = itemCount - showCount;
@@ -2823,7 +2823,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         if (fixFocus) {
             CTabItem item = getSelection();
             if (item != null) {
-                if (((SwtCTabItem) item.getImpl()).setFocus())
+                if (((DartCTabItem) item.getImpl()).setFocus())
                     return true;
             }
         }
@@ -2929,19 +2929,19 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                 CTabItem item = items[i];
                 if (i == selectedIndex) {
                     firstIndex = selectedIndex;
-                    int oldX = ((SwtCTabItem) item.getImpl()).x, oldY = ((SwtCTabItem) item.getImpl()).y;
-                    ((SwtCTabItem) item.getImpl()).x = leftItemEdge;
-                    ((SwtCTabItem) item.getImpl()).y = y;
-                    ((SwtCTabItem) item.getImpl()).showing = true;
-                    if (showClose || ((SwtCTabItem) item.getImpl()).showClose) {
-                        ((SwtCTabItem) item.getImpl()).closeRect.x = leftItemEdge - renderer.computeTrim(i, SWT.NONE, 0, 0, 0, 0).x;
-                        ((SwtCTabItem) item.getImpl()).closeRect.y = onBottom ? size.y - borderBottom - tabHeight + (tabHeight - closeButtonSize.y) / 2 : borderTop + (tabHeight - closeButtonSize.y) / 2;
+                    int oldX = ((DartCTabItem) item.getImpl()).x, oldY = ((DartCTabItem) item.getImpl()).y;
+                    ((DartCTabItem) item.getImpl()).x = leftItemEdge;
+                    ((DartCTabItem) item.getImpl()).y = y;
+                    ((DartCTabItem) item.getImpl()).showing = true;
+                    if (showClose || ((DartCTabItem) item.getImpl()).showClose) {
+                        ((DartCTabItem) item.getImpl()).closeRect.x = leftItemEdge - renderer.computeTrim(i, SWT.NONE, 0, 0, 0, 0).x;
+                        ((DartCTabItem) item.getImpl()).closeRect.y = onBottom ? size.y - borderBottom - tabHeight + (tabHeight - closeButtonSize.y) / 2 : borderTop + (tabHeight - closeButtonSize.y) / 2;
                     }
-                    if (((SwtCTabItem) item.getImpl()).x != oldX || ((SwtCTabItem) item.getImpl()).y != oldY)
+                    if (((DartCTabItem) item.getImpl()).x != oldX || ((DartCTabItem) item.getImpl()).y != oldY)
                         changed = true;
                 } else {
-                    ((SwtCTabItem) item.getImpl()).x = defaultX;
-                    ((SwtCTabItem) item.getImpl()).showing = false;
+                    ((DartCTabItem) item.getImpl()).x = defaultX;
+                    ((DartCTabItem) item.getImpl()).showing = false;
                 }
             }
         } else {
@@ -2950,8 +2950,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             int width = 0;
             for (int i = 0; i < priority.length; i++) {
                 CTabItem item = items[priority[i]];
-                width += ((SwtCTabItem) item.getImpl()).width;
-                ((SwtCTabItem) item.getImpl()).showing = i == 0 ? true : ((SwtCTabItem) item.getImpl()).width > 0 && width <= maxWidth;
+                width += ((DartCTabItem) item.getImpl()).width;
+                ((DartCTabItem) item.getImpl()).showing = i == 0 ? true : ((DartCTabItem) item.getImpl()).width > 0 && width <= maxWidth;
             }
             int x = getLeftItemEdge(gc, CTabFolderRenderer.PART_HEADER);
             // off screen
@@ -2959,23 +2959,23 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             firstIndex = items.length - 1;
             for (int i = 0; i < items.length; i++) {
                 CTabItem item = items[i];
-                if (!((SwtCTabItem) item.getImpl()).showing) {
-                    if (((SwtCTabItem) item.getImpl()).x != defaultX)
+                if (!((DartCTabItem) item.getImpl()).showing) {
+                    if (((DartCTabItem) item.getImpl()).x != defaultX)
                         changed = true;
-                    ((SwtCTabItem) item.getImpl()).x = defaultX;
+                    ((DartCTabItem) item.getImpl()).x = defaultX;
                 } else {
                     firstIndex = Math.min(firstIndex, i);
-                    if (((SwtCTabItem) item.getImpl()).x != x || ((SwtCTabItem) item.getImpl()).y != y)
+                    if (((DartCTabItem) item.getImpl()).x != x || ((DartCTabItem) item.getImpl()).y != y)
                         changed = true;
-                    ((SwtCTabItem) item.getImpl()).x = x;
-                    ((SwtCTabItem) item.getImpl()).y = y;
+                    ((DartCTabItem) item.getImpl()).x = x;
+                    ((DartCTabItem) item.getImpl()).y = y;
                     int state = SWT.NONE;
                     if (i == selectedIndex)
                         state |= SWT.SELECTED;
                     Rectangle edgeTrim = renderer.computeTrim(i, state, 0, 0, 0, 0);
-                    ((SwtCTabItem) item.getImpl()).closeRect.x = ((SwtCTabItem) item.getImpl()).x + ((SwtCTabItem) item.getImpl()).width - (edgeTrim.width + edgeTrim.x) - closeButtonSize.x;
-                    ((SwtCTabItem) item.getImpl()).closeRect.y = onBottom ? size.y - borderBottom - tabHeight + (tabHeight - closeButtonSize.y) / 2 : borderTop + (tabHeight - closeButtonSize.y) / 2;
-                    x = x + ((SwtCTabItem) item.getImpl()).width;
+                    ((DartCTabItem) item.getImpl()).closeRect.x = ((DartCTabItem) item.getImpl()).x + ((DartCTabItem) item.getImpl()).width - (edgeTrim.width + edgeTrim.x) - closeButtonSize.x;
+                    ((DartCTabItem) item.getImpl()).closeRect.y = onBottom ? size.y - borderBottom - tabHeight + (tabHeight - closeButtonSize.y) / 2 : borderTop + (tabHeight - closeButtonSize.y) / 2;
+                    x = x + ((DartCTabItem) item.getImpl()).width;
                     //TODO: fix next item position
                     if (!simple && i == selectedIndex)
                         x -= ((SwtCTabFolderRenderer) renderer.getImpl()).curveIndent;
@@ -3046,17 +3046,17 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                 CTabItem tab = items[selectedIndex];
                 int width = renderer.computeSize(selectedIndex, SWT.SELECTED, gc, SWT.DEFAULT, SWT.DEFAULT).x;
                 width = Math.min(width, getRightItemEdge(gc) - getLeftItemEdge(gc, CTabFolderRenderer.PART_BORDER));
-                if (((SwtCTabItem) tab.getImpl()).height != tabHeight || ((SwtCTabItem) tab.getImpl()).width != width) {
+                if (((DartCTabItem) tab.getImpl()).height != tabHeight || ((DartCTabItem) tab.getImpl()).width != width) {
                     changed = true;
-                    ((SwtCTabItem) tab.getImpl()).shortenedText = null;
-                    ((SwtCTabItem) tab.getImpl()).shortenedTextWidth = 0;
-                    ((SwtCTabItem) tab.getImpl()).height = tabHeight;
-                    ((SwtCTabItem) tab.getImpl()).width = width;
-                    ((SwtCTabItem) tab.getImpl()).closeRect.width = ((SwtCTabItem) tab.getImpl()).closeRect.height = 0;
-                    if (showClose || ((SwtCTabItem) tab.getImpl()).showClose) {
+                    ((DartCTabItem) tab.getImpl()).shortenedText = null;
+                    ((DartCTabItem) tab.getImpl()).shortenedTextWidth = 0;
+                    ((DartCTabItem) tab.getImpl()).height = tabHeight;
+                    ((DartCTabItem) tab.getImpl()).width = width;
+                    ((DartCTabItem) tab.getImpl()).closeRect.width = ((DartCTabItem) tab.getImpl()).closeRect.height = 0;
+                    if (showClose || ((DartCTabItem) tab.getImpl()).showClose) {
                         Point closeSize = renderer.computeSize(CTabFolderRenderer.PART_CLOSE_BUTTON, SWT.SELECTED, gc, SWT.DEFAULT, SWT.DEFAULT);
-                        ((SwtCTabItem) tab.getImpl()).closeRect.width = closeSize.x;
-                        ((SwtCTabItem) tab.getImpl()).closeRect.height = closeSize.y;
+                        ((DartCTabItem) tab.getImpl()).closeRect.width = closeSize.x;
+                        ((DartCTabItem) tab.getImpl()).closeRect.height = closeSize.y;
                     }
                 }
             }
@@ -3135,16 +3135,16 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             CTabItem tab = items[i];
             int width = widths[i];
             changed = true;
-            ((SwtCTabItem) tab.getImpl()).shortenedText = null;
-            ((SwtCTabItem) tab.getImpl()).shortenedTextWidth = 0;
-            ((SwtCTabItem) tab.getImpl()).height = tabHeight;
-            ((SwtCTabItem) tab.getImpl()).width = width;
-            ((SwtCTabItem) tab.getImpl()).closeRect.width = ((SwtCTabItem) tab.getImpl()).closeRect.height = 0;
-            if (showClose || ((SwtCTabItem) tab.getImpl()).showClose) {
+            ((DartCTabItem) tab.getImpl()).shortenedText = null;
+            ((DartCTabItem) tab.getImpl()).shortenedTextWidth = 0;
+            ((DartCTabItem) tab.getImpl()).height = tabHeight;
+            ((DartCTabItem) tab.getImpl()).width = width;
+            ((DartCTabItem) tab.getImpl()).closeRect.width = ((DartCTabItem) tab.getImpl()).closeRect.height = 0;
+            if (showClose || ((DartCTabItem) tab.getImpl()).showClose) {
                 if (i == selectedIndex || showUnselectedClose) {
                     Point closeSize = renderer.computeSize(CTabFolderRenderer.PART_CLOSE_BUTTON, SWT.NONE, gc, SWT.DEFAULT, SWT.DEFAULT);
-                    ((SwtCTabItem) tab.getImpl()).closeRect.width = closeSize.x;
-                    ((SwtCTabItem) tab.getImpl()).closeRect.height = closeSize.y;
+                    ((DartCTabItem) tab.getImpl()).closeRect.width = closeSize.x;
+                    ((DartCTabItem) tab.getImpl()).closeRect.height = closeSize.y;
                 }
             }
         }
@@ -3423,16 +3423,16 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         int oldIndex = selectedIndex;
         selectedIndex = index;
         if (oldIndex != -1) {
-            ((SwtCTabItem) items[oldIndex].getImpl()).closeImageState = SWT.BACKGROUND;
-            ((SwtCTabItem) items[oldIndex].getImpl()).state &= ~SWT.SELECTED;
+            ((DartCTabItem) items[oldIndex].getImpl()).closeImageState = SWT.BACKGROUND;
+            ((DartCTabItem) items[oldIndex].getImpl()).state &= ~SWT.SELECTED;
         }
-        ((SwtCTabItem) selection.getImpl()).closeImageState = SWT.NONE;
-        ((SwtCTabItem) selection.getImpl()).showing = false;
-        ((SwtCTabItem) selection.getImpl()).state |= SWT.SELECTED;
-        Control newControl = ((SwtCTabItem) selection.getImpl()).control;
+        ((DartCTabItem) selection.getImpl()).closeImageState = SWT.NONE;
+        ((DartCTabItem) selection.getImpl()).showing = false;
+        ((DartCTabItem) selection.getImpl()).state |= SWT.SELECTED;
+        Control newControl = ((DartCTabItem) selection.getImpl()).control;
         Control oldControl = null;
         if (oldIndex != -1) {
-            oldControl = ((SwtCTabItem) items[oldIndex].getImpl()).control;
+            oldControl = ((DartCTabItem) items[oldIndex].getImpl()).control;
         }
         if (newControl != oldControl) {
             if (newControl != null && !newControl.isDisposed()) {
@@ -3762,8 +3762,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             this.single = single;
             if (!single) {
                 for (int i = 0; i < items.length; i++) {
-                    if (i != selectedIndex && ((SwtCTabItem) items[i].getImpl()).closeImageState == SWT.NONE) {
-                        ((SwtCTabItem) items[i].getImpl()).closeImageState = SWT.BACKGROUND;
+                    if (i != selectedIndex && ((DartCTabItem) items[i].getImpl()).closeImageState == SWT.NONE) {
+                        ((DartCTabItem) items[i].getImpl()).closeImageState = SWT.BACKGROUND;
                     }
                 }
             }
@@ -4004,7 +4004,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             newPriority[0] = index;
             priority = newPriority;
         }
-        if (((SwtCTabItem) item.getImpl()).showing)
+        if (((DartCTabItem) item.getImpl()).showing)
             return;
         updateFolder(REDRAW_TABS);
     }
@@ -4022,7 +4022,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         //$NON-NLS-1$
         final String id = "CTabFolder_showList_Index";
         for (CTabItem tab : items) {
-            if (((SwtCTabItem) tab.getImpl()).showing)
+            if (((DartCTabItem) tab.getImpl()).showing)
                 continue;
             MenuItem item = new MenuItem(showMenu, SWT.NONE);
             // Bug 533124 In the case where you have multi line tab text, we force the drop-down menu to have single line entries to ensure consistent behavior across platforms.
@@ -4283,9 +4283,9 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         CTabItem item = getItem(new Point(x, y));
         if (item == null)
             return null;
-        if (!((SwtCTabItem) item.getImpl()).showing)
+        if (!((DartCTabItem) item.getImpl()).showing)
             return null;
-        if ((showClose || ((SwtCTabItem) item.getImpl()).showClose) && ((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
+        if ((showClose || ((DartCTabItem) item.getImpl()).showClose) && ((DartCTabItem) item.getImpl()).closeRect.contains(x, y)) {
             //$NON-NLS-1$
             return SWT.getMessage("SWT_Close");
         }

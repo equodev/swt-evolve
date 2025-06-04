@@ -174,7 +174,7 @@ public abstract class SwtWidget implements IWidget {
         checkSubclass();
         checkParent(parent);
         this.style = style;
-        display = ((SwtWidget) parent.getImpl()).display;
+        display = parent.getImpl() instanceof DartWidget p ? p.display : ((SwtWidget) parent.getImpl()).display;
         reskinWidget();
         notifyCreationTracker();
     }

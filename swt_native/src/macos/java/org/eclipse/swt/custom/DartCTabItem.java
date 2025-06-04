@@ -137,7 +137,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
     public DartCTabItem(CTabFolder parent, int style, int index, CTabItem api) {
         super(parent, style, api);
         showClose = (style & SWT.CLOSE) != 0;
-        ((SwtCTabFolder) parent.getImpl()).createItem(this.getApi(), index);
+        ((DartCTabFolder) parent.getImpl()).createItem(this.getApi(), index);
     }
 
     @Override
@@ -145,7 +145,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
         if (isDisposed())
             return;
         //if (!isValidThread ()) error (SWT.ERROR_THREAD_INVALID_ACCESS);
-        ((SwtCTabFolder) parent.getImpl()).destroyItem(this.getApi());
+        ((DartCTabFolder) parent.getImpl()).destroyItem(this.getApi());
         super.dispose();
         parent = null;
         control = null;
@@ -171,7 +171,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
 	 * called from a thread which is different from one that created the widget.
 	 */
         //checkWidget();
-        ((SwtCTabFolder) parent.getImpl()).runUpdate();
+        ((DartCTabFolder) parent.getImpl()).runUpdate();
         return new Rectangle(x, y, width, height);
     }
 
@@ -375,7 +375,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
                 int selectedIndex = parent.getSelectionIndex();
                 Control selectedControl = null;
                 if (selectedIndex != -1) {
-                    selectedControl = ((SwtCTabItem) parent.getItem(selectedIndex).getImpl()).control;
+                    selectedControl = ((DartCTabItem) parent.getItem(selectedIndex).getImpl()).control;
                 }
                 if (this.control != selectedControl) {
                     this.control.setVisible(false);
@@ -439,7 +439,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
         if (font != null && font.equals(this.font))
             return;
         this.font = font;
-        ((SwtCTabFolder) parent.getImpl()).updateFolder(SwtCTabFolder.UPDATE_TAB_HEIGHT | SwtCTabFolder.REDRAW_TABS);
+        ((DartCTabFolder) parent.getImpl()).updateFolder(DartCTabFolder.UPDATE_TAB_HEIGHT | DartCTabFolder.REDRAW_TABS);
         getBridge().dirty(this);
     }
 
@@ -468,7 +468,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
         if (color == foreground)
             return;
         foreground = color;
-        ((SwtCTabFolder) parent.getImpl()).updateFolder(SwtCTabFolder.REDRAW_TABS);
+        ((DartCTabFolder) parent.getImpl()).updateFolder(DartCTabFolder.REDRAW_TABS);
         getBridge().dirty(this);
     }
 
@@ -497,7 +497,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
         if (color == selectionForeground)
             return;
         selectionForeground = color;
-        ((SwtCTabFolder) parent.getImpl()).updateFolder(SwtCTabFolder.REDRAW_TABS);
+        ((DartCTabFolder) parent.getImpl()).updateFolder(DartCTabFolder.REDRAW_TABS);
         getBridge().dirty(this);
     }
 
@@ -513,7 +513,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
         if (image != null && image.equals(oldImage))
             return;
         super.setImage(image);
-        ((SwtCTabFolder) parent.getImpl()).updateFolder(SwtCTabFolder.UPDATE_TAB_HEIGHT | SwtCTabFolder.REDRAW_TABS);
+        ((DartCTabFolder) parent.getImpl()).updateFolder(DartCTabFolder.UPDATE_TAB_HEIGHT | DartCTabFolder.REDRAW_TABS);
         getBridge().dirty(this);
     }
 
@@ -536,7 +536,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
         if (showClose == close)
             return;
         showClose = close;
-        ((SwtCTabFolder) parent.getImpl()).updateFolder(SwtCTabFolder.REDRAW_TABS);
+        ((DartCTabFolder) parent.getImpl()).updateFolder(DartCTabFolder.REDRAW_TABS);
         getBridge().dirty(this);
     }
 
@@ -561,7 +561,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
         super.setText(string);
         shortenedText = null;
         shortenedTextWidth = 0;
-        ((SwtCTabFolder) parent.getImpl()).updateFolder(SwtCTabFolder.UPDATE_TAB_HEIGHT | SwtCTabFolder.REDRAW_TABS);
+        ((DartCTabFolder) parent.getImpl()).updateFolder(DartCTabFolder.UPDATE_TAB_HEIGHT | DartCTabFolder.REDRAW_TABS);
         getBridge().dirty(this);
     }
 
@@ -589,6 +589,12 @@ public class DartCTabItem extends DartItem implements ICTabItem {
         checkWidget();
         toolTipText = string;
         getBridge().dirty(this);
+    }
+
+    public FlutterBridge getBridge() {
+        if (bridge != null)
+            return bridge;
+        return ((DartWidget) parent.getImpl()).getBridge();
     }
 
     public CTabItem getApi() {

@@ -1497,8 +1497,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     @Override
     public long internal_new_GC(GCData data) {
         checkWidget();
-        if (data != null && data.paintRect != null) {
-        }
         if (data != null) {
             int mask = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
             if ((data.style & mask) == 0) {
@@ -1506,8 +1504,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             }
             data.device = display;
             data.thread = ((SwtDisplay) display.getImpl()).thread;
-            data.view.retain();
-            data.view.window().retain();
             data.foreground = getForegroundColor().handle;
             Control control = findBackgroundControl();
             if (control == null)
@@ -1540,11 +1536,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         ((SwtDisplay) display.getImpl()).removeContext(data);
         if (data != null) {
             data.visibleRgn = 0;
-            if (data.view != null) {
-                data.view.window().release();
-                data.view.release();
-                data.view = null;
-            }
         }
     }
 
