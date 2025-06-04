@@ -67,7 +67,7 @@ public class TreeCursor extends Canvas {
      */
     public TreeCursor(Tree parent, int style) {
         this((ITreeCursor) null);
-        setImpl(new SwtTreeCursor(parent, style));
+        setImpl(new SwtTreeCursor(parent, style, this));
     }
 
     /**
@@ -248,11 +248,7 @@ public class TreeCursor extends Canvas {
     }
 
     static TreeCursor createApi(ITreeCursor impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TreeCursor inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TreeCursor(impl);
+        return new TreeCursor(impl);
     }
 
     public ITreeCursor getImpl() {

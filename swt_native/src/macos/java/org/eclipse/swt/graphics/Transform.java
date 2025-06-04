@@ -79,7 +79,7 @@ public class Transform extends Resource {
      */
     public Transform(Device device) {
         this((ITransform) null);
-        setImpl(new SwtTransform(device));
+        setImpl(new SwtTransform(device, this));
     }
 
     /**
@@ -112,7 +112,7 @@ public class Transform extends Resource {
      */
     public Transform(Device device, float[] elements) {
         this((ITransform) null);
-        setImpl(new SwtTransform(device, elements));
+        setImpl(new SwtTransform(device, elements, this));
     }
 
     /**
@@ -149,7 +149,7 @@ public class Transform extends Resource {
      */
     public Transform(Device device, float m11, float m12, float m21, float m22, float dx, float dy) {
         this((ITransform) null);
-        setImpl(new SwtTransform(device, m11, m12, m21, m22, dx, dy));
+        setImpl(new SwtTransform(device, m11, m12, m21, m22, dx, dy, this));
     }
 
     /**
@@ -356,11 +356,7 @@ public class Transform extends Resource {
     }
 
     static Transform createApi(ITransform impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Transform inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Transform(impl);
+        return new Transform(impl);
     }
 
     public ITransform getImpl() {

@@ -102,8 +102,8 @@ public class SwtLabel extends SwtControl implements ILabel {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtLabel(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtLabel(Composite parent, int style, Label api) {
+        super(parent, checkStyle(style), api);
     }
 
     @Override

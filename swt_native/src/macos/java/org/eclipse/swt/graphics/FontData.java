@@ -105,7 +105,7 @@ public final class FontData {
      */
     public FontData() {
         this((IFontData) null);
-        setImpl(new SwtFontData());
+        setImpl(new SwtFontData(this));
     }
 
     /**
@@ -129,7 +129,7 @@ public final class FontData {
      */
     public FontData(String string) {
         this((IFontData) null);
-        setImpl(new SwtFontData(string));
+        setImpl(new SwtFontData(string, this));
     }
 
     /**
@@ -148,13 +148,13 @@ public final class FontData {
      */
     public FontData(String name, int height, int style) {
         this((IFontData) null);
-        setImpl(new SwtFontData(name, height, style));
+        setImpl(new SwtFontData(name, height, style, this));
     }
 
     /*public*/
     FontData(String name, float height, int style) {
         this((IFontData) null);
-        setImpl(new SwtFontData(name, height, style));
+        setImpl(new SwtFontData(name, height, style, this));
     }
 
     /**
@@ -341,20 +341,12 @@ public final class FontData {
     protected IFontData impl;
 
     protected FontData(IFontData impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static FontData createApi(IFontData impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof FontData inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new FontData(impl);
+        return new FontData(impl);
     }
 
     public IFontData getImpl() {
@@ -363,8 +355,6 @@ public final class FontData {
 
     protected FontData setImpl(IFontData impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

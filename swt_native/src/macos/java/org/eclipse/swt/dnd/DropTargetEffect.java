@@ -64,7 +64,7 @@ public class DropTargetEffect extends DropTargetAdapter {
      */
     public DropTargetEffect(Control control) {
         this((IDropTargetEffect) null);
-        setImpl(new SwtDropTargetEffect(control));
+        setImpl(new SwtDropTargetEffect(control, this));
     }
 
     /**
@@ -95,11 +95,7 @@ public class DropTargetEffect extends DropTargetAdapter {
     }
 
     static DropTargetEffect createApi(IDropTargetEffect impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof DropTargetEffect inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new DropTargetEffect(impl);
+        return new DropTargetEffect(impl);
     }
 
     public IDropTargetEffect getImpl() {

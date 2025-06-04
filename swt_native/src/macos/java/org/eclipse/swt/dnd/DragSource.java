@@ -134,7 +134,7 @@ public class DragSource extends Widget {
      */
     public DragSource(Control control, int style) {
         this((IDragSource) null);
-        setImpl(new SwtDragSource(control, style));
+        setImpl(new SwtDragSource(control, style, this));
     }
 
     /**
@@ -281,11 +281,7 @@ public class DragSource extends Widget {
     }
 
     static DragSource createApi(IDragSource impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof DragSource inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new DragSource(impl);
+        return new DragSource(impl);
     }
 
     public IDragSource getImpl() {

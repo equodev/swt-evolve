@@ -69,7 +69,7 @@ public class TaskItem extends Item {
      */
     TaskItem(TaskBar parent, int style) {
         this((ITaskItem) null);
-        setImpl(new SwtTaskItem(parent, style));
+        setImpl(new SwtTaskItem(parent, style, this));
     }
 
     protected void checkSubclass() {
@@ -332,11 +332,7 @@ public class TaskItem extends Item {
     }
 
     static TaskItem createApi(ITaskItem impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TaskItem inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TaskItem(impl);
+        return new TaskItem(impl);
     }
 
     public ITaskItem getImpl() {

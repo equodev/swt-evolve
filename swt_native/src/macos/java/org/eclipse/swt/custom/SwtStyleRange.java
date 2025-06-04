@@ -37,7 +37,8 @@ public class SwtStyleRange extends SwtTextStyle implements Cloneable, IStyleRang
      *
      * @since 3.2
      */
-    public SwtStyleRange() {
+    public SwtStyleRange(StyleRange api) {
+        super(api);
     }
 
     /**
@@ -47,8 +48,8 @@ public class SwtStyleRange extends SwtTextStyle implements Cloneable, IStyleRang
      *
      * @since 3.4
      */
-    public SwtStyleRange(TextStyle style) {
-        super(style);
+    public SwtStyleRange(TextStyle style, StyleRange api) {
+        super(style, api);
     }
 
     /**
@@ -59,8 +60,8 @@ public class SwtStyleRange extends SwtTextStyle implements Cloneable, IStyleRang
      * @param foreground foreground color of the style, null if none
      * @param background background color of the style, null if none
      */
-    public SwtStyleRange(int start, int length, Color foreground, Color background) {
-        super(null, foreground, background);
+    public SwtStyleRange(int start, int length, Color foreground, Color background, StyleRange api) {
+        super(null, foreground, background, api);
         this.getApi().start = start;
         this.getApi().length = length;
     }
@@ -74,8 +75,8 @@ public class SwtStyleRange extends SwtTextStyle implements Cloneable, IStyleRang
      * @param background background color of the style, null if none
      * @param fontStyle font style of the style, may be SWT.NORMAL, SWT.ITALIC or SWT.BOLD
      */
-    public SwtStyleRange(int start, int length, Color foreground, Color background, int fontStyle) {
-        this(start, length, foreground, background);
+    public SwtStyleRange(int start, int length, Color foreground, Color background, int fontStyle, StyleRange api) {
+        this(start, length, foreground, background, api);
         this.getApi().fontStyle = fontStyle;
     }
 

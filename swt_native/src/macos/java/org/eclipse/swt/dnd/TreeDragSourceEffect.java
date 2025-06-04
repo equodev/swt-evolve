@@ -48,7 +48,7 @@ public class TreeDragSourceEffect extends DragSourceEffect {
      */
     public TreeDragSourceEffect(Tree tree) {
         this((ITreeDragSourceEffect) null);
-        setImpl(new SwtTreeDragSourceEffect(tree));
+        setImpl(new SwtTreeDragSourceEffect(tree, this));
     }
 
     /**
@@ -84,11 +84,7 @@ public class TreeDragSourceEffect extends DragSourceEffect {
     }
 
     static TreeDragSourceEffect createApi(ITreeDragSourceEffect impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TreeDragSourceEffect inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TreeDragSourceEffect(impl);
+        return new TreeDragSourceEffect(impl);
     }
 
     public ITreeDragSourceEffect getImpl() {

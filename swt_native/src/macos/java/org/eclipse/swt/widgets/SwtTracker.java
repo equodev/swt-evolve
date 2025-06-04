@@ -102,8 +102,8 @@ public class SwtTracker extends SwtWidget implements ITracker {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTracker(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtTracker(Composite parent, int style, Tracker api) {
+        super(parent, checkStyle(style), api);
         this.parent = parent;
     }
 
@@ -142,7 +142,8 @@ public class SwtTracker extends SwtWidget implements ITracker {
      * @see SWT#DOWN
      * @see SWT#RESIZE
      */
-    public SwtTracker(Display display, int style) {
+    public SwtTracker(Display display, int style, Tracker api) {
+        super(api);
         if (display == null)
             display = SwtDisplay.getCurrent();
         if (display == null)

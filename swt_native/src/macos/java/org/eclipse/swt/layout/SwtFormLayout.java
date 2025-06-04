@@ -96,7 +96,8 @@ public final class SwtFormLayout extends SwtLayout implements IFormLayout {
     /**
      * Constructs a new instance of this class.
      */
-    public SwtFormLayout() {
+    public SwtFormLayout(FormLayout api) {
+        super(api);
     }
 
     /*

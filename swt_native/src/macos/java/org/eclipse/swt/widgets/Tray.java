@@ -42,7 +42,7 @@ public class Tray extends Widget {
 
     Tray(Display display, int style) {
         this((ITray) null);
-        setImpl(new SwtTray(display, style));
+        setImpl(new SwtTray(display, style, this));
     }
 
     /**
@@ -103,11 +103,7 @@ public class Tray extends Widget {
     }
 
     static Tray createApi(ITray impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Tray inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Tray(impl);
+        return new Tray(impl);
     }
 
     public ITray getImpl() {

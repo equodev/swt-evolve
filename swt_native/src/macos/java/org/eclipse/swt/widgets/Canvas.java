@@ -47,7 +47,7 @@ public class Canvas extends Composite {
 
     Canvas() {
         this((ICanvas) null);
-        setImpl(new SwtCanvas());
+        setImpl(new SwtCanvas(this));
     }
 
     /**
@@ -78,7 +78,7 @@ public class Canvas extends Composite {
      */
     public Canvas(Composite parent, int style) {
         this((ICanvas) null);
-        setImpl(new SwtCanvas(parent, style));
+        setImpl(new SwtCanvas(parent, style, this));
     }
 
     /**
@@ -222,11 +222,7 @@ public class Canvas extends Composite {
     }
 
     static Canvas createApi(ICanvas impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Canvas inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Canvas(impl);
+        return new Canvas(impl);
     }
 
     public ICanvas getImpl() {

@@ -44,7 +44,8 @@ public class SwtTray extends SwtWidget implements ITray {
 
     TrayItem[] items = new TrayItem[4];
 
-    SwtTray(Display display, int style) {
+    SwtTray(Display display, int style, Tray api) {
+        super(api);
         this.display = display;
         reskinWidget();
     }

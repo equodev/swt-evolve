@@ -47,7 +47,8 @@ public final class SwtProgram implements IProgram {
     /**
      * Prevents uninitialized instances from being created outside the package.
      */
-    SwtProgram() {
+    SwtProgram(Program api) {
+        setApi(api);
     }
 
     /**
@@ -470,5 +471,7 @@ public final class SwtProgram implements IProgram {
 
     public void setApi(Program api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

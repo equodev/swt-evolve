@@ -45,7 +45,8 @@ public class SwtTextTransfer extends SwtByteArrayTransfer implements ITextTransf
 
     static final int ID = registerType(ID_NAME);
 
-    SwtTextTransfer() {
+    SwtTextTransfer(TextTransfer api) {
+        super(api);
     }
 
     /**

@@ -154,7 +154,7 @@ public class DropTarget extends Widget {
      */
     public DropTarget(Control control, int style) {
         this((IDropTarget) null);
-        setImpl(new SwtDropTarget(control, style));
+        setImpl(new SwtDropTarget(control, style, this));
     }
 
     /**
@@ -270,11 +270,7 @@ public class DropTarget extends Widget {
     }
 
     static DropTarget createApi(IDropTarget impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof DropTarget inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new DropTarget(impl);
+        return new DropTarget(impl);
     }
 
     public IDropTarget getImpl() {

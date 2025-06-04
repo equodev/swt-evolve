@@ -893,8 +893,8 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      * @see SWT#WRAP
      * @see #getStyle
      */
-    public SwtStyledText(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtStyledText(Composite parent, int style, StyledText api) {
+        super(parent, checkStyle(style), api);
         // set the fg in the OS to ensure that these are the same as StyledText, necessary
         // for ensuring that the bg/fg the IME box uses is the same as what StyledText uses
         super.setForeground(getForeground());

@@ -41,7 +41,7 @@ public class ImageTransfer extends ByteArrayTransfer {
 
     ImageTransfer() {
         this((IImageTransfer) null);
-        setImpl(new SwtImageTransfer());
+        setImpl(new SwtImageTransfer(this));
     }
 
     /**
@@ -98,11 +98,7 @@ public class ImageTransfer extends ByteArrayTransfer {
     }
 
     static ImageTransfer createApi(IImageTransfer impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof ImageTransfer inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new ImageTransfer(impl);
+        return new ImageTransfer(impl);
     }
 
     public IImageTransfer getImpl() {

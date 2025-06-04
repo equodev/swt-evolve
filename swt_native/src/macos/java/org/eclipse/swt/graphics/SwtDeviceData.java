@@ -27,5 +27,11 @@ public class SwtDeviceData implements IDeviceData {
 
     public void setApi(DeviceData api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
+    }
+
+    public SwtDeviceData(DeviceData api) {
+        setApi(api);
     }
 }

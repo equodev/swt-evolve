@@ -31,7 +31,8 @@ public final class SwtFontMetrics implements IFontMetrics {
 
     double averageCharWidth;
 
-    SwtFontMetrics() {
+    SwtFontMetrics(FontMetrics api) {
+        setApi(api);
     }
 
     /**
@@ -209,5 +210,7 @@ public final class SwtFontMetrics implements IFontMetrics {
 
     public void setApi(FontMetrics api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

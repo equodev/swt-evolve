@@ -168,8 +168,8 @@ public class SwtTree extends SwtComposite implements ITree {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTree(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtTree(Composite parent, int style, Tree api) {
+        super(parent, checkStyle(style), api);
         this.nativeItemHeight = (int) ((NSTableView) getApi().view).rowHeight();
         setItemHeight(null, null, true);
     }

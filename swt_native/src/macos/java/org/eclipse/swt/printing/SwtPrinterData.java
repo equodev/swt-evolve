@@ -64,7 +64,8 @@ public final class SwtPrinterData extends SwtDeviceData implements IPrinterData 
      *
      * @see Printer#getDefaultPrinterData
      */
-    public SwtPrinterData() {
+    public SwtPrinterData(PrinterData api) {
+        super(api);
     }
 
     /**
@@ -77,7 +78,8 @@ public final class SwtPrinterData extends SwtDeviceData implements IPrinterData 
      * @see #driver
      * @see #name
      */
-    public SwtPrinterData(String driver, String name) {
+    public SwtPrinterData(String driver, String name, PrinterData api) {
+        super(api);
         this.getApi().driver = driver;
         this.getApi().name = name;
     }

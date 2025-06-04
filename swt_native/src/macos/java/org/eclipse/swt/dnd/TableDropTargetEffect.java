@@ -56,7 +56,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
      */
     public TableDropTargetEffect(Table table) {
         this((ITableDropTargetEffect) null);
-        setImpl(new SwtTableDropTargetEffect(table));
+        setImpl(new SwtTableDropTargetEffect(table, this));
     }
 
     /**
@@ -121,11 +121,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
     }
 
     static TableDropTargetEffect createApi(ITableDropTargetEffect impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TableDropTargetEffect inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TableDropTargetEffect(impl);
+        return new TableDropTargetEffect(impl);
     }
 
     public ITableDropTargetEffect getImpl() {

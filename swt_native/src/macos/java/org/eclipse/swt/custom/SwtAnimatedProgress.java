@@ -78,8 +78,8 @@ public class SwtAnimatedProgress extends SwtCanvas implements IAnimatedProgress 
      * @see SWT#BORDER
      * @see #getStyle()
      */
-    public SwtAnimatedProgress(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtAnimatedProgress(Composite parent, int style, AnimatedProgress api) {
+        super(parent, checkStyle(style), api);
         if ((style & SWT.VERTICAL) != 0) {
             orientation = SWT.VERTICAL;
         }

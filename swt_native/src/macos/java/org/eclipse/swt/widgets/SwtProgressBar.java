@@ -75,8 +75,8 @@ public class SwtProgressBar extends SwtControl implements IProgressBar {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtProgressBar(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtProgressBar(Composite parent, int style, ProgressBar api) {
+        super(parent, checkStyle(style), api);
     }
 
     static int checkStyle(int style) {

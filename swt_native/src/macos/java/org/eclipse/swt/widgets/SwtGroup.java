@@ -85,8 +85,8 @@ public class SwtGroup extends SwtComposite implements IGroup {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtGroup(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtGroup(Composite parent, int style, Group api) {
+        super(parent, checkStyle(style), api);
     }
 
     static int checkStyle(int style) {

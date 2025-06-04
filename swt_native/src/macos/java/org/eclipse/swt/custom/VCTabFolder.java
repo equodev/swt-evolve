@@ -26,7 +26,6 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).borderVisible = value;
     }
 
-    @JsonAttribute(ignore = true)
     public CTabItem[] getItems() {
         return ((DartCTabFolder) impl).items;
     }

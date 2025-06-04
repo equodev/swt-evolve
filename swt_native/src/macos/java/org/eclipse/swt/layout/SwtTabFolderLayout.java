@@ -63,4 +63,8 @@ public class SwtTabFolderLayout extends SwtLayout implements ITabFolderLayout {
             api = TabFolderLayout.createApi(this);
         return (TabFolderLayout) api;
     }
+
+    public SwtTabFolderLayout(TabFolderLayout api) {
+        super(api);
+    }
 }

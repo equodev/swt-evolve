@@ -108,8 +108,8 @@ public class SwtViewForm extends SwtComposite implements IViewForm {
      * @see SWT#FLAT
      * @see #getStyle()
      */
-    public SwtViewForm(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtViewForm(Composite parent, int style, ViewForm api) {
+        super(parent, checkStyle(style), api);
         super.setLayout(new ViewFormLayout());
         setBorderVisible((style & SWT.BORDER) != 0);
         listener = e -> {

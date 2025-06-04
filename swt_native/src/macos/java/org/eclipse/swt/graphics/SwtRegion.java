@@ -46,8 +46,8 @@ public final class SwtRegion extends SwtResource implements IRegion {
      *
      * @see #dispose()
      */
-    public SwtRegion() {
-        this(null);
+    public SwtRegion(Region api) {
+        this(null, api);
     }
 
     /**
@@ -69,8 +69,8 @@ public final class SwtRegion extends SwtResource implements IRegion {
      *
      * @since 3.0
      */
-    public SwtRegion(Device device) {
-        super(device);
+    public SwtRegion(Device device, Region api) {
+        super(device, api);
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
@@ -85,8 +85,8 @@ public final class SwtRegion extends SwtResource implements IRegion {
         }
     }
 
-    SwtRegion(Device device, long handle) {
-        super(device);
+    SwtRegion(Device device, long handle, Region api) {
+        super(device, api);
         this.getApi().handle = handle;
         /*
 	 * When created this way, Font doesn't own its .handle, and

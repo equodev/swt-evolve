@@ -462,12 +462,8 @@ public abstract class Device implements Drawable {
     protected IDevice impl;
 
     protected Device(IDevice impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     public IDevice getImpl() {
@@ -476,8 +472,6 @@ public abstract class Device implements Drawable {
 
     protected Device setImpl(IDevice impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

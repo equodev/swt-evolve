@@ -42,5 +42,11 @@ public final class SwtGCData implements IGCData {
 
     public void setApi(GCData api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
+    }
+
+    public SwtGCData(GCData api) {
+        setApi(api);
     }
 }

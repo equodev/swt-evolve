@@ -48,8 +48,8 @@ public class SwtTreeDragSourceEffect extends SwtDragSourceEffect implements ITre
      *
      * @param tree the <code>Tree</code> that the user clicks on to initiate the drag
      */
-    public SwtTreeDragSourceEffect(Tree tree) {
-        super(tree);
+    public SwtTreeDragSourceEffect(Tree tree, TreeDragSourceEffect api) {
+        super(tree, api);
     }
 
     /**

@@ -61,8 +61,8 @@ public class SwtColorDialog extends SwtDialog implements IColorDialog {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtColorDialog(Shell parent) {
-        this(parent, SWT.APPLICATION_MODAL);
+    public SwtColorDialog(Shell parent, ColorDialog api) {
+        this(parent, SWT.APPLICATION_MODAL, api);
     }
 
     /**
@@ -93,8 +93,8 @@ public class SwtColorDialog extends SwtDialog implements IColorDialog {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtColorDialog(Shell parent, int style) {
-        super(parent, checkStyle(parent, style));
+    public SwtColorDialog(Shell parent, int style, ColorDialog api) {
+        super(parent, checkStyle(parent, style), api);
         checkSubclass();
     }
 

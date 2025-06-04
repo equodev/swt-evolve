@@ -72,8 +72,8 @@ public final class SwtCursor extends SwtResource implements ICursor {
     /**
      * Prevents uninitialized instances from being created outside the package.
      */
-    SwtCursor(Device device) {
-        super(device);
+    SwtCursor(Device device, Cursor api) {
+        super(device, api);
     }
 
     /**
@@ -122,8 +122,8 @@ public final class SwtCursor extends SwtResource implements ICursor {
      * @see SWT#CURSOR_HAND
      * @see #dispose()
      */
-    public SwtCursor(Device device, int style) {
-        super(device);
+    public SwtCursor(Device device, int style, Cursor api) {
+        super(device, api);
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
@@ -278,8 +278,8 @@ public final class SwtCursor extends SwtResource implements ICursor {
      *
      * @see #dispose()
      */
-    public SwtCursor(Device device, ImageData source, ImageData mask, int hotspotX, int hotspotY) {
-        super(device);
+    public SwtCursor(Device device, ImageData source, ImageData mask, int hotspotX, int hotspotY, Cursor api) {
+        super(device, api);
         if (source == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (mask == null) {
@@ -381,8 +381,8 @@ public final class SwtCursor extends SwtResource implements ICursor {
      *
      * @since 3.0
      */
-    public SwtCursor(Device device, ImageData source, int hotspotX, int hotspotY) {
-        super(device);
+    public SwtCursor(Device device, ImageData source, int hotspotX, int hotspotY, Cursor api) {
+        super(device, api);
         if (source == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (hotspotX >= source.width || hotspotX < 0 || hotspotY >= source.height || hotspotY < 0) {

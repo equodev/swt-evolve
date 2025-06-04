@@ -92,7 +92,8 @@ public final class SwtFormAttachment implements IFormAttachment {
      *
      * @since 3.2
      */
-    public SwtFormAttachment() {
+    public SwtFormAttachment(FormAttachment api) {
+        setApi(api);
     }
 
     /**
@@ -105,8 +106,8 @@ public final class SwtFormAttachment implements IFormAttachment {
      *
      * @since 3.0
      */
-    public SwtFormAttachment(int numerator) {
-        this(numerator, 100, 0);
+    public SwtFormAttachment(int numerator, FormAttachment api) {
+        this(numerator, 100, 0, api);
     }
 
     /**
@@ -118,8 +119,8 @@ public final class SwtFormAttachment implements IFormAttachment {
      * @param numerator the percentage of the position
      * @param offset the offset of the side from the position
      */
-    public SwtFormAttachment(int numerator, int offset) {
-        this(numerator, 100, offset);
+    public SwtFormAttachment(int numerator, int offset, FormAttachment api) {
+        this(numerator, 100, offset, api);
     }
 
     /**
@@ -132,7 +133,8 @@ public final class SwtFormAttachment implements IFormAttachment {
      * @param denominator the denominator of the position
      * @param offset the offset of the side from the position
      */
-    public SwtFormAttachment(int numerator, int denominator, int offset) {
+    public SwtFormAttachment(int numerator, int denominator, int offset, FormAttachment api) {
+        setApi(api);
         if (denominator == 0)
             SWT.error(SWT.ERROR_CANNOT_BE_ZERO);
         this.getApi().numerator = numerator;
@@ -149,8 +151,8 @@ public final class SwtFormAttachment implements IFormAttachment {
      *
      * @param control the control the side is attached to
      */
-    public SwtFormAttachment(Control control) {
-        this(control, 0, SWT.DEFAULT);
+    public SwtFormAttachment(Control control, FormAttachment api) {
+        this(control, 0, SWT.DEFAULT, api);
     }
 
     /**
@@ -162,8 +164,8 @@ public final class SwtFormAttachment implements IFormAttachment {
      * @param control the control the side is attached to
      * @param offset the offset of the side from the control
      */
-    public SwtFormAttachment(Control control, int offset) {
-        this(control, offset, SWT.DEFAULT);
+    public SwtFormAttachment(Control control, int offset, FormAttachment api) {
+        this(control, offset, SWT.DEFAULT, api);
     }
 
     /**
@@ -189,7 +191,8 @@ public final class SwtFormAttachment implements IFormAttachment {
      * @param alignment the alignment of the side to the control it is attached to,
      * 		one of TOP, BOTTOM, LEFT, RIGHT, CENTER, or DEFAULT
      */
-    public SwtFormAttachment(Control control, int offset, int alignment) {
+    public SwtFormAttachment(Control control, int offset, int alignment, FormAttachment api) {
+        setApi(api);
         this.getApi().control = control;
         this.getApi().offset = offset;
         this.getApi().alignment = alignment;
@@ -280,5 +283,7 @@ public final class SwtFormAttachment implements IFormAttachment {
 
     public void setApi(FormAttachment api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

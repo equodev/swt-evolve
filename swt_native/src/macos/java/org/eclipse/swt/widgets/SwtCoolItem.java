@@ -100,8 +100,8 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtCoolItem(CoolBar parent, int style) {
-        super(parent, style);
+    public SwtCoolItem(CoolBar parent, int style, CoolItem api) {
+        super(parent, style, api);
         this.parent = parent;
         ((SwtCoolBar) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
         calculateChevronTrim();
@@ -139,8 +139,8 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtCoolItem(CoolBar parent, int style, int index) {
-        super(parent, style);
+    public SwtCoolItem(CoolBar parent, int style, int index, CoolItem api) {
+        super(parent, style, api);
         this.parent = parent;
         ((SwtCoolBar) parent.getImpl()).createItem(this.getApi(), index);
         calculateChevronTrim();

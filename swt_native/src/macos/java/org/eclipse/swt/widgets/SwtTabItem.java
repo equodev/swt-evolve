@@ -80,8 +80,8 @@ public class SwtTabItem extends SwtItem implements ITabItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTabItem(TabFolder parent, int style) {
-        super(parent, style);
+    public SwtTabItem(TabFolder parent, int style, TabItem api) {
+        super(parent, style, api);
         this.parent = parent;
         ((SwtTabFolder) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
     }
@@ -118,8 +118,8 @@ public class SwtTabItem extends SwtItem implements ITabItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTabItem(TabFolder parent, int style, int index) {
-        super(parent, style);
+    public SwtTabItem(TabFolder parent, int style, int index, TabItem api) {
+        super(parent, style, api);
         this.parent = parent;
         ((SwtTabFolder) parent.getImpl()).createItem(this.getApi(), index);
     }

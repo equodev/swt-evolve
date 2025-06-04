@@ -135,26 +135,18 @@ public final class GCData {
 
     public GCData() {
         this((IGCData) null);
-        setImpl(new SwtGCData());
+        setImpl(new SwtGCData(this));
     }
 
     protected IGCData impl;
 
     protected GCData(IGCData impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static GCData createApi(IGCData impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof GCData inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new GCData(impl);
+        return new GCData(impl);
     }
 
     public IGCData getImpl() {
@@ -163,8 +155,6 @@ public final class GCData {
 
     protected GCData setImpl(IGCData impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

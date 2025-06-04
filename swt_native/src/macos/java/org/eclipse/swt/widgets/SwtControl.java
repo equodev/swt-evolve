@@ -90,7 +90,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     static final boolean FORCE_RUN_UPDATE = Boolean.valueOf(System.getProperty("org.eclipse.swt.internal.control.forceRunUpdate"));
 
-    SwtControl() {
+    SwtControl(Control api) {
+        super(api);
         /* Do nothing */
     }
 
@@ -124,8 +125,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtControl(Composite parent, int style) {
-        super(parent, style);
+    public SwtControl(Composite parent, int style, Control api) {
+        super(parent, style, api);
         this.parent = parent;
         createWidget();
     }

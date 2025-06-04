@@ -87,8 +87,8 @@ public class SwtTaskItem extends SwtItem implements ITaskItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    SwtTaskItem(TaskBar parent, int style) {
-        super(parent, style);
+    SwtTaskItem(TaskBar parent, int style, TaskItem api) {
+        super(parent, style, api);
         this.parent = parent;
         ((SwtTaskBar) parent.getImpl()).createItem(this.getApi(), -1);
         createWidget();

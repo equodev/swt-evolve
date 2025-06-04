@@ -79,7 +79,7 @@ public final class Touch {
      */
     Touch(long identity, TouchSource source, int state, boolean primary, int x, int y) {
         this((ITouch) null);
-        setImpl(new SwtTouch(identity, source, state, primary, x, y));
+        setImpl(new SwtTouch(identity, source, state, primary, x, y, this));
     }
 
     /**
@@ -95,20 +95,12 @@ public final class Touch {
     protected ITouch impl;
 
     protected Touch(ITouch impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static Touch createApi(ITouch impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Touch inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Touch(impl);
+        return new Touch(impl);
     }
 
     public ITouch getImpl() {
@@ -117,8 +109,6 @@ public final class Touch {
 
     protected Touch setImpl(ITouch impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

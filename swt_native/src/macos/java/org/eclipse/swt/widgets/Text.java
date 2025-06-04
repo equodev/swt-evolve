@@ -130,7 +130,7 @@ public class Text extends Scrollable {
      */
     public Text(Composite parent, int style) {
         this((IText) null);
-        setImpl(new SwtText(parent, style));
+        setImpl(new SwtText(parent, style, this));
     }
 
     /**
@@ -1185,11 +1185,7 @@ public class Text extends Scrollable {
     }
 
     static Text createApi(IText impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Text inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Text(impl);
+        return new Text(impl);
     }
 
     public IText getImpl() {

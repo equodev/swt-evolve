@@ -154,26 +154,18 @@ public class BusyIndicator {
 
     public BusyIndicator() {
         this((IBusyIndicator) null);
-        setImpl(new SwtBusyIndicator());
+        setImpl(new SwtBusyIndicator(this));
     }
 
     protected IBusyIndicator impl;
 
     protected BusyIndicator(IBusyIndicator impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static BusyIndicator createApi(IBusyIndicator impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof BusyIndicator inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new BusyIndicator(impl);
+        return new BusyIndicator(impl);
     }
 
     public IBusyIndicator getImpl() {
@@ -182,8 +174,6 @@ public class BusyIndicator {
 
     protected BusyIndicator setImpl(IBusyIndicator impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

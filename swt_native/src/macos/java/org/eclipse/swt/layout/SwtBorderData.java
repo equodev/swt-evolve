@@ -33,7 +33,8 @@ public final class SwtBorderData implements IBorderData {
     /**
      * creates a {@link BorderData} with default options
      */
-    public SwtBorderData() {
+    public SwtBorderData(BorderData api) {
+        setApi(api);
     }
 
     /**
@@ -45,7 +46,8 @@ public final class SwtBorderData implements IBorderData {
      *               {@link SWT#CENTER}, {@link SWT#LEFT}, {@link SWT#RIGHT},
      *               {@link SWT#BOTTOM}
      */
-    public SwtBorderData(int region) {
+    public SwtBorderData(int region, BorderData api) {
+        setApi(api);
         this.getApi().region = region;
     }
 
@@ -59,7 +61,8 @@ public final class SwtBorderData implements IBorderData {
      * @param widthHint  the default hint for the width
      * @param heightHint he default hint for the height
      */
-    public SwtBorderData(int region, int widthHint, int heightHint) {
+    public SwtBorderData(int region, int widthHint, int heightHint, BorderData api) {
+        setApi(api);
         this.getApi().region = region;
         this.getApi().wHint = widthHint;
         this.getApi().hHint = heightHint;
@@ -130,5 +133,7 @@ public final class SwtBorderData implements IBorderData {
 
     public void setApi(BorderData api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

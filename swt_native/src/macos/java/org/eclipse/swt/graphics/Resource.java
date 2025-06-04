@@ -105,12 +105,8 @@ public abstract class Resource {
     protected IResource impl;
 
     protected Resource(IResource impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     public IResource getImpl() {
@@ -119,8 +115,6 @@ public abstract class Resource {
 
     protected Resource setImpl(IResource impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

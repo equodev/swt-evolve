@@ -41,7 +41,7 @@ public class TextTransfer extends ByteArrayTransfer {
 
     TextTransfer() {
         this((ITextTransfer) null);
-        setImpl(new SwtTextTransfer());
+        setImpl(new SwtTextTransfer(this));
     }
 
     /**
@@ -97,11 +97,7 @@ public class TextTransfer extends ByteArrayTransfer {
     }
 
     static TextTransfer createApi(ITextTransfer impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TextTransfer inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TextTransfer(impl);
+        return new TextTransfer(impl);
     }
 
     public ITextTransfer getImpl() {

@@ -54,7 +54,8 @@ public class SwtDragSourceEffect extends SwtDragSourceAdapter implements IDragSo
      *    <li>ERROR_NULL_ARGUMENT - if the control is null</li>
      * </ul>
      */
-    public SwtDragSourceEffect(Control control) {
+    public SwtDragSourceEffect(Control control, DragSourceEffect api) {
+        super(api);
         if (control == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.control = control;

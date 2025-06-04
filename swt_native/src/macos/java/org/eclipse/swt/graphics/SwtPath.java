@@ -69,8 +69,8 @@ public class SwtPath extends SwtResource implements IPath {
      *
      * @see #dispose()
      */
-    public SwtPath(Device device) {
-        super(device);
+    public SwtPath(Device device, Path api) {
+        super(device, api);
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
@@ -121,8 +121,8 @@ public class SwtPath extends SwtResource implements IPath {
      * @see #dispose()
      * @since 3.4
      */
-    public SwtPath(Device device, Path path, float flatness) {
-        super(device);
+    public SwtPath(Device device, Path path, float flatness, Path api) {
+        super(device, api);
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
@@ -178,8 +178,8 @@ public class SwtPath extends SwtResource implements IPath {
      * @see #dispose()
      * @since 3.4
      */
-    public SwtPath(Device device, PathData data) {
-        this(device);
+    public SwtPath(Device device, PathData data, Path api) {
+        this(device, api);
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();

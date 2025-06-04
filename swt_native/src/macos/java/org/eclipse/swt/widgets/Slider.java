@@ -107,7 +107,7 @@ public class Slider extends Control {
      */
     public Slider(Composite parent, int style) {
         this((ISlider) null);
-        setImpl(new SwtSlider(parent, style));
+        setImpl(new SwtSlider(parent, style, this));
     }
 
     /**
@@ -394,11 +394,7 @@ public class Slider extends Control {
     }
 
     static Slider createApi(ISlider impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Slider inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Slider(impl);
+        return new Slider(impl);
     }
 
     public ISlider getImpl() {

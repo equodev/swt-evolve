@@ -88,7 +88,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     static final boolean FORCE_RUN_UPDATE = Boolean.valueOf(System.getProperty("org.eclipse.swt.internal.control.forceRunUpdate"));
 
-    DartControl() {
+    DartControl(Control api) {
+        super(api);
         /* Do nothing */
     }
 
@@ -122,8 +123,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public DartControl(Composite parent, int style) {
-        super(parent, style);
+    public DartControl(Composite parent, int style, Control api) {
+        super(parent, style, api);
         this.parent = parent;
         createWidget();
     }

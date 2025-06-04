@@ -110,26 +110,18 @@ public class DropTargetAdapter implements DropTargetListener {
 
     public DropTargetAdapter() {
         this((IDropTargetAdapter) null);
-        setImpl(new SwtDropTargetAdapter());
+        setImpl(new SwtDropTargetAdapter(this));
     }
 
     protected IDropTargetAdapter impl;
 
     protected DropTargetAdapter(IDropTargetAdapter impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static DropTargetAdapter createApi(IDropTargetAdapter impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof DropTargetAdapter inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new DropTargetAdapter(impl);
+        return new DropTargetAdapter(impl);
     }
 
     public IDropTargetAdapter getImpl() {
@@ -138,8 +130,6 @@ public class DropTargetAdapter implements DropTargetListener {
 
     protected DropTargetAdapter setImpl(IDropTargetAdapter impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

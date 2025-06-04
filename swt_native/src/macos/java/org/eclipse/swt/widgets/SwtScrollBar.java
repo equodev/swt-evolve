@@ -103,7 +103,8 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
 
     long actionSelector;
 
-    SwtScrollBar() {
+    SwtScrollBar(ScrollBar api) {
+        super(api);
         /* Do nothing */
     }
 

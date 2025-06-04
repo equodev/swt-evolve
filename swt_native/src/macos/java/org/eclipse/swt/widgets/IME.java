@@ -48,7 +48,7 @@ public class IME extends Widget {
      */
     IME() {
         this((IIME) null);
-        setImpl(new SwtIME());
+        setImpl(new SwtIME(this));
     }
 
     /**
@@ -80,7 +80,7 @@ public class IME extends Widget {
      */
     public IME(Canvas parent, int style) {
         this((IIME) null);
-        setImpl(new SwtIME(parent, style));
+        setImpl(new SwtIME(parent, style, this));
     }
 
     /**
@@ -241,11 +241,7 @@ public class IME extends Widget {
     }
 
     static IME createApi(IIME impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof IME inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new IME(impl);
+        return new IME(impl);
     }
 
     public IIME getImpl() {

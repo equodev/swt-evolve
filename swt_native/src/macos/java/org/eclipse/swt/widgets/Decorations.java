@@ -102,7 +102,7 @@ public class Decorations extends Canvas {
 
     Decorations() {
         this((IDecorations) null);
-        setImpl(new SwtDecorations());
+        setImpl(new SwtDecorations(this));
     }
 
     /**
@@ -146,7 +146,7 @@ public class Decorations extends Canvas {
      */
     public Decorations(Composite parent, int style) {
         this((IDecorations) null);
-        setImpl(new SwtDecorations(parent, style));
+        setImpl(new SwtDecorations(parent, style, this));
     }
 
     protected void checkSubclass() {
@@ -475,11 +475,7 @@ public class Decorations extends Canvas {
     }
 
     static Decorations createApi(IDecorations impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Decorations inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Decorations(impl);
+        return new Decorations(impl);
     }
 
     public IDecorations getImpl() {

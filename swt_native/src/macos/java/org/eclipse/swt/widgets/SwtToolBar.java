@@ -95,12 +95,12 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
      * @see Widget#checkSubclass()
      * @see Widget#getStyle()
      */
-    public SwtToolBar(Composite parent, int style) {
-        this(parent, style, false);
+    public SwtToolBar(Composite parent, int style, ToolBar api) {
+        this(parent, style, false, api);
     }
 
-    SwtToolBar(Composite parent, int style, boolean internal) {
-        super(parent, checkStyle(parent, style, internal));
+    SwtToolBar(Composite parent, int style, boolean internal, ToolBar api) {
+        super(parent, checkStyle(parent, style, internal), api);
         /*
 	* Ensure that either of HORIZONTAL or VERTICAL is set.
 	* NOTE: HORIZONTAL and VERTICAL have the same values

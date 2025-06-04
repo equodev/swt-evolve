@@ -407,7 +407,7 @@ public final class GridData {
      */
     public GridData() {
         this((IGridData) null);
-        setImpl(new SwtGridData());
+        setImpl(new SwtGridData(this));
     }
 
     /**
@@ -418,7 +418,7 @@ public final class GridData {
      */
     public GridData(int style) {
         this((IGridData) null);
-        setImpl(new SwtGridData(style));
+        setImpl(new SwtGridData(style, this));
     }
 
     /**
@@ -435,7 +435,7 @@ public final class GridData {
      */
     public GridData(int horizontalAlignment, int verticalAlignment, boolean grabExcessHorizontalSpace, boolean grabExcessVerticalSpace) {
         this((IGridData) null);
-        setImpl(new SwtGridData(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace));
+        setImpl(new SwtGridData(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace, this));
     }
 
     /**
@@ -454,7 +454,7 @@ public final class GridData {
      */
     public GridData(int horizontalAlignment, int verticalAlignment, boolean grabExcessHorizontalSpace, boolean grabExcessVerticalSpace, int horizontalSpan, int verticalSpan) {
         this((IGridData) null);
-        setImpl(new SwtGridData(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace, horizontalSpan, verticalSpan));
+        setImpl(new SwtGridData(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace, horizontalSpan, verticalSpan, this));
     }
 
     /**
@@ -469,7 +469,7 @@ public final class GridData {
      */
     public GridData(int width, int height) {
         this((IGridData) null);
-        setImpl(new SwtGridData(width, height));
+        setImpl(new SwtGridData(width, height, this));
     }
 
     /**
@@ -485,20 +485,12 @@ public final class GridData {
     protected IGridData impl;
 
     protected GridData(IGridData impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static GridData createApi(IGridData impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof GridData inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new GridData(impl);
+        return new GridData(impl);
     }
 
     public IGridData getImpl() {
@@ -507,8 +499,6 @@ public final class GridData {
 
     protected GridData setImpl(IGridData impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

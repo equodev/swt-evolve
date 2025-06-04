@@ -127,8 +127,8 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      *
      * @see #dispose()
      */
-    public SwtTextLayout(Device device) {
-        super(device);
+    public SwtTextLayout(Device device, TextLayout api) {
+        super(device, api);
         wrapWidth = ascent = descent = -1;
         alignment = SWT.LEFT;
         orientation = SWT.LEFT_TO_RIGHT;

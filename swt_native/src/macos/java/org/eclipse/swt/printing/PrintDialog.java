@@ -54,7 +54,7 @@ public class PrintDialog extends Dialog {
      */
     public PrintDialog(Shell parent) {
         this((IPrintDialog) null);
-        setImpl(new SwtPrintDialog(parent));
+        setImpl(new SwtPrintDialog(parent, this));
     }
 
     /**
@@ -87,7 +87,7 @@ public class PrintDialog extends Dialog {
      */
     public PrintDialog(Shell parent, int style) {
         this((IPrintDialog) null);
-        setImpl(new SwtPrintDialog(parent, style));
+        setImpl(new SwtPrintDialog(parent, style, this));
     }
 
     /**
@@ -257,11 +257,7 @@ public class PrintDialog extends Dialog {
     }
 
     static PrintDialog createApi(IPrintDialog impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof PrintDialog inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new PrintDialog(impl);
+        return new PrintDialog(impl);
     }
 
     public IPrintDialog getImpl() {

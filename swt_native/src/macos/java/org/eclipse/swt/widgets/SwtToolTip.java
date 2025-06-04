@@ -107,8 +107,8 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtToolTip(Shell parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtToolTip(Shell parent, int style, ToolTip api) {
+        super(parent, checkStyle(style), api);
         this.parent = parent;
         this.autohide = true;
         x = y = -1;

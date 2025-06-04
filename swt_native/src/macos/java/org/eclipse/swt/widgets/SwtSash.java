@@ -86,8 +86,8 @@ public class SwtSash extends SwtControl implements ISash {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtSash(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtSash(Composite parent, int style, Sash api) {
+        super(parent, checkStyle(style), api);
         int cursorStyle = (style & SWT.VERTICAL) != 0 ? SWT.CURSOR_SIZEWE : SWT.CURSOR_SIZENS;
         sizeCursor = new Cursor(display, cursorStyle);
     }

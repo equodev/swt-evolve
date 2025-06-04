@@ -57,7 +57,7 @@ public class FileDialog extends Dialog {
      */
     public FileDialog(Shell parent) {
         this((IFileDialog) null);
-        setImpl(new SwtFileDialog(parent));
+        setImpl(new SwtFileDialog(parent, this));
     }
 
     /**
@@ -90,7 +90,7 @@ public class FileDialog extends Dialog {
      */
     public FileDialog(Shell parent, int style) {
         this((IFileDialog) null);
-        setImpl(new SwtFileDialog(parent, style));
+        setImpl(new SwtFileDialog(parent, style, this));
     }
 
     /**
@@ -338,11 +338,7 @@ public class FileDialog extends Dialog {
     }
 
     static FileDialog createApi(IFileDialog impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof FileDialog inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new FileDialog(impl);
+        return new FileDialog(impl);
     }
 
     public IFileDialog getImpl() {

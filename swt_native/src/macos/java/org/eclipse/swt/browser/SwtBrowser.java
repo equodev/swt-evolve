@@ -92,8 +92,8 @@ public class SwtBrowser extends SwtComposite implements IBrowser {
      *
      * @since 3.0
      */
-    public SwtBrowser(Composite parent, int style) {
-        super(checkParent(parent), checkStyle(style));
+    public SwtBrowser(Composite parent, int style, Browser api) {
+        super(checkParent(parent), checkStyle(style), api);
         userStyle = style;
         String platform = SWT.getPlatform();
         if ("gtk".equals(platform)) {

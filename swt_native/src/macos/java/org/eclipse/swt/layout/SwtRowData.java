@@ -44,7 +44,8 @@ public final class SwtRowData implements IRowData {
      * Constructs a new instance of RowData using
      * default values.
      */
-    public SwtRowData() {
+    public SwtRowData(RowData api) {
+        setApi(api);
     }
 
     /**
@@ -55,7 +56,8 @@ public final class SwtRowData implements IRowData {
      * @param width a minimum width for the control
      * @param height a minimum height for the control
      */
-    public SwtRowData(int width, int height) {
+    public SwtRowData(int width, int height, RowData api) {
+        setApi(api);
         this.getApi().width = width;
         this.getApi().height = height;
     }
@@ -68,8 +70,8 @@ public final class SwtRowData implements IRowData {
      * @param point a point whose x coordinate specifies a minimum width for the control
      * and y coordinate specifies a minimum height for the control
      */
-    public SwtRowData(Point point) {
-        this(point.x, point.y);
+    public SwtRowData(Point point, RowData api) {
+        this(point.x, point.y, api);
     }
 
     String getName() {
@@ -110,5 +112,7 @@ public final class SwtRowData implements IRowData {
 
     public void setApi(RowData api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

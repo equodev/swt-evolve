@@ -46,8 +46,8 @@ public final class SwtFont extends SwtResource implements IFont {
 
     static final double SYNTHETIC_ITALIC = 0.2;
 
-    SwtFont(Device device) {
-        super(device);
+    SwtFont(Device device, Font api) {
+        super(device, api);
     }
 
     /**
@@ -70,8 +70,8 @@ public final class SwtFont extends SwtResource implements IFont {
      *
      * @see #dispose()
      */
-    public SwtFont(Device device, FontData fd) {
-        super(device);
+    public SwtFont(Device device, FontData fd, Font api) {
+        super(device, api);
         if (fd == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         NSAutoreleasePool pool = null;
@@ -111,8 +111,8 @@ public final class SwtFont extends SwtResource implements IFont {
      *
      * @since 2.1
      */
-    public SwtFont(Device device, FontData[] fds) {
-        super(device);
+    public SwtFont(Device device, FontData[] fds, Font api) {
+        super(device, api);
         if (fds == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (fds.length == 0)
@@ -158,8 +158,8 @@ public final class SwtFont extends SwtResource implements IFont {
      *
      * @see #dispose()
      */
-    public SwtFont(Device device, String name, int height, int style) {
-        super(device);
+    public SwtFont(Device device, String name, int height, int style, Font api) {
+        super(device, api);
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
@@ -173,8 +173,8 @@ public final class SwtFont extends SwtResource implements IFont {
     }
 
     /*public*/
-    SwtFont(Device device, String name, float height, int style) {
-        super(device);
+    SwtFont(Device device, String name, float height, int style, Font api) {
+        super(device, api);
         init(name, height, style, null);
         init();
     }

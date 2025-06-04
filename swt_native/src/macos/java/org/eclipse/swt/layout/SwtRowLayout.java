@@ -64,7 +64,8 @@ public final class SwtRowLayout extends SwtLayout implements IRowLayout {
     /**
      * Constructs a new instance of this class with type HORIZONTAL.
      */
-    public SwtRowLayout() {
+    public SwtRowLayout(RowLayout api) {
+        super(api);
     }
 
     /**
@@ -74,7 +75,8 @@ public final class SwtRowLayout extends SwtLayout implements IRowLayout {
      *
      * @since 2.0
      */
-    public SwtRowLayout(int type) {
+    public SwtRowLayout(int type, RowLayout api) {
+        super(api);
         this.getApi().type = type;
     }
 

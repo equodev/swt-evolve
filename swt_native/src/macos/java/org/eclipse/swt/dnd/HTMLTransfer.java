@@ -35,7 +35,7 @@ public class HTMLTransfer extends ByteArrayTransfer {
 
     HTMLTransfer() {
         this((IHTMLTransfer) null);
-        setImpl(new SwtHTMLTransfer());
+        setImpl(new SwtHTMLTransfer(this));
     }
 
     /**
@@ -92,11 +92,7 @@ public class HTMLTransfer extends ByteArrayTransfer {
     }
 
     static HTMLTransfer createApi(IHTMLTransfer impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof HTMLTransfer inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new HTMLTransfer(impl);
+        return new HTMLTransfer(impl);
     }
 
     public IHTMLTransfer getImpl() {

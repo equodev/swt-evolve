@@ -39,8 +39,8 @@ public class SwtLineAttributes implements ILineAttributes {
      *
      * @param width the line width
      */
-    public SwtLineAttributes(float width) {
-        this(width, SWT.CAP_FLAT, SWT.JOIN_MITER, SWT.LINE_SOLID, null, 0, 10);
+    public SwtLineAttributes(float width, LineAttributes api) {
+        this(width, SWT.CAP_FLAT, SWT.JOIN_MITER, SWT.LINE_SOLID, null, 0, 10, api);
     }
 
     /**
@@ -50,8 +50,8 @@ public class SwtLineAttributes implements ILineAttributes {
      * @param cap the line cap style
      * @param join the line join style
      */
-    public SwtLineAttributes(float width, int cap, int join) {
-        this(width, cap, join, SWT.LINE_SOLID, null, 0, 10);
+    public SwtLineAttributes(float width, int cap, int join, LineAttributes api) {
+        this(width, cap, join, SWT.LINE_SOLID, null, 0, 10, api);
     }
 
     /**
@@ -65,7 +65,8 @@ public class SwtLineAttributes implements ILineAttributes {
      * @param dashOffset the line dash style offset
      * @param miterLimit the line miter limit
      */
-    public SwtLineAttributes(float width, int cap, int join, int style, float[] dash, float dashOffset, float miterLimit) {
+    public SwtLineAttributes(float width, int cap, int join, int style, float[] dash, float dashOffset, float miterLimit, LineAttributes api) {
+        setApi(api);
         this.getApi().width = width;
         this.getApi().cap = cap;
         this.getApi().join = join;
@@ -153,5 +154,7 @@ public class SwtLineAttributes implements ILineAttributes {
 
     public void setApi(LineAttributes api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

@@ -141,8 +141,8 @@ public class SwtCLabel extends SwtCanvas implements ICLabel {
      * @see SWT#SHADOW_NONE
      * @see #getStyle()
      */
-    public SwtCLabel(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtCLabel(Composite parent, int style, CLabel api) {
+        super(parent, checkStyle(style), api);
         if ((style & (SWT.CENTER | SWT.RIGHT)) == 0)
             style |= SWT.LEFT;
         if ((style & SWT.CENTER) != 0)

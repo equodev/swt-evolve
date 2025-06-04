@@ -113,8 +113,8 @@ public class SwtSlider extends SwtControl implements ISlider {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtSlider(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtSlider(Composite parent, int style, Slider api) {
+        super(parent, checkStyle(style), api);
     }
 
     /**

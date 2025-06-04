@@ -42,7 +42,7 @@ public class FileTransfer extends ByteArrayTransfer {
 
     FileTransfer() {
         this((IFileTransfer) null);
-        setImpl(new SwtFileTransfer());
+        setImpl(new SwtFileTransfer(this));
     }
 
     /**
@@ -102,11 +102,7 @@ public class FileTransfer extends ByteArrayTransfer {
     }
 
     static FileTransfer createApi(IFileTransfer impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof FileTransfer inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new FileTransfer(impl);
+        return new FileTransfer(impl);
     }
 
     public IFileTransfer getImpl() {

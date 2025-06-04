@@ -37,7 +37,8 @@ public final class SwtTouch implements ITouch {
      * @param x X location of the touch in screen coordinates
      * @param y Y location of the touch in screen coordinates
      */
-    SwtTouch(long identity, TouchSource source, int state, boolean primary, int x, int y) {
+    SwtTouch(long identity, TouchSource source, int state, boolean primary, int x, int y, Touch api) {
+        setApi(api);
         this.getApi().id = identity;
         this.getApi().source = source;
         this.getApi().state = state;
@@ -67,5 +68,7 @@ public final class SwtTouch implements ITouch {
 
     public void setApi(Touch api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

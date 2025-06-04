@@ -133,7 +133,8 @@ public abstract class DartWidget implements IWidget {
 
     static final int DEFAULT_HEIGHT = 64;
 
-    DartWidget() {
+    DartWidget(Widget api) {
+        setApi(api);
         notifyCreationTracker();
     }
 
@@ -166,7 +167,8 @@ public abstract class DartWidget implements IWidget {
      * @see #checkSubclass
      * @see #getStyle
      */
-    public DartWidget(Widget parent, int style) {
+    public DartWidget(Widget parent, int style, Widget api) {
+        setApi(api);
         checkSubclass();
         checkParent(parent);
         this.style = style;
@@ -1187,6 +1189,8 @@ public abstract class DartWidget implements IWidget {
 
     public void setApi(Widget api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 
     protected VWidget value;

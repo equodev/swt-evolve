@@ -52,7 +52,7 @@ public final class TouchSource {
      */
     TouchSource(long handle, boolean direct, Rectangle bounds) {
         this((ITouchSource) null);
-        setImpl(new SwtTouchSource(handle, direct, bounds));
+        setImpl(new SwtTouchSource(handle, direct, bounds, this));
     }
 
     /**
@@ -89,20 +89,12 @@ public final class TouchSource {
     protected ITouchSource impl;
 
     protected TouchSource(ITouchSource impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static TouchSource createApi(ITouchSource impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TouchSource inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TouchSource(impl);
+        return new TouchSource(impl);
     }
 
     public ITouchSource getImpl() {
@@ -111,8 +103,6 @@ public final class TouchSource {
 
     protected TouchSource setImpl(ITouchSource impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

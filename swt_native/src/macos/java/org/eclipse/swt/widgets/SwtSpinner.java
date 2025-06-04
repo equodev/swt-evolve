@@ -90,8 +90,8 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtSpinner(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtSpinner(Composite parent, int style, Spinner api) {
+        super(parent, checkStyle(style), api);
     }
 
     @Override

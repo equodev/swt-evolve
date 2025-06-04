@@ -35,5 +35,11 @@ public final class SwtPathData implements IPathData {
 
     public void setApi(PathData api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
+    }
+
+    public SwtPathData(PathData api) {
+        setApi(api);
     }
 }

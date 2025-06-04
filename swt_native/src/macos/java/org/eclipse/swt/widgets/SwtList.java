@@ -86,8 +86,8 @@ public class SwtList extends SwtScrollable implements IList {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtList(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtList(Composite parent, int style, List api) {
+        super(parent, checkStyle(style), api);
         this.nativeItemHeight = (int) ((NSTableView) getApi().view).rowHeight();
         // update height
         setFont(defaultFont().handle);

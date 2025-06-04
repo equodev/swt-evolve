@@ -114,5 +114,11 @@ public abstract class SwtLayout implements ILayout {
 
     public void setApi(Layout api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
+    }
+
+    public SwtLayout(Layout api) {
+        setApi(api);
     }
 }

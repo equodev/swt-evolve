@@ -81,7 +81,7 @@ public final class RowData {
      */
     public RowData() {
         this((IRowData) null);
-        setImpl(new SwtRowData());
+        setImpl(new SwtRowData(this));
     }
 
     /**
@@ -94,7 +94,7 @@ public final class RowData {
      */
     public RowData(int width, int height) {
         this((IRowData) null);
-        setImpl(new SwtRowData(width, height));
+        setImpl(new SwtRowData(width, height, this));
     }
 
     /**
@@ -107,7 +107,7 @@ public final class RowData {
      */
     public RowData(Point point) {
         this((IRowData) null);
-        setImpl(new SwtRowData(point));
+        setImpl(new SwtRowData(point, this));
     }
 
     /**
@@ -123,20 +123,12 @@ public final class RowData {
     protected IRowData impl;
 
     protected RowData(IRowData impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static RowData createApi(IRowData impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof RowData inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new RowData(impl);
+        return new RowData(impl);
     }
 
     public IRowData getImpl() {
@@ -145,8 +137,6 @@ public final class RowData {
 
     protected RowData setImpl(IRowData impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

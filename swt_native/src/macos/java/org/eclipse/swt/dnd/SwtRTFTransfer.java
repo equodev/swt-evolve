@@ -39,7 +39,8 @@ public class SwtRTFTransfer extends SwtByteArrayTransfer implements IRTFTransfer
 
     static final int RTFID = registerType(RTF);
 
-    SwtRTFTransfer() {
+    SwtRTFTransfer(RTFTransfer api) {
+        super(api);
     }
 
     /**

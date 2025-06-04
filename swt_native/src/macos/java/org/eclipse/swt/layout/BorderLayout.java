@@ -140,7 +140,7 @@ public class BorderLayout extends Layout {
 
     public BorderLayout() {
         this((IBorderLayout) null);
-        setImpl(new SwtBorderLayout());
+        setImpl(new SwtBorderLayout(this));
     }
 
     protected BorderLayout(IBorderLayout impl) {
@@ -148,11 +148,7 @@ public class BorderLayout extends Layout {
     }
 
     static BorderLayout createApi(IBorderLayout impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof BorderLayout inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new BorderLayout(impl);
+        return new BorderLayout(impl);
     }
 
     public IBorderLayout getImpl() {

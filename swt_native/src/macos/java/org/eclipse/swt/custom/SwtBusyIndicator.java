@@ -310,5 +310,11 @@ public class SwtBusyIndicator implements IBusyIndicator {
 
     public void setApi(BusyIndicator api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
+    }
+
+    public SwtBusyIndicator(BusyIndicator api) {
+        setApi(api);
     }
 }

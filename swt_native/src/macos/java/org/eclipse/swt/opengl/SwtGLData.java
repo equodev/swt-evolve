@@ -48,5 +48,11 @@ public class SwtGLData implements IGLData {
 
     public void setApi(GLData api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
+    }
+
+    public SwtGLData(GLData api) {
+        setApi(api);
     }
 }

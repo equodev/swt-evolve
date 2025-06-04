@@ -74,7 +74,7 @@ public class TableColumn extends Item {
      */
     public TableColumn(Table parent, int style) {
         this((ITableColumn) null);
-        setImpl(new SwtTableColumn(parent, style));
+        setImpl(new SwtTableColumn(parent, style, this));
     }
 
     /**
@@ -116,7 +116,7 @@ public class TableColumn extends Item {
      */
     public TableColumn(Table parent, int style, int index) {
         this((ITableColumn) null);
-        setImpl(new SwtTableColumn(parent, style, index));
+        setImpl(new SwtTableColumn(parent, style, index, this));
     }
 
     /**
@@ -451,11 +451,7 @@ public class TableColumn extends Item {
     }
 
     static TableColumn createApi(ITableColumn impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TableColumn inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TableColumn(impl);
+        return new TableColumn(impl);
     }
 
     public ITableColumn getImpl() {

@@ -164,7 +164,7 @@ public final class FormLayout extends Layout {
      */
     public FormLayout() {
         this((IFormLayout) null);
-        setImpl(new SwtFormLayout());
+        setImpl(new SwtFormLayout(this));
     }
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
@@ -194,11 +194,7 @@ public final class FormLayout extends Layout {
     }
 
     static FormLayout createApi(IFormLayout impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof FormLayout inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new FormLayout(impl);
+        return new FormLayout(impl);
     }
 
     public IFormLayout getImpl() {

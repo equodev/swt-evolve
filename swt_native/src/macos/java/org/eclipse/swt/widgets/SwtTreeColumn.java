@@ -84,8 +84,8 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTreeColumn(Tree parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtTreeColumn(Tree parent, int style, TreeColumn api) {
+        super(parent, checkStyle(style), api);
         this.parent = parent;
         ((SwtTree) parent.getImpl()).createItem(this.getApi(), ((SwtTree) parent.getImpl()).columnCount);
     }
@@ -127,8 +127,8 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTreeColumn(Tree parent, int style, int index) {
-        super(parent, checkStyle(style));
+    public SwtTreeColumn(Tree parent, int style, int index, TreeColumn api) {
+        super(parent, checkStyle(style), api);
         this.parent = parent;
         ((SwtTree) parent.getImpl()).createItem(this.getApi(), index);
     }

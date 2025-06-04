@@ -81,8 +81,8 @@ public class SwtCaret extends SwtWidget implements ICaret {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtCaret(Canvas parent, int style) {
-        super(parent, style);
+    public SwtCaret(Canvas parent, int style, Caret api) {
+        super(parent, style, api);
         this.parent = parent;
         createWidget();
     }

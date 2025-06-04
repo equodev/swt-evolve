@@ -88,8 +88,8 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTabFolder(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtTabFolder(Composite parent, int style, TabFolder api) {
+        super(parent, checkStyle(style), api);
     }
 
     /**

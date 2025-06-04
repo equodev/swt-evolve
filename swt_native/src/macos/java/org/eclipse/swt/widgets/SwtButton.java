@@ -113,8 +113,8 @@ public class SwtButton extends SwtControl implements IButton {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtButton(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtButton(Composite parent, int style, Button api) {
+        super(parent, checkStyle(style), api);
     }
 
     /**

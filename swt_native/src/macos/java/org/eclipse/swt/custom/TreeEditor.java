@@ -83,7 +83,7 @@ public class TreeEditor extends ControlEditor {
      */
     public TreeEditor(Tree tree) {
         this((ITreeEditor) null);
-        setImpl(new SwtTreeEditor(tree));
+        setImpl(new SwtTreeEditor(tree, this));
     }
 
     /**
@@ -176,11 +176,7 @@ public class TreeEditor extends ControlEditor {
     }
 
     static TreeEditor createApi(ITreeEditor impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TreeEditor inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TreeEditor(impl);
+        return new TreeEditor(impl);
     }
 
     public ITreeEditor getImpl() {

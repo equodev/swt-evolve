@@ -99,7 +99,7 @@ public final class FillLayout extends Layout {
      */
     public FillLayout() {
         this((IFillLayout) null);
-        setImpl(new SwtFillLayout());
+        setImpl(new SwtFillLayout(this));
     }
 
     /**
@@ -111,7 +111,7 @@ public final class FillLayout extends Layout {
      */
     public FillLayout(int type) {
         this((IFillLayout) null);
-        setImpl(new SwtFillLayout(type));
+        setImpl(new SwtFillLayout(type, this));
     }
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
@@ -141,11 +141,7 @@ public final class FillLayout extends Layout {
     }
 
     static FillLayout createApi(IFillLayout impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof FillLayout inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new FillLayout(impl);
+        return new FillLayout(impl);
     }
 
     public IFillLayout getImpl() {

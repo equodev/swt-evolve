@@ -29,7 +29,7 @@ public final class FontMetrics {
 
     FontMetrics() {
         this((IFontMetrics) null);
-        setImpl(new SwtFontMetrics());
+        setImpl(new SwtFontMetrics(this));
     }
 
     /**
@@ -140,20 +140,12 @@ public final class FontMetrics {
     protected IFontMetrics impl;
 
     protected FontMetrics(IFontMetrics impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static FontMetrics createApi(IFontMetrics impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof FontMetrics inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new FontMetrics(impl);
+        return new FontMetrics(impl);
     }
 
     public IFontMetrics getImpl() {
@@ -162,8 +154,6 @@ public final class FontMetrics {
 
     protected FontMetrics setImpl(IFontMetrics impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

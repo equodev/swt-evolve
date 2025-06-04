@@ -51,7 +51,8 @@ public final class SwtGlyphMetrics implements IGlyphMetrics {
      *    <li>ERROR_INVALID_ARGUMENT - if the ascent, descent or width argument is negative</li>
      * </ul>
      */
-    public SwtGlyphMetrics(int ascent, int descent, int width) {
+    public SwtGlyphMetrics(int ascent, int descent, int width, GlyphMetrics api) {
+        setApi(api);
         if (ascent < 0 || descent < 0 || width < 0) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -116,5 +117,7 @@ public final class SwtGlyphMetrics implements IGlyphMetrics {
 
     public void setApi(GlyphMetrics api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

@@ -63,7 +63,8 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         //supportedPboardTypes.addObject(OS.NSRTFPboardType);
     }
 
-    SwtCanvas() {
+    SwtCanvas(Canvas api) {
+        super(api);
         /* Do nothing */
     }
 
@@ -112,8 +113,8 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
      * @see SWT
      * @see Widget#getStyle
      */
-    public SwtCanvas(Composite parent, int style) {
-        super(parent, style);
+    public SwtCanvas(Composite parent, int style, Canvas api) {
+        super(parent, style, api);
     }
 
     @Override

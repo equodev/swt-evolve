@@ -115,6 +115,8 @@ public abstract class DartLayout implements ILayout {
 
     public void setApi(Layout api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 
     protected VLayout value;
@@ -123,5 +125,9 @@ public abstract class DartLayout implements ILayout {
         if (value == null)
             value = new VLayout(this);
         return (VLayout) value;
+    }
+
+    public DartLayout(Layout api) {
+        setApi(api);
     }
 }

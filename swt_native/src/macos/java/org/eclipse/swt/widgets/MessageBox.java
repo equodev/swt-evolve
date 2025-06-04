@@ -60,7 +60,7 @@ public class MessageBox extends Dialog {
      */
     public MessageBox(Shell parent) {
         this((IMessageBox) null);
-        setImpl(new SwtMessageBox(parent));
+        setImpl(new SwtMessageBox(parent, this));
     }
 
     /**
@@ -101,7 +101,7 @@ public class MessageBox extends Dialog {
      */
     public MessageBox(Shell parent, int style) {
         this((IMessageBox) null);
-        setImpl(new SwtMessageBox(parent, style));
+        setImpl(new SwtMessageBox(parent, style, this));
     }
 
     /**
@@ -173,11 +173,7 @@ public class MessageBox extends Dialog {
     }
 
     static MessageBox createApi(IMessageBox impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof MessageBox inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new MessageBox(impl);
+        return new MessageBox(impl);
     }
 
     public IMessageBox getImpl() {

@@ -63,7 +63,8 @@ public final class SwtFormData implements IFormData {
      * Constructs a new instance of FormData using
      * default values.
      */
-    public SwtFormData() {
+    public SwtFormData(FormData api) {
+        setApi(api);
     }
 
     /**
@@ -74,7 +75,8 @@ public final class SwtFormData implements IFormData {
      * @param width a minimum width for the control
      * @param height a minimum height for the control
      */
-    public SwtFormData(int width, int height) {
+    public SwtFormData(int width, int height, FormData api) {
+        setApi(api);
         this.getApi().width = width;
         this.getApi().height = height;
     }
@@ -353,5 +355,7 @@ public final class SwtFormData implements IFormData {
 
     public void setApi(FormData api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

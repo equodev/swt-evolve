@@ -47,7 +47,7 @@ public class Synchronizer {
      */
     public Synchronizer(Display display) {
         this((ISynchronizer) null);
-        setImpl(new SwtSynchronizer(display));
+        setImpl(new SwtSynchronizer(display, this));
     }
 
     /**
@@ -86,20 +86,12 @@ public class Synchronizer {
     protected ISynchronizer impl;
 
     protected Synchronizer(ISynchronizer impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static Synchronizer createApi(ISynchronizer impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Synchronizer inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Synchronizer(impl);
+        return new Synchronizer(impl);
     }
 
     public ISynchronizer getImpl() {
@@ -108,8 +100,6 @@ public class Synchronizer {
 
     protected Synchronizer setImpl(ISynchronizer impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

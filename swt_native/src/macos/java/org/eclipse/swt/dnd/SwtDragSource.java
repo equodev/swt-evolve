@@ -195,8 +195,8 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
      *  @see DND#DROP_MOVE
      *  @see DND#DROP_LINK
      */
-    public SwtDragSource(Control control, int style) {
-        super(control, checkStyle(style));
+    public SwtDragSource(Control control, int style, DragSource api) {
+        super(control, checkStyle(style), api);
         this.control = control;
         if (control.getData(DND.DRAG_SOURCE_KEY) != null) {
             DND.error(DND.ERROR_CANNOT_INIT_DRAG);

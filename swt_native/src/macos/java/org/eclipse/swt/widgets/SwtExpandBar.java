@@ -95,8 +95,8 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtExpandBar(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtExpandBar(Composite parent, int style, ExpandBar api) {
+        super(parent, checkStyle(style), api);
         items = new ExpandItem[4];
         listener = event -> {
             switch(event.type) {

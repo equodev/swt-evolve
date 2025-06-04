@@ -40,7 +40,8 @@ public class SwtTaskBar extends SwtWidget implements ITaskBar {
 
     TaskItem[] items = new TaskItem[4];
 
-    SwtTaskBar(Display display, int style) {
+    SwtTaskBar(Display display, int style, TaskBar api) {
+        super(api);
         if (display == null)
             display = SwtDisplay.getCurrent();
         if (display == null)

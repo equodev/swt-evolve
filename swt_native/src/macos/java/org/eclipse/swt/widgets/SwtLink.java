@@ -93,8 +93,8 @@ public class SwtLink extends SwtControl implements ILink {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtLink(Composite parent, int style) {
-        super(parent, style);
+    public SwtLink(Composite parent, int style, Link api) {
+        super(parent, style, api);
     }
 
     /**

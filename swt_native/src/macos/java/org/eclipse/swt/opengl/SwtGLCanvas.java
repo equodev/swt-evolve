@@ -52,8 +52,8 @@ public class SwtGLCanvas extends SwtCanvas implements IGLCanvas {
      *     <li>ERROR_UNSUPPORTED_DEPTH when the requested attributes cannot be provided</li>
      * </ul>
      */
-    public SwtGLCanvas(Composite parent, int style, GLData data) {
-        super(parent, style);
+    public SwtGLCanvas(Composite parent, int style, GLData data, GLCanvas api) {
+        super(parent, style, api);
         if (data == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         int[] attrib = new int[MAX_ATTRIBUTES];

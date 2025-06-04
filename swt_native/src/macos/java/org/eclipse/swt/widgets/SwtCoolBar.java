@@ -101,8 +101,8 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtCoolBar(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtCoolBar(Composite parent, int style, CoolBar api) {
+        super(parent, checkStyle(style), api);
         if ((style & SWT.VERTICAL) != 0) {
             this.style |= SWT.VERTICAL;
             hoverCursor = new Cursor(display, SWT.CURSOR_SIZENS);

@@ -147,26 +147,18 @@ public class GLData {
 
     public GLData() {
         this((IGLData) null);
-        setImpl(new SwtGLData());
+        setImpl(new SwtGLData(this));
     }
 
     protected IGLData impl;
 
     protected GLData(IGLData impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static GLData createApi(IGLData impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof GLData inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new GLData(impl);
+        return new GLData(impl);
     }
 
     public IGLData getImpl() {
@@ -175,8 +167,6 @@ public class GLData {
 
     protected GLData setImpl(IGLData impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

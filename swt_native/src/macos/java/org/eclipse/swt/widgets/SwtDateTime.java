@@ -102,8 +102,8 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtDateTime(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtDateTime(Composite parent, int style, DateTime api) {
+        super(parent, checkStyle(style), api);
     }
 
     static int checkStyle(int style) {

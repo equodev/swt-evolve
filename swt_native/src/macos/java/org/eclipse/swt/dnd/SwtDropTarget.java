@@ -404,8 +404,8 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
      *  @see DND#DROP_MOVE
      *  @see DND#DROP_LINK
      */
-    public SwtDropTarget(Control control, int style) {
-        super(control, checkStyle(style));
+    public SwtDropTarget(Control control, int style, DropTarget api) {
+        super(control, checkStyle(style), api);
         this.control = control;
         if (control.getData(DND.DROP_TARGET_KEY) != null) {
             DND.error(DND.ERROR_CANNOT_INIT_DROP);

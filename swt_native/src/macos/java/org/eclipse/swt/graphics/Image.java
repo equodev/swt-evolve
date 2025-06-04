@@ -106,7 +106,7 @@ public final class Image extends Resource implements Drawable {
      */
     Image(Device device) {
         this((IImage) null);
-        setImpl(new SwtImage(device));
+        setImpl(new SwtImage(device, this));
     }
 
     /**
@@ -146,7 +146,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, int width, int height) {
         this((IImage) null);
-        setImpl(new SwtImage(device, width, height));
+        setImpl(new SwtImage(device, width, height, this));
     }
 
     /**
@@ -187,7 +187,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, Image srcImage, int flag) {
         this((IImage) null);
-        setImpl(new SwtImage(device, srcImage, flag));
+        setImpl(new SwtImage(device, srcImage, flag, this));
     }
 
     /**
@@ -227,7 +227,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, Rectangle bounds) {
         this((IImage) null);
-        setImpl(new SwtImage(device, bounds));
+        setImpl(new SwtImage(device, bounds, this));
     }
 
     /**
@@ -255,7 +255,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, ImageData data) {
         this((IImage) null);
-        setImpl(new SwtImage(device, data));
+        setImpl(new SwtImage(device, data, this));
     }
 
     /**
@@ -290,7 +290,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, ImageData source, ImageData mask) {
         this((IImage) null);
-        setImpl(new SwtImage(device, source, mask));
+        setImpl(new SwtImage(device, source, mask, this));
     }
 
     /**
@@ -348,7 +348,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, InputStream stream) {
         this((IImage) null);
-        setImpl(new SwtImage(device, stream));
+        setImpl(new SwtImage(device, stream, this));
     }
 
     /**
@@ -385,7 +385,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, String filename) {
         this((IImage) null);
-        setImpl(new SwtImage(device, filename));
+        setImpl(new SwtImage(device, filename, this));
     }
 
     /**
@@ -419,7 +419,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
         this((IImage) null);
-        setImpl(new SwtImage(device, imageFileNameProvider));
+        setImpl(new SwtImage(device, imageFileNameProvider, this));
     }
 
     /**
@@ -453,7 +453,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, ImageDataProvider imageDataProvider) {
         this((IImage) null);
-        setImpl(new SwtImage(device, imageDataProvider));
+        setImpl(new SwtImage(device, imageDataProvider, this));
     }
 
     /**
@@ -723,11 +723,7 @@ public final class Image extends Resource implements Drawable {
     }
 
     static Image createApi(IImage impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Image inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Image(impl);
+        return new Image(impl);
     }
 
     public IImage getImpl() {

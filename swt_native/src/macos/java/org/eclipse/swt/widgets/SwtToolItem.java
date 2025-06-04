@@ -111,8 +111,8 @@ public class SwtToolItem extends SwtItem implements IToolItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtToolItem(ToolBar parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtToolItem(ToolBar parent, int style, ToolItem api) {
+        super(parent, checkStyle(style), api);
         this.parent = parent;
         ((SwtToolBar) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
     }
@@ -153,8 +153,8 @@ public class SwtToolItem extends SwtItem implements IToolItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtToolItem(ToolBar parent, int style, int index) {
-        super(parent, checkStyle(style));
+    public SwtToolItem(ToolBar parent, int style, int index, ToolItem api) {
+        super(parent, checkStyle(style), api);
         this.parent = parent;
         ((SwtToolBar) parent.getImpl()).createItem(this.getApi(), index);
     }

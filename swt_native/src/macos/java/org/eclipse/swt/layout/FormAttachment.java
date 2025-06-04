@@ -147,7 +147,7 @@ public final class FormAttachment {
      */
     public FormAttachment() {
         this((IFormAttachment) null);
-        setImpl(new SwtFormAttachment());
+        setImpl(new SwtFormAttachment(this));
     }
 
     /**
@@ -162,7 +162,7 @@ public final class FormAttachment {
      */
     public FormAttachment(int numerator) {
         this((IFormAttachment) null);
-        setImpl(new SwtFormAttachment(numerator));
+        setImpl(new SwtFormAttachment(numerator, this));
     }
 
     /**
@@ -176,7 +176,7 @@ public final class FormAttachment {
      */
     public FormAttachment(int numerator, int offset) {
         this((IFormAttachment) null);
-        setImpl(new SwtFormAttachment(numerator, offset));
+        setImpl(new SwtFormAttachment(numerator, offset, this));
     }
 
     /**
@@ -191,7 +191,7 @@ public final class FormAttachment {
      */
     public FormAttachment(int numerator, int denominator, int offset) {
         this((IFormAttachment) null);
-        setImpl(new SwtFormAttachment(numerator, denominator, offset));
+        setImpl(new SwtFormAttachment(numerator, denominator, offset, this));
     }
 
     /**
@@ -205,7 +205,7 @@ public final class FormAttachment {
      */
     public FormAttachment(Control control) {
         this((IFormAttachment) null);
-        setImpl(new SwtFormAttachment(control));
+        setImpl(new SwtFormAttachment(control, this));
     }
 
     /**
@@ -219,7 +219,7 @@ public final class FormAttachment {
      */
     public FormAttachment(Control control, int offset) {
         this((IFormAttachment) null);
-        setImpl(new SwtFormAttachment(control, offset));
+        setImpl(new SwtFormAttachment(control, offset, this));
     }
 
     /**
@@ -247,7 +247,7 @@ public final class FormAttachment {
      */
     public FormAttachment(Control control, int offset, int alignment) {
         this((IFormAttachment) null);
-        setImpl(new SwtFormAttachment(control, offset, alignment));
+        setImpl(new SwtFormAttachment(control, offset, alignment, this));
     }
 
     /**
@@ -263,20 +263,12 @@ public final class FormAttachment {
     protected IFormAttachment impl;
 
     protected FormAttachment(IFormAttachment impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static FormAttachment createApi(IFormAttachment impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof FormAttachment inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new FormAttachment(impl);
+        return new FormAttachment(impl);
     }
 
     public IFormAttachment getImpl() {
@@ -285,8 +277,6 @@ public final class FormAttachment {
 
     protected FormAttachment setImpl(IFormAttachment impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

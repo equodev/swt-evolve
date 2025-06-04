@@ -81,7 +81,7 @@ public class Tracker extends Widget {
      */
     public Tracker(Composite parent, int style) {
         this((ITracker) null);
-        setImpl(new SwtTracker(parent, style));
+        setImpl(new SwtTracker(parent, style, this));
     }
 
     /**
@@ -121,7 +121,7 @@ public class Tracker extends Widget {
      */
     public Tracker(Display display, int style) {
         this((ITracker) null);
-        setImpl(new SwtTracker(display, style));
+        setImpl(new SwtTracker(display, style, this));
     }
 
     /**
@@ -323,11 +323,7 @@ public class Tracker extends Widget {
     }
 
     static Tracker createApi(ITracker impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Tracker inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Tracker(impl);
+        return new Tracker(impl);
     }
 
     public ITracker getImpl() {

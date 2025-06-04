@@ -62,7 +62,8 @@ public class DartComposite extends DartScrollable implements IComposite {
     // This field is set to true if Object is StyledText
     private boolean isStyledText;
 
-    DartComposite() {
+    DartComposite(Composite api) {
+        super(api);
         /* Do nothing */
     }
 
@@ -98,8 +99,8 @@ public class DartComposite extends DartScrollable implements IComposite {
      * @see SWT#DOUBLE_BUFFERED
      * @see Widget#getStyle
      */
-    public DartComposite(Composite parent, int style) {
-        super(parent, style);
+    public DartComposite(Composite parent, int style, Composite api) {
+        super(parent, style, api);
     }
 
     Control[] _getChildren() {

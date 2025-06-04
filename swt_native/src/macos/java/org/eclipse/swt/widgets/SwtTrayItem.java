@@ -85,8 +85,8 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTrayItem(Tray parent, int style) {
-        super(parent, style);
+    public SwtTrayItem(Tray parent, int style, TrayItem api) {
+        super(parent, style, api);
         this.parent = parent;
         ((SwtTray) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
         createWidget();

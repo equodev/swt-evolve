@@ -114,7 +114,7 @@ public class ControlEditor {
      */
     public ControlEditor(Composite parent) {
         this((IControlEditor) null);
-        setImpl(new SwtControlEditor(parent));
+        setImpl(new SwtControlEditor(parent, this));
     }
 
     /**
@@ -160,20 +160,12 @@ public class ControlEditor {
     protected IControlEditor impl;
 
     protected ControlEditor(IControlEditor impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static ControlEditor createApi(IControlEditor impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof ControlEditor inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new ControlEditor(impl);
+        return new ControlEditor(impl);
     }
 
     public IControlEditor getImpl() {
@@ -182,8 +174,6 @@ public class ControlEditor {
 
     protected ControlEditor setImpl(IControlEditor impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

@@ -116,26 +116,18 @@ public class StyledTextPrintOptions {
 
     public StyledTextPrintOptions() {
         this((IStyledTextPrintOptions) null);
-        setImpl(new SwtStyledTextPrintOptions());
+        setImpl(new SwtStyledTextPrintOptions(this));
     }
 
     protected IStyledTextPrintOptions impl;
 
     protected StyledTextPrintOptions(IStyledTextPrintOptions impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static StyledTextPrintOptions createApi(IStyledTextPrintOptions impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof StyledTextPrintOptions inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new StyledTextPrintOptions(impl);
+        return new StyledTextPrintOptions(impl);
     }
 
     public IStyledTextPrintOptions getImpl() {
@@ -144,8 +136,6 @@ public class StyledTextPrintOptions {
 
     protected StyledTextPrintOptions setImpl(IStyledTextPrintOptions impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

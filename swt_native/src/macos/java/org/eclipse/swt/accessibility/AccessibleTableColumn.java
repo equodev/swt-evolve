@@ -30,7 +30,7 @@ class AccessibleTableColumn extends Accessible {
 
     public AccessibleTableColumn(Accessible accessible, int childID) {
         this((IAccessibleTableColumn) null);
-        setImpl(new SwtAccessibleTableColumn(accessible, childID));
+        setImpl(new SwtAccessibleTableColumn(accessible, childID, this));
     }
 
     protected AccessibleTableColumn(IAccessibleTableColumn impl) {
@@ -38,11 +38,7 @@ class AccessibleTableColumn extends Accessible {
     }
 
     static AccessibleTableColumn createApi(IAccessibleTableColumn impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof AccessibleTableColumn inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new AccessibleTableColumn(impl);
+        return new AccessibleTableColumn(impl);
     }
 
     public IAccessibleTableColumn getImpl() {

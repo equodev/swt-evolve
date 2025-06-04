@@ -84,7 +84,8 @@ public class SwtControlEditor implements IControlEditor {
      *
      * @param parent the Composite above which this editor will be displayed
      */
-    public SwtControlEditor(Composite parent) {
+    public SwtControlEditor(Composite parent, ControlEditor api) {
+        setApi(api);
         this.parent = parent;
         controlListener = e -> layout();
         for (int event : EVENTS) {
@@ -225,5 +226,7 @@ public class SwtControlEditor implements IControlEditor {
 
     public void setApi(ControlEditor api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

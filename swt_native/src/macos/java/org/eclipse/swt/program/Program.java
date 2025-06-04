@@ -38,7 +38,7 @@ public final class Program {
      */
     Program() {
         this((IProgram) null);
-        setImpl(new SwtProgram());
+        setImpl(new SwtProgram(this));
     }
 
     /**
@@ -216,20 +216,12 @@ public final class Program {
     protected IProgram impl;
 
     protected Program(IProgram impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static Program createApi(IProgram impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Program inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Program(impl);
+        return new Program(impl);
     }
 
     public IProgram getImpl() {
@@ -238,8 +230,6 @@ public final class Program {
 
     protected Program setImpl(IProgram impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

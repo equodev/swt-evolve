@@ -62,7 +62,8 @@ public class SwtIME extends SwtWidget implements IIME {
     /**
      * Prevents uninitialized instances from being created outside the package.
      */
-    SwtIME() {
+    SwtIME(IME api) {
+        super(api);
     }
 
     /**
@@ -92,8 +93,8 @@ public class SwtIME extends SwtWidget implements IIME {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtIME(Canvas parent, int style) {
-        super(parent, style);
+    public SwtIME(Canvas parent, int style, IME api) {
+        super(parent, style, api);
         this.parent = parent;
         createWidget();
     }

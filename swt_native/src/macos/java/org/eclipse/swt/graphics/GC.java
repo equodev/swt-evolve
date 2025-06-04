@@ -78,7 +78,7 @@ public final class GC extends Resource {
 
     GC() {
         this((IGC) null);
-        setImpl(new SwtGC());
+        setImpl(new SwtGC(this));
     }
 
     /**
@@ -106,7 +106,7 @@ public final class GC extends Resource {
      */
     public GC(Drawable drawable) {
         this((IGC) null);
-        setImpl(new SwtGC(drawable));
+        setImpl(new SwtGC(drawable, this));
     }
 
     /**
@@ -140,7 +140,7 @@ public final class GC extends Resource {
      */
     public GC(Drawable drawable, int style) {
         this((IGC) null);
-        setImpl(new SwtGC(drawable, style));
+        setImpl(new SwtGC(drawable, style, this));
     }
 
     /**
@@ -2045,11 +2045,7 @@ public final class GC extends Resource {
     }
 
     static GC createApi(IGC impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof GC inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new GC(impl);
+        return new GC(impl);
     }
 
     public IGC getImpl() {

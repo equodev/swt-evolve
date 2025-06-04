@@ -82,8 +82,8 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtExpandItem(ExpandBar parent, int style) {
-        this(parent, style, checkNull(parent).getItemCount());
+    public SwtExpandItem(ExpandBar parent, int style, ExpandItem api) {
+        this(parent, style, checkNull(parent).getItemCount(), api);
     }
 
     /**
@@ -116,8 +116,8 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtExpandItem(ExpandBar parent, int style, int index) {
-        super(parent, style);
+    public SwtExpandItem(ExpandBar parent, int style, int index, ExpandItem api) {
+        super(parent, style, api);
         this.parent = parent;
         ((SwtExpandBar) parent.getImpl()).createItem(this.getApi(), style, index);
     }

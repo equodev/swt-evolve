@@ -69,8 +69,9 @@ public final class SwtGridData implements IGridData {
      * Constructs a new instance of GridData using
      * default values.
      */
-    public SwtGridData() {
+    public SwtGridData(GridData api) {
         super();
+        setApi(api);
     }
 
     /**
@@ -79,8 +80,9 @@ public final class SwtGridData implements IGridData {
      *
      * @param style the GridData style
      */
-    public SwtGridData(int style) {
+    public SwtGridData(int style, GridData api) {
         super();
+        setApi(api);
         if ((style & GridData.VERTICAL_ALIGN_BEGINNING) != 0)
             getApi().verticalAlignment = GridData.BEGINNING;
         if ((style & GridData.VERTICAL_ALIGN_CENTER) != 0)
@@ -113,8 +115,8 @@ public final class SwtGridData implements IGridData {
      *
      * @since 3.0
      */
-    public SwtGridData(int horizontalAlignment, int verticalAlignment, boolean grabExcessHorizontalSpace, boolean grabExcessVerticalSpace) {
-        this(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace, 1, 1);
+    public SwtGridData(int horizontalAlignment, int verticalAlignment, boolean grabExcessHorizontalSpace, boolean grabExcessVerticalSpace, GridData api) {
+        this(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace, 1, 1, api);
     }
 
     /**
@@ -131,8 +133,9 @@ public final class SwtGridData implements IGridData {
      *
      * @since 3.0
      */
-    public SwtGridData(int horizontalAlignment, int verticalAlignment, boolean grabExcessHorizontalSpace, boolean grabExcessVerticalSpace, int horizontalSpan, int verticalSpan) {
+    public SwtGridData(int horizontalAlignment, int verticalAlignment, boolean grabExcessHorizontalSpace, boolean grabExcessVerticalSpace, int horizontalSpan, int verticalSpan, GridData api) {
         super();
+        setApi(api);
         this.getApi().horizontalAlignment = horizontalAlignment;
         this.getApi().verticalAlignment = verticalAlignment;
         this.getApi().grabExcessHorizontalSpace = grabExcessHorizontalSpace;
@@ -151,8 +154,9 @@ public final class SwtGridData implements IGridData {
      *
      * @since 3.0
      */
-    public SwtGridData(int width, int height) {
+    public SwtGridData(int width, int height, GridData api) {
         super();
+        setApi(api);
         this.getApi().widthHint = width;
         this.getApi().heightHint = height;
     }
@@ -287,5 +291,7 @@ public final class SwtGridData implements IGridData {
 
     public void setApi(GridData api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

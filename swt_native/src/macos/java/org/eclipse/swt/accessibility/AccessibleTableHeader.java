@@ -32,7 +32,7 @@ class AccessibleTableHeader extends Accessible {
 
     public AccessibleTableHeader(Accessible accessible, int childID) {
         this((IAccessibleTableHeader) null);
-        setImpl(new SwtAccessibleTableHeader(accessible, childID));
+        setImpl(new SwtAccessibleTableHeader(accessible, childID, this));
     }
 
     protected AccessibleTableHeader(IAccessibleTableHeader impl) {
@@ -40,11 +40,7 @@ class AccessibleTableHeader extends Accessible {
     }
 
     static AccessibleTableHeader createApi(IAccessibleTableHeader impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof AccessibleTableHeader inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new AccessibleTableHeader(impl);
+        return new AccessibleTableHeader(impl);
     }
 
     public IAccessibleTableHeader getImpl() {

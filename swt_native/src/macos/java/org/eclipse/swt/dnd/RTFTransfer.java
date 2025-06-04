@@ -35,7 +35,7 @@ public class RTFTransfer extends ByteArrayTransfer {
 
     RTFTransfer() {
         this((IRTFTransfer) null);
-        setImpl(new SwtRTFTransfer());
+        setImpl(new SwtRTFTransfer(this));
     }
 
     /**
@@ -92,11 +92,7 @@ public class RTFTransfer extends ByteArrayTransfer {
     }
 
     static RTFTransfer createApi(IRTFTransfer impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof RTFTransfer inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new RTFTransfer(impl);
+        return new RTFTransfer(impl);
     }
 
     public IRTFTransfer getImpl() {

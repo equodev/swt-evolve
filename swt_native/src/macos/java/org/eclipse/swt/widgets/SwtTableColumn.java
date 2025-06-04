@@ -82,8 +82,8 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTableColumn(Table parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtTableColumn(Table parent, int style, TableColumn api) {
+        super(parent, checkStyle(style), api);
         this.parent = parent;
         ((SwtTable) parent.getImpl()).createItem(this.getApi(), ((SwtTable) parent.getImpl()).columnCount);
     }
@@ -125,8 +125,8 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTableColumn(Table parent, int style, int index) {
-        super(parent, checkStyle(style));
+    public SwtTableColumn(Table parent, int style, int index, TableColumn api) {
+        super(parent, checkStyle(style), api);
         this.parent = parent;
         ((SwtTable) parent.getImpl()).createItem(this.getApi(), index);
     }

@@ -134,7 +134,7 @@ public class Shell extends Decorations {
      */
     public Shell() {
         this((IShell) null);
-        setImpl(new SwtShell());
+        setImpl(new SwtShell(this));
     }
 
     /**
@@ -178,7 +178,7 @@ public class Shell extends Decorations {
      */
     public Shell(int style) {
         this((IShell) null);
-        setImpl(new SwtShell(style));
+        setImpl(new SwtShell(style, this));
     }
 
     /**
@@ -202,7 +202,7 @@ public class Shell extends Decorations {
      */
     public Shell(Display display) {
         this((IShell) null);
-        setImpl(new SwtShell(display));
+        setImpl(new SwtShell(display, this));
     }
 
     /**
@@ -254,12 +254,12 @@ public class Shell extends Decorations {
      */
     public Shell(Display display, int style) {
         this((IShell) null);
-        setImpl(new SwtShell(display, style));
+        setImpl(new SwtShell(display, style, this));
     }
 
     Shell(Display display, Shell parent, int style, long handle, boolean embedded) {
         this((IShell) null);
-        setImpl(new SwtShell(display, parent, style, handle, embedded));
+        setImpl(new SwtShell(display, parent, style, handle, embedded, this));
     }
 
     /**
@@ -286,7 +286,7 @@ public class Shell extends Decorations {
      */
     public Shell(Shell parent) {
         this((IShell) null);
-        setImpl(new SwtShell(parent));
+        setImpl(new SwtShell(parent, this));
     }
 
     /**
@@ -340,7 +340,7 @@ public class Shell extends Decorations {
      */
     public Shell(Shell parent, int style) {
         this((IShell) null);
-        setImpl(new SwtShell(parent, style));
+        setImpl(new SwtShell(parent, style, this));
     }
 
     /**
@@ -948,11 +948,7 @@ public class Shell extends Decorations {
     }
 
     static Shell createApi(IShell impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Shell inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Shell(impl);
+        return new Shell(impl);
     }
 
     public IShell getImpl() {

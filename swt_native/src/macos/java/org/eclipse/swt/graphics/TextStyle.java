@@ -158,7 +158,7 @@ public class TextStyle {
      */
     public TextStyle() {
         this((ITextStyle) null);
-        setImpl(new SwtTextStyle());
+        setImpl(new SwtTextStyle(this));
     }
 
     /**
@@ -171,7 +171,7 @@ public class TextStyle {
      */
     public TextStyle(Font font, Color foreground, Color background) {
         this((ITextStyle) null);
-        setImpl(new SwtTextStyle(font, foreground, background));
+        setImpl(new SwtTextStyle(font, foreground, background, this));
     }
 
     /**
@@ -183,7 +183,7 @@ public class TextStyle {
      */
     public TextStyle(TextStyle style) {
         this((ITextStyle) null);
-        setImpl(new SwtTextStyle(style));
+        setImpl(new SwtTextStyle(style, this));
     }
 
     /**
@@ -227,20 +227,12 @@ public class TextStyle {
     protected ITextStyle impl;
 
     protected TextStyle(ITextStyle impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static TextStyle createApi(ITextStyle impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TextStyle inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TextStyle(impl);
+        return new TextStyle(impl);
     }
 
     public ITextStyle getImpl() {
@@ -249,8 +241,6 @@ public class TextStyle {
 
     protected TextStyle setImpl(ITextStyle impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

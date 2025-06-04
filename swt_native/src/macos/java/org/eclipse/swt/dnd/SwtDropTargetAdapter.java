@@ -118,5 +118,11 @@ public class SwtDropTargetAdapter implements DropTargetListener, IDropTargetAdap
 
     public void setApi(DropTargetAdapter api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
+    }
+
+    public SwtDropTargetAdapter(DropTargetAdapter api) {
+        setApi(api);
     }
 }

@@ -40,7 +40,8 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
 
     ScrollBar horizontalBar, verticalBar;
 
-    DartScrollable() {
+    DartScrollable(Scrollable api) {
+        super(api);
         /* Do nothing */
     }
 
@@ -73,8 +74,8 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public DartScrollable(Composite parent, int style) {
-        super(parent, style);
+    public DartScrollable(Composite parent, int style, Scrollable api) {
+        super(parent, style, api);
     }
 
     /**

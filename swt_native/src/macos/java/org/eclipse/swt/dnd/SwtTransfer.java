@@ -172,5 +172,11 @@ public abstract class SwtTransfer implements ITransfer {
 
     public void setApi(Transfer api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
+    }
+
+    public SwtTransfer(Transfer api) {
+        setApi(api);
     }
 }

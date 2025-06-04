@@ -137,7 +137,7 @@ public class ScrolledComposite extends Composite {
      */
     public ScrolledComposite(Composite parent, int style) {
         this((IScrolledComposite) null);
-        setImpl(new SwtScrolledComposite(parent, style));
+        setImpl(new SwtScrolledComposite(parent, style, this));
     }
 
     /**
@@ -505,11 +505,7 @@ public class ScrolledComposite extends Composite {
     }
 
     static ScrolledComposite createApi(IScrolledComposite impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof ScrolledComposite inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new ScrolledComposite(impl);
+        return new ScrolledComposite(impl);
     }
 
     public IScrolledComposite getImpl() {

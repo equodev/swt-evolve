@@ -79,7 +79,7 @@ public class ExpandBar extends Composite {
      */
     public ExpandBar(Composite parent, int style) {
         this((IExpandBar) null);
-        setImpl(new SwtExpandBar(parent, style));
+        setImpl(new SwtExpandBar(parent, style, this));
     }
 
     /**
@@ -255,11 +255,7 @@ public class ExpandBar extends Composite {
     }
 
     static ExpandBar createApi(IExpandBar impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof ExpandBar inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new ExpandBar(impl);
+        return new ExpandBar(impl);
     }
 
     public IExpandBar getImpl() {

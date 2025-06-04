@@ -114,7 +114,7 @@ public class Tree extends Composite {
      */
     public Tree(Composite parent, int style) {
         this((ITree) null);
-        setImpl(new SwtTree(parent, style));
+        setImpl(new SwtTree(parent, style, this));
     }
 
     /**
@@ -1181,11 +1181,7 @@ public class Tree extends Composite {
     }
 
     static Tree createApi(ITree impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Tree inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Tree(impl);
+        return new Tree(impl);
     }
 
     public ITree getImpl() {

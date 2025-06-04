@@ -79,7 +79,7 @@ public class BrowserFunction {
      */
     public BrowserFunction(Browser browser, String name) {
         this((IBrowserFunction) null);
-        setImpl(new SwtBrowserFunction(browser, name));
+        setImpl(new SwtBrowserFunction(browser, name, this));
     }
 
     /**
@@ -121,12 +121,12 @@ public class BrowserFunction {
      */
     public BrowserFunction(Browser browser, String name, boolean top, String[] frameNames) {
         this((IBrowserFunction) null);
-        setImpl(new SwtBrowserFunction(browser, name, top, frameNames));
+        setImpl(new SwtBrowserFunction(browser, name, top, frameNames, this));
     }
 
     BrowserFunction(Browser browser, String name, boolean top, String[] frameNames, boolean create) {
         this((IBrowserFunction) null);
-        setImpl(new SwtBrowserFunction(browser, name, top, frameNames, create));
+        setImpl(new SwtBrowserFunction(browser, name, top, frameNames, create, this));
     }
 
     /**
@@ -224,20 +224,12 @@ public class BrowserFunction {
     protected IBrowserFunction impl;
 
     protected BrowserFunction(IBrowserFunction impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static BrowserFunction createApi(IBrowserFunction impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof BrowserFunction inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new BrowserFunction(impl);
+        return new BrowserFunction(impl);
     }
 
     public IBrowserFunction getImpl() {
@@ -246,8 +238,6 @@ public class BrowserFunction {
 
     protected BrowserFunction setImpl(IBrowserFunction impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

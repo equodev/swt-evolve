@@ -92,7 +92,7 @@ public class ScrollBar extends Widget {
 
     ScrollBar() {
         this((IScrollBar) null);
-        setImpl(Config.isEquo(ScrollBar.class) ? new DartScrollBar() : new SwtScrollBar());
+        setImpl(Config.isEquo(ScrollBar.class) ? new DartScrollBar(this) : new SwtScrollBar(this));
     }
 
     /**
@@ -557,11 +557,7 @@ public class ScrollBar extends Widget {
     }
 
     static ScrollBar createApi(IScrollBar impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof ScrollBar inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new ScrollBar(impl);
+        return new ScrollBar(impl);
     }
 
     public IScrollBar getImpl() {

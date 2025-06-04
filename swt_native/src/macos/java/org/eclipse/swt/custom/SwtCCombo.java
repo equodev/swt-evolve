@@ -109,8 +109,8 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
      * @see SWT#TRAIL
      * @see Widget#getStyle()
      */
-    public SwtCCombo(Composite parent, int style) {
-        super(parent, style = checkStyle(style));
+    public SwtCCombo(Composite parent, int style, CCombo api) {
+        super(parent, style = checkStyle(style), api);
         _shell = super.getShell();
         listener = event -> {
             if (isDisposed())

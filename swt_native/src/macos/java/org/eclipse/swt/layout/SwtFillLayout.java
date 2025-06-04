@@ -54,7 +54,8 @@ public final class SwtFillLayout extends SwtLayout implements IFillLayout {
     /**
      * Constructs a new instance of this class.
      */
-    public SwtFillLayout() {
+    public SwtFillLayout(FillLayout api) {
+        super(api);
     }
 
     /**
@@ -64,7 +65,8 @@ public final class SwtFillLayout extends SwtLayout implements IFillLayout {
      *
      * @since 2.0
      */
-    public SwtFillLayout(int type) {
+    public SwtFillLayout(int type, FillLayout api) {
+        super(api);
         this.getApi().type = type;
     }
 

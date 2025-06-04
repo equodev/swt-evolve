@@ -39,7 +39,7 @@ public class TabFolderLayout extends Layout {
 
     public TabFolderLayout() {
         this((ITabFolderLayout) null);
-        setImpl(new SwtTabFolderLayout());
+        setImpl(new SwtTabFolderLayout(this));
     }
 
     protected TabFolderLayout(ITabFolderLayout impl) {
@@ -47,11 +47,7 @@ public class TabFolderLayout extends Layout {
     }
 
     static TabFolderLayout createApi(ITabFolderLayout impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TabFolderLayout inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TabFolderLayout(impl);
+        return new TabFolderLayout(impl);
     }
 
     public ITabFolderLayout getImpl() {

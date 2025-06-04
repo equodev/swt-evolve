@@ -138,7 +138,7 @@ public class ViewForm extends Composite {
      */
     public ViewForm(Composite parent, int style) {
         this((IViewForm) null);
-        setImpl(new SwtViewForm(parent, style));
+        setImpl(new SwtViewForm(parent, style, this));
     }
 
     //protected void checkSubclass () {
@@ -320,11 +320,7 @@ public class ViewForm extends Composite {
     }
 
     static ViewForm createApi(IViewForm impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof ViewForm inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new ViewForm(impl);
+        return new ViewForm(impl);
     }
 
     public IViewForm getImpl() {

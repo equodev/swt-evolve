@@ -107,8 +107,8 @@ public class DartButton extends DartControl implements IButton {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public DartButton(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public DartButton(Composite parent, int style, Button api) {
+        super(parent, checkStyle(style), api);
     }
 
     /**

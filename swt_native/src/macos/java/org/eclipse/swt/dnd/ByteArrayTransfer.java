@@ -169,7 +169,7 @@ public abstract class ByteArrayTransfer extends Transfer {
 
     public IByteArrayTransfer getImpl() {
         if (impl == null)
-            impl = new SwtByteArrayTransfer() {
+            impl = new SwtByteArrayTransfer(this) {
 
                 public int[] getTypeIds() {
                     return ByteArrayTransfer.this.getTypeIds();

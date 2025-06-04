@@ -66,8 +66,8 @@ public class SwtMessageBox extends SwtDialog implements IMessageBox {
      *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
      * </ul>
      */
-    public SwtMessageBox(Shell parent) {
-        this(parent, SWT.OK | SWT.ICON_INFORMATION | SWT.APPLICATION_MODAL);
+    public SwtMessageBox(Shell parent, MessageBox api) {
+        this(parent, SWT.OK | SWT.ICON_INFORMATION | SWT.APPLICATION_MODAL, api);
     }
 
     /**
@@ -106,8 +106,8 @@ public class SwtMessageBox extends SwtDialog implements IMessageBox {
      * @see SWT#RETRY
      * @see SWT#IGNORE
      */
-    public SwtMessageBox(Shell parent, int style) {
-        super(parent, checkStyle(parent, checkStyle(style)));
+    public SwtMessageBox(Shell parent, int style, MessageBox api) {
+        super(parent, checkStyle(parent, checkStyle(style)), api);
         if (SwtDisplay.getSheetEnabled()) {
             if (parent != null && (style & SWT.SHEET) != 0)
                 this.style |= SWT.SHEET;

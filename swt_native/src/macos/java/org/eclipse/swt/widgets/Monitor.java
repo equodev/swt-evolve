@@ -33,7 +33,7 @@ public final class Monitor {
      */
     Monitor() {
         this((IMonitor) null);
-        setImpl(new SwtMonitor());
+        setImpl(new SwtMonitor(this));
     }
 
     /**
@@ -99,20 +99,12 @@ public final class Monitor {
     protected IMonitor impl;
 
     protected Monitor(IMonitor impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static Monitor createApi(IMonitor impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Monitor inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Monitor(impl);
+        return new Monitor(impl);
     }
 
     public IMonitor getImpl() {
@@ -121,8 +113,6 @@ public final class Monitor {
 
     protected Monitor setImpl(IMonitor impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

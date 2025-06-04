@@ -61,26 +61,18 @@ public class DragSourceAdapter implements DragSourceListener {
 
     public DragSourceAdapter() {
         this((IDragSourceAdapter) null);
-        setImpl(new SwtDragSourceAdapter());
+        setImpl(new SwtDragSourceAdapter(this));
     }
 
     protected IDragSourceAdapter impl;
 
     protected DragSourceAdapter(IDragSourceAdapter impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static DragSourceAdapter createApi(IDragSourceAdapter impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof DragSourceAdapter inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new DragSourceAdapter(impl);
+        return new DragSourceAdapter(impl);
     }
 
     public IDragSourceAdapter getImpl() {
@@ -89,8 +81,6 @@ public class DragSourceAdapter implements DragSourceListener {
 
     protected DragSourceAdapter setImpl(IDragSourceAdapter impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

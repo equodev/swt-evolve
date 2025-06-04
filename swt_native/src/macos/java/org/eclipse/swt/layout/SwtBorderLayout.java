@@ -359,4 +359,8 @@ public class SwtBorderLayout extends SwtLayout implements IBorderLayout {
             api = BorderLayout.createApi(this);
         return (BorderLayout) api;
     }
+
+    public SwtBorderLayout(BorderLayout api) {
+        super(api);
+    }
 }

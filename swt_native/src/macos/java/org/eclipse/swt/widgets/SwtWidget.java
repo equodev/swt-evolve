@@ -135,7 +135,8 @@ public abstract class SwtWidget implements IWidget {
 
     static final int DEFAULT_HEIGHT = 64;
 
-    SwtWidget() {
+    SwtWidget(Widget api) {
+        setApi(api);
         notifyCreationTracker();
     }
 
@@ -168,7 +169,8 @@ public abstract class SwtWidget implements IWidget {
      * @see #checkSubclass
      * @see #getStyle
      */
-    public SwtWidget(Widget parent, int style) {
+    public SwtWidget(Widget parent, int style, Widget api) {
+        setApi(api);
         checkSubclass();
         checkParent(parent);
         this.style = style;
@@ -2565,5 +2567,7 @@ public abstract class SwtWidget implements IWidget {
 
     public void setApi(Widget api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

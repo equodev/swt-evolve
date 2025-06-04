@@ -101,8 +101,8 @@ public abstract class SwtDevice implements Drawable, IDevice {
      *
      * @since 3.1
      */
-    public SwtDevice() {
-        this(null);
+    public SwtDevice(Device api) {
+        this(null, api);
     }
 
     /**
@@ -117,7 +117,8 @@ public abstract class SwtDevice implements Drawable, IDevice {
      * @see #init
      * @see DeviceData
      */
-    public SwtDevice(DeviceData data) {
+    public SwtDevice(DeviceData data, Device api) {
+        setApi(api);
         synchronized (SwtDevice.class) {
             if (data != null) {
                 debug = data.debug;
@@ -887,5 +888,7 @@ public abstract class SwtDevice implements Drawable, IDevice {
 
     public void setApi(Device api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

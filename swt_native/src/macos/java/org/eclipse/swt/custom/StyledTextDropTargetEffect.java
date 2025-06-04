@@ -59,7 +59,7 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
      */
     public StyledTextDropTargetEffect(StyledText styledText) {
         this((IStyledTextDropTargetEffect) null);
-        setImpl(new SwtStyledTextDropTargetEffect(styledText));
+        setImpl(new SwtStyledTextDropTargetEffect(styledText, this));
     }
 
     /**
@@ -141,11 +141,7 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
     }
 
     static StyledTextDropTargetEffect createApi(IStyledTextDropTargetEffect impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof StyledTextDropTargetEffect inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new StyledTextDropTargetEffect(impl);
+        return new StyledTextDropTargetEffect(impl);
     }
 
     public IStyledTextDropTargetEffect getImpl() {

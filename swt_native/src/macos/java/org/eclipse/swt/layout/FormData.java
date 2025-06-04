@@ -100,7 +100,7 @@ public final class FormData {
      */
     public FormData() {
         this((IFormData) null);
-        setImpl(new SwtFormData());
+        setImpl(new SwtFormData(this));
     }
 
     /**
@@ -113,7 +113,7 @@ public final class FormData {
      */
     public FormData(int width, int height) {
         this((IFormData) null);
-        setImpl(new SwtFormData(width, height));
+        setImpl(new SwtFormData(width, height, this));
     }
 
     /**
@@ -129,20 +129,12 @@ public final class FormData {
     protected IFormData impl;
 
     protected FormData(IFormData impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static FormData createApi(IFormData impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof FormData inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new FormData(impl);
+        return new FormData(impl);
     }
 
     public IFormData getImpl() {
@@ -151,8 +143,6 @@ public final class FormData {
 
     protected FormData setImpl(IFormData impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

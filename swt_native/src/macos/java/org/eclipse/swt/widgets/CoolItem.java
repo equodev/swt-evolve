@@ -70,7 +70,7 @@ public class CoolItem extends Item {
      */
     public CoolItem(CoolBar parent, int style) {
         this((ICoolItem) null);
-        setImpl(new SwtCoolItem(parent, style));
+        setImpl(new SwtCoolItem(parent, style, this));
     }
 
     /**
@@ -107,7 +107,7 @@ public class CoolItem extends Item {
      */
     public CoolItem(CoolBar parent, int style, int index) {
         this((ICoolItem) null);
-        setImpl(new SwtCoolItem(parent, style, index));
+        setImpl(new SwtCoolItem(parent, style, index, this));
     }
 
     /**
@@ -435,11 +435,7 @@ public class CoolItem extends Item {
     }
 
     static CoolItem createApi(ICoolItem impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof CoolItem inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new CoolItem(impl);
+        return new CoolItem(impl);
     }
 
     public ICoolItem getImpl() {

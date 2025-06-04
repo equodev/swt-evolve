@@ -64,7 +64,7 @@ public class Accessible {
      */
     public Accessible(Accessible parent) {
         this((IAccessible) null);
-        setImpl(new SwtAccessible(parent));
+        setImpl(new SwtAccessible(parent, this));
     }
 
     /**
@@ -74,12 +74,12 @@ public class Accessible {
     @Deprecated
     protected Accessible() {
         this((IAccessible) null);
-        setImpl(new SwtAccessible());
+        setImpl(new SwtAccessible(this));
     }
 
     Accessible(Control control) {
         this((IAccessible) null);
-        setImpl(new SwtAccessible(control));
+        setImpl(new SwtAccessible(control, this));
     }
 
     /**
@@ -877,20 +877,12 @@ public class Accessible {
     protected IAccessible impl;
 
     protected Accessible(IAccessible impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static Accessible createApi(IAccessible impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Accessible inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Accessible(impl);
+        return new Accessible(impl);
     }
 
     public IAccessible getImpl() {
@@ -899,8 +891,6 @@ public class Accessible {
 
     protected Accessible setImpl(IAccessible impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

@@ -99,7 +99,8 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
 
     long actionSelector;
 
-    DartScrollBar() {
+    DartScrollBar(ScrollBar api) {
+        super(api);
         /* Do nothing */
     }
 

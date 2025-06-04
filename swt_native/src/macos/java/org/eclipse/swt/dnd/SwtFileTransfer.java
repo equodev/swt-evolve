@@ -50,7 +50,8 @@ public class SwtFileTransfer extends SwtByteArrayTransfer implements IFileTransf
 
     static final int ID1 = registerType(ID1_NAME);
 
-    SwtFileTransfer() {
+    SwtFileTransfer(FileTransfer api) {
+        super(api);
     }
 
     /**

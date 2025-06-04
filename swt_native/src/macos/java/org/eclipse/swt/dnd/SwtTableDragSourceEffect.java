@@ -49,8 +49,8 @@ public class SwtTableDragSourceEffect extends SwtDragSourceEffect implements ITa
      *
      * @param table the <code>Table</code> that the user clicks on to initiate the drag
      */
-    public SwtTableDragSourceEffect(Table table) {
-        super(table);
+    public SwtTableDragSourceEffect(Table table, TableDragSourceEffect api) {
+        super(table, api);
     }
 
     /**

@@ -95,8 +95,8 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
      *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
      * </ul>
      */
-    public SwtFileDialog(Shell parent) {
-        this(parent, SWT.APPLICATION_MODAL);
+    public SwtFileDialog(Shell parent, FileDialog api) {
+        this(parent, SWT.APPLICATION_MODAL, api);
     }
 
     /**
@@ -127,8 +127,8 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
      * @see SWT#OPEN
      * @see SWT#MULTI
      */
-    public SwtFileDialog(Shell parent, int style) {
-        super(parent, checkStyle(parent, style));
+    public SwtFileDialog(Shell parent, int style, FileDialog api) {
+        super(parent, checkStyle(parent, style), api);
         if (SwtDisplay.getSheetEnabled()) {
             if (parent != null && (style & SWT.SHEET) != 0)
                 this.style |= SWT.SHEET;

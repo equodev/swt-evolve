@@ -44,8 +44,8 @@ public class SwtPopupList implements IPopupList {
      *
      * @param parent a Shell control which will be the parent of the new instance (cannot be null)
      */
-    public SwtPopupList(Shell parent) {
-        this(parent, 0);
+    public SwtPopupList(Shell parent, PopupList api) {
+        this(parent, 0, api);
     }
 
     /**
@@ -56,7 +56,8 @@ public class SwtPopupList implements IPopupList {
      *
      * @since 3.0
      */
-    public SwtPopupList(Shell parent, int style) {
+    public SwtPopupList(Shell parent, int style, PopupList api) {
+        setApi(api);
         int listStyle = SWT.SINGLE | SWT.V_SCROLL;
         if ((style & SWT.H_SCROLL) != 0)
             listStyle |= SWT.H_SCROLL;
@@ -295,5 +296,7 @@ public class SwtPopupList implements IPopupList {
 
     public void setApi(PopupList api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

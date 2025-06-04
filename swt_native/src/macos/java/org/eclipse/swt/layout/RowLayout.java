@@ -190,7 +190,7 @@ public final class RowLayout extends Layout {
      */
     public RowLayout() {
         this((IRowLayout) null);
-        setImpl(new SwtRowLayout());
+        setImpl(new SwtRowLayout(this));
     }
 
     /**
@@ -202,7 +202,7 @@ public final class RowLayout extends Layout {
      */
     public RowLayout(int type) {
         this((IRowLayout) null);
-        setImpl(new SwtRowLayout(type));
+        setImpl(new SwtRowLayout(type, this));
     }
 
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
@@ -232,11 +232,7 @@ public final class RowLayout extends Layout {
     }
 
     static RowLayout createApi(IRowLayout impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof RowLayout inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new RowLayout(impl);
+        return new RowLayout(impl);
     }
 
     public IRowLayout getImpl() {

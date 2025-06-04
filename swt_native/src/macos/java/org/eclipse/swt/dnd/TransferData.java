@@ -66,26 +66,18 @@ public class TransferData {
 
     public TransferData() {
         this((ITransferData) null);
-        setImpl(new SwtTransferData());
+        setImpl(new SwtTransferData(this));
     }
 
     protected ITransferData impl;
 
     protected TransferData(ITransferData impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static TransferData createApi(ITransferData impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TransferData inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TransferData(impl);
+        return new TransferData(impl);
     }
 
     public ITransferData getImpl() {
@@ -94,8 +86,6 @@ public class TransferData {
 
     protected TransferData setImpl(ITransferData impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

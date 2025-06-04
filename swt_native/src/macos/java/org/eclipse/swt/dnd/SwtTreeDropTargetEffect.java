@@ -60,8 +60,8 @@ public class SwtTreeDropTargetEffect extends SwtDropTargetEffect implements ITre
      *
      * @param tree the <code>Tree</code> over which the user positions the cursor to drop the data
      */
-    public SwtTreeDropTargetEffect(Tree tree) {
-        super(tree);
+    public SwtTreeDropTargetEffect(Tree tree, TreeDropTargetEffect api) {
+        super(tree, api);
     }
 
     int checkEffect(int effect) {

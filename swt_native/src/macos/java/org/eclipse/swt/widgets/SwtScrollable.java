@@ -42,7 +42,8 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
 
     ScrollBar horizontalBar, verticalBar;
 
-    SwtScrollable() {
+    SwtScrollable(Scrollable api) {
+        super(api);
         /* Do nothing */
     }
 
@@ -75,8 +76,8 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtScrollable(Composite parent, int style) {
-        super(parent, style);
+    public SwtScrollable(Composite parent, int style, Scrollable api) {
+        super(parent, style, api);
     }
 
     /**

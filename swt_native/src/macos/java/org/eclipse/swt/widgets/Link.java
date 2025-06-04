@@ -75,7 +75,7 @@ public class Link extends Control {
      */
     public Link(Composite parent, int style) {
         this((ILink) null);
-        setImpl(new SwtLink(parent, style));
+        setImpl(new SwtLink(parent, style, this));
     }
 
     /**
@@ -230,11 +230,7 @@ public class Link extends Control {
     }
 
     static Link createApi(ILink impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Link inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Link(impl);
+        return new Link(impl);
     }
 
     public ILink getImpl() {

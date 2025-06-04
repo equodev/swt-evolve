@@ -52,8 +52,8 @@ public final class SwtFontData implements IFontData {
     /**
      * Constructs a new uninitialized font data.
      */
-    public SwtFontData() {
-        this("", 12, SWT.NORMAL);
+    public SwtFontData(FontData api) {
+        this("", 12, SWT.NORMAL, api);
     }
 
     /**
@@ -75,7 +75,8 @@ public final class SwtFontData implements IFontData {
      *
      * @see #toString
      */
-    public SwtFontData(String string) {
+    public SwtFontData(String string, FontData api) {
+        setApi(api);
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         int start = 0;
@@ -149,14 +150,16 @@ public final class SwtFontData implements IFontData {
      *    <li>ERROR_INVALID_ARGUMENT - if the height is negative</li>
      * </ul>
      */
-    public SwtFontData(String name, int height, int style) {
+    public SwtFontData(String name, int height, int style, FontData api) {
+        setApi(api);
         setName(name);
         setHeight(height);
         setStyle(style);
     }
 
     /*public*/
-    SwtFontData(String name, float height, int style) {
+    SwtFontData(String name, float height, int style, FontData api) {
+        setApi(api);
         setName(name);
         setHeight(height);
         setStyle(style);
@@ -428,5 +431,7 @@ public final class SwtFontData implements IFontData {
 
     public void setApi(FontData api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

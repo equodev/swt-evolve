@@ -56,7 +56,7 @@ public class Composite extends Scrollable {
 
     Composite() {
         this((IComposite) null);
-        setImpl(Config.isEquo(Composite.class) ? new DartComposite() : new SwtComposite());
+        setImpl(Config.isEquo(Composite.class) ? new DartComposite(this) : new SwtComposite(this));
     }
 
     /**
@@ -93,7 +93,7 @@ public class Composite extends Scrollable {
      */
     public Composite(Composite parent, int style) {
         this((IComposite) null);
-        setImpl(Config.isEquo(Composite.class, parent) ? new DartComposite(parent, style) : new SwtComposite(parent, style));
+        setImpl(Config.isEquo(Composite.class, parent) ? new DartComposite(parent, style, this) : new SwtComposite(parent, style, this));
     }
 
     /**
@@ -596,11 +596,7 @@ public class Composite extends Scrollable {
     }
 
     static Composite createApi(IComposite impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Composite inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Composite(impl);
+        return new Composite(impl);
     }
 
     public IComposite getImpl() {

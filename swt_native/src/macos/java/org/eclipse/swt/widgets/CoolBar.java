@@ -81,7 +81,7 @@ public class CoolBar extends Composite {
      */
     public CoolBar(Composite parent, int style) {
         this((ICoolBar) null);
-        setImpl(new SwtCoolBar(parent, style));
+        setImpl(new SwtCoolBar(parent, style, this));
     }
 
     protected void checkSubclass() {
@@ -333,11 +333,7 @@ public class CoolBar extends Composite {
     }
 
     static CoolBar createApi(ICoolBar impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof CoolBar inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new CoolBar(impl);
+        return new CoolBar(impl);
     }
 
     public ICoolBar getImpl() {

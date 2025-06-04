@@ -222,7 +222,8 @@ public final class SwtGC extends SwtResource implements IGC {
         }
     }
 
-    SwtGC() {
+    SwtGC(GC api) {
+        super(api);
     }
 
     /**
@@ -248,8 +249,8 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      * @see #dispose()
      */
-    public SwtGC(Drawable drawable) {
-        this(drawable, 0);
+    public SwtGC(Drawable drawable, GC api) {
+        this(drawable, 0, api);
     }
 
     /**
@@ -281,7 +282,8 @@ public final class SwtGC extends SwtResource implements IGC {
      *
      * @since 2.1.2
      */
-    public SwtGC(Drawable drawable, int style) {
+    public SwtGC(Drawable drawable, int style, GC api) {
+        super(api);
         if (drawable == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         NSAutoreleasePool pool = null;

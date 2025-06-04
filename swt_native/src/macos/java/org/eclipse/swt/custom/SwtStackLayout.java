@@ -140,4 +140,8 @@ public class SwtStackLayout extends SwtLayout implements IStackLayout {
             api = StackLayout.createApi(this);
         return (StackLayout) api;
     }
+
+    public SwtStackLayout(StackLayout api) {
+        super(api);
+    }
 }

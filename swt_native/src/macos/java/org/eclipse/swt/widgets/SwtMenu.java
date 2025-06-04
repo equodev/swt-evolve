@@ -82,8 +82,8 @@ public class SwtMenu extends SwtWidget implements IMenu {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtMenu(Control parent) {
-        this(((SwtControl) checkNull(parent).getImpl()).menuShell(), SWT.POP_UP);
+    public SwtMenu(Control parent, Menu api) {
+        this(((SwtControl) checkNull(parent).getImpl()).menuShell(), SWT.POP_UP, api);
     }
 
     /**
@@ -123,7 +123,8 @@ public class SwtMenu extends SwtWidget implements IMenu {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtMenu(Decorations parent, int style) {
+    public SwtMenu(Decorations parent, int style, Menu api) {
+        super(api);
         checkSubclass();
         checkParent(parent);
         this.style = checkStyle(style);
@@ -166,8 +167,8 @@ public class SwtMenu extends SwtWidget implements IMenu {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtMenu(Menu parentMenu) {
-        this(((SwtMenu) checkNull(parentMenu).getImpl()).parent, SWT.DROP_DOWN);
+    public SwtMenu(Menu parentMenu, Menu api) {
+        this(((SwtMenu) checkNull(parentMenu).getImpl()).parent, SWT.DROP_DOWN, api);
     }
 
     /**
@@ -194,11 +195,12 @@ public class SwtMenu extends SwtWidget implements IMenu {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtMenu(MenuItem parentItem) {
-        this(((SwtMenuItem) checkNull(parentItem).getImpl()).parent);
+    public SwtMenu(MenuItem parentItem, Menu api) {
+        this(((SwtMenuItem) checkNull(parentItem).getImpl()).parent, api);
     }
 
-    SwtMenu(Display display) {
+    SwtMenu(Display display, Menu api) {
+        super(api);
         if (display == null)
             display = SwtDisplay.getCurrent();
         if (display == null)
@@ -212,7 +214,8 @@ public class SwtMenu extends SwtWidget implements IMenu {
         createWidget();
     }
 
-    SwtMenu(Display display, NSMenu nativeMenu) {
+    SwtMenu(Display display, NSMenu nativeMenu, Menu api) {
+        super(api);
         this.display = display;
         this.style = SWT.DROP_DOWN;
         this.nsMenu = nativeMenu;

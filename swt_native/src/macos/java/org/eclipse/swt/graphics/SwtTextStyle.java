@@ -47,7 +47,8 @@ public class SwtTextStyle implements ITextStyle {
      *
      * @since 3.4
      */
-    public SwtTextStyle() {
+    public SwtTextStyle(TextStyle api) {
+        setApi(api);
     }
 
     /**
@@ -58,7 +59,8 @@ public class SwtTextStyle implements ITextStyle {
      * @param foreground the foreground color of the style, <code>null</code> if none
      * @param background the background color of the style, <code>null</code> if none
      */
-    public SwtTextStyle(Font font, Color foreground, Color background) {
+    public SwtTextStyle(Font font, Color foreground, Color background, TextStyle api) {
+        setApi(api);
         if (font != null && font.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (foreground != null && foreground.isDisposed())
@@ -77,7 +79,8 @@ public class SwtTextStyle implements ITextStyle {
      *
      * @since 3.4
      */
-    public SwtTextStyle(TextStyle style) {
+    public SwtTextStyle(TextStyle style, TextStyle api) {
+        setApi(api);
         if (style == null)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         getApi().font = style.font;
@@ -410,5 +413,7 @@ public class SwtTextStyle implements ITextStyle {
 
     public void setApi(TextStyle api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

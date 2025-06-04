@@ -120,8 +120,8 @@ public class SwtCBanner extends SwtComposite implements ICBanner {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the parent</li>
      * </ul>
      */
-    public SwtCBanner(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtCBanner(Composite parent, int style, CBanner api) {
+        super(parent, checkStyle(style), api);
         super.setLayout(new CBannerLayout());
         resizeCursor = getDisplay().getSystemCursor(SWT.CURSOR_SIZEWE);
         listener = e -> {

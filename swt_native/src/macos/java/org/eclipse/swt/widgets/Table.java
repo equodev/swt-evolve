@@ -108,7 +108,7 @@ public class Table extends Composite {
      */
     public Table(Composite parent, int style) {
         this((ITable) null);
-        setImpl(new SwtTable(parent, style));
+        setImpl(new SwtTable(parent, style, this));
     }
 
     /**
@@ -1370,11 +1370,7 @@ public class Table extends Composite {
     }
 
     static Table createApi(ITable impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Table inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Table(impl);
+        return new Table(impl);
     }
 
     public ITable getImpl() {

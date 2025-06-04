@@ -49,5 +49,11 @@ public class SwtStyledTextPrintOptions implements IStyledTextPrintOptions {
 
     public void setApi(StyledTextPrintOptions api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
+    }
+
+    public SwtStyledTextPrintOptions(StyledTextPrintOptions api) {
+        setApi(api);
     }
 }

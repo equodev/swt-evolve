@@ -70,7 +70,7 @@ public class TabItem extends Item {
      */
     public TabItem(TabFolder parent, int style) {
         this((ITabItem) null);
-        setImpl(new SwtTabItem(parent, style));
+        setImpl(new SwtTabItem(parent, style, this));
     }
 
     /**
@@ -107,7 +107,7 @@ public class TabItem extends Item {
      */
     public TabItem(TabFolder parent, int style, int index) {
         this((ITabItem) null);
-        setImpl(new SwtTabItem(parent, style, index));
+        setImpl(new SwtTabItem(parent, style, index, this));
     }
 
     protected void checkSubclass() {
@@ -261,11 +261,7 @@ public class TabItem extends Item {
     }
 
     static TabItem createApi(ITabItem impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TabItem inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TabItem(impl);
+        return new TabItem(impl);
     }
 
     public ITabItem getImpl() {

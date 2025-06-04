@@ -77,7 +77,7 @@ public class MenuItem extends Item {
      */
     public MenuItem(Menu parent, int style) {
         this((IMenuItem) null);
-        setImpl(new SwtMenuItem(parent, style));
+        setImpl(new SwtMenuItem(parent, style, this));
     }
 
     /**
@@ -118,12 +118,12 @@ public class MenuItem extends Item {
      */
     public MenuItem(Menu parent, int style, int index) {
         this((IMenuItem) null);
-        setImpl(new SwtMenuItem(parent, style, index));
+        setImpl(new SwtMenuItem(parent, style, index, this));
     }
 
     MenuItem(Menu parent, NSMenuItem nsMenuItem) {
         this((IMenuItem) null);
-        setImpl(new SwtMenuItem(parent, nsMenuItem));
+        setImpl(new SwtMenuItem(parent, nsMenuItem, this));
     }
 
     /**
@@ -610,11 +610,7 @@ public class MenuItem extends Item {
     }
 
     static MenuItem createApi(IMenuItem impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof MenuItem inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new MenuItem(impl);
+        return new MenuItem(impl);
     }
 
     public IMenuItem getImpl() {

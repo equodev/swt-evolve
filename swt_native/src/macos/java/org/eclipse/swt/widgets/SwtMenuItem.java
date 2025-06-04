@@ -87,8 +87,8 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtMenuItem(Menu parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtMenuItem(Menu parent, int style, MenuItem api) {
+        super(parent, checkStyle(style), api);
         this.parent = parent;
         ((SwtMenu) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
     }
@@ -129,14 +129,14 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtMenuItem(Menu parent, int style, int index) {
-        super(parent, checkStyle(style));
+    public SwtMenuItem(Menu parent, int style, int index, MenuItem api) {
+        super(parent, checkStyle(style), api);
         this.parent = parent;
         ((SwtMenu) parent.getImpl()).createItem(this.getApi(), index);
     }
 
-    SwtMenuItem(Menu parent, NSMenuItem nsMenuItem) {
-        super(parent, 0);
+    SwtMenuItem(Menu parent, NSMenuItem nsMenuItem, MenuItem api) {
+        super(parent, 0, api);
         this.parent = parent;
         this.nsItem = nsMenuItem;
         ((SwtMenu) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());

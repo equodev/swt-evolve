@@ -64,7 +64,8 @@ public class SwtDropTargetEffect extends SwtDropTargetAdapter implements IDropTa
      *    <li>ERROR_NULL_ARGUMENT - if the control is null</li>
      * </ul>
      */
-    public SwtDropTargetEffect(Control control) {
+    public SwtDropTargetEffect(Control control, DropTargetEffect api) {
+        super(api);
         if (control == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.control = control;

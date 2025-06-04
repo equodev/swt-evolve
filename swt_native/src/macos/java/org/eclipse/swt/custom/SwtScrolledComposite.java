@@ -155,8 +155,8 @@ public class SwtScrolledComposite extends SwtComposite implements IScrolledCompo
      * @see SWT#V_SCROLL
      * @see #getStyle()
      */
-    public SwtScrolledComposite(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtScrolledComposite(Composite parent, int style, ScrolledComposite api) {
+        super(parent, checkStyle(style), api);
         super.setLayout(new ScrolledCompositeLayout());
         ScrollBar hBar = getHorizontalBar();
         if (hBar != null) {

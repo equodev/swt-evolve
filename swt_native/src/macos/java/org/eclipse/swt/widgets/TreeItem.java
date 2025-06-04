@@ -77,7 +77,7 @@ public class TreeItem extends Item {
      */
     public TreeItem(Tree parent, int style) {
         this((ITreeItem) null);
-        setImpl(new SwtTreeItem(parent, style));
+        setImpl(new SwtTreeItem(parent, style, this));
     }
 
     /**
@@ -111,7 +111,7 @@ public class TreeItem extends Item {
      */
     public TreeItem(Tree parent, int style, int index) {
         this((ITreeItem) null);
-        setImpl(new SwtTreeItem(parent, style, index));
+        setImpl(new SwtTreeItem(parent, style, index, this));
     }
 
     /**
@@ -138,7 +138,7 @@ public class TreeItem extends Item {
      */
     public TreeItem(TreeItem parentItem, int style) {
         this((ITreeItem) null);
-        setImpl(new SwtTreeItem(parentItem, style));
+        setImpl(new SwtTreeItem(parentItem, style, this));
     }
 
     /**
@@ -168,12 +168,12 @@ public class TreeItem extends Item {
      */
     public TreeItem(TreeItem parentItem, int style, int index) {
         this((ITreeItem) null);
-        setImpl(new SwtTreeItem(parentItem, style, index));
+        setImpl(new SwtTreeItem(parentItem, style, index, this));
     }
 
     TreeItem(Tree parent, TreeItem parentItem, int style, int index, boolean create) {
         this((ITreeItem) null);
-        setImpl(new SwtTreeItem(parent, parentItem, style, index, create));
+        setImpl(new SwtTreeItem(parent, parentItem, style, index, create, this));
     }
 
     protected void checkSubclass() {
@@ -909,11 +909,7 @@ public class TreeItem extends Item {
     }
 
     static TreeItem createApi(ITreeItem impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TreeItem inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TreeItem(impl);
+        return new TreeItem(impl);
     }
 
     public ITreeItem getImpl() {

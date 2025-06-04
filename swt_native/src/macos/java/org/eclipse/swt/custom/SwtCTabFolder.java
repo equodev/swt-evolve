@@ -296,8 +296,8 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
      * @see SWT#MULTI
      * @see #getStyle()
      */
-    public SwtCTabFolder(Composite parent, int style) {
-        super(parent, checkStyle(parent, style));
+    public SwtCTabFolder(Composite parent, int style, CTabFolder api) {
+        super(parent, checkStyle(parent, style), api);
         init(style);
     }
 

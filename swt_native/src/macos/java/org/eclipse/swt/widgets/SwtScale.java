@@ -77,8 +77,8 @@ public class SwtScale extends SwtControl implements IScale {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtScale(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtScale(Composite parent, int style, Scale api) {
+        super(parent, checkStyle(style), api);
     }
 
     /**

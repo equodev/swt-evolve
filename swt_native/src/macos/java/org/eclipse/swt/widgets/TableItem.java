@@ -70,7 +70,7 @@ public class TableItem extends Item {
      */
     public TableItem(Table parent, int style) {
         this((ITableItem) null);
-        setImpl(new SwtTableItem(parent, style));
+        setImpl(new SwtTableItem(parent, style, this));
     }
 
     /**
@@ -107,12 +107,12 @@ public class TableItem extends Item {
      */
     public TableItem(Table parent, int style, int index) {
         this((ITableItem) null);
-        setImpl(new SwtTableItem(parent, style, index));
+        setImpl(new SwtTableItem(parent, style, index, this));
     }
 
     TableItem(Table parent, int style, int index, boolean create) {
         this((ITableItem) null);
-        setImpl(new SwtTableItem(parent, style, index, create));
+        setImpl(new SwtTableItem(parent, style, index, create, this));
     }
 
     protected void checkSubclass() {
@@ -657,11 +657,7 @@ public class TableItem extends Item {
     }
 
     static TableItem createApi(ITableItem impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TableItem inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TableItem(impl);
+        return new TableItem(impl);
     }
 
     public ITableItem getImpl() {

@@ -95,8 +95,8 @@ public class SwtTableEditor extends SwtControlEditor implements ITableEditor {
      *
      * @param table the Table Control above which this editor will be displayed
      */
-    public SwtTableEditor(Table table) {
-        super(table);
+    public SwtTableEditor(Table table, TableEditor api) {
+        super(table, api);
         this.table = table;
         columnListener = new ControlListener() {
 

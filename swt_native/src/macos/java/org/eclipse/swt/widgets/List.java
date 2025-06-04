@@ -74,7 +74,7 @@ public class List extends Scrollable {
      */
     public List(Composite parent, int style) {
         this((IList) null);
-        setImpl(new SwtList(parent, style));
+        setImpl(new SwtList(parent, style, this));
     }
 
     /**
@@ -824,11 +824,7 @@ public class List extends Scrollable {
     }
 
     static List createApi(IList impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof List inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new List(impl);
+        return new List(impl);
     }
 
     public IList getImpl() {

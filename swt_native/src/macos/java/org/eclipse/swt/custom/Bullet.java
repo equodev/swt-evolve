@@ -73,7 +73,7 @@ public class Bullet {
      */
     public Bullet(StyleRange style) {
         this((IBullet) null);
-        setImpl(new SwtBullet(style));
+        setImpl(new SwtBullet(style, this));
     }
 
     /**
@@ -89,7 +89,7 @@ public class Bullet {
      */
     public Bullet(int type, StyleRange style) {
         this((IBullet) null);
-        setImpl(new SwtBullet(type, style));
+        setImpl(new SwtBullet(type, style, this));
     }
 
     public int hashCode() {
@@ -99,20 +99,12 @@ public class Bullet {
     protected IBullet impl;
 
     protected Bullet(IBullet impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static Bullet createApi(IBullet impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Bullet inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Bullet(impl);
+        return new Bullet(impl);
     }
 
     public IBullet getImpl() {
@@ -121,8 +113,6 @@ public class Bullet {
 
     protected Bullet setImpl(IBullet impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

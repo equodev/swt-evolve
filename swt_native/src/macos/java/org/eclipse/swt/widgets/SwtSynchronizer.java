@@ -60,7 +60,8 @@ public class SwtSynchronizer implements ISynchronizer {
      *
      * @param display the display to create the synchronizer on
      */
-    public SwtSynchronizer(Display display) {
+    public SwtSynchronizer(Display display, Synchronizer api) {
+        setApi(api);
         this.display = display;
     }
 
@@ -230,5 +231,7 @@ public class SwtSynchronizer implements ISynchronizer {
 
     public void setApi(Synchronizer api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

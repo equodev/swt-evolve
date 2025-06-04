@@ -114,7 +114,8 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
 
     Button defaultButton;
 
-    SwtDecorations() {
+    SwtDecorations(Decorations api) {
+        super(api);
         /* Do nothing */
     }
 
@@ -157,8 +158,8 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtDecorations(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtDecorations(Composite parent, int style, Decorations api) {
+        super(parent, checkStyle(style), api);
     }
 
     static int checkStyle(int style) {

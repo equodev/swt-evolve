@@ -68,7 +68,7 @@ public class ExpandItem extends Item {
      */
     public ExpandItem(ExpandBar parent, int style) {
         this((IExpandItem) null);
-        setImpl(new SwtExpandItem(parent, style));
+        setImpl(new SwtExpandItem(parent, style, this));
     }
 
     /**
@@ -103,7 +103,7 @@ public class ExpandItem extends Item {
      */
     public ExpandItem(ExpandBar parent, int style, int index) {
         this((IExpandItem) null);
-        setImpl(new SwtExpandItem(parent, style, index));
+        setImpl(new SwtExpandItem(parent, style, index, this));
     }
 
     public void dispose() {
@@ -242,11 +242,7 @@ public class ExpandItem extends Item {
     }
 
     static ExpandItem createApi(IExpandItem impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof ExpandItem inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new ExpandItem(impl);
+        return new ExpandItem(impl);
     }
 
     public IExpandItem getImpl() {

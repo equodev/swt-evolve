@@ -31,26 +31,18 @@ public class DeviceData {
 
     public DeviceData() {
         this((IDeviceData) null);
-        setImpl(new SwtDeviceData());
+        setImpl(new SwtDeviceData(this));
     }
 
     protected IDeviceData impl;
 
     protected DeviceData(IDeviceData impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static DeviceData createApi(IDeviceData impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof DeviceData inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new DeviceData(impl);
+        return new DeviceData(impl);
     }
 
     public IDeviceData getImpl() {
@@ -59,8 +51,6 @@ public class DeviceData {
 
     protected DeviceData setImpl(IDeviceData impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

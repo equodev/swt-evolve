@@ -53,12 +53,12 @@ public final class Color extends Resource {
 
     Color() {
         this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor() : new SwtColor());
+        setImpl(Config.isEquo(Color.class) ? new DartColor(this) : new SwtColor(this));
     }
 
     Color(Device device) {
         this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(device) : new SwtColor(device));
+        setImpl(Config.isEquo(Color.class) ? new DartColor(device, this) : new SwtColor(device, this));
     }
 
     /**
@@ -80,7 +80,7 @@ public final class Color extends Resource {
      */
     public Color(Device device, int red, int green, int blue) {
         this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(device, red, green, blue) : new SwtColor(device, red, green, blue));
+        setImpl(Config.isEquo(Color.class) ? new DartColor(device, red, green, blue, this) : new SwtColor(device, red, green, blue, this));
     }
 
     /**
@@ -99,7 +99,7 @@ public final class Color extends Resource {
      */
     public Color(int red, int green, int blue) {
         this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(red, green, blue) : new SwtColor(red, green, blue));
+        setImpl(Config.isEquo(Color.class) ? new DartColor(red, green, blue, this) : new SwtColor(red, green, blue, this));
     }
 
     /**
@@ -124,7 +124,7 @@ public final class Color extends Resource {
      */
     public Color(Device device, int red, int green, int blue, int alpha) {
         this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(device, red, green, blue, alpha) : new SwtColor(device, red, green, blue, alpha));
+        setImpl(Config.isEquo(Color.class) ? new DartColor(device, red, green, blue, alpha, this) : new SwtColor(device, red, green, blue, alpha, this));
     }
 
     /**
@@ -145,7 +145,7 @@ public final class Color extends Resource {
      */
     public Color(int red, int green, int blue, int alpha) {
         this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(red, green, blue, alpha) : new SwtColor(red, green, blue, alpha));
+        setImpl(Config.isEquo(Color.class) ? new DartColor(red, green, blue, alpha, this) : new SwtColor(red, green, blue, alpha, this));
     }
 
     /**
@@ -165,7 +165,7 @@ public final class Color extends Resource {
      */
     public Color(Device device, RGB rgb) {
         this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(device, rgb) : new SwtColor(device, rgb));
+        setImpl(Config.isEquo(Color.class) ? new DartColor(device, rgb, this) : new SwtColor(device, rgb, this));
     }
 
     /**
@@ -182,7 +182,7 @@ public final class Color extends Resource {
      */
     public Color(RGB rgb) {
         this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(rgb) : new SwtColor(rgb));
+        setImpl(Config.isEquo(Color.class) ? new DartColor(rgb, this) : new SwtColor(rgb, this));
     }
 
     /**
@@ -204,7 +204,7 @@ public final class Color extends Resource {
      */
     public Color(Device device, RGBA rgba) {
         this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(device, rgba) : new SwtColor(device, rgba));
+        setImpl(Config.isEquo(Color.class) ? new DartColor(device, rgba, this) : new SwtColor(device, rgba, this));
     }
 
     /**
@@ -222,7 +222,7 @@ public final class Color extends Resource {
      */
     public Color(RGBA rgba) {
         this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(rgba) : new SwtColor(rgba));
+        setImpl(Config.isEquo(Color.class) ? new DartColor(rgba, this) : new SwtColor(rgba, this));
     }
 
     /**
@@ -246,7 +246,7 @@ public final class Color extends Resource {
      */
     public Color(Device device, RGB rgb, int alpha) {
         this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(device, rgb, alpha) : new SwtColor(device, rgb, alpha));
+        setImpl(Config.isEquo(Color.class) ? new DartColor(device, rgb, alpha, this) : new SwtColor(device, rgb, alpha, this));
     }
 
     /**
@@ -266,7 +266,7 @@ public final class Color extends Resource {
      */
     public Color(RGB rgb, int alpha) {
         this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(rgb, alpha) : new SwtColor(rgb, alpha));
+        setImpl(Config.isEquo(Color.class) ? new DartColor(rgb, alpha, this) : new SwtColor(rgb, alpha, this));
     }
 
     /**
@@ -431,11 +431,7 @@ public final class Color extends Resource {
     }
 
     static Color createApi(IColor impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Color inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Color(impl);
+        return new Color(impl);
     }
 
     public IColor getImpl() {

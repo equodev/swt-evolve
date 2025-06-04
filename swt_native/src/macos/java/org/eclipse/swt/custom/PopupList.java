@@ -40,7 +40,7 @@ public class PopupList {
      */
     public PopupList(Shell parent) {
         this((IPopupList) null);
-        setImpl(new SwtPopupList(parent));
+        setImpl(new SwtPopupList(parent, this));
     }
 
     /**
@@ -53,7 +53,7 @@ public class PopupList {
      */
     public PopupList(Shell parent, int style) {
         this((IPopupList) null);
-        setImpl(new SwtPopupList(parent, style));
+        setImpl(new SwtPopupList(parent, style, this));
     }
 
     /**
@@ -181,20 +181,12 @@ public class PopupList {
     protected IPopupList impl;
 
     protected PopupList(IPopupList impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static PopupList createApi(IPopupList impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof PopupList inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new PopupList(impl);
+        return new PopupList(impl);
     }
 
     public IPopupList getImpl() {
@@ -203,8 +195,6 @@ public class PopupList {
 
     protected PopupList setImpl(IPopupList impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

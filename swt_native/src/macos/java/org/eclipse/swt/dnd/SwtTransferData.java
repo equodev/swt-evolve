@@ -45,5 +45,11 @@ public class SwtTransferData implements ITransferData {
 
     public void setApi(TransferData api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
+    }
+
+    public SwtTransferData(TransferData api) {
+        setApi(api);
     }
 }

@@ -58,7 +58,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      */
     public StyleRange() {
         this((IStyleRange) null);
-        setImpl(new SwtStyleRange());
+        setImpl(new SwtStyleRange(this));
     }
 
     /**
@@ -70,7 +70,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      */
     public StyleRange(TextStyle style) {
         this((IStyleRange) null);
-        setImpl(new SwtStyleRange(style));
+        setImpl(new SwtStyleRange(style, this));
     }
 
     /**
@@ -83,7 +83,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      */
     public StyleRange(int start, int length, Color foreground, Color background) {
         this((IStyleRange) null);
-        setImpl(new SwtStyleRange(start, length, foreground, background));
+        setImpl(new SwtStyleRange(start, length, foreground, background, this));
     }
 
     /**
@@ -97,7 +97,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      */
     public StyleRange(int start, int length, Color foreground, Color background, int fontStyle) {
         this((IStyleRange) null);
-        setImpl(new SwtStyleRange(start, length, foreground, background, fontStyle));
+        setImpl(new SwtStyleRange(start, length, foreground, background, fontStyle, this));
     }
 
     /**
@@ -179,11 +179,7 @@ public class StyleRange extends TextStyle implements Cloneable {
     }
 
     static StyleRange createApi(IStyleRange impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof StyleRange inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new StyleRange(impl);
+        return new StyleRange(impl);
     }
 
     public IStyleRange getImpl() {

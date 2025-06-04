@@ -91,7 +91,7 @@ public class LineAttributes {
      */
     public LineAttributes(float width) {
         this((ILineAttributes) null);
-        setImpl(new SwtLineAttributes(width));
+        setImpl(new SwtLineAttributes(width, this));
     }
 
     /**
@@ -103,7 +103,7 @@ public class LineAttributes {
      */
     public LineAttributes(float width, int cap, int join) {
         this((ILineAttributes) null);
-        setImpl(new SwtLineAttributes(width, cap, join));
+        setImpl(new SwtLineAttributes(width, cap, join, this));
     }
 
     /**
@@ -119,7 +119,7 @@ public class LineAttributes {
      */
     public LineAttributes(float width, int cap, int join, int style, float[] dash, float dashOffset, float miterLimit) {
         this((ILineAttributes) null);
-        setImpl(new SwtLineAttributes(width, cap, join, style, dash, dashOffset, miterLimit));
+        setImpl(new SwtLineAttributes(width, cap, join, style, dash, dashOffset, miterLimit, this));
     }
 
     /**
@@ -153,20 +153,12 @@ public class LineAttributes {
     protected ILineAttributes impl;
 
     protected LineAttributes(ILineAttributes impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static LineAttributes createApi(ILineAttributes impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof LineAttributes inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new LineAttributes(impl);
+        return new LineAttributes(impl);
     }
 
     public ILineAttributes getImpl() {
@@ -175,8 +167,6 @@ public class LineAttributes {
 
     protected LineAttributes setImpl(ILineAttributes impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

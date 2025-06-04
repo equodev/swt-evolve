@@ -56,7 +56,8 @@ public final class SwtTouchSource implements ITouchSource {
      * @param height height of the source in points.
      * @param width width of the source in points.
      */
-    SwtTouchSource(long handle, boolean direct, Rectangle bounds) {
+    SwtTouchSource(long handle, boolean direct, Rectangle bounds, TouchSource api) {
+        setApi(api);
         this.handle = handle;
         this.direct = direct;
         this.bounds = bounds;
@@ -104,5 +105,7 @@ public final class SwtTouchSource implements ITouchSource {
 
     public void setApi(TouchSource api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

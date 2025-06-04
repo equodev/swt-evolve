@@ -28,8 +28,8 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 class SwtAccessibleTableRow extends SwtAccessible implements IAccessibleTableRow {
 
-    public SwtAccessibleTableRow(Accessible accessible, int childID) {
-        super(accessible);
+    public SwtAccessibleTableRow(Accessible accessible, int childID, AccessibleTableRow api) {
+        super(accessible, api);
         index = childID;
         addAccessibleControlListener(new AccessibleControlAdapter() {
 

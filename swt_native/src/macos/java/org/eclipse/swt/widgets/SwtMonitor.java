@@ -39,7 +39,8 @@ public final class SwtMonitor implements IMonitor {
     /**
      * Prevents uninitialized instances from being created outside the package.
      */
-    SwtMonitor() {
+    SwtMonitor(Monitor api) {
+        setApi(api);
     }
 
     /**
@@ -132,5 +133,7 @@ public final class SwtMonitor implements IMonitor {
 
     public void setApi(Monitor api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

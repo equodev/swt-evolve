@@ -83,8 +83,8 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
      * @see SWT#VERTICAL
      * @see #getStyle()
      */
-    public SwtSashForm(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtSashForm(Composite parent, int style, SashForm api) {
+        super(parent, checkStyle(style), api);
         super.setLayout(new SashFormLayout());
         sashStyle = ((style & SWT.VERTICAL) != 0) ? SWT.HORIZONTAL : SWT.VERTICAL;
         if ((style & SWT.BORDER) != 0)

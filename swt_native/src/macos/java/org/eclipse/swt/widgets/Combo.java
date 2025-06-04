@@ -109,7 +109,7 @@ public class Combo extends Composite {
      */
     public Combo(Composite parent, int style) {
         this((ICombo) null);
-        setImpl(new SwtCombo(parent, style));
+        setImpl(new SwtCombo(parent, style, this));
     }
 
     /**
@@ -1044,11 +1044,7 @@ public class Combo extends Composite {
     }
 
     static Combo createApi(ICombo impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Combo inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Combo(impl);
+        return new Combo(impl);
     }
 
     public ICombo getImpl() {

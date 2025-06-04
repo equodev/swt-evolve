@@ -68,7 +68,7 @@ public final class Cursor extends Resource {
      */
     Cursor(Device device) {
         this((ICursor) null);
-        setImpl(new SwtCursor(device));
+        setImpl(new SwtCursor(device, this));
     }
 
     /**
@@ -119,7 +119,7 @@ public final class Cursor extends Resource {
      */
     public Cursor(Device device, int style) {
         this((ICursor) null);
-        setImpl(new SwtCursor(device, style));
+        setImpl(new SwtCursor(device, style, this));
     }
 
     /**
@@ -157,7 +157,7 @@ public final class Cursor extends Resource {
      */
     public Cursor(Device device, ImageData source, ImageData mask, int hotspotX, int hotspotY) {
         this((ICursor) null);
-        setImpl(new SwtCursor(device, source, mask, hotspotX, hotspotY));
+        setImpl(new SwtCursor(device, source, mask, hotspotX, hotspotY, this));
     }
 
     /**
@@ -191,7 +191,7 @@ public final class Cursor extends Resource {
      */
     public Cursor(Device device, ImageData source, int hotspotX, int hotspotY) {
         this((ICursor) null);
-        setImpl(new SwtCursor(device, source, hotspotX, hotspotY));
+        setImpl(new SwtCursor(device, source, hotspotX, hotspotY, this));
     }
 
     /**
@@ -251,11 +251,7 @@ public final class Cursor extends Resource {
     }
 
     static Cursor createApi(ICursor impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Cursor inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Cursor(impl);
+        return new Cursor(impl);
     }
 
     public ICursor getImpl() {

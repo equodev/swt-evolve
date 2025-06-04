@@ -79,8 +79,8 @@ public class SwtPattern extends SwtResource implements IPattern {
      *
      * @see #dispose()
      */
-    public SwtPattern(Device device, Image image) {
-        super(device);
+    public SwtPattern(Device device, Image image, Pattern api) {
+        super(device, api);
         if (image == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (image.isDisposed())
@@ -134,8 +134,8 @@ public class SwtPattern extends SwtResource implements IPattern {
      *
      * @see #dispose()
      */
-    public SwtPattern(Device device, float x1, float y1, float x2, float y2, Color color1, Color color2) {
-        this(device, x1, y1, x2, y2, color1, 0xFF, color2, 0xFF);
+    public SwtPattern(Device device, float x1, float y1, float x2, float y2, Color color1, Color color2, Pattern api) {
+        this(device, x1, y1, x2, y2, color1, 0xFF, color2, 0xFF, api);
     }
 
     /**
@@ -177,8 +177,8 @@ public class SwtPattern extends SwtResource implements IPattern {
      *
      * @since 3.2
      */
-    public SwtPattern(Device device, float x1, float y1, float x2, float y2, Color color1, int alpha1, Color color2, int alpha2) {
-        super(device);
+    public SwtPattern(Device device, float x1, float y1, float x2, float y2, Color color1, int alpha1, Color color2, int alpha2, Pattern api) {
+        super(device, api);
         if (color1 == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color1.isDisposed())

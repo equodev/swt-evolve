@@ -112,17 +112,13 @@ public abstract class Layout {
     protected ILayout impl;
 
     protected Layout(ILayout impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     public ILayout getImpl() {
         if (impl == null)
-            impl = new SwtLayout() {
+            impl = new SwtLayout(this) {
 
                 public Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
                     return Layout.this.computeSize(composite, wHint, hHint, flushCache);
@@ -137,8 +133,6 @@ public abstract class Layout {
 
     protected Layout setImpl(ILayout impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

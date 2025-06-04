@@ -95,8 +95,8 @@ public class SwtTreeEditor extends SwtControlEditor implements ITreeEditor {
      *
      * @param tree the Tree Control above which this editor will be displayed
      */
-    public SwtTreeEditor(Tree tree) {
-        super(tree);
+    public SwtTreeEditor(Tree tree, TreeEditor api) {
+        super(tree, api);
         this.tree = tree;
         columnListener = new ControlListener() {
 

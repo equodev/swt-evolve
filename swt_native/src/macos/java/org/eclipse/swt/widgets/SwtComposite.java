@@ -62,7 +62,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     // This field is set to true if Object is StyledText
     private boolean isStyledText;
 
-    SwtComposite() {
+    SwtComposite(Composite api) {
+        super(api);
         /* Do nothing */
     }
 
@@ -98,8 +99,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
      * @see SWT#DOUBLE_BUFFERED
      * @see Widget#getStyle
      */
-    public SwtComposite(Composite parent, int style) {
-        super(parent, style);
+    public SwtComposite(Composite parent, int style, Composite api) {
+        super(parent, style, api);
     }
 
     Control[] _getChildren() {

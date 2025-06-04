@@ -56,7 +56,8 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
      * Constructs a new instance of this class
      * with a single column.
      */
-    public SwtGridLayout() {
+    public SwtGridLayout(GridLayout api) {
+        super(api);
     }
 
     /**
@@ -71,7 +72,8 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
      *
      * @since 2.0
      */
-    public SwtGridLayout(int numColumns, boolean makeColumnsEqualWidth) {
+    public SwtGridLayout(int numColumns, boolean makeColumnsEqualWidth, GridLayout api) {
+        super(api);
         this.getApi().numColumns = numColumns;
         this.getApi().makeColumnsEqualWidth = makeColumnsEqualWidth;
     }

@@ -95,7 +95,7 @@ public class Spinner extends Composite {
      */
     public Spinner(Composite parent, int style) {
         this((ISpinner) null);
-        setImpl(new SwtSpinner(parent, style));
+        setImpl(new SwtSpinner(parent, style, this));
     }
 
     /**
@@ -540,11 +540,7 @@ public class Spinner extends Composite {
     }
 
     static Spinner createApi(ISpinner impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Spinner inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Spinner(impl);
+        return new Spinner(impl);
     }
 
     public ISpinner getImpl() {

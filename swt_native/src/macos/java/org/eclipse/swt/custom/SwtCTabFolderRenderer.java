@@ -156,7 +156,8 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
      *
      * @see Widget#getStyle
      */
-    protected SwtCTabFolderRenderer(CTabFolder parent) {
+    protected SwtCTabFolderRenderer(CTabFolder parent, CTabFolderRenderer api) {
+        setApi(api);
         if (parent == null)
             return;
         if (parent.isDisposed())
@@ -1766,5 +1767,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
 
     public void setApi(CTabFolderRenderer api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

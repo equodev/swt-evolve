@@ -153,17 +153,13 @@ public abstract class Transfer {
     protected ITransfer impl;
 
     protected Transfer(ITransfer impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     public ITransfer getImpl() {
         if (impl == null)
-            impl = new SwtTransfer() {
+            impl = new SwtTransfer(this) {
 
                 public TransferData[] getSupportedTypes() {
                     return Transfer.this.getSupportedTypes();
@@ -194,8 +190,6 @@ public abstract class Transfer {
 
     protected Transfer setImpl(ITransfer impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

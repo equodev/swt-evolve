@@ -84,7 +84,7 @@ public class TabFolder extends Composite {
      */
     public TabFolder(Composite parent, int style) {
         this((ITabFolder) null);
-        setImpl(new SwtTabFolder(parent, style));
+        setImpl(new SwtTabFolder(parent, style, this));
     }
 
     /**
@@ -345,11 +345,7 @@ public class TabFolder extends Composite {
     }
 
     static TabFolder createApi(ITabFolder impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TabFolder inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TabFolder(impl);
+        return new TabFolder(impl);
     }
 
     public ITabFolder getImpl() {

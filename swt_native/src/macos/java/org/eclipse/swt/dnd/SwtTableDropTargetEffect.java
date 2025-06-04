@@ -56,8 +56,8 @@ public class SwtTableDropTargetEffect extends SwtDropTargetEffect implements ITa
      *
      * @param table the <code>Table</code> over which the user positions the cursor to drop the data
      */
-    public SwtTableDropTargetEffect(Table table) {
-        super(table);
+    public SwtTableDropTargetEffect(Table table, TableDropTargetEffect api) {
+        super(table, api);
     }
 
     int checkEffect(int effect) {

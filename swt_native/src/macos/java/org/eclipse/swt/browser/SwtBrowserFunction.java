@@ -91,8 +91,8 @@ public class SwtBrowserFunction implements IBrowserFunction {
      * @see #BrowserFunction(Browser, String, boolean, String[])
      * @see org.eclipse.swt.browser.LocationListener#changed(LocationEvent)
      */
-    public SwtBrowserFunction(Browser browser, String name) {
-        this(browser, name, true, null, true);
+    public SwtBrowserFunction(Browser browser, String name, BrowserFunction api) {
+        this(browser, name, true, null, true, api);
     }
 
     /**
@@ -132,12 +132,13 @@ public class SwtBrowserFunction implements IBrowserFunction {
      *
      * @since 3.8
      */
-    public SwtBrowserFunction(Browser browser, String name, boolean top, String[] frameNames) {
-        this(browser, name, top, frameNames, true);
+    public SwtBrowserFunction(Browser browser, String name, boolean top, String[] frameNames, BrowserFunction api) {
+        this(browser, name, top, frameNames, true, api);
     }
 
-    SwtBrowserFunction(Browser browser, String name, boolean top, String[] frameNames, boolean create) {
+    SwtBrowserFunction(Browser browser, String name, boolean top, String[] frameNames, boolean create, BrowserFunction api) {
         super();
+        setApi(api);
         if (browser == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (name == null)
@@ -282,5 +283,7 @@ public class SwtBrowserFunction implements IBrowserFunction {
 
     public void setApi(BrowserFunction api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

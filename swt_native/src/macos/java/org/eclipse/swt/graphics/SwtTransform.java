@@ -63,8 +63,8 @@ public class SwtTransform extends SwtResource implements ITransform {
      *
      * @see #dispose()
      */
-    public SwtTransform(Device device) {
-        this(device, 1, 0, 0, 1, 0, 0);
+    public SwtTransform(Device device, Transform api) {
+        this(device, 1, 0, 0, 1, 0, 0, api);
     }
 
     /**
@@ -95,8 +95,8 @@ public class SwtTransform extends SwtResource implements ITransform {
      *
      * @see #dispose()
      */
-    public SwtTransform(Device device, float[] elements) {
-        this(device, checkTransform(elements)[0], elements[1], elements[2], elements[3], elements[4], elements[5]);
+    public SwtTransform(Device device, float[] elements, Transform api) {
+        this(device, checkTransform(elements)[0], elements[1], elements[2], elements[3], elements[4], elements[5], api);
     }
 
     /**
@@ -131,8 +131,8 @@ public class SwtTransform extends SwtResource implements ITransform {
      *
      * @see #dispose()
      */
-    public SwtTransform(Device device, float m11, float m12, float m21, float m22, float dx, float dy) {
-        super(device);
+    public SwtTransform(Device device, float m11, float m12, float m21, float m22, float dx, float dy, Transform api) {
+        super(device, api);
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();

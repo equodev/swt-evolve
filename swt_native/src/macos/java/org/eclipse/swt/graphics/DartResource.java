@@ -116,11 +116,13 @@ public abstract class DartResource implements IResource {
         }
     }
 
-    public DartResource() {
+    public DartResource(Resource api) {
+        setApi(api);
         initNonDisposeTracking();
     }
 
-    DartResource(Device device) {
+    DartResource(Device device, Resource api) {
+        setApi(api);
         if (device == null)
             device = SwtDevice.getDevice();
         if (device == null)
@@ -241,6 +243,8 @@ public abstract class DartResource implements IResource {
 
     public void setApi(Resource api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 
     protected VResource value;

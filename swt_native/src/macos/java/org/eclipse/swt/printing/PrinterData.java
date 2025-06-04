@@ -222,7 +222,7 @@ public final class PrinterData extends DeviceData {
      */
     public PrinterData() {
         this((IPrinterData) null);
-        setImpl(new SwtPrinterData());
+        setImpl(new SwtPrinterData(this));
     }
 
     /**
@@ -237,7 +237,7 @@ public final class PrinterData extends DeviceData {
      */
     public PrinterData(String driver, String name) {
         this((IPrinterData) null);
-        setImpl(new SwtPrinterData(driver, name));
+        setImpl(new SwtPrinterData(driver, name, this));
     }
 
     /**
@@ -255,11 +255,7 @@ public final class PrinterData extends DeviceData {
     }
 
     static PrinterData createApi(IPrinterData impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof PrinterData inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new PrinterData(impl);
+        return new PrinterData(impl);
     }
 
     public IPrinterData getImpl() {

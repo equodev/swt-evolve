@@ -64,8 +64,8 @@ public class SwtPrintDialog extends SwtDialog implements IPrintDialog {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtPrintDialog(Shell parent) {
-        this(parent, SWT.PRIMARY_MODAL);
+    public SwtPrintDialog(Shell parent, PrintDialog api) {
+        this(parent, SWT.PRIMARY_MODAL, api);
     }
 
     /**
@@ -96,8 +96,8 @@ public class SwtPrintDialog extends SwtDialog implements IPrintDialog {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtPrintDialog(Shell parent, int style) {
-        super(parent, checkStyle(parent, style));
+    public SwtPrintDialog(Shell parent, int style, PrintDialog api) {
+        super(parent, checkStyle(parent, style), api);
         checkSubclass();
     }
 

@@ -147,8 +147,8 @@ public class SwtTable extends SwtComposite implements ITable {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTable(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtTable(Composite parent, int style, Table api) {
+        super(parent, checkStyle(style), api);
         this.nativeItemHeight = (int) ((NSTableView) getApi().view).rowHeight();
         setItemHeight(null, null, true);
     }

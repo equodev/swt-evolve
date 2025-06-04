@@ -18,6 +18,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -69,7 +70,7 @@ public class CTabItem extends Item {
      */
     public CTabItem(CTabFolder parent, int style) {
         this((ICTabItem) null);
-        setImpl(new SwtCTabItem(parent, style));
+        setImpl(Config.isEquo(CTabItem.class, parent) ? new DartCTabItem(parent, style, this) : new SwtCTabItem(parent, style, this));
     }
 
     /**
@@ -104,7 +105,7 @@ public class CTabItem extends Item {
      */
     public CTabItem(CTabFolder parent, int style, int index) {
         this((ICTabItem) null);
-        setImpl(new SwtCTabItem(parent, style, index));
+        setImpl(Config.isEquo(CTabItem.class, parent) ? new DartCTabItem(parent, style, index, this) : new SwtCTabItem(parent, style, index, this));
     }
 
     public void dispose() {
@@ -430,11 +431,7 @@ public class CTabItem extends Item {
     }
 
     static CTabItem createApi(ICTabItem impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof CTabItem inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new CTabItem(impl);
+        return new CTabItem(impl);
     }
 
     public ICTabItem getImpl() {

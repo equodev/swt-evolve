@@ -166,8 +166,8 @@ public class SwtShell extends SwtDecorations implements IShell {
      *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
      * </ul>
      */
-    public SwtShell() {
-        this((Display) null);
+    public SwtShell(Shell api) {
+        this((Display) null, api);
     }
 
     /**
@@ -209,8 +209,8 @@ public class SwtShell extends SwtDecorations implements IShell {
      * @see SWT#SYSTEM_MODAL
      * @see SWT#SHEET
      */
-    public SwtShell(int style) {
-        this((Display) null, style);
+    public SwtShell(int style, Shell api) {
+        this((Display) null, style, api);
     }
 
     /**
@@ -232,8 +232,8 @@ public class SwtShell extends SwtDecorations implements IShell {
      *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
      * </ul>
      */
-    public SwtShell(Display display) {
-        this(display, SWT.SHELL_TRIM);
+    public SwtShell(Display display, Shell api) {
+        this(display, SWT.SHELL_TRIM, api);
     }
 
     /**
@@ -283,12 +283,12 @@ public class SwtShell extends SwtDecorations implements IShell {
      * @see SWT#SYSTEM_MODAL
      * @see SWT#SHEET
      */
-    public SwtShell(Display display, int style) {
-        this(display, null, style, 0, false);
+    public SwtShell(Display display, int style, Shell api) {
+        this(display, null, style, 0, false, api);
     }
 
-    SwtShell(Display display, Shell parent, int style, long handle, boolean embedded) {
-        super();
+    SwtShell(Display display, Shell parent, int style, long handle, boolean embedded, Shell api) {
+        super(api);
         checkSubclass();
         if (display == null)
             display = SwtDisplay.getCurrent();
@@ -340,8 +340,8 @@ public class SwtShell extends SwtDecorations implements IShell {
      *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
      * </ul>
      */
-    public SwtShell(Shell parent) {
-        this(parent, SWT.DIALOG_TRIM);
+    public SwtShell(Shell parent, Shell api) {
+        this(parent, SWT.DIALOG_TRIM, api);
     }
 
     /**
@@ -393,8 +393,8 @@ public class SwtShell extends SwtDecorations implements IShell {
      * @see SWT#SYSTEM_MODAL
      * @see SWT#SHEET
      */
-    public SwtShell(Shell parent, int style) {
-        this(parent != null ? ((SwtWidget) parent.getImpl()).display : null, parent, style, 0, false);
+    public SwtShell(Shell parent, int style, Shell api) {
+        this(parent != null ? ((SwtWidget) parent.getImpl()).display : null, parent, style, 0, false, api);
     }
 
     /**

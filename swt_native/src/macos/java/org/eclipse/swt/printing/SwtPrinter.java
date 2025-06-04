@@ -122,8 +122,8 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
      *
      * @see Device#dispose
      */
-    public SwtPrinter() {
-        this(null);
+    public SwtPrinter(Printer api) {
+        this(null, api);
     }
 
     /**
@@ -145,8 +145,8 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
      *
      * @see Device#dispose
      */
-    public SwtPrinter(PrinterData data) {
-        super(checkNull(data));
+    public SwtPrinter(PrinterData data, Printer api) {
+        super(checkNull(data), api);
     }
 
     /**

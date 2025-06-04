@@ -122,7 +122,7 @@ public class StyledText extends Canvas {
      */
     public StyledText(Composite parent, int style) {
         this((IStyledText) null);
-        setImpl(new SwtStyledText(parent, style));
+        setImpl(new SwtStyledText(parent, style, this));
     }
 
     /**
@@ -3633,11 +3633,7 @@ public class StyledText extends Canvas {
     }
 
     static StyledText createApi(IStyledText impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof StyledText inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new StyledText(impl);
+        return new StyledText(impl);
     }
 
     public IStyledText getImpl() {

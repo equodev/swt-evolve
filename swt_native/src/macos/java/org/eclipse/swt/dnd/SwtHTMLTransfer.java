@@ -39,7 +39,8 @@ public class SwtHTMLTransfer extends SwtByteArrayTransfer implements IHTMLTransf
 
     static final int HTMLID = registerType(HTML);
 
-    SwtHTMLTransfer() {
+    SwtHTMLTransfer(HTMLTransfer api) {
+        super(api);
     }
 
     /**

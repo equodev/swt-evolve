@@ -297,8 +297,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @see SWT#MULTI
      * @see #getStyle()
      */
-    public DartCTabFolder(Composite parent, int style) {
-        super(parent, checkStyle(parent, style));
+    public DartCTabFolder(Composite parent, int style, CTabFolder api) {
+        super(parent, checkStyle(parent, style), api);
         init(style);
     }
 

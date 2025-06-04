@@ -37,12 +37,12 @@ import dev.equo.swt.*;
  */
 public final class DartColor extends DartResource implements IColor {
 
-    DartColor() {
-        super();
+    DartColor(Color api) {
+        super(api);
     }
 
-    DartColor(Device device) {
-        super(device);
+    DartColor(Device device, Color api) {
+        super(device, api);
     }
 
     /**
@@ -62,8 +62,8 @@ public final class DartColor extends DartResource implements IColor {
      *
      * @see #Color(int, int, int) The equivalent constructor not requiring a Device
      */
-    public DartColor(Device device, int red, int green, int blue) {
-        super(device);
+    public DartColor(Device device, int red, int green, int blue, Color api) {
+        super(device, api);
         init(red, green, blue, 255);
         init();
     }
@@ -82,8 +82,8 @@ public final class DartColor extends DartResource implements IColor {
      * </ul>
      * @since 3.115
      */
-    public DartColor(int red, int green, int blue) {
-        super();
+    public DartColor(int red, int green, int blue, Color api) {
+        super(api);
         init(red, green, blue, 255);
     }
 
@@ -107,8 +107,8 @@ public final class DartColor extends DartResource implements IColor {
      *
      * @since 3.104
      */
-    public DartColor(Device device, int red, int green, int blue, int alpha) {
-        super(device);
+    public DartColor(Device device, int red, int green, int blue, int alpha, Color api) {
+        super(device, api);
         init(red, green, blue, alpha);
         init();
     }
@@ -129,8 +129,8 @@ public final class DartColor extends DartResource implements IColor {
      *
      * @since 3.115
      */
-    public DartColor(int red, int green, int blue, int alpha) {
-        super();
+    public DartColor(int red, int green, int blue, int alpha, Color api) {
+        super(api);
         init(red, green, blue, alpha);
     }
 
@@ -149,8 +149,8 @@ public final class DartColor extends DartResource implements IColor {
      *
      * @see #Color(RGB) The equivalent constructor not requiring a Device
      */
-    public DartColor(Device device, RGB rgb) {
-        super(device);
+    public DartColor(Device device, RGB rgb, Color api) {
+        super(device, api);
         if (rgb == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init(rgb.red, rgb.green, rgb.blue, 255);
@@ -169,8 +169,8 @@ public final class DartColor extends DartResource implements IColor {
      * </ul>
      * @since 3.115
      */
-    public DartColor(RGB rgb) {
-        super();
+    public DartColor(RGB rgb, Color api) {
+        super(api);
         if (rgb == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init(rgb.red, rgb.green, rgb.blue, 255);
@@ -193,8 +193,8 @@ public final class DartColor extends DartResource implements IColor {
      *
      * @since 3.104
      */
-    public DartColor(Device device, RGBA rgba) {
-        super(device);
+    public DartColor(Device device, RGBA rgba, Color api) {
+        super(device, api);
         if (rgba == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init(rgba.rgb.red, rgba.rgb.green, rgba.rgb.blue, rgba.alpha);
@@ -214,8 +214,8 @@ public final class DartColor extends DartResource implements IColor {
      *
      * @since 3.115
      */
-    public DartColor(RGBA rgba) {
-        super();
+    public DartColor(RGBA rgba, Color api) {
+        super(api);
         if (rgba == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init(rgba.rgb.red, rgba.rgb.green, rgba.rgb.blue, rgba.alpha);
@@ -240,8 +240,8 @@ public final class DartColor extends DartResource implements IColor {
      *
      * @since 3.104
      */
-    public DartColor(Device device, RGB rgb, int alpha) {
-        super(device);
+    public DartColor(Device device, RGB rgb, int alpha, Color api) {
+        super(device, api);
         if (rgb == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init(rgb.red, rgb.green, rgb.blue, alpha);
@@ -263,8 +263,8 @@ public final class DartColor extends DartResource implements IColor {
      *
      * @since 3.115
      */
-    public DartColor(RGB rgb, int alpha) {
-        super();
+    public DartColor(RGB rgb, int alpha, Color api) {
+        super(api);
         if (rgb == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init(rgb.red, rgb.green, rgb.blue, alpha);

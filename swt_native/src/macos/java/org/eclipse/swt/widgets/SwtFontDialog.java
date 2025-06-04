@@ -61,8 +61,8 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
      *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
      * </ul>
      */
-    public SwtFontDialog(Shell parent) {
-        this(parent, SWT.APPLICATION_MODAL);
+    public SwtFontDialog(Shell parent, FontDialog api) {
+        this(parent, SWT.APPLICATION_MODAL, api);
     }
 
     /**
@@ -89,8 +89,8 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
      *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
      * </ul>
      */
-    public SwtFontDialog(Shell parent, int style) {
-        super(parent, checkStyle(parent, style));
+    public SwtFontDialog(Shell parent, int style, FontDialog api) {
+        super(parent, checkStyle(parent, style), api);
         checkSubclass();
     }
 

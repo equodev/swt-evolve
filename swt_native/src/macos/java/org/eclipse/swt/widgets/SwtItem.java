@@ -73,8 +73,8 @@ public abstract class SwtItem extends SwtWidget implements IItem {
      * @see SWT
      * @see Widget#getStyle
      */
-    public SwtItem(Widget parent, int style) {
-        super(parent, style);
+    public SwtItem(Widget parent, int style, Item api) {
+        super(parent, style, api);
         text = "";
     }
 
@@ -108,8 +108,8 @@ public abstract class SwtItem extends SwtWidget implements IItem {
      * @see SWT
      * @see Widget#getStyle
      */
-    public SwtItem(Widget parent, int style, int index) {
-        this(parent, style);
+    public SwtItem(Widget parent, int style, int index, Item api) {
+        this(parent, style, api);
     }
 
     @Override

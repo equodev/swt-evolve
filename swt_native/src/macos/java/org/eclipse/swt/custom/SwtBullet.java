@@ -52,8 +52,8 @@ public class SwtBullet implements IBullet {
      *    <li>ERROR_NULL_ARGUMENT when the style or the glyph metrics are null</li>
      * </ul>
      */
-    public SwtBullet(StyleRange style) {
-        this(ST.BULLET_DOT, style);
+    public SwtBullet(StyleRange style, Bullet api) {
+        this(ST.BULLET_DOT, style, api);
     }
 
     /**
@@ -67,7 +67,8 @@ public class SwtBullet implements IBullet {
      *    <li>ERROR_NULL_ARGUMENT when the style or the glyph metrics are null</li>
      * </ul>
      */
-    public SwtBullet(int type, StyleRange style) {
+    public SwtBullet(int type, StyleRange style, Bullet api) {
+        setApi(api);
         if (style == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (style.metrics == null)
@@ -163,5 +164,7 @@ public class SwtBullet implements IBullet {
 
     public void setApi(Bullet api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

@@ -70,7 +70,7 @@ public class Menu extends Widget {
      */
     public Menu(Control parent) {
         this((IMenu) null);
-        setImpl(new SwtMenu(parent));
+        setImpl(new SwtMenu(parent, this));
     }
 
     /**
@@ -112,7 +112,7 @@ public class Menu extends Widget {
      */
     public Menu(Decorations parent, int style) {
         this((IMenu) null);
-        setImpl(new SwtMenu(parent, style));
+        setImpl(new SwtMenu(parent, style, this));
     }
 
     /**
@@ -141,7 +141,7 @@ public class Menu extends Widget {
      */
     public Menu(Menu parentMenu) {
         this((IMenu) null);
-        setImpl(new SwtMenu(parentMenu));
+        setImpl(new SwtMenu(parentMenu, this));
     }
 
     /**
@@ -170,17 +170,17 @@ public class Menu extends Widget {
      */
     public Menu(MenuItem parentItem) {
         this((IMenu) null);
-        setImpl(new SwtMenu(parentItem));
+        setImpl(new SwtMenu(parentItem, this));
     }
 
     Menu(Display display) {
         this((IMenu) null);
-        setImpl(new SwtMenu(display));
+        setImpl(new SwtMenu(display, this));
     }
 
     Menu(Display display, NSMenu nativeMenu) {
         this((IMenu) null);
-        setImpl(new SwtMenu(display, nativeMenu));
+        setImpl(new SwtMenu(display, nativeMenu, this));
     }
 
     /**
@@ -651,11 +651,7 @@ public class Menu extends Widget {
     }
 
     static Menu createApi(IMenu impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Menu inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Menu(impl);
+        return new Menu(impl);
     }
 
     public IMenu getImpl() {

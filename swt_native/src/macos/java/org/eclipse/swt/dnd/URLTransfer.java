@@ -36,7 +36,7 @@ public class URLTransfer extends ByteArrayTransfer {
 
     URLTransfer() {
         this((IURLTransfer) null);
-        setImpl(new SwtURLTransfer());
+        setImpl(new SwtURLTransfer(this));
     }
 
     /**
@@ -93,11 +93,7 @@ public class URLTransfer extends ByteArrayTransfer {
     }
 
     static URLTransfer createApi(IURLTransfer impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof URLTransfer inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new URLTransfer(impl);
+        return new URLTransfer(impl);
     }
 
     public IURLTransfer getImpl() {

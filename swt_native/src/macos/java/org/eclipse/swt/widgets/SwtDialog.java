@@ -100,8 +100,8 @@ public abstract class SwtDialog implements IDialog {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the parent</li>
      * </ul>
      */
-    public SwtDialog(Shell parent) {
-        this(parent, SWT.PRIMARY_MODAL);
+    public SwtDialog(Shell parent, Dialog api) {
+        this(parent, SWT.PRIMARY_MODAL, api);
     }
 
     /**
@@ -130,7 +130,8 @@ public abstract class SwtDialog implements IDialog {
      * @see SWT#APPLICATION_MODAL
      * @see SWT#SYSTEM_MODAL
      */
-    public SwtDialog(Shell parent, int style) {
+    public SwtDialog(Shell parent, int style, Dialog api) {
+        setApi(api);
         checkParent(parent);
         this.parent = parent;
         this.style = style;
@@ -288,5 +289,7 @@ public abstract class SwtDialog implements IDialog {
 
     public void setApi(Dialog api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

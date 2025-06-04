@@ -60,7 +60,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
      */
     public TreeDropTargetEffect(Tree tree) {
         this((ITreeDropTargetEffect) null);
-        setImpl(new SwtTreeDropTargetEffect(tree));
+        setImpl(new SwtTreeDropTargetEffect(tree, this));
     }
 
     /**
@@ -126,11 +126,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
     }
 
     static TreeDropTargetEffect createApi(ITreeDropTargetEffect impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TreeDropTargetEffect inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TreeDropTargetEffect(impl);
+        return new TreeDropTargetEffect(impl);
     }
 
     public ITreeDropTargetEffect getImpl() {

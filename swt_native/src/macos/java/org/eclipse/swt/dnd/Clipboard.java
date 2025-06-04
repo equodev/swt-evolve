@@ -49,7 +49,7 @@ public class Clipboard {
      */
     public Clipboard(Display display) {
         this((IClipboard) null);
-        setImpl(new SwtClipboard(display));
+        setImpl(new SwtClipboard(display, this));
     }
 
     /**
@@ -456,20 +456,12 @@ public class Clipboard {
     protected IClipboard impl;
 
     protected Clipboard(IClipboard impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static Clipboard createApi(IClipboard impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Clipboard inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Clipboard(impl);
+        return new Clipboard(impl);
     }
 
     public IClipboard getImpl() {
@@ -478,8 +470,6 @@ public class Clipboard {
 
     protected Clipboard setImpl(IClipboard impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

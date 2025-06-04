@@ -227,8 +227,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         }
     }
 
-    SwtImage(Device device) {
-        super(device);
+    SwtImage(Device device, Image api) {
+        super(device, api);
     }
 
     /**
@@ -266,8 +266,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      *
      * @see #dispose()
      */
-    public SwtImage(Device device, int width, int height) {
-        super(device);
+    public SwtImage(Device device, int width, int height, Image api) {
+        super(device, api);
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
@@ -316,8 +316,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      *
      * @see #dispose()
      */
-    public SwtImage(Device device, Image srcImage, int flag) {
-        super(device);
+    public SwtImage(Device device, Image srcImage, int flag, Image api) {
+        super(device, api);
         if (srcImage == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (srcImage.isDisposed())
@@ -501,8 +501,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      *
      * @see #dispose()
      */
-    public SwtImage(Device device, Rectangle bounds) {
-        super(device);
+    public SwtImage(Device device, Rectangle bounds, Image api) {
+        super(device, api);
         if (bounds == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         NSAutoreleasePool pool = null;
@@ -540,8 +540,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      *
      * @see #dispose()
      */
-    public SwtImage(Device device, ImageData data) {
-        super(device);
+    public SwtImage(Device device, ImageData data, Image api) {
+        super(device, api);
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
@@ -584,8 +584,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      *
      * @see #dispose()
      */
-    public SwtImage(Device device, ImageData source, ImageData mask) {
-        super(device);
+    public SwtImage(Device device, ImageData source, ImageData mask, Image api) {
+        super(device, api);
         if (source == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (mask == null)
@@ -661,8 +661,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      *
      * @see #dispose()
      */
-    public SwtImage(Device device, InputStream stream) {
-        super(device);
+    public SwtImage(Device device, InputStream stream, Image api) {
+        super(device, api);
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
@@ -707,8 +707,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      *
      * @see #dispose()
      */
-    public SwtImage(Device device, String filename) {
-        super(device);
+    public SwtImage(Device device, String filename, Image api) {
+        super(device, api);
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
@@ -754,8 +754,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      * </ul>
      * @since 3.104
      */
-    public SwtImage(Device device, ImageFileNameProvider imageFileNameProvider) {
-        super(device);
+    public SwtImage(Device device, ImageFileNameProvider imageFileNameProvider, Image api) {
+        super(device, api);
         if (imageFileNameProvider == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.imageFileNameProvider = imageFileNameProvider;
@@ -812,8 +812,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      * </ul>
      * @since 3.104
      */
-    public SwtImage(Device device, ImageDataProvider imageDataProvider) {
-        super(device);
+    public SwtImage(Device device, ImageDataProvider imageDataProvider, Image api) {
+        super(device, api);
         if (imageDataProvider == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.imageDataProvider = imageDataProvider;

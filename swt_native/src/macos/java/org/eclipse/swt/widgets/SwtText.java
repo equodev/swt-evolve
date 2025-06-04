@@ -121,8 +121,8 @@ public class SwtText extends SwtScrollable implements IText {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtText(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtText(Composite parent, int style, Text api) {
+        super(parent, checkStyle(style), api);
         if ((style & SWT.SEARCH) != 0) {
             /*
 		* Ensure that SWT.ICON_CANCEL and ICON_SEARCH are set.

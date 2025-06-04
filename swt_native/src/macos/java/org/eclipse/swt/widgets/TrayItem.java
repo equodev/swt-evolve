@@ -73,7 +73,7 @@ public class TrayItem extends Item {
      */
     public TrayItem(Tray parent, int style) {
         this((ITrayItem) null);
-        setImpl(new SwtTrayItem(parent, style));
+        setImpl(new SwtTrayItem(parent, style, this));
     }
 
     /**
@@ -360,11 +360,7 @@ public class TrayItem extends Item {
     }
 
     static TrayItem createApi(ITrayItem impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TrayItem inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TrayItem(impl);
+        return new TrayItem(impl);
     }
 
     public ITrayItem getImpl() {

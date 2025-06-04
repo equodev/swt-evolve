@@ -86,8 +86,8 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTableItem(Table parent, int style) {
-        this(parent, style, checkNull(parent).getItemCount(), true);
+    public SwtTableItem(Table parent, int style, TableItem api) {
+        this(parent, style, checkNull(parent).getItemCount(), true, api);
     }
 
     /**
@@ -122,12 +122,12 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTableItem(Table parent, int style, int index) {
-        this(parent, style, index, true);
+    public SwtTableItem(Table parent, int style, int index, TableItem api) {
+        this(parent, style, index, true, api);
     }
 
-    SwtTableItem(Table parent, int style, int index, boolean create) {
-        super(parent, style);
+    SwtTableItem(Table parent, int style, int index, boolean create, TableItem api) {
+        super(parent, style, api);
         this.parent = parent;
         if (create)
             ((SwtTable) parent.getImpl()).createItem(this.getApi(), index);

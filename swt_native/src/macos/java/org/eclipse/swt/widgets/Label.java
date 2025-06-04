@@ -92,7 +92,7 @@ public class Label extends Control {
      */
     public Label(Composite parent, int style) {
         this((ILabel) null);
-        setImpl(new SwtLabel(parent, style));
+        setImpl(new SwtLabel(parent, style, this));
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {
@@ -223,11 +223,7 @@ public class Label extends Control {
     }
 
     static Label createApi(ILabel impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Label inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Label(impl);
+        return new Label(impl);
     }
 
     public ILabel getImpl() {

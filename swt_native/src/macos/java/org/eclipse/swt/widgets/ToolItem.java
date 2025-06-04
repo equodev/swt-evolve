@@ -79,7 +79,7 @@ public class ToolItem extends Item {
      */
     public ToolItem(ToolBar parent, int style) {
         this((IToolItem) null);
-        setImpl(new SwtToolItem(parent, style));
+        setImpl(new SwtToolItem(parent, style, this));
     }
 
     /**
@@ -120,7 +120,7 @@ public class ToolItem extends Item {
      */
     public ToolItem(ToolBar parent, int style, int index) {
         this((IToolItem) null);
-        setImpl(new SwtToolItem(parent, style, index));
+        setImpl(new SwtToolItem(parent, style, index, this));
     }
 
     /**
@@ -636,11 +636,7 @@ public class ToolItem extends Item {
     }
 
     static ToolItem createApi(IToolItem impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof ToolItem inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new ToolItem(impl);
+        return new ToolItem(impl);
     }
 
     public IToolItem getImpl() {

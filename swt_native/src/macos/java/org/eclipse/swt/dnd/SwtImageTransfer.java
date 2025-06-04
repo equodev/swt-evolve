@@ -45,7 +45,8 @@ public class SwtImageTransfer extends SwtByteArrayTransfer implements IImageTran
 
     static final int TIFFID = registerType(TIFF);
 
-    SwtImageTransfer() {
+    SwtImageTransfer(ImageTransfer api) {
+        super(api);
     }
 
     /**

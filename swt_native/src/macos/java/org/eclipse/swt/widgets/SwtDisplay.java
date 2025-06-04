@@ -805,8 +805,8 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @see Widget#checkSubclass
      * @see Shell
      */
-    public SwtDisplay() {
-        this(null);
+    public SwtDisplay(Display api) {
+        this(null, api);
     }
 
     /**
@@ -814,8 +814,8 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      *
      * @param data the device data
      */
-    public SwtDisplay(DeviceData data) {
-        super(data);
+    public SwtDisplay(DeviceData data, Display api) {
+        super(data, api);
     }
 
     static void checkDisplay(Thread thread, boolean multiple) {

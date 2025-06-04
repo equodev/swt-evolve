@@ -69,5 +69,11 @@ public class SwtDragSourceAdapter implements DragSourceListener, IDragSourceAdap
 
     public void setApi(DragSourceAdapter api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
+    }
+
+    public SwtDragSourceAdapter(DragSourceAdapter api) {
+        setApi(api);
     }
 }

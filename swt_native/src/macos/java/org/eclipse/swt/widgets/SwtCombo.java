@@ -106,8 +106,8 @@ public class SwtCombo extends SwtComposite implements ICombo {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtCombo(Composite parent, int style) {
-        super(parent, checkStyle(style));
+    public SwtCombo(Composite parent, int style, Combo api) {
+        super(parent, checkStyle(style), api);
     }
 
     /**

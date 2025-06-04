@@ -115,11 +115,13 @@ public abstract class SwtResource implements IResource {
         }
     }
 
-    public SwtResource() {
+    public SwtResource(Resource api) {
+        setApi(api);
         initNonDisposeTracking();
     }
 
-    SwtResource(Device device) {
+    SwtResource(Device device, Resource api) {
+        setApi(api);
         if (device == null)
             device = SwtDevice.getDevice();
         if (device == null)
@@ -240,5 +242,7 @@ public abstract class SwtResource implements IResource {
 
     public void setApi(Resource api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

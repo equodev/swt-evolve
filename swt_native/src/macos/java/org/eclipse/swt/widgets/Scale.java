@@ -75,7 +75,7 @@ public class Scale extends Control {
      */
     public Scale(Composite parent, int style) {
         this((IScale) null);
-        setImpl(new SwtScale(parent, style));
+        setImpl(new SwtScale(parent, style, this));
     }
 
     /**
@@ -292,11 +292,7 @@ public class Scale extends Control {
     }
 
     static Scale createApi(IScale impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof Scale inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new Scale(impl);
+        return new Scale(impl);
     }
 
     public IScale getImpl() {

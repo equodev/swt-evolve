@@ -151,7 +151,7 @@ public class CTabFolder extends Composite {
      */
     public CTabFolder(Composite parent, int style) {
         this((ICTabFolder) null);
-        setImpl(Config.isEquo(CTabFolder.class, parent) ? new DartCTabFolder(parent, style) : new SwtCTabFolder(parent, style));
+        setImpl(Config.isEquo(CTabFolder.class, parent) ? new DartCTabFolder(parent, style, this) : new SwtCTabFolder(parent, style, this));
     }
 
     /**
@@ -1512,11 +1512,7 @@ public class CTabFolder extends Composite {
     }
 
     static CTabFolder createApi(ICTabFolder impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof CTabFolder inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new CTabFolder(impl);
+        return new CTabFolder(impl);
     }
 
     public ICTabFolder getImpl() {

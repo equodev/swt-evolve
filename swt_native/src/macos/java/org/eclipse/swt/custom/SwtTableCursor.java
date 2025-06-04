@@ -88,8 +88,8 @@ public class SwtTableCursor extends SwtCanvas implements ITableCursor {
      * @see Widget#checkSubclass()
      * @see Widget#getStyle()
      */
-    public SwtTableCursor(Table parent, int style) {
-        super(parent, style);
+    public SwtTableCursor(Table parent, int style, TableCursor api) {
+        super(parent, style, api);
         table = parent;
         setBackground(null);
         setForeground(null);

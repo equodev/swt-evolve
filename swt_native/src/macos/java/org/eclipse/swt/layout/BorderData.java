@@ -39,7 +39,7 @@ public final class BorderData {
      */
     public BorderData() {
         this((IBorderData) null);
-        setImpl(new SwtBorderData());
+        setImpl(new SwtBorderData(this));
     }
 
     /**
@@ -53,7 +53,7 @@ public final class BorderData {
      */
     public BorderData(int region) {
         this((IBorderData) null);
-        setImpl(new SwtBorderData(region));
+        setImpl(new SwtBorderData(region, this));
     }
 
     /**
@@ -68,7 +68,7 @@ public final class BorderData {
      */
     public BorderData(int region, int widthHint, int heightHint) {
         this((IBorderData) null);
-        setImpl(new SwtBorderData(region, widthHint, heightHint));
+        setImpl(new SwtBorderData(region, widthHint, heightHint, this));
     }
 
     public String toString() {
@@ -78,20 +78,12 @@ public final class BorderData {
     protected IBorderData impl;
 
     protected BorderData(IBorderData impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static BorderData createApi(IBorderData impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof BorderData inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new BorderData(impl);
+        return new BorderData(impl);
     }
 
     public IBorderData getImpl() {
@@ -100,8 +92,6 @@ public final class BorderData {
 
     protected BorderData setImpl(IBorderData impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

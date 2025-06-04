@@ -85,8 +85,8 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTreeItem(Tree parent, int style) {
-        this(checkNull(parent), null, style, -1, true);
+    public SwtTreeItem(Tree parent, int style, TreeItem api) {
+        this(checkNull(parent), null, style, -1, true, api);
     }
 
     /**
@@ -118,8 +118,8 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      * @see Widget#getStyle
      * @see Tree#setRedraw
      */
-    public SwtTreeItem(Tree parent, int style, int index) {
-        this(checkNull(parent), null, style, checkIndex(index), true);
+    public SwtTreeItem(Tree parent, int style, int index, TreeItem api) {
+        this(checkNull(parent), null, style, checkIndex(index), true, api);
     }
 
     /**
@@ -144,8 +144,8 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTreeItem(TreeItem parentItem, int style) {
-        this(((SwtTreeItem) checkNull(parentItem).getImpl()).parent, parentItem, style, -1, true);
+    public SwtTreeItem(TreeItem parentItem, int style, TreeItem api) {
+        this(((SwtTreeItem) checkNull(parentItem).getImpl()).parent, parentItem, style, -1, true, api);
     }
 
     /**
@@ -173,12 +173,12 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      * @see Widget#getStyle
      * @see Tree#setRedraw
      */
-    public SwtTreeItem(TreeItem parentItem, int style, int index) {
-        this(((SwtTreeItem) checkNull(parentItem).getImpl()).parent, parentItem, style, checkIndex(index), true);
+    public SwtTreeItem(TreeItem parentItem, int style, int index, TreeItem api) {
+        this(((SwtTreeItem) checkNull(parentItem).getImpl()).parent, parentItem, style, checkIndex(index), true, api);
     }
 
-    SwtTreeItem(Tree parent, TreeItem parentItem, int style, int index, boolean create) {
-        super(parent, style);
+    SwtTreeItem(Tree parent, TreeItem parentItem, int style, int index, boolean create, TreeItem api) {
+        super(parent, style, api);
         this.parent = parent;
         this.parentItem = parentItem;
         if (create) {

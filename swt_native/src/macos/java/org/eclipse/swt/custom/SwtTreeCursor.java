@@ -82,8 +82,8 @@ public class SwtTreeCursor extends SwtCanvas implements ITreeCursor {
      * @see Widget#checkSubclass()
      * @see Widget#getStyle()
      */
-    public SwtTreeCursor(Tree parent, int style) {
-        super(parent, style);
+    public SwtTreeCursor(Tree parent, int style, TreeCursor api) {
+        super(parent, style, api);
         tree = parent;
         setBackground(null);
         setForeground(null);

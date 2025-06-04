@@ -36,12 +36,12 @@ import org.eclipse.swt.*;
  */
 public final class SwtColor extends SwtResource implements IColor {
 
-    SwtColor() {
-        super();
+    SwtColor(Color api) {
+        super(api);
     }
 
-    SwtColor(Device device) {
-        super(device);
+    SwtColor(Device device, Color api) {
+        super(device, api);
     }
 
     /**
@@ -61,8 +61,8 @@ public final class SwtColor extends SwtResource implements IColor {
      *
      * @see #Color(int, int, int) The equivalent constructor not requiring a Device
      */
-    public SwtColor(Device device, int red, int green, int blue) {
-        super(device);
+    public SwtColor(Device device, int red, int green, int blue, Color api) {
+        super(device, api);
         init(red, green, blue, 255);
         init();
     }
@@ -81,8 +81,8 @@ public final class SwtColor extends SwtResource implements IColor {
      * </ul>
      * @since 3.115
      */
-    public SwtColor(int red, int green, int blue) {
-        super();
+    public SwtColor(int red, int green, int blue, Color api) {
+        super(api);
         init(red, green, blue, 255);
     }
 
@@ -106,8 +106,8 @@ public final class SwtColor extends SwtResource implements IColor {
      *
      * @since 3.104
      */
-    public SwtColor(Device device, int red, int green, int blue, int alpha) {
-        super(device);
+    public SwtColor(Device device, int red, int green, int blue, int alpha, Color api) {
+        super(device, api);
         init(red, green, blue, alpha);
         init();
     }
@@ -128,8 +128,8 @@ public final class SwtColor extends SwtResource implements IColor {
      *
      * @since 3.115
      */
-    public SwtColor(int red, int green, int blue, int alpha) {
-        super();
+    public SwtColor(int red, int green, int blue, int alpha, Color api) {
+        super(api);
         init(red, green, blue, alpha);
     }
 
@@ -148,8 +148,8 @@ public final class SwtColor extends SwtResource implements IColor {
      *
      * @see #Color(RGB) The equivalent constructor not requiring a Device
      */
-    public SwtColor(Device device, RGB rgb) {
-        super(device);
+    public SwtColor(Device device, RGB rgb, Color api) {
+        super(device, api);
         if (rgb == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init(rgb.red, rgb.green, rgb.blue, 255);
@@ -168,8 +168,8 @@ public final class SwtColor extends SwtResource implements IColor {
      * </ul>
      * @since 3.115
      */
-    public SwtColor(RGB rgb) {
-        super();
+    public SwtColor(RGB rgb, Color api) {
+        super(api);
         if (rgb == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init(rgb.red, rgb.green, rgb.blue, 255);
@@ -192,8 +192,8 @@ public final class SwtColor extends SwtResource implements IColor {
      *
      * @since 3.104
      */
-    public SwtColor(Device device, RGBA rgba) {
-        super(device);
+    public SwtColor(Device device, RGBA rgba, Color api) {
+        super(device, api);
         if (rgba == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init(rgba.rgb.red, rgba.rgb.green, rgba.rgb.blue, rgba.alpha);
@@ -213,8 +213,8 @@ public final class SwtColor extends SwtResource implements IColor {
      *
      * @since 3.115
      */
-    public SwtColor(RGBA rgba) {
-        super();
+    public SwtColor(RGBA rgba, Color api) {
+        super(api);
         if (rgba == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init(rgba.rgb.red, rgba.rgb.green, rgba.rgb.blue, rgba.alpha);
@@ -239,8 +239,8 @@ public final class SwtColor extends SwtResource implements IColor {
      *
      * @since 3.104
      */
-    public SwtColor(Device device, RGB rgb, int alpha) {
-        super(device);
+    public SwtColor(Device device, RGB rgb, int alpha, Color api) {
+        super(device, api);
         if (rgb == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init(rgb.red, rgb.green, rgb.blue, alpha);
@@ -262,8 +262,8 @@ public final class SwtColor extends SwtResource implements IColor {
      *
      * @since 3.115
      */
-    public SwtColor(RGB rgb, int alpha) {
-        super();
+    public SwtColor(RGB rgb, int alpha, Color api) {
+        super(api);
         if (rgb == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init(rgb.red, rgb.green, rgb.blue, alpha);

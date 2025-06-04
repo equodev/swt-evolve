@@ -67,8 +67,8 @@ public class SwtDirectoryDialog extends SwtDialog implements IDirectoryDialog {
      *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
      * </ul>
      */
-    public SwtDirectoryDialog(Shell parent) {
-        this(parent, SWT.APPLICATION_MODAL);
+    public SwtDirectoryDialog(Shell parent, DirectoryDialog api) {
+        this(parent, SWT.APPLICATION_MODAL, api);
     }
 
     /**
@@ -95,8 +95,8 @@ public class SwtDirectoryDialog extends SwtDialog implements IDirectoryDialog {
      *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
      * </ul>
      */
-    public SwtDirectoryDialog(Shell parent, int style) {
-        super(parent, checkStyle(parent, style));
+    public SwtDirectoryDialog(Shell parent, int style, DirectoryDialog api) {
+        super(parent, checkStyle(parent, style), api);
         if (SwtDisplay.getSheetEnabled()) {
             if (parent != null && (style & SWT.SHEET) != 0)
                 this.style |= SWT.SHEET;

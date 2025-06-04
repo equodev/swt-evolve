@@ -38,7 +38,7 @@ public class TaskBar extends Widget {
 
     TaskBar(Display display, int style) {
         this((ITaskBar) null);
-        setImpl(new SwtTaskBar(display, style));
+        setImpl(new SwtTaskBar(display, style, this));
     }
 
     /**
@@ -116,11 +116,7 @@ public class TaskBar extends Widget {
     }
 
     static TaskBar createApi(ITaskBar impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof TaskBar inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new TaskBar(impl);
+        return new TaskBar(impl);
     }
 
     public ITaskBar getImpl() {

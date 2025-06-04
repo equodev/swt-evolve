@@ -30,7 +30,7 @@ class AccessibleTableRow extends Accessible {
 
     public AccessibleTableRow(Accessible accessible, int childID) {
         this((IAccessibleTableRow) null);
-        setImpl(new SwtAccessibleTableRow(accessible, childID));
+        setImpl(new SwtAccessibleTableRow(accessible, childID, this));
     }
 
     protected AccessibleTableRow(IAccessibleTableRow impl) {
@@ -38,11 +38,7 @@ class AccessibleTableRow extends Accessible {
     }
 
     static AccessibleTableRow createApi(IAccessibleTableRow impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof AccessibleTableRow inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new AccessibleTableRow(impl);
+        return new AccessibleTableRow(impl);
     }
 
     public IAccessibleTableRow getImpl() {

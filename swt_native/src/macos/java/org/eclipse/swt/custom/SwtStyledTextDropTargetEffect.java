@@ -73,8 +73,8 @@ public class SwtStyledTextDropTargetEffect extends SwtDropTargetEffect implement
      *
      * @param styledText the <code>StyledText</code> over which the user positions the cursor to drop the data
      */
-    public SwtStyledTextDropTargetEffect(StyledText styledText) {
-        super(styledText);
+    public SwtStyledTextDropTargetEffect(StyledText styledText, StyledTextDropTargetEffect api) {
+        super(styledText, api);
         paintListener = event -> {
             if (currentOffset != -1) {
                 StyledText text = (StyledText) getControl();

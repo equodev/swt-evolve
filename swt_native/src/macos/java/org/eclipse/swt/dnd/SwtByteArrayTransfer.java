@@ -198,4 +198,8 @@ public abstract class SwtByteArrayTransfer extends SwtTransfer implements IByteA
     public ByteArrayTransfer getApi() {
         return (ByteArrayTransfer) api;
     }
+
+    public SwtByteArrayTransfer(ByteArrayTransfer api) {
+        super(api);
+    }
 }

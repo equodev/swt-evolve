@@ -99,8 +99,8 @@ public class SwtCTabItem extends SwtItem implements ICTabItem {
      * @see SWT
      * @see Widget#getStyle()
      */
-    public SwtCTabItem(CTabFolder parent, int style) {
-        this(parent, style, parent.getItemCount());
+    public SwtCTabItem(CTabFolder parent, int style, CTabItem api) {
+        this(parent, style, parent.getItemCount(), api);
     }
 
     /**
@@ -133,8 +133,8 @@ public class SwtCTabItem extends SwtItem implements ICTabItem {
      * @see SWT
      * @see Widget#getStyle()
      */
-    public SwtCTabItem(CTabFolder parent, int style, int index) {
-        super(parent, style);
+    public SwtCTabItem(CTabFolder parent, int style, int index, CTabItem api) {
+        super(parent, style, api);
         showClose = (style & SWT.CLOSE) != 0;
         ((SwtCTabFolder) parent.getImpl()).createItem(this.getApi(), index);
     }

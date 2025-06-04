@@ -37,26 +37,18 @@ public final class PathData {
 
     public PathData() {
         this((IPathData) null);
-        setImpl(new SwtPathData());
+        setImpl(new SwtPathData(this));
     }
 
     protected IPathData impl;
 
     protected PathData(IPathData impl) {
-        if (impl == null) {
-            dev.equo.swt.Creation.creating.push(this);
-        } else {
-            this.impl = impl;
+        if (impl != null)
             impl.setApi(this);
-        }
     }
 
     static PathData createApi(IPathData impl) {
-        if (dev.equo.swt.Creation.creating.peek() instanceof PathData inst) {
-            inst.impl = impl;
-            return inst;
-        } else
-            return new PathData(impl);
+        return new PathData(impl);
     }
 
     public IPathData getImpl() {
@@ -65,8 +57,6 @@ public final class PathData {
 
     protected PathData setImpl(IPathData impl) {
         this.impl = impl;
-        impl.setApi(this);
-        dev.equo.swt.Creation.creating.pop();
         return this;
     }
 }

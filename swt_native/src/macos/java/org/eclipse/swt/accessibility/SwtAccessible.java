@@ -112,7 +112,8 @@ public class SwtAccessible implements IAccessible {
      *
      * @since 3.6
      */
-    public SwtAccessible(Accessible parent) {
+    public SwtAccessible(Accessible parent, Accessible api) {
+        setApi(api);
         if (parent == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.parent = parent;
@@ -125,10 +126,12 @@ public class SwtAccessible implements IAccessible {
      * @deprecated
      */
     @Deprecated
-    protected SwtAccessible() {
+    protected SwtAccessible(Accessible api) {
+        setApi(api);
     }
 
-    SwtAccessible(Control control) {
+    SwtAccessible(Control control, Accessible api) {
+        setApi(api);
         this.control = control;
     }
 
@@ -3722,5 +3725,7 @@ public class SwtAccessible implements IAccessible {
 
     public void setApi(Accessible api) {
         this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 }

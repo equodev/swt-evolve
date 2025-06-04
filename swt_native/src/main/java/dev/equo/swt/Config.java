@@ -1,5 +1,8 @@
 package dev.equo.swt;
 
+import org.eclipse.swt.custom.CTabFolder;
+import org.eclipse.swt.custom.CTabFolderRenderer;
+import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 
@@ -11,7 +14,11 @@ public class Config {
 
     static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.eclipse.name()));
 
-    static final Map<Class<?>, Impl> equoDefaults = Map.of(Button.class, Impl.equo);
+    static final Map<Class<?>, Impl> equoDefaults = Map.of(
+            Button.class, Impl.equo,
+            CTabFolder.class, Impl.equo,
+            CTabItem.class, Impl.equo
+    );
 
     static final String PROPERTY_PREFIX = "dev.equo.swt.";
 
@@ -44,7 +51,7 @@ public class Config {
     }
 
     public static boolean isEquo(Class<?> clazz, Composite parent) {
-        Object data = parent.getData(getKey(clazz));
+        Object data = parent != null ? parent.getData(getKey(clazz)) : null;
         if (data != null) {
             if (Impl.equo.equals(data)) return true;
             else if (Impl.eclipse.equals(data)) return false;
