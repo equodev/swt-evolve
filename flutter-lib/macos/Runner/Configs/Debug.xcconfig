@@ -1,3 +1,4 @@
 #include "../../Flutter/Flutter-Debug.xcconfig"
 #include "Warnings.xcconfig"
 #include "JavaPaths.xcconfig"
+#include "Architecture.xcconfig"

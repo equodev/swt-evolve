@@ -39,4 +39,3 @@ public class SwtFlutterBridge extends FlutterBridge {
     static native long InitializeFlutterWindow(int port, long parentHandle, long widgetId, String widgetName);
 
 }
-

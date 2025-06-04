@@ -34,7 +34,7 @@ public class FlutterSwt {
     }
 
     public static native long InitializeFlutterWindow(long hwnd, int port, long widgetId, String widgetName, int width,
-            int height, int policy);
+                                                      int height, int policy);
 
     public static native void CloseFlutterWindow(long flutterContext);
 
@@ -55,10 +55,10 @@ public class FlutterSwt {
         WidgetValue.Builder builder = widget.builder();
 //      checkAndBuildMenu(widget);
 
-      if (widget != null && widget.children != null) {
-          List<WidgetValue> childrenValues = widget.children.stream().map(FlutterSwt::build).collect(Collectors.toList());
-          builder.setChildren(childrenValues);
-      }
+        if (widget != null && widget.children != null) {
+            List<WidgetValue> childrenValues = widget.children.stream().map(FlutterSwt::build).collect(Collectors.toList());
+            builder.setChildren(childrenValues);
+        }
         return builder.build();
     }
 
@@ -73,7 +73,7 @@ public class FlutterSwt {
                 try {
                     WidgetValue value = build(widget);
                     String payload = SERIALIZER.to(value);
-                     System.out.println("send: " + event + ": " + payload);
+                    System.out.println("send: " + event + ": " + payload);
                     comm.send(event, payload);
                 } catch (Exception e) {
                     e.printStackTrace();
