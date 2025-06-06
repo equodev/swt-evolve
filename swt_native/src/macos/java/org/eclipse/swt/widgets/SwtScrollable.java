@@ -115,7 +115,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
             size.height = height;
             int border = hasBorder() ? OS.NSBezelBorder : OS.NSNoBorder;
             // Always include the scroll bar in the trim even when the scroll style is overlay
-            size = NSScrollView.frameSizeForContentSize(size, (style & SWT.H_SCROLL) != 0 ? OS.class_NSScroller : 0, (style & SWT.V_SCROLL) != 0 ? OS.class_NSScroller : 0, border, OS.NSRegularControlSize, OS.NSScrollerStyleLegacy);
+            size = NSScrollView.frameSizeForContentSize(size, (getApi().style & SWT.H_SCROLL) != 0 ? OS.class_NSScroller : 0, (getApi().style & SWT.V_SCROLL) != 0 ? OS.class_NSScroller : 0, border, OS.NSRegularControlSize, OS.NSScrollerStyleLegacy);
             width = (int) size.width;
             height = (int) size.height;
             NSRect frame = scrollView.contentView().frame();
@@ -130,7 +130,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
             return null;
         ScrollBar bar = new ScrollBar();
         ((SwtScrollBar) bar.getImpl()).parent = this.getApi();
-        ((SwtWidget) bar.getImpl()).style = style;
+        bar.style = style;
         ((SwtWidget) bar.getImpl()).display = display;
         NSScroller scroller;
         long actionSelector;
@@ -152,13 +152,13 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
         ((SwtScrollBar) bar.getImpl()).view = scroller;
         ((SwtWidget) bar.getImpl()).createJNIRef();
         ((SwtScrollBar) bar.getImpl()).register();
-        if ((state & CANVAS) == 0) {
+        if ((getApi().state & CANVAS) == 0) {
             ((SwtScrollBar) bar.getImpl()).target = scroller.target();
             ((SwtScrollBar) bar.getImpl()).actionSelector = scroller.action();
         }
         scroller.setTarget(scrollView);
         scroller.setAction(actionSelector);
-        if ((state & CANVAS) != 0) {
+        if ((getApi().state & CANVAS) != 0) {
             ((SwtScrollBar) bar.getImpl()).updateBar(0, 0, 100, 10);
         }
         return bar;
@@ -167,9 +167,9 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
     @Override
     void createWidget() {
         super.createWidget();
-        if ((style & SWT.H_SCROLL) != 0)
+        if ((getApi().style & SWT.H_SCROLL) != 0)
             horizontalBar = createScrollBar(SWT.H_SCROLL);
-        if ((style & SWT.V_SCROLL) != 0)
+        if ((getApi().style & SWT.V_SCROLL) != 0)
             verticalBar = createScrollBar(SWT.V_SCROLL);
     }
 
@@ -327,7 +327,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
     void redrawBackgroundImage() {
         if (scrollView != null) {
             Control control = findBackgroundControl();
-            if (control != null && ((SwtControl) control.getImpl()).backgroundImage != null) {
+            if (control != null && control.getImpl()._backgroundImage() != null) {
                 redrawWidget(getApi().view, false);
             }
         }
@@ -378,7 +378,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
 
     @Override
     void scrollClipViewToPoint(long id, long sel, long clipView, NSPoint point) {
-        if ((state & CANVAS) == 0 && scrollView != null) {
+        if ((getApi().state & CANVAS) == 0 && scrollView != null) {
             NSClipView clip = new NSClipView(clipView);
             boolean oldCopies = clip.copiesOnScroll(), copies = oldCopies;
             if (visibleRgn == 0)
@@ -416,23 +416,23 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
     boolean setScrollBarVisible(ScrollBar bar, boolean visible) {
         if (scrollView == null)
             return false;
-        if ((state & CANVAS) == 0)
+        if ((getApi().state & CANVAS) == 0)
             return false;
         if (visible) {
-            if ((((SwtWidget) bar.getImpl()).state & HIDDEN) == 0)
+            if ((bar.state & HIDDEN) == 0)
                 return false;
-            ((SwtWidget) bar.getImpl()).state &= ~HIDDEN;
+            bar.state &= ~HIDDEN;
         } else {
-            if ((((SwtWidget) bar.getImpl()).state & HIDDEN) != 0)
+            if ((bar.state & HIDDEN) != 0)
                 return false;
-            ((SwtWidget) bar.getImpl()).state |= HIDDEN;
+            bar.state |= HIDDEN;
         }
-        if ((((SwtWidget) bar.getImpl()).style & SWT.HORIZONTAL) != 0) {
+        if ((bar.style & SWT.HORIZONTAL) != 0) {
             scrollView.setHasHorizontalScroller(visible);
         } else {
             scrollView.setHasVerticalScroller(visible);
         }
-        ((SwtWidget) bar.getImpl()).sendEvent(visible ? SWT.Show : SWT.Hide);
+        bar.getImpl().sendEvent(visible ? SWT.Show : SWT.Hide);
         sendEvent(SWT.Resize);
         return true;
     }
@@ -459,6 +459,14 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
         updateCursorRects(enabled, scrollView);
         NSClipView contentView = scrollView.contentView();
         updateCursorRects(enabled, contentView);
+    }
+
+    public ScrollBar _horizontalBar() {
+        return horizontalBar;
+    }
+
+    public ScrollBar _verticalBar() {
+        return verticalBar;
     }
 
     public Scrollable getApi() {

@@ -351,7 +351,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
                 oldControl.setVisible(false);
         }
         NSView view;
-        if (newControl != null) {
+        if (newControl != null && newControl.getImpl() instanceof SwtControl) {
             view = ((SwtControl) newControl.getImpl()).topView();
         } else {
             view = (NSView) new NSView().alloc();
@@ -365,9 +365,13 @@ public class SwtTabItem extends SwtItem implements ITabItem {
 	* it back.
 	*/
         if (oldControl != null) {
-            NSView topView = ((SwtControl) oldControl.getImpl()).topView();
-            if (topView.superview() == null) {
-                ((SwtControl) parent.getImpl()).contentView().addSubview(topView, OS.NSWindowBelow, null);
+            if (oldControl == null || oldControl.getImpl() instanceof SwtControl) {
+                NSView topView = ((SwtControl) oldControl.getImpl()).topView();
+                if (topView.superview() == null) {
+                    if (parent == null || parent.getImpl() instanceof SwtControl) {
+                        ((SwtControl) parent.getImpl()).contentView().addSubview(topView, OS.NSWindowBelow, null);
+                    }
+                }
             }
         }
     }
@@ -486,7 +490,9 @@ public class SwtTabItem extends SwtItem implements ITabItem {
                 foreground = ((SwtControl) parent.getImpl()).defaultForeground().handle;
             }
         }
-        attriStr = ((SwtControl) parent.getImpl()).createString(text, null, foreground, 0, false, true, true);
+        if (parent == null || parent.getImpl() instanceof SwtControl) {
+            attriStr = ((SwtControl) parent.getImpl()).createString(text, null, foreground, 0, false, true, true);
+        }
         //force parent to resize
         nsItem.setLabel(NSString.string());
     }

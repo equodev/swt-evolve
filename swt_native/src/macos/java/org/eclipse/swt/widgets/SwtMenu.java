@@ -127,7 +127,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
         super(api);
         checkSubclass();
         checkParent(parent);
-        this.style = checkStyle(style);
+        this.getApi().style = checkStyle(style);
         if (parent != null) {
             display = ((SwtWidget) parent.getImpl()).display;
         } else {
@@ -209,7 +209,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             error(SWT.ERROR_THREAD_INVALID_ACCESS);
         }
         this.display = display;
-        this.style = SWT.BAR;
+        this.getApi().style = SWT.BAR;
         reskinWidget();
         createWidget();
     }
@@ -217,7 +217,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
     SwtMenu(Display display, NSMenu nativeMenu, Menu api) {
         super(api);
         this.display = display;
-        this.style = SWT.DROP_DOWN;
+        this.getApi().style = SWT.DROP_DOWN;
         this.nsMenu = nativeMenu;
         reskinWidget();
         createWidget();
@@ -243,8 +243,6 @@ public class SwtMenu extends SwtWidget implements IMenu {
 
     @Override
     void checkParent(Widget parent) {
-        if (parent != null && !(parent.getImpl() instanceof SwtWidget))
-            return;
         // A null parent is okay when the app menu bar is in use.
         if (parent == null && ((SwtDisplay) SwtDisplay.getDefault().getImpl()).appMenuBar == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -252,7 +250,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             if (parent.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
             parent.checkWidget();
-            ((SwtWidget) parent.getImpl()).checkOpen();
+            parent.getImpl().checkOpen();
         }
     }
 
@@ -261,7 +259,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
     }
 
     void _setVisible(boolean visible) {
-        if ((style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
+        if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
             return;
         TrayItem trayItem = ((SwtDisplay) display.getImpl()).currentTrayItem;
         if (trayItem != null && visible) {
@@ -365,14 +363,12 @@ public class SwtMenu extends SwtWidget implements IMenu {
     }
 
     void createItem(MenuItem item, int index) {
-        if (item != null && !(item.getImpl() instanceof SwtWidget))
-            return;
         if (!(0 <= index && index <= itemCount))
             error(SWT.ERROR_INVALID_RANGE);
         boolean add = true;
         NSMenuItem nsItem = ((SwtMenuItem) item.getImpl()).nsItem;
         if (nsItem == null) {
-            if ((((SwtWidget) item.getImpl()).style & SWT.SEPARATOR) != 0) {
+            if ((item.style & SWT.SEPARATOR) != 0) {
                 nsItem = NSMenuItem.separatorItem();
                 nsItem.retain();
             } else {
@@ -400,7 +396,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
                 type = SWT.SEPARATOR;
             if (nsItem.submenu() != null)
                 type = SWT.CASCADE;
-            ((SwtWidget) item.getImpl()).style |= type;
+            item.style |= type;
             // Sync native item text to Item's text.
             ((SwtItem) item.getImpl()).text = nsItem.title().getString();
             // Sync native key equivalent to MenuItem's accelerator.
@@ -419,7 +415,9 @@ public class SwtMenu extends SwtWidget implements IMenu {
             }
             add = false;
         }
-        ((SwtWidget) item.getImpl()).createJNIRef();
+        if (item == null || item.getImpl() instanceof SwtWidget) {
+            ((SwtWidget) item.getImpl()).createJNIRef();
+        }
         ((SwtMenuItem) item.getImpl()).register();
         if (add) {
             nsMenu.insertItem(nsItem, index);
@@ -525,7 +523,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
      */
     public boolean getEnabled() {
         checkWidget();
-        return (state & DISABLED) == 0;
+        return (getApi().state & DISABLED) == 0;
     }
 
     /**
@@ -630,7 +628,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
      */
     public int getOrientation() {
         checkWidget();
-        return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+        return getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
     }
 
     /**
@@ -727,13 +725,13 @@ public class SwtMenu extends SwtWidget implements IMenu {
      */
     public boolean getVisible() {
         checkWidget();
-        if ((style & SWT.BAR) != 0) {
+        if ((getApi().style & SWT.BAR) != 0) {
             if (this.getApi() == ((SwtDisplay) display.getImpl()).appMenuBar)
                 return ((SwtDisplay) display.getImpl()).application.isActive();
             else
                 return this.getApi() == ((SwtDecorations) ((SwtDecorations) parent.getImpl()).menuShell().getImpl()).menuBar;
         }
-        if ((style & SWT.POP_UP) != 0) {
+        if ((getApi().style & SWT.POP_UP) != 0) {
             Menu[] popups = ((SwtDisplay) display.getImpl()).popups;
             if (popups == null)
                 return false;
@@ -824,7 +822,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
     void menu_willHighlightItem(long id, long sel, long menu, long itemID) {
         Widget widget = ((SwtDisplay) display.getImpl()).getWidget(itemID);
         if (widget instanceof MenuItem item) {
-            ((SwtWidget) item.getImpl()).sendEvent(SWT.Arm);
+            item.getImpl().sendEvent(SWT.Arm);
         }
     }
 
@@ -861,7 +859,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             MenuItem item = items[i];
             if (((SwtMenuItem) item.getImpl()).updateAccelerator(true))
                 continue;
-            if (((SwtMenuItem) item.getImpl()).accelerator != 0 || strs[i] == null || (style & SWT.BAR) != 0 || (((SwtWidget) item.getImpl()).style & SWT.CASCADE) != 0)
+            if (((SwtMenuItem) item.getImpl()).accelerator != 0 || strs[i] == null || (getApi().style & SWT.BAR) != 0 || (item.style & SWT.CASCADE) != 0)
                 continue;
             int accelIndex = ((SwtItem) item.getImpl()).text.indexOf('\t');
             if (accelIndex != -1) {
@@ -912,7 +910,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
         for (int i = 0; i < itemCount; i++) {
             MenuItem item = items[i];
             ((SwtMenuItem) item.getImpl()).updateAccelerator(false);
-            if ((((SwtWidget) item.getImpl()).style & SWT.SEPARATOR) != 0)
+            if ((item.style & SWT.SEPARATOR) != 0)
                 continue;
             ((SwtMenuItem) item.getImpl()).updateText();
         }
@@ -951,7 +949,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
         super.releaseParent();
         if (cascade != null)
             cascade.setMenu(null);
-        if ((style & SWT.BAR) != 0 && parent != null && this.getApi() == ((SwtDecorations) parent.getImpl()).menuBar) {
+        if ((getApi().style & SWT.BAR) != 0 && parent != null && this.getApi() == ((SwtDecorations) parent.getImpl()).menuBar) {
             parent.setMenuBar(null);
         }
     }
@@ -1064,9 +1062,9 @@ public class SwtMenu extends SwtWidget implements IMenu {
     public void setEnabled(boolean enabled) {
         checkWidget();
         if (enabled) {
-            state &= ~DISABLED;
+            getApi().state &= ~DISABLED;
         } else {
-            state |= DISABLED;
+            getApi().state |= DISABLED;
         }
         //TODO - find a way to disable the menu instead of each item
         for (int i = 0; i < items.length; i++) {
@@ -1179,7 +1177,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
      */
     public void setVisible(boolean visible) {
         checkWidget();
-        if ((style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
+        if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
             return;
         if (visible) {
             ((SwtDisplay) display.getImpl()).addPopup(this.getApi());

@@ -253,7 +253,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         if (OS.isBigSurOrLater())
             width += SwtTree.TEXT_GAP;
         boolean sendMeasure = true;
-        if ((((SwtWidget) parent.getImpl()).style & SWT.VIRTUAL) != 0) {
+        if ((parent.style & SWT.VIRTUAL) != 0) {
             sendMeasure = cached;
         }
         if (sendMeasure && ((SwtWidget) parent.getImpl()).hooks(SWT.MeasureItem)) {
@@ -266,8 +266,8 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
             int height = (int) widget.rowHeight();
             event.width = width;
             event.height = height;
-            event.detail = (cell.isHighlighted() && ((style & SWT.HIDE_SELECTION) == 0 || ((SwtControl) parent.getImpl()).hasFocus())) ? SWT.SELECTED : 0;
-            ((SwtWidget) parent.getImpl()).sendEvent(SWT.MeasureItem, event);
+            event.detail = (cell.isHighlighted() && ((getApi().style & SWT.HIDE_SELECTION) == 0 || ((SwtControl) parent.getImpl()).hasFocus())) ? SWT.SELECTED : 0;
+            parent.getImpl().sendEvent(SWT.MeasureItem, event);
             if (height < event.height) {
                 widget.setRowHeight(event.height);
                 widget.setNeedsDisplay(true);
@@ -518,7 +518,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         ((SwtTree) parent.getImpl()).checkItems();
         NSOutlineView outlineView = (NSOutlineView) parent.view;
         if (((SwtTree) parent.getImpl()).columnCount == 0) {
-            index = (((SwtWidget) parent.getImpl()).style & SWT.CHECK) != 0 ? 1 : 0;
+            index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
         } else {
             TreeColumn column = parent.getColumn(index);
             index = ((SwtTree) parent.getImpl()).indexOf(((SwtTreeColumn) column.getImpl()).nsColumn);
@@ -543,7 +543,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         checkWidget();
         if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
-        if ((((SwtWidget) parent.getImpl()).style & SWT.CHECK) == 0)
+        if ((parent.style & SWT.CHECK) == 0)
             return false;
         return checked;
     }
@@ -669,7 +669,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         checkWidget();
         if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
-        if ((((SwtWidget) parent.getImpl()).style & SWT.CHECK) == 0)
+        if ((parent.style & SWT.CHECK) == 0)
             return false;
         return grayed;
     }
@@ -734,7 +734,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         NSOutlineView outlineView = (NSOutlineView) parent.view;
         Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
         if (((SwtTree) parent.getImpl()).columnCount == 0) {
-            index = (((SwtWidget) parent.getImpl()).style & SWT.CHECK) != 0 ? 1 : 0;
+            index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
         } else {
             TreeColumn column = parent.getColumn(index);
             index = ((SwtTree) parent.getImpl()).indexOf(((SwtTreeColumn) column.getImpl()).nsColumn);
@@ -824,7 +824,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
 
     @Override
     String getNameText() {
-        if ((((SwtWidget) parent.getImpl()).style & SWT.VIRTUAL) != 0) {
+        if ((parent.style & SWT.VIRTUAL) != 0) {
             //$NON-NLS-1$
             if (!cached)
                 return "*virtual*";
@@ -926,7 +926,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         NSOutlineView outlineView = (NSOutlineView) parent.view;
         Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
         if (((SwtTree) parent.getImpl()).columnCount == 0) {
-            index = (((SwtWidget) parent.getImpl()).style & SWT.CHECK) != 0 ? 1 : 0;
+            index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
         } else {
             TreeColumn column = parent.getColumn(index);
             index = ((SwtTree) parent.getImpl()).indexOf(((SwtTreeColumn) column.getImpl()).nsColumn);
@@ -978,8 +978,8 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
     }
 
     @Override
-    boolean isDrawing() {
-        return getDrawing() && ((SwtControl) parent.getImpl()).isDrawing();
+    public boolean isDrawing() {
+        return getDrawing() && parent.getImpl().isDrawing();
     }
 
     void redraw(int columnIndex) {
@@ -993,7 +993,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         } else {
             int index;
             if (((SwtTree) parent.getImpl()).columnCount == 0) {
-                index = (((SwtWidget) parent.getImpl()).style & SWT.CHECK) != 0 ? 1 : 0;
+                index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
             } else {
                 if (0 <= columnIndex && columnIndex < ((SwtTree) parent.getImpl()).columnCount) {
                     index = ((SwtTree) parent.getImpl()).indexOf(((SwtTreeColumn) ((SwtTree) parent.getImpl()).columns[columnIndex].getImpl()).nsColumn);
@@ -1080,7 +1080,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         if (expanded != expand) {
             Event event = new Event();
             event.item = this.getApi();
-            ((SwtWidget) parent.getImpl()).sendEvent(expand ? SWT.Expand : SWT.Collapse, event);
+            parent.getImpl().sendEvent(expand ? SWT.Expand : SWT.Collapse, event);
             if (isDisposed())
                 return;
             expanded = expand;
@@ -1178,7 +1178,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public void setChecked(boolean checked) {
         checkWidget();
-        if ((((SwtWidget) parent.getImpl()).style & SWT.CHECK) == 0)
+        if ((parent.style & SWT.CHECK) == 0)
             return;
         if (this.checked == checked)
             return;
@@ -1379,7 +1379,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public void setGrayed(boolean grayed) {
         checkWidget();
-        if ((((SwtWidget) parent.getImpl()).style & SWT.CHECK) == 0)
+        if ((parent.style & SWT.CHECK) == 0)
             return;
         if (this.grayed == grayed)
             return;

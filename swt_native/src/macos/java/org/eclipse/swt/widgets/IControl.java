@@ -6,7 +6,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 
-public interface IControl extends IWidget {
+public interface IControl extends IWidget, ImplControl {
 
     /**
      * Adds the listener to the collection of listeners who will

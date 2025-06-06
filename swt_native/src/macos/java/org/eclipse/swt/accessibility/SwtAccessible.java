@@ -158,9 +158,11 @@ public class SwtAccessible implements IAccessible {
         if (((SwtAccessible) accessible.getImpl()).delegate != null)
             return ((SwtAccessible) accessible.getImpl()).delegate;
         if (((SwtAccessible) accessible.getImpl()).control != null) {
-            NSView view = ((SwtAccessible) accessible.getImpl()).control.view;
-            long handle = OS.objc_msgSend(view.id, OS.sel_accessibleHandle);
-            return new id(handle);
+            if (((SwtAccessible) accessible.getImpl()).control == null || ((SwtAccessible) accessible.getImpl()).control.getImpl() instanceof SwtControl) {
+                NSView view = ((SwtAccessible) accessible.getImpl()).control.view;
+                long handle = OS.objc_msgSend(view.id, OS.sel_accessibleHandle);
+                return new id(handle);
+            }
         }
         return null;
     }
@@ -1393,7 +1395,10 @@ public class SwtAccessible implements IAccessible {
             return null;
         /* The application can optionally answer an accessible. */
         if (event.accessible != null) {
-            return new id(OS.NSAccessibilityUnignoredAncestor(((SwtAccessible) event.accessible.getImpl()).control.view.id));
+            if (((SwtAccessible) event.accessible.getImpl()).control == null || ((SwtAccessible) event.accessible.getImpl()).control.getImpl() instanceof SwtControl) {
+                return new id(OS.NSAccessibilityUnignoredAncestor(((SwtAccessible) event.accessible.getImpl()).control.view.id));
+            } else
+                return null;
         }
         /* Or the application can answer a valid child ID, including CHILDID_SELF and CHILDID_NONE. */
         if (event.childID == ACC.CHILDID_SELF || event.childID == ACC.CHILDID_NONE) {

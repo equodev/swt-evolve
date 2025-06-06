@@ -178,7 +178,7 @@ public class SwtLink extends SwtControl implements ILink {
 
     @Override
     void createHandle() {
-        state |= THEME_BACKGROUND;
+        getApi().state |= THEME_BACKGROUND;
         NSScrollView scrollWidget = (NSScrollView) new SWTScrollView().alloc();
         scrollWidget.init();
         scrollWidget.setDrawsBackground(false);
@@ -272,7 +272,7 @@ public class SwtLink extends SwtControl implements ILink {
     }
 
     @Override
-    Cursor findCursor() {
+    public Cursor findCursor() {
         Cursor cursor = super.findCursor();
         if (cursor != null)
             return cursor;
@@ -609,7 +609,9 @@ public class SwtLink extends SwtControl implements ILink {
     @Override
     void scrollWheel(long id, long sel, long theEvent) {
         super.scrollWheel(id, sel, theEvent);
-        ((SwtComposite) parent.getImpl()).scrollWheel(parent.view.id, sel, theEvent);
+        if (parent == null || parent.getImpl() instanceof SwtComposite) {
+            ((SwtComposite) parent.getImpl()).scrollWheel(parent.view.id, sel, theEvent);
+        }
     }
 
     @Override
@@ -748,7 +750,7 @@ public class SwtLink extends SwtControl implements ILink {
     @Override
     void setOrientation() {
         NSTextView widget = (NSTextView) getApi().view;
-        int direction = (style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
+        int direction = (getApi().style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
         widget.setBaseWritingDirection(direction);
     }
 

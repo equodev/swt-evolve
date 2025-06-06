@@ -103,7 +103,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         super(parent, style, api);
     }
 
-    Control[] _getChildren() {
+    public Control[] _getChildren() {
         NSView nsClipView = contentView();
         if (nsClipView == null)
             return new Control[0];
@@ -149,7 +149,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 
     @Override
     boolean acceptsFirstMouse(long id, long sel, long theEvent) {
-        if ((state & CANVAS) != 0) {
+        if ((getApi().state & CANVAS) != 0) {
             return true;
         }
         return super.acceptsFirstMouse(id, sel, theEvent);
@@ -157,8 +157,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 
     @Override
     boolean acceptsFirstResponder(long id, long sel) {
-        if ((state & CANVAS) != 0) {
-            if ((style & SWT.NO_FOCUS) == 0 && hooksKeys()) {
+        if ((getApi().state & CANVAS) != 0) {
+            if ((getApi().style & SWT.NO_FOCUS) == 0 && hooksKeys()) {
                 if (contentView().subviews().count() == 0)
                     return true;
             }
@@ -171,7 +171,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     long accessibilityAttributeValue(long id, long sel, long arg0) {
         NSString nsAttributeName = new NSString(arg0);
         long superValue = super.accessibilityAttributeValue(id, sel, arg0);
-        if ((state & CANVAS) != 0) {
+        if ((getApi().state & CANVAS) != 0) {
             // If this Composite has an Accessible that defined a role, return that, unless the
             // supplied role was NSAccessibilityUnknownRole.  In that case, return an SWT-specific constant.
             // This lets the accessibility hierarchy know there's a container here.
@@ -239,9 +239,9 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         Point size;
         if (layout != null) {
             if ((wHint == SWT.DEFAULT) || (hHint == SWT.DEFAULT)) {
-                changed |= (state & LAYOUT_CHANGED) != 0;
+                changed |= (getApi().state & LAYOUT_CHANGED) != 0;
                 size = layout.computeSize(this.getApi(), wHint, hHint, changed);
-                state &= ~LAYOUT_CHANGED;
+                getApi().state &= ~LAYOUT_CHANGED;
             } else {
                 size = new Point(wHint, hHint);
             }
@@ -286,18 +286,18 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 
     @Override
     void createHandle() {
-        state |= CANVAS;
-        boolean scrolled = (style & (SWT.V_SCROLL | SWT.H_SCROLL)) != 0;
+        getApi().state |= CANVAS;
+        boolean scrolled = (getApi().style & (SWT.V_SCROLL | SWT.H_SCROLL)) != 0;
         if (!scrolled)
-            state |= THEME_BACKGROUND;
+            getApi().state |= THEME_BACKGROUND;
         NSRect rect = new NSRect();
         if (scrolled || hasBorder()) {
             NSScrollView scrollWidget = (NSScrollView) new SWTScrollView().alloc();
             scrollWidget.initWithFrame(rect);
             scrollWidget.setDrawsBackground(false);
-            if ((style & SWT.H_SCROLL) != 0)
+            if ((getApi().style & SWT.H_SCROLL) != 0)
                 scrollWidget.setHasHorizontalScroller(true);
-            if ((style & SWT.V_SCROLL) != 0)
+            if ((getApi().style & SWT.V_SCROLL) != 0)
                 scrollWidget.setHasVerticalScroller(true);
             scrollWidget.setBorderType(hasBorder() ? OS.NSBezelBorder : OS.NSNoBorder);
             scrollView = scrollWidget;
@@ -362,7 +362,9 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                 NSGraphicsContext.static_saveGraphicsState();
                 NSGraphicsContext.setCurrentContext(context);
             }
-            ((SwtControl) control.getImpl()).fillBackground(getApi().view, context, rect, imgHeight, data.view, offsetX, offsetY);
+            if (control == null || control.getImpl() instanceof SwtControl) {
+                ((SwtControl) control.getImpl()).fillBackground(getApi().view, context, rect, imgHeight, data.view, offsetX, offsetY);
+            }
             if (data.flippedContext != null) {
                 NSGraphicsContext.static_restoreGraphicsState();
             }
@@ -375,8 +377,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     void drawBackground(long id, NSGraphicsContext context, NSRect rect) {
         if (id != getApi().view.id)
             return;
-        if ((state & CANVAS) != 0) {
-            if ((style & SWT.NO_BACKGROUND) == 0) {
+        if ((getApi().state & CANVAS) != 0) {
+            if ((getApi().style & SWT.NO_BACKGROUND) == 0) {
                 fillBackground(getApi().view, context, rect, -1);
             }
         }
@@ -567,7 +569,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         Control[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
             Control child = children[i];
-            ((SwtControl) child.getImpl()).resetVisibleRegion();
+            child.getImpl().resetVisibleRegion();
             ((SwtControl) child.getImpl()).invalidateChildrenVisibleRegion();
         }
     }
@@ -597,7 +599,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 
     @Override
     boolean isOpaque(long id, long sel) {
-        if ((state & CANVAS) != 0) {
+        if ((getApi().state & CANVAS) != 0) {
             if (id == getApi().view.id) {
                 return region == null && isOpaque();
             }
@@ -620,7 +622,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 
     @Override
     boolean isTabGroup() {
-        if ((state & CANVAS) != 0)
+        if ((getApi().state & CANVAS) != 0)
             return true;
         return super.isTabGroup();
     }
@@ -628,7 +630,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     @Override
     void keyDown(long id, long sel, long theEvent) {
         if (hasFocus()) {
-            if ((state & CANVAS) != 0) {
+            if ((getApi().state & CANVAS) != 0) {
                 Shell s = this.getShell();
                 ((SwtShell) s.getImpl()).deferFlushing();
                 NSArray array = NSArray.arrayWithObject(new NSEvent(theEvent));
@@ -890,12 +892,12 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                 if (control.isDisposed())
                     error(SWT.ERROR_INVALID_ARGUMENT);
                 boolean ancestor = false;
-                Composite composite = ((SwtControl) control.getImpl()).parent;
+                Composite composite = control.getImpl()._parent();
                 while (composite != null) {
                     ancestor = composite == this.getApi();
                     if (ancestor)
                         break;
-                    composite = ((SwtControl) composite.getImpl()).parent;
+                    composite = composite.getImpl()._parent();
                 }
                 if (!ancestor)
                     error(SWT.ERROR_INVALID_PARENT);
@@ -904,15 +906,15 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             Composite[] update = new Composite[16];
             for (int i = 0; i < changed.length; i++) {
                 Control child = changed[i];
-                Composite composite = ((SwtControl) child.getImpl()).parent;
+                Composite composite = child.getImpl()._parent();
                 // Update layout when the list of children has changed.
                 // See bug 497812.
                 ((SwtControl) child.getImpl()).markLayout(false, false);
                 while (child != this.getApi()) {
-                    if (((SwtComposite) composite.getImpl()).layout != null) {
-                        ((SwtWidget) composite.getImpl()).state |= LAYOUT_NEEDED;
-                        if (!((SwtComposite) composite.getImpl()).layout.flushCache(child)) {
-                            ((SwtWidget) composite.getImpl()).state |= LAYOUT_CHANGED;
+                    if (composite.getImpl()._layout() != null) {
+                        composite.state |= LAYOUT_NEEDED;
+                        if (!composite.getImpl()._layout().flushCache(child)) {
+                            composite.state |= LAYOUT_CHANGED;
                         }
                     }
                     if (updateCount == update.length) {
@@ -921,7 +923,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                         update = newUpdate;
                     }
                     child = update[updateCount++] = composite;
-                    composite = ((SwtControl) child.getImpl()).parent;
+                    composite = child.getImpl()._parent();
                 }
             }
             if ((flags & SWT.DEFER) != 0) {
@@ -946,9 +948,9 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     @Override
     void markLayout(boolean changed, boolean all) {
         if (layout != null) {
-            state |= LAYOUT_NEEDED;
+            getApi().state |= LAYOUT_NEEDED;
             if (changed)
-                state |= LAYOUT_CHANGED;
+                getApi().state |= LAYOUT_CHANGED;
         }
         if (all) {
             Control[] children = _getChildren();
@@ -973,19 +975,19 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     @Override
     boolean mouseEvent(long id, long sel, long theEvent, int type) {
         boolean result = super.mouseEvent(id, sel, theEvent, type);
-        return (state & CANVAS) == 0 ? result : new NSEvent(theEvent).type() != OS.NSLeftMouseDown;
+        return (getApi().state & CANVAS) == 0 ? result : new NSEvent(theEvent).type() != OS.NSLeftMouseDown;
     }
 
     @Override
     void pageDown(long id, long sel, long sender) {
-        if ((state & CANVAS) != 0)
+        if ((getApi().state & CANVAS) != 0)
             return;
         super.pageDown(id, sel, sender);
     }
 
     @Override
     void pageUp(long id, long sel, long sender) {
-        if ((state & CANVAS) != 0)
+        if ((getApi().state & CANVAS) != 0)
             return;
         super.pageUp(id, sel, sender);
     }
@@ -997,7 +999,9 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             Control[] _getChildren = _getChildren();
             for (Control child : _getChildren) {
                 if (child != null && !child.isDisposed() && child.isVisible()) {
-                    ((SwtWidget) child.getImpl()).redrawWidget(child.view, redrawChildren);
+                    if (child == null || child.getImpl() instanceof SwtWidget) {
+                        ((SwtWidget) child.getImpl()).redrawWidget(child.view, redrawChildren);
+                    }
                 }
             }
         }
@@ -1024,7 +1028,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 
     @Override
     void reflectScrolledClipView(long id, long sel, long aClipView) {
-        if ((state & CANVAS) != 0)
+        if ((getApi().state & CANVAS) != 0)
             return;
         super.reflectScrolledClipView(id, sel, aClipView);
     }
@@ -1053,10 +1057,10 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     }
 
     void removeControl(Control control) {
-        if (control != null && !(control.getImpl() instanceof SwtControl))
-            return;
-        if (((SwtControl) control.getImpl()).hasFocus())
-            redrawWidget(getApi().view, true);
+        if (control == null || control.getImpl() instanceof SwtControl) {
+            if (((SwtControl) control.getImpl()).hasFocus())
+                redrawWidget(getApi().view, true);
+        }
         fixTabList(control);
     }
 
@@ -1082,7 +1086,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 
     @Override
     void scrollWheel(long id, long sel, long theEvent) {
-        if ((state & CANVAS) != 0) {
+        if ((getApi().state & CANVAS) != 0) {
             NSView view = scrollView != null ? scrollView : this.getApi().view;
             if (id == view.id) {
                 ((SwtShell) getShell().getImpl()).deferFlushing();
@@ -1233,7 +1237,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         checkWidget();
         if (!defer) {
             if (--layoutCount == 0) {
-                if ((state & LAYOUT_CHILD) != 0 || (state & LAYOUT_NEEDED) != 0) {
+                if ((getApi().state & LAYOUT_CHILD) != 0 || (getApi().state & LAYOUT_NEEDED) != 0) {
                     updateLayout(true);
                 }
             }
@@ -1256,8 +1260,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     boolean setTabGroupFocus() {
         if (isTabItem())
             return setTabItemFocus();
-        boolean takeFocus = (style & SWT.NO_FOCUS) == 0;
-        if ((state & CANVAS) != 0)
+        boolean takeFocus = (getApi().style & SWT.NO_FOCUS) == 0;
+        if ((getApi().state & CANVAS) != 0)
             takeFocus = hooksKeys();
         if (takeFocus && setTabItemFocus())
             return true;
@@ -1298,7 +1302,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                     error(SWT.ERROR_INVALID_ARGUMENT);
                 if (control.isDisposed())
                     error(SWT.ERROR_INVALID_ARGUMENT);
-                if (((SwtControl) control.getImpl()).parent != this.getApi())
+                if (control.getImpl()._parent() != this.getApi())
                     error(SWT.ERROR_INVALID_PARENT);
             }
             Control[] newList = new Control[tabList.length];
@@ -1310,8 +1314,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 
     @Override
     int traversalCode(int key, NSEvent theEvent) {
-        if ((state & CANVAS) != 0) {
-            if ((style & SWT.NO_FOCUS) != 0)
+        if ((getApi().state & CANVAS) != 0) {
+            if ((getApi().style & SWT.NO_FOCUS) != 0)
                 return 0;
             if (hooksKeys())
                 return 0;
@@ -1324,7 +1328,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         super.updateBackgroundColor();
         Control[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
-            if ((((SwtWidget) children[i].getImpl()).state & PARENT_BACKGROUND) != 0) {
+            if ((children[i].state & PARENT_BACKGROUND) != 0) {
                 ((SwtControl) children[i].getImpl()).updateBackgroundColor();
             }
         }
@@ -1335,7 +1339,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         super.updateBackgroundImage();
         Control[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
-            if ((((SwtWidget) children[i].getImpl()).state & PARENT_BACKGROUND) != 0) {
+            if ((children[i].state & PARENT_BACKGROUND) != 0) {
                 ((SwtControl) children[i].getImpl()).updateBackgroundImage();
             }
         }
@@ -1364,17 +1368,17 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     void updateLayout(boolean all) {
         Composite parent = findDeferredControl();
         if (parent != null) {
-            ((SwtWidget) parent.getImpl()).state |= LAYOUT_CHILD;
+            parent.state |= LAYOUT_CHILD;
             return;
         }
-        if ((state & LAYOUT_NEEDED) != 0) {
-            boolean changed = (state & LAYOUT_CHANGED) != 0;
-            state &= ~(LAYOUT_NEEDED | LAYOUT_CHANGED);
+        if ((getApi().state & LAYOUT_NEEDED) != 0) {
+            boolean changed = (getApi().state & LAYOUT_CHANGED) != 0;
+            getApi().state &= ~(LAYOUT_NEEDED | LAYOUT_CHANGED);
             ((SwtDisplay) display.getImpl()).runSkin();
             layout.layout(this.getApi(), changed);
         }
         if (all) {
-            state &= ~LAYOUT_CHILD;
+            getApi().state &= ~LAYOUT_CHILD;
             Control[] children = _getChildren();
             for (int i = 0; i < children.length; i++) {
                 ((SwtControl) children[i].getImpl()).updateLayout(all);
@@ -1385,6 +1389,22 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     @Override
     public String toString() {
         return super.toString() + " [layout=" + layout + "]";
+    }
+
+    public Layout _layout() {
+        return layout;
+    }
+
+    public Control[] _tabList() {
+        return tabList;
+    }
+
+    public int _layoutCount() {
+        return layoutCount;
+    }
+
+    public int _backgroundMode() {
+        return backgroundMode;
     }
 
     public Composite getApi() {

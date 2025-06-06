@@ -5,7 +5,7 @@ import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 
-public interface IWidget {
+public interface IWidget extends ImplWidget {
 
     /**
      * Marks the widget to be skinned.

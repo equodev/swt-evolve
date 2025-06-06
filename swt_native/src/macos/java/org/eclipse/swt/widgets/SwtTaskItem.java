@@ -259,7 +259,7 @@ public class SwtTaskItem extends SwtItem implements ITaskItem {
         if (menu != null) {
             if (menu.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if ((((SwtWidget) menu.getImpl()).style & SWT.POP_UP) == 0) {
+            if ((menu.style & SWT.POP_UP) == 0) {
                 error(SWT.ERROR_MENU_NOT_POP_UP);
             }
         }

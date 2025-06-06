@@ -51,6 +51,8 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public abstract class Widget {
 
+    int style, state;
+
     Widget() {
     }
 

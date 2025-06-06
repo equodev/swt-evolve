@@ -118,7 +118,7 @@ public class SwtScale extends SwtControl implements IScale {
         NSSlider widget = (NSSlider) getApi().view;
         double thickness = widget.knobThickness();
         int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT;
-        if ((style & SWT.HORIZONTAL) != 0) {
+        if ((getApi().style & SWT.HORIZONTAL) != 0) {
             height = (int) Math.ceil(thickness);
             width = height * 10;
         } else {
@@ -134,13 +134,13 @@ public class SwtScale extends SwtControl implements IScale {
 
     @Override
     void createHandle() {
-        state |= THEME_BACKGROUND;
+        getApi().state |= THEME_BACKGROUND;
         NSSlider widget = (NSSlider) new SWTSlider().alloc();
         widget.init();
         widget.setMaxValue(100);
         widget.setTarget(widget);
         widget.setAction(OS.sel_sendSelection);
-        if ((style & SWT.VERTICAL) != 0)
+        if ((getApi().style & SWT.VERTICAL) != 0)
             widget.setBoundsRotation(-90);
         getApi().view = widget;
     }

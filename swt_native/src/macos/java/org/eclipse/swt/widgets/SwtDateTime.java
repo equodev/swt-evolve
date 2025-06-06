@@ -164,7 +164,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         NSSize size = widget.cell().cellSize();
         width = (int) Math.ceil(size.width);
         height = (int) Math.ceil(size.height);
-        if ((style & SWT.DROP_DOWN) != 0) {
+        if ((getApi().style & SWT.DROP_DOWN) != 0) {
             size = buttonView.cell().cellSize();
             width += (int) Math.ceil(size.width) - getBezelSize() * 2;
             height = Math.max(height, (int) Math.ceil(size.height));
@@ -187,21 +187,21 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     void createHandle() {
         NSDatePicker widget = (NSDatePicker) new SWTDatePicker().alloc();
         widget.init();
-        int pickerStyle = (style & SWT.DROP_DOWN) != 0 ? OS.NSTextFieldDatePickerStyle : OS.NSTextFieldAndStepperDatePickerStyle;
+        int pickerStyle = (getApi().style & SWT.DROP_DOWN) != 0 ? OS.NSTextFieldDatePickerStyle : OS.NSTextFieldAndStepperDatePickerStyle;
         int elementFlags = 0;
-        if ((style & SWT.CALENDAR) != 0) {
+        if ((getApi().style & SWT.CALENDAR) != 0) {
             pickerStyle = OS.NSClockAndCalendarDatePickerStyle;
             elementFlags = OS.NSYearMonthDayDatePickerElementFlag;
         } else {
-            if ((style & SWT.TIME) != 0) {
-                elementFlags = (style & SWT.SHORT) != 0 ? OS.NSHourMinuteDatePickerElementFlag : OS.NSHourMinuteSecondDatePickerElementFlag;
+            if ((getApi().style & SWT.TIME) != 0) {
+                elementFlags = (getApi().style & SWT.SHORT) != 0 ? OS.NSHourMinuteDatePickerElementFlag : OS.NSHourMinuteSecondDatePickerElementFlag;
             }
-            if ((style & SWT.DATE) != 0) {
-                elementFlags = (style & SWT.SHORT) != 0 ? OS.NSYearMonthDatePickerElementFlag : OS.NSYearMonthDayDatePickerElementFlag;
+            if ((getApi().style & SWT.DATE) != 0) {
+                elementFlags = (getApi().style & SWT.SHORT) != 0 ? OS.NSYearMonthDatePickerElementFlag : OS.NSYearMonthDayDatePickerElementFlag;
             }
         }
-        widget.setBezeled((style & SWT.BORDER) != 0);
-        if ((style & SWT.BORDER) == 0) {
+        widget.setBezeled((getApi().style & SWT.BORDER) != 0);
+        if ((getApi().style & SWT.BORDER) == 0) {
             widget.setFocusRingType(OS.NSFocusRingTypeNone);
         }
         widget.setDrawsBackground(true);
@@ -212,7 +212,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         widget.setTarget(widget);
         widget.setAction(OS.sel_sendSelection);
         getApi().view = widget;
-        if ((this.style & SWT.DROP_DOWN) != 0) {
+        if ((this.getApi().style & SWT.DROP_DOWN) != 0) {
             NSButton buttonWidget = (NSButton) new SWTButton().alloc();
             buttonWidget.init();
             buttonWidget.setButtonType(OS.NSMomentaryLightButton);
@@ -430,7 +430,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     @Override
     String getNameText() {
-        return (style & SWT.TIME) != 0 ? getHours() + ":" + getMinutes() + ":" + getSeconds() : (getMonth() + 1) + "/" + getDay() + "/" + getYear();
+        return (getApi().style & SWT.TIME) != 0 ? getHours() + ":" + getMinutes() + ":" + getSeconds() : (getMonth() + 1) + "/" + getDay() + "/" + getYear();
     }
 
     /**
@@ -480,14 +480,14 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     @Override
     boolean isFlipped(long id, long sel) {
-        if ((style & SWT.CALENDAR) != 0)
+        if ((getApi().style & SWT.CALENDAR) != 0)
             return super.isFlipped(id, sel);
         return true;
     }
 
     @Override
     void keyDown(long id, long sel, long theEvent) {
-        if ((style & SWT.DROP_DOWN) != 0) {
+        if ((getApi().style & SWT.DROP_DOWN) != 0) {
             NSEvent nsEvent = new NSEvent(theEvent);
             int keyCode = SwtDisplay.translateKey(nsEvent.keyCode());
             boolean alt = (nsEvent.modifierFlags() & OS.NSAlternateKeyMask) != 0;
@@ -508,7 +508,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
             }
         }
         super.keyDown(id, sel, theEvent);
-        if ((style & SWT.DROP_DOWN) != 0 && popupCalendar != null) {
+        if ((getApi().style & SWT.DROP_DOWN) != 0 && popupCalendar != null) {
             // Re-sync the calendar to the current date in the field.
             int month = getMonth();
             int day = getDay();
@@ -582,14 +582,14 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
             return result;
         if (type != SWT.KeyDown)
             return result;
-        if ((style & SWT.CALENDAR) == 0) {
+        if ((getApi().style & SWT.CALENDAR) == 0) {
             short keyCode = nsEvent.keyCode();
             switch(keyCode) {
                 case 76:
                 /* KP Enter */
                 case 36:
                     /* Return */
-                    if ((style & SWT.DROP_DOWN) != 0) {
+                    if ((getApi().style & SWT.DROP_DOWN) != 0) {
                         hideCalendar();
                     }
                     sendSelectionEvent(SWT.DefaultSelection);
@@ -601,7 +601,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     @Override
     void sendSelection() {
         NSEvent event = NSApplication.sharedApplication().currentEvent();
-        if (event != null && (style & SWT.CALENDAR) != 0) {
+        if (event != null && (getApi().style & SWT.CALENDAR) != 0) {
             if (event.clickCount() == 2) {
                 sendSelectionEvent(SWT.DefaultSelection);
             } else if (event.type() == OS.NSLeftMouseUp) {
@@ -699,7 +699,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     void setForeground(double[] color) {
         NSColor nsColor;
         if (color == null) {
-            if ((style & SWT.CALENDAR) != 0) {
+            if ((getApi().style & SWT.CALENDAR) != 0) {
                 nsColor = NSColor.controlTextColor();
             } else {
                 nsColor = NSColor.textColor();

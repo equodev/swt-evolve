@@ -3,7 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
-public interface IScrollable extends IControl {
+public interface IScrollable extends IControl, ImplScrollable {
 
     /**
      * Given a desired <em>client area</em> for the receiver

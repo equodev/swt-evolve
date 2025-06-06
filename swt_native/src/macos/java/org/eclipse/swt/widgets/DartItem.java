@@ -207,7 +207,7 @@ public abstract class DartItem extends DartWidget implements IItem {
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         text = string;
-        if ((state & HAS_AUTO_DIRECTION) != 0) {
+        if ((getApi().state & HAS_AUTO_DIRECTION) != 0) {
             updateTextDirection(AUTO_TEXT_DIRECTION);
         }
         getBridge().dirty(this);
@@ -219,15 +219,23 @@ public abstract class DartItem extends DartWidget implements IItem {
 	 * (2) 0 (i.e. match orientation) or FLIP_TEXT_DIRECTION (mismatch orientation).
 	 */
         if (textDirection == AUTO_TEXT_DIRECTION) {
-            state |= HAS_AUTO_DIRECTION;
+            getApi().state |= HAS_AUTO_DIRECTION;
         } else {
-            state &= ~HAS_AUTO_DIRECTION;
+            getApi().state &= ~HAS_AUTO_DIRECTION;
         }
-        if (((style & SWT.FLIP_TEXT_DIRECTION) ^ textDirection) != 0) {
-            style ^= SWT.FLIP_TEXT_DIRECTION;
+        if (((getApi().style & SWT.FLIP_TEXT_DIRECTION) ^ textDirection) != 0) {
+            getApi().style ^= SWT.FLIP_TEXT_DIRECTION;
             return true;
         }
         return textDirection == AUTO_TEXT_DIRECTION;
+    }
+
+    public String _text() {
+        return text;
+    }
+
+    public Image _image() {
+        return image;
     }
 
     public Item getApi() {

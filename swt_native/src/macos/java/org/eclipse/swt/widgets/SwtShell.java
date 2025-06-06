@@ -303,7 +303,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         if (!SwtDisplay.getSheetEnabled()) {
             this.center = parent != null && (style & SWT.SHEET) != 0;
         }
-        this.style = checkStyle(parent, style);
+        this.getApi().style = checkStyle(parent, style);
         this.parent = parent;
         this.display = display;
         if (handle != 0) {
@@ -311,7 +311,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 getApi().view = new NSView(handle);
             } else {
                 window = new NSWindow(handle);
-                state |= FOREIGN_HANDLE;
+                getApi().state |= FOREIGN_HANDLE;
             }
         }
         reskinWidget();
@@ -568,7 +568,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             return false;
         // Only answer if SWT created the window.
         if (window != null) {
-            if ((style & SWT.NO_FOCUS) != 0) {
+            if ((getApi().style & SWT.NO_FOCUS) != 0) {
                 NSEvent nsEvent = NSApplication.sharedApplication().currentEvent();
                 if (nsEvent != null && nsEvent.type() == OS.NSLeftMouseDown) {
                     NSView contentView = window.contentView();
@@ -587,7 +587,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
-    void checkOpen() {
+    public void checkOpen() {
         if (!opened)
             resized = false;
     }
@@ -683,12 +683,12 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     @Override
     void createHandle() {
-        state |= HIDDEN;
+        getApi().state |= HIDDEN;
         if (window == null && getApi().view == null) {
             int styleMask = OS.NSBorderlessWindowMask;
-            if ((style & (SWT.TOOL | SWT.SHEET)) != 0) {
+            if ((getApi().style & (SWT.TOOL | SWT.SHEET)) != 0) {
                 window = (NSWindow) new SWTPanel().alloc();
-                if ((style & SWT.SHEET) != 0) {
+                if ((getApi().style & SWT.SHEET) != 0) {
                     styleMask |= OS.NSDocModalWindowMask;
                 } else {
                     styleMask |= OS.NSUtilityWindowMask | OS.NSNonactivatingPanelMask;
@@ -696,16 +696,16 @@ public class SwtShell extends SwtDecorations implements IShell {
             } else {
                 window = (NSWindow) new SWTWindow().alloc();
             }
-            if ((style & SWT.NO_TRIM) == 0) {
-                if ((style & SWT.TITLE) != 0)
+            if ((getApi().style & SWT.NO_TRIM) == 0) {
+                if ((getApi().style & SWT.TITLE) != 0)
                     styleMask |= OS.NSTitledWindowMask;
-                if ((style & SWT.CLOSE) != 0)
+                if ((getApi().style & SWT.CLOSE) != 0)
                     styleMask |= OS.NSClosableWindowMask;
-                if ((style & SWT.MIN) != 0)
+                if ((getApi().style & SWT.MIN) != 0)
                     styleMask |= OS.NSMiniaturizableWindowMask;
-                if ((style & SWT.MAX) != 0)
+                if ((getApi().style & SWT.MAX) != 0)
                     styleMask |= OS.NSResizableWindowMask;
-                if ((style & SWT.RESIZE) != 0)
+                if ((getApi().style & SWT.RESIZE) != 0)
                     styleMask |= OS.NSResizableWindowMask;
             }
             NSScreen screen = null;
@@ -714,14 +714,14 @@ public class SwtShell extends SwtDecorations implements IShell {
                 screen = parentWindow().screen();
             if (screen == null)
                 screen = primaryScreen;
-            window = window.initWithContentRect(new NSRect(), styleMask, OS.NSBackingStoreBuffered, (style & SWT.ON_TOP) != 0, screen);
-            if ((style & (SWT.NO_TRIM | SWT.BORDER | SWT.SHELL_TRIM)) == 0 || (style & (SWT.TOOL | SWT.SHEET)) != 0) {
+            window = window.initWithContentRect(new NSRect(), styleMask, OS.NSBackingStoreBuffered, (getApi().style & SWT.ON_TOP) != 0, screen);
+            if ((getApi().style & (SWT.NO_TRIM | SWT.BORDER | SWT.SHELL_TRIM)) == 0 || (getApi().style & (SWT.TOOL | SWT.SHEET)) != 0) {
                 window.setHasShadow(true);
             }
-            if ((style & SWT.NO_MOVE) != 0) {
+            if ((getApi().style & SWT.NO_MOVE) != 0) {
                 window.setMovable(false);
             }
-            if ((style & SWT.TOOL) != 0) {
+            if ((getApi().style & SWT.TOOL) != 0) {
                 // Feature in Cocoa: NSPanels that use NSUtilityWindowMask are always promoted to the floating window layer.
                 // Fix is to call setFloatingPanel:NO, which turns off this behavior.
                 ((NSPanel) window).setFloatingPanel(false);
@@ -732,7 +732,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 ((NSPanel) window).setBecomesKeyOnlyIfNeeded(false);
             }
             window.setReleasedWhenClosed(true);
-            if ((style & SWT.NO_TRIM) == 0) {
+            if ((getApi().style & SWT.NO_TRIM) == 0) {
                 NSSize size = window.minSize();
                 size.width = NSWindow.minFrameWidthWithTitle(NSString.string(), styleMask);
                 window.setMinSize(size);
@@ -761,13 +761,13 @@ public class SwtShell extends SwtDecorations implements IShell {
             frame.width = width;
             frame.height = height;
             window.setFrame(frame, false);
-            if ((style & SWT.ON_TOP) != 0) {
+            if ((getApi().style & SWT.ON_TOP) != 0) {
                 window.setLevel(OS.NSStatusWindowLevel);
             }
             super.createHandle();
             topView().setHidden(true);
         } else {
-            state &= ~HIDDEN;
+            getApi().state &= ~HIDDEN;
             if (window != null) {
                 // In the FOREIGN_HANDLE case, 'window' is an NSWindow created on our behalf.
                 // It may already have a content view, so if it does, grab and retain, since we release()
@@ -787,7 +787,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 super.createHandle();
                 parentView.addSubview(topView());
             }
-            style |= SWT.NO_BACKGROUND;
+            getApi().style |= SWT.NO_BACKGROUND;
         }
         windowDelegate = (SWTWindowDelegate) new SWTWindowDelegate().alloc().init();
         if (window == null) {
@@ -797,7 +797,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             int behavior;
             if (parent != null) {
                 behavior = OS.NSWindowCollectionBehaviorMoveToActiveSpace;
-            } else if ((style & SWT.TOOL) != 0) {
+            } else if ((getApi().style & SWT.TOOL) != 0) {
                 behavior = OS.NSWindowCollectionBehaviorFullScreenAuxiliary;
             } else {
                 behavior = OS.NSWindowCollectionBehaviorFullScreenPrimary;
@@ -839,7 +839,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         NSView view = topView();
         if (view != null)
             view.retain();
-        boolean sheet = (style & (SWT.SHEET)) != 0;
+        boolean sheet = (getApi().style & (SWT.SHEET)) != 0;
         releaseHandle();
         if (window != null) {
             if (sheet) {
@@ -887,7 +887,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
-    Cursor findCursor() {
+    public Cursor findCursor() {
         return cursor;
     }
 
@@ -901,8 +901,8 @@ public class SwtShell extends SwtDecorations implements IShell {
 	*/
         if (window == null)
             return false;
-        if ((style & SWT.NO_TRIM) == 0) {
-            if ((style & SWT.RESIZE) != 0 && (style & (SWT.SHEET | SWT.TITLE | SWT.CLOSE | SWT.MIN | SWT.MAX)) == 0) {
+        if ((getApi().style & SWT.NO_TRIM) == 0) {
+            if ((getApi().style & SWT.RESIZE) != 0 && (getApi().style & (SWT.SHEET | SWT.TITLE | SWT.CLOSE | SWT.MIN | SWT.MAX)) == 0) {
                 return true;
             }
         }
@@ -1008,7 +1008,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             NSSize size = new NSSize();
             size.width = width;
             size.height = height;
-            size = NSScrollView.contentSizeForFrameSize(size, (style & SWT.H_SCROLL) != 0, (style & SWT.V_SCROLL) != 0, OS.NSNoBorder);
+            size = NSScrollView.contentSizeForFrameSize(size, (getApi().style & SWT.H_SCROLL) != 0, (getApi().style & SWT.V_SCROLL) != 0, OS.NSNoBorder);
             width = (int) size.width;
             height = (int) size.height;
         }
@@ -1100,18 +1100,18 @@ public class SwtShell extends SwtDecorations implements IShell {
             while (--index >= 0) {
                 Shell modal = modalShells[index];
                 if (modal != null) {
-                    if ((((SwtWidget) modal.getImpl()).style & bits) != 0) {
+                    if ((modal.style & bits) != 0) {
                         Control control = this.getApi();
                         while (control != null) {
                             if (control == modal)
                                 break;
-                            control = ((SwtControl) control.getImpl()).parent;
+                            control = control.getImpl()._parent();
                         }
                         if (control != modal)
                             return modal;
                         break;
                     }
-                    if ((((SwtWidget) modal.getImpl()).style & SWT.PRIMARY_MODAL) != 0) {
+                    if ((modal.style & SWT.PRIMARY_MODAL) != 0) {
                         if (shell == null)
                             shell = getShell();
                         if (((SwtControl) modal.getImpl()).parent == shell)
@@ -1288,7 +1288,7 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public ToolBar getToolBar() {
         checkWidget();
-        if ((style & SWT.NO_TRIM) == 0) {
+        if ((getApi().style & SWT.NO_TRIM) == 0) {
             if (toolBar == null)
                 toolBar = new ToolBar(this.getApi(), SWT.HORIZONTAL | SWT.SMOOTH, true);
         }
@@ -1313,7 +1313,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 ((SwtWidget) control.getImpl()).postEvent(SWT.Help);
                 break;
             }
-            control = ((SwtControl) control.getImpl()).parent;
+            control = control.getImpl()._parent();
         }
     }
 
@@ -1321,12 +1321,12 @@ public class SwtShell extends SwtDecorations implements IShell {
     void invalidateVisibleRegion() {
         resetVisibleRegion();
         if (toolBar != null)
-            ((SwtControl) toolBar.getImpl()).resetVisibleRegion();
+            toolBar.getImpl().resetVisibleRegion();
         invalidateChildrenVisibleRegion();
     }
 
     @Override
-    boolean isDrawing() {
+    public boolean isDrawing() {
         return getDrawing();
     }
 
@@ -1343,11 +1343,11 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     @Override
     boolean isResizing() {
-        return (state & RESIZING) != 0;
+        return (getApi().state & RESIZING) != 0;
     }
 
     @Override
-    boolean isTransparent() {
+    public boolean isTransparent() {
         return false;
     }
 
@@ -1435,7 +1435,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     public void open() {
         checkWidget();
         int mask = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
-        if ((style & mask) != 0) {
+        if ((getApi().style & mask) != 0) {
             ((SwtDisplay) display.getImpl()).setModalShell(this.getApi());
         } else {
             updateModal();
@@ -1456,7 +1456,10 @@ public class SwtShell extends SwtDecorations implements IShell {
     NSWindow parentWindow() {
         if (parent == null)
             return null;
-        return parent.view.window();
+        if (parent == null || parent.getImpl() instanceof SwtComposite) {
+            return parent.view.window();
+        } else
+            return null;
     }
 
     @Override
@@ -1662,8 +1665,6 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     void setActiveControl(Control control, int type) {
-        if (control != null && !(control.getImpl() instanceof SwtControl))
-            return;
         if (control != null && control.isDisposed())
             control = null;
         if (lastActive != null && lastActive.isDisposed())
@@ -1675,8 +1676,8 @@ public class SwtShell extends SwtDecorations implements IShell {
 	* deactivated by finding the first common parent
 	* control.
 	*/
-        Control[] activate = (control == null) ? new Control[0] : ((SwtControl) control.getImpl()).getPath();
-        Control[] deactivate = (lastActive == null) ? new Control[0] : ((SwtControl) lastActive.getImpl()).getPath();
+        Control[] activate = (control == null) ? new Control[0] : control.getImpl().getPath();
+        Control[] deactivate = (lastActive == null) ? new Control[0] : lastActive.getImpl().getPath();
         lastActive = control;
         int index = 0, length = Math.min(activate.length, deactivate.length);
         while (index < length) {
@@ -1692,14 +1693,14 @@ public class SwtShell extends SwtDecorations implements IShell {
 	*/
         for (int i = deactivate.length - 1; i >= index; --i) {
             if (!deactivate[i].isDisposed()) {
-                ((SwtWidget) deactivate[i].getImpl()).sendEvent(SWT.Deactivate);
+                deactivate[i].getImpl().sendEvent(SWT.Deactivate);
             }
         }
         for (int i = activate.length - 1; i >= index; --i) {
             if (!activate[i].isDisposed()) {
                 Event event = new Event();
                 event.detail = type;
-                ((SwtWidget) activate[i].getImpl()).sendEvent(SWT.Activate, event);
+                activate[i].getImpl().sendEvent(SWT.Activate, event);
             }
         }
     }
@@ -1798,7 +1799,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     @Override
     public void setEnabled(boolean enabled) {
         checkWidget();
-        if (((state & DISABLED) == 0) == enabled)
+        if (((getApi().state & DISABLED) == 0) == enabled)
             return;
         super.setEnabled(enabled);
         if (enabled && window != null && window.isMainWindow()) {
@@ -2093,7 +2094,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     @Override
     public void setRegion(Region region) {
         checkWidget();
-        if ((style & SWT.NO_TRIM) == 0)
+        if ((getApi().style & SWT.NO_TRIM) == 0)
             return;
         if (window == null)
             return;
@@ -2141,7 +2142,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     public void setVisible(boolean visible) {
         checkWidget();
         int mask = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
-        if ((style & mask) != 0) {
+        if ((getApi().style & mask) != 0) {
             if (visible) {
                 ((SwtDisplay) display.getImpl()).setModalShell(this.getApi());
             } else {
@@ -2183,13 +2184,13 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     void setWindowVisible(boolean visible, boolean key) {
         if (visible) {
-            if ((state & HIDDEN) == 0)
+            if ((getApi().state & HIDDEN) == 0)
                 return;
-            state &= ~HIDDEN;
+            getApi().state &= ~HIDDEN;
         } else {
-            if ((state & HIDDEN) != 0)
+            if ((getApi().state & HIDDEN) != 0)
                 return;
-            state |= HIDDEN;
+            getApi().state |= HIDDEN;
         }
         if (window != null && (window.isVisible() == visible))
             return;
@@ -2207,7 +2208,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             invalidateVisibleRegion();
             if (window != null) {
                 preventShellActivateJvmCrash();
-                if ((style & (SWT.SHEET)) != 0) {
+                if ((getApi().style & (SWT.SHEET)) != 0) {
                     NSApplication application = NSApplication.sharedApplication();
                     application.beginSheet(window, parentWindow(), null, 0, 0);
                 } else {
@@ -2215,7 +2216,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                     // when its parent is shown.
                     boolean parentMinimized = parent != null && parentWindow().isMiniaturized();
                     if (!parentMinimized) {
-                        if (key && (style & SWT.NO_FOCUS) == 0) {
+                        if (key && (getApi().style & SWT.NO_FOCUS) == 0) {
                             makeKeyAndOrderFront();
                         } else {
                             window.orderFront(null);
@@ -2255,7 +2256,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         } else {
             updateParent(visible);
             if (window != null) {
-                if ((style & (SWT.SHEET)) != 0) {
+                if ((getApi().style & (SWT.SHEET)) != 0) {
                     NSApplication application = NSApplication.sharedApplication();
                     application.endSheet(window, 0);
                 }
@@ -2277,8 +2278,10 @@ public class SwtShell extends SwtDecorations implements IShell {
         if (control != null && (!((SwtControl) control.getImpl()).isActive() || !control.isEnabled()))
             control = null;
         Control trimControl = control;
-        if (trimControl != null && ((SwtControl) trimControl.getImpl()).isTrim(hitView[0]))
-            trimControl = null;
+        if (trimControl == null || trimControl.getImpl() instanceof SwtControl) {
+            if (trimControl != null && ((SwtControl) trimControl.getImpl()).isTrim(hitView[0]))
+                trimControl = null;
+        }
         ((SwtDisplay) display.getImpl()).checkEnterExit(trimControl, null, false);
     }
 
@@ -2352,7 +2355,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                      * its window level resets to its parent's window level. So, we
                      * have to set the level for ON_TOP child window again.
                      */
-                    if ((style & SWT.ON_TOP) != 0) {
+                    if ((getApi().style & SWT.ON_TOP) != 0) {
                         window.setLevel(OS.NSStatusWindowLevel);
                     } else if (OS.VERSION >= OS.VERSION(10, 11, 0)) {
                         /*
@@ -2546,14 +2549,18 @@ public class SwtShell extends SwtDecorations implements IShell {
                     control = null;
                 if (type == OS.NSMouseMoved) {
                     Control trimControl = control;
-                    if (trimControl != null && ((SwtControl) trimControl.getImpl()).isTrim(hitView[0]))
-                        trimControl = null;
+                    if (trimControl == null || trimControl.getImpl() instanceof SwtControl) {
+                        if (trimControl != null && ((SwtControl) trimControl.getImpl()).isTrim(hitView[0]))
+                            trimControl = null;
+                    }
                     ((SwtDisplay) display.getImpl()).checkEnterExit(trimControl, nsEvent, false);
                     // Browser will send MouseMoved in response to a DOM event, so don't send it here.
-                    if (trimControl != null && (((SwtWidget) trimControl.getImpl()).state & WEBKIT_EVENTS_FIX) != 0)
+                    if (trimControl != null && (trimControl.state & WEBKIT_EVENTS_FIX) != 0)
                         trimControl = null;
                     if (trimControl != null)
-                        ((SwtControl) trimControl.getImpl()).sendMouseEvent(nsEvent, type, false);
+                        if (trimControl == null || trimControl.getImpl() instanceof SwtControl) {
+                            ((SwtControl) trimControl.getImpl()).sendMouseEvent(nsEvent, type, false);
+                        }
                 }
                 // Tooltip updating: Find the widget under the cursor. If it changed, clear the tooltip from
                 // the last tracked item and send a tooltip event to make it visible on the new widget.
@@ -2569,7 +2576,9 @@ public class SwtShell extends SwtDecorations implements IShell {
                             eventPoint = hitView[0].window().convertScreenToBase(eventPoint);
                         }
                     }
-                    target = ((SwtControl) control.getImpl()).findTooltip(eventPoint);
+                    if (control == null || control.getImpl() instanceof SwtControl) {
+                        target = ((SwtControl) control.getImpl()).findTooltip(eventPoint);
+                    }
                 }
                 if (((SwtDisplay) display.getImpl()).tooltipControl != control || ((SwtDisplay) display.getImpl()).tooltipTarget != target) {
                     Control oldControl = ((SwtDisplay) display.getImpl()).tooltipControl;

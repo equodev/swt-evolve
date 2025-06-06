@@ -134,7 +134,7 @@ public class SwtText extends SwtScrollable implements IText {
 		*/
             NSSearchFieldCell cell = new NSSearchFieldCell(((NSSearchField) getApi().view).cell());
             if ((style & SWT.ICON_CANCEL) != 0) {
-                this.style |= SWT.ICON_CANCEL;
+                this.getApi().style |= SWT.ICON_CANCEL;
                 NSButtonCell cancelCell = cell.cancelButtonCell();
                 targetCancel = cancelCell.target();
                 actionCancel = cancelCell.action();
@@ -144,7 +144,7 @@ public class SwtText extends SwtScrollable implements IText {
                 cell.setCancelButtonCell(null);
             }
             if ((style & SWT.ICON_SEARCH) != 0) {
-                this.style |= SWT.ICON_SEARCH;
+                this.getApi().style |= SWT.ICON_SEARCH;
                 NSButtonCell searchCell = cell.searchButtonCell();
                 targetSearch = searchCell.target();
                 actionSearch = searchCell.action();
@@ -299,7 +299,7 @@ public class SwtText extends SwtScrollable implements IText {
             if (string == null)
                 return;
         }
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             setSelection(getCharCount());
             insertEditText(string);
         } else {
@@ -324,8 +324,8 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     boolean becomeFirstResponder(long id, long sel) {
-        if ((style & SWT.SINGLE) != 0) {
-            if ((state & DISABLED) != 0)
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            if ((getApi().state & DISABLED) != 0)
                 return false;
             return true;
         }
@@ -379,7 +379,7 @@ public class SwtText extends SwtScrollable implements IText {
     public Point computeSize(int wHint, int hHint, boolean changed) {
         checkWidget();
         int width = 0, height = 0;
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             NSCell cell = ((NSTextField) getApi().view).cell();
             NSSize size = cell.cellSize();
             NSString str = ((NSTextField) getApi().view).stringValue();
@@ -388,7 +388,7 @@ public class SwtText extends SwtScrollable implements IText {
             }
             height = (int) Math.ceil(size.height);
             Point border = null;
-            if ((style & SWT.BORDER) != 0 && (wHint != SWT.DEFAULT || hHint != SWT.DEFAULT)) {
+            if ((getApi().style & SWT.BORDER) != 0 && (wHint != SWT.DEFAULT || hHint != SWT.DEFAULT)) {
                 /* determine the size of the cell without its border */
                 NSRect insets = cell.titleRectForBounds(new NSRect());
                 border = new Point(-(int) Math.ceil(insets.width), -(int) Math.ceil(insets.height));
@@ -413,7 +413,7 @@ public class SwtText extends SwtScrollable implements IText {
             NSTextContainer textContainer = (NSTextContainer) new NSTextContainer().alloc();
             NSSize size = new NSSize();
             size.width = size.height = OS.MAX_TEXT_CONTAINER_SIZE;
-            if ((style & SWT.WRAP) != 0) {
+            if ((getApi().style & SWT.WRAP) != 0) {
                 if (wHint != SWT.DEFAULT)
                     size.width = wHint;
                 if (hHint != SWT.DEFAULT)
@@ -449,9 +449,9 @@ public class SwtText extends SwtScrollable implements IText {
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
         Rectangle result = super.computeTrim(x, y, width, height);
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             NSTextField widget = (NSTextField) getApi().view;
-            if ((style & SWT.SEARCH) != 0) {
+            if ((getApi().style & SWT.SEARCH) != 0) {
                 NSSearchFieldCell cell = new NSSearchFieldCell(widget.cell());
                 int testWidth = 100;
                 NSRect rect = new NSRect();
@@ -484,9 +484,9 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public void copy() {
         checkWidget();
-        if ((style & SWT.PASSWORD) != 0 || echoCharacter != '\0')
+        if ((getApi().style & SWT.PASSWORD) != 0 || echoCharacter != '\0')
             return;
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             Point selection = getSelection();
             if (selection.x == selection.y)
                 return;
@@ -501,24 +501,24 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     void createHandle() {
-        if ((style & SWT.READ_ONLY) != 0) {
-            if ((style & (SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL)) == 0) {
-                state |= THEME_BACKGROUND;
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+            if ((getApi().style & (SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL)) == 0) {
+                getApi().state |= THEME_BACKGROUND;
             }
         }
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             NSTextField widget;
-            if ((style & SWT.PASSWORD) != 0) {
+            if ((getApi().style & SWT.PASSWORD) != 0) {
                 widget = (NSTextField) new SWTSecureTextField().alloc();
-            } else if ((style & SWT.SEARCH) != 0) {
+            } else if ((getApi().style & SWT.SEARCH) != 0) {
                 widget = (NSTextField) new SWTSearchField().alloc();
             } else {
                 widget = (NSTextField) new SWTTextField().alloc();
             }
             widget.init();
             widget.setSelectable(true);
-            widget.setEditable((style & SWT.READ_ONLY) == 0);
-            if ((style & SWT.BORDER) == 0) {
+            widget.setEditable((getApi().style & SWT.READ_ONLY) == 0);
+            if ((getApi().style & SWT.BORDER) == 0) {
                 widget.setFocusRingType(OS.NSFocusRingTypeNone);
                 widget.setBordered(false);
             }
@@ -528,10 +528,10 @@ public class SwtText extends SwtScrollable implements IText {
 		 * Fix is to use NSJustifiedTextAlignment instead, since for
 		 * a single line of text, justified has the same effect as left aligned.
 		 */
-            int align = ((style & SWT.SEARCH) != 0) ? OS.NSTextAlignmentJustified : OS.NSTextAlignmentLeft;
-            if ((style & SWT.CENTER) != 0)
+            int align = ((getApi().style & SWT.SEARCH) != 0) ? OS.NSTextAlignmentJustified : OS.NSTextAlignmentLeft;
+            if ((getApi().style & SWT.CENTER) != 0)
                 align = OS.NSTextAlignmentCenter;
-            if ((style & SWT.RIGHT) != 0)
+            if ((getApi().style & SWT.RIGHT) != 0)
                 align = OS.NSTextAlignmentRight;
             widget.setAlignment(align);
             NSCell cell = widget.cell();
@@ -543,20 +543,20 @@ public class SwtText extends SwtScrollable implements IText {
         } else {
             NSScrollView scrollWidget = (NSScrollView) new SWTScrollView().alloc();
             scrollWidget.init();
-            scrollWidget.setHasVerticalScroller((style & SWT.VERTICAL) != 0);
-            scrollWidget.setHasHorizontalScroller((style & SWT.HORIZONTAL) != 0);
+            scrollWidget.setHasVerticalScroller((getApi().style & SWT.VERTICAL) != 0);
+            scrollWidget.setHasHorizontalScroller((getApi().style & SWT.HORIZONTAL) != 0);
             scrollWidget.setAutoresizesSubviews(true);
-            if ((style & SWT.BORDER) != 0)
+            if ((getApi().style & SWT.BORDER) != 0)
                 scrollWidget.setBorderType(OS.NSBezelBorder);
             NSTextView widget = (NSTextView) new SWTTextView().alloc();
             widget.init();
-            widget.setEditable((style & SWT.READ_ONLY) == 0);
+            widget.setEditable((getApi().style & SWT.READ_ONLY) == 0);
             widget.setAllowsUndo(true);
             NSSize size = new NSSize();
             size.width = size.height = Float.MAX_VALUE;
             widget.setMaxSize(size);
             widget.setAutoresizingMask(OS.NSViewWidthSizable | OS.NSViewHeightSizable);
-            if ((style & SWT.WRAP) == 0) {
+            if ((getApi().style & SWT.WRAP) == 0) {
                 NSTextContainer textContainer = widget.textContainer();
                 widget.setHorizontallyResizable(true);
                 textContainer.setWidthTracksTextView(false);
@@ -565,9 +565,9 @@ public class SwtText extends SwtScrollable implements IText {
                 textContainer.setContainerSize(csize);
             }
             int align = OS.NSTextAlignmentLeft;
-            if ((style & SWT.CENTER) != 0)
+            if ((getApi().style & SWT.CENTER) != 0)
                 align = OS.NSTextAlignmentCenter;
-            if ((style & SWT.RIGHT) != 0)
+            if ((getApi().style & SWT.RIGHT) != 0)
                 align = OS.NSTextAlignmentRight;
             widget.setAlignment(align);
             //		widget.setTarget(widget);
@@ -584,7 +584,7 @@ public class SwtText extends SwtScrollable implements IText {
     @Override
     void createWidget() {
         super.createWidget();
-        if ((style & SWT.PASSWORD) != 0) {
+        if ((getApi().style & SWT.PASSWORD) != 0) {
             NSText fieldEditor = getApi().view.window().fieldEditor(true, getApi().view);
             long nsSecureTextViewClass = OS.objc_lookUpClass("NSSecureTextView");
             if (fieldEditor != null && nsSecureTextViewClass != 0 && fieldEditor.isKindOfClass(nsSecureTextViewClass)) {
@@ -610,9 +610,9 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public void cut() {
         checkWidget();
-        if ((style & SWT.READ_ONLY) != 0)
+        if ((getApi().style & SWT.READ_ONLY) != 0)
             return;
-        if ((style & SWT.PASSWORD) != 0 || echoCharacter != '\0')
+        if ((getApi().style & SWT.PASSWORD) != 0 || echoCharacter != '\0')
             return;
         boolean cut = true;
         char[] oldText = null;
@@ -625,7 +625,7 @@ public class SwtText extends SwtScrollable implements IText {
                     return;
                 if (newText.length() != 0) {
                     copyToClipboard(oldText);
-                    if ((style & SWT.SINGLE) != 0) {
+                    if ((getApi().style & SWT.SINGLE) != 0) {
                         insertEditText(newText);
                     } else {
                         NSTextView widget = (NSTextView) getApi().view;
@@ -636,7 +636,7 @@ public class SwtText extends SwtScrollable implements IText {
             }
         }
         if (cut) {
-            if ((style & SWT.SINGLE) != 0) {
+            if ((getApi().style & SWT.SINGLE) != 0) {
                 if (oldText == null)
                     oldText = getEditText(oldSelection.x, oldSelection.y - 1);
                 copyToClipboard(oldText);
@@ -657,11 +657,11 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     NSFont defaultNSFont() {
-        if ((style & SWT.MULTI) != 0)
+        if ((getApi().style & SWT.MULTI) != 0)
             return ((SwtDisplay) display.getImpl()).textViewFont;
-        if ((style & SWT.SEARCH) != 0)
+        if ((getApi().style & SWT.SEARCH) != 0)
             return ((SwtDisplay) display.getImpl()).searchFieldFont;
-        if ((style & SWT.PASSWORD) != 0)
+        if ((getApi().style & SWT.PASSWORD) != 0)
             return ((SwtDisplay) display.getImpl()).secureTextFieldFont;
         return ((SwtDisplay) display.getImpl()).textFieldFont;
     }
@@ -674,14 +674,14 @@ public class SwtText extends SwtScrollable implements IText {
     @Override
     void deregister() {
         super.deregister();
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             ((SwtDisplay) display.getImpl()).removeWidget(((NSControl) getApi().view).cell());
         }
     }
 
     @Override
     void drawBackground(long id, NSGraphicsContext context, NSRect rect) {
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             if (backgroundImage == null)
                 return;
             if (new NSView(id).isKindOfClass(OS.class_NSText)) {
@@ -689,7 +689,7 @@ public class SwtText extends SwtScrollable implements IText {
                 if (!text.isFieldEditor())
                     return;
             }
-        } else if ((style & SWT.MULTI) != 0) {
+        } else if ((getApi().style & SWT.MULTI) != 0) {
             if (id != scrollView.id)
                 return;
         }
@@ -701,11 +701,13 @@ public class SwtText extends SwtScrollable implements IText {
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        Image image = ((SwtControl) control.getImpl()).backgroundImage;
+        Image image = control.getImpl()._backgroundImage();
         if (image != null && !image.isDisposed()) {
             NSGraphicsContext context = NSGraphicsContext.currentContext();
-            ((SwtControl) control.getImpl()).fillBackground(getApi().view, context, cellFrame, -1);
-        } else if ((style & SWT.SEARCH) != 0) {
+            if (control == null || control.getImpl() instanceof SwtControl) {
+                ((SwtControl) control.getImpl()).fillBackground(getApi().view, context, cellFrame, -1);
+            }
+        } else if ((getApi().style & SWT.SEARCH) != 0) {
             // If no background image is set, call custom paint code for search field
             drawInteriorWithFrame_inView_searchfield(id, sel, cellFrame, viewid);
         }
@@ -782,13 +784,13 @@ public class SwtText extends SwtScrollable implements IText {
     @Override
     void enableWidget(boolean enabled) {
         super.enableWidget(enabled);
-        if ((style & SWT.MULTI) != 0) {
+        if ((getApi().style & SWT.MULTI) != 0) {
             setForeground(this.foreground);
         }
     }
 
     @Override
-    Cursor findCursor() {
+    public Cursor findCursor() {
         Cursor cursor = super.findCursor();
         if (cursor == null && OS.VERSION < OS.VERSION(10, 14, 0)) {
             cursor = display.getSystemCursor(SWT.CURSOR_IBEAM);
@@ -800,7 +802,7 @@ public class SwtText extends SwtScrollable implements IText {
     boolean forceFocus(NSView focusView) {
         receivingFocus = true;
         boolean result = super.forceFocus(focusView);
-        if (((style & SWT.SINGLE) != 0))
+        if (((getApi().style & SWT.SINGLE) != 0))
             ((NSTextField) getApi().view).selectText(null);
         receivingFocus = false;
         return result;
@@ -821,14 +823,14 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public int getCaretLineNumber() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0)
+        if ((getApi().style & SWT.SINGLE) != 0)
             return 0;
         return (getTopPixel() + getCaretLocation().y) / getLineHeight();
     }
 
     @Override
     boolean acceptsFirstResponder(long id, long sel) {
-        if ((style & SWT.READ_ONLY) != 0)
+        if ((getApi().style & SWT.READ_ONLY) != 0)
             return true;
         return super.acceptsFirstResponder(id, sel);
     }
@@ -847,7 +849,7 @@ public class SwtText extends SwtScrollable implements IText {
     public Point getCaretLocation() {
         checkWidget();
         NSTextView widget = null;
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             if (this.hasFocus()) {
                 widget = new NSTextView(getApi().view.window().fieldEditor(true, getApi().view));
             }
@@ -882,7 +884,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public int getCaretPosition() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             return selectionRange != null ? (int) selectionRange.location : 0;
         } else {
             NSRange range = ((NSTextView) getApi().view).selectedRange();
@@ -902,7 +904,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public int getCharCount() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             return (int) ((NSControl) getApi().view).stringValue().length();
         } else {
             return (int) ((NSTextView) getApi().view).textStorage().length();
@@ -963,7 +965,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public boolean getEditable() {
         checkWidget();
-        return (style & SWT.READ_ONLY) == 0;
+        return (getApi().style & SWT.READ_ONLY) == 0;
     }
 
     char[] getEditText() {
@@ -973,7 +975,7 @@ public class SwtText extends SwtScrollable implements IText {
             return text;
         }
         NSString str = null;
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             str = ((NSTextField) getApi().view).stringValue();
         } else {
             str = ((NSTextView) getApi().view).textStorage().string();
@@ -988,7 +990,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     char[] getEditText(int start, int end) {
         NSString str = null;
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             str = ((NSTextField) getApi().view).stringValue();
         } else {
             str = ((NSTextView) getApi().view).textStorage().string();
@@ -1037,7 +1039,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public int getLineCount() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0)
+        if ((getApi().style & SWT.SINGLE) != 0)
             return 1;
         NSTextStorage storage = ((NSTextView) getApi().view).textStorage();
         int count = (int) storage.paragraphs().count();
@@ -1079,7 +1081,7 @@ public class SwtText extends SwtScrollable implements IText {
     public int getLineHeight() {
         checkWidget();
         Font font = this.font != null ? this.font : defaultFont();
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             NSDictionary dict = NSDictionary.dictionaryWithObject(font.handle, OS.NSFontAttributeName);
             NSString str = NSString.stringWith(" ");
             NSAttributedString attribStr = ((NSAttributedString) new NSAttributedString().alloc()).initWithString(str, dict);
@@ -1108,7 +1110,7 @@ public class SwtText extends SwtScrollable implements IText {
     @Override
     public int getOrientation() {
         checkWidget();
-        return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+        return getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
     }
 
     /**
@@ -1134,7 +1136,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     long getPosition(long x, long y) {
         //	checkWidget ();
-        if ((style & SWT.MULTI) != 0) {
+        if ((getApi().style & SWT.MULTI) != 0) {
             NSTextView widget = (NSTextView) getApi().view;
             NSPoint viewLocation = new NSPoint();
             viewLocation.x = x;
@@ -1166,7 +1168,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public Point getSelection() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             if (selectionRange == null) {
                 NSString str = ((NSTextField) getApi().view).stringValue();
                 return new Point((int) str.length(), (int) str.length());
@@ -1191,7 +1193,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public int getSelectionCount() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             return selectionRange != null ? (int) selectionRange.length : 0;
         } else {
             NSTextView widget = (NSTextView) getApi().view;
@@ -1212,7 +1214,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public String getSelectionText() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             Point selection = getSelection();
             if (selection.x == selection.y)
                 return "";
@@ -1264,7 +1266,7 @@ public class SwtText extends SwtScrollable implements IText {
     public String getText() {
         checkWidget();
         NSString str;
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             return new String(getEditText());
         } else {
             str = ((NSTextView) getApi().view).textStorage().string();
@@ -1295,7 +1297,7 @@ public class SwtText extends SwtScrollable implements IText {
         //$NON-NLS-1$
         if (!(start <= end && 0 <= end))
             return "";
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             return new String(getEditText(start, end));
         }
         NSTextStorage storage = ((NSTextView) getApi().view).textStorage();
@@ -1339,7 +1341,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public char[] getTextChars() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             return getEditText();
         } else {
             NSString str = ((NSTextView) getApi().view).textStorage().string();
@@ -1389,7 +1391,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public int getTopIndex() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0)
+        if ((getApi().style & SWT.SINGLE) != 0)
             return 0;
         return getTopPixel() / getLineHeight();
     }
@@ -1416,7 +1418,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public int getTopPixel() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0)
+        if ((getApi().style & SWT.SINGLE) != 0)
             return 0;
         return (int) scrollView.contentView().bounds().y;
     }
@@ -1447,7 +1449,7 @@ public class SwtText extends SwtScrollable implements IText {
             if (string == null)
                 return;
         }
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             insertEditText(string);
         } else {
             NSTextView widget = (NSTextView) getApi().view;
@@ -1515,7 +1517,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     boolean isEventView(long id) {
-        if ((style & SWT.MULTI) != 0)
+        if ((getApi().style & SWT.MULTI) != 0)
             return super.isEventView(id);
         return true;
     }
@@ -1523,10 +1525,10 @@ public class SwtText extends SwtScrollable implements IText {
     @Override
     boolean isNeeded(ScrollBar scrollbar) {
         boolean result = false;
-        if ((style & SWT.MULTI) != 0) {
+        if ((getApi().style & SWT.MULTI) != 0) {
             NSRect docFrame = scrollView.documentView().frame();
             NSRect contentFrame = scrollView.contentView().frame();
-            if ((((SwtWidget) scrollbar.getImpl()).style & SWT.VERTICAL) != 0) {
+            if ((scrollbar.style & SWT.VERTICAL) != 0) {
                 result = docFrame.height > contentFrame.height;
             } else {
                 result = docFrame.width > contentFrame.width;
@@ -1553,7 +1555,7 @@ public class SwtText extends SwtScrollable implements IText {
     }
 
     void _paste(boolean enableUndo) {
-        if ((style & SWT.READ_ONLY) != 0)
+        if ((getApi().style & SWT.READ_ONLY) != 0)
             return;
         boolean paste = true;
         String oldText = null;
@@ -1565,7 +1567,7 @@ public class SwtText extends SwtScrollable implements IText {
                 if (newText == null)
                     return;
                 if (!newText.equals(oldText)) {
-                    if ((style & SWT.SINGLE) != 0) {
+                    if ((getApi().style & SWT.SINGLE) != 0) {
                         _insertEditText(newText, enableUndo);
                     } else {
                         NSTextView textView = (NSTextView) getApi().view;
@@ -1583,7 +1585,7 @@ public class SwtText extends SwtScrollable implements IText {
             }
         }
         if (paste) {
-            if ((style & SWT.SINGLE) != 0) {
+            if ((getApi().style & SWT.SINGLE) != 0) {
                 if (oldText == null)
                     oldText = getClipboardText();
                 if (oldText == null)
@@ -1610,7 +1612,7 @@ public class SwtText extends SwtScrollable implements IText {
     @Override
     void register() {
         super.register();
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             ((SwtDisplay) display.getImpl()).addWidget(((NSControl) getApi().view).cell(), this.getApi());
         }
     }
@@ -1618,7 +1620,7 @@ public class SwtText extends SwtScrollable implements IText {
     @Override
     void releaseWidget() {
         super.releaseWidget();
-        if ((style & SWT.SINGLE) != 0)
+        if ((getApi().style & SWT.SINGLE) != 0)
             ((NSControl) getApi().view).abortEditing();
         hiddenText = null;
         message = null;
@@ -1741,7 +1743,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public void selectAll() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             setSelection(0, getCharCount());
         } else {
             ((NSTextView) getApi().view).selectAll(null);
@@ -1761,12 +1763,12 @@ public class SwtText extends SwtScrollable implements IText {
             switch(keyCode) {
                 case 7:
                     /* X */
-                    if ((style & SWT.PASSWORD) == 0)
+                    if ((getApi().style & SWT.PASSWORD) == 0)
                         cut();
                     return false;
                 case 8:
                     /* C */
-                    if ((style & SWT.PASSWORD) == 0)
+                    if ((getApi().style & SWT.PASSWORD) == 0)
                         copy();
                     return false;
                 case 9:
@@ -1781,7 +1783,7 @@ public class SwtText extends SwtScrollable implements IText {
         }
         if (isDisposed())
             return false;
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             short keyCode = nsEvent.keyCode();
             switch(keyCode) {
                 case 76:
@@ -1805,7 +1807,7 @@ public class SwtText extends SwtScrollable implements IText {
             switch(event.keyCode) {
                 case 'z':
                     NSUndoManager undoManager = getApi().view.undoManager();
-                    if (undoManager == null && (style & SWT.SINGLE) != 0) {
+                    if (undoManager == null && (getApi().style & SWT.SINGLE) != 0) {
                         NSText fieldEditor = ((NSTextField) getApi().view).currentEditor();
                         undoManager = fieldEditor.undoManager();
                     }
@@ -1852,7 +1854,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     void setBackgroundColor(NSColor nsColor) {
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             NSTextField textField = (NSTextField) getApi().view;
             textField.setBackgroundColor(nsColor);
             /*
@@ -1860,7 +1862,7 @@ public class SwtText extends SwtScrollable implements IText {
 		 * as the field editor is drawn on top. Set drawsBackground to true
 		 * for the field editor.
 		 */
-            if ((style & SWT.SEARCH) == 0 && hasFocus()) {
+            if ((getApi().style & SWT.SEARCH) == 0 && hasFocus()) {
                 NSText fieldEditor = textField.currentEditor();
                 if (fieldEditor != null) {
                     fieldEditor.setDrawsBackground(true);
@@ -1873,7 +1875,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     void setBackgroundImage(NSImage image) {
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             NSTextField widget = (NSTextField) getApi().view;
             widget.setDrawsBackground(image == null);
         } else {
@@ -1932,9 +1934,9 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public void setEchoChar(char echo) {
         checkWidget();
-        if ((style & SWT.MULTI) != 0)
+        if ((getApi().style & SWT.MULTI) != 0)
             return;
-        if ((style & SWT.PASSWORD) == 0) {
+        if ((getApi().style & SWT.PASSWORD) == 0) {
             Point selection = getSelection();
             char[] text = getTextChars();
             echoCharacter = echo;
@@ -1957,11 +1959,11 @@ public class SwtText extends SwtScrollable implements IText {
     public void setEditable(boolean editable) {
         checkWidget();
         if (editable) {
-            style &= ~SWT.READ_ONLY;
+            getApi().style &= ~SWT.READ_ONLY;
         } else {
-            style |= SWT.READ_ONLY;
+            getApi().style |= SWT.READ_ONLY;
         }
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             ((NSTextField) getApi().view).setEditable(editable);
         } else {
             ((NSTextView) getApi().view).setEditable(editable);
@@ -1977,7 +1979,7 @@ public class SwtText extends SwtScrollable implements IText {
     void setEditText(char[] text) {
         char[] buffer;
         int length = Math.min(text.length, textLimit);
-        if ((style & SWT.PASSWORD) == 0 && echoCharacter != '\0') {
+        if ((getApi().style & SWT.PASSWORD) == 0 && echoCharacter != '\0') {
             hiddenText = new char[length];
             buffer = new char[length];
             for (int i = 0; i < length; i++) {
@@ -2006,7 +2008,7 @@ public class SwtText extends SwtScrollable implements IText {
 	* focus, its editor is not properly positioned within the
 	* widget.   The fix is to reposition the editor.
 	*/
-        if ((style & SWT.SEARCH) != 0) {
+        if ((getApi().style & SWT.SEARCH) != 0) {
             NSSearchField widget = (NSSearchField) getApi().view;
             NSText editor = widget.currentEditor();
             if (editor != null) {
@@ -2021,7 +2023,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     void setFont(NSFont font) {
-        if ((style & SWT.MULTI) != 0) {
+        if ((getApi().style & SWT.MULTI) != 0) {
             ((NSTextView) getApi().view).setFont(font);
             return;
         }
@@ -2033,15 +2035,15 @@ public class SwtText extends SwtScrollable implements IText {
         NSColor nsColor;
         if (color == null) {
             nsColor = NSColor.textColor();
-            if ((style & SWT.MULTI) != 0 && !isEnabled())
+            if ((getApi().style & SWT.MULTI) != 0 && !isEnabled())
                 nsColor = NSColor.disabledControlTextColor();
         } else {
             double alpha = 1;
-            if ((style & SWT.MULTI) != 0 && !isEnabled())
+            if ((getApi().style & SWT.MULTI) != 0 && !isEnabled())
                 alpha = 0.5f;
             nsColor = NSColor.colorWithDeviceRed(color[0], color[1], color[2], alpha);
         }
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             ((NSTextField) getApi().view).setTextColor(nsColor);
         } else {
             ((NSTextView) getApi().view).setTextColor(nsColor);
@@ -2072,8 +2074,8 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     void setOrientation() {
-        int direction = (style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
-        if ((style & SWT.SINGLE) != 0) {
+        int direction = (getApi().style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
+        if ((getApi().style & SWT.SINGLE) != 0) {
             NSTextField widget = (NSTextField) getApi().view;
             widget.setBaseWritingDirection(direction);
         } else {
@@ -2106,7 +2108,7 @@ public class SwtText extends SwtScrollable implements IText {
         if (message == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         this.message = message;
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             NSString str = NSString.stringWith(message);
             NSTextFieldCell cell = new NSTextFieldCell(((NSTextField) getApi().view).cell());
             cell.setPlaceholderString(str);
@@ -2168,7 +2170,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public void setSelection(int start, int end) {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             NSString str = ((NSTextField) getApi().view).stringValue();
             int length = (int) str.length();
             int selStart = Math.min(Math.max(Math.min(start, end), 0), length);
@@ -2250,7 +2252,7 @@ public class SwtText extends SwtScrollable implements IText {
         if (this.tabs == tabs)
             return;
         this.tabs = tabs;
-        if ((style & SWT.SINGLE) != 0)
+        if ((getApi().style & SWT.SINGLE) != 0)
             return;
         double size = textExtent("s").width * tabs;
         NSTextView widget = (NSTextView) getApi().view;
@@ -2293,7 +2295,7 @@ public class SwtText extends SwtScrollable implements IText {
             if (string == null)
                 return;
         }
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             setEditText(string);
             NSText fieldEditor = ((NSControl) getApi().view).currentEditor();
             if (fieldEditor != null) {
@@ -2349,7 +2351,7 @@ public class SwtText extends SwtScrollable implements IText {
             text = new char[string.length()];
             string.getChars(0, text.length, text, 0);
         }
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             setEditText(text);
             NSText fieldEditor = ((NSControl) getApi().view).currentEditor();
             if (fieldEditor != null) {
@@ -2414,7 +2416,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public void setTopIndex(int index) {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0)
+        if ((getApi().style & SWT.SINGLE) != 0)
             return;
         int row = Math.max(0, Math.min(index, getLineCount() - 1));
         NSPoint pt = new NSPoint();
@@ -2429,7 +2431,7 @@ public class SwtText extends SwtScrollable implements IText {
         OS.memmove(range, affectedCharRange, NSRange.sizeof);
         boolean result = callSuperBoolean(id, sel, range, replacementString);
         NSString nsString = new NSString(replacementString);
-        if (!hooks(SWT.Verify) && ((echoCharacter == '\0') || (style & SWT.PASSWORD) != 0)) {
+        if (!hooks(SWT.Verify) && ((echoCharacter == '\0') || (getApi().style & SWT.PASSWORD) != 0)) {
             if (!result || (getCharCount() - range.length + nsString.length() > textLimit)) {
                 return false;
             }
@@ -2449,7 +2451,7 @@ public class SwtText extends SwtScrollable implements IText {
         if (getCharCount() - range.length + newText.length() > textLimit) {
             return false;
         }
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             if (text != newText || echoCharacter != '\0') {
                 //handle backspace and delete
                 if (range.length == 1) {
@@ -2486,7 +2488,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public void showSelection() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             setSelection(getSelection());
         } else {
             NSTextView widget = (NSTextView) getApi().view;
@@ -2503,7 +2505,7 @@ public class SwtText extends SwtScrollable implements IText {
 
     @Override
     void textDidChange(long id, long sel, long aNotification) {
-        if ((style & SWT.SINGLE) != 0)
+        if ((getApi().style & SWT.SINGLE) != 0)
             super.textDidChange(id, sel, aNotification);
         postEvent(SWT.Modify);
     }
@@ -2526,9 +2528,9 @@ public class SwtText extends SwtScrollable implements IText {
     @Override
     int traversalCode(int key, NSEvent theEvent) {
         int bits = super.traversalCode(key, theEvent);
-        if ((style & SWT.READ_ONLY) != 0)
+        if ((getApi().style & SWT.READ_ONLY) != 0)
             return bits;
-        if ((style & SWT.MULTI) != 0) {
+        if ((getApi().style & SWT.MULTI) != 0) {
             bits &= ~SWT.TRAVERSE_RETURN;
             if (key == 48 && /* Tab */
             theEvent != null) {
@@ -2558,7 +2560,7 @@ public class SwtText extends SwtScrollable implements IText {
             return;
         lastAppAppearance = ((SwtDisplay) display.getImpl()).appAppearance;
         // Only multi-line controls are affected
-        if ((style & SWT.MULTI) == 0)
+        if ((getApi().style & SWT.MULTI) == 0)
             return;
         if (foreground == null) {
             if (getEnabled()) {

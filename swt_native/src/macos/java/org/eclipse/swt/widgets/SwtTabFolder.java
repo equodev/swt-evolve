@@ -167,15 +167,13 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         NSTabView widget = (NSTabView) new SWTTabView().alloc();
         widget.init();
         widget.setDelegate(widget);
-        if ((style & SWT.BOTTOM) != 0) {
+        if ((getApi().style & SWT.BOTTOM) != 0) {
             widget.setTabViewType(OS.NSBottomTabsBezelBorder);
         }
         getApi().view = widget;
     }
 
     void createItem(TabItem item, int index) {
-        if (item != null && !(item.getImpl() instanceof SwtWidget))
-            return;
         int count = itemCount;
         if (!(0 <= index && index <= count))
             error(SWT.ERROR_INVALID_RANGE);
@@ -189,7 +187,9 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         itemCount++;
         NSTabViewItem nsItem = (NSTabViewItem) new SWTTabViewItem().alloc().init();
         ((SwtTabItem) item.getImpl()).nsItem = nsItem;
-        ((SwtWidget) item.getImpl()).createJNIRef();
+        if (item == null || item.getImpl() instanceof SwtWidget) {
+            ((SwtWidget) item.getImpl()).createJNIRef();
+        }
         ((SwtTabItem) item.getImpl()).register();
         ((NSTabView) getApi().view).insertTabViewItem(nsItem, index);
     }
@@ -437,7 +437,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
     }
 
     @Override
-    boolean isTransparent() {
+    public boolean isTransparent() {
         return true;
     }
 
@@ -721,9 +721,11 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
 		*/
             Control control = ((SwtTabItem) item.getImpl()).control;
             if (control != null) {
-                NSView topView = ((SwtControl) control.getImpl()).topView();
-                if (topView.superview() == null) {
-                    contentView().addSubview(topView, OS.NSWindowBelow, null);
+                if (control == null || control.getImpl() instanceof SwtControl) {
+                    NSView topView = ((SwtControl) control.getImpl()).topView();
+                    if (topView.superview() == null) {
+                        contentView().addSubview(topView, OS.NSWindowBelow, null);
+                    }
                 }
             }
             if (((SwtTabItem) item.getImpl()).nsItem.id == tabViewItem) {

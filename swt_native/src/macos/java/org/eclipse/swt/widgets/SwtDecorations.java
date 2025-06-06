@@ -224,7 +224,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
             defaultButton = null;
         if (menus == null)
             return;
-        Menu menu = ((SwtControl) control.getImpl()).menu;
+        Menu menu = control.getImpl()._menu();
         if (menu != null) {
             int index = 0;
             while (index < menus.length) {
@@ -504,23 +504,25 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
      * </ul>
      */
     public void setDefaultButton(Button button) {
-        if (button != null && !(button.getImpl() instanceof SwtControl))
-            return;
         checkWidget();
         if (button != null) {
             if (button.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if (((SwtControl) button.getImpl()).menuShell() != this.getApi())
-                error(SWT.ERROR_INVALID_PARENT);
-            if ((((SwtWidget) button.getImpl()).style & SWT.PUSH) == 0)
+            if (button == null || button.getImpl() instanceof SwtControl) {
+                if (((SwtControl) button.getImpl()).menuShell() != this.getApi())
+                    error(SWT.ERROR_INVALID_PARENT);
+            }
+            if ((button.style & SWT.PUSH) == 0)
                 return;
         }
         if (button == defaultButton)
             return;
         defaultButton = button;
         NSButtonCell cell = null;
-        if (defaultButton != null && (((SwtWidget) defaultButton.getImpl()).style & SWT.PUSH) != 0) {
-            cell = new NSButtonCell(((NSButton) defaultButton.view).cell());
+        if (defaultButton != null && (defaultButton.style & SWT.PUSH) != 0) {
+            if (defaultButton == null || defaultButton.getImpl() instanceof SwtButton) {
+                cell = new NSButtonCell(((NSButton) defaultButton.view).cell());
+            }
         }
         getApi().view.window().setDefaultButtonCell(cell);
         ((SwtDisplay) display.getImpl()).updateDefaultButton();
@@ -655,7 +657,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
         if (menu != null) {
             if (menu.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if ((((SwtWidget) menu.getImpl()).style & SWT.BAR) == 0)
+            if ((menu.style & SWT.BAR) == 0)
                 error(SWT.ERROR_MENU_NOT_BAR);
             if (((SwtMenu) menu.getImpl()).parent != this.getApi())
                 error(SWT.ERROR_INVALID_PARENT);

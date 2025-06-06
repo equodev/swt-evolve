@@ -151,7 +151,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
         if (!((SwtDisplay) display.getImpl()).isValidThread()) {
             error(SWT.ERROR_THREAD_INVALID_ACCESS);
         }
-        this.style = checkStyle(style);
+        this.getApi().style = checkStyle(style);
         this.display = display;
         reskinWidget();
     }
@@ -450,7 +450,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
             Event event = new Event();
             event.x = newX;
             event.y = newY;
-            if ((style & SWT.RESIZE) != 0) {
+            if ((getApi().style & SWT.RESIZE) != 0) {
                 boolean orientationInit = resizeRectangles(newX - oldX, newY - oldY);
                 inEvent = true;
                 sendEvent(SWT.Resize, event);
@@ -656,7 +656,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
             event.x = newX;
             event.y = newY;
             Point cursorPos;
-            if ((style & SWT.RESIZE) != 0) {
+            if ((getApi().style & SWT.RESIZE) != 0) {
                 resizeRectangles(xChange, yChange);
                 inEvent = true;
                 sendEvent(SWT.Resize, event);
@@ -759,13 +759,13 @@ public class SwtTracker extends SwtWidget implements ITracker {
     void moveRectangles(int xChange, int yChange) {
         if (bounds == null)
             return;
-        if (xChange < 0 && ((style & SWT.LEFT) == 0))
+        if (xChange < 0 && ((getApi().style & SWT.LEFT) == 0))
             xChange = 0;
-        if (xChange > 0 && ((style & SWT.RIGHT) == 0))
+        if (xChange > 0 && ((getApi().style & SWT.RIGHT) == 0))
             xChange = 0;
-        if (yChange < 0 && ((style & SWT.UP) == 0))
+        if (yChange < 0 && ((getApi().style & SWT.UP) == 0))
             yChange = 0;
-        if (yChange > 0 && ((style & SWT.DOWN) == 0))
+        if (yChange > 0 && ((getApi().style & SWT.DOWN) == 0))
             yChange = 0;
         if (xChange == 0 && yChange == 0)
             return;
@@ -837,11 +837,11 @@ public class SwtTracker extends SwtWidget implements ITracker {
 	* If exactly one of UP/DOWN is specified as a style then set the cursor
 	* orientation accordingly (the same is done for LEFT/RIGHT styles below).
 	*/
-        int vStyle = style & (SWT.UP | SWT.DOWN);
+        int vStyle = getApi().style & (SWT.UP | SWT.DOWN);
         if (vStyle == SWT.UP || vStyle == SWT.DOWN) {
             cursorOrientation |= vStyle;
         }
-        int hStyle = style & (SWT.LEFT | SWT.RIGHT);
+        int hStyle = getApi().style & (SWT.LEFT | SWT.RIGHT);
         if (hStyle == SWT.LEFT || hStyle == SWT.RIGHT) {
             cursorOrientation |= hStyle;
         }
@@ -863,7 +863,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
         if (down) {
             cursorPos = display.getCursorLocation();
         } else {
-            if ((style & SWT.RESIZE) != 0) {
+            if ((getApi().style & SWT.RESIZE) != 0) {
                 cursorPos = adjustResizeCursor(true);
             } else {
                 cursorPos = adjustMoveCursor();
@@ -1035,25 +1035,25 @@ public class SwtTracker extends SwtWidget implements ITracker {
 	* If the cursor orientation has not been set in the orientation of
 	* this change then try to set it here.
 	*/
-        if (xChange < 0 && ((style & SWT.LEFT) != 0) && ((cursorOrientation & SWT.RIGHT) == 0)) {
+        if (xChange < 0 && ((getApi().style & SWT.LEFT) != 0) && ((cursorOrientation & SWT.RIGHT) == 0)) {
             if ((cursorOrientation & SWT.LEFT) == 0) {
                 cursorOrientation |= SWT.LEFT;
                 orientationInit = true;
             }
         }
-        if (xChange > 0 && ((style & SWT.RIGHT) != 0) && ((cursorOrientation & SWT.LEFT) == 0)) {
+        if (xChange > 0 && ((getApi().style & SWT.RIGHT) != 0) && ((cursorOrientation & SWT.LEFT) == 0)) {
             if ((cursorOrientation & SWT.RIGHT) == 0) {
                 cursorOrientation |= SWT.RIGHT;
                 orientationInit = true;
             }
         }
-        if (yChange < 0 && ((style & SWT.UP) != 0) && ((cursorOrientation & SWT.DOWN) == 0)) {
+        if (yChange < 0 && ((getApi().style & SWT.UP) != 0) && ((cursorOrientation & SWT.DOWN) == 0)) {
             if ((cursorOrientation & SWT.UP) == 0) {
                 cursorOrientation |= SWT.UP;
                 orientationInit = true;
             }
         }
-        if (yChange > 0 && ((style & SWT.DOWN) != 0) && ((cursorOrientation & SWT.UP) == 0)) {
+        if (yChange > 0 && ((getApi().style & SWT.DOWN) != 0) && ((cursorOrientation & SWT.UP) == 0)) {
             if ((cursorOrientation & SWT.DOWN) == 0) {
                 cursorOrientation |= SWT.DOWN;
                 orientationInit = true;
@@ -1067,7 +1067,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
 	 */
         if ((cursorOrientation & SWT.LEFT) != 0) {
             if (xChange > bounds.width) {
-                if ((style & SWT.RIGHT) == 0)
+                if ((getApi().style & SWT.RIGHT) == 0)
                     return orientationInit;
                 cursorOrientation |= SWT.RIGHT;
                 cursorOrientation &= ~SWT.LEFT;
@@ -1083,7 +1083,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
             }
         } else if ((cursorOrientation & SWT.RIGHT) != 0) {
             if (bounds.width < -xChange) {
-                if ((style & SWT.LEFT) == 0)
+                if ((getApi().style & SWT.LEFT) == 0)
                     return orientationInit;
                 cursorOrientation |= SWT.LEFT;
                 cursorOrientation &= ~SWT.RIGHT;
@@ -1099,7 +1099,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
         }
         if ((cursorOrientation & SWT.UP) != 0) {
             if (yChange > bounds.height) {
-                if ((style & SWT.DOWN) == 0)
+                if ((getApi().style & SWT.DOWN) == 0)
                     return orientationInit;
                 cursorOrientation |= SWT.DOWN;
                 cursorOrientation &= ~SWT.UP;
@@ -1115,7 +1115,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
             }
         } else if ((cursorOrientation & SWT.DOWN) != 0) {
             if (bounds.height < -yChange) {
-                if ((style & SWT.UP) == 0)
+                if ((getApi().style & SWT.UP) == 0)
                     return orientationInit;
                 cursorOrientation |= SWT.UP;
                 cursorOrientation &= ~SWT.DOWN;

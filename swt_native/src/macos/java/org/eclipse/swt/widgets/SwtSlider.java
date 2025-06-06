@@ -161,7 +161,7 @@ public class SwtSlider extends SwtControl implements ISlider {
     public Point computeSize(int wHint, int hHint, boolean changed) {
         checkWidget();
         int width = 0, height = 0;
-        if ((style & SWT.HORIZONTAL) != 0) {
+        if ((getApi().style & SWT.HORIZONTAL) != 0) {
             height = (int) NSScroller.scrollerWidthForControlSize(((NSScroller) getApi().view).controlSize());
             width = height * 10;
         } else {
@@ -179,7 +179,7 @@ public class SwtSlider extends SwtControl implements ISlider {
     void createHandle() {
         NSScroller widget = (NSScroller) new SWTScroller().alloc();
         NSRect rect = new NSRect();
-        if ((style & SWT.HORIZONTAL) != 0) {
+        if ((getApi().style & SWT.HORIZONTAL) != 0) {
             rect.width = 1;
         } else {
             rect.height = 1;

@@ -190,8 +190,8 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
         Point size = getSize(dest.width / 4);
         int w = size.x;
         int h = size.y;
-        int t = (style & SWT.BALLOON) != 0 ? TIP_HEIGHT : 0;
-        int i = (style & SWT.BALLOON) != 0 ? 16 : 0;
+        int t = (getApi().style & SWT.BALLOON) != 0 ? TIP_HEIGHT : 0;
+        int i = (getApi().style & SWT.BALLOON) != 0 ? 16 : 0;
         tip.setSize(w, h + t);
         int[] polyline;
         spikeAbove = dest.height >= y + size.y + t;
@@ -216,7 +216,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
                 tip.setLocation(Math.min(dest.width - size.x, x - size.x + i), y - size.y - t);
             }
         }
-        if ((style & SWT.BALLOON) != 0) {
+        if ((getApi().style & SWT.BALLOON) != 0) {
             if (region != null)
                 region.dispose();
             region = new Region(display);
@@ -252,7 +252,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
             messageWidth = layoutMessage.getBounds().width;
         }
         int messageTrim = 2 * INSET + 2 * BORDER + 2 * PADDING;
-        boolean hasImage = layoutText != null && (style & SWT.BALLOON) != 0 && (style & (SWT.ICON_ERROR | SWT.ICON_INFORMATION | SWT.ICON_WARNING)) != 0;
+        boolean hasImage = layoutText != null && (getApi().style & SWT.BALLOON) != 0 && (getApi().style & (SWT.ICON_ERROR | SWT.ICON_INFORMATION | SWT.ICON_WARNING)) != 0;
         int textTrim = messageTrim + (hasImage ? IMAGE_SIZE : 0);
         int width = Math.min(maxWidth, Math.max(textWidth + textTrim, messageWidth + messageTrim));
         int textHeight = 0, messageHeight = 0;
@@ -395,7 +395,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
         GC gc = event.gc;
         int x = BORDER + PADDING;
         int y = BORDER + PADDING;
-        if ((style & SWT.BALLOON) != 0) {
+        if ((getApi().style & SWT.BALLOON) != 0) {
             if (spikeAbove)
                 y += TIP_HEIGHT;
             gc.drawPolygon(borderPolygon);
@@ -404,8 +404,8 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
             gc.drawRectangle(rect.x, rect.y, rect.width - 1, rect.height - 1);
         }
         if (layoutText != null) {
-            int id = style & (SWT.ICON_ERROR | SWT.ICON_INFORMATION | SWT.ICON_WARNING);
-            if ((style & SWT.BALLOON) != 0 && id != 0) {
+            int id = getApi().style & (SWT.ICON_ERROR | SWT.ICON_INFORMATION | SWT.ICON_WARNING);
+            if ((getApi().style & SWT.BALLOON) != 0 && id != 0) {
                 Display display = getDisplay();
                 Image image = display.getSystemImage(id);
                 Rectangle rect = image.getBounds();

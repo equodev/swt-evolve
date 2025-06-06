@@ -151,7 +151,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
 
     @Override
     boolean getDrawing() {
-        return ((SwtControl) parent.getImpl()).getDrawing();
+        return ((DartControl) parent.getImpl()).getDrawing();
     }
 
     /**
@@ -171,7 +171,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public boolean getEnabled() {
         checkWidget();
-        return (state & DISABLED) == 0;
+        return (getApi().state & DISABLED) == 0;
     }
 
     /**
@@ -383,8 +383,8 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     }
 
     @Override
-    boolean isDrawing() {
-        return getDrawing() && ((SwtControl) parent.getImpl()).isDrawing();
+    public boolean isDrawing() {
+        return getDrawing() && parent.getImpl().isDrawing();
     }
 
     /**
@@ -446,10 +446,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     @Override
     void releaseParent() {
         super.releaseParent();
-        if (((SwtScrollable) parent.getImpl()).horizontalBar == this.getApi())
-            ((SwtScrollable) parent.getImpl()).horizontalBar = null;
-        if (((SwtScrollable) parent.getImpl()).verticalBar == this.getApi())
-            ((SwtScrollable) parent.getImpl()).verticalBar = null;
+        if (((DartScrollable) parent.getImpl()).horizontalBar == this.getApi())
+            ((DartScrollable) parent.getImpl()).horizontalBar = null;
+        if (((DartScrollable) parent.getImpl()).verticalBar == this.getApi())
+            ((DartScrollable) parent.getImpl()).verticalBar = null;
     }
 
     @Override
@@ -502,13 +502,13 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setEnabled(boolean enabled) {
         checkWidget();
         if (enabled) {
-            if ((state & DISABLED) == 0)
+            if ((getApi().state & DISABLED) == 0)
                 return;
-            state &= ~DISABLED;
+            getApi().state &= ~DISABLED;
         } else {
-            if ((state & DISABLED) != 0)
+            if ((getApi().state & DISABLED) != 0)
                 return;
-            state |= DISABLED;
+            getApi().state |= DISABLED;
         }
         enableWidget(enabled);
         this.enabled = enabled;
@@ -516,7 +516,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     }
 
     void enableWidget(boolean enabled) {
-        if (!enabled || (state & DISABLED) == 0) {
+        if (!enabled || (getApi().state & DISABLED) == 0) {
         }
     }
 
@@ -703,7 +703,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setVisible(boolean visible) {
         checkWidget();
-        ((SwtScrollable) parent.getImpl()).setScrollBarVisible(this.getApi(), visible);
+        ((DartScrollable) parent.getImpl()).setScrollBarVisible(this.getApi(), visible);
         this.visible = visible;
         getBridge().dirty(this);
     }
@@ -720,6 +720,46 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     int selection;
 
     boolean visible;
+
+    public Scrollable _parent() {
+        return parent;
+    }
+
+    public int _minimum() {
+        return minimum;
+    }
+
+    public int _maximum() {
+        return maximum;
+    }
+
+    public int _thumb() {
+        return thumb;
+    }
+
+    public int _increment() {
+        return increment;
+    }
+
+    public int _pageIncrement() {
+        return pageIncrement;
+    }
+
+    public long _actionSelector() {
+        return actionSelector;
+    }
+
+    public boolean _enabled() {
+        return enabled;
+    }
+
+    public int _selection() {
+        return selection;
+    }
+
+    public boolean _visible() {
+        return visible;
+    }
 
     public FlutterBridge getBridge() {
         if (bridge != null)

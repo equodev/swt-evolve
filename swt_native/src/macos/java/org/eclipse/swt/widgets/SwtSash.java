@@ -154,20 +154,20 @@ public class SwtSash extends SwtControl implements ISash {
         } else if (attributeName.isEqualToString(OS.NSAccessibilityEnabledAttribute)) {
             return NSNumber.numberWithBool(isEnabled()).id;
         } else if (attributeName.isEqualToString(OS.NSAccessibilityOrientationAttribute)) {
-            NSString orientation = (style & SWT.VERTICAL) != 0 ? OS.NSAccessibilityVerticalOrientationValue : OS.NSAccessibilityHorizontalOrientationValue;
+            NSString orientation = (getApi().style & SWT.VERTICAL) != 0 ? OS.NSAccessibilityVerticalOrientationValue : OS.NSAccessibilityHorizontalOrientationValue;
             return orientation.id;
         } else if (attributeName.isEqualToString(OS.NSAccessibilityValueAttribute)) {
             Point location = getLocation();
-            int value = (style & SWT.VERTICAL) != 0 ? location.x : location.y;
+            int value = (getApi().style & SWT.VERTICAL) != 0 ? location.x : location.y;
             return NSNumber.numberWithInt(value).id;
         } else if (attributeName.isEqualToString(OS.NSAccessibilityMaxValueAttribute)) {
             NSRect parentFrame = ((SwtScrollable) parent.getImpl()).topView().frame();
-            double maxValue = (style & SWT.VERTICAL) != 0 ? parentFrame.width : parentFrame.height;
+            double maxValue = (getApi().style & SWT.VERTICAL) != 0 ? parentFrame.width : parentFrame.height;
             return NSNumber.numberWithDouble(maxValue).id;
         } else if (attributeName.isEqualToString(OS.NSAccessibilityMinValueAttribute)) {
             return NSNumber.numberWithInt(0).id;
         } else if (attributeName.isEqualToString(OS.NSAccessibilityNextContentsAttribute)) {
-            Control[] children = ((SwtComposite) parent.getImpl())._getChildren();
+            Control[] children = parent.getImpl()._getChildren();
             Control nextView = null;
             for (int i = 0; i < children.length; i++) {
                 if (children[i] == this.getApi()) {
@@ -182,7 +182,7 @@ public class SwtSash extends SwtControl implements ISash {
             else
                 return NSArray.array().id;
         } else if (attributeName.isEqualToString(OS.NSAccessibilityPreviousContentsAttribute)) {
-            Control[] children = ((SwtComposite) parent.getImpl())._getChildren();
+            Control[] children = parent.getImpl()._getChildren();
             Control nextView = null;
             for (int i = 0; i < children.length; i++) {
                 if (children[i] == this.getApi()) {
@@ -255,7 +255,7 @@ public class SwtSash extends SwtControl implements ISash {
     public Point computeSize(int wHint, int hHint, boolean changed) {
         checkWidget();
         int width = 0, height = 0;
-        if ((style & SWT.HORIZONTAL) != 0) {
+        if ((getApi().style & SWT.HORIZONTAL) != 0) {
             width += DEFAULT_WIDTH;
             height += 5;
         } else {
@@ -271,7 +271,7 @@ public class SwtSash extends SwtControl implements ISash {
 
     @Override
     void createHandle() {
-        state |= THEME_BACKGROUND;
+        getApi().state |= THEME_BACKGROUND;
         NSView widget = (NSView) new SWTView().alloc();
         widget.init();
         getApi().view = widget;
@@ -285,10 +285,10 @@ public class SwtSash extends SwtControl implements ISash {
     }
 
     @Override
-    Cursor findCursor() {
+    public Cursor findCursor() {
         Cursor cursor = super.findCursor();
         if (cursor == null) {
-            int cursorType = (style & SWT.HORIZONTAL) != 0 ? SWT.CURSOR_SIZENS : SWT.CURSOR_SIZEWE;
+            int cursorType = (getApi().style & SWT.HORIZONTAL) != 0 ? SWT.CURSOR_SIZENS : SWT.CURSOR_SIZEWE;
             cursor = display.getSystemCursor(cursorType);
         }
         return cursor;
@@ -314,7 +314,7 @@ public class SwtSash extends SwtControl implements ISash {
                         long modifiers = nsEvent.modifierFlags();
                         if ((modifiers & OS.NSControlKeyMask) != 0)
                             stepSize = INCREMENT;
-                        if ((style & SWT.VERTICAL) != 0) {
+                        if ((getApi().style & SWT.VERTICAL) != 0) {
                             if (keyCode == 126 || keyCode == 125)
                                 break;
                             xChange = keyCode == 123 ? -stepSize : stepSize;
@@ -329,7 +329,7 @@ public class SwtSash extends SwtControl implements ISash {
                         int parentWidth = parentBounds.width;
                         int parentHeight = parentBounds.height;
                         int newX = lastX, newY = lastY;
-                        if ((style & SWT.VERTICAL) != 0) {
+                        if ((getApi().style & SWT.VERTICAL) != 0) {
                             newX = Math.min(Math.max(0, lastX + xChange), parentWidth - width);
                         } else {
                             newY = Math.min(Math.max(0, lastY + yChange), parentHeight - height);
@@ -353,7 +353,7 @@ public class SwtSash extends SwtControl implements ISash {
                             if (isDisposed())
                                 return false;
                             int cursorX = event.x, cursorY = event.y;
-                            if ((style & SWT.VERTICAL) != 0) {
+                            if ((getApi().style & SWT.VERTICAL) != 0) {
                                 cursorY += height / 2;
                             } else {
                                 cursorX += width / 2;
@@ -415,27 +415,29 @@ public class SwtSash extends SwtControl implements ISash {
         NSPoint location = nsEvent.locationInWindow();
         NSPoint point = getApi().view.convertPoint_fromView_(location, null);
         NSRect frame = getApi().view.frame();
-        NSRect parentFrame = ((SwtScrollable) parent.getImpl()).topView().frame();
-        int newX = lastX, newY = lastY;
-        if ((style & SWT.VERTICAL) != 0) {
-            newX = Math.min(Math.max(0, (int) (point.x + frame.x - startX)), (int) (parentFrame.width - frame.width));
-        } else {
-            newY = Math.min(Math.max(0, (int) (point.y + frame.y - startY)), (int) (parentFrame.height - frame.height));
-        }
-        if (newX == lastX && newY == lastY)
-            return;
-        Event event = new Event();
-        event.x = newX;
-        event.y = newY;
-        event.width = (int) frame.width;
-        event.height = (int) frame.height;
-        sendSelectionEvent(SWT.Selection, event, true);
-        if (isDisposed())
-            return;
-        if (event.doit) {
-            lastX = event.x;
-            lastY = event.y;
-            setBounds(event.x, event.y, (int) frame.width, (int) frame.height);
+        if (parent == null || parent.getImpl() instanceof SwtScrollable) {
+            NSRect parentFrame = ((SwtScrollable) parent.getImpl()).topView().frame();
+            int newX = lastX, newY = lastY;
+            if ((getApi().style & SWT.VERTICAL) != 0) {
+                newX = Math.min(Math.max(0, (int) (point.x + frame.x - startX)), (int) (parentFrame.width - frame.width));
+            } else {
+                newY = Math.min(Math.max(0, (int) (point.y + frame.y - startY)), (int) (parentFrame.height - frame.height));
+            }
+            if (newX == lastX && newY == lastY)
+                return;
+            Event event = new Event();
+            event.x = newX;
+            event.y = newY;
+            event.width = (int) frame.width;
+            event.height = (int) frame.height;
+            sendSelectionEvent(SWT.Selection, event, true);
+            if (isDisposed())
+                return;
+            if (event.doit) {
+                lastX = event.x;
+                lastY = event.y;
+                setBounds(event.x, event.y, (int) frame.width, (int) frame.height);
+            }
         }
     }
 

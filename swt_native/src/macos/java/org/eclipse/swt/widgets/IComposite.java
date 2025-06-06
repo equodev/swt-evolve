@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 
-public interface IComposite extends IScrollable {
+public interface IComposite extends IScrollable, ImplComposite {
 
     /**
      * Clears any data that has been cached by a Layout for all widgets that

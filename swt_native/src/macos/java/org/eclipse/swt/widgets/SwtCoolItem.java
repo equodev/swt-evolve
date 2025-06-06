@@ -237,7 +237,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
             width = 32;
         if (hHint == SWT.DEFAULT)
             height = 32;
-        if ((((SwtWidget) parent.getImpl()).style & SWT.VERTICAL) != 0) {
+        if ((parent.style & SWT.VERTICAL) != 0) {
             height += MINIMUM_WIDTH;
         } else {
             width += MINIMUM_WIDTH;
@@ -285,7 +285,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
         gc.fillRectangle(0, 0, width, height);
         gc.setForeground(black);
         int startX = 0;
-        if ((((SwtWidget) parent.getImpl()).style & SWT.VERTICAL) != 0) {
+        if ((parent.style & SWT.VERTICAL) != 0) {
             startX = width - CHEVRON_IMAGE_WIDTH;
         }
         int startY = height / 6;
@@ -410,7 +410,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
 
     int internalGetMinimumWidth() {
         int width = minimumWidth + MINIMUM_WIDTH;
-        if ((style & SWT.DROP_DOWN) != 0 && width < preferredWidth) {
+        if ((getApi().style & SWT.DROP_DOWN) != 0 && width < preferredWidth) {
             width += CHEVRON_IMAGE_WIDTH + CHEVRON_HORIZONTAL_TRIM + CHEVRON_LEFT_MARGIN;
         }
         return width;
@@ -423,7 +423,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
         Rectangle bounds = chevron.getBounds();
         Event event = new Event();
         event.detail = SWT.ARROW;
-        if ((((SwtWidget) parent.getImpl()).style & SWT.VERTICAL) != 0) {
+        if ((parent.style & SWT.VERTICAL) != 0) {
             event.x = bounds.x + bounds.width;
             event.y = bounds.y;
         } else {
@@ -470,7 +470,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
         itemBounds.height = height;
         if (control != null) {
             int controlWidth = width - MINIMUM_WIDTH;
-            if ((style & SWT.DROP_DOWN) != 0 && width < preferredWidth) {
+            if ((getApi().style & SWT.DROP_DOWN) != 0 && width < preferredWidth) {
                 controlWidth -= CHEVRON_IMAGE_WIDTH + CHEVRON_HORIZONTAL_TRIM + CHEVRON_LEFT_MARGIN;
             }
             if (height > preferredHeight) {
@@ -508,7 +508,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
         this.control = control;
         if (control != null) {
             int controlWidth = itemBounds.width - MINIMUM_WIDTH;
-            if ((style & SWT.DROP_DOWN) != 0 && itemBounds.width < preferredWidth) {
+            if ((getApi().style & SWT.DROP_DOWN) != 0 && itemBounds.width < preferredWidth) {
                 controlWidth -= CHEVRON_IMAGE_WIDTH + CHEVRON_HORIZONTAL_TRIM + CHEVRON_LEFT_MARGIN;
             }
             control.setBounds(((SwtCoolBar) parent.getImpl()).fixRectangle(itemBounds.x + MINIMUM_WIDTH, itemBounds.y, controlWidth, itemBounds.height));
@@ -627,7 +627,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
         itemBounds.height = height;
         if (control != null) {
             int controlWidth = width - MINIMUM_WIDTH;
-            if ((style & SWT.DROP_DOWN) != 0 && width < preferredWidth) {
+            if ((getApi().style & SWT.DROP_DOWN) != 0 && width < preferredWidth) {
                 controlWidth -= CHEVRON_IMAGE_WIDTH + CHEVRON_HORIZONTAL_TRIM + CHEVRON_LEFT_MARGIN;
             }
             control.setSize(((SwtCoolBar) parent.getImpl()).fixPoint(controlWidth, height));
@@ -664,14 +664,14 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
     void updateChevron() {
         if (control != null) {
             int width = itemBounds.width;
-            if ((style & SWT.DROP_DOWN) != 0 && width < preferredWidth) {
+            if ((getApi().style & SWT.DROP_DOWN) != 0 && width < preferredWidth) {
                 if (chevron == null) {
                     chevron = new ToolBar(parent, SWT.FLAT | SWT.NO_FOCUS);
                     ToolItem toolItem = new ToolItem(chevron, SWT.PUSH);
                     toolItem.addListener(SWT.Selection, event -> SwtCoolItem.this.onSelection(event));
                 }
                 int controlHeight, currentImageHeight = 0;
-                if ((((SwtWidget) parent.getImpl()).style & SWT.VERTICAL) != 0) {
+                if ((parent.style & SWT.VERTICAL) != 0) {
                     controlHeight = control.getSize().x;
                     if (arrowImage != null)
                         currentImageHeight = arrowImage.getBounds().width;

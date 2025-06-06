@@ -384,7 +384,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
     }
 
     @Override
-    void resetVisibleRegion() {
+    public void resetVisibleRegion() {
         super.resetVisibleRegion();
         if (visiblePath != null)
             visiblePath.release();
@@ -431,7 +431,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         Rectangle clientRect = getClientArea();
         Rectangle sourceRect = new Rectangle(x, y, width, height);
         Control control = findBackgroundControl();
-        boolean redraw = control != null && ((SwtControl) control.getImpl()).backgroundImage != null;
+        boolean redraw = control != null && control.getImpl()._backgroundImage() != null;
         if (!redraw)
             redraw = hasRegion();
         if (!redraw)

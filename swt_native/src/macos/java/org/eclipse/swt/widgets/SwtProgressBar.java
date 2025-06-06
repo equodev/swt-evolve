@@ -89,7 +89,7 @@ public class SwtProgressBar extends SwtControl implements IProgressBar {
         checkWidget();
         int size = OS.NSProgressIndicatorPreferredThickness;
         int width = 0, height = 0;
-        if ((style & SWT.HORIZONTAL) != 0) {
+        if ((getApi().style & SWT.HORIZONTAL) != 0) {
             height = size;
             width = height * 10;
         } else {
@@ -108,9 +108,9 @@ public class SwtProgressBar extends SwtControl implements IProgressBar {
         NSProgressIndicator widget = (NSProgressIndicator) new SWTProgressIndicator().alloc();
         widget.init();
         widget.setUsesThreadedAnimation(false);
-        if ((style & SWT.VERTICAL) != 0)
+        if ((getApi().style & SWT.VERTICAL) != 0)
             widget.setBoundsRotation(-90);
-        widget.setIndeterminate((style & SWT.INDETERMINATE) != 0);
+        widget.setIndeterminate((getApi().style & SWT.INDETERMINATE) != 0);
         getApi().view = widget;
     }
 
@@ -328,7 +328,7 @@ public class SwtProgressBar extends SwtControl implements IProgressBar {
     }
 
     @Override
-    void resetVisibleRegion() {
+    public void resetVisibleRegion() {
         super.resetVisibleRegion();
         if (visiblePath != null)
             visiblePath.release();
@@ -343,7 +343,7 @@ public class SwtProgressBar extends SwtControl implements IProgressBar {
 	 * the animation there.
 	 */
         if (getApi().view.window() != null) {
-            if ((style & SWT.INDETERMINATE) != 0) {
+            if ((getApi().style & SWT.INDETERMINATE) != 0) {
                 ((NSProgressIndicator) getApi().view).startAnimation(null);
             }
         }

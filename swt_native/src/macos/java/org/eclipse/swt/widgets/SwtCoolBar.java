@@ -104,10 +104,10 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     public SwtCoolBar(Composite parent, int style, CoolBar api) {
         super(parent, checkStyle(style), api);
         if ((style & SWT.VERTICAL) != 0) {
-            this.style |= SWT.VERTICAL;
+            this.getApi().style |= SWT.VERTICAL;
             hoverCursor = new Cursor(display, SWT.CURSOR_SIZENS);
         } else {
-            this.style |= SWT.HORIZONTAL;
+            this.getApi().style |= SWT.HORIZONTAL;
             hoverCursor = new Cursor(display, SWT.CURSOR_SIZEWE);
         }
         dragCursor = new Cursor(display, SWT.CURSOR_SIZEALL);
@@ -166,8 +166,8 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     public Point computeSize(int wHint, int hHint, boolean changed) {
         checkWidget();
         int width = 0, height = 0;
-        wrapItems((style & SWT.VERTICAL) != 0 ? hHint : wHint);
-        boolean flat = (style & SWT.FLAT) != 0;
+        wrapItems((getApi().style & SWT.VERTICAL) != 0 ? hHint : wHint);
+        boolean flat = (getApi().style & SWT.FLAT) != 0;
         for (int row = 0; row < items.length; row++) {
             int rowWidth = 0, rowHeight = 0;
             for (int i = 0; i < items[row].length; i++) {
@@ -296,7 +296,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     void fixEvent(Event event) {
-        if ((style & SWT.VERTICAL) != 0) {
+        if ((getApi().style & SWT.VERTICAL) != 0) {
             int tmp = event.x;
             event.x = event.y;
             event.y = tmp;
@@ -304,14 +304,14 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     Rectangle fixRectangle(int x, int y, int width, int height) {
-        if ((style & SWT.VERTICAL) != 0) {
+        if ((getApi().style & SWT.VERTICAL) != 0) {
             return new Rectangle(y, x, height, width);
         }
         return new Rectangle(x, y, width, height);
     }
 
     Point fixPoint(int x, int y) {
-        if ((style & SWT.VERTICAL) != 0) {
+        if ((getApi().style & SWT.VERTICAL) != 0) {
             return new Point(y, x);
         }
         return new Point(x, y);
@@ -429,7 +429,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     void internalRedraw(int x, int y, int width, int height) {
-        if ((style & SWT.VERTICAL) != 0) {
+        if ((getApi().style & SWT.VERTICAL) != 0) {
             redraw(y, x, height, width, false);
         } else {
             redraw(x, y, width, height, false);
@@ -488,8 +488,6 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     void destroyItem(CoolItem item) {
-        if (item != null && !(item.getImpl() instanceof SwtCoolItem))
-            return;
         if (inDispose)
             return;
         int row = findItem(item).y;
@@ -513,8 +511,6 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     void moveDown(CoolItem item, int x_root) {
-        if (item != null && !(item.getImpl() instanceof SwtCoolItem))
-            return;
         int oldRowIndex = findItem(item).y;
         if (items[oldRowIndex].length == 1) {
             /* If this is the only item in the bottom row, don't move it. */
@@ -534,8 +530,6 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     void moveLeft(CoolItem item, int pixels) {
-        if (item != null && !(item.getImpl() instanceof SwtCoolItem))
-            return;
         Point point = findItem(item);
         int row = point.y;
         int index = point.x;
@@ -567,8 +561,6 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     void moveRight(CoolItem item, int pixels) {
-        if (item != null && !(item.getImpl() instanceof SwtCoolItem))
-            return;
         Point point = findItem(item);
         int row = point.y;
         int index = point.x;
@@ -608,8 +600,6 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     void moveUp(CoolItem item, int x_root) {
-        if (item != null && !(item.getImpl() instanceof SwtCoolItem))
-            return;
         Point point = findItem(item);
         int oldRowIndex = point.y;
         if (items[oldRowIndex].length == 1) {
@@ -776,8 +766,8 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             return;
         Color shadowColor = display.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);
         Color highlightColor = display.getSystemColor(SWT.COLOR_WIDGET_HIGHLIGHT_SHADOW);
-        boolean vertical = (style & SWT.VERTICAL) != 0;
-        boolean flat = (style & SWT.FLAT) != 0;
+        boolean vertical = (getApi().style & SWT.VERTICAL) != 0;
+        boolean flat = (getApi().style & SWT.FLAT) != 0;
         int stopX = getWidth();
         Rectangle rect;
         Rectangle clipping = gc.getClipping();
@@ -897,13 +887,13 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
      */
     int layoutItems() {
         int y = 0, width;
-        if ((style & SWT.VERTICAL) != 0) {
+        if ((getApi().style & SWT.VERTICAL) != 0) {
             width = getClientArea().height;
         } else {
             width = getClientArea().width;
         }
         wrapItems(width);
-        int rowSpacing = (style & SWT.FLAT) != 0 ? 0 : ROW_SPACING;
+        int rowSpacing = (getApi().style & SWT.FLAT) != 0 ? 0 : ROW_SPACING;
         for (int row = 0; row < items.length; row++) {
             int count = items[row].length;
             int x = 0;
@@ -965,7 +955,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     void relayout() {
         Point size = getSize();
         int height = layoutItems();
-        if ((style & SWT.VERTICAL) != 0) {
+        if ((getApi().style & SWT.VERTICAL) != 0) {
             Rectangle trim = computeTrim(0, 0, height, 0);
             if (height != size.x)
                 super.setSize(trim.width, size.y);
@@ -1106,7 +1096,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     int getWidth() {
-        if ((style & SWT.VERTICAL) != 0)
+        if ((getApi().style & SWT.VERTICAL) != 0)
             return getSize().y;
         return getSize().x;
     }

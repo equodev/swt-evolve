@@ -726,16 +726,16 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     void checkEnterExit(Control control, NSEvent nsEvent, boolean send) {
-        if (control != null && !(control.getImpl() instanceof SwtControl))
-            return;
         if (control != currentControl) {
             if (currentControl != null && !currentControl.isDisposed()) {
-                ((SwtControl) currentControl.getImpl()).sendMouseEvent(nsEvent, SWT.MouseExit, send);
+                if (currentControl == null || currentControl.getImpl() instanceof SwtControl) {
+                    ((SwtControl) currentControl.getImpl()).sendMouseEvent(nsEvent, SWT.MouseExit, send);
+                }
             }
             if (control != null && control.isDisposed())
                 control = null;
             currentControl = control;
-            if (control != null) {
+            if (control != null && control.getImpl() instanceof SwtControl) {
                 ((SwtControl) control.getImpl()).sendMouseEvent(nsEvent, SWT.MouseEnter, send);
             }
             setCursor(control);
@@ -1149,7 +1149,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     long cursorSetProc(long id, long sel) {
         if (lockCursor) {
             if (currentControl != null) {
-                Cursor cursor = ((SwtControl) currentControl.getImpl()).findCursor();
+                Cursor cursor = currentControl.getImpl().findCursor();
                 if (cursor != null && cursor.handle.id != id)
                     return 0;
             }
@@ -3788,34 +3788,38 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         NSPoint pt = new NSPoint();
         pt.x = x;
         pt.y = y;
-        NSWindow fromWindow = from != null ? from.view.window() : null;
-        NSWindow toWindow = to != null ? to.view.window() : null;
-        if (toWindow != null && fromWindow != null && toWindow.id == fromWindow.id) {
-            if (!from.view.isFlipped()) {
-                pt.y = from.view.bounds().height - pt.y;
-            }
-            pt = from.view.convertPoint_toView_(pt, to.view);
-            if (!to.view.isFlipped()) {
-                pt.y = to.view.bounds().height - pt.y;
-            }
-        } else {
-            NSRect primaryFrame = getPrimaryFrame();
-            if (from != null) {
-                NSView view = ((SwtControl) from.getImpl()).eventView();
-                if (!view.isFlipped()) {
-                    pt.y = view.bounds().height - pt.y;
-                }
-                pt = view.convertPoint_toView_(pt, null);
-                pt = fromWindow.convertBaseToScreen(pt);
-                pt.y = primaryFrame.height - pt.y;
-            }
-            if (to != null) {
-                NSView view = ((SwtControl) to.getImpl()).eventView();
-                pt.y = primaryFrame.height - pt.y;
-                pt = toWindow.convertScreenToBase(pt);
-                pt = view.convertPoint_fromView_(pt, null);
-                if (!view.isFlipped()) {
-                    pt.y = view.bounds().height - pt.y;
+        if (from == null || from.getImpl() instanceof SwtControl) {
+            NSWindow fromWindow = from != null ? from.view.window() : null;
+            if (to == null || to.getImpl() instanceof SwtControl) {
+                NSWindow toWindow = to != null ? to.view.window() : null;
+                if (toWindow != null && fromWindow != null && toWindow.id == fromWindow.id) {
+                    if (!from.view.isFlipped()) {
+                        pt.y = from.view.bounds().height - pt.y;
+                    }
+                    pt = from.view.convertPoint_toView_(pt, to.view);
+                    if (!to.view.isFlipped()) {
+                        pt.y = to.view.bounds().height - pt.y;
+                    }
+                } else {
+                    NSRect primaryFrame = getPrimaryFrame();
+                    if (from != null) {
+                        NSView view = ((SwtControl) from.getImpl()).eventView();
+                        if (!view.isFlipped()) {
+                            pt.y = view.bounds().height - pt.y;
+                        }
+                        pt = view.convertPoint_toView_(pt, null);
+                        pt = fromWindow.convertBaseToScreen(pt);
+                        pt.y = primaryFrame.height - pt.y;
+                    }
+                    if (to != null) {
+                        NSView view = ((SwtControl) to.getImpl()).eventView();
+                        pt.y = primaryFrame.height - pt.y;
+                        pt = toWindow.convertScreenToBase(pt);
+                        pt = view.convertPoint_fromView_(pt, null);
+                        if (!view.isFlipped()) {
+                            pt.y = view.bounds().height - pt.y;
+                        }
+                    }
                 }
             }
         }
@@ -3917,34 +3921,38 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         NSPoint pt = new NSPoint();
         pt.x = x;
         pt.y = y;
-        NSWindow fromWindow = from != null ? from.view.window() : null;
-        NSWindow toWindow = to != null ? to.view.window() : null;
-        if (toWindow != null && fromWindow != null && toWindow.id == fromWindow.id) {
-            if (!from.view.isFlipped()) {
-                pt.y = from.view.bounds().height - pt.y;
-            }
-            pt = from.view.convertPoint_toView_(pt, to.view);
-            if (!to.view.isFlipped()) {
-                pt.y = to.view.bounds().height - pt.y;
-            }
-        } else {
-            NSRect primaryFrame = getPrimaryFrame();
-            if (from != null) {
-                NSView view = ((SwtControl) from.getImpl()).eventView();
-                if (!view.isFlipped()) {
-                    pt.y = view.bounds().height - pt.y;
-                }
-                pt = view.convertPoint_toView_(pt, null);
-                pt = fromWindow.convertBaseToScreen(pt);
-                pt.y = primaryFrame.height - pt.y;
-            }
-            if (to != null) {
-                NSView view = ((SwtControl) to.getImpl()).eventView();
-                pt.y = primaryFrame.height - pt.y;
-                pt = toWindow.convertScreenToBase(pt);
-                pt = view.convertPoint_fromView_(pt, null);
-                if (!view.isFlipped()) {
-                    pt.y = view.bounds().height - pt.y;
+        if (from == null || from.getImpl() instanceof SwtControl) {
+            NSWindow fromWindow = from != null ? from.view.window() : null;
+            if (to == null || to.getImpl() instanceof SwtControl) {
+                NSWindow toWindow = to != null ? to.view.window() : null;
+                if (toWindow != null && fromWindow != null && toWindow.id == fromWindow.id) {
+                    if (!from.view.isFlipped()) {
+                        pt.y = from.view.bounds().height - pt.y;
+                    }
+                    pt = from.view.convertPoint_toView_(pt, to.view);
+                    if (!to.view.isFlipped()) {
+                        pt.y = to.view.bounds().height - pt.y;
+                    }
+                } else {
+                    NSRect primaryFrame = getPrimaryFrame();
+                    if (from != null) {
+                        NSView view = ((SwtControl) from.getImpl()).eventView();
+                        if (!view.isFlipped()) {
+                            pt.y = view.bounds().height - pt.y;
+                        }
+                        pt = view.convertPoint_toView_(pt, null);
+                        pt = fromWindow.convertBaseToScreen(pt);
+                        pt.y = primaryFrame.height - pt.y;
+                    }
+                    if (to != null) {
+                        NSView view = ((SwtControl) to.getImpl()).eventView();
+                        pt.y = primaryFrame.height - pt.y;
+                        pt = toWindow.convertScreenToBase(pt);
+                        pt = view.convertPoint_fromView_(pt, null);
+                        if (!view.isFlipped()) {
+                            pt.y = view.bounds().height - pt.y;
+                        }
+                    }
                 }
             }
         }
@@ -4667,7 +4675,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 for (int i = 0; i < count; i++) {
                     Widget widget = oldSkinWidgets[i];
                     if (widget != null && !widget.isDisposed()) {
-                        ((SwtWidget) widget.getImpl()).state &= ~SwtWidget.SKIN_NEEDED;
+                        widget.state &= ~SwtWidget.SKIN_NEEDED;
                         oldSkinWidgets[i] = null;
                         Event event = new Event();
                         event.widget = widget;
@@ -4904,8 +4912,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             if (shell != null && !shell.isDisposed()) {
                 Button defaultButton = ((SwtDecorations) shell.getImpl()).defaultButton;
                 if (defaultButton != null && !defaultButton.isDisposed()) {
-                    NSView view = defaultButton.view;
-                    view.display();
+                    if (defaultButton == null || defaultButton.getImpl() instanceof SwtButton) {
+                        NSView view = defaultButton.view;
+                        view.display();
+                    }
                 }
             }
             if (isDisposed())
@@ -4922,11 +4932,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     void setCursor(Control control) {
-        if (control != null && !(control.getImpl() instanceof SwtControl))
-            return;
         Cursor cursor = null;
         if (control != null && !control.isDisposed())
-            cursor = ((SwtControl) control.getImpl()).findCursor();
+            cursor = control.getImpl().findCursor();
         if (cursor == null) {
             NSWindow window = application.keyWindow();
             if (window != null) {
@@ -5562,7 +5570,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         int mask = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
         for (int i = 0; i < shells.length; i++) {
             Shell shell = shells[i];
-            if ((((SwtWidget) shell.getImpl()).style & mask) != 0 && shell.isVisible()) {
+            if ((shell.style & mask) != 0 && shell.isVisible()) {
                 enabled = false;
                 break;
             }
@@ -5705,8 +5713,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     void applicationSendTrackingEvent(NSEvent nsEvent, Control trackingControl) {
-        if (trackingControl != null && !(trackingControl.getImpl() instanceof SwtControl))
-            return;
         int type = (int) nsEvent.type();
         boolean runEnterExit = false;
         Control runEnterExitControl = null;
@@ -5716,7 +5722,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             case OS.NSOtherMouseDown:
                 clickCount = (int) (clickCountButton == nsEvent.buttonNumber() ? nsEvent.clickCount() : 1);
                 clickCountButton = (int) nsEvent.buttonNumber();
-                ((SwtControl) trackingControl.getImpl()).sendMouseEvent(nsEvent, SWT.MouseDown, true);
+                if (trackingControl == null || trackingControl.getImpl() instanceof SwtControl) {
+                    ((SwtControl) trackingControl.getImpl()).sendMouseEvent(nsEvent, SWT.MouseDown, true);
+                }
                 break;
             case OS.NSLeftMouseUp:
             case OS.NSRightMouseUp:
@@ -5726,10 +5734,14 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 Control control = trackingControl;
                 this.trackingControl = null;
                 if (clickCount == 2) {
-                    ((SwtControl) control.getImpl()).sendMouseEvent(nsEvent, SWT.MouseDoubleClick, false);
+                    if (control == null || control.getImpl() instanceof SwtControl) {
+                        ((SwtControl) control.getImpl()).sendMouseEvent(nsEvent, SWT.MouseDoubleClick, false);
+                    }
                 }
                 if (!control.isDisposed())
-                    ((SwtControl) control.getImpl()).sendMouseEvent(nsEvent, SWT.MouseUp, false);
+                    if (control == null || control.getImpl() instanceof SwtControl) {
+                        ((SwtControl) control.getImpl()).sendMouseEvent(nsEvent, SWT.MouseUp, false);
+                    }
                 break;
             case OS.NSLeftMouseDragged:
             case OS.NSRightMouseDragged:
@@ -5738,7 +5750,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 runEnterExitControl = trackingControl;
             //FALL THROUGH
             case OS.NSMouseMoved:
-                ((SwtControl) trackingControl.getImpl()).sendMouseEvent(nsEvent, SWT.MouseMove, true);
+                if (trackingControl == null || trackingControl.getImpl() instanceof SwtControl) {
+                    ((SwtControl) trackingControl.getImpl()).sendMouseEvent(nsEvent, SWT.MouseMove, true);
+                }
                 break;
         }
         if (runEnterExit) {

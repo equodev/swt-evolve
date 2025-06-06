@@ -226,8 +226,6 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
     }
 
     void destroyItem(ExpandItem item) {
-        if (item != null && !(item.getImpl() instanceof SwtExpandItem))
-            return;
         if (inDispose)
             return;
         int index = 0;
@@ -502,8 +500,6 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
     }
 
     void showItem(ExpandItem item) {
-        if (item != null && !(item.getImpl() instanceof SwtExpandItem))
-            return;
         Control control = ((SwtExpandItem) item.getImpl()).control;
         if (control != null && !control.isDisposed()) {
             control.setVisible(((SwtExpandItem) item.getImpl()).expanded);

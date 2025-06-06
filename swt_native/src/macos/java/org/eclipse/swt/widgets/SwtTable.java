@@ -165,7 +165,7 @@ public class SwtTable extends SwtComposite implements ITable {
         // If the check column is visible, don't report it back as a column for accessibility purposes.
         // The check column is meant to appear as a part of the first column.
         if (attributeName.isEqualToString(OS.NSAccessibilityColumnsAttribute) || attributeName.isEqualToString(OS.NSAccessibilityVisibleColumnsAttribute)) {
-            if ((style & SWT.CHECK) != 0) {
+            if ((getApi().style & SWT.CHECK) != 0) {
                 long superValue = super.accessibilityAttributeValue(id, sel, arg0);
                 if (superValue != 0) {
                     NSArray columns = new NSArray(superValue);
@@ -221,7 +221,7 @@ public class SwtTable extends SwtComposite implements ITable {
     }
 
     TableItem _getItem(int index) {
-        if ((style & SWT.VIRTUAL) == 0)
+        if ((getApi().style & SWT.VIRTUAL) == 0)
             return items[index];
         if (items[index] != null)
             return items[index];
@@ -273,7 +273,7 @@ public class SwtTable extends SwtComposite implements ITable {
         NSTableView widget = (NSTableView) getApi().view;
         long row = widget.rowAtPoint(mouseDownPoint);
         long modifiers = NSApplication.sharedApplication().currentEvent().modifierFlags();
-        boolean drag = (state & DRAG_DETECT) != 0 && hooks(SWT.DragDetect);
+        boolean drag = (getApi().state & DRAG_DETECT) != 0 && hooks(SWT.DragDetect);
         if (drag) {
             if (!widget.isRowSelected(row) && (modifiers & (OS.NSCommandKeyMask | OS.NSShiftKeyMask | OS.NSAlternateKeyMask)) == 0) {
                 NSIndexSet set = (NSIndexSet) new NSIndexSet().alloc();
@@ -293,7 +293,7 @@ public class SwtTable extends SwtComposite implements ITable {
     boolean checkData(TableItem item, int index) {
         if (((SwtTableItem) item.getImpl()).cached)
             return true;
-        if ((style & SWT.VIRTUAL) != 0) {
+        if ((getApi().style & SWT.VIRTUAL) != 0) {
             ((SwtTableItem) item.getImpl()).cached = true;
             Event event = new Event();
             event.item = item;
@@ -486,7 +486,7 @@ public class SwtTable extends SwtComposite implements ITable {
 
     @Override
     long columnAtPoint(long id, long sel, NSPoint point) {
-        if ((style & SWT.CHECK) != 0) {
+        if ((getApi().style & SWT.CHECK) != 0) {
             if (point.x <= getCheckColumnWidth() && point.y < headerView.frame().height)
                 return 1;
         }
@@ -507,7 +507,7 @@ public class SwtTable extends SwtComposite implements ITable {
                 width += calculateWidth(items, 0, gc) + CELL_GAP;
                 gc.dispose();
             }
-            if ((style & SWT.CHECK) != 0)
+            if ((getApi().style & SWT.CHECK) != 0)
                 width += getCheckColumnWidth();
         } else {
             width = wHint;
@@ -573,13 +573,13 @@ public class SwtTable extends SwtComposite implements ITable {
     void createHandle() {
         NSScrollView scrollWidget = (NSScrollView) new SWTScrollView().alloc();
         scrollWidget.init();
-        scrollWidget.setHasHorizontalScroller((style & SWT.H_SCROLL) != 0);
-        scrollWidget.setHasVerticalScroller((style & SWT.V_SCROLL) != 0);
+        scrollWidget.setHasHorizontalScroller((getApi().style & SWT.H_SCROLL) != 0);
+        scrollWidget.setHasVerticalScroller((getApi().style & SWT.V_SCROLL) != 0);
         scrollWidget.setAutohidesScrollers(true);
         scrollWidget.setBorderType(hasBorder() ? OS.NSBezelBorder : OS.NSNoBorder);
         NSTableView widget = (NSTableView) new SWTTableView().alloc();
         widget.init();
-        widget.setAllowsMultipleSelection((style & SWT.MULTI) != 0);
+        widget.setAllowsMultipleSelection((getApi().style & SWT.MULTI) != 0);
         widget.setDataSource(widget);
         widget.setDelegate(widget);
         widget.setColumnAutoresizingStyle(OS.NSTableViewNoColumnAutoresizing);
@@ -602,7 +602,7 @@ public class SwtTable extends SwtComposite implements ITable {
         headerView = (NSTableHeaderView) new SWTTableHeaderView().alloc().init();
         widget.setHeaderView(null);
         NSString str = NSString.string();
-        if ((style & SWT.CHECK) != 0) {
+        if ((getApi().style & SWT.CHECK) != 0) {
             checkColumn = (NSTableColumn) new NSTableColumn().alloc();
             NSString nsstring = (NSString) new NSString().alloc();
             nsstring = nsstring.initWithString(String.valueOf(++NEXT_ID));
@@ -649,8 +649,6 @@ public class SwtTable extends SwtComposite implements ITable {
     }
 
     void createItem(TableColumn column, int index) {
-        if (column != null && !(column.getImpl() instanceof SwtWidget))
-            return;
         if (!(0 <= index && index <= columnCount))
             error(SWT.ERROR_INVALID_RANGE);
         if (columnCount == columns.length) {
@@ -674,11 +672,13 @@ public class SwtTable extends SwtComposite implements ITable {
             nsstring.release();
             nsColumn.setMinWidth(0);
             ((NSTableView) getApi().view).addTableColumn(nsColumn);
-            int checkColumn = (style & SWT.CHECK) != 0 ? 1 : 0;
+            int checkColumn = (getApi().style & SWT.CHECK) != 0 ? 1 : 0;
             ((NSTableView) getApi().view).moveColumn(columnCount + checkColumn, index + checkColumn);
             nsColumn.setDataCell(dataCell);
         }
-        ((SwtWidget) column.getImpl()).createJNIRef();
+        if (column == null || column.getImpl() instanceof SwtWidget) {
+            ((SwtWidget) column.getImpl()).createJNIRef();
+        }
         NSTableHeaderCell headerCell = (NSTableHeaderCell) new SWTTableHeaderCell().alloc().init();
         if (font != null)
             headerCell.setFont(font.handle);
@@ -750,7 +750,7 @@ public class SwtTable extends SwtComposite implements ITable {
     void deselectAll(long id, long sel, long sender) {
         if (preventSelect && !ignoreSelect)
             return;
-        if ((style & SWT.SINGLE) != 0 && !ignoreSelect) {
+        if ((getApi().style & SWT.SINGLE) != 0 && !ignoreSelect) {
             if (((NSTableView) getApi().view).selectedRow() != -1)
                 return;
         }
@@ -761,7 +761,7 @@ public class SwtTable extends SwtComposite implements ITable {
     void deselectRow(long id, long sel, long index) {
         if (preventSelect && !ignoreSelect)
             return;
-        if ((style & SWT.SINGLE) != 0 && !ignoreSelect) {
+        if ((getApi().style & SWT.SINGLE) != 0 && !ignoreSelect) {
             if (((NSTableView) getApi().view).selectedRow() == index)
                 return;
         }
@@ -962,7 +962,7 @@ public class SwtTable extends SwtComposite implements ITable {
             long columnId = array.objectAtIndex(i).id;
             for (int j = 0; j < columnCount; j++) {
                 if (((SwtTableColumn) columns[j].getImpl()).nsColumn.id == columnId) {
-                    ((SwtWidget) columns[j].getImpl()).sendEvent(SWT.Move);
+                    columns[j].getImpl().sendEvent(SWT.Move);
                     break;
                 }
             }
@@ -1073,7 +1073,7 @@ public class SwtTable extends SwtComposite implements ITable {
             GC gc = SwtGC.cocoa_new(this.getApi(), data);
             gc.setFont(item.getFont(columnIndex));
             Color fg;
-            if (isSelected && ((style & SWT.HIDE_SELECTION) == 0 || hasFocus)) {
+            if (isSelected && ((getApi().style & SWT.HIDE_SELECTION) == 0 || hasFocus)) {
                 fg = selectionForeground;
                 gc.setBackground(selectionBackground);
             } else {
@@ -1091,7 +1091,7 @@ public class SwtTable extends SwtComposite implements ITable {
             event.detail = SWT.FOREGROUND;
             if (drawBackground)
                 event.detail |= SWT.BACKGROUND;
-            if (isSelected && ((style & SWT.HIDE_SELECTION) == 0 || hasFocus))
+            if (isSelected && ((getApi().style & SWT.HIDE_SELECTION) == 0 || hasFocus))
                 event.detail |= SWT.SELECTED;
             event.x = (int) cellRect.x;
             event.y = (int) cellRect.y;
@@ -1131,7 +1131,7 @@ public class SwtTable extends SwtComposite implements ITable {
             gc.dispose();
             context.restoreGraphicsState();
         } else {
-            if (isSelected && (style & SWT.HIDE_SELECTION) != 0 && !hasFocus) {
+            if (isSelected && (getApi().style & SWT.HIDE_SELECTION) != 0 && !hasFocus) {
                 userForeground = item.getForeground(columnIndex);
             }
         }
@@ -1176,7 +1176,7 @@ public class SwtTable extends SwtComposite implements ITable {
                     NSRange range = new NSRange();
                     range.length = newStr.length();
                     newStr.removeAttribute(OS.NSForegroundColorAttributeName, range);
-                    int alignment = columnCount == 0 ? SWT.LEFT : ((SwtWidget) columns[columnIndex].getImpl()).style & (SWT.LEFT | SWT.CENTER | SWT.RIGHT);
+                    int alignment = columnCount == 0 ? SWT.LEFT : columns[columnIndex].style & (SWT.LEFT | SWT.CENTER | SWT.RIGHT);
                     NSSize size = newStr.size();
                     NSRect newRect = new NSRect();
                     newRect.x = rect.x + TEXT_GAP;
@@ -1491,7 +1491,7 @@ public class SwtTable extends SwtComposite implements ITable {
         for (int i = 0; i < columnCount; i++) {
             TableColumn column = columns[i];
             int index = indexOf(((SwtTableColumn) column.getImpl()).nsColumn);
-            if ((style & SWT.CHECK) != 0)
+            if ((getApi().style & SWT.CHECK) != 0)
                 index -= 1;
             order[index] = i;
         }
@@ -1736,7 +1736,7 @@ public class SwtTable extends SwtComposite implements ITable {
     public TableItem[] getItems() {
         checkWidget();
         TableItem[] result = new TableItem[itemCount];
-        if ((style & SWT.VIRTUAL) != 0) {
+        if ((getApi().style & SWT.VIRTUAL) != 0) {
             for (int i = 0; i < itemCount; i++) {
                 result[i] = _getItem(i);
             }
@@ -1955,7 +1955,7 @@ public class SwtTable extends SwtComposite implements ITable {
 
     @Override
     NSRect headerRectOfColumn(long id, long sel, long column) {
-        if ((style & SWT.CHECK) == 0)
+        if ((getApi().style & SWT.CHECK) == 0)
             return callSuperRect(id, sel, column);
         if (column == 0) {
             NSRect returnValue = callSuperRect(id, sel, column);
@@ -1976,7 +1976,7 @@ public class SwtTable extends SwtComposite implements ITable {
     void highlightSelectionInClipRect(long id, long sel, long rect) {
         if (hooks(SWT.EraseItem))
             return;
-        if ((style & SWT.HIDE_SELECTION) != 0 && !hasFocus())
+        if ((getApi().style & SWT.HIDE_SELECTION) != 0 && !hasFocus())
             return;
         NSRect clipRect = new NSRect();
         OS.memmove(clipRect, rect, NSRect.sizeof);
@@ -2106,7 +2106,7 @@ public class SwtTable extends SwtComposite implements ITable {
     }
 
     @Override
-    boolean isTransparent() {
+    public boolean isTransparent() {
         return true;
     }
 
@@ -2176,7 +2176,7 @@ public class SwtTable extends SwtComposite implements ITable {
         NSTableView widget = (NSTableView) getApi().view;
         NSPoint pt = getApi().view.convertPoint_fromView_(nsEvent.locationInWindow(), null);
         int row = (int) widget.rowAtPoint(pt);
-        if (row != -1 && (style & SWT.CHECK) != 0) {
+        if (row != -1 && (getApi().style & SWT.CHECK) != 0) {
             int column = (int) widget.columnAtPoint(pt);
             NSCell cell = widget.preparedCellAtColumn(column, row);
             if (cell != null && cell.isKindOfClass(OS.class_NSButtonCell) && cell.isEnabled()) {
@@ -2499,7 +2499,7 @@ public class SwtTable extends SwtComposite implements ITable {
     void scrollClipViewToPoint(long id, long sel, long clipView, NSPoint point) {
         if (shouldScroll) {
             super.scrollClipViewToPoint(id, sel, clipView, point);
-            if ((style & SWT.CHECK) != 0 && columnCount > 0 && ((NSTableView) getApi().view).headerView() != null) {
+            if ((getApi().style & SWT.CHECK) != 0 && columnCount > 0 && ((NSTableView) getApi().view).headerView() != null) {
                 if (point.x <= getCheckColumnWidth()) {
                     /*
 				 * Header of first column is extended as header of the checkbox column.
@@ -2530,7 +2530,7 @@ public class SwtTable extends SwtComposite implements ITable {
             set = set.initWithIndex(index);
             NSTableView widget = (NSTableView) getApi().view;
             ignoreSelect = true;
-            widget.selectRowIndexes(set, (style & SWT.MULTI) != 0);
+            widget.selectRowIndexes(set, (getApi().style & SWT.MULTI) != 0);
             ignoreSelect = false;
             set.release();
         }
@@ -2561,7 +2561,7 @@ public class SwtTable extends SwtComposite implements ITable {
      */
     public void select(int start, int end) {
         checkWidget();
-        if (end < 0 || start > end || ((style & SWT.SINGLE) != 0 && start != end))
+        if (end < 0 || start > end || ((getApi().style & SWT.SINGLE) != 0 && start != end))
             return;
         if (itemCount == 0 || start >= itemCount)
             return;
@@ -2577,7 +2577,7 @@ public class SwtTable extends SwtComposite implements ITable {
             set = set.initWithIndexesInRange(range);
             NSTableView widget = (NSTableView) getApi().view;
             ignoreSelect = true;
-            widget.selectRowIndexes(set, (style & SWT.MULTI) != 0);
+            widget.selectRowIndexes(set, (getApi().style & SWT.MULTI) != 0);
             ignoreSelect = false;
             set.release();
         }
@@ -2611,7 +2611,7 @@ public class SwtTable extends SwtComposite implements ITable {
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int length = indices.length;
-        if (length == 0 || ((style & SWT.SINGLE) != 0 && length > 1))
+        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
             return;
         int count = 0;
         NSMutableIndexSet set = (NSMutableIndexSet) new NSMutableIndexSet().alloc().init();
@@ -2625,7 +2625,7 @@ public class SwtTable extends SwtComposite implements ITable {
         if (count > 0) {
             NSTableView widget = (NSTableView) getApi().view;
             ignoreSelect = true;
-            widget.selectRowIndexes(set, (style & SWT.MULTI) != 0);
+            widget.selectRowIndexes(set, (getApi().style & SWT.MULTI) != 0);
             ignoreSelect = false;
         }
         set.release();
@@ -2654,7 +2654,7 @@ public class SwtTable extends SwtComposite implements ITable {
      */
     public void selectAll() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0)
+        if ((getApi().style & SWT.SINGLE) != 0)
             return;
         NSTableView widget = (NSTableView) getApi().view;
         ignoreSelect = true;
@@ -2718,7 +2718,7 @@ public class SwtTable extends SwtComposite implements ITable {
         if (reorder) {
             NSTableView tableView = (NSTableView) getApi().view;
             int[] oldX = new int[oldOrder.length];
-            int check = (style & SWT.CHECK) != 0 ? 1 : 0;
+            int check = (getApi().style & SWT.CHECK) != 0 ? 1 : 0;
             for (int i = 0; i < oldOrder.length; i++) {
                 int index = oldOrder[i];
                 oldX[index] = (int) tableView.rectOfColumn(i + check).x;
@@ -2738,7 +2738,7 @@ public class SwtTable extends SwtComposite implements ITable {
                 TableColumn column = newColumns[i];
                 if (!column.isDisposed()) {
                     if (newX[i] != oldX[i]) {
-                        ((SwtWidget) column.getImpl()).sendEvent(SWT.Move);
+                        column.getImpl().sendEvent(SWT.Move);
                     }
                 }
             }
@@ -3099,7 +3099,7 @@ public class SwtTable extends SwtComposite implements ITable {
         checkWidget();
         //TODO - optimize to use expand flag
         deselectAll();
-        if (end < 0 || start > end || ((style & SWT.SINGLE) != 0 && start != end))
+        if (end < 0 || start > end || ((getApi().style & SWT.SINGLE) != 0 && start != end))
             return;
         if (itemCount == 0 || start >= itemCount)
             return;
@@ -3139,7 +3139,7 @@ public class SwtTable extends SwtComposite implements ITable {
         //TODO - optimize to use expand flag
         deselectAll();
         int length = indices.length;
-        if (length == 0 || ((style & SWT.SINGLE) != 0 && length > 1))
+        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
             return;
         select(indices);
         showIndex(indices[0]);
@@ -3205,7 +3205,7 @@ public class SwtTable extends SwtComposite implements ITable {
         //TODO - optimize to use expand flag
         deselectAll();
         int length = items.length;
-        if (length == 0 || ((style & SWT.SINGLE) != 0 && length > 1))
+        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
             return;
         int[] indices = new int[length];
         int count = 0;
@@ -3361,7 +3361,7 @@ public class SwtTable extends SwtComposite implements ITable {
         if (columnCount <= 1)
             return;
         int index = indexOf(((SwtTableColumn) column.getImpl()).nsColumn);
-        if (!(0 <= index && index < columnCount + ((style & SWT.CHECK) != 0 ? 1 : 0)))
+        if (!(0 <= index && index < columnCount + ((getApi().style & SWT.CHECK) != 0 ? 1 : 0)))
             return;
         ((NSTableView) getApi().view).scrollColumnToVisible(index);
     }
@@ -3452,7 +3452,7 @@ public class SwtTable extends SwtComposite implements ITable {
     void selectRowIndexes_byExtendingSelection(long id, long sel, long indexes, boolean extend) {
         if (preventSelect && !ignoreSelect)
             return;
-        if ((style & SWT.SINGLE) != 0 && !ignoreSelect) {
+        if ((getApi().style & SWT.SINGLE) != 0 && !ignoreSelect) {
             NSIndexSet set = new NSIndexSet(indexes);
             if (set.count() == 0)
                 return;
@@ -3467,7 +3467,7 @@ public class SwtTable extends SwtComposite implements ITable {
         if (rowIndex == -1)
             rowIndex = (int) tableView.selectedRow();
         if (rowIndex != -1) {
-            if ((style & SWT.CHECK) != 0) {
+            if ((getApi().style & SWT.CHECK) != 0) {
                 NSArray columns = tableView.tableColumns();
                 int columnIndex = (int) tableView.clickedColumn();
                 if (columnIndex != -1) {
@@ -3518,7 +3518,7 @@ public class SwtTable extends SwtComposite implements ITable {
         event.index = columnIndex;
         event.width = contentWidth;
         event.height = itemHeight;
-        if (isSelected && ((style & SWT.HIDE_SELECTION) == 0 || hasFocus()))
+        if (isSelected && ((getApi().style & SWT.HIDE_SELECTION) == 0 || hasFocus()))
             event.detail |= SWT.SELECTED;
         sendEvent(SWT.MeasureItem, event);
         gc.dispose();
@@ -3563,7 +3563,7 @@ public class SwtTable extends SwtComposite implements ITable {
             id columnId = nsColumns.objectAtIndex(i);
             TableColumn column = getColumn(columnId);
             if (column != null) {
-                ((SwtWidget) column.getImpl()).sendEvent(SWT.Move);
+                column.getImpl().sendEvent(SWT.Move);
                 if (isDisposed())
                     return;
             }
@@ -3584,7 +3584,7 @@ public class SwtTable extends SwtComposite implements ITable {
         if (column == null)
             return;
         /* either CHECK column or firstColumn in 0-column Table */
-        ((SwtWidget) column.getImpl()).sendEvent(SWT.Resize);
+        column.getImpl().sendEvent(SWT.Resize);
         if (isDisposed())
             return;
         NSTableView tableView = (NSTableView) getApi().view;
@@ -3598,7 +3598,7 @@ public class SwtTable extends SwtComposite implements ITable {
             columnId = nsColumns.objectAtIndex(i);
             column = getColumn(columnId);
             if (column != null) {
-                ((SwtWidget) column.getImpl()).sendEvent(SWT.Move);
+                column.getImpl().sendEvent(SWT.Move);
                 if (isDisposed())
                     return;
             }
@@ -3673,7 +3673,7 @@ public class SwtTable extends SwtComposite implements ITable {
     @Override
     boolean tableView_shouldReorderColumn_toColumn(long id, long sel, long aTableView, long currentColIndex, long newColIndex) {
         // Check column should never move and no column can be dragged to the left of it, if present.
-        if ((style & SWT.CHECK) != 0) {
+        if ((getApi().style & SWT.CHECK) != 0) {
             if (currentColIndex == 0)
                 return false;
             if (newColIndex == 0)
@@ -3692,7 +3692,7 @@ public class SwtTable extends SwtComposite implements ITable {
     @Override
     boolean tableView_shouldTrackCell_forTableColumn_row(long id, long sel, long table, long cell, /*long*/
     long tableColumn, long rowIndex) {
-        if ((style & SWT.CHECK) != 0) {
+        if ((getApi().style & SWT.CHECK) != 0) {
             if (new NSCell(cell).isKindOfClass(OS.class_NSButtonCell))
                 return true;
         }
@@ -3703,7 +3703,7 @@ public class SwtTable extends SwtComposite implements ITable {
     @Override
     void tableView_setObjectValue_forTableColumn_row(long id, long sel, long aTableView, long anObject, long aTableColumn, long rowIndex) {
         if (checkColumn != null && aTableColumn == checkColumn.id) {
-            if (keyDown && (style & SWT.MULTI) != 0) {
+            if (keyDown && (getApi().style & SWT.MULTI) != 0) {
                 NSTableView widget = (NSTableView) getApi().view;
                 NSIndexSet selection = widget.selectedRowIndexes();
                 int count = (int) selection.count();
@@ -3722,8 +3722,6 @@ public class SwtTable extends SwtComposite implements ITable {
     }
 
     private void toggleCheckedItem(TableItem item, long rowIndex) {
-        if (item != null && !(item.getImpl() instanceof SwtTableItem))
-            return;
         ((SwtTableItem) item.getImpl()).checked = !((SwtTableItem) item.getImpl()).checked;
         Event event = new Event();
         event.detail = SWT.CHECK;
@@ -3765,10 +3763,10 @@ public class SwtTable extends SwtComposite implements ITable {
         } else {
             color = NSColor.disabledControlTextColor();
         }
-        int direction = (style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
+        int direction = (getApi().style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
         int alignment = OS.NSTextAlignmentLeft;
         if (columnCount > 0) {
-            int style = ((SwtWidget) columns[index].getImpl()).style;
+            int style = columns[index].style;
             if ((style & SWT.CENTER) != 0) {
                 alignment = OS.NSTextAlignmentCenter;
             } else if ((style & SWT.RIGHT) != 0) {

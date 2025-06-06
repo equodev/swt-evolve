@@ -134,7 +134,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     @Override
     boolean acceptsFirstMouse(long id, long sel, long theEvent) {
         Shell shell = getShell();
-        if ((((SwtWidget) shell.getImpl()).style & SWT.ON_TOP) != 0)
+        if ((shell.style & SWT.ON_TOP) != 0)
             return true;
         return super.acceptsFirstMouse(id, sel, theEvent);
     }
@@ -607,7 +607,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         addTypedListener(listener, SWT.MouseWheel);
     }
 
-    void addRelation(Control control) {
+    public void addRelation(Control control) {
     }
 
     /**
@@ -706,7 +706,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     @Override
     boolean becomeFirstResponder(long id, long sel) {
-        if ((state & DISABLED) != 0)
+        if ((getApi().state & DISABLED) != 0)
             return false;
         return super.becomeFirstResponder(id, sel);
     }
@@ -794,31 +794,31 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Shell shell = getShell();
         if (this.getApi() == shell)
             return;
-        state &= ~PARENT_BACKGROUND;
+        getApi().state &= ~PARENT_BACKGROUND;
         Composite composite = parent;
         do {
-            int mode = ((SwtComposite) composite.getImpl()).backgroundMode;
+            int mode = composite.getImpl()._backgroundMode();
             if (mode != 0 || backgroundAlpha == 0) {
                 if (mode == SWT.INHERIT_DEFAULT || backgroundAlpha == 0) {
                     Control control = this.getApi();
                     do {
-                        if ((((SwtWidget) control.getImpl()).state & THEME_BACKGROUND) == 0) {
+                        if ((control.state & THEME_BACKGROUND) == 0) {
                             return;
                         }
-                        control = ((SwtControl) control.getImpl()).parent;
+                        control = control.getImpl()._parent();
                     } while (control != composite);
                 }
-                state |= PARENT_BACKGROUND;
+                getApi().state |= PARENT_BACKGROUND;
                 return;
             }
             if (composite == shell)
                 break;
-            composite = ((SwtControl) composite.getImpl()).parent;
+            composite = composite.getImpl()._parent();
         } while (true);
     }
 
     void checkBuffered() {
-        style |= SWT.DOUBLE_BUFFERED;
+        getApi().style |= SWT.DOUBLE_BUFFERED;
     }
 
     void checkToolTip(Widget target) {
@@ -969,7 +969,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             }
             paragraphStyle.setAlignment(align);
         }
-        if ((style & SWT.RIGHT_TO_LEFT) != 0) {
+        if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0) {
             paragraphStyle.setBaseWritingDirection(OS.NSWritingDirectionRightToLeft);
         } else {
             paragraphStyle.setBaseWritingDirection(OS.NSWritingDirectionLeftToRight);
@@ -990,7 +990,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     @Override
     void createWidget() {
-        state |= DRAG_DETECT;
+        getApi().state |= DRAG_DETECT;
         checkOrientation(parent);
         super.createWidget();
         checkBackground();
@@ -998,7 +998,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         setDefaultFont();
         setZOrder();
         setRelations();
-        if ((state & PARENT_BACKGROUND) != 0) {
+        if ((getApi().state & PARENT_BACKGROUND) != 0) {
             setBackground();
         }
         ((SwtDisplay) display.getImpl()).clearPool();
@@ -1065,7 +1065,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                         return;
                 }
             }
-            if ((state & CANVAS) != 0)
+            if ((getApi().state & CANVAS) != 0)
                 return;
         }
         super.doCommandBySelector(id, sel, selector);
@@ -1286,7 +1286,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        Image image = ((SwtControl) control.getImpl()).backgroundImage;
+        Image image = control.getImpl()._backgroundImage();
         if (image != null && !image.isDisposed()) {
             context.saveGraphicsState();
             NSColor.colorWithPatternImage(image.handle).setFill();
@@ -1331,16 +1331,16 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         context.restoreGraphicsState();
     }
 
-    Cursor findCursor() {
+    public Cursor findCursor() {
         if (cursor != null)
             return cursor;
-        return ((SwtControl) parent.getImpl()).findCursor();
+        return parent.getImpl().findCursor();
     }
 
     Control findBackgroundControl() {
         if ((backgroundImage != null || background != null) && backgroundAlpha > 0)
             return this.getApi();
-        return (parent != null && !isTransparent() && (state & PARENT_BACKGROUND) != 0) ? ((SwtControl) parent.getImpl()).findBackgroundControl() : null;
+        return (parent != null && !isTransparent() && (getApi().state & PARENT_BACKGROUND) != 0) ? ((SwtControl) parent.getImpl()).findBackgroundControl() : null;
     }
 
     Menu[] findMenus(Control control) {
@@ -1354,10 +1354,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus) {
-        if (oldDecorations != null && !(oldDecorations.getImpl() instanceof SwtDecorations))
-            return;
-        if (oldShell != null && !(oldShell.getImpl() instanceof SwtShell))
-            return;
         ((SwtShell) oldShell.getImpl()).fixShell(newShell, this.getApi());
         ((SwtDecorations) oldDecorations.getImpl()).fixDecorations(newDecorations, this.getApi(), menus);
     }
@@ -1365,7 +1361,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     void fixFocus(Control focusControl) {
         Shell shell = getShell();
         Control control = this.getApi();
-        while (control != shell && (control = ((SwtControl) control.getImpl()).parent) != null) {
+        while (control != shell && (control = control.getImpl()._parent()) != null) {
             if (control.setFocus())
                 return;
         }
@@ -1380,7 +1376,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     @Override
     void flagsChanged(long id, long sel, long theEvent) {
         if (hasKeyboardFocus(id)) {
-            if ((state & WEBKIT_EVENTS_FIX) == 0) {
+            if ((getApi().state & WEBKIT_EVENTS_FIX) == 0) {
                 Shell s = this.getShell();
                 ((SwtShell) s.getImpl()).keyInputHappened = false;
                 int mask = 0;
@@ -1624,7 +1620,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        return ((SwtControl) control.getImpl()).backgroundImage;
+        return control.getImpl()._backgroundImage();
     }
 
     /**
@@ -1676,7 +1672,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public boolean getDragDetect() {
         checkWidget();
-        return (state & DRAG_DETECT) != 0;
+        return (getApi().state & DRAG_DETECT) != 0;
     }
 
     @Override
@@ -1722,7 +1718,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public boolean getEnabled() {
         checkWidget();
-        return (state & DISABLED) == 0;
+        return (getApi().state & DISABLED) == 0;
     }
 
     /**
@@ -1878,7 +1874,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public int getOrientation() {
         checkWidget();
-        return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+        return getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
     }
 
     /**
@@ -1898,19 +1894,19 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return parent;
     }
 
-    Control[] getPath() {
+    public Control[] getPath() {
         int count = 0;
         Shell shell = getShell();
         Control control = this.getApi();
         while (control != shell) {
             count++;
-            control = ((SwtControl) control.getImpl()).parent;
+            control = control.getImpl()._parent();
         }
         control = this.getApi();
         Control[] result = new Control[count];
         while (control != shell) {
             result[--count] = control;
-            control = ((SwtControl) control.getImpl()).parent;
+            control = control.getImpl()._parent();
         }
         return result;
     }
@@ -2005,7 +2001,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     public int getTextDirection() {
         checkWidget();
         /* return the widget orientation */
-        return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+        return getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
     }
 
     float getThemeAlpha() {
@@ -2072,7 +2068,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public boolean getVisible() {
         checkWidget();
-        return (state & HIDDEN) == 0;
+        return (getApi().state & HIDDEN) == 0;
     }
 
     long getVisibleRegion() {
@@ -2086,7 +2082,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     boolean hasBorder() {
-        return (style & SWT.BORDER) != 0;
+        return (getApi().style & SWT.BORDER) != 0;
     }
 
     boolean hasFocus() {
@@ -2099,7 +2095,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     @Override
     long hitTest(long id, long sel, NSPoint point) {
-        if ((state & DISABLED) != 0)
+        if ((getApi().state & DISABLED) != 0)
             return 0;
         if (!isActive())
             return 0;
@@ -2150,7 +2146,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                         }
                     }
                 }
-                if ((state & CANVAS) != 0)
+                if ((getApi().state & CANVAS) != 0)
                     return true;
             }
             return super.insertText(id, sel, string);
@@ -2221,7 +2217,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (data != null) {
             int mask = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
             if ((data.style & mask) == 0) {
-                data.style |= style & (mask | SWT.MIRRORED);
+                data.style |= getApi().style & (mask | SWT.MIRRORED);
             }
             data.device = display;
             data.thread = ((SwtDisplay) display.getImpl()).thread;
@@ -2281,14 +2277,14 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     void invalidateVisibleRegion() {
         int index = 0;
-        Control[] siblings = ((SwtComposite) parent.getImpl())._getChildren();
+        Control[] siblings = parent.getImpl()._getChildren();
         while (index < siblings.length && siblings[index] != this.getApi()) index++;
         for (int i = index; i < siblings.length; i++) {
             Control sibling = siblings[i];
-            ((SwtControl) sibling.getImpl()).resetVisibleRegion();
+            sibling.getImpl().resetVisibleRegion();
             ((SwtControl) sibling.getImpl()).invalidateChildrenVisibleRegion();
         }
-        ((SwtControl) parent.getImpl()).resetVisibleRegion();
+        parent.getImpl().resetVisibleRegion();
     }
 
     @Override
@@ -2314,8 +2310,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
-    boolean isDrawing() {
-        return getDrawing() && ((SwtControl) parent.getImpl()).isDrawing();
+    public boolean isDrawing() {
+        return getDrawing() && parent.getImpl().isDrawing();
     }
 
     /**
@@ -2345,7 +2341,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     boolean isFocusAncestor(Control control) {
         while (control != null && control != this.getApi() && !(control instanceof Shell)) {
-            control = ((SwtControl) control.getImpl()).parent;
+            control = control.getImpl()._parent();
         }
         return control == this.getApi();
     }
@@ -2400,7 +2396,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     boolean isResizing() {
-        return (state & RESIZING) != 0 || ((SwtControl) parent.getImpl()).isResizing();
+        return (getApi().state & RESIZING) != 0 || ((SwtControl) parent.getImpl()).isResizing();
     }
 
     boolean isShowing() {
@@ -2416,7 +2412,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             if (size.x == 0 || size.y == 0) {
                 return false;
             }
-            control = ((SwtControl) control.getImpl()).parent;
+            control = control.getImpl()._parent();
         }
         return true;
     }
@@ -2447,10 +2443,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return (code & (SWT.TRAVERSE_ARROW_PREVIOUS | SWT.TRAVERSE_ARROW_NEXT)) != 0;
     }
 
-    boolean isTransparent() {
+    public boolean isTransparent() {
         if (background != null)
             return false;
-        return ((SwtControl) parent.getImpl()).isTransparent();
+        return parent.getImpl().isTransparent();
     }
 
     boolean isTrim(NSView view) {
@@ -2635,7 +2631,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control runEnterExitControl = null;
         switch(nsType) {
             case OS.NSLeftMouseDown:
-                if (nsEvent.clickCount() == 1 && (nsEvent.modifierFlags() & OS.NSControlKeyMask) == 0 && (state & DRAG_DETECT) != 0 && hooks(SWT.DragDetect)) {
+                if (nsEvent.clickCount() == 1 && (nsEvent.modifierFlags() & OS.NSControlKeyMask) == 0 && (getApi().state & DRAG_DETECT) != 0 && hooks(SWT.DragDetect)) {
                     consume = new boolean[1];
                     NSPoint location = getApi().view.convertPoint_fromView_(nsEvent.locationInWindow(), null);
                     if (!getApi().view.isFlipped()) {
@@ -2768,7 +2764,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if (parent != ((SwtControl) control.getImpl()).parent)
+            if (parent != control.getImpl()._parent())
                 return;
         }
         setZOrder(control, true);
@@ -2799,7 +2795,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if (parent != ((SwtControl) control.getImpl()).parent)
+            if (parent != control.getImpl()._parent())
                 return;
         }
         setZOrder(control, false);
@@ -3026,7 +3022,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     void release(boolean destroy) {
         Control next = null, previous = null;
         if (destroy && parent != null) {
-            Control[] children = ((SwtComposite) parent.getImpl())._getChildren();
+            Control[] children = parent.getImpl()._getChildren();
             int index = 0;
             while (index < children.length) {
                 if (children[index] == this.getApi())
@@ -3041,7 +3037,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         super.release(destroy);
         if (destroy) {
             if (previous != null)
-                ((SwtControl) previous.getImpl()).addRelation(next);
+                previous.getImpl().addRelation(next);
         }
     }
 
@@ -3485,7 +3481,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         eventTable.unhook(SWT.Traverse, listener);
     }
 
-    void resetVisibleRegion() {
+    public void resetVisibleRegion() {
         if (visibleRgn != 0) {
             OS.DisposeRgn(visibleRgn);
             visibleRgn = 0;
@@ -3681,8 +3677,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        if (((SwtControl) control.getImpl()).backgroundImage != null) {
-            setBackgroundImage(((SwtControl) control.getImpl()).backgroundImage.handle);
+        if (control.getImpl()._backgroundImage() != null) {
+            setBackgroundImage(control.getImpl()._backgroundImage().handle);
         } else {
             double[] color = ((SwtControl) control.getImpl()).background != null ? ((SwtControl) control.getImpl()).background : ((SwtControl) control.getImpl()).defaultBackground().handle;
             NSColor nsColor = NSColor.colorWithDeviceRed(color[0], color[1], color[2], color[3]);
@@ -3894,7 +3890,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             transform.translateXBy(2 * pt.x, 2 * pt.y);
             regionPath.transformUsingAffineTransform(transform);
         }
-        ((SwtControl) parent.getImpl()).setClipRegion(view);
+        if (parent == null || parent.getImpl() instanceof SwtControl) {
+            ((SwtControl) parent.getImpl()).setClipRegion(view);
+        }
     }
 
     /**
@@ -3952,9 +3950,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     public void setDragDetect(boolean dragDetect) {
         checkWidget();
         if (dragDetect) {
-            state |= DRAG_DETECT;
+            getApi().state |= DRAG_DETECT;
         } else {
-            state &= ~DRAG_DETECT;
+            getApi().state &= ~DRAG_DETECT;
         }
     }
 
@@ -3973,7 +3971,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public void setEnabled(boolean enabled) {
         checkWidget();
-        if (((state & DISABLED) == 0) == enabled)
+        if (((getApi().state & DISABLED) == 0) == enabled)
             return;
         Control control = null;
         boolean fixFocus = false;
@@ -3984,9 +3982,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             }
         }
         if (enabled) {
-            state &= ~DISABLED;
+            getApi().state &= ~DISABLED;
         } else {
-            state |= DISABLED;
+            getApi().state |= DISABLED;
         }
         enableWidget(enabled);
         if (fixFocus)
@@ -4009,7 +4007,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public boolean setFocus() {
         checkWidget();
-        if ((style & SWT.NO_FOCUS) != 0)
+        if ((getApi().style & SWT.NO_FOCUS) != 0)
             return false;
         return forceFocus();
     }
@@ -4105,11 +4103,11 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         super.setFrameSize(id, sel, size);
         if (frame.width != size.width || frame.height != size.height) {
             invalidateVisibleRegion();
-            boolean oldResizing = (state & RESIZING) != 0;
-            state |= RESIZING;
+            boolean oldResizing = (getApi().state & RESIZING) != 0;
+            getApi().state |= RESIZING;
             resized();
             if (!oldResizing)
-                state &= ~RESIZING;
+                getApi().state &= ~RESIZING;
         }
     }
 
@@ -4216,7 +4214,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (menu != null) {
             if (menu.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if ((((SwtWidget) menu.getImpl()).style & SWT.POP_UP) == 0) {
+            if ((menu.style & SWT.POP_UP) == 0) {
                 error(SWT.ERROR_MENU_NOT_POP_UP);
             }
             if (((SwtMenu) menu.getImpl()).parent != menuShell()) {
@@ -4358,7 +4356,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     void setRelations() {
         if (parent == null)
             return;
-        Control[] children = ((SwtComposite) parent.getImpl())._getChildren();
+        Control[] children = parent.getImpl()._getChildren();
         int count = children.length;
         if (count > 1) {
             /*
@@ -4367,7 +4365,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 		 */
             Control child = children[count - 2];
             if (child != this.getApi()) {
-                ((SwtControl) child.getImpl()).addRelation(this.getApi());
+                child.getImpl().addRelation(this.getApi());
             }
         }
     }
@@ -4553,13 +4551,13 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     public void setVisible(boolean visible) {
         checkWidget();
         if (visible) {
-            if ((state & HIDDEN) == 0)
+            if ((getApi().state & HIDDEN) == 0)
                 return;
-            state &= ~HIDDEN;
+            getApi().state &= ~HIDDEN;
         } else {
-            if ((state & HIDDEN) != 0)
+            if ((getApi().state & HIDDEN) != 0)
                 return;
-            state |= HIDDEN;
+            getApi().state |= HIDDEN;
         }
         if (visible) {
             /*
@@ -4607,24 +4605,24 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     void setZOrder() {
         NSView topView = topView();
-        ((SwtControl) parent.getImpl()).contentView().addSubview(topView, OS.NSWindowBelow, null);
+        if (parent == null || parent.getImpl() instanceof SwtControl) {
+            ((SwtControl) parent.getImpl()).contentView().addSubview(topView, OS.NSWindowBelow, null);
+        }
     }
 
     @Override
     boolean shouldDelayWindowOrderingForEvent(long id, long sel, long theEvent) {
         Shell shell = getShell();
-        if ((((SwtWidget) shell.getImpl()).style & SWT.ON_TOP) != 0)
+        if ((shell.style & SWT.ON_TOP) != 0)
             return false;
         return super.shouldDelayWindowOrderingForEvent(id, sel, theEvent);
     }
 
     void setZOrder(Control sibling, boolean above) {
-        if (sibling != null && !(sibling.getImpl() instanceof SwtControl))
-            return;
         int index = 0, siblingIndex = 0, oldNextIndex = -1;
         Control[] children = null;
         /* determine the receiver's and sibling's indexes in the parent */
-        children = ((SwtComposite) parent.getImpl())._getChildren();
+        children = parent.getImpl()._getChildren();
         while (index < children.length) {
             if (children[index] == this.getApi())
                 break;
@@ -4645,19 +4643,25 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         }
         if (sibling != null) {
             if (above) {
-                ((SwtControl) sibling.getImpl()).removeRelation();
+                if (sibling == null || sibling.getImpl() instanceof SwtControl) {
+                    ((SwtControl) sibling.getImpl()).removeRelation();
+                }
             } else {
                 if (siblingIndex + 1 < children.length) {
                     ((SwtControl) children[siblingIndex + 1].getImpl()).removeRelation();
                 }
             }
         }
-        NSView otherView = sibling == null ? null : ((SwtControl) sibling.getImpl()).topView();
-        NSView topView = topView();
-        topView.retain();
-        topView.removeFromSuperview();
-        ((SwtControl) parent.getImpl()).contentView().addSubview(topView, above ? OS.NSWindowAbove : OS.NSWindowBelow, otherView);
-        topView.release();
+        if (sibling == null || sibling.getImpl() instanceof SwtControl) {
+            NSView otherView = sibling == null ? null : ((SwtControl) sibling.getImpl()).topView();
+            NSView topView = topView();
+            topView.retain();
+            topView.removeFromSuperview();
+            if (parent == null || parent.getImpl() instanceof SwtControl) {
+                ((SwtControl) parent.getImpl()).contentView().addSubview(topView, above ? OS.NSWindowAbove : OS.NSWindowBelow, otherView);
+            }
+            topView.release();
+        }
         invalidateVisibleRegion();
         /* determine the receiver's new index in the parent */
         if (sibling != null) {
@@ -4674,9 +4678,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             }
         }
         /* add new "Labeled by" relations as needed */
-        children = ((SwtComposite) parent.getImpl())._getChildren();
+        children = parent.getImpl()._getChildren();
         if (0 < index) {
-            ((SwtControl) children[index - 1].getImpl()).addRelation(this.getApi());
+            children[index - 1].getImpl().addRelation(this.getApi());
         }
         if (index + 1 < children.length) {
             addRelation(children[index + 1]);
@@ -4686,7 +4690,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 oldNextIndex--;
             /* the last two conditions below ensure that duplicate relations are not hooked */
             if (0 < oldNextIndex && oldNextIndex != index && oldNextIndex != index + 1) {
-                ((SwtControl) children[oldNextIndex - 1].getImpl()).addRelation(children[oldNextIndex]);
+                children[oldNextIndex - 1].getImpl().addRelation(children[oldNextIndex]);
             }
         }
     }
@@ -5010,7 +5014,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             }
             if (control == shell)
                 return false;
-            control = ((SwtControl) control.getImpl()).parent;
+            control = control.getImpl()._parent();
         } while (all && control != null);
         return false;
     }
@@ -5206,7 +5210,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 return false;
             if (control == shell)
                 return false;
-            control = ((SwtControl) control.getImpl()).parent;
+            control = control.getImpl()._parent();
         } while (all && control != null);
         return false;
     }
@@ -5302,7 +5306,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     boolean traverseItem(boolean next) {
-        Control[] children = ((SwtComposite) parent.getImpl())._getChildren();
+        Control[] children = parent.getImpl()._getChildren();
         int length = children.length;
         int index = 0;
         while (index < length) {
@@ -5437,14 +5441,14 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     void updateBackgroundImage() {
         Control control = findBackgroundControl();
-        Image image = control != null ? ((SwtControl) control.getImpl()).backgroundImage : backgroundImage;
+        Image image = control != null ? control.getImpl()._backgroundImage() : backgroundImage;
         setBackgroundImage(image != null ? image.handle : null);
     }
 
     void updateBackgroundMode() {
-        int oldState = state & PARENT_BACKGROUND;
+        int oldState = getApi().state & PARENT_BACKGROUND;
         checkBackground();
-        if (oldState != (state & PARENT_BACKGROUND)) {
+        if (oldState != (getApi().state & PARENT_BACKGROUND)) {
             setBackground();
         }
     }
@@ -5505,6 +5509,62 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     static double luma(double[] rgbColor) {
         return 0.2126f * rgbColor[0] + 0.7152f * rgbColor[1] + 0.0722f * rgbColor[2];
+    }
+
+    public Composite _parent() {
+        return parent;
+    }
+
+    public String _toolTipText() {
+        return toolTipText;
+    }
+
+    public Object _layoutData() {
+        return layoutData;
+    }
+
+    public int _drawCount() {
+        return drawCount;
+    }
+
+    public int _backgroundAlpha() {
+        return backgroundAlpha;
+    }
+
+    public Menu _menu() {
+        return menu;
+    }
+
+    public Image _backgroundImage() {
+        return backgroundImage;
+    }
+
+    public Font _font() {
+        return font;
+    }
+
+    public Cursor _cursor() {
+        return cursor;
+    }
+
+    public Region _region() {
+        return region;
+    }
+
+    public long _visibleRgn() {
+        return visibleRgn;
+    }
+
+    public Accessible _accessible() {
+        return accessible;
+    }
+
+    public boolean _inCacheDisplayInRect() {
+        return inCacheDisplayInRect;
+    }
+
+    public boolean _touchEnabled() {
+        return touchEnabled;
     }
 
     public Control getApi() {

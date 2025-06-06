@@ -233,7 +233,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     }
 
     NSMenu createEmptyMenu() {
-        if ((((SwtWidget) parent.getImpl()).style & SWT.BAR) != 0) {
+        if ((parent.style & SWT.BAR) != 0) {
             return (NSMenu) new SWTMenu().alloc().init();
         }
         return null;
@@ -287,7 +287,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
      */
     public boolean getEnabled() {
         checkWidget();
-        return (state & DISABLED) == 0;
+        return (getApi().state & DISABLED) == 0;
     }
 
     /**
@@ -328,7 +328,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
 
     @Override
     String getNameText() {
-        if ((style & SWT.SEPARATOR) != 0)
+        if ((getApi().style & SWT.SEPARATOR) != 0)
             return "|";
         return super.getNameText();
     }
@@ -364,7 +364,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
      */
     public boolean getSelection() {
         checkWidget();
-        if ((style & (SWT.CHECK | SWT.RADIO)) == 0)
+        if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return false;
         return nsItem.state() == OS.NSOnState;
     }
@@ -617,10 +617,10 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
 
     @Override
     void sendSelection() {
-        if ((style & SWT.CHECK) != 0) {
+        if ((getApi().style & SWT.CHECK) != 0) {
             setSelection(!getSelection());
         } else {
-            if ((style & SWT.RADIO) != 0) {
+            if ((getApi().style & SWT.RADIO) != 0) {
                 if ((parent.getStyle() & SWT.NO_RADIO_GROUP) != 0) {
                     setSelection(!getSelection());
                 } else {
@@ -700,9 +700,9 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     public void setEnabled(boolean enabled) {
         checkWidget();
         if (enabled) {
-            state &= ~DISABLED;
+            getApi().state &= ~DISABLED;
         } else {
-            state |= DISABLED;
+            getApi().state |= DISABLED;
         }
         nsItem.setEnabled(enabled);
     }
@@ -748,7 +748,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         checkWidget();
         if (this.image == image)
             return;
-        if ((style & SWT.SEPARATOR) != 0)
+        if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
         super.setImage(image);
         nsItem.setImage(image != null ? image.handle : null);
@@ -782,13 +782,13 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     public void setMenu(Menu menu) {
         checkWidget();
         /* Check to make sure the new menu is valid */
-        if ((style & SWT.CASCADE) == 0) {
+        if ((getApi().style & SWT.CASCADE) == 0) {
             error(SWT.ERROR_MENUITEM_NOT_CASCADE);
         }
         if (menu != null) {
             if (menu.isDisposed() || (menu == parent))
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if ((((SwtWidget) menu.getImpl()).style & SWT.DROP_DOWN) == 0) {
+            if ((menu.style & SWT.DROP_DOWN) == 0) {
                 error(SWT.ERROR_MENU_NOT_DROP_DOWN);
             }
             if (((SwtMenu) parent.getImpl()).parent != null && ((SwtMenu) menu.getImpl()).parent != ((SwtMenu) parent.getImpl()).parent) {
@@ -825,7 +825,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     }
 
     boolean setRadioSelection(boolean value) {
-        if ((style & SWT.RADIO) == 0)
+        if ((getApi().style & SWT.RADIO) == 0)
             return false;
         if (getSelection() != value) {
             setSelection(value);
@@ -849,7 +849,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
      */
     public void setSelection(boolean selected) {
         checkWidget();
-        if ((style & (SWT.CHECK | SWT.RADIO)) == 0)
+        if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
         nsItem.setState(selected ? OS.NSOnState : OS.NSOffState);
     }
@@ -896,7 +896,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if ((style & SWT.SEPARATOR) != 0)
+        if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
         if (text.equals(string))
             return;

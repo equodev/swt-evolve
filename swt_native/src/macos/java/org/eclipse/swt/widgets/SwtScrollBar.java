@@ -176,7 +176,7 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
      */
     public boolean getEnabled() {
         checkWidget();
-        return (state & DISABLED) == 0;
+        return (getApi().state & DISABLED) == 0;
     }
 
     /**
@@ -371,7 +371,7 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
      */
     public boolean getVisible() {
         checkWidget();
-        return (state & HIDDEN) == 0 && !view.isHidden();
+        return (getApi().state & HIDDEN) == 0 && !view.isHidden();
     }
 
     /**
@@ -395,8 +395,8 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
     }
 
     @Override
-    boolean isDrawing() {
-        return getDrawing() && ((SwtControl) parent.getImpl()).isDrawing();
+    public boolean isDrawing() {
+        return getDrawing() && parent.getImpl().isDrawing();
     }
 
     /**
@@ -547,7 +547,9 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
 
     @Override
     void setClipRegion(NSView view) {
-        ((SwtControl) parent.getImpl()).setClipRegion(view);
+        if (parent == null || parent.getImpl() instanceof SwtControl) {
+            ((SwtControl) parent.getImpl()).setClipRegion(view);
+        }
     }
 
     /**
@@ -566,19 +568,19 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
     public void setEnabled(boolean enabled) {
         checkWidget();
         if (enabled) {
-            if ((state & DISABLED) == 0)
+            if ((getApi().state & DISABLED) == 0)
                 return;
-            state &= ~DISABLED;
+            getApi().state &= ~DISABLED;
         } else {
-            if ((state & DISABLED) != 0)
+            if ((getApi().state & DISABLED) != 0)
                 return;
-            state |= DISABLED;
+            getApi().state |= DISABLED;
         }
         enableWidget(enabled);
     }
 
     void enableWidget(boolean enabled) {
-        if (!enabled || (state & DISABLED) == 0) {
+        if (!enabled || (getApi().state & DISABLED) == 0) {
             view.setEnabled(enabled);
         }
     }
@@ -776,6 +778,34 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
         if (target == null && (knob != oldKnob || fraction != oldFraction)) {
             ((SwtScrollable) parent.getImpl()).scrollView.flashScrollers();
         }
+    }
+
+    public Scrollable _parent() {
+        return parent;
+    }
+
+    public int _minimum() {
+        return minimum;
+    }
+
+    public int _maximum() {
+        return maximum;
+    }
+
+    public int _thumb() {
+        return thumb;
+    }
+
+    public int _increment() {
+        return increment;
+    }
+
+    public int _pageIncrement() {
+        return pageIncrement;
+    }
+
+    public long _actionSelector() {
+        return actionSelector;
     }
 
     public ScrollBar getApi() {

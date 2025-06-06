@@ -235,6 +235,10 @@ public abstract class DartResource implements IResource {
         nonDisposedReporter = reporter;
     }
 
+    public Device _device() {
+        return device;
+    }
+
     public Resource getApi() {
         return (Resource) api;
     }

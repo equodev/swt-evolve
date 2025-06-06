@@ -6,7 +6,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface ICTabFolder extends IComposite {
+public interface ICTabFolder extends IComposite, ImplCTabFolder {
 
     /**
      * Adds the listener to the collection of listeners who will

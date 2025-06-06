@@ -322,7 +322,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         controlAlignments = new int[0];
         controlRects = new Rectangle[0];
         controlBkImages = new Image[0];
-//        updateTabHeight(false);
+        updateTabHeight(false);
         // Add all listeners
         listener = event -> {
             switch(event.type) {
@@ -1906,8 +1906,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                             ((DartCTabItem) item.getImpl()).closeImageState = SWT.BACKGROUND;
                             redraw(((DartCTabItem) item.getImpl()).closeRect.x, ((DartCTabItem) item.getImpl()).closeRect.y, ((DartCTabItem) item.getImpl()).closeRect.width, ((DartCTabItem) item.getImpl()).closeRect.height, false);
                         }
-                        if ((((DartCTabItem) item.getImpl()).state & SWT.HOT) != 0) {
-                            ((DartCTabItem) item.getImpl()).state &= ~SWT.HOT;
+                        if ((item.state & SWT.HOT) != 0) {
+                            item.state &= ~SWT.HOT;
                             redraw(((DartCTabItem) item.getImpl()).x, ((DartCTabItem) item.getImpl()).y, ((DartCTabItem) item.getImpl()).width, ((DartCTabItem) item.getImpl()).height, false);
                         }
                         if (i == selectedIndex && ((DartCTabItem) item.getImpl()).closeImageState != SWT.NONE) {
@@ -2019,8 +2019,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                                     redraw(((DartCTabItem) item.getImpl()).closeRect.x, ((DartCTabItem) item.getImpl()).closeRect.y, ((DartCTabItem) item.getImpl()).closeRect.width, ((DartCTabItem) item.getImpl()).closeRect.height, false);
                                 }
                             }
-                            if ((((DartCTabItem) item.getImpl()).state & SWT.HOT) == 0) {
-                                ((DartCTabItem) item.getImpl()).state |= SWT.HOT;
+                            if ((item.state & SWT.HOT) == 0) {
+                                item.state |= SWT.HOT;
                                 redraw(((DartCTabItem) item.getImpl()).x, ((DartCTabItem) item.getImpl()).y, ((DartCTabItem) item.getImpl()).width, ((DartCTabItem) item.getImpl()).height, false);
                             }
                         }
@@ -2028,8 +2028,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                             ((DartCTabItem) item.getImpl()).closeImageState = SWT.BACKGROUND;
                             redraw(((DartCTabItem) item.getImpl()).closeRect.x, ((DartCTabItem) item.getImpl()).closeRect.y, ((DartCTabItem) item.getImpl()).closeRect.width, ((DartCTabItem) item.getImpl()).closeRect.height, false);
                         }
-                        if ((((DartCTabItem) item.getImpl()).state & SWT.HOT) != 0 && !close) {
-                            ((DartCTabItem) item.getImpl()).state &= ~SWT.HOT;
+                        if ((item.state & SWT.HOT) != 0 && !close) {
+                            item.state &= ~SWT.HOT;
                             redraw(((DartCTabItem) item.getImpl()).x, ((DartCTabItem) item.getImpl()).y, ((DartCTabItem) item.getImpl()).width, ((DartCTabItem) item.getImpl()).height, false);
                         }
                         if (i == selectedIndex && ((DartCTabItem) item.getImpl()).closeImageState != SWT.NONE && !close) {
@@ -2189,7 +2189,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             for (int i = 0; i < items.length; i++) {
                 Rectangle itemBounds = items[i].getBounds();
                 if (i != selectedIndex && event.getBounds().intersects(itemBounds)) {
-                    renderer.draw(i, SWT.BACKGROUND | SWT.FOREGROUND | ((DartCTabItem) items[i].getImpl()).state, itemBounds, gc);
+                    renderer.draw(i, SWT.BACKGROUND | SWT.FOREGROUND | items[i].state, itemBounds, gc);
                 }
             }
         }
@@ -2197,7 +2197,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         gc.setForeground(gcForeground);
         gc.setBackground(gcBackground);
         if (selectedIndex != -1) {
-            renderer.draw(selectedIndex, ((DartCTabItem) items[selectedIndex].getImpl()).state | SWT.BACKGROUND | SWT.FOREGROUND, items[selectedIndex].getBounds(), gc);
+            renderer.draw(selectedIndex, items[selectedIndex].state | SWT.BACKGROUND | SWT.FOREGROUND, items[selectedIndex].getBounds(), gc);
         }
         gc.setFont(gcFont);
         gc.setForeground(gcForeground);
@@ -3424,11 +3424,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         selectedIndex = index;
         if (oldIndex != -1) {
             ((DartCTabItem) items[oldIndex].getImpl()).closeImageState = SWT.BACKGROUND;
-            ((DartCTabItem) items[oldIndex].getImpl()).state &= ~SWT.SELECTED;
+            items[oldIndex].state &= ~SWT.SELECTED;
         }
         ((DartCTabItem) selection.getImpl()).closeImageState = SWT.NONE;
         ((DartCTabItem) selection.getImpl()).showing = false;
-        ((DartCTabItem) selection.getImpl()).state |= SWT.SELECTED;
+        selection.state |= SWT.SELECTED;
         Control newControl = ((DartCTabItem) selection.getImpl()).control;
         Control oldControl = null;
         if (oldIndex != -1) {
@@ -4550,6 +4550,274 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             maxImage = createButtonImage(getDisplay(), CTabFolderRenderer.PART_MAX_BUTTON);
             maxItem.setImage(maxImage);
         }
+    }
+
+    public boolean _onBottom() {
+        return onBottom;
+    }
+
+    public boolean _single() {
+        return single;
+    }
+
+    public boolean _simple() {
+        return simple;
+    }
+
+    public int _fixedTabHeight() {
+        return fixedTabHeight;
+    }
+
+    public int _tabHeight() {
+        return tabHeight;
+    }
+
+    public int _minChars() {
+        return minChars;
+    }
+
+    public boolean _borderVisible() {
+        return borderVisible;
+    }
+
+    public CTabFolderRenderer _renderer() {
+        return renderer;
+    }
+
+    public CTabItem[] _items() {
+        return items;
+    }
+
+    public int _firstIndex() {
+        return firstIndex;
+    }
+
+    public int _selectedIndex() {
+        return selectedIndex;
+    }
+
+    public int[] _priority() {
+        return priority;
+    }
+
+    public boolean _mru() {
+        return mru;
+    }
+
+    public Listener _listener() {
+        return listener;
+    }
+
+    public boolean _ignoreTraverse() {
+        return ignoreTraverse;
+    }
+
+    public boolean _useDefaultRenderer() {
+        return useDefaultRenderer;
+    }
+
+    public CTabFolder2Listener[] _folderListeners() {
+        return folderListeners;
+    }
+
+    public CTabFolderListener[] _tabListeners() {
+        return tabListeners;
+    }
+
+    public Image _selectionBgImage() {
+        return selectionBgImage;
+    }
+
+    public Color[] _selectionGradientColors() {
+        return selectionGradientColors;
+    }
+
+    public int[] _selectionGradientPercents() {
+        return selectionGradientPercents;
+    }
+
+    public boolean _selectionGradientVertical() {
+        return selectionGradientVertical;
+    }
+
+    public Color _selectionForeground() {
+        return selectionForeground;
+    }
+
+    public Color _selectionBackground() {
+        return selectionBackground;
+    }
+
+    public int _selectionHighlightBarThickness() {
+        return selectionHighlightBarThickness;
+    }
+
+    public Color[] _gradientColors() {
+        return gradientColors;
+    }
+
+    public int[] _gradientPercents() {
+        return gradientPercents;
+    }
+
+    public boolean _gradientVertical() {
+        return gradientVertical;
+    }
+
+    public boolean _showUnselectedImage() {
+        return showUnselectedImage;
+    }
+
+    public boolean _showSelectedImage() {
+        return showSelectedImage;
+    }
+
+    public boolean _showClose() {
+        return showClose;
+    }
+
+    public boolean _showUnselectedClose() {
+        return showUnselectedClose;
+    }
+
+    public boolean _showMin() {
+        return showMin;
+    }
+
+    public boolean _minimized() {
+        return minimized;
+    }
+
+    public boolean _showMax() {
+        return showMax;
+    }
+
+    public boolean _maximized() {
+        return maximized;
+    }
+
+    public ToolBar _minMaxTb() {
+        return minMaxTb;
+    }
+
+    public ToolItem _maxItem() {
+        return maxItem;
+    }
+
+    public ToolItem _minItem() {
+        return minItem;
+    }
+
+    public Image _maxImage() {
+        return maxImage;
+    }
+
+    public Image _minImage() {
+        return minImage;
+    }
+
+    public boolean _hoverTb() {
+        return hoverTb;
+    }
+
+    public Rectangle _hoverRect() {
+        return hoverRect;
+    }
+
+    public boolean _hovering() {
+        return hovering;
+    }
+
+    public boolean _hoverTimerRunning() {
+        return hoverTimerRunning;
+    }
+
+    public boolean _highlight() {
+        return highlight;
+    }
+
+    public boolean _highlightEnabled() {
+        return highlightEnabled;
+    }
+
+    public boolean _showChevron() {
+        return showChevron;
+    }
+
+    public Menu _showMenu() {
+        return showMenu;
+    }
+
+    public ToolBar _chevronTb() {
+        return chevronTb;
+    }
+
+    public ToolItem _chevronItem() {
+        return chevronItem;
+    }
+
+    public int _chevronCount() {
+        return chevronCount;
+    }
+
+    public boolean _chevronVisible() {
+        return chevronVisible;
+    }
+
+    public Image _chevronImage() {
+        return chevronImage;
+    }
+
+    public Control _topRight() {
+        return topRight;
+    }
+
+    public int _topRightAlignment() {
+        return topRightAlignment;
+    }
+
+    public boolean _ignoreResize() {
+        return ignoreResize;
+    }
+
+    public Control[] _controls() {
+        return controls;
+    }
+
+    public int[] _controlAlignments() {
+        return controlAlignments;
+    }
+
+    public Rectangle[] _controlRects() {
+        return controlRects;
+    }
+
+    public Rectangle[] _bkImageBounds() {
+        return bkImageBounds;
+    }
+
+    public Image[] _controlBkImages() {
+        return controlBkImages;
+    }
+
+    public int _updateFlags() {
+        return updateFlags;
+    }
+
+    public Runnable _updateRun() {
+        return updateRun;
+    }
+
+    public boolean _inDispose() {
+        return inDispose;
+    }
+
+    public Point _oldSize() {
+        return oldSize;
+    }
+
+    public Font _oldFont() {
+        return oldFont;
     }
 
     public CTabFolder getApi() {

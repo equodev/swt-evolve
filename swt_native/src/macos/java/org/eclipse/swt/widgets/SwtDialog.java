@@ -188,9 +188,9 @@ public abstract class SwtDialog implements IDialog {
         style &= ~SWT.MIRRORED;
         if ((style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT)) == 0) {
             if (parent != null) {
-                if ((((SwtWidget) parent.getImpl()).style & SWT.LEFT_TO_RIGHT) != 0)
+                if ((parent.style & SWT.LEFT_TO_RIGHT) != 0)
                     style |= SWT.LEFT_TO_RIGHT;
-                if ((((SwtWidget) parent.getImpl()).style & SWT.RIGHT_TO_LEFT) != 0)
+                if ((parent.style & SWT.RIGHT_TO_LEFT) != 0)
                     style |= SWT.RIGHT_TO_LEFT;
             }
         }

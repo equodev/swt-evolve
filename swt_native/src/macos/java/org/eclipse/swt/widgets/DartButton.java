@@ -167,13 +167,13 @@ public class DartButton extends DartControl implements IButton {
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
         checkWidget();
-        if ((style & SWT.ARROW) != 0) {
+        if ((getApi().style & SWT.ARROW) != 0) {
             // TODO use some OS metric instead of hardcoded values
             int width = wHint != SWT.DEFAULT ? wHint : 14;
             int height = hHint != SWT.DEFAULT ? hHint : 14;
             return new Point(width, height);
         }
-        if ((style & SWT.WRAP) != 0 && wHint != SWT.DEFAULT) {
+        if ((getApi().style & SWT.WRAP) != 0 && wHint != SWT.DEFAULT) {
         } else {
         }
         return null;
@@ -181,23 +181,23 @@ public class DartButton extends DartControl implements IButton {
 
     @Override
     void createHandle() {
-        if ((style & SWT.PUSH) == 0)
-            state |= THEME_BACKGROUND;
-        if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (style & SWT.FLAT) == 0) {
+        if ((getApi().style & SWT.PUSH) == 0)
+            getApi().state |= THEME_BACKGROUND;
+        if ((getApi().style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (getApi().style & SWT.FLAT) == 0) {
         }
-        if ((style & SWT.PUSH) != 0) {
-            if ((style & SWT.FLAT) != 0) {
+        if ((getApi().style & SWT.PUSH) != 0) {
+            if ((getApi().style & SWT.FLAT) != 0) {
             } else {
             }
-        } else if ((style & SWT.CHECK) != 0) {
-        } else if ((style & SWT.RADIO) != 0) {
-        } else if ((style & SWT.TOGGLE) != 0) {
-            if ((style & SWT.FLAT) != 0) {
+        } else if ((getApi().style & SWT.CHECK) != 0) {
+        } else if ((getApi().style & SWT.RADIO) != 0) {
+        } else if ((getApi().style & SWT.TOGGLE) != 0) {
+            if ((getApi().style & SWT.FLAT) != 0) {
             } else {
             }
-        } else if ((style & SWT.ARROW) != 0) {
+        } else if ((getApi().style & SWT.ARROW) != 0) {
         }
-        _setAlignment(style);
+        _setAlignment(getApi().style);
     }
 
     @Override
@@ -246,22 +246,22 @@ public class DartButton extends DartControl implements IButton {
      */
     public int getAlignment() {
         checkWidget();
-        if ((style & SWT.ARROW) != 0) {
-            if ((style & SWT.UP) != 0)
+        if ((getApi().style & SWT.ARROW) != 0) {
+            if ((getApi().style & SWT.UP) != 0)
                 return SWT.UP;
-            if ((style & SWT.DOWN) != 0)
+            if ((getApi().style & SWT.DOWN) != 0)
                 return SWT.DOWN;
-            if ((style & SWT.LEFT) != 0)
+            if ((getApi().style & SWT.LEFT) != 0)
                 return SWT.LEFT;
-            if ((style & SWT.RIGHT) != 0)
+            if ((getApi().style & SWT.RIGHT) != 0)
                 return SWT.RIGHT;
             return SWT.UP;
         }
-        if ((style & SWT.LEFT) != 0)
+        if ((getApi().style & SWT.LEFT) != 0)
             return SWT.LEFT;
-        if ((style & SWT.CENTER) != 0)
+        if ((getApi().style & SWT.CENTER) != 0)
             return SWT.CENTER;
-        if ((style & SWT.RIGHT) != 0)
+        if ((getApi().style & SWT.RIGHT) != 0)
             return SWT.RIGHT;
         return SWT.LEFT;
     }
@@ -282,7 +282,7 @@ public class DartButton extends DartControl implements IButton {
      */
     public boolean getGrayed() {
         checkWidget();
-        if ((style & SWT.CHECK) == 0)
+        if ((getApi().style & SWT.CHECK) == 0)
             return false;
         return grayed;
     }
@@ -326,7 +326,7 @@ public class DartButton extends DartControl implements IButton {
      */
     public boolean getSelection() {
         checkWidget();
-        if ((style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
+        if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
             return false;
         return this.selection;
     }
@@ -409,23 +409,23 @@ public class DartButton extends DartControl implements IButton {
         //	int j = index + 1;
         //	while (j < children.length && children [j].setRadioSelection (false)) j++;
         //	setSelection (true);
-        Control[] children = ((SwtComposite) parent.getImpl())._getChildren();
+        Control[] children = parent.getImpl()._getChildren();
         for (int i = 0; i < children.length; i++) {
             Control child = children[i];
             if (this.getApi() != child)
-                ((SwtControl) child.getImpl()).setRadioSelection(false);
+                ((DartControl) child.getImpl()).setRadioSelection(false);
         }
         setSelection(true);
     }
 
     @Override
     void sendSelection() {
-        if ((style & SWT.RADIO) != 0) {
+        if ((getApi().style & SWT.RADIO) != 0) {
             if ((parent.getStyle() & SWT.NO_RADIO_GROUP) == 0) {
                 selectRadio();
             }
         }
-        if ((style & SWT.CHECK) != 0) {
+        if ((getApi().style & SWT.CHECK) != 0) {
         }
         sendSelectionEvent(SWT.Selection);
     }
@@ -455,17 +455,17 @@ public class DartButton extends DartControl implements IButton {
     }
 
     void _setAlignment(int alignment) {
-        if ((style & SWT.ARROW) != 0) {
-            if ((style & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT)) == 0)
+        if ((getApi().style & SWT.ARROW) != 0) {
+            if ((getApi().style & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT)) == 0)
                 return;
-            style &= ~(SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT);
-            style |= alignment & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT);
+            getApi().style &= ~(SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT);
+            getApi().style |= alignment & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT);
             return;
         }
         if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
             return;
-        style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
-        style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+        getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+        getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         /* text is still null when this is called from createHandle() */
         if (text != null) {
         }
@@ -473,7 +473,7 @@ public class DartButton extends DartControl implements IButton {
 
     @Override
     void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
-        if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (style & (SWT.FLAT | SWT.WRAP)) == 0) {
+        if ((getApi().style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (getApi().style & (SWT.FLAT | SWT.WRAP)) == 0) {
             int heightThreshold = REGULAR_BUTTON_HEIGHT;
             if (height > heightThreshold) {
             } else {
@@ -502,7 +502,7 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setGrayed(boolean grayed) {
         checkWidget();
-        if ((style & SWT.CHECK) == 0)
+        if ((getApi().style & SWT.CHECK) == 0)
             return;
         boolean checked = getSelection();
         this.grayed = grayed;
@@ -535,14 +535,14 @@ public class DartButton extends DartControl implements IButton {
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        if ((style & SWT.ARROW) != 0)
+        if ((getApi().style & SWT.ARROW) != 0)
             return;
         this.image = image;
-        if ((style & (SWT.RADIO | SWT.CHECK)) == 0) {
+        if ((getApi().style & (SWT.RADIO | SWT.CHECK)) == 0) {
         } else {
         }
         if (image != null) {
-            if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (style & (SWT.FLAT | SWT.WRAP)) == 0) {
+            if ((getApi().style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (getApi().style & (SWT.FLAT | SWT.WRAP)) == 0) {
             }
         }
         updateAlignment();
@@ -551,7 +551,7 @@ public class DartButton extends DartControl implements IButton {
 
     @Override
     boolean setRadioSelection(boolean value) {
-        if ((style & SWT.RADIO) == 0)
+        if ((getApi().style & SWT.RADIO) == 0)
             return false;
         if (getSelection() != value) {
             setSelection(value);
@@ -578,7 +578,7 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setSelection(boolean selected) {
         checkWidget();
-        if ((style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
+        if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
             return;
         if (grayed) {
         } else {
@@ -625,7 +625,7 @@ public class DartButton extends DartControl implements IButton {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if ((style & SWT.ARROW) != 0)
+        if ((getApi().style & SWT.ARROW) != 0)
             return;
         text = string;
         updateAlignment();
@@ -633,7 +633,7 @@ public class DartButton extends DartControl implements IButton {
     }
 
     void updateAlignment() {
-        if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0) {
+        if ((getApi().style & (SWT.PUSH | SWT.TOGGLE)) != 0) {
             if (text.length() != 0 && image != null) {
             } else {
             }
@@ -648,6 +648,26 @@ public class DartButton extends DartControl implements IButton {
     int alignment;
 
     boolean selection;
+
+    public String _text() {
+        return text;
+    }
+
+    public Image _image() {
+        return image;
+    }
+
+    public boolean _grayed() {
+        return grayed;
+    }
+
+    public int _alignment() {
+        return alignment;
+    }
+
+    public boolean _selection() {
+        return selection;
+    }
 
     public Button getApi() {
         if (api == null)

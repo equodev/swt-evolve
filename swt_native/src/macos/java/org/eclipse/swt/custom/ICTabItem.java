@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface ICTabItem extends IItem {
+public interface ICTabItem extends IItem, ImplCTabItem {
 
     void dispose();
 

@@ -136,7 +136,7 @@ public class SwtGroup extends SwtComposite implements IGroup {
 
     @Override
     void createHandle() {
-        state |= THEME_BACKGROUND;
+        getApi().state |= THEME_BACKGROUND;
         NSBox widget = (NSBox) new SWTBox().alloc();
         widget.init();
         widget.setTitlePosition(OS.NSNoTitle);
@@ -209,7 +209,7 @@ public class SwtGroup extends SwtComposite implements IGroup {
     }
 
     @Override
-    boolean isTransparent() {
+    public boolean isTransparent() {
         return true;
     }
 
@@ -259,7 +259,7 @@ public class SwtGroup extends SwtComposite implements IGroup {
 
     @Override
     void setOrientation() {
-        int direction = (style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
+        int direction = (getApi().style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
         NSTextFieldCell cell = new NSTextFieldCell(((NSBox) getApi().view).titleCell().id);
         cell.setBaseWritingDirection(direction);
     }

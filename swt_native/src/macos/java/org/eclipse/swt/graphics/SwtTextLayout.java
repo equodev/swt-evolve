@@ -492,8 +492,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      * @since 3.3
      */
     public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground, int flags) {
-        if (gc != null && !(gc.getImpl() instanceof SwtGC))
-            return;
         checkLayout();
         if (gc == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -1948,8 +1946,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      * @since 3.125
      */
     public void setFixedLineMetrics(FontMetrics metrics) {
-        if (metrics != null && !(metrics.getImpl() instanceof SwtFontMetrics))
-            return;
         if (metrics == null) {
             fixedLineMetrics = null;
             return;

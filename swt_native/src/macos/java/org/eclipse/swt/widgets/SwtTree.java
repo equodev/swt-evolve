@@ -193,7 +193,7 @@ public class SwtTree extends SwtComposite implements ITree {
         if (index < 0 || index >= count)
             return null;
         TreeItem item = items[index];
-        if (item != null || (style & SWT.VIRTUAL) == 0 || !create)
+        if (item != null || (getApi().style & SWT.VIRTUAL) == 0 || !create)
             return item;
         item = new TreeItem(this.getApi(), parentItem, SWT.NONE, index, false);
         items[index] = item;
@@ -212,7 +212,7 @@ public class SwtTree extends SwtComposite implements ITree {
         // If the check column is visible, don't report it back as a column for accessibility purposes.
         // The check column is meant to appear as a part of the first column.
         if (attributeName.isEqualToString(OS.NSAccessibilityColumnsAttribute) || attributeName.isEqualToString(OS.NSAccessibilityVisibleColumnsAttribute)) {
-            if ((style & SWT.CHECK) != 0) {
+            if ((getApi().style & SWT.CHECK) != 0) {
                 long superValue = super.accessibilityAttributeValue(id, sel, arg0);
                 if (superValue != 0) {
                     NSArray columns = new NSArray(superValue);
@@ -334,7 +334,7 @@ public class SwtTree extends SwtComposite implements ITree {
         NSTableView widget = (NSTableView) getApi().view;
         long row = widget.rowAtPoint(mouseDownPoint);
         long modifiers = NSApplication.sharedApplication().currentEvent().modifierFlags();
-        boolean drag = (state & DRAG_DETECT) != 0 && hooks(SWT.DragDetect);
+        boolean drag = (getApi().state & DRAG_DETECT) != 0 && hooks(SWT.DragDetect);
         if (drag) {
             if (!widget.isRowSelected(row) && (modifiers & (OS.NSCommandKeyMask | OS.NSShiftKeyMask | OS.NSAlternateKeyMask | OS.NSControlKeyMask)) == 0) {
                 NSIndexSet set = (NSIndexSet) new NSIndexSet().alloc();
@@ -350,7 +350,7 @@ public class SwtTree extends SwtComposite implements ITree {
     boolean checkData(TreeItem item) {
         if (((SwtTreeItem) item.getImpl()).cached)
             return true;
-        if ((style & SWT.VIRTUAL) != 0) {
+        if ((getApi().style & SWT.VIRTUAL) != 0) {
             ((SwtTreeItem) item.getImpl()).cached = true;
             Event event = new Event();
             TreeItem parentItem = item.getParentItem();
@@ -518,7 +518,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     long columnAtPoint(long id, long sel, NSPoint point) {
-        if ((style & SWT.CHECK) != 0) {
+        if ((getApi().style & SWT.CHECK) != 0) {
             if (point.x <= getCheckColumnWidth() && point.y < headerView.frame().height)
                 return 1;
         }
@@ -539,7 +539,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 width = calculateWidth(items, 0, gc, true) + CELL_GAP;
                 gc.dispose();
             }
-            if ((style & SWT.CHECK) != 0)
+            if ((getApi().style & SWT.CHECK) != 0)
                 width += getCheckColumnWidth();
         } else {
             width = wHint;
@@ -610,8 +610,8 @@ public class SwtTree extends SwtComposite implements ITree {
     void createHandle() {
         NSScrollView scrollWidget = (NSScrollView) new SWTScrollView().alloc();
         scrollWidget.init();
-        scrollWidget.setHasHorizontalScroller((style & SWT.H_SCROLL) != 0);
-        scrollWidget.setHasVerticalScroller((style & SWT.V_SCROLL) != 0);
+        scrollWidget.setHasHorizontalScroller((getApi().style & SWT.H_SCROLL) != 0);
+        scrollWidget.setHasVerticalScroller((getApi().style & SWT.V_SCROLL) != 0);
         scrollWidget.setAutohidesScrollers(true);
         scrollWidget.setBorderType(hasBorder() ? OS.NSBezelBorder : OS.NSNoBorder);
         NSOutlineView widget = (NSOutlineView) new SWTOutlineView().alloc();
@@ -621,7 +621,7 @@ public class SwtTree extends SwtComposite implements ITree {
 	* initWithFrame and pass an empty NSRect instead of calling init.
 	*/
         widget.initWithFrame(new NSRect());
-        widget.setAllowsMultipleSelection((style & SWT.MULTI) != 0);
+        widget.setAllowsMultipleSelection((getApi().style & SWT.MULTI) != 0);
         widget.setAutoresizesOutlineColumn(false);
         widget.setAutosaveExpandedItems(true);
         widget.setDataSource(widget);
@@ -639,7 +639,7 @@ public class SwtTree extends SwtComposite implements ITree {
         headerView = (NSTableHeaderView) new SWTTableHeaderView().alloc().init();
         widget.setHeaderView(null);
         NSString str = NSString.string();
-        if ((style & SWT.CHECK) != 0) {
+        if ((getApi().style & SWT.CHECK) != 0) {
             checkColumn = (NSTableColumn) new NSTableColumn().alloc();
             NSString nsstring = (NSString) new NSString().alloc();
             nsstring = nsstring.initWithString(String.valueOf(++NEXT_ID));
@@ -687,14 +687,12 @@ public class SwtTree extends SwtComposite implements ITree {
     }
 
     void createItem(TreeColumn column, int index) {
-        if (column != null && !(column.getImpl() instanceof SwtWidget))
-            return;
         if (!(0 <= index && index <= columnCount))
             error(SWT.ERROR_INVALID_RANGE);
         if (index == 0) {
             // first column must be left aligned
-            ((SwtWidget) column.getImpl()).style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
-            ((SwtWidget) column.getImpl()).style |= SWT.LEFT;
+            column.style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+            column.style |= SWT.LEFT;
         }
         if (columnCount == columns.length) {
             TreeColumn[] newColumns = new TreeColumn[columnCount + 4];
@@ -720,14 +718,16 @@ public class SwtTree extends SwtComposite implements ITree {
             nsColumn.setMinWidth(0);
             nsColumn.headerCell().setTitle(str);
             outlineView.addTableColumn(nsColumn);
-            int checkColumn = (style & SWT.CHECK) != 0 ? 1 : 0;
+            int checkColumn = (getApi().style & SWT.CHECK) != 0 ? 1 : 0;
             outlineView.moveColumn(columnCount + checkColumn, index + checkColumn);
             nsColumn.setDataCell(dataCell);
             if (index == 0) {
                 outlineView.setOutlineTableColumn(nsColumn);
             }
         }
-        ((SwtWidget) column.getImpl()).createJNIRef();
+        if (column == null || column.getImpl() instanceof SwtWidget) {
+            ((SwtWidget) column.getImpl()).createJNIRef();
+        }
         NSTableHeaderCell headerCell = (NSTableHeaderCell) new SWTTableHeaderCell().alloc().init();
         if (font != null)
             headerCell.setFont(font.handle);
@@ -752,8 +752,6 @@ public class SwtTree extends SwtComposite implements ITree {
      * and {@link TreeItem#setItemCount}
      */
     void createItem(TreeItem item, TreeItem parentItem, int index) {
-        if (item != null && !(item.getImpl() instanceof SwtWidget))
-            return;
         int count;
         TreeItem[] items;
         if (parentItem != null) {
@@ -782,7 +780,9 @@ public class SwtTree extends SwtComposite implements ITree {
         ((SwtTreeItem) item.getImpl()).items = new TreeItem[4];
         SWTTreeItem handle = (SWTTreeItem) new SWTTreeItem().alloc().init();
         item.handle = handle;
-        ((SwtWidget) item.getImpl()).createJNIRef();
+        if (item == null || item.getImpl() instanceof SwtWidget) {
+            ((SwtWidget) item.getImpl()).createJNIRef();
+        }
         ((SwtTreeItem) item.getImpl()).register();
         if (parentItem != null) {
             ((SwtTreeItem) parentItem.getImpl()).itemCount = count;
@@ -839,7 +839,7 @@ public class SwtTree extends SwtComposite implements ITree {
     void deselectAll(long id, long sel, long sender) {
         if (preventSelect && !ignoreSelect)
             return;
-        if ((style & SWT.SINGLE) != 0 && !ignoreSelect) {
+        if ((getApi().style & SWT.SINGLE) != 0 && !ignoreSelect) {
             if (((NSTableView) getApi().view).selectedRow() != -1)
                 return;
         }
@@ -850,7 +850,7 @@ public class SwtTree extends SwtComposite implements ITree {
     void deselectRow(long id, long sel, long index) {
         if (preventSelect && !ignoreSelect)
             return;
-        if ((style & SWT.SINGLE) != 0 && !ignoreSelect) {
+        if ((getApi().style & SWT.SINGLE) != 0 && !ignoreSelect) {
             if (((NSTableView) getApi().view).selectedRow() == index)
                 return;
         }
@@ -1007,7 +1007,7 @@ public class SwtTree extends SwtComposite implements ITree {
             long columnId = array.objectAtIndex(i).id;
             for (int j = 0; j < columnCount; j++) {
                 if (((SwtTreeColumn) columns[j].getImpl()).nsColumn.id == columnId) {
-                    ((SwtWidget) columns[j].getImpl()).sendEvent(SWT.Move);
+                    columns[j].getImpl().sendEvent(SWT.Move);
                     break;
                 }
             }
@@ -1154,7 +1154,7 @@ public class SwtTree extends SwtComposite implements ITree {
             GC gc = SwtGC.cocoa_new(this.getApi(), data);
             gc.setFont(item.getFont(columnIndex));
             Color fg;
-            if (isSelected && ((style & SWT.HIDE_SELECTION) == 0 || hasFocus)) {
+            if (isSelected && ((getApi().style & SWT.HIDE_SELECTION) == 0 || hasFocus)) {
                 fg = selectionForeground;
                 gc.setBackground(selectionBackground);
             } else {
@@ -1172,7 +1172,7 @@ public class SwtTree extends SwtComposite implements ITree {
             event.detail = SWT.FOREGROUND;
             if (drawBackground)
                 event.detail |= SWT.BACKGROUND;
-            if (isSelected && ((style & SWT.HIDE_SELECTION) == 0 || hasFocus))
+            if (isSelected && ((getApi().style & SWT.HIDE_SELECTION) == 0 || hasFocus))
                 event.detail |= SWT.SELECTED;
             event.x = (int) cellRect.x;
             event.y = (int) cellRect.y;
@@ -1194,7 +1194,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 context.restoreGraphicsState();
                 return;
             }
-            if (drawSelection && ((style & SWT.HIDE_SELECTION) == 0 || hasFocus)) {
+            if (drawSelection && ((getApi().style & SWT.HIDE_SELECTION) == 0 || hasFocus)) {
                 cellRect.height -= spacing.height;
                 /*
 			 * On BigSur, calling highlightSelectionInClipRect here draws over the full row
@@ -1212,7 +1212,7 @@ public class SwtTree extends SwtComposite implements ITree {
             gc.dispose();
             context.restoreGraphicsState();
         } else {
-            if (isSelected && (style & SWT.HIDE_SELECTION) != 0 && !hasFocus) {
+            if (isSelected && (getApi().style & SWT.HIDE_SELECTION) != 0 && !hasFocus) {
                 userForeground = item.getForeground(columnIndex);
             }
         }
@@ -1276,7 +1276,7 @@ public class SwtTree extends SwtComposite implements ITree {
                     NSRange range = new NSRange();
                     range.length = newStr.length();
                     newStr.removeAttribute(OS.NSForegroundColorAttributeName, range);
-                    int alignment = columnCount == 0 ? SWT.LEFT : ((SwtWidget) columns[columnIndex].getImpl()).style & (SWT.LEFT | SWT.CENTER | SWT.RIGHT);
+                    int alignment = columnCount == 0 ? SWT.LEFT : columns[columnIndex].style & (SWT.LEFT | SWT.CENTER | SWT.RIGHT);
                     NSSize size = newStr.size();
                     NSRect newRect = new NSRect();
                     newRect.x = rect.x + TEXT_GAP;
@@ -1584,7 +1584,7 @@ public class SwtTree extends SwtComposite implements ITree {
         for (int i = 0; i < columnCount; i++) {
             TreeColumn column = columns[i];
             int index = indexOf(((SwtTreeColumn) column.getImpl()).nsColumn);
-            if ((style & SWT.CHECK) != 0)
+            if ((getApi().style & SWT.CHECK) != 0)
                 index -= 1;
             order[index] = i;
         }
@@ -2042,7 +2042,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     NSRect headerRectOfColumn(long id, long sel, long column) {
-        if ((style & SWT.CHECK) == 0)
+        if ((getApi().style & SWT.CHECK) == 0)
             return callSuperRect(id, sel, column);
         if (column == 0) {
             NSRect returnValue = callSuperRect(id, sel, column);
@@ -2063,7 +2063,7 @@ public class SwtTree extends SwtComposite implements ITree {
     void highlightSelectionInClipRect(long id, long sel, long rect) {
         if (hooks(SWT.EraseItem))
             return;
-        if ((style & SWT.HIDE_SELECTION) != 0 && !hasFocus())
+        if ((getApi().style & SWT.HIDE_SELECTION) != 0 && !hasFocus())
             return;
         NSRect clipRect = new NSRect();
         OS.memmove(clipRect, rect, NSRect.sizeof);
@@ -2169,7 +2169,7 @@ public class SwtTree extends SwtComposite implements ITree {
     }
 
     @Override
-    boolean isTransparent() {
+    public boolean isTransparent() {
         return true;
     }
 
@@ -2241,7 +2241,7 @@ public class SwtTree extends SwtComposite implements ITree {
         NSObject itemID = null;
         if (row != -1)
             itemID = new NSObject(widget.itemAtRow(row));
-        if (row != -1 && (style & SWT.CHECK) != 0) {
+        if (row != -1 && (getApi().style & SWT.CHECK) != 0) {
             int column = (int) widget.columnAtPoint(pt);
             NSCell cell = widget.preparedCellAtColumn(column, row);
             if (cell != null && cell.isKindOfClass(OS.class_NSButtonCell) && cell.isEnabled()) {
@@ -2354,7 +2354,7 @@ public class SwtTree extends SwtComposite implements ITree {
     @Override
     boolean outlineView_shouldReorderColumn_toColumn(long id, long sel, long aTableView, long currentColIndex, long newColIndex) {
         // Check column should never move and no column can be dragged to the left of it, if present.
-        if ((style & SWT.CHECK) != 0) {
+        if ((getApi().style & SWT.CHECK) != 0) {
             if (currentColIndex == 0)
                 return false;
             if (newColIndex == 0)
@@ -2372,7 +2372,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     @Override
     boolean outlineView_shouldTrackCell_forTableColumn_item(long id, long sel, long table, long cell, long tableColumn, long item) {
-        if ((style & SWT.CHECK) != 0) {
+        if ((getApi().style & SWT.CHECK) != 0) {
             if (new NSCell(cell).isKindOfClass(OS.class_NSButtonCell))
                 return true;
         }
@@ -2413,10 +2413,10 @@ public class SwtTree extends SwtComposite implements ITree {
         } else {
             color = NSColor.disabledControlTextColor();
         }
-        int direction = (style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
+        int direction = (getApi().style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
         int alignment = OS.NSTextAlignmentLeft;
         if (columnCount > 0) {
-            int style = ((SwtWidget) columns[index].getImpl()).style;
+            int style = columns[index].style;
             if ((style & SWT.CENTER) != 0) {
                 alignment = OS.NSTextAlignmentCenter;
             } else if ((style & SWT.RIGHT) != 0) {
@@ -2477,7 +2477,7 @@ public class SwtTree extends SwtComposite implements ITree {
             id columnId = nsColumns.objectAtIndex(i);
             TreeColumn column = getColumn(columnId);
             if (column != null) {
-                ((SwtWidget) column.getImpl()).sendEvent(SWT.Move);
+                column.getImpl().sendEvent(SWT.Move);
                 if (isDisposed())
                     return;
             }
@@ -2498,7 +2498,7 @@ public class SwtTree extends SwtComposite implements ITree {
         if (column == null)
             return;
         /* either CHECK column or firstColumn in 0-column Tree */
-        ((SwtWidget) column.getImpl()).sendEvent(SWT.Resize);
+        column.getImpl().sendEvent(SWT.Resize);
         if (isDisposed())
             return;
         NSOutlineView outlineView = (NSOutlineView) getApi().view;
@@ -2512,7 +2512,7 @@ public class SwtTree extends SwtComposite implements ITree {
             columnId = nsColumns.objectAtIndex(i);
             column = getColumn(columnId);
             if (column != null) {
-                ((SwtWidget) column.getImpl()).sendEvent(SWT.Move);
+                column.getImpl().sendEvent(SWT.Move);
                 if (isDisposed())
                     return;
             }
@@ -2523,7 +2523,7 @@ public class SwtTree extends SwtComposite implements ITree {
     void scrollClipViewToPoint(long id, long sel, long clipView, NSPoint point) {
         if (shouldScroll) {
             super.scrollClipViewToPoint(id, sel, clipView, point);
-            if ((style & SWT.CHECK) != 0 && columnCount > 0 && ((NSOutlineView) getApi().view).headerView() != null) {
+            if ((getApi().style & SWT.CHECK) != 0 && columnCount > 0 && ((NSOutlineView) getApi().view).headerView() != null) {
                 if (point.x <= getCheckColumnWidth()) {
                     /*
 				 * Header of first column is extended as header of the checkbox column.
@@ -2763,8 +2763,6 @@ public class SwtTree extends SwtComposite implements ITree {
      *  </ul>
      */
     public void setInsertMark(TreeItem item, boolean before) {
-        if (item != null && !(item.getImpl() instanceof SwtTreeItem))
-            return;
         checkWidget();
         if (item != null && item.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -2790,7 +2788,7 @@ public class SwtTree extends SwtComposite implements ITree {
      */
     public void selectAll() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0)
+        if ((getApi().style & SWT.SINGLE) != 0)
             return;
         checkItems();
         NSOutlineView widget = (NSOutlineView) getApi().view;
@@ -2829,7 +2827,7 @@ public class SwtTree extends SwtComposite implements ITree {
         NSIndexSet set = (NSIndexSet) new NSIndexSet().alloc();
         set = set.initWithIndex(row);
         ignoreSelect = true;
-        outlineView.selectRowIndexes(set, (style & SWT.MULTI) != 0);
+        outlineView.selectRowIndexes(set, (getApi().style & SWT.MULTI) != 0);
         ignoreSelect = false;
         set.release();
     }
@@ -2838,7 +2836,7 @@ public class SwtTree extends SwtComposite implements ITree {
     void selectRowIndexes_byExtendingSelection(long id, long sel, long indexes, boolean extend) {
         if (preventSelect && !ignoreSelect)
             return;
-        if ((style & SWT.SINGLE) != 0 && !ignoreSelect) {
+        if ((getApi().style & SWT.SINGLE) != 0 && !ignoreSelect) {
             NSIndexSet set = new NSIndexSet(indexes);
             if (set.count() == 0)
                 return;
@@ -2853,7 +2851,7 @@ public class SwtTree extends SwtComposite implements ITree {
         if (rowIndex == -1)
             rowIndex = (int) outlineView.selectedRow();
         if (rowIndex != -1) {
-            if ((style & SWT.CHECK) != 0) {
+            if ((getApi().style & SWT.CHECK) != 0) {
                 NSArray columns = outlineView.tableColumns();
                 int columnIndex = (int) outlineView.clickedColumn();
                 if (columnIndex != -1) {
@@ -2908,7 +2906,7 @@ public class SwtTree extends SwtComposite implements ITree {
         event.index = columnIndex;
         event.width = contentWidth;
         event.height = itemHeight;
-        if (selected && ((style & SWT.HIDE_SELECTION) == 0 || hasFocus()))
+        if (selected && ((getApi().style & SWT.HIDE_SELECTION) == 0 || hasFocus()))
             event.detail |= SWT.SELECTED;
         sendEvent(SWT.MeasureItem, event);
         gc.dispose();
@@ -3062,7 +3060,7 @@ public class SwtTree extends SwtComposite implements ITree {
         if (reorder) {
             NSOutlineView outlineView = (NSOutlineView) getApi().view;
             int[] oldX = new int[oldOrder.length];
-            int check = (style & SWT.CHECK) != 0 ? 1 : 0;
+            int check = (getApi().style & SWT.CHECK) != 0 ? 1 : 0;
             for (int i = 0; i < oldOrder.length; i++) {
                 int index = oldOrder[i];
                 oldX[index] = (int) outlineView.rectOfColumn(i + check).x;
@@ -3082,7 +3080,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 TreeColumn column = newColumns[i];
                 if (!column.isDisposed()) {
                     if (newX[i] != oldX[i]) {
-                        ((SwtWidget) column.getImpl()).sendEvent(SWT.Move);
+                        column.getImpl().sendEvent(SWT.Move);
                     }
                 }
             }
@@ -3267,7 +3265,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 ((SwtTreeItem) parentItem.getImpl()).items = newItems;
             }
         } else {
-            if ((style & SWT.VIRTUAL) == 0) {
+            if ((getApi().style & SWT.VIRTUAL) == 0) {
                 for (int i = itemCount; i < count; i++) {
                     new TreeItem(this.getApi(), parentItem, SWT.NONE, i, true);
                 }
@@ -3484,7 +3482,7 @@ public class SwtTree extends SwtComposite implements ITree {
         checkItems();
         deselectAll();
         int length = items.length;
-        if (length == 0 || ((style & SWT.SINGLE) != 0 && length > 1))
+        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
             return;
         selectItems(items, false);
         if (items.length > 0) {
@@ -3643,7 +3641,7 @@ public class SwtTree extends SwtComposite implements ITree {
         if (columnCount <= 1)
             return;
         int index = indexOf(((SwtTreeColumn) column.getImpl()).nsColumn);
-        if (!(0 <= index && index < columnCount + ((style & SWT.CHECK) != 0 ? 1 : 0)))
+        if (!(0 <= index && index < columnCount + ((getApi().style & SWT.CHECK) != 0 ? 1 : 0)))
             return;
         ((NSOutlineView) getApi().view).scrollColumnToVisible(index);
     }

@@ -250,12 +250,14 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
         NSTableHeaderCell headerCell = nsColumn.headerCell();
         if (displayText != null) {
             Font font = SwtFont.cocoa_new(display, headerCell.font());
-            attrString = ((SwtControl) parent.getImpl()).createString(displayText, font, ((SwtTable) parent.getImpl()).getHeaderForegroundColor().handle, SWT.LEFT, false, (((SwtWidget) parent.getImpl()).state & DISABLED) == 0, false);
+            /* space between image and text */
+            if (parent == null || parent.getImpl() instanceof SwtControl) {
+                attrString = ((SwtControl) parent.getImpl()).createString(displayText, font, ((SwtTable) parent.getImpl()).getHeaderForegroundColor().handle, SWT.LEFT, false, (parent.state & DISABLED) == 0, false);
+            }
             stringSize = attrString.size();
             contentWidth += Math.ceil(stringSize.width);
             if (image != null)
                 contentWidth += MARGIN;
-            /* space between image and text */
         }
         if (((SwtTable) parent.getImpl()).headerBackground != null) {
             // fill header background
@@ -346,9 +348,9 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
             cellRect.width = Math.max(0, sortRect.x - cellRect.x);
         }
         int drawX = 0;
-        if ((style & SWT.CENTER) != 0) {
+        if ((getApi().style & SWT.CENTER) != 0) {
             drawX = (int) (cellRect.x + Math.max(MARGIN, ((cellRect.width - contentWidth) / 2)));
-        } else if ((style & SWT.RIGHT) != 0) {
+        } else if ((getApi().style & SWT.RIGHT) != 0) {
             drawX = (int) (cellRect.x + Math.max(MARGIN, cellRect.width - contentWidth - MARGIN));
         } else {
             drawX = (int) cellRect.x + MARGIN;
@@ -405,11 +407,11 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
      */
     public int getAlignment() {
         checkWidget();
-        if ((style & SWT.LEFT) != 0)
+        if ((getApi().style & SWT.LEFT) != 0)
             return SWT.LEFT;
-        if ((style & SWT.CENTER) != 0)
+        if ((getApi().style & SWT.CENTER) != 0)
             return SWT.CENTER;
-        if ((style & SWT.RIGHT) != 0)
+        if ((getApi().style & SWT.RIGHT) != 0)
             return SWT.RIGHT;
         return SWT.LEFT;
     }
@@ -641,8 +643,8 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
         int index = parent.indexOf(this.getApi());
         if (index == -1 || index == 0)
             return;
-        style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
-        style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+        getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+        getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         NSTableView tableView = ((NSTableView) parent.view);
         NSTableHeaderView headerView = tableView.headerView();
         if (headerView == null)

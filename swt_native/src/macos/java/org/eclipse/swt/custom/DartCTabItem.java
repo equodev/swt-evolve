@@ -66,8 +66,6 @@ public class DartCTabItem extends DartItem implements ICTabItem {
 
     int closeImageState = SWT.BACKGROUND;
 
-    int state = SWT.NONE;
-
     boolean showClose = false;
 
     boolean showing = false;
@@ -589,6 +587,70 @@ public class DartCTabItem extends DartItem implements ICTabItem {
         checkWidget();
         toolTipText = string;
         getBridge().dirty(this);
+    }
+
+    public CTabFolder _parent() {
+        return parent;
+    }
+
+    public int _x() {
+        return x;
+    }
+
+    public int _y() {
+        return y;
+    }
+
+    public int _width() {
+        return width;
+    }
+
+    public int _height() {
+        return height;
+    }
+
+    public Control _control() {
+        return control;
+    }
+
+    public String _toolTipText() {
+        return toolTipText;
+    }
+
+    public String _shortenedText() {
+        return shortenedText;
+    }
+
+    public int _shortenedTextWidth() {
+        return shortenedTextWidth;
+    }
+
+    public Font _font() {
+        return font;
+    }
+
+    public Color _selectionForeground() {
+        return selectionForeground;
+    }
+
+    public Image _disabledImage() {
+        return disabledImage;
+    }
+
+    public Rectangle _closeRect() {
+        return closeRect;
+    }
+
+    public int _closeImageState() {
+        return closeImageState;
+    }
+
+    public boolean _showClose() {
+        return showClose;
+    }
+
+    public boolean _showing() {
+        return showing;
     }
 
     public FlutterBridge getBridge() {

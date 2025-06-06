@@ -40,6 +40,8 @@ import dev.equo.swt.Config;
  */
 public class CTabItem extends Item {
 
+    int state = SWT.NONE;
+
     /**
      * Constructs a new instance of this class given its parent
      * (which must be a <code>CTabFolder</code>) and a style value

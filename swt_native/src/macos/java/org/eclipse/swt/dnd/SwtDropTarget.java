@@ -136,19 +136,23 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
         if (labelDragHandlersAdded)
             return;
         if (c instanceof Label) {
-            long labelViewClass = OS.object_getClass(c.view.id);
-            // adding the handlers to label class
-            addDragHandlers(labelViewClass);
+            if (c == null || c.getImpl() instanceof SwtControl) {
+                long labelViewClass = OS.object_getClass(c.view.id);
+                // adding the handlers to label class
+                addDragHandlers(labelViewClass);
+            }
             /*
 		 * If the content view can be an image view, then add the dragging methods to
 		 * the image view too. This is used by Label so that dragging can work even when
 		 * the Label has an image set on it.
 		 */
             long imageView = 0;
-            if ((imageView = OS.objc_msgSend(c.view.id, OS.sel_getImageView)) != 0) {
-                long cls = OS.object_getClass(imageView);
-                addDragHandlers(cls);
-                labelDragHandlersAdded = true;
+            if (c == null || c.getImpl() instanceof SwtControl) {
+                if ((imageView = OS.objc_msgSend(c.view.id, OS.sel_getImageView)) != 0) {
+                    long cls = OS.object_getClass(imageView);
+                    addDragHandlers(cls);
+                    labelDragHandlersAdded = true;
+                }
             }
         } else if (c instanceof Composite) {
             Control[] cal = ((Composite) c).getChildren();

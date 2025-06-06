@@ -154,12 +154,12 @@ public class SwtButton extends SwtControl implements IButton {
     @Override
     NSSize cellSizeForBounds(long id, long sel, NSRect cellFrame) {
         NSSize size = super.cellSizeForBounds(id, sel, cellFrame);
-        if (image != null && ((style & (SWT.CHECK | SWT.RADIO)) != 0)) {
+        if (image != null && ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0)) {
             NSSize imageSize = image.handle.size();
             size.width += imageSize.width + IMAGE_GAP;
             size.height = Math.max(size.height, imageSize.height);
         }
-        if (((style & (SWT.PUSH | SWT.TOGGLE)) != 0) && (style & (SWT.FLAT | SWT.WRAP)) == 0) {
+        if (((getApi().style & (SWT.PUSH | SWT.TOGGLE)) != 0) && (getApi().style & (SWT.FLAT | SWT.WRAP)) == 0) {
             if (image != null) {
                 NSCell cell = new NSCell(id);
                 if (cell.controlSize() == OS.NSSmallControlSize)
@@ -168,19 +168,19 @@ public class SwtButton extends SwtControl implements IButton {
             // TODO: Why is this necessary?
             size.width += EXTRA_WIDTH;
         }
-        if ((style & SWT.WRAP) != 0 && text.length() != 0 && cellFrame.width < MAX_SIZE) {
+        if ((getApi().style & SWT.WRAP) != 0 && text.length() != 0 && cellFrame.width < MAX_SIZE) {
             NSCell cell = new NSCell(id);
             NSRect titleRect = cell.titleRectForBounds(cellFrame);
             NSSize wrapSize = new NSSize();
             wrapSize.width = titleRect.width;
             wrapSize.height = MAX_SIZE;
-            NSAttributedString attribStr = createString(text, null, foreground, style, true, true, true);
+            NSAttributedString attribStr = createString(text, null, foreground, getApi().style, true, true, true);
             NSRect rect = attribStr.boundingRectWithSize(wrapSize, OS.NSStringDrawingUsesLineFragmentOrigin);
             attribStr.release();
             // Avoid trim height to be set to a negative value
             double trimHeight = Math.max(size.height - titleRect.height, 0);
             size.height = rect.height;
-            if (image != null && ((style & (SWT.CHECK | SWT.RADIO)) != 0)) {
+            if (image != null && ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0)) {
                 NSSize imageSize = image.handle.size();
                 size.height = Math.max(size.height, imageSize.height);
             }
@@ -211,7 +211,7 @@ public class SwtButton extends SwtControl implements IButton {
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
         checkWidget();
-        if ((style & SWT.ARROW) != 0) {
+        if ((getApi().style & SWT.ARROW) != 0) {
             // TODO use some OS metric instead of hardcoded values
             int width = wHint != SWT.DEFAULT ? wHint : 14;
             int height = hHint != SWT.DEFAULT ? hHint : 14;
@@ -219,7 +219,7 @@ public class SwtButton extends SwtControl implements IButton {
         }
         NSSize size = null;
         NSCell cell = ((NSButton) getApi().view).cell();
-        if ((style & SWT.WRAP) != 0 && wHint != SWT.DEFAULT) {
+        if ((getApi().style & SWT.WRAP) != 0 && wHint != SWT.DEFAULT) {
             NSRect rect = new NSRect();
             rect.width = wHint;
             rect.height = hHint != SWT.DEFAULT ? hHint : MAX_SIZE;
@@ -237,50 +237,52 @@ public class SwtButton extends SwtControl implements IButton {
     }
 
     NSAttributedString createString() {
-        NSAttributedString attribStr = createString(text, null, foreground, style, false, true, true);
+        NSAttributedString attribStr = createString(text, null, foreground, getApi().style, false, true, true);
         attribStr.autorelease();
         return attribStr;
     }
 
     @Override
     void createHandle() {
-        if ((style & SWT.PUSH) == 0)
-            state |= THEME_BACKGROUND;
+        if ((getApi().style & SWT.PUSH) == 0)
+            getApi().state |= THEME_BACKGROUND;
         NSButton widget = (NSButton) new SWTButton().alloc();
         widget.init();
         NSButtonCell cell = (NSButtonCell) new SWTButtonCell().alloc().init();
         widget.setCell(cell);
         cell.release();
-        if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (style & SWT.FLAT) == 0) {
-            NSView superview = parent.view;
-            while (superview != null) {
-                if (superview.isKindOfClass(OS.class_NSTableView)) {
-                    style |= SWT.FLAT;
-                    break;
+        if ((getApi().style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (getApi().style & SWT.FLAT) == 0) {
+            if (parent == null || parent.getImpl() instanceof SwtComposite) {
+                NSView superview = parent.view;
+                while (superview != null) {
+                    if (superview.isKindOfClass(OS.class_NSTableView)) {
+                        getApi().style |= SWT.FLAT;
+                        break;
+                    }
+                    superview = superview.superview();
                 }
-                superview = superview.superview();
             }
         }
         int type = OS.NSMomentaryLightButton;
-        if ((style & SWT.PUSH) != 0) {
-            if ((style & SWT.FLAT) != 0) {
+        if ((getApi().style & SWT.PUSH) != 0) {
+            if ((getApi().style & SWT.FLAT) != 0) {
                 widget.setBezelStyle(OS.NSShadowlessSquareBezelStyle);
             } else {
-                widget.setBezelStyle((style & SWT.WRAP) != 0 ? OS.NSRegularSquareBezelStyle : OS.NSRoundedBezelStyle);
+                widget.setBezelStyle((getApi().style & SWT.WRAP) != 0 ? OS.NSRegularSquareBezelStyle : OS.NSRoundedBezelStyle);
             }
-        } else if ((style & SWT.CHECK) != 0) {
+        } else if ((getApi().style & SWT.CHECK) != 0) {
             type = OS.NSSwitchButton;
-        } else if ((style & SWT.RADIO) != 0) {
+        } else if ((getApi().style & SWT.RADIO) != 0) {
             type = OS.NSRadioButton;
             radioParent = (SWTView) new SWTView().alloc().init();
-        } else if ((style & SWT.TOGGLE) != 0) {
+        } else if ((getApi().style & SWT.TOGGLE) != 0) {
             type = OS.NSPushOnPushOffButton;
-            if ((style & SWT.FLAT) != 0) {
+            if ((getApi().style & SWT.FLAT) != 0) {
                 widget.setBezelStyle(OS.NSShadowlessSquareBezelStyle);
             } else {
-                widget.setBezelStyle((style & SWT.WRAP) != 0 ? OS.NSRegularSquareBezelStyle : OS.NSRoundedBezelStyle);
+                widget.setBezelStyle((getApi().style & SWT.WRAP) != 0 ? OS.NSRegularSquareBezelStyle : OS.NSRoundedBezelStyle);
             }
-        } else if ((style & SWT.ARROW) != 0) {
+        } else if ((getApi().style & SWT.ARROW) != 0) {
             widget.setBezelStyle(OS.NSShadowlessSquareBezelStyle);
         }
         widget.setButtonType(type);
@@ -289,7 +291,7 @@ public class SwtButton extends SwtControl implements IButton {
         widget.setTarget(widget);
         widget.setAction(OS.sel_sendSelection);
         getApi().view = widget;
-        _setAlignment(style);
+        _setAlignment(getApi().style);
     }
 
     @Override
@@ -350,12 +352,12 @@ public class SwtButton extends SwtControl implements IButton {
     void drawBezelWithFrame_inView(long id, long sel, NSRect cellFrame, long viewid) {
         if (this.background != null) {
             NSButton button = (NSButton) getApi().view;
-            final boolean isHighlighted = (style & SWT.TOGGLE) == 0 ? button.isHighlighted() : ((NSButton) getApi().view).state() == OS.NSOnState;
+            final boolean isHighlighted = (getApi().style & SWT.TOGGLE) == 0 ? button.isHighlighted() : ((NSButton) getApi().view).state() == OS.NSOnState;
             final NSWindow window = button.window();
             final NSButtonCell defaultButtonCell = window == null ? null : window.defaultButtonCell();
             final boolean isDefault = defaultButtonCell != null && defaultButtonCell.id == id;
             double[] borderRGB = getLighterOrDarkerColor(this.background, 0.3, luma(background) >= 0.5);
-            if (isHighlighted && (style & SWT.FLAT) != 0) {
+            if (isHighlighted && (getApi().style & SWT.FLAT) != 0) {
                 borderRGB = getLighterOrDarkerColor(borderRGB, 0.2, true);
             }
             NSGraphicsContext gc = NSGraphicsContext.currentContext();
@@ -364,7 +366,7 @@ public class SwtButton extends SwtControl implements IButton {
             final float lineWidth;
             if (isDefault) {
                 lineWidth = 2f;
-            } else if ((style & SWT.FLAT) == 0) {
+            } else if ((getApi().style & SWT.FLAT) == 0) {
                 lineWidth = 0.75f;
             } else {
                 lineWidth = 1f;
@@ -383,7 +385,7 @@ public class SwtButton extends SwtControl implements IButton {
             if (!isHighlighted) {
                 double[] backgroundRGB = this.background;
                 NSColor backgroundNSColor = NSColor.colorWithDeviceRed(backgroundRGB[0], backgroundRGB[1], backgroundRGB[2], 1f);
-                if ((style & SWT.FLAT) == 0) {
+                if ((getApi().style & SWT.FLAT) == 0) {
                     double[] topRGB = getLighterOrDarkerColor(this.background, 0.2, false);
                     NSColor topColor = NSColor.colorWithDeviceRed(topRGB[0], topRGB[1], topRGB[2], 1f);
                     double[] bottomRGB = getLighterOrDarkerColor(this.background, 0.1, true);
@@ -419,18 +421,18 @@ public class SwtButton extends SwtControl implements IButton {
 
     @Override
     void drawInteriorWithFrame_inView(long id, long sel, NSRect cellRect, long viewid) {
-        if ((style & (SWT.CHECK | SWT.RADIO)) != 0 && backgroundImage != null) {
+        if ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0 && backgroundImage != null) {
             fillBackground(new NSView(viewid), NSGraphicsContext.currentContext(), cellRect, -1);
         }
         super.drawInteriorWithFrame_inView(id, sel, cellRect, viewid);
-        if (image != null && ((style & (SWT.CHECK | SWT.RADIO)) != 0)) {
+        if (image != null && ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0)) {
             NSSize imageSize = image.handle.size();
             NSCell nsCell = new NSCell(id);
             double x = 0;
             double y = (imageSize.height - cellRect.height) / 2f;
             NSRect imageRect = nsCell.imageRectForBounds(cellRect);
             NSSize stringSize = ((NSButton) getApi().view).attributedTitle().size();
-            switch(style & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) {
+            switch(getApi().style & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) {
                 case SWT.LEFT:
                     x = imageRect.x + imageRect.width + IMAGE_GAP;
                     break;
@@ -458,7 +460,7 @@ public class SwtButton extends SwtControl implements IButton {
 
     @Override
     NSRect drawTitleWithFrameInView(long id, long sel, long title, NSRect titleRect, long view) {
-        boolean wrap = (style & SWT.WRAP) != 0 && text.length() != 0;
+        boolean wrap = (getApi().style & SWT.WRAP) != 0 && text.length() != 0;
         boolean isEnabled = isEnabled();
         if (wrap) {
             NSSize wrapSize = new NSSize();
@@ -472,9 +474,9 @@ public class SwtButton extends SwtControl implements IButton {
             } else {
                 foreground2 = getLighterOrDarkerColor(foreground, 0.5, luma(foreground) >= 0.5);
             }
-            NSAttributedString attribStr = createString(text, null, foreground2, style, true, true, true);
+            NSAttributedString attribStr = createString(text, null, foreground2, getApi().style, true, true, true);
             NSRect rect = attribStr.boundingRectWithSize(wrapSize, OS.NSStringDrawingUsesLineFragmentOrigin);
-            switch(style & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) {
+            switch(getApi().style & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) {
                 case SWT.LEFT:
                     rect.x = titleRect.x;
                     break;
@@ -491,7 +493,7 @@ public class SwtButton extends SwtControl implements IButton {
             return rect;
         }
         if (!isEnabled && foreground != null) {
-            NSAttributedString attribStr = createString(text, null, getLighterOrDarkerColor(foreground, 0.5, luma(foreground) >= 0.5), style, false, true, true);
+            NSAttributedString attribStr = createString(text, null, getLighterOrDarkerColor(foreground, 0.5, luma(foreground) >= 0.5), getApi().style, false, true, true);
             final NSRect result = super.drawTitleWithFrameInView(id, sel, attribStr.id, titleRect, view);
             attribStr.release();
             return result;
@@ -506,7 +508,7 @@ public class SwtButton extends SwtControl implements IButton {
 
     @Override
     void drawWidget(long id, NSGraphicsContext context, NSRect rect) {
-        if ((style & SWT.ARROW) != 0) {
+        if ((getApi().style & SWT.ARROW) != 0) {
             NSRect frame = getApi().view.frame();
             int arrowSize = Math.min((int) frame.height, (int) frame.width) / 2;
             context.saveGraphicsState();
@@ -524,11 +526,11 @@ public class SwtButton extends SwtControl implements IButton {
             path.lineToPoint(p3);
             path.closePath();
             NSAffineTransform transform = NSAffineTransform.transform();
-            if ((style & SWT.LEFT) != 0) {
+            if ((getApi().style & SWT.LEFT) != 0) {
                 transform.rotateByDegrees(90);
-            } else if ((style & SWT.UP) != 0) {
+            } else if ((getApi().style & SWT.UP) != 0) {
                 transform.rotateByDegrees(180);
-            } else if ((style & SWT.RIGHT) != 0) {
+            } else if ((getApi().style & SWT.RIGHT) != 0) {
                 transform.rotateByDegrees(-90);
             }
             path.transformUsingAffineTransform(transform);
@@ -566,22 +568,22 @@ public class SwtButton extends SwtControl implements IButton {
      */
     public int getAlignment() {
         checkWidget();
-        if ((style & SWT.ARROW) != 0) {
-            if ((style & SWT.UP) != 0)
+        if ((getApi().style & SWT.ARROW) != 0) {
+            if ((getApi().style & SWT.UP) != 0)
                 return SWT.UP;
-            if ((style & SWT.DOWN) != 0)
+            if ((getApi().style & SWT.DOWN) != 0)
                 return SWT.DOWN;
-            if ((style & SWT.LEFT) != 0)
+            if ((getApi().style & SWT.LEFT) != 0)
                 return SWT.LEFT;
-            if ((style & SWT.RIGHT) != 0)
+            if ((getApi().style & SWT.RIGHT) != 0)
                 return SWT.RIGHT;
             return SWT.UP;
         }
-        if ((style & SWT.LEFT) != 0)
+        if ((getApi().style & SWT.LEFT) != 0)
             return SWT.LEFT;
-        if ((style & SWT.CENTER) != 0)
+        if ((getApi().style & SWT.CENTER) != 0)
             return SWT.CENTER;
-        if ((style & SWT.RIGHT) != 0)
+        if ((getApi().style & SWT.RIGHT) != 0)
             return SWT.RIGHT;
         return SWT.LEFT;
     }
@@ -602,7 +604,7 @@ public class SwtButton extends SwtControl implements IButton {
      */
     public boolean getGrayed() {
         checkWidget();
-        if ((style & SWT.CHECK) == 0)
+        if ((getApi().style & SWT.CHECK) == 0)
             return false;
         return grayed;
     }
@@ -646,9 +648,9 @@ public class SwtButton extends SwtControl implements IButton {
      */
     public boolean getSelection() {
         checkWidget();
-        if ((style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
+        if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
             return false;
-        if ((style & SWT.CHECK) != 0 && grayed)
+        if ((getApi().style & SWT.CHECK) != 0 && grayed)
             return ((NSButton) getApi().view).state() == OS.NSMixedState;
         return ((NSButton) getApi().view).state() == OS.NSOnState;
     }
@@ -682,7 +684,7 @@ public class SwtButton extends SwtControl implements IButton {
  */
     @Override
     long nextState(long id, long sel) {
-        if ((style & SWT.CHECK) != 0 && grayed) {
+        if ((getApi().style & SWT.CHECK) != 0 && grayed) {
             return ((NSButton) getApi().view).state() == OS.NSMixedState ? OS.NSOffState : OS.NSMixedState;
         }
         return super.nextState(id, sel);
@@ -747,7 +749,7 @@ public class SwtButton extends SwtControl implements IButton {
         //	int j = index + 1;
         //	while (j < children.length && children [j].setRadioSelection (false)) j++;
         //	setSelection (true);
-        Control[] children = ((SwtComposite) parent.getImpl())._getChildren();
+        Control[] children = parent.getImpl()._getChildren();
         for (int i = 0; i < children.length; i++) {
             Control child = children[i];
             if (this.getApi() != child)
@@ -758,12 +760,12 @@ public class SwtButton extends SwtControl implements IButton {
 
     @Override
     void sendSelection() {
-        if ((style & SWT.RADIO) != 0) {
+        if ((getApi().style & SWT.RADIO) != 0) {
             if ((parent.getStyle() & SWT.NO_RADIO_GROUP) == 0) {
                 selectRadio();
             }
         }
-        if ((style & SWT.CHECK) != 0) {
+        if ((getApi().style & SWT.CHECK) != 0) {
             if (grayed && ((NSButton) getApi().view).state() == OS.NSOnState) {
                 ((NSButton) getApi().view).setState(OS.NSOffState);
             }
@@ -797,17 +799,17 @@ public class SwtButton extends SwtControl implements IButton {
     }
 
     void _setAlignment(int alignment) {
-        if ((style & SWT.ARROW) != 0) {
-            if ((style & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT)) == 0)
+        if ((getApi().style & SWT.ARROW) != 0) {
+            if ((getApi().style & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT)) == 0)
                 return;
-            style &= ~(SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT);
-            style |= alignment & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT);
+            getApi().style &= ~(SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT);
+            getApi().style |= alignment & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT);
             return;
         }
         if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
             return;
-        style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
-        style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+        getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+        getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         /* text is still null when this is called from createHandle() */
         if (text != null) {
             ((NSButton) getApi().view).setAttributedTitle(createString());
@@ -817,7 +819,7 @@ public class SwtButton extends SwtControl implements IButton {
     @Override
     void setBackgroundColor(NSColor nsColor) {
         Control control = findBackgroundControl();
-        if (control == null || ((SwtControl) control.getImpl()).backgroundImage == null) {
+        if (control == null || control.getImpl()._backgroundImage() == null) {
             NSButtonCell cell = new NSButtonCell(((NSButton) getApi().view).cell());
             cell.setBackgroundColor(nsColor);
         }
@@ -833,7 +835,7 @@ public class SwtButton extends SwtControl implements IButton {
 
     @Override
     void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
-        if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (style & (SWT.FLAT | SWT.WRAP)) == 0) {
+        if ((getApi().style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (getApi().style & (SWT.FLAT | SWT.WRAP)) == 0) {
             int heightThreshold = REGULAR_BUTTON_HEIGHT;
             NSCell cell = ((NSControl) getApi().view).cell();
             if (cell != null && cell.controlSize() == OS.NSSmallControlSize) {
@@ -883,7 +885,7 @@ public class SwtButton extends SwtControl implements IButton {
      */
     public void setGrayed(boolean grayed) {
         checkWidget();
-        if ((style & SWT.CHECK) == 0)
+        if ((getApi().style & SWT.CHECK) == 0)
             return;
         boolean checked = getSelection();
         this.grayed = grayed;
@@ -918,10 +920,10 @@ public class SwtButton extends SwtControl implements IButton {
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        if ((style & SWT.ARROW) != 0)
+        if ((getApi().style & SWT.ARROW) != 0)
             return;
         this.image = image;
-        if ((style & (SWT.RADIO | SWT.CHECK)) == 0) {
+        if ((getApi().style & (SWT.RADIO | SWT.CHECK)) == 0) {
             /*
 		 * Feature in Cocoa.  If the NSImage object being set into the button is
 		 * the same NSImage object that is already there then the button does not
@@ -935,7 +937,7 @@ public class SwtButton extends SwtControl implements IButton {
             ((NSButton) getApi().view).setAttributedTitle(createString());
         }
         if (image != null) {
-            if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (style & (SWT.FLAT | SWT.WRAP)) == 0) {
+            if ((getApi().style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (getApi().style & (SWT.FLAT | SWT.WRAP)) == 0) {
                 NSCell cell = ((NSButton) getApi().view).cell();
                 NSSize size = cell.cellSize();
                 int height = (int) Math.ceil(size.height);
@@ -952,7 +954,7 @@ public class SwtButton extends SwtControl implements IButton {
 
     @Override
     boolean setRadioSelection(boolean value) {
-        if ((style & SWT.RADIO) == 0)
+        if ((getApi().style & SWT.RADIO) == 0)
             return false;
         if (getSelection() != value) {
             setSelection(value);
@@ -979,7 +981,7 @@ public class SwtButton extends SwtControl implements IButton {
      */
     public void setSelection(boolean selected) {
         checkWidget();
-        if ((style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
+        if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
             return;
         if (grayed) {
             ((NSButton) getApi().view).setState(selected ? OS.NSMixedState : OS.NSOffState);
@@ -1026,7 +1028,7 @@ public class SwtButton extends SwtControl implements IButton {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if ((style & SWT.ARROW) != 0)
+        if ((getApi().style & SWT.ARROW) != 0)
             return;
         text = string;
         ((NSButton) getApi().view).setAttributedTitle(createString());
@@ -1036,7 +1038,7 @@ public class SwtButton extends SwtControl implements IButton {
     @Override
     NSRect titleRectForBounds(long id, long sel, NSRect cellFrame) {
         NSRect rect = super.titleRectForBounds(id, sel, cellFrame);
-        if (image != null && ((style & (SWT.CHECK | SWT.RADIO)) != 0)) {
+        if (image != null && ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0)) {
             NSSize imageSize = image.handle.size();
             rect.x += imageSize.width + IMAGE_GAP;
             rect.width -= (imageSize.width + IMAGE_GAP);
@@ -1048,16 +1050,16 @@ public class SwtButton extends SwtControl implements IButton {
     @Override
     int traversalCode(int key, NSEvent theEvent) {
         int code = super.traversalCode(key, theEvent);
-        if ((style & SWT.ARROW) != 0)
+        if ((getApi().style & SWT.ARROW) != 0)
             code &= ~(SWT.TRAVERSE_TAB_NEXT | SWT.TRAVERSE_TAB_PREVIOUS);
-        if ((style & SWT.RADIO) != 0)
+        if ((getApi().style & SWT.RADIO) != 0)
             code |= SWT.TRAVERSE_ARROW_NEXT | SWT.TRAVERSE_ARROW_PREVIOUS;
         return code;
     }
 
     void updateAlignment() {
         NSButton widget = (NSButton) getApi().view;
-        if ((style & (SWT.PUSH | SWT.TOGGLE)) != 0) {
+        if ((getApi().style & (SWT.PUSH | SWT.TOGGLE)) != 0) {
             if (text.length() != 0 && image != null) {
                 widget.setImagePosition(OS.NSImageLeft);
             } else {
@@ -1078,6 +1080,18 @@ public class SwtButton extends SwtControl implements IButton {
         super.setZOrder();
         if (radioParent != null)
             radioParent.addSubview(getApi().view);
+    }
+
+    public String _text() {
+        return text;
+    }
+
+    public Image _image() {
+        return image;
+    }
+
+    public boolean _grayed() {
+        return grayed;
     }
 
     public Button getApi() {

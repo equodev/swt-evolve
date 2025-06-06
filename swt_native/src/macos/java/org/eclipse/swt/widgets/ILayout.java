@@ -2,7 +2,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.graphics.*;
 
-public interface ILayout {
+public interface ILayout extends ImplLayout {
 
     /**
      * Computes and returns the size of the specified

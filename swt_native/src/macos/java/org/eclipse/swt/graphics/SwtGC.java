@@ -585,8 +585,6 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void copyArea(Image image, int x, int y) {
-        if (image != null && !(image.getImpl() instanceof SwtImage))
-            return;
         if (getApi().handle == null)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (image == null)
@@ -702,8 +700,6 @@ public final class SwtGC extends SwtResource implements IGC {
     }
 
     void copyArea(Image image, int x, int y, long srcImage) {
-        if (image != null && !(image.getImpl() instanceof SwtImage))
-            return;
         if (srcImage == 0)
             return;
         NSBitmapImageRep rep = ((SwtImage) image.getImpl()).getRepresentation();
@@ -1306,8 +1302,6 @@ public final class SwtGC extends SwtResource implements IGC {
     }
 
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
-        if (srcImage != null && !(srcImage.getImpl() instanceof SwtImage))
-            return;
         NSImage imageHandle = srcImage.handle;
         NSSize size = imageHandle.size();
         int imgWidth = (int) size.width;
@@ -2773,8 +2767,6 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void getClipping(Region region) {
-        if (region != null && !(region.getImpl() instanceof SwtRegion))
-            return;
         if (getApi().handle == null)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (region == null)
@@ -3748,8 +3740,6 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void setClipping(Region region) {
-        if (region != null && !(region.getImpl() instanceof SwtRegion))
-            return;
         if (getApi().handle == null)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (region != null && region.isDisposed())

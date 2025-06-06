@@ -133,7 +133,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         NSAttributedString str = createString(string);
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             NSPopUpButton widget = (NSPopUpButton) getApi().view;
             long selection = widget.indexOfSelectedItem();
             NSMenu nsMenu = widget.menu();
@@ -184,7 +184,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
         if (0 > index || index > count)
             error(SWT.ERROR_INVALID_RANGE);
         NSAttributedString str = createString(string);
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             NSPopUpButton widget = (NSPopUpButton) getApi().view;
             long selection = widget.indexOfSelectedItem();
             NSMenu nsMenu = widget.menu();
@@ -376,7 +376,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void clearSelection() {
         checkWidget();
-        if ((style & SWT.READ_ONLY) == 0) {
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
             Point selection = getSelection();
             selection.y = selection.x;
             setSelection(selection);
@@ -410,7 +410,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
         NSSize size = viewCell.cellSize();
         width = (int) Math.ceil(size.width);
         height = (int) Math.ceil(size.height);
-        if ((style & SWT.READ_ONLY) == 0) {
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
             ignoreSetObject = true;
             NSComboBoxCell cell = new NSComboBoxCell(viewCell.id);
             NSArray array = cell.objectValues();
@@ -463,7 +463,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 	* required to display their text, even if a larger hHint is specified.
 	*/
         if (hHint != SWT.DEFAULT) {
-            if ((style & SWT.READ_ONLY) != 0 || hHint < height)
+            if ((getApi().style & SWT.READ_ONLY) != 0 || hHint < height)
                 height = hHint;
         }
         if (wHint != SWT.DEFAULT)
@@ -494,7 +494,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 
     @Override
     void createHandle() {
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             NSPopUpButton widget = (NSPopUpButton) new SWTPopUpButton().alloc();
             widget.initWithFrame(new NSRect(), false);
             widget.menu().setAutoenablesItems(false);
@@ -524,7 +524,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
     void createWidget() {
         text = "";
         super.createWidget();
-        if ((style & SWT.READ_ONLY) == 0) {
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
             NSComboBox widget = (NSComboBox) getApi().view;
             NSScreen screen = widget.window().screen();
             NSRect rect = screen != null ? screen.frame() : NSScreen.mainScreen().frame();
@@ -561,7 +561,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void cut() {
         checkWidget();
-        if ((style & SWT.READ_ONLY) != 0)
+        if ((getApi().style & SWT.READ_ONLY) != 0)
             return;
         Point selection = getSelection();
         if (selection.x == selection.y)
@@ -593,7 +593,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 
     @Override
     NSFont defaultNSFont() {
-        if ((style & SWT.READ_ONLY) != 0)
+        if ((getApi().style & SWT.READ_ONLY) != 0)
             return ((SwtDisplay) display.getImpl()).popUpButtonFont;
         return ((SwtDisplay) display.getImpl()).comboBoxFont;
     }
@@ -626,7 +626,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
         if (index == -1)
             return;
         if (index == getSelectionIndex()) {
-            if ((style & SWT.READ_ONLY) != 0) {
+            if ((getApi().style & SWT.READ_ONLY) != 0) {
                 ((NSPopUpButton) getApi().view).selectItem(null);
                 sendEvent(SWT.Modify);
             } else {
@@ -651,7 +651,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void deselectAll() {
         checkWidget();
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             ((NSPopUpButton) getApi().view).selectItem(null);
             sendEvent(SWT.Modify);
         } else {
@@ -664,7 +664,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 
     @Override
     boolean dragDetect(int x, int y, boolean filter, boolean[] consume) {
-        if ((style & SWT.READ_ONLY) == 0) {
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
             NSText fieldEditor = ((NSControl) getApi().view).currentEditor();
             if (fieldEditor != null) {
                 NSRange selectedRange = fieldEditor.selectedRange();
@@ -689,9 +689,9 @@ public class SwtCombo extends SwtComposite implements ICombo {
     }
 
     @Override
-    Cursor findCursor() {
+    public Cursor findCursor() {
         Cursor cursor = super.findCursor();
-        if (cursor == null && (style & SWT.READ_ONLY) == 0 && OS.VERSION < OS.VERSION(10, 14, 0)) {
+        if (cursor == null && (getApi().style & SWT.READ_ONLY) == 0 && OS.VERSION < OS.VERSION(10, 14, 0)) {
             cursor = display.getSystemCursor(SWT.CURSOR_IBEAM);
         }
         return cursor;
@@ -760,7 +760,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 
     int getCharCount() {
         NSString str;
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             str = ((NSPopUpButton) getApi().view).titleOfSelectedItem();
         } else {
             str = new NSCell(((NSComboBox) getApi().view).cell()).title();
@@ -792,7 +792,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
         if (0 > index || index >= count)
             error(SWT.ERROR_INVALID_RANGE);
         NSString str = null;
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             str = ((NSPopUpButton) getApi().view).itemTitleAtIndex(index);
         } else {
             NSAttributedString attString = new NSAttributedString(((NSComboBox) getApi().view).itemObjectValueAtIndex(index));
@@ -816,7 +816,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public int getItemCount() {
         checkWidget();
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             return (int) ((NSPopUpButton) getApi().view).numberOfItems();
         } else {
             return (int) ((NSComboBox) getApi().view).numberOfItems();
@@ -913,7 +913,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
     @Override
     public int getOrientation() {
         checkWidget();
-        return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+        return getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
     }
 
     /**
@@ -937,7 +937,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public Point getSelection() {
         checkWidget();
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             return new Point(0, getCharCount());
         } else {
             if (selectionRange == null) {
@@ -961,7 +961,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public int getSelectionIndex() {
         checkWidget();
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             return (int) ((NSPopUpButton) getApi().view).indexOfSelectedItem();
         } else {
             return (int) ((NSComboBox) getApi().view).indexOfSelectedItem();
@@ -987,7 +987,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 
     char[] getText(int start, int end) {
         NSString str;
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             str = ((NSPopUpButton) getApi().view).titleOfSelectedItem();
         } else {
             str = new NSCell(((NSComboBox) getApi().view).cell()).title();
@@ -1020,7 +1020,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
     public int getTextHeight() {
         checkWidget();
         NSCell cell;
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             cell = ((NSPopUpButton) getApi().view).cell();
         } else {
             cell = ((NSComboBox) getApi().view).cell();
@@ -1067,7 +1067,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public int getVisibleItemCount() {
         checkWidget();
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             return getItemCount();
         } else {
             return (int) ((NSComboBox) getApi().view).numberOfVisibleItems();
@@ -1177,7 +1177,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void paste() {
         checkWidget();
-        if ((style & SWT.READ_ONLY) != 0)
+        if ((getApi().style & SWT.READ_ONLY) != 0)
             return;
         Point selection = getSelection();
         int start = selection.x, end = selection.y;
@@ -1216,7 +1216,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
             ((SwtDisplay) display.getImpl()).currentCombo = null;
         }
         super.releaseWidget();
-        if ((style & SWT.READ_ONLY) == 0) {
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
             ((NSControl) getApi().view).abortEditing();
         }
         text = null;
@@ -1244,7 +1244,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
         int count = getItemCount();
         if (0 > index || index >= count)
             error(SWT.ERROR_INVALID_RANGE);
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             ((NSPopUpButton) getApi().view).removeItemAtIndex(index);
         } else {
             ((NSComboBox) getApi().view).removeItemAtIndex(index);
@@ -1318,7 +1318,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
     public void removeAll() {
         checkWidget();
         ignoreSelection = true;
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             ((NSPopUpButton) getApi().view).removeAllItems();
         } else {
             setText("", true);
@@ -1454,7 +1454,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
             if (index == getSelectionIndex())
                 return;
             ignoreSelection = true;
-            if ((style & SWT.READ_ONLY) != 0) {
+            if ((getApi().style & SWT.READ_ONLY) != 0) {
                 ((NSPopUpButton) getApi().view).selectItemAtIndex(index);
                 sendEvent(SWT.Modify);
             } else {
@@ -1507,7 +1507,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
                     return false;
                 case 0:
                     /* A */
-                    if ((style & SWT.READ_ONLY) == 0) {
+                    if ((getApi().style & SWT.READ_ONLY) == 0) {
                         ((NSComboBox) getApi().view).selectText(null);
                         return false;
                     }
@@ -1547,7 +1547,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 
     @Override
     void setBackgroundColor(NSColor nsColor) {
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             //TODO
         } else {
             ((NSTextField) getApi().view).setBackgroundColor(nsColor);
@@ -1569,7 +1569,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 	 * height that is required to display their text. For multiline text,
 	 * limit the height to frame height.
 	 */
-        if ((style & SWT.READ_ONLY) == 0) {
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
             NSControl widget = (NSControl) getApi().view;
             int hLimit = 0;
             NSString nsStr = widget.stringValue();
@@ -1601,7 +1601,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
     void setForeground(double[] color) {
         super.setForeground(color);
         updateItems();
-        if ((style & SWT.READ_ONLY) == 0) {
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
             NSColor nsColor;
             if (color == null) {
                 nsColor = NSColor.textColor();
@@ -1638,7 +1638,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
         int selection = getSelectionIndex();
         NSAttributedString str = createString(string);
         ignoreSelection = true;
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             NSMenuItem nsItem = ((NSPopUpButton) getApi().view).itemAtIndex(index);
             nsItem.setAttributedTitle(str);
             /*
@@ -1687,7 +1687,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
         ignoreSelection = true;
         for (int i = 0; i < items.length; i++) {
             NSAttributedString str = createString(items[i]);
-            if ((style & SWT.READ_ONLY) != 0) {
+            if ((getApi().style & SWT.READ_ONLY) != 0) {
                 NSMenu nsMenu = ((NSPopUpButton) getApi().view).menu();
                 NSMenuItem nsItem = (NSMenuItem) new NSMenuItem().alloc();
                 NSString empty = NSString.string();
@@ -1724,7 +1724,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void setListVisible(boolean visible) {
         checkWidget();
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             ((NSPopUpButton) getApi().view).setPullsDown(visible);
         } else {
         }
@@ -1750,7 +1750,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
 
     @Override
     void setOrientation() {
-        int direction = (style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
+        int direction = (getApi().style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
         ((NSControl) getApi().view).setBaseWritingDirection(direction);
     }
 
@@ -1774,7 +1774,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
         checkWidget();
         if (selection == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if ((style & SWT.READ_ONLY) == 0) {
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
             NSComboBox widget = (NSComboBox) getApi().view;
             NSString str = new NSCell(widget.cell()).title();
             int length = (int) str.length();
@@ -1832,7 +1832,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
                     return;
             }
         }
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             int index = indexOf(string);
             if (index != -1) {
                 select(index);
@@ -1896,7 +1896,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
         checkWidget();
         if (count < 0)
             return;
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             //TODO
         } else {
             ((NSComboBox) getApi().view).setNumberOfVisibleItems(count);
@@ -1976,7 +1976,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
     }
 
     void updateItems() {
-        if ((style & SWT.READ_ONLY) != 0) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
             NSPopUpButton widget = (NSPopUpButton) getApi().view;
             int count = (int) widget.numberOfItems();
             for (int i = 0; i < count; i++) {

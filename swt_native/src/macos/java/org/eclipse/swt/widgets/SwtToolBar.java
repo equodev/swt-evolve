@@ -110,9 +110,9 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 	* programmer.
 	*/
         if ((style & SWT.VERTICAL) != 0) {
-            this.style |= SWT.VERTICAL;
+            this.getApi().style |= SWT.VERTICAL;
         } else {
-            this.style |= SWT.HORIZONTAL;
+            this.getApi().style |= SWT.HORIZONTAL;
         }
     }
 
@@ -240,37 +240,39 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     void createHandle() {
-        if ((style & SWT.SMOOTH) != 0) {
+        if ((getApi().style & SWT.SMOOTH) != 0) {
             nsToolbar = ((NSToolbar) new SWTToolbar().alloc()).initWithIdentifier(NSString.stringWith(String.valueOf(NEXT_ID++)));
             nsToolbar.setDelegate(nsToolbar);
             nsToolbar.setDisplayMode(OS.NSToolbarDisplayModeIconOnly);
-            NSWindow window = parent.view.window();
-            window.setToolbar(nsToolbar);
-            nsToolbar.setVisible(true);
-            NSArray views = window.contentView().superview().subviews();
-            int i = 0;
-            while (i < views.count()) {
-                id id = views.objectAtIndex(i);
-                String className = new NSObject(id).className().getString();
-                if (className.equals("NSToolbarView")) {
-                    getApi().view = new NSView(id);
-                    OS.object_setClass(getApi().view.id, OS.objc_getClass("SWTToolbarView"));
-                    getApi().view.retain();
-                    break;
-                }
-                if (className.equals("NSTitlebarContainerView")) {
-                    views = new NSView(id).subviews();
-                    i = 0;
-                } else if (className.equals("NSTitlebarView")) {
-                    views = new NSView(id).subviews();
-                    i = 0;
-                } else {
-                    i++;
+            if (parent == null || parent.getImpl() instanceof SwtComposite) {
+                NSWindow window = parent.view.window();
+                window.setToolbar(nsToolbar);
+                nsToolbar.setVisible(true);
+                NSArray views = window.contentView().superview().subviews();
+                int i = 0;
+                while (i < views.count()) {
+                    id id = views.objectAtIndex(i);
+                    String className = new NSObject(id).className().getString();
+                    if (className.equals("NSToolbarView")) {
+                        getApi().view = new NSView(id);
+                        OS.object_setClass(getApi().view.id, OS.objc_getClass("SWTToolbarView"));
+                        getApi().view.retain();
+                        break;
+                    }
+                    if (className.equals("NSTitlebarContainerView")) {
+                        views = new NSView(id).subviews();
+                        i = 0;
+                    } else if (className.equals("NSTitlebarView")) {
+                        views = new NSView(id).subviews();
+                        i = 0;
+                    } else {
+                        i++;
+                    }
                 }
             }
-            style &= ~SWT.SMOOTH;
+            getApi().style &= ~SWT.SMOOTH;
         } else {
-            state |= THEME_BACKGROUND;
+            getApi().state |= THEME_BACKGROUND;
             if (hasBorder()) {
                 NSRect rect = new NSRect();
                 NSScrollView scrollWidget = (NSScrollView) new SWTScrollView().alloc();
@@ -288,8 +290,6 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     }
 
     void createItem(ToolItem item, int index) {
-        if (item != null && !(item.getImpl() instanceof SwtWidget))
-            return;
         if (!(0 <= index && index <= itemCount))
             error(SWT.ERROR_INVALID_RANGE);
         if (itemCount == items.length) {
@@ -297,7 +297,9 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             System.arraycopy(items, 0, newItems, 0, items.length);
             items = newItems;
         }
-        ((SwtWidget) item.getImpl()).createWidget();
+        if (item == null || item.getImpl() instanceof SwtWidget) {
+            ((SwtWidget) item.getImpl()).createWidget();
+        }
         System.arraycopy(items, index, items, index + 1, itemCount++ - index);
         items[index] = item;
         if (nsToolbar != null) {
@@ -563,7 +565,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         int marginWidth = 0, marginHeight = 0;
         int x = marginWidth, y = marginHeight;
         int maxX = 0, rows = 1;
-        boolean wrap = (style & SWT.WRAP) != 0;
+        boolean wrap = (getApi().style & SWT.WRAP) != 0;
         int itemHeight = 0;
         Point[] sizes = new Point[itemCount];
         for (int i = 0; i < itemCount; i++) {
@@ -636,7 +638,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         int marginWidth = 0, marginHeight = 0;
         int x = marginWidth, y = marginHeight;
         int maxY = 0, cols = 1;
-        boolean wrap = (style & SWT.WRAP) != 0;
+        boolean wrap = (getApi().style & SWT.WRAP) != 0;
         int itemWidth = 0;
         Point[] sizes = new Point[itemCount];
         for (int i = 0; i < itemCount; i++) {
@@ -670,7 +672,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         if (nsToolbar != null) {
             return layoutUnified(nWidth, nHeight, resize);
         }
-        if ((style & SWT.VERTICAL) != 0) {
+        if ((getApi().style & SWT.VERTICAL) != 0) {
             return layoutVertical(nWidth, nHeight, resize);
         } else {
             return layoutHorizontal(nWidth, nHeight, resize);
@@ -757,23 +759,23 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                 windowPoint = getApi().view.window().convertScreenToBase(windowPoint);
                 for (int i = 0; i < itemCount; i++) {
                     ToolItem item = items[i];
-                    int currState = ((SwtWidget) item.getImpl()).state;
+                    int currState = item.state;
                     NSPoint viewPoint = ((SwtToolItem) item.getImpl()).view.convertPoint_fromView_(windowPoint, null);
                     if (((SwtToolItem) item.getImpl()).view.mouse(viewPoint, ((SwtToolItem) item.getImpl()).view.bounds())) {
-                        ((SwtWidget) item.getImpl()).state |= SwtWidget.HOT;
+                        item.state |= SwtWidget.HOT;
                     } else {
-                        ((SwtWidget) item.getImpl()).state &= ~SwtWidget.HOT;
+                        item.state &= ~SwtWidget.HOT;
                     }
-                    if (currState != ((SwtWidget) item.getImpl()).state)
+                    if (currState != item.state)
                         ((SwtToolItem) item.getImpl()).updateImage(true);
                 }
                 break;
             case SWT.MouseExit:
                 for (int i = 0; i < itemCount; i++) {
                     ToolItem item = items[i];
-                    int currState = ((SwtWidget) item.getImpl()).state;
-                    ((SwtWidget) item.getImpl()).state &= ~SwtWidget.HOT;
-                    if (currState != ((SwtWidget) item.getImpl()).state)
+                    int currState = item.state;
+                    item.state &= ~SwtWidget.HOT;
+                    if (currState != item.state)
                         ((SwtToolItem) item.getImpl()).updateImage(true);
                 }
                 break;
@@ -861,7 +863,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     long toolbarSelectableItemIdentifiers(long id, long sel, long toolbar) {
         NSMutableArray array = NSMutableArray.arrayWithCapacity(itemCount);
         for (int i = 0; i < itemCount; i++) {
-            if ((((SwtWidget) items[i].getImpl()).style & SWT.RADIO) != 0)
+            if ((items[i].style & SWT.RADIO) != 0)
                 array.addObject(((SwtToolItem) items[i].getImpl()).nsItem.itemIdentifier());
         }
         return array.id;

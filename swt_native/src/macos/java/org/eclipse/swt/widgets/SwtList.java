@@ -260,19 +260,19 @@ public class SwtList extends SwtScrollable implements IList {
     void createHandle() {
         NSScrollView scrollWidget = (NSScrollView) new SWTScrollView().alloc();
         scrollWidget.init();
-        if ((style & SWT.H_SCROLL) != 0)
+        if ((getApi().style & SWT.H_SCROLL) != 0)
             scrollWidget.setHasHorizontalScroller(true);
-        if ((style & SWT.V_SCROLL) != 0)
+        if ((getApi().style & SWT.V_SCROLL) != 0)
             scrollWidget.setHasVerticalScroller(true);
         scrollWidget.setAutohidesScrollers(true);
-        scrollWidget.setBorderType((style & SWT.BORDER) != 0 ? OS.NSBezelBorder : OS.NSNoBorder);
+        scrollWidget.setBorderType((getApi().style & SWT.BORDER) != 0 ? OS.NSBezelBorder : OS.NSNoBorder);
         NSTableView widget = (NSTableView) new SWTTableView().alloc();
         widget.init();
-        widget.setAllowsMultipleSelection((style & SWT.MULTI) != 0);
+        widget.setAllowsMultipleSelection((getApi().style & SWT.MULTI) != 0);
         widget.setDataSource(widget);
         widget.setHeaderView(null);
         widget.setDelegate(widget);
-        if ((style & SWT.H_SCROLL) != 0) {
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
             widget.setColumnAutoresizingStyle(OS.NSTableViewNoColumnAutoresizing);
         }
         NSSize spacing = new NSSize();
@@ -1027,7 +1027,7 @@ public class SwtList extends SwtScrollable implements IList {
             set = set.initWithIndex(index);
             NSTableView widget = (NSTableView) getApi().view;
             ignoreSelect = true;
-            widget.selectRowIndexes(set, (style & SWT.MULTI) != 0);
+            widget.selectRowIndexes(set, (getApi().style & SWT.MULTI) != 0);
             ignoreSelect = false;
             set.release();
         }
@@ -1057,7 +1057,7 @@ public class SwtList extends SwtScrollable implements IList {
      */
     public void select(int start, int end) {
         checkWidget();
-        if (end < 0 || start > end || ((style & SWT.SINGLE) != 0 && start != end))
+        if (end < 0 || start > end || ((getApi().style & SWT.SINGLE) != 0 && start != end))
             return;
         if (itemCount == 0 || start >= itemCount)
             return;
@@ -1073,7 +1073,7 @@ public class SwtList extends SwtScrollable implements IList {
             set = set.initWithIndexesInRange(range);
             NSTableView widget = (NSTableView) getApi().view;
             ignoreSelect = true;
-            widget.selectRowIndexes(set, (style & SWT.MULTI) != 0);
+            widget.selectRowIndexes(set, (getApi().style & SWT.MULTI) != 0);
             ignoreSelect = false;
             set.release();
         }
@@ -1106,7 +1106,7 @@ public class SwtList extends SwtScrollable implements IList {
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int length = indices.length;
-        if (length == 0 || ((style & SWT.SINGLE) != 0 && length > 1))
+        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
             return;
         int count = 0;
         NSMutableIndexSet set = (NSMutableIndexSet) new NSMutableIndexSet().alloc().init();
@@ -1120,7 +1120,7 @@ public class SwtList extends SwtScrollable implements IList {
         if (count > 0) {
             NSTableView widget = (NSTableView) getApi().view;
             ignoreSelect = true;
-            widget.selectRowIndexes(set, (style & SWT.MULTI) != 0);
+            widget.selectRowIndexes(set, (getApi().style & SWT.MULTI) != 0);
             ignoreSelect = false;
         }
         set.release();
@@ -1148,7 +1148,7 @@ public class SwtList extends SwtScrollable implements IList {
      */
     public void selectAll() {
         checkWidget();
-        if ((style & SWT.SINGLE) != 0)
+        if ((getApi().style & SWT.SINGLE) != 0)
             return;
         NSTableView widget = (NSTableView) getApi().view;
         ignoreSelect = true;
@@ -1289,7 +1289,7 @@ public class SwtList extends SwtScrollable implements IList {
     }
 
     boolean setScrollWidth(String item) {
-        if ((style & SWT.H_SCROLL) == 0)
+        if ((getApi().style & SWT.H_SCROLL) == 0)
             return false;
         NSCell cell = column.dataCell();
         Font font = this.font != null ? this.font : defaultFont();
@@ -1305,7 +1305,7 @@ public class SwtList extends SwtScrollable implements IList {
     }
 
     boolean setScrollWidth() {
-        if ((style & SWT.H_SCROLL) == 0)
+        if ((getApi().style & SWT.H_SCROLL) == 0)
             return false;
         if (items == null)
             return false;
@@ -1378,7 +1378,7 @@ public class SwtList extends SwtScrollable implements IList {
     public void setSelection(int start, int end) {
         checkWidget();
         deselectAll();
-        if (end < 0 || start > end || ((style & SWT.SINGLE) != 0 && start != end))
+        if (end < 0 || start > end || ((getApi().style & SWT.SINGLE) != 0 && start != end))
             return;
         if (itemCount == 0 || start >= itemCount)
             return;
@@ -1425,7 +1425,7 @@ public class SwtList extends SwtScrollable implements IList {
             error(SWT.ERROR_NULL_ARGUMENT);
         deselectAll();
         int length = indices.length;
-        if (length == 0 || ((style & SWT.SINGLE) != 0 && length > 1))
+        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
             return;
         int[] newIndices = new int[length];
         int count = 0;
@@ -1470,13 +1470,13 @@ public class SwtList extends SwtScrollable implements IList {
             error(SWT.ERROR_NULL_ARGUMENT);
         deselectAll();
         int length = items.length;
-        if (length == 0 || ((style & SWT.SINGLE) != 0 && length > 1))
+        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
             return;
         int count = 0;
         int[] indices = new int[length];
         for (int i = 0; i < length; i++) {
             String string = items[length - i - 1];
-            if ((style & SWT.SINGLE) != 0) {
+            if ((getApi().style & SWT.SINGLE) != 0) {
                 int index = indexOf(string, 0);
                 if (index != -1) {
                     count = 1;
@@ -1568,7 +1568,7 @@ public class SwtList extends SwtScrollable implements IList {
     }
 
     long tableView_selectionIndexesForProposedSelection(long id, long sel, long aTableView, long indexSet) {
-        if ((style & SWT.SINGLE) != 0) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
             /*
 		 * Feature in Cocoa.  Calling setAllowsEmptySelection will automatically select the first row of the list.
 		 * And, single-selection NSTable/OutlineViews allow the user to de-select the selected item via command-click.

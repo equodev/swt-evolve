@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.function.*;
 import org.eclipse.swt.*;
 
-public interface IResource {
+public interface IResource extends ImplResource {
 
     /**
      * Disposes of the operating system resources associated with

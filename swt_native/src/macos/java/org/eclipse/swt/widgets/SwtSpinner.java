@@ -264,15 +264,15 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
         //	widget.setDrawsBackground(false);
         NSStepper buttonWidget = (NSStepper) new SWTStepper().alloc();
         buttonWidget.init();
-        buttonWidget.setValueWraps((style & SWT.WRAP) != 0);
+        buttonWidget.setValueWraps((getApi().style & SWT.WRAP) != 0);
         buttonWidget.setTarget(buttonWidget);
         buttonWidget.setAction(OS.sel_sendSelection);
         buttonWidget.setMaxValue(100);
         NSTextField textWidget = (NSTextField) new SWTTextField().alloc();
         textWidget.init();
         //	textWidget.setTarget(widget);
-        textWidget.setEditable((style & SWT.READ_ONLY) == 0);
-        if ((style & SWT.BORDER) == 0) {
+        textWidget.setEditable((getApi().style & SWT.READ_ONLY) == 0);
+        if ((getApi().style & SWT.BORDER) == 0) {
             textWidget.setFocusRingType(OS.NSFocusRingTypeNone);
             textWidget.setBordered(false);
         }
@@ -300,7 +300,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
      */
     public void cut() {
         checkWidget();
-        if ((style & SWT.READ_ONLY) != 0)
+        if ((getApi().style & SWT.READ_ONLY) != 0)
             return;
         NSText fieldEditor = textView.currentEditor();
         if (fieldEditor != null) {
@@ -352,18 +352,20 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        Image image = ((SwtControl) control.getImpl()).backgroundImage;
+        Image image = control.getImpl()._backgroundImage();
         if (image != null && !image.isDisposed()) {
             NSGraphicsContext context = NSGraphicsContext.currentContext();
-            ((SwtControl) control.getImpl()).fillBackground(getApi().view, context, cellFrame, -1);
+            if (control == null || control.getImpl() instanceof SwtControl) {
+                ((SwtControl) control.getImpl()).fillBackground(getApi().view, context, cellFrame, -1);
+            }
         }
         super.drawInteriorWithFrame_inView(id, sel, cellFrame, viewid);
     }
 
     @Override
-    Cursor findCursor() {
+    public Cursor findCursor() {
         Cursor cursor = super.findCursor();
-        if (cursor == null && (style & SWT.READ_ONLY) == 0 && OS.VERSION < OS.VERSION(10, 14, 0)) {
+        if (cursor == null && (getApi().style & SWT.READ_ONLY) == 0 && OS.VERSION < OS.VERSION(10, 14, 0)) {
             cursor = display.getSystemCursor(SWT.CURSOR_IBEAM);
         }
         return cursor;
@@ -576,7 +578,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
      */
     public void paste() {
         checkWidget();
-        if ((style & SWT.READ_ONLY) != 0)
+        if ((getApi().style & SWT.READ_ONLY) != 0)
             return;
         NSText fieldEditor = textView.currentEditor();
         if (fieldEditor != null) {
@@ -760,7 +762,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
             int newValue = value + delta;
             int max = (int) buttonView.maxValue();
             int min = (int) buttonView.minValue();
-            if ((style & SWT.WRAP) != 0) {
+            if ((getApi().style & SWT.WRAP) != 0) {
                 if (newValue > max)
                     newValue = min;
                 if (newValue < min)
@@ -936,7 +938,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
 
     @Override
     void setOrientation() {
-        int direction = (style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
+        int direction = (getApi().style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
         textView.setBaseWritingDirection(direction);
     }
 

@@ -51,8 +51,6 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public abstract class SwtWidget implements IWidget {
 
-    int style, state;
-
     Display display;
 
     EventTable eventTable;
@@ -173,8 +171,8 @@ public abstract class SwtWidget implements IWidget {
         setApi(api);
         checkSubclass();
         checkParent(parent);
-        this.style = style;
-        display = parent.getImpl() instanceof DartWidget p ? p.display : ((SwtWidget) parent.getImpl()).display;
+        this.getApi().style = style;
+        display = parent.getImpl()._display();
         reskinWidget();
         notifyCreationTracker();
     }
@@ -463,8 +461,8 @@ public abstract class SwtWidget implements IWidget {
     }
 
     void reskinWidget() {
-        if ((state & SKIN_NEEDED) != SKIN_NEEDED) {
-            this.state |= SKIN_NEEDED;
+        if ((getApi().state & SKIN_NEEDED) != SKIN_NEEDED) {
+            this.getApi().state |= SKIN_NEEDED;
             ((SwtDisplay) display.getImpl()).addSkinnableWidget(this.getApi());
         }
     }
@@ -591,32 +589,30 @@ public abstract class SwtWidget implements IWidget {
         return style;
     }
 
-    void checkOpen() {
+    public void checkOpen() {
         /* Do nothing */
     }
 
     void checkOrientation(Widget parent) {
-        style &= ~SWT.MIRRORED;
-        if ((style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT)) == 0) {
+        getApi().style &= ~SWT.MIRRORED;
+        if ((getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT)) == 0) {
             if (parent != null) {
-                if ((((SwtWidget) parent.getImpl()).style & SWT.LEFT_TO_RIGHT) != 0)
-                    style |= SWT.LEFT_TO_RIGHT;
-                if ((((SwtWidget) parent.getImpl()).style & SWT.RIGHT_TO_LEFT) != 0)
-                    style |= SWT.RIGHT_TO_LEFT;
+                if ((parent.style & SWT.LEFT_TO_RIGHT) != 0)
+                    getApi().style |= SWT.LEFT_TO_RIGHT;
+                if ((parent.style & SWT.RIGHT_TO_LEFT) != 0)
+                    getApi().style |= SWT.RIGHT_TO_LEFT;
             }
         }
-        style = checkBits(style, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, 0, 0, 0, 0);
+        getApi().style = checkBits(getApi().style, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, 0, 0, 0, 0);
     }
 
     void checkParent(Widget parent) {
-        if (parent != null && !(parent.getImpl() instanceof SwtWidget))
-            return;
         if (parent == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (parent.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         parent.checkWidget();
-        ((SwtWidget) parent.getImpl()).checkOpen();
+        parent.getImpl().checkOpen();
     }
 
     /**
@@ -681,7 +677,7 @@ public abstract class SwtWidget implements IWidget {
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (((SwtDisplay) display.getImpl()).thread != Thread.currentThread())
             error(SWT.ERROR_THREAD_INVALID_ACCESS);
-        if ((state & DISPOSED) != 0)
+        if ((getApi().state & DISPOSED) != 0)
             error(SWT.ERROR_WIDGET_DISPOSED);
     }
 
@@ -978,7 +974,7 @@ public abstract class SwtWidget implements IWidget {
      */
     public Object getData() {
         checkWidget();
-        return (state & KEYED_DATA) != 0 ? ((Object[]) data)[0] : data;
+        return (getApi().state & KEYED_DATA) != 0 ? ((Object[]) data)[0] : data;
     }
 
     /**
@@ -1011,7 +1007,7 @@ public abstract class SwtWidget implements IWidget {
             error(SWT.ERROR_NULL_ARGUMENT);
         if (key.equals(IS_ACTIVE))
             return Boolean.valueOf(isActive());
-        if ((state & KEYED_DATA) != 0) {
+        if ((getApi().state & KEYED_DATA) != 0) {
             Object[] table = (Object[]) data;
             for (int i = 1; i < table.length; i += 2) {
                 if (key.equals(table[i]))
@@ -1133,7 +1129,7 @@ public abstract class SwtWidget implements IWidget {
      */
     public int getStyle() {
         checkWidget();
-        return style;
+        return getApi().style;
     }
 
     boolean hasMarkedText(long id, long sel) {
@@ -1210,10 +1206,10 @@ public abstract class SwtWidget implements IWidget {
      * @return <code>true</code> when the widget is disposed and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return (state & DISPOSED) != 0;
+        return (getApi().state & DISPOSED) != 0;
     }
 
-    boolean isDrawing() {
+    public boolean isDrawing() {
         return true;
     }
 
@@ -1484,23 +1480,23 @@ public abstract class SwtWidget implements IWidget {
 
     void release(boolean destroy) {
         try (ExceptionStash exceptions = new ExceptionStash()) {
-            if ((state & DISPOSE_SENT) == 0) {
-                state |= DISPOSE_SENT;
+            if ((getApi().state & DISPOSE_SENT) == 0) {
+                getApi().state |= DISPOSE_SENT;
                 try {
                     sendEvent(SWT.Dispose);
                 } catch (Error | RuntimeException ex) {
                     exceptions.stash(ex);
                 }
             }
-            if ((state & DISPOSED) == 0) {
+            if ((getApi().state & DISPOSED) == 0) {
                 try {
                     releaseChildren(destroy);
                 } catch (Error | RuntimeException ex) {
                     exceptions.stash(ex);
                 }
             }
-            if ((state & RELEASED) == 0) {
-                state |= RELEASED;
+            if ((getApi().state & RELEASED) == 0) {
+                getApi().state |= RELEASED;
                 if (destroy) {
                     releaseParent();
                     releaseWidget();
@@ -1518,7 +1514,7 @@ public abstract class SwtWidget implements IWidget {
     }
 
     void releaseHandle() {
-        state |= DISPOSED;
+        getApi().state |= DISPOSED;
         display = null;
         destroyJNIRef();
     }
@@ -1692,19 +1688,19 @@ public abstract class SwtWidget implements IWidget {
     void sendDoubleSelection() {
     }
 
-    void sendEvent(Event event) {
+    public void sendEvent(Event event) {
         ((SwtDisplay) display.getImpl()).sendEvent(eventTable, event);
     }
 
-    void sendEvent(int eventType) {
+    public void sendEvent(int eventType) {
         sendEvent(eventType, null, true);
     }
 
-    void sendEvent(int eventType, Event event) {
+    public void sendEvent(int eventType, Event event) {
         sendEvent(eventType, event, true);
     }
 
-    void sendEvent(int eventType, Event event, boolean send) {
+    public void sendEvent(int eventType, Event event, boolean send) {
         if (eventTable == null && !((SwtDisplay) display.getImpl()).filters(eventType)) {
             return;
         }
@@ -1724,7 +1720,7 @@ public abstract class SwtWidget implements IWidget {
     }
 
     boolean sendKeyEvent(NSEvent nsEvent, int type) {
-        if ((state & WEBKIT_EVENTS_FIX) != 0)
+        if ((getApi().state & WEBKIT_EVENTS_FIX) != 0)
             return true;
         Event event = new Event();
         if (!setKeyState(event, type, nsEvent))
@@ -1802,14 +1798,14 @@ public abstract class SwtWidget implements IWidget {
     public void setData(Object data) {
         checkWidget();
         if (WEBKIT_EVENTS_FIX_KEY.equals(data)) {
-            state |= WEBKIT_EVENTS_FIX;
+            getApi().state |= WEBKIT_EVENTS_FIX;
             return;
         }
         if (STYLEDTEXT_KEY.equals(data)) {
             setIsStyledText();
             return;
         }
-        if ((state & KEYED_DATA) != 0) {
+        if ((getApi().state & KEYED_DATA) != 0) {
             ((Object[]) this.data)[0] = data;
         } else {
             this.data = data;
@@ -1853,7 +1849,7 @@ public abstract class SwtWidget implements IWidget {
         }
         int index = 1;
         Object[] table = null;
-        if ((state & KEYED_DATA) != 0) {
+        if ((getApi().state & KEYED_DATA) != 0) {
             table = (Object[]) data;
             while (index < table.length) {
                 if (key.equals(table[index]))
@@ -1862,7 +1858,7 @@ public abstract class SwtWidget implements IWidget {
             }
         }
         if (value != null) {
-            if ((state & KEYED_DATA) != 0) {
+            if ((getApi().state & KEYED_DATA) != 0) {
                 if (index == table.length) {
                     Object[] newTable = new Object[table.length + 2];
                     System.arraycopy(table, 0, newTable, 0, table.length);
@@ -1872,17 +1868,17 @@ public abstract class SwtWidget implements IWidget {
                 table = new Object[3];
                 table[0] = data;
                 data = table;
-                state |= KEYED_DATA;
+                getApi().state |= KEYED_DATA;
             }
             table[index] = key;
             table[index + 1] = value;
         } else {
-            if ((state & KEYED_DATA) != 0) {
+            if ((getApi().state & KEYED_DATA) != 0) {
                 if (index != table.length) {
                     int length = table.length - 2;
                     if (length == 1) {
                         data = table[0];
-                        state &= ~KEYED_DATA;
+                        getApi().state &= ~KEYED_DATA;
                     } else {
                         Object[] newTable = new Object[length];
                         System.arraycopy(table, 0, newTable, 0, index);
@@ -2557,6 +2553,18 @@ public abstract class SwtWidget implements IWidget {
         if (WidgetSpy.isEnabled) {
             WidgetSpy.getInstance().widgetDisposed(this.getApi());
         }
+    }
+
+    public Display _display() {
+        return display;
+    }
+
+    public EventTable _eventTable() {
+        return eventTable;
+    }
+
+    public Object _data() {
+        return data;
     }
 
     public Widget getApi() {

@@ -2,7 +2,7 @@ package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
 
-public interface IColor extends IResource {
+public interface IColor extends IResource, ImplColor {
 
     /**
      * Colors do not need to be disposed, however to maintain compatibility

@@ -442,8 +442,6 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
          * 	line data for.
          */
         void cacheLineData(StyledText styledText) {
-            if (styledText != null && !(styledText.getImpl() instanceof SwtStyledText))
-                return;
             StyledTextRenderer renderer = ((SwtStyledText) styledText.getImpl()).renderer;
             renderer.copyInto(printerRenderer);
             fontData = styledText.getFont().getFontData()[0];
@@ -11547,8 +11545,6 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static void updateAndRefreshCarets(StyledText styledText, Consumer<Caret> caretUpdater) {
-        if (styledText != null && !(styledText.getImpl() instanceof SwtStyledText))
-            return;
         caretUpdater.accept(styledText.getCaret());
         caretUpdater.accept(((SwtStyledText) styledText.getImpl()).defaultCaret);
         for (Caret caret : ((SwtStyledText) styledText.getImpl()).carets) {
