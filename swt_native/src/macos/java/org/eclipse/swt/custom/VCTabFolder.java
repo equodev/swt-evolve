@@ -19,7 +19,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public boolean getBorderVisible() {
-        return ((DartCTabFolder) impl).borderVisible;
+        return ((DartCTabFolder) impl).getBorderVisible();
     }
 
     public void setBorderVisible(boolean value) {
@@ -35,7 +35,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public boolean getMinimized() {
-        return ((DartCTabFolder) impl).minimized;
+        return ((DartCTabFolder) impl).getMinimized();
     }
 
     public void setMinimized(boolean value) {
@@ -43,7 +43,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public boolean getShowMin() {
-        return ((DartCTabFolder) impl).showMin;
+        return ((DartCTabFolder) impl).getMinimizeVisible();
     }
 
     public void setShowMin(boolean value) {
@@ -51,7 +51,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public int getMinChars() {
-        return ((DartCTabFolder) impl).minChars;
+        return ((DartCTabFolder) impl).getMinimumCharacters();
     }
 
     public void setMinChars(int value) {
@@ -59,7 +59,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public boolean getMaximized() {
-        return ((DartCTabFolder) impl).maximized;
+        return ((DartCTabFolder) impl).getMaximized();
     }
 
     public void setMaximized(boolean value) {
@@ -67,7 +67,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public boolean getShowMax() {
-        return ((DartCTabFolder) impl).showMax;
+        return ((DartCTabFolder) impl).getMaximizeVisible();
     }
 
     public void setShowMax(boolean value) {
@@ -75,7 +75,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public boolean getMru() {
-        return ((DartCTabFolder) impl).mru;
+        return ((DartCTabFolder) impl).getMRUVisible();
     }
 
     public void setMru(boolean value) {
@@ -107,7 +107,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public boolean getSimple() {
-        return ((DartCTabFolder) impl).simple;
+        return ((DartCTabFolder) impl).getSimple();
     }
 
     public void setSimple(boolean value) {
@@ -115,7 +115,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public boolean getSingle() {
-        return ((DartCTabFolder) impl).single;
+        return ((DartCTabFolder) impl).getSingle();
     }
 
     public void setSingle(boolean value) {
@@ -131,7 +131,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public int getTopRightAlignment() {
-        return ((DartCTabFolder) impl).topRightAlignment;
+        return ((DartCTabFolder) impl).getTopRightAlignment();
     }
 
     public void setTopRightAlignment(int value) {
@@ -139,7 +139,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public boolean getShowUnselectedClose() {
-        return ((DartCTabFolder) impl).showUnselectedClose;
+        return ((DartCTabFolder) impl).getUnselectedCloseVisible();
     }
 
     public void setShowUnselectedClose(boolean value) {
@@ -147,7 +147,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public boolean getShowUnselectedImage() {
-        return ((DartCTabFolder) impl).showUnselectedImage;
+        return ((DartCTabFolder) impl).getUnselectedImageVisible();
     }
 
     public void setShowUnselectedImage(boolean value) {
@@ -155,7 +155,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public boolean getShowSelectedImage() {
-        return ((DartCTabFolder) impl).showSelectedImage;
+        return ((DartCTabFolder) impl).getSelectedImageVisible();
     }
 
     public void setShowSelectedImage(boolean value) {
@@ -253,7 +253,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public boolean getHighlightEnabled() {
-        return ((DartCTabFolder) impl).highlightEnabled;
+        return ((DartCTabFolder) impl).getHighlightEnabled();
     }
 
     public void setHighlightEnabled(boolean value) {

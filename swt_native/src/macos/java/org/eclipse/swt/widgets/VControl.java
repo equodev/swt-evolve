@@ -43,7 +43,7 @@ public class VControl extends VWidget {
     }
 
     public boolean getDragDetect() {
-        return ((DartControl) impl).dragDetect;
+        return ((DartControl) impl).getDragDetect();
     }
 
     public void setDragDetect(boolean value) {
@@ -60,7 +60,7 @@ public class VControl extends VWidget {
     }
 
     public boolean getEnabled() {
-        return ((DartControl) impl).enabled;
+        return ((DartControl) impl).getEnabled();
     }
 
     public void setEnabled(boolean value) {
@@ -94,7 +94,7 @@ public class VControl extends VWidget {
     }
 
     public int getOrientation() {
-        return ((DartControl) impl).orientation;
+        return ((DartControl) impl).getOrientation();
     }
 
     public void setOrientation(int value) {
@@ -111,7 +111,7 @@ public class VControl extends VWidget {
     }
 
     public int getTextDirection() {
-        return ((DartControl) impl).textDirection;
+        return ((DartControl) impl).getTextDirection();
     }
 
     public void setTextDirection(int value) {
@@ -127,7 +127,7 @@ public class VControl extends VWidget {
     }
 
     public boolean getTouchEnabled() {
-        return ((DartControl) impl).touchEnabled;
+        return ((DartControl) impl).getTouchEnabled();
     }
 
     public void setTouchEnabled(boolean value) {
@@ -135,7 +135,7 @@ public class VControl extends VWidget {
     }
 
     public boolean getVisible() {
-        return ((DartControl) impl).visible;
+        return ((DartControl) impl).getVisible();
     }
 
     public void setVisible(boolean value) {

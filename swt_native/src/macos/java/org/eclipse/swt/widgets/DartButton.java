@@ -448,9 +448,9 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setAlignment(int alignment) {
         checkWidget();
+        this.alignment = alignment;
         _setAlignment(alignment);
         redraw();
-        this.alignment = alignment;
         getBridge().dirty(this);
     }
 
@@ -578,12 +578,12 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setSelection(boolean selected) {
         checkWidget();
+        this.selection = selected;
         if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
             return;
         if (grayed) {
         } else {
         }
-        this.selection = selected;
         getBridge().dirty(this);
     }
 

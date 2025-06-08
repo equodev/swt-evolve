@@ -15,7 +15,7 @@ public class VScrollable extends VControl {
     }
 
     public int getScrollbarsMode() {
-        return ((DartScrollable) impl).scrollbarsMode;
+        return ((DartScrollable) impl).getScrollbarsMode();
     }
 
     public void setScrollbarsMode(int value) {

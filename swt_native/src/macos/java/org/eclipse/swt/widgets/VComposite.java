@@ -17,7 +17,7 @@ public class VComposite extends VScrollable {
     }
 
     public int getBackgroundMode() {
-        return ((DartComposite) impl).backgroundMode;
+        return ((DartComposite) impl).getBackgroundMode();
     }
 
     public void setBackgroundMode(int value) {
@@ -33,7 +33,7 @@ public class VComposite extends VScrollable {
     }
 
     public boolean getLayoutDeferred() {
-        return ((DartComposite) impl).layoutDeferred;
+        return ((DartComposite) impl).getLayoutDeferred();
     }
 
     public void setLayoutDeferred(boolean value) {

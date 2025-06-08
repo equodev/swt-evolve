@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface ICTabFolderRenderer {
+public interface ICTabFolderRenderer extends ImplCTabFolderRenderer {
 
     /**
      * Returns the preferred size of a part.

@@ -17,7 +17,7 @@ public class VScrollBar extends VWidget {
     }
 
     public boolean getEnabled() {
-        return ((DartScrollBar) impl).enabled;
+        return ((DartScrollBar) impl).getEnabled();
     }
 
     public void setEnabled(boolean value) {
@@ -25,7 +25,7 @@ public class VScrollBar extends VWidget {
     }
 
     public int getIncrement() {
-        return ((DartScrollBar) impl).increment;
+        return ((DartScrollBar) impl).getIncrement();
     }
 
     public void setIncrement(int value) {
@@ -33,7 +33,7 @@ public class VScrollBar extends VWidget {
     }
 
     public int getMaximum() {
-        return ((DartScrollBar) impl).maximum;
+        return ((DartScrollBar) impl).getMaximum();
     }
 
     public void setMaximum(int value) {
@@ -41,7 +41,7 @@ public class VScrollBar extends VWidget {
     }
 
     public int getMinimum() {
-        return ((DartScrollBar) impl).minimum;
+        return ((DartScrollBar) impl).getMinimum();
     }
 
     public void setMinimum(int value) {
@@ -49,7 +49,7 @@ public class VScrollBar extends VWidget {
     }
 
     public int getPageIncrement() {
-        return ((DartScrollBar) impl).pageIncrement;
+        return ((DartScrollBar) impl).getPageIncrement();
     }
 
     public void setPageIncrement(int value) {
@@ -57,7 +57,7 @@ public class VScrollBar extends VWidget {
     }
 
     public int getSelection() {
-        return ((DartScrollBar) impl).selection;
+        return ((DartScrollBar) impl).getSelection();
     }
 
     public void setSelection(int value) {
@@ -65,7 +65,7 @@ public class VScrollBar extends VWidget {
     }
 
     public int getThumb() {
-        return ((DartScrollBar) impl).thumb;
+        return ((DartScrollBar) impl).getThumb();
     }
 
     public void setThumb(int value) {
@@ -73,7 +73,7 @@ public class VScrollBar extends VWidget {
     }
 
     public boolean getVisible() {
-        return ((DartScrollBar) impl).visible;
+        return ((DartScrollBar) impl).getVisible();
     }
 
     public void setVisible(boolean value) {

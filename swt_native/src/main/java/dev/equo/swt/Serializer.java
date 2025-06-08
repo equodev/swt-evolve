@@ -52,7 +52,8 @@ public class Serializer {
         writer.writeByte((byte)',');
         if (alwaysSerialize) { converter.writeContentFull(writer, value); writer.writeByte((byte)'}'); }
         else if (converter.writeContentMinimal(writer, value)) writer.getByteBuffer()[writer.size() - 1] = '}';
-        else writer.writeByte((byte)'}');
+        else writer.getByteBuffer()[writer.size() - 1] = '}';
+//        else writer.writeByte((byte)'}');
     }
 
 }

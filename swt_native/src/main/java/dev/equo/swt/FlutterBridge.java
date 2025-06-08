@@ -74,6 +74,7 @@ public abstract class FlutterBridge {
 
     protected void onReady(DartControl control) {
         setNotNew(control);
+        dirty(control);
         client.getComm().on(event(control,"ClientReady"), p -> {
             if (!clientReady.isDone()) {
                 System.out.println("ClientReady "+event(control));

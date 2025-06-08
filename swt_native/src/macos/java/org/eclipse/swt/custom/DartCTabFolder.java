@@ -709,7 +709,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                 CTabItem lastItem = items[lastIndex];
                 int w = ((DartCTabItem) lastItem.getImpl()).x + ((DartCTabItem) lastItem.getImpl()).width + SPACING;
                 if (!simple && lastIndex == selectedIndex)
-                    w -= (((SwtCTabFolderRenderer) renderer.getImpl()).curveIndent - 7);
+                    w -= (((DartCTabFolderRenderer) renderer.getImpl()).curveIndent - 7);
                 rects[controls.length - 1].x = w;
             }
         }
@@ -2478,7 +2478,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     public void setBackground(Color color) {
         super.setBackground(color);
         //TODO: need better caching strategy
-        ((SwtCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
+        ((DartCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
         updateBkImages(true);
         redraw();
         getBridge().dirty(this);
@@ -2613,7 +2613,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     public void setBackgroundImage(Image image) {
         super.setBackgroundImage(image);
         //TODO: need better caching strategy
-        ((SwtCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
+        ((DartCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
         redraw();
         getBridge().dirty(this);
     }
@@ -2849,7 +2849,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         // To apply the new font the cached image must be recreated with new font.
         // Redraw request alone would only redraw the cached image with old font.
         // renderer will pickup and adjust(!) the new font automatically
-        ((SwtCTabFolderRenderer) renderer.getImpl()).resetChevronFont();
+        ((DartCTabFolderRenderer) renderer.getImpl()).resetChevronFont();
         updateChevronImage(true);
         updateFolder(REDRAW);
         getBridge().dirty(this);
@@ -2978,7 +2978,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                     x = x + ((DartCTabItem) item.getImpl()).width;
                     //TODO: fix next item position
                     if (!simple && i == selectedIndex)
-                        x -= ((SwtCTabFolderRenderer) renderer.getImpl()).curveIndent;
+                        x -= ((DartCTabFolderRenderer) renderer.getImpl()).curveIndent;
                 }
             }
         }
@@ -3486,7 +3486,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             color = getDisplay().getSystemColor(SELECTION_BACKGROUND);
         selectionBackground = color;
         //TODO:  need better caching strategy
-        ((SwtCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
+        ((DartCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
         if (selectedIndex > -1)
             redraw();
         getBridge().dirty(this);
@@ -3646,7 +3646,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         if (inDispose)
             return;
         //TODO: need better caching strategy
-        ((SwtCTabFolderRenderer) renderer.getImpl()).setSelectionHighlightGradientColor(start);
+        ((DartCTabFolderRenderer) renderer.getImpl()).setSelectionHighlightGradientColor(start);
     }
 
     /**
@@ -3669,11 +3669,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             selectionGradientColors = null;
             selectionGradientPercents = null;
             //TODO: need better caching strategy
-            ((SwtCTabFolderRenderer) renderer.getImpl()).disposeSelectionHighlightGradientColors();
+            ((DartCTabFolderRenderer) renderer.getImpl()).disposeSelectionHighlightGradientColors();
         }
         selectionBgImage = image;
         //TODO:  need better caching strategy
-        ((SwtCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
+        ((DartCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
         if (selectedIndex > -1)
             redraw();
         getBridge().dirty(this);

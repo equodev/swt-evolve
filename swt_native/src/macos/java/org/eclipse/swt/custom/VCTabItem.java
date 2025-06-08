@@ -59,7 +59,7 @@ public class VCTabItem extends VItem {
     }
 
     public boolean getShowClose() {
-        return ((DartCTabItem) impl).showClose;
+        return ((DartCTabItem) impl).getShowClose();
     }
 
     public void setShowClose(boolean value) {

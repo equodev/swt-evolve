@@ -23,6 +23,7 @@ public class VItem extends VWidget {
         ((DartItem) impl).image = value;
     }
 
+    @JsonAttribute(nullable = false)
     public String getText() {
         return ((DartItem) impl).text;
     }

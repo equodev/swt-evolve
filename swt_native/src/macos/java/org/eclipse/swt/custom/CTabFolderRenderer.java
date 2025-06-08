@@ -19,6 +19,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class provide all of the measuring and drawing functionality
@@ -137,7 +138,7 @@ public class CTabFolderRenderer {
      */
     protected CTabFolderRenderer(CTabFolder parent) {
         this((ICTabFolderRenderer) null);
-        setImpl(new SwtCTabFolderRenderer(parent, this));
+        setImpl(Config.isEquo(CTabFolderRenderer.class, parent) ? new DartCTabFolderRenderer(parent, this) : new SwtCTabFolderRenderer(parent, this));
     }
 
     /**

@@ -12,12 +12,13 @@ public class Config {
 
     public enum Impl { eclipse, equo }
 
-    static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.eclipse.name()));
+    static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.equo.name()));
 
     static final Map<Class<?>, Impl> equoDefaults = Map.of(
             Button.class, Impl.equo,
             CTabFolder.class, Impl.equo,
-            CTabItem.class, Impl.equo
+            CTabItem.class, Impl.equo,
+            CTabFolderRenderer.class, Impl.equo
     );
 
     static final String PROPERTY_PREFIX = "dev.equo.swt.";

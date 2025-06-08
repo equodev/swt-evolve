@@ -17,7 +17,7 @@ public class VButton extends VControl {
     }
 
     public int getAlignment() {
-        return ((DartButton) impl).alignment;
+        return ((DartButton) impl).getAlignment();
     }
 
     public void setAlignment(int value) {
@@ -25,7 +25,7 @@ public class VButton extends VControl {
     }
 
     public boolean getGrayed() {
-        return ((DartButton) impl).grayed;
+        return ((DartButton) impl).getGrayed();
     }
 
     public void setGrayed(boolean value) {
@@ -42,13 +42,14 @@ public class VButton extends VControl {
     }
 
     public boolean getSelection() {
-        return ((DartButton) impl).selection;
+        return ((DartButton) impl).getSelection();
     }
 
     public void setSelection(boolean value) {
         ((DartButton) impl).selection = value;
     }
 
+    @JsonAttribute(nullable = false)
     public String getText() {
         return ((DartButton) impl).text;
     }
