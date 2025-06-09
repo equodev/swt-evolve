@@ -13,10 +13,9 @@ class ButtonSerializeTest extends SerializeTestBase {
     void should_serialize_empty_Button() {
         Button w = new Button(composite(), SWT.NONE);
         String json = serialize(w);
-        JsonMapAssert assertJson = assertThatJson(json).isObject();
-        assertJson.containsEntry("id", w.hashCode())
-                  .containsEntry("swt", "Button")
-                  .containsEntry("style", w.getStyle());
+        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        assertJ.containsEntry("id", w.hashCode())
+               .containsEntry("swt", "Button");
     }
 
     @Test
@@ -24,40 +23,25 @@ class ButtonSerializeTest extends SerializeTestBase {
         Button w = new Button(composite(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
-        JsonMapAssert assertJson = assertThatJson(json).isObject();
-        assertJson.containsEntry("id", w.hashCode())
-                  .containsEntry("swt", "Button")
-                  .containsEntry("style", w.getStyle());
-        assertJson.node("alignment")
-                  .satisfies(isEqualTo(w.getAlignment(), orAbsentIf0()));
-        assertJson.node("grayed")
-                  .satisfies(isEqualTo(w.getGrayed(), orAbsentIfFalse()));
-        assertJson.node("selection")
-                  .satisfies(isEqualTo(w.getSelection(), orAbsentIfFalse()));
-        assertJson.node("text")
-                  .satisfies(isEqualTo(w.getText(), ifNotNull()));
-        assertJson.node("background")
-                  .satisfies(isEqualTo(value(w).getBackground(), ifNotNull()));
-        assertJson.node("dragDetect")
-                  .satisfies(isEqualTo(w.getDragDetect(), orAbsentIfFalse()));
-        assertJson.node("enabled")
-                  .satisfies(isEqualTo(w.getEnabled(), orAbsentIfFalse()));
-        assertJson.node("foreground")
-                  .satisfies(isEqualTo(value(w).getForeground(), ifNotNull()));
-        assertJson.node("orientation")
-                  .satisfies(isEqualTo(w.getOrientation(), orAbsentIf0()));
-        assertJson.node("textDirection")
-                  .satisfies(isEqualTo(w.getTextDirection(), orAbsentIf0()));
-        assertJson.node("toolTipText")
-                  .satisfies(isEqualTo(w.getToolTipText(), ifNotNull()));
-        assertJson.node("touchEnabled")
-                  .satisfies(isEqualTo(w.getTouchEnabled(), orAbsentIfFalse()));
-        assertJson.node("visible")
-                  .satisfies(isEqualTo(w.getVisible(), orAbsentIfFalse()));
-        assertJson.node("capture")
-                  .satisfies(isEqualTo(value(w).getCapture(), orAbsentIfFalse()));
-        assertJson.node("redraw")
-                  .satisfies(isEqualTo(value(w).getRedraw(), orAbsentIfFalse()));
+        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        assertJ.containsEntry("id", w.hashCode())
+               .containsEntry("swt", "Button")
+               .containsEntry("text", json(w.getText()))
+               .containsEntry("toolTipText", json(w.getToolTipText()));
+        assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
+        assertJ.satisfies(node("grayed").equalsTo(w.getGrayed(), orAbsentIfFalse));
+        assertJ.satisfies(node("selection").equalsTo(w.getSelection(), orAbsentIfFalse));
+        assertJ.satisfies(node("background").equalsTo(value(w).getBackground(), orAbsentIfNull));
+        assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));
+        assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
+        assertJ.satisfies(node("foreground").equalsTo(value(w).getForeground(), orAbsentIfNull));
+        assertJ.satisfies(node("orientation").equalsTo(w.getOrientation(), orAbsentIf0));
+        assertJ.satisfies(node("textDirection").equalsTo(w.getTextDirection(), orAbsentIf0));
+        assertJ.satisfies(node("touchEnabled").equalsTo(w.getTouchEnabled(), orAbsentIfFalse));
+        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
+        assertJ.satisfies(node("redraw").equalsTo(value(w).getRedraw(), orAbsentIfFalse));
+        assertJ.satisfies(node("style").equalsTo(w.getStyle(), orAbsentIf0));
     }
 
     VButton value(Button w) {

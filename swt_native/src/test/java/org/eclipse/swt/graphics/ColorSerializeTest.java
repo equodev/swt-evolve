@@ -13,8 +13,8 @@ class ColorSerializeTest extends SerializeTestBase {
     void should_serialize_empty_Color() {
         Color w = new Color(device(), red(), green(), blue());
         String json = serialize(w);
-        JsonMapAssert assertJson = assertThatJson(json).isObject();
-        assertJson.isNotEmpty();
+        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        assertJ.isNotEmpty();
     }
 
     @Test
@@ -22,8 +22,12 @@ class ColorSerializeTest extends SerializeTestBase {
         Color w = new Color(device(), red(), green(), blue());
         setAll(w);
         String json = serialize(w);
-        JsonMapAssert assertJson = assertThatJson(json).isObject();
-        assertJson.isNotEmpty();
+        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        assertJ.isNotEmpty();
+        assertJ.satisfies(node("alpha").equalsTo(w.getAlpha(), orAbsentIf0));
+        assertJ.satisfies(node("blue").equalsTo(w.getBlue(), orAbsentIf0));
+        assertJ.satisfies(node("green").equalsTo(w.getGreen(), orAbsentIf0));
+        assertJ.satisfies(node("red").equalsTo(w.getRed(), orAbsentIf0));
     }
 
     VColor value(Color w) {

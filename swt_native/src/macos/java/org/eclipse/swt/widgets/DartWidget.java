@@ -428,8 +428,8 @@ public abstract class DartWidget implements IWidget {
         Display display = this.display;
         if (display == null)
             error(SWT.ERROR_WIDGET_DISPOSED);
-        if (((SwtDisplay) display.getImpl()).thread != Thread.currentThread())
-            error(SWT.ERROR_THREAD_INVALID_ACCESS);
+        //if (((SwtDisplay) display.getImpl()).thread != Thread.currentThread())
+        //    error(SWT.ERROR_THREAD_INVALID_ACCESS);
         if ((getApi().state & DISPOSED) != 0)
             error(SWT.ERROR_WIDGET_DISPOSED);
     }

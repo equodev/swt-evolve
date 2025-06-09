@@ -1823,12 +1823,4 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
         if (api != null)
             api.impl = this;
     }
-
-    protected VCTabFolderRenderer value;
-
-    public VCTabFolderRenderer getValue() {
-        if (value == null)
-            value = new VCTabFolderRenderer(this);
-        return (VCTabFolderRenderer) value;
-    }
 }

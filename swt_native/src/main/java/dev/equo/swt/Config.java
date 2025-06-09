@@ -14,12 +14,12 @@ public class Config {
 
     static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.equo.name()));
 
-    static final Map<Class<?>, Impl> equoDefaults = Map.of(
-            Button.class, Impl.equo,
-            CTabFolder.class, Impl.equo,
-            CTabItem.class, Impl.equo,
-            CTabFolderRenderer.class, Impl.equo
-    );
+//    static final Map<Class<?>, Impl> equoDefaults = Map.of(
+//            Button.class, Impl.equo
+//            CTabFolder.class, Impl.equo,
+//            CTabItem.class, Impl.equo,
+//            CTabFolderRenderer.class, Impl.equo
+//    );
 
     static final String PROPERTY_PREFIX = "dev.equo.swt.";
 
@@ -44,7 +44,7 @@ public class Config {
     }
 
     public static boolean isEquo(Class<?> clazz) {
-        if ((defaultImpl == Impl.equo || equoDefaults.containsKey(clazz)) && notNegatedDefault(clazz, Impl.equo))
+        if ((defaultImpl == Impl.equo /*|| equoDefaults.containsKey(clazz)*/) && notNegatedDefault(clazz, Impl.equo))
             return true;
         if ((defaultImpl == Impl.eclipse && !notNegatedDefault(clazz, Impl.eclipse)))
             return true;

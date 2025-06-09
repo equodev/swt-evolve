@@ -13,10 +13,9 @@ class CTabItemSerializeTest extends SerializeTestBase {
     void should_serialize_empty_CTabItem() {
         CTabItem w = new CTabItem(cTabFolder(), SWT.NONE);
         String json = serialize(w);
-        JsonMapAssert assertJson = assertThatJson(json).isObject();
-        assertJson.containsEntry("id", w.hashCode())
-                  .containsEntry("swt", "CTabItem")
-                  .containsEntry("style", w.getStyle());
+        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        assertJ.containsEntry("id", w.hashCode())
+               .containsEntry("swt", "CTabItem");
     }
 
     @Test
@@ -24,24 +23,17 @@ class CTabItemSerializeTest extends SerializeTestBase {
         CTabItem w = new CTabItem(cTabFolder(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
-        JsonMapAssert assertJson = assertThatJson(json).isObject();
-        assertJson.containsEntry("id", w.hashCode())
-                  .containsEntry("swt", "CTabItem")
-                  .containsEntry("style", w.getStyle());
-        assertJson.node("control")
-                  .satisfies(isEqualTo(w.getControl(), ifNotNull()));
-        assertJson.node("foreground")
-                  .satisfies(isEqualTo(w.getForeground(), ifNotNull()));
-        assertJson.node("selectionForeground")
-                  .satisfies(isEqualTo(w.getSelectionForeground(), ifNotNull()));
-        assertJson.node("showClose")
-                  .satisfies(isEqualTo(w.getShowClose(), orAbsentIfFalse()));
-        assertJson.node("toolTipText")
-                  .satisfies(isEqualTo(w.getToolTipText(), ifNotNull()));
-        assertJson.node("shortenedText")
-                  .satisfies(isEqualTo(value(w).getShortenedText(), ifNotNull()));
-        assertJson.node("text")
-                  .satisfies(isEqualTo(w.getText(), ifNotNull()));
+        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        assertJ.containsEntry("id", w.hashCode())
+               .containsEntry("swt", "CTabItem")
+               .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("text", json(w.getText()));
+        assertJ.satisfies(node("control").equalsTo(w.getControl(), orAbsentIfNull));
+        assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
+        assertJ.satisfies(node("selectionForeground").equalsTo(w.getSelectionForeground(), orAbsentIfNull));
+        assertJ.satisfies(node("showClose").equalsTo(w.getShowClose(), orAbsentIfFalse));
+        assertJ.satisfies(node("shortenedText").equalsTo(value(w).getShortenedText(), orAbsentIfNull));
+        assertJ.satisfies(node("style").equalsTo(w.getStyle(), orAbsentIf0));
     }
 
     VCTabItem value(CTabItem w) {

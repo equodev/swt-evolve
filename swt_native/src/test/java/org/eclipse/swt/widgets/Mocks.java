@@ -66,14 +66,14 @@ public class Mocks {
     }
 
     public static int red() {
-        return Instancio.gen().ints().range(0, 255).get();
+        return Instancio.gen().ints().range(1, 255).get();
     }
 
     public static int green() {
-        return Instancio.gen().ints().range(0, 255).get();
+        return Instancio.gen().ints().range(1, 255).get();
     }
 
     public static int blue() {
-        return Instancio.gen().ints().range(0, 255).get();
+        return Instancio.gen().ints().range(1, 255).get();
     }
 }

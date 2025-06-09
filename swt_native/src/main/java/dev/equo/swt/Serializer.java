@@ -14,7 +14,7 @@ import java.io.IOException;
 public class Serializer {
     private static final byte[] name_id = "id".getBytes(java.nio.charset.StandardCharsets.UTF_8);
     private static final byte[] name_swt = "swt".getBytes(java.nio.charset.StandardCharsets.UTF_8);
-    private static final byte[] name_style = "style".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+//    private static final byte[] name_style = "style".getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
     private final DslJson<Object> dsl;
 
@@ -47,9 +47,9 @@ public class Serializer {
         writer.writeByte((byte)'"'); writer.writeAscii(name_swt); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
         StringConverter.serialize(api.getClass().getSimpleName(), writer);
         writer.writeByte((byte)',');
-        writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
-        NumberConverter.serialize(api.getStyle(), writer);
-        writer.writeByte((byte)',');
+//        writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
+//        NumberConverter.serialize(api.getStyle(), writer);
+//        writer.writeByte((byte)',');
         if (alwaysSerialize) { converter.writeContentFull(writer, value); writer.writeByte((byte)'}'); }
         else if (converter.writeContentMinimal(writer, value)) writer.getByteBuffer()[writer.size() - 1] = '}';
         else writer.getByteBuffer()[writer.size() - 1] = '}';

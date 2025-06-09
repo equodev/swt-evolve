@@ -151,14 +151,14 @@ class EquoComm {
             Future(() async {
               callback.onSuccess(message.payload);
             }).catchError((error) {
-              print(error); // Log it
+              throw error; // Log it
             });
           }
         } else if (message.error != null && callback.onError != null) {
           Future(() async {
             callback.onError!(message.error!);
           }).catchError((error) {
-            print(error); // Log it
+            throw error; // Log it
           });
         }
       } else {

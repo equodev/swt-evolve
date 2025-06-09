@@ -13,10 +13,18 @@ class CTabFolderSerializeTest extends SerializeTestBase {
     void should_serialize_empty_CTabFolder() {
         CTabFolder w = new CTabFolder(composite(), SWT.NONE);
         String json = serialize(w);
-        JsonMapAssert assertJson = assertThatJson(json).isObject();
-        assertJson.containsEntry("id", w.hashCode())
-                  .containsEntry("swt", "CTabFolder")
-                  .containsEntry("style", w.getStyle());
+        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        assertJ.containsEntry("id", w.hashCode())
+               .containsEntry("swt", "CTabFolder");
+        assertJ.satisfies(node("minChars").equalsTo(w.getMinimumCharacters(), orAbsentIf0));
+        assertJ.satisfies(node("selectedIndex").equalsTo(w.getSelectionIndex(), orAbsentIf0));
+        assertJ.satisfies(node("simple").equalsTo(w.getSimple(), orAbsentIfFalse));
+        assertJ.satisfies(node("showUnselectedClose").equalsTo(w.getUnselectedCloseVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("showUnselectedImage").equalsTo(w.getUnselectedImageVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("showSelectedImage").equalsTo(w.getSelectedImageVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("selectionHighlightBarThickness").equalsTo(value(w).getSelectionHighlightBarThickness(), orAbsentIf0));
+        assertJ.satisfies(node("fixedTabHeight").equalsTo(value(w).getFixedTabHeight(), orAbsentIf0));
+        assertJ.satisfies(node("highlightEnabled").equalsTo(w.getHighlightEnabled(), orAbsentIfFalse));
     }
 
     @Test
@@ -24,80 +32,46 @@ class CTabFolderSerializeTest extends SerializeTestBase {
         CTabFolder w = new CTabFolder(composite(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
-        JsonMapAssert assertJson = assertThatJson(json).isObject();
-        assertJson.containsEntry("id", w.hashCode())
-                  .containsEntry("swt", "CTabFolder")
-                  .containsEntry("style", w.getStyle());
-        assertJson.node("borderVisible")
-                  .satisfies(isEqualTo(w.getBorderVisible(), orAbsentIfFalse()));
-        assertJson.node("minimized")
-                  .satisfies(isEqualTo(w.getMinimized(), orAbsentIfFalse()));
-        assertJson.node("showMin")
-                  .satisfies(isEqualTo(w.getMinimizeVisible(), orAbsentIfFalse()));
-        assertJson.node("minChars")
-                  .satisfies(isEqualTo(w.getMinimumCharacters(), orAbsentIf0()));
-        assertJson.node("maximized")
-                  .satisfies(isEqualTo(w.getMaximized(), orAbsentIfFalse()));
-        assertJson.node("showMax")
-                  .satisfies(isEqualTo(w.getMaximizeVisible(), orAbsentIfFalse()));
-        assertJson.node("mru")
-                  .satisfies(isEqualTo(w.getMRUVisible(), orAbsentIfFalse()));
-        assertJson.node("selectedIndex")
-                  .satisfies(isEqualTo(w.getSelectionIndex(), orAbsentIf0()));
-        assertJson.node("selectionBackground")
-                  .satisfies(isEqualTo(w.getSelectionBackground(), ifNotNull()));
-        assertJson.node("selectionForeground")
-                  .satisfies(isEqualTo(w.getSelectionForeground(), ifNotNull()));
-        assertJson.node("simple")
-                  .satisfies(isEqualTo(w.getSimple(), orAbsentIfFalse()));
-        assertJson.node("single")
-                  .satisfies(isEqualTo(w.getSingle(), orAbsentIfFalse()));
-        assertJson.node("showUnselectedClose")
-                  .satisfies(isEqualTo(w.getUnselectedCloseVisible(), orAbsentIfFalse()));
-        assertJson.node("showUnselectedImage")
-                  .satisfies(isEqualTo(w.getUnselectedImageVisible(), orAbsentIfFalse()));
-        assertJson.node("showSelectedImage")
-                  .satisfies(isEqualTo(w.getSelectedImageVisible(), orAbsentIfFalse()));
-        assertJson.node("background")
-                  .satisfies(isEqualTo(value(w).getBackground(), ifNotNull()));
-        assertJson.node("foreground")
-                  .satisfies(isEqualTo(value(w).getForeground(), ifNotNull()));
-        assertJson.node("selectionHighlightBarThickness")
-                  .satisfies(isEqualTo(value(w).getSelectionHighlightBarThickness(), orAbsentIf0()));
-        assertJson.node("fixedTabHeight")
-                  .satisfies(isEqualTo(value(w).getFixedTabHeight(), orAbsentIf0()));
-        assertJson.node("onBottom")
-                  .satisfies(isEqualTo(value(w).getOnBottom(), orAbsentIfFalse()));
-        assertJson.node("highlightEnabled")
-                  .satisfies(isEqualTo(w.getHighlightEnabled(), orAbsentIfFalse()));
-        assertJson.node("backgroundMode")
-                  .satisfies(isEqualTo(w.getBackgroundMode(), orAbsentIf0()));
-        assertJson.node("layoutDeferred")
-                  .satisfies(isEqualTo(w.getLayoutDeferred(), orAbsentIfFalse()));
-        assertJson.node("scrollbarsMode")
-                  .satisfies(isEqualTo(w.getScrollbarsMode(), orAbsentIf0()));
-        assertJson.node("background")
-                  .satisfies(isEqualTo(value(w).getBackground(), ifNotNull()));
-        assertJson.node("dragDetect")
-                  .satisfies(isEqualTo(w.getDragDetect(), orAbsentIfFalse()));
-        assertJson.node("enabled")
-                  .satisfies(isEqualTo(w.getEnabled(), orAbsentIfFalse()));
-        assertJson.node("foreground")
-                  .satisfies(isEqualTo(value(w).getForeground(), ifNotNull()));
-        assertJson.node("orientation")
-                  .satisfies(isEqualTo(w.getOrientation(), orAbsentIf0()));
-        assertJson.node("textDirection")
-                  .satisfies(isEqualTo(w.getTextDirection(), orAbsentIf0()));
-        assertJson.node("toolTipText")
-                  .satisfies(isEqualTo(w.getToolTipText(), ifNotNull()));
-        assertJson.node("touchEnabled")
-                  .satisfies(isEqualTo(w.getTouchEnabled(), orAbsentIfFalse()));
-        assertJson.node("visible")
-                  .satisfies(isEqualTo(w.getVisible(), orAbsentIfFalse()));
-        assertJson.node("capture")
-                  .satisfies(isEqualTo(value(w).getCapture(), orAbsentIfFalse()));
-        assertJson.node("redraw")
-                  .satisfies(isEqualTo(value(w).getRedraw(), orAbsentIfFalse()));
+        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        assertJ.containsEntry("id", w.hashCode())
+               .containsEntry("swt", "CTabFolder")
+               .containsEntry("toolTipText", json(w.getToolTipText()));
+        assertJ.satisfies(node("borderVisible").equalsTo(w.getBorderVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("minimized").equalsTo(w.getMinimized(), orAbsentIfFalse));
+        assertJ.satisfies(node("showMin").equalsTo(w.getMinimizeVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("minChars").equalsTo(w.getMinimumCharacters(), orAbsentIf0));
+        assertJ.satisfies(node("maximized").equalsTo(w.getMaximized(), orAbsentIfFalse));
+        assertJ.satisfies(node("showMax").equalsTo(w.getMaximizeVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("mru").equalsTo(w.getMRUVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("selectedIndex").equalsTo(w.getSelectionIndex(), orAbsentIf0));
+        assertJ.satisfies(node("selectionBackground").equalsTo(w.getSelectionBackground(), orAbsentIfNull));
+        assertJ.satisfies(node("selectionForeground").equalsTo(w.getSelectionForeground(), orAbsentIfNull));
+        assertJ.satisfies(node("simple").equalsTo(w.getSimple(), orAbsentIfFalse));
+        assertJ.satisfies(node("single").equalsTo(w.getSingle(), orAbsentIfFalse));
+        assertJ.satisfies(node("style").equalsTo(w.getStyle(), orAbsentIf0));
+        assertJ.satisfies(node("showUnselectedClose").equalsTo(w.getUnselectedCloseVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("showUnselectedImage").equalsTo(w.getUnselectedImageVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("showSelectedImage").equalsTo(w.getSelectedImageVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("background").equalsTo(value(w).getBackground(), orAbsentIfNull));
+        assertJ.satisfies(node("foreground").equalsTo(value(w).getForeground(), orAbsentIfNull));
+        assertJ.satisfies(node("selectionHighlightBarThickness").equalsTo(value(w).getSelectionHighlightBarThickness(), orAbsentIf0));
+        assertJ.satisfies(node("fixedTabHeight").equalsTo(value(w).getFixedTabHeight(), orAbsentIf0));
+        assertJ.satisfies(node("onBottom").equalsTo(value(w).getOnBottom(), orAbsentIfFalse));
+        assertJ.satisfies(node("highlightEnabled").equalsTo(w.getHighlightEnabled(), orAbsentIfFalse));
+        assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
+        assertJ.satisfies(node("layoutDeferred").equalsTo(w.getLayoutDeferred(), orAbsentIfFalse));
+        assertJ.satisfies(node("scrollbarsMode").equalsTo(w.getScrollbarsMode(), orAbsentIf0));
+        assertJ.satisfies(node("background").equalsTo(value(w).getBackground(), orAbsentIfNull));
+        assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));
+        assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
+        assertJ.satisfies(node("foreground").equalsTo(value(w).getForeground(), orAbsentIfNull));
+        assertJ.satisfies(node("orientation").equalsTo(w.getOrientation(), orAbsentIf0));
+        assertJ.satisfies(node("textDirection").equalsTo(w.getTextDirection(), orAbsentIf0));
+        assertJ.satisfies(node("touchEnabled").equalsTo(w.getTouchEnabled(), orAbsentIfFalse));
+        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
+        assertJ.satisfies(node("redraw").equalsTo(value(w).getRedraw(), orAbsentIfFalse));
+        assertJ.satisfies(node("style").equalsTo(w.getStyle(), orAbsentIf0));
     }
 
     VCTabFolder value(CTabFolder w) {

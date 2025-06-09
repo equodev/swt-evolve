@@ -18,6 +18,15 @@ public class VWidget {
 
     protected DartWidget impl;
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
+    public int getStyle() {
+        return ((DartWidget) impl).getStyle();
+    }
+
+    public void setStyle(int value) {
+        ((DartWidget) impl).getApi().style = value;
+    }
+
     @JsonConverter(target = Widget.class)
     public static class WidgetJson implements Configuration {
 
