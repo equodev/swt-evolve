@@ -26,7 +26,8 @@ class CompositeSerializeTest extends SerializeTestBase {
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Composite")
-               .containsEntry("toolTipText", json(w.getToolTipText()));
+               .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
         assertJ.satisfies(node("layoutDeferred").equalsTo(w.getLayoutDeferred(), orAbsentIfFalse));
         assertJ.satisfies(node("scrollbarsMode").equalsTo(w.getScrollbarsMode(), orAbsentIf0));
@@ -40,7 +41,6 @@ class CompositeSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("redraw").equalsTo(value(w).getRedraw(), orAbsentIfFalse));
-        assertJ.satisfies(node("style").equalsTo(w.getStyle(), orAbsentIf0));
     }
 
     VComposite value(Composite w) {

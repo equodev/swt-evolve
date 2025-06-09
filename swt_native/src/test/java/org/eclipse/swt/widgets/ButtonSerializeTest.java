@@ -27,7 +27,8 @@ class ButtonSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Button")
                .containsEntry("text", json(w.getText()))
-               .containsEntry("toolTipText", json(w.getToolTipText()));
+               .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
         assertJ.satisfies(node("grayed").equalsTo(w.getGrayed(), orAbsentIfFalse));
         assertJ.satisfies(node("selection").equalsTo(w.getSelection(), orAbsentIfFalse));
@@ -41,7 +42,6 @@ class ButtonSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("redraw").equalsTo(value(w).getRedraw(), orAbsentIfFalse));
-        assertJ.satisfies(node("style").equalsTo(w.getStyle(), orAbsentIf0));
     }
 
     VButton value(Button w) {

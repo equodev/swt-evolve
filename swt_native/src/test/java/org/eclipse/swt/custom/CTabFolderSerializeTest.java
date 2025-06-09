@@ -35,7 +35,9 @@ class CTabFolderSerializeTest extends SerializeTestBase {
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "CTabFolder")
-               .containsEntry("toolTipText", json(w.getToolTipText()));
+               .containsEntry("style", w.getStyle())
+               .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("borderVisible").equalsTo(w.getBorderVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("minimized").equalsTo(w.getMinimized(), orAbsentIfFalse));
         assertJ.satisfies(node("showMin").equalsTo(w.getMinimizeVisible(), orAbsentIfFalse));
@@ -48,7 +50,6 @@ class CTabFolderSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("selectionForeground").equalsTo(w.getSelectionForeground(), orAbsentIfNull));
         assertJ.satisfies(node("simple").equalsTo(w.getSimple(), orAbsentIfFalse));
         assertJ.satisfies(node("single").equalsTo(w.getSingle(), orAbsentIfFalse));
-        assertJ.satisfies(node("style").equalsTo(w.getStyle(), orAbsentIf0));
         assertJ.satisfies(node("showUnselectedClose").equalsTo(w.getUnselectedCloseVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("showUnselectedImage").equalsTo(w.getUnselectedImageVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("showSelectedImage").equalsTo(w.getSelectedImageVisible(), orAbsentIfFalse));
@@ -71,7 +72,6 @@ class CTabFolderSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("redraw").equalsTo(value(w).getRedraw(), orAbsentIfFalse));
-        assertJ.satisfies(node("style").equalsTo(w.getStyle(), orAbsentIf0));
     }
 
     VCTabFolder value(CTabFolder w) {

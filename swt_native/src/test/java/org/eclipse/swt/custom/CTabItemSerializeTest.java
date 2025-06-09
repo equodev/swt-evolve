@@ -27,13 +27,13 @@ class CTabItemSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "CTabItem")
                .containsEntry("toolTipText", json(w.getToolTipText()))
-               .containsEntry("text", json(w.getText()));
+               .containsEntry("text", json(w.getText()))
+               .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("control").equalsTo(w.getControl(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("selectionForeground").equalsTo(w.getSelectionForeground(), orAbsentIfNull));
         assertJ.satisfies(node("showClose").equalsTo(w.getShowClose(), orAbsentIfFalse));
         assertJ.satisfies(node("shortenedText").equalsTo(value(w).getShortenedText(), orAbsentIfNull));
-        assertJ.satisfies(node("style").equalsTo(w.getStyle(), orAbsentIf0));
     }
 
     VCTabItem value(CTabItem w) {

@@ -3929,7 +3929,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return 0.2126f * rgbColor[0] + 0.7152f * rgbColor[1] + 0.0722f * rgbColor[2];
     }
 
-    Rectangle bounds;
+    Rectangle bounds = new Rectangle(0, 0, 0, 0);
 
     boolean dragDetect;
 

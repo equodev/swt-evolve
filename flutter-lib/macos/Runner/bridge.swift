@@ -32,7 +32,8 @@ class FlutterBridgeController {
         }
 
         let arguments = [String(port), String(widgetId), widgetName]
-        let project = FlutterDartProject(precompiledDartBundle: Bundle(path: "/Users/guillez/ws/equoswt/flutter-lib/build/macos/Build/Products/Release/swtflutter.app/Contents/Frameworks/App.framework"))
+        let frameworkPath = getDylibDirectory()! + "/swtflutter.app/Contents/Frameworks/App.framework"
+        let project = FlutterDartProject(precompiledDartBundle: Bundle(path: frameworkPath))
         project.dartEntrypointArguments = arguments
         // Create Flutter view controller
         flutterViewController = FlutterViewController.init(project: project)
@@ -70,6 +71,16 @@ class FlutterBridgeController {
         RegisterGeneratedPlugins(registry: flutterViewController!)
     }
 
+}
+
+func getDylibDirectory() -> String? {
+    var info = Dl_info()
+    guard dladdr(#dsohandle, &info) != 0,
+          let path = info.dli_fname else {
+        return nil
+    }
+    let dylibPath = String(cString: path)
+    return URL(fileURLWithPath: dylibPath).deletingLastPathComponent().path
 }
 
 // JNI bridge function
