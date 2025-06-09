@@ -2,7 +2,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
-import org.eclipse.swt.custom.ICTabItem;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Point;
@@ -226,7 +225,8 @@ public class FlutterTabFolder extends FlutterComposite implements ITabFolder{
      */
     public ITabItem[] getItems() {
         // Not Generated
-        return children.stream().map(ITabItem.class::cast).toArray(ITabItem[]::new);
+        return children == null ? new ITabItem[0]
+                : children.stream().filter(ITabItem.class::isInstance).toArray(ITabItem[]::new);
     }
 
     /**

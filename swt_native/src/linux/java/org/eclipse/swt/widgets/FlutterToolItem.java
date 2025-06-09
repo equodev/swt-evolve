@@ -6,6 +6,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.ToolitemSwtSizingConstants;
@@ -71,8 +72,11 @@ public class FlutterToolItem extends FlutterItem implements IToolItem {
      */
     public FlutterToolItem(IToolBar parent, int style) {
         super(parent, checkStyle(style));
-        this.parent = (FlutterToolBar)parent;
+        this.parent = (FlutterToolBar) parent;
         createWidget(parent.getItemCount());
+        if (parent instanceof FlutterControl flutterParent) {
+            flutterParent.currentSize = null;
+        }
     }
 
     /**
@@ -113,12 +117,15 @@ public class FlutterToolItem extends FlutterItem implements IToolItem {
      */
     public FlutterToolItem(IToolBar parent, int style, int index) {
         super(parent, checkStyle(style));
-        this.parent = (FlutterToolBar)parent;
+        this.parent = (FlutterToolBar) parent;
         int count = parent.getItemCount();
         if (!(0 <= index && index <= count)) {
             error(SWT.ERROR_INVALID_RANGE);
         }
         createWidget(index);
+        if (parent instanceof FlutterControl flutterParent) {
+            flutterParent.currentSize = null;
+        }
     }
 
     /**
@@ -212,7 +219,7 @@ public class FlutterToolItem extends FlutterItem implements IToolItem {
      * </ul>
      */
     public IControl getControl() {
-        return null;
+        return parent;
     }
 
     /**
@@ -558,10 +565,20 @@ public class FlutterToolItem extends FlutterItem implements IToolItem {
     @Override
     public void setImage(Image image) {
         if (image != null) {
-            String imageFile = image.getImageData().getFilename();
+            ImageData data = image.getImageData();
+            String imageFile = data.getFilename();
+            if (imageFile == null) {
+                if (data.alphaData != null && data.data.length == data.alphaData.length * 4) {
+                    for (int i = 0; i < data.alphaData.length; ++i) {
+                        data.data[i * 4] = data.alphaData[i];
+                    }
+                }
+//                builder().setImageData(data.data);
+            } else
             if (imageFile != null) {
                 builder().setImage(imageFile);
             }
+            FlutterSwt.dirty(this);
         }
     }
 

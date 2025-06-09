@@ -4218,11 +4218,7 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
      *
      * @since 2.1.2
      */
-    public Rectangle map(IControl from__, IControl to__, Rectangle rectangle) {
-        SWTControl to_ = (SWTControl) to__;
-        SWTControl from_ = (SWTControl) from__;
-        SWTControl to = (SWTControl) to_;
-        SWTControl from = (SWTControl) from_;
+    public Rectangle map(IControl from, IControl to, Rectangle rectangle) {
         checkDevice();
         if (rectangle == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -4274,11 +4270,10 @@ public class SWTDisplay extends Device implements Executor, IDisplay {
      *
      * @since 2.1.2
      */
-    public Rectangle map(IControl from__, IControl to__, int x, int y, int width, int height) {
-        SWTControl to_ = (SWTControl) to__;
-        SWTControl from_ = (SWTControl) from__;
-        SWTControl to = (SWTControl) to_;
+    public Rectangle map(IControl from_, IControl to_, int x, int y, int width, int height) {
+        if (!(from_ instanceof SWTControl) || !(to_ instanceof SWTControl)) return new Rectangle(x, y, width, height);
         SWTControl from = (SWTControl) from_;
+        SWTControl to = (SWTControl) to_;
         checkDevice();
         if (from != null && from.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);

@@ -63,7 +63,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
      *
      * @param table the <code>Table</code> over which the user positions the cursor to drop the data
      */
-    public TableDropTargetEffect(SWTTable table) {
+    public TableDropTargetEffect(Table table) {
         super(table);
     }
 
@@ -112,7 +112,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
      */
     @Override
     public void dragLeave(DropTargetEvent event) {
-        SWTTable table = (SWTTable) ((SWTTable) control);
+        SWTTable table = (SWTTable) (control.delegate);
         long handle = table.getHandle();
         GTK.gtk_tree_view_set_drag_dest_row(handle, 0, GTK.GTK_TREE_VIEW_DROP_BEFORE);
         scrollBeginTime = 0;
@@ -138,7 +138,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
      */
     @Override
     public void dragOver(DropTargetEvent event) {
-        SWTTable table = (SWTTable) ((SWTTable) control);
+        SWTTable table = (SWTTable) control.delegate;
         long handle = table.getHandle();
         int effect = checkEffect(event.feedback);
         Point coordinates = new Point(event.x, event.y);

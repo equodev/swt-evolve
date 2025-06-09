@@ -16,6 +16,8 @@
 package org.eclipse.swt.widgets;
 
 import java.util.*;
+import java.util.stream.Stream;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
@@ -73,7 +75,221 @@ public class Menu extends Widget {
      * @see Widget#getStyle
      */
     public Menu(Control parent) {
-        this(new SWTMenu((SWTControl) parent.delegate));
+        this((IMenu) null);
+        if (parent.delegate instanceof SWTControl) {
+            delegate = new SWTMenu((SWTControl) parent.delegate);
+        } else {
+            delegate = new IMenu() {
+                @Override
+                public void addTypedListener(EventListener listener, int... eventTypes) {
+                }
+
+                @Override
+                public void checkWidget() {
+                }
+
+                @Override
+                public long getHandle() {
+                    return 0;
+                }
+
+                @Override
+                public long topHandle() {
+                    return 0;
+                }
+
+                @Override
+                public void addListener(int eventType, Listener listener) {
+                }
+
+                @Override
+                public void addDisposeListener(DisposeListener listener) {
+                }
+
+                @Override
+                public void dispose() {
+                }
+
+                @Override
+                public Object getData() {
+                    return null;
+                }
+
+                @Override
+                public Object getData(String key) {
+                    return null;
+                }
+
+                @Override
+                public IDisplay getDisplay() {
+                    return null;
+                }
+
+                @Override
+                public Listener[] getListeners(int eventType) {
+                    return null;
+                }
+
+                @Override
+                public <L extends EventListener> Stream<L> getTypedListeners(int eventType, Class<L> listenerType) {
+                    return null;
+                }
+
+                @Override
+                public int getStyle() {
+                    return 0;
+                }
+
+                @Override
+                public boolean isAutoDirection() {
+                    return false;
+                }
+
+                @Override
+                public boolean isDisposed() {
+                    return false;
+                }
+
+                @Override
+                public boolean isListening(int eventType) {
+                    return false;
+                }
+
+                @Override
+                public void notifyListeners(int eventType, Event event) {
+                }
+
+                @Override
+                public void removeListener(int eventType, Listener listener) {
+                }
+
+                @Override
+                public void reskin(int flags) {
+                }
+
+                @Override
+                public void removeDisposeListener(DisposeListener listener) {
+                }
+
+                @Override
+                public void setData(Object data) {
+                }
+
+                @Override
+                public void setData(String key, Object value) {
+                }
+
+                @Override
+                public void addMenuListener(MenuListener listener) {
+                }
+
+                @Override
+                public void addHelpListener(HelpListener listener) {
+                }
+
+                @Override
+                public IMenuItem getDefaultItem() {
+                    return null;
+                }
+
+                @Override
+                public boolean getEnabled() {
+                    return false;
+                }
+
+                @Override
+                public IMenuItem getItem(int index) {
+                    return null;
+                }
+
+                @Override
+                public int getItemCount() {
+                    return 0;
+                }
+
+                @Override
+                public IMenuItem[] getItems() {
+                    return null;
+                }
+
+                @Override
+                public int getOrientation() {
+                    return 0;
+                }
+
+                @Override
+                public IDecorations getParent() {
+                    return null;
+                }
+
+                @Override
+                public IMenuItem getParentItem() {
+                    return null;
+                }
+
+                @Override
+                public IMenu getParentMenu() {
+                    return null;
+                }
+
+                @Override
+                public IShell getShell() {
+                    return null;
+                }
+
+                @Override
+                public boolean getVisible() {
+                    return false;
+                }
+
+                @Override
+                public int indexOf(IMenuItem item) {
+                    return 0;
+                }
+
+                @Override
+                public boolean isEnabled() {
+                    return false;
+                }
+
+                @Override
+                public boolean isVisible() {
+                    return false;
+                }
+
+                @Override
+                public void removeMenuListener(MenuListener listener) {
+                }
+
+                @Override
+                public void removeHelpListener(HelpListener listener) {
+                }
+
+                @Override
+                public void setDefaultItem(IMenuItem item) {
+                }
+
+                @Override
+                public void setEnabled(boolean enabled) {
+                }
+
+                @Override
+                public void setLocation(int x, int y) {
+                }
+
+                @Override
+                public void setLocation(Point location) {
+                }
+
+                @Override
+                public void setOrientation(int orientation) {
+                }
+
+                @Override
+                public void setVisible(boolean visible) {
+                }
+            };
+        }
     }
 
     /**
@@ -142,7 +358,222 @@ public class Menu extends Widget {
      * @see Widget#getStyle
      */
     public Menu(Menu parentMenu) {
-        this(new SWTMenu((SWTMenu) parentMenu.delegate));
+        this((IMenu) null);
+        if (parentMenu.delegate instanceof SWTMenu) {
+            delegate = new SWTMenu((SWTMenu) parentMenu.delegate);
+        } else {
+            delegate = new IMenu() {
+
+                @Override
+                public void addTypedListener(EventListener listener, int... eventTypes) {
+                }
+
+                @Override
+                public void checkWidget() {
+                }
+
+                @Override
+                public long getHandle() {
+                    return 0;
+                }
+
+                @Override
+                public long topHandle() {
+                    return 0;
+                }
+
+                @Override
+                public void addListener(int eventType, Listener listener) {
+                }
+
+                @Override
+                public void addDisposeListener(DisposeListener listener) {
+                }
+
+                @Override
+                public void dispose() {
+                }
+
+                @Override
+                public Object getData() {
+                    return null;
+                }
+
+                @Override
+                public Object getData(String key) {
+                    return null;
+                }
+
+                @Override
+                public IDisplay getDisplay() {
+                    return null;
+                }
+
+                @Override
+                public Listener[] getListeners(int eventType) {
+                    return null;
+                }
+
+                @Override
+                public <L extends EventListener> Stream<L> getTypedListeners(int eventType, Class<L> listenerType) {
+                    return null;
+                }
+
+                @Override
+                public int getStyle() {
+                    return 0;
+                }
+
+                @Override
+                public boolean isAutoDirection() {
+                    return false;
+                }
+
+                @Override
+                public boolean isDisposed() {
+                    return false;
+                }
+
+                @Override
+                public boolean isListening(int eventType) {
+                    return false;
+                }
+
+                @Override
+                public void notifyListeners(int eventType, Event event) {
+                }
+
+                @Override
+                public void removeListener(int eventType, Listener listener) {
+                }
+
+                @Override
+                public void reskin(int flags) {
+                }
+
+                @Override
+                public void removeDisposeListener(DisposeListener listener) {
+                }
+
+                @Override
+                public void setData(Object data) {
+                }
+
+                @Override
+                public void setData(String key, Object value) {
+                }
+
+                @Override
+                public void addMenuListener(MenuListener listener) {
+                }
+
+                @Override
+                public void addHelpListener(HelpListener listener) {
+                }
+
+                @Override
+                public IMenuItem getDefaultItem() {
+                    return null;
+                }
+
+                @Override
+                public boolean getEnabled() {
+                    return false;
+                }
+
+                @Override
+                public IMenuItem getItem(int index) {
+                    return null;
+                }
+
+                @Override
+                public int getItemCount() {
+                    return 0;
+                }
+
+                @Override
+                public IMenuItem[] getItems() {
+                    return null;
+                }
+
+                @Override
+                public int getOrientation() {
+                    return 0;
+                }
+
+                @Override
+                public IDecorations getParent() {
+                    return null;
+                }
+
+                @Override
+                public IMenuItem getParentItem() {
+                    return null;
+                }
+
+                @Override
+                public IMenu getParentMenu() {
+                    return null;
+                }
+
+                @Override
+                public IShell getShell() {
+                    return null;
+                }
+
+                @Override
+                public boolean getVisible() {
+                    return false;
+                }
+
+                @Override
+                public int indexOf(IMenuItem item) {
+                    return 0;
+                }
+
+                @Override
+                public boolean isEnabled() {
+                    return false;
+                }
+
+                @Override
+                public boolean isVisible() {
+                    return false;
+                }
+
+                @Override
+                public void removeMenuListener(MenuListener listener) {
+                }
+
+                @Override
+                public void removeHelpListener(HelpListener listener) {
+                }
+
+                @Override
+                public void setDefaultItem(IMenuItem item) {
+                }
+
+                @Override
+                public void setEnabled(boolean enabled) {
+                }
+
+                @Override
+                public void setLocation(int x, int y) {
+                }
+
+                @Override
+                public void setLocation(Point location) {
+                }
+
+                @Override
+                public void setOrientation(int orientation) {
+                }
+
+                @Override
+                public void setVisible(boolean visible) {
+                }
+            };
+        }
     }
 
     /**

@@ -7,6 +7,7 @@ public interface ItemValue extends WidgetValue {
 
     Optional<String> getText();
     Optional<String> getImage();
+    Optional<byte[]> getImageData();
 
     static Builder builder() {
 
@@ -19,7 +20,9 @@ public interface ItemValue extends WidgetValue {
 
         Optional<String> getText();
         Optional<String> getImage();
+        Optional<byte[]> getImageData();
         Builder setImage(String string);
+        Builder setImageData(byte[] data);
     }
 }
 

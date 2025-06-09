@@ -73,7 +73,7 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
      *
      * @param styledText the <code>StyledText</code> over which the user positions the cursor to drop the data
      */
-    public StyledTextDropTargetEffect(SWTStyledText styledText) {
+    public StyledTextDropTargetEffect(StyledText styledText) {
         super(styledText);
         paintListener = event -> {
             if (currentOffset != -1) {

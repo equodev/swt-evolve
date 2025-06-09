@@ -50,10 +50,20 @@ public class FlutterComposite extends FlutterScrollable implements IComposite {
 
     @Override
     void createHandle(int index) {
-        super.createHandle(index);
-        childComposite = new SWTComposite(parentComposite, SWT.NONE);
-        childComposite.setLayout(new StackLayout());
-        Composite.getInstance(childComposite);
+        if (parent instanceof SWTComposite) {
+            super.createHandle(index);
+            childComposite = new SWTComposite(parentComposite, SWT.NONE);
+            childComposite.setLayout(new StackLayout());
+            Composite.getInstance(childComposite);
+        }
+    }
+
+    @Override
+    public boolean setParent(IComposite control) {
+        if (parent instanceof SWTComposite && control instanceof SWTComposite parent) {
+            return parentComposite.setParent(parent);
+        }
+        return false;
     }
 
     @Override
@@ -137,11 +147,25 @@ public class FlutterComposite extends FlutterScrollable implements IComposite {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        Point thisSize = parentComposite.computeSize(wHint, hHint, changed);
-        Point childSize = childComposite.computeSize(wHint, hHint, changed);
-        thisSize.x += childSize.x;
-        thisSize.y += childSize.y;
-        return thisSize;
+        if (getClass() == FlutterComposite.class) {
+            Point size = new Point(wHint != SWT.DEFAULT ? wHint : 768, 40);
+//            for (FlutterWidget child : children) {
+//                if (child instanceof FlutterControl childControl) {
+//                    Point childSize = childControl.computeSize(wHint, hHint, changed);
+//                    size.x += childSize.x;
+//                    size.y = 28;
+//                }
+//            }
+            return size;
+        } else {
+            Point thisSize = parentComposite.computeSize(wHint, hHint, changed);
+            Point childSize = childComposite != null ? childComposite.computeSize(wHint, hHint, changed)
+                    : new Point(0, 0);
+            thisSize.x += childSize.x;
+            thisSize.y += childSize.y;
+            return thisSize;
+        }
+//        return new Point(0, 0);
     }
 
     IControl[] _getChildren() {

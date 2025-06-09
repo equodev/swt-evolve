@@ -742,7 +742,7 @@ class WebKit extends WebBrowser {
         SWTComposite parentShell = (SWTComposite) (parent.getParent());
         SWTBrowser parentBrowser = WebKit.parentBrowser;
         if (parentBrowser == null && parentShell != null) {
-            SWTControl[] children = (SWTControl[]) (parentShell.getChildren());
+            IControl[] children = parentShell.getChildren();
             for (int i = 0; i < children.length; i++) {
                 if (children[i] instanceof SWTBrowser) {
                     parentBrowser = (SWTBrowser) children[i];

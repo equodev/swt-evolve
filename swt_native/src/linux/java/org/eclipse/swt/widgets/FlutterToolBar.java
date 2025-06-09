@@ -2,8 +2,8 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
-import org.eclipse.swt.custom.ICTabItem;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.ToolbarSwtSizingConstants;
 import org.eclipse.swt.values.ToolBarValue;
 
@@ -276,6 +276,15 @@ public class FlutterToolBar extends FlutterComposite implements IToolBar {
         // width = Math.max(width, ToolbarSwtSizingConstants.MINIMUM_TOOLBAR_WIDTH);
         // height = Math.max(height, ToolbarSwtSizingConstants.MINIMUM_TOOLBAR_HEIGHT);
 
-        return new Point(width, height);
+        currentSize = new Point(width, height);
+        if (flutterContext != 0) {
+            parentComposite.setSize(currentSize);
+        }
+        return currentSize;
+    }
+
+    @Override
+    public void setBounds(Rectangle bounds) {
+        super.setBounds(bounds);
     }
 }

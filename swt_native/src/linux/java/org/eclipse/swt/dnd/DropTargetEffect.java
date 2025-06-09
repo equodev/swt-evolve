@@ -52,7 +52,7 @@ import org.eclipse.swt.widgets.*;
  */
 public class DropTargetEffect extends DropTargetAdapter {
 
-    SWTControl control;
+    Control control;
 
     /**
      * Creates a new <code>DropTargetEffect</code> to handle the drag under effect on the specified
@@ -64,7 +64,7 @@ public class DropTargetEffect extends DropTargetAdapter {
      *    <li>ERROR_NULL_ARGUMENT - if the control is null</li>
      * </ul>
      */
-    public DropTargetEffect(SWTControl control) {
+    public DropTargetEffect(Control control) {
         if (control == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.control = control;
@@ -77,7 +77,7 @@ public class DropTargetEffect extends DropTargetAdapter {
      * @return the Control which is registered for this DropTargetEffect
      */
     public IControl getControl() {
-        return control;
+        return (IControl)control.delegate;
     }
 
     /**
@@ -90,11 +90,11 @@ public class DropTargetEffect extends DropTargetAdapter {
      * @return the item at the given x-y coordinate, or null if the coordinate is not in a selectable item
      */
     public IWidget getItem(int x, int y) {
-        if (control instanceof SWTTable) {
-            return ((SWTWidget) (getItem((SWTTable) control, x, y)));
+        if (control.delegate instanceof SWTTable) {
+            return ((SWTWidget) (getItem((SWTTable) control.delegate, x, y)));
         }
-        if (control instanceof SWTTree) {
-            return ((SWTWidget) (getItem((SWTTree) control, x, y)));
+        if (control.delegate instanceof SWTTree) {
+            return ((SWTWidget) (getItem((SWTTree) control.delegate, x, y)));
         }
         return null;
     }

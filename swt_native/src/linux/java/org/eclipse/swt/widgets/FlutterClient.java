@@ -78,15 +78,16 @@ public class FlutterClient implements Delegate {
 	}
 
 	private ICommService doCreateComm() {
-		String impl = (clientMode == Mode.Equo) ? "com.equo.comm.ee.provider.service.ChromiumService"
-				: "com.equo.comm.ws.provider.EquoWebSocketServiceImpl";
-		String sendImpl = (clientMode == Mode.Equo) ? "com.equo.comm.ee.provider.service.ChromiumSendService"
-				: "com.equo.comm.ws.provider.EquoWebSocketServiceImpl";
-		System.setProperty("com.equo.comm.api.ICommService", impl);
-		System.setProperty("com.equo.comm.api.ICommSendService", sendImpl);
-		ServiceLoader<ICommService> serviceLoader = ServiceLoader.load(ICommService.class);
-		return serviceLoader.stream().filter(p -> impl.equals(p.type().getName())).map(ServiceLoader.Provider::get)
-				.findFirst().orElse(null);
+//		String impl = (clientMode == Mode.Equo) ? "com.equo.comm.ee.provider.service.ChromiumService"
+//				: "com.equo.comm.ws.provider.EquoWebSocketServiceImpl";
+//		String sendImpl = (clientMode == Mode.Equo) ? "com.equo.comm.ee.provider.service.ChromiumSendService"
+//				: "com.equo.comm.ws.provider.EquoWebSocketServiceImpl";
+//		System.setProperty("com.equo.comm.api.ICommService", impl);
+//		System.setProperty("com.equo.comm.api.ICommSendService", sendImpl);
+//		ServiceLoader<ICommService> serviceLoader = ServiceLoader.load(ICommService.class);
+//		return serviceLoader.stream().filter(p -> impl.equals(p.type().getName())).map(ServiceLoader.Provider::get)
+//				.findFirst().orElse(null);
+		return new EquoWebSocketServiceImpl();
 	}
 
 	public void createClient() throws Exception {

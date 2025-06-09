@@ -186,11 +186,11 @@ public class FlutterTabItem extends FlutterItem implements ITabItem {
      */
     public void setControl(IControl control) {
         // Not Generated
-        if (children == null) {
-            children = new ArrayList<>();
-        }
-        parent.children.remove(control);
-        children.add((FlutterWidget)control);
+//        if (children == null) {
+//            children = new ArrayList<>();
+//        }
+//        parent.children.remove(control);
+//        children.add((FlutterWidget)control);
     }
 
     @Override

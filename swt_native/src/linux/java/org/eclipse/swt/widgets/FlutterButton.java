@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.util.ButtonSwtSizingConstants;
 import org.eclipse.swt.values.ButtonValue;
@@ -99,8 +100,14 @@ public class FlutterButton extends FlutterControl implements IButton {
 
     @Override
     public void setImage(Image image) {
-        if (image != null){
-            builder().setImage(image.getImageData(). getFilename());
+        if (image != null) {
+            ImageData imageData = image.getImageData();
+            if (imageData != null) {
+                String filename = imageData.getFilename();
+                if (filename != null) {
+                    builder().setImage(filename);
+                }
+            }
         }
     }
 

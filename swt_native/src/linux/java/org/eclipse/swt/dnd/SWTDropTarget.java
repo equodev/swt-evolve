@@ -204,10 +204,10 @@ public class SWTDropTarget extends SWTWidget implements IDropTarget {
             Object effect = control.getData(DEFAULT_DROP_TARGET_EFFECT);
             if (effect instanceof DropTargetEffect) {
                 dropEffect = (DropTargetEffect) effect;
-            } else if (control instanceof SWTTable) {
-                dropEffect = new TableDropTargetEffect((SWTTable) control);
-            } else if (control instanceof SWTTree) {
-                dropEffect = new TreeDropTargetEffect((SWTTree) control);
+            } else if (Table.getInstance(control) instanceof Table) {
+                dropEffect = new TableDropTargetEffect((Table) Table.getInstance(control));
+            } else if (Tree.getInstance(control) instanceof Tree) {
+                dropEffect = new TreeDropTargetEffect((Tree) Tree.getInstance(control));
             }
             dragOverHeartbeat = () -> {
                 SWTControl control1 = SWTDropTarget.this.control;

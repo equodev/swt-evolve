@@ -89,7 +89,7 @@ public class Button extends Control {
      * @see Widget#getStyle
      */
     public Button(Composite parent, int style) {
-        this(new FlutterButton((SWTComposite) parent.delegate, style));
+        this(new SWTButton((SWTComposite) parent.delegate, style));
     }
 
     /**

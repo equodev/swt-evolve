@@ -19,6 +19,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.GC;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * Instances of this class are controls which are capable of containing other
  * controls.
@@ -93,8 +95,30 @@ public class Composite extends Scrollable {
      * @see Widget#getStyle
      */
     public Composite(Composite parent, int style) {
-        this(parent.delegate instanceof SWTComposite ? new SWTComposite((SWTComposite) parent.delegate, style)
-                : new SWTComposite(((FlutterComposite) parent.delegate).childComposite, style));
+        this((IComposite) null);
+        StackWalker walker = StackWalker.getInstance();
+        AtomicBoolean shouldBeFlutter = new AtomicBoolean();
+        walker.walk(stream -> {
+            stream.skip(2).findFirst().ifPresent(frame -> {
+                String className = frame.getClassName();
+                int lineNumber = frame.getLineNumber();
+
+                if (className.contains("TrimBarRenderer") && lineNumber == 71) {
+                    shouldBeFlutter.set(true);
+                }
+            });
+            return null;
+        });
+//        shouldBeFlutter.set(true);
+        if (shouldBeFlutter.get()) {
+            delegate = new FlutterComposite((IComposite) parent.delegate, style);
+        } else if (parent.delegate instanceof SWTComposite) {
+            delegate = new SWTComposite((SWTComposite) parent.delegate, style);
+        } else {
+            delegate = new SWTComposite(((FlutterComposite) parent.delegate).childComposite, style);
+        }
+
+        INSTANCES.put(delegate, this);
     }
 
     /**

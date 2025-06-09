@@ -77,7 +77,14 @@ public class Canvas extends Composite {
      * @see Widget#getStyle
      */
     public Canvas(Composite parent, int style) {
-        this(new SWTCanvas((SWTComposite) parent.delegate, style));
+        this((ICanvas) null);
+        if (parent.delegate instanceof SWTComposite) {
+            delegate = new SWTCanvas((SWTComposite) parent.delegate, style);
+        } else {
+            FlutterComposite comp = (FlutterComposite)parent.delegate;
+            delegate = new SWTCanvas(comp.childComposite, style);
+        }
+        INSTANCES.put(delegate, this);
     }
 
     /**

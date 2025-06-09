@@ -417,7 +417,7 @@ public abstract class FlutterWidget implements IWidget {
         if (!isValidThread())
             error(SWT.ERROR_THREAD_INVALID_ACCESS);
         release(true);
-        FlutterSwt.CloseFlutterWindow(flutterContext);
+//        FlutterSwt.CloseFlutterWindow(flutterContext);
     }
 
     void error(int code) {

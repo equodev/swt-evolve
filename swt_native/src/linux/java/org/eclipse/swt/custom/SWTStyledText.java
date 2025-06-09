@@ -936,7 +936,7 @@ public class SWTStyledText extends SWTCanvas implements IStyledText {
         super.setCursor(display.getSystemCursor(SWT.CURSOR_IBEAM));
         installListeners();
         initializeAccessible();
-        setData("DEFAULT_DROP_TARGET_EFFECT", new StyledTextDropTargetEffect(this));
+        setData("DEFAULT_DROP_TARGET_EFFECT", new StyledTextDropTargetEffect(StyledText.getInstance(this)));
         if (IS_MAC)
             setData(STYLEDTEXT_KEY);
     }

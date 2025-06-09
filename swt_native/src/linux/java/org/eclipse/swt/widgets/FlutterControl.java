@@ -637,6 +637,10 @@ public abstract class FlutterControl extends FlutterWidget implements Drawable, 
      *                                     </ul>
      */
     public void setSize(Point size) {
+        currentSize = size;
+        if (size != null) {
+            setBounds(new Rectangle(0, 0, Math.max(0, size.x), Math.max(0, size.y)));
+        }
     }
 
     /**
@@ -2429,7 +2433,7 @@ public abstract class FlutterControl extends FlutterWidget implements Drawable, 
      * @see #getVisible
      */
     public boolean isVisible() {
-        return false;
+        return builder().getVisible().orElse(true);
     }
 
     /**

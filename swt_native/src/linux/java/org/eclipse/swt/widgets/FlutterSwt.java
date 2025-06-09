@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import com.equo.comm.api.ICommService;
+import org.eclipse.swt.internal.Library;
 import org.eclipse.swt.values.WidgetValue;
 
 import java.util.HashSet;

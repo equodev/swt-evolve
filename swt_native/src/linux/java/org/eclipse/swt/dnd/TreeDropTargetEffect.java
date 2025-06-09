@@ -74,7 +74,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
      *
      * @param tree the <code>Tree</code> over which the user positions the cursor to drop the data
      */
-    public TreeDropTargetEffect(SWTTree tree) {
+    public TreeDropTargetEffect(Tree tree) {
         super(tree);
     }
 
@@ -125,7 +125,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
      */
     @Override
     public void dragLeave(DropTargetEvent event) {
-        SWTTree tree = (SWTTree) ((SWTTree) control);
+        SWTTree tree = (SWTTree) (control.delegate);
         long handle = tree.getHandle();
         GTK.gtk_tree_view_set_drag_dest_row(handle, 0, GTK.GTK_TREE_VIEW_DROP_BEFORE);
         scrollBeginTime = 0;
@@ -154,7 +154,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
      */
     @Override
     public void dragOver(DropTargetEvent event) {
-        SWTTree tree = (SWTTree) ((SWTTree) control);
+        SWTTree tree = (SWTTree) (control.delegate);
         int effect = checkEffect(event.feedback);
         long handle = tree.getHandle();
         Point coordinates = new Point(event.x, event.y);

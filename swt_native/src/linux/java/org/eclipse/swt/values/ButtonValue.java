@@ -1,7 +1,9 @@
 package org.eclipse.swt.values;
 
 import com.google.auto.value.AutoValue;
-import java.util.*;
+
+import java.util.Optional;
+import java.util.OptionalInt;
 
 public interface ButtonValue extends ControlValue {
 
