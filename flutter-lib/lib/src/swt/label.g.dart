@@ -30,31 +30,22 @@ LabelValue _$LabelValueFromJson(Map<String, dynamic> json) => LabelValue()
   ..alignment = (json['alignment'] as num?)?.toInt()
   ..text = json['text'] as String?;
 
-Map<String, dynamic> _$LabelValueToJson(LabelValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('orientation', instance.orientation);
-  writeNotNull('textDirection', instance.textDirection);
-  writeNotNull('bounds', instance.bounds?.toJson());
-  writeNotNull('dragDetect', instance.dragDetect);
-  writeNotNull('enabled', instance.enabled);
-  writeNotNull('layoutData', instance.layoutData);
-  writeNotNull('menu', instance.menu?.toJson());
-  writeNotNull('toolTipText', instance.toolTipText);
-  writeNotNull('touchEnabled', instance.touchEnabled);
-  writeNotNull('visible', instance.visible);
-  writeNotNull('alignment', instance.alignment);
-  writeNotNull('text', instance.text);
-  return val;
-}
+Map<String, dynamic> _$LabelValueToJson(LabelValue instance) =>
+    <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'orientation': instance.orientation,
+      'textDirection': instance.textDirection,
+      'bounds': instance.bounds,
+      'dragDetect': instance.dragDetect,
+      'enabled': instance.enabled,
+      'layoutData': instance.layoutData,
+      'menu': instance.menu,
+      'toolTipText': instance.toolTipText,
+      'touchEnabled': instance.touchEnabled,
+      'visible': instance.visible,
+      'alignment': instance.alignment,
+      'text': instance.text,
+    };

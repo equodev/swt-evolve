@@ -39,38 +39,29 @@ ComboValue _$ComboValueFromJson(Map<String, dynamic> json) => ComboValue()
   ..textLimit = (json['textLimit'] as num?)?.toInt()
   ..visibleItemCount = (json['visibleItemCount'] as num?)?.toInt();
 
-Map<String, dynamic> _$ComboValueToJson(ComboValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('textDirection', instance.textDirection);
-  writeNotNull('bounds', instance.bounds?.toJson());
-  writeNotNull('dragDetect', instance.dragDetect);
-  writeNotNull('enabled', instance.enabled);
-  writeNotNull('layoutData', instance.layoutData);
-  writeNotNull('menu', instance.menu?.toJson());
-  writeNotNull('toolTipText', instance.toolTipText);
-  writeNotNull('touchEnabled', instance.touchEnabled);
-  writeNotNull('visible', instance.visible);
-  writeNotNull('backgroundMode', instance.backgroundMode);
-  writeNotNull('layout', instance.layout?.toJson());
-  writeNotNull('layoutDeferred', instance.layoutDeferred);
-  writeNotNull('items', instance.items);
-  writeNotNull('listVisible', instance.listVisible);
-  writeNotNull('orientation', instance.orientation);
-  writeNotNull('selectionIndex', instance.selectionIndex);
-  writeNotNull('text', instance.text);
-  writeNotNull('textLimit', instance.textLimit);
-  writeNotNull('visibleItemCount', instance.visibleItemCount);
-  return val;
-}
+Map<String, dynamic> _$ComboValueToJson(ComboValue instance) =>
+    <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'textDirection': instance.textDirection,
+      'bounds': instance.bounds,
+      'dragDetect': instance.dragDetect,
+      'enabled': instance.enabled,
+      'layoutData': instance.layoutData,
+      'menu': instance.menu,
+      'toolTipText': instance.toolTipText,
+      'touchEnabled': instance.touchEnabled,
+      'visible': instance.visible,
+      'backgroundMode': instance.backgroundMode,
+      'layout': instance.layout,
+      'layoutDeferred': instance.layoutDeferred,
+      'items': instance.items,
+      'listVisible': instance.listVisible,
+      'orientation': instance.orientation,
+      'selectionIndex': instance.selectionIndex,
+      'text': instance.text,
+      'textLimit': instance.textLimit,
+      'visibleItemCount': instance.visibleItemCount,
+    };

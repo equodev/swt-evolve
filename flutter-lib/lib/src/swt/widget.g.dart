@@ -14,19 +14,10 @@ WidgetValue _$WidgetValueFromJson(Map<String, dynamic> json) => WidgetValue()
       .toList()
   ..style = (json['style'] as num).toInt();
 
-Map<String, dynamic> _$WidgetValueToJson(WidgetValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  return val;
-}
+Map<String, dynamic> _$WidgetValueToJson(WidgetValue instance) =>
+    <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+    };

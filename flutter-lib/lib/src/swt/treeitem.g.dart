@@ -15,6 +15,7 @@ TreeItemValue _$TreeItemValueFromJson(Map<String, dynamic> json) =>
           .toList()
       ..style = (json['style'] as num).toInt()
       ..text = json['text'] as String?
+      ..image = json['image'] as String?
       ..checked = json['checked'] as bool?
       ..expanded = json['expanded'] as bool?
       ..grayed = json['grayed'] as bool?
@@ -23,26 +24,18 @@ TreeItemValue _$TreeItemValueFromJson(Map<String, dynamic> json) =>
           (json['texts'] as List<dynamic>?)?.map((e) => e as String).toList()
       ..selected = json['selected'] as bool?;
 
-Map<String, dynamic> _$TreeItemValueToJson(TreeItemValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('text', instance.text);
-  writeNotNull('checked', instance.checked);
-  writeNotNull('expanded', instance.expanded);
-  writeNotNull('grayed', instance.grayed);
-  writeNotNull('itemCount', instance.itemCount);
-  writeNotNull('texts', instance.texts);
-  writeNotNull('selected', instance.selected);
-  return val;
-}
+Map<String, dynamic> _$TreeItemValueToJson(TreeItemValue instance) =>
+    <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'text': instance.text,
+      'image': instance.image,
+      'checked': instance.checked,
+      'expanded': instance.expanded,
+      'grayed': instance.grayed,
+      'itemCount': instance.itemCount,
+      'texts': instance.texts,
+      'selected': instance.selected,
+    };

@@ -16,21 +16,11 @@ ItemValue _$ItemValueFromJson(Map<String, dynamic> json) => ItemValue()
   ..text = json['text'] as String?
   ..image = json['image'] as String?;
 
-Map<String, dynamic> _$ItemValueToJson(ItemValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('text', instance.text);
-  writeNotNull('image', instance.image);
-  return val;
-}
+Map<String, dynamic> _$ItemValueToJson(ItemValue instance) => <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'text': instance.text,
+      'image': instance.image,
+    };

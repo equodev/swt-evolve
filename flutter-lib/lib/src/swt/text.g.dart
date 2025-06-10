@@ -36,37 +36,27 @@ TextValue _$TextValueFromJson(Map<String, dynamic> json) => TextValue()
   ..textLimit = (json['textLimit'] as num?)?.toInt()
   ..topIndex = (json['topIndex'] as num?)?.toInt();
 
-Map<String, dynamic> _$TextValueToJson(TextValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('textDirection', instance.textDirection);
-  writeNotNull('bounds', instance.bounds?.toJson());
-  writeNotNull('dragDetect', instance.dragDetect);
-  writeNotNull('enabled', instance.enabled);
-  writeNotNull('layoutData', instance.layoutData);
-  writeNotNull('menu', instance.menu?.toJson());
-  writeNotNull('toolTipText', instance.toolTipText);
-  writeNotNull('touchEnabled', instance.touchEnabled);
-  writeNotNull('visible', instance.visible);
-  writeNotNull('doubleClickEnabled', instance.doubleClickEnabled);
-  writeNotNull('echoChar', instance.echoChar);
-  writeNotNull('editable', instance.editable);
-  writeNotNull('message', instance.message);
-  writeNotNull('orientation', instance.orientation);
-  writeNotNull('tabs', instance.tabs);
-  writeNotNull('text', instance.text);
-  writeNotNull('textLimit', instance.textLimit);
-  writeNotNull('topIndex', instance.topIndex);
-  return val;
-}
+Map<String, dynamic> _$TextValueToJson(TextValue instance) => <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'textDirection': instance.textDirection,
+      'bounds': instance.bounds,
+      'dragDetect': instance.dragDetect,
+      'enabled': instance.enabled,
+      'layoutData': instance.layoutData,
+      'menu': instance.menu,
+      'toolTipText': instance.toolTipText,
+      'touchEnabled': instance.touchEnabled,
+      'visible': instance.visible,
+      'doubleClickEnabled': instance.doubleClickEnabled,
+      'echoChar': instance.echoChar,
+      'editable': instance.editable,
+      'message': instance.message,
+      'orientation': instance.orientation,
+      'tabs': instance.tabs,
+      'text': instance.text,
+      'textLimit': instance.textLimit,
+      'topIndex': instance.topIndex,
+    };

@@ -23,27 +23,18 @@ ScrollBarValue _$ScrollBarValueFromJson(Map<String, dynamic> json) =>
       ..thumb = (json['thumb'] as num?)?.toInt()
       ..visible = json['visible'] as bool?;
 
-Map<String, dynamic> _$ScrollBarValueToJson(ScrollBarValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('enabled', instance.enabled);
-  writeNotNull('increment', instance.increment);
-  writeNotNull('maximum', instance.maximum);
-  writeNotNull('minimum', instance.minimum);
-  writeNotNull('pageIncrement', instance.pageIncrement);
-  writeNotNull('selection', instance.selection);
-  writeNotNull('thumb', instance.thumb);
-  writeNotNull('visible', instance.visible);
-  return val;
-}
+Map<String, dynamic> _$ScrollBarValueToJson(ScrollBarValue instance) =>
+    <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'enabled': instance.enabled,
+      'increment': instance.increment,
+      'maximum': instance.maximum,
+      'minimum': instance.minimum,
+      'pageIncrement': instance.pageIncrement,
+      'selection': instance.selection,
+      'thumb': instance.thumb,
+      'visible': instance.visible,
+    };

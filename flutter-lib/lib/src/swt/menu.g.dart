@@ -17,22 +17,12 @@ MenuValue _$MenuValueFromJson(Map<String, dynamic> json) => MenuValue()
   ..orientation = (json['orientation'] as num?)?.toInt()
   ..visible = json['visible'] as bool?;
 
-Map<String, dynamic> _$MenuValueToJson(MenuValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('enabled', instance.enabled);
-  writeNotNull('orientation', instance.orientation);
-  writeNotNull('visible', instance.visible);
-  return val;
-}
+Map<String, dynamic> _$MenuValueToJson(MenuValue instance) => <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'enabled': instance.enabled,
+      'orientation': instance.orientation,
+      'visible': instance.visible,
+    };

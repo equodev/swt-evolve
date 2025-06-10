@@ -41,40 +41,31 @@ ShellValue _$ShellValueFromJson(Map<String, dynamic> json) => ShellValue()
   ..visible = json['visible'] as bool?
   ..imeInputMode = (json['imeInputMode'] as num?)?.toInt();
 
-Map<String, dynamic> _$ShellValueToJson(ShellValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('orientation', instance.orientation);
-  writeNotNull('textDirection', instance.textDirection);
-  writeNotNull('bounds', instance.bounds?.toJson());
-  writeNotNull('dragDetect', instance.dragDetect);
-  writeNotNull('enabled', instance.enabled);
-  writeNotNull('layoutData', instance.layoutData);
-  writeNotNull('menu', instance.menu?.toJson());
-  writeNotNull('toolTipText', instance.toolTipText);
-  writeNotNull('touchEnabled', instance.touchEnabled);
-  writeNotNull('backgroundMode', instance.backgroundMode);
-  writeNotNull('layout', instance.layout?.toJson());
-  writeNotNull('layoutDeferred', instance.layoutDeferred);
-  writeNotNull('menuBar', instance.menuBar);
-  writeNotNull('minimized', instance.minimized);
-  writeNotNull('text', instance.text);
-  writeNotNull('alpha', instance.alpha);
-  writeNotNull('fullScreen', instance.fullScreen);
-  writeNotNull('maximized', instance.maximized);
-  writeNotNull('modified', instance.modified);
-  writeNotNull('visible', instance.visible);
-  writeNotNull('imeInputMode', instance.imeInputMode);
-  return val;
-}
+Map<String, dynamic> _$ShellValueToJson(ShellValue instance) =>
+    <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'orientation': instance.orientation,
+      'textDirection': instance.textDirection,
+      'bounds': instance.bounds,
+      'dragDetect': instance.dragDetect,
+      'enabled': instance.enabled,
+      'layoutData': instance.layoutData,
+      'menu': instance.menu,
+      'toolTipText': instance.toolTipText,
+      'touchEnabled': instance.touchEnabled,
+      'backgroundMode': instance.backgroundMode,
+      'layout': instance.layout,
+      'layoutDeferred': instance.layoutDeferred,
+      'menuBar': instance.menuBar,
+      'minimized': instance.minimized,
+      'text': instance.text,
+      'alpha': instance.alpha,
+      'fullScreen': instance.fullScreen,
+      'maximized': instance.maximized,
+      'modified': instance.modified,
+      'visible': instance.visible,
+      'imeInputMode': instance.imeInputMode,
+    };

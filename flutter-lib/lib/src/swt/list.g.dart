@@ -33,33 +33,23 @@ ListValue _$ListValueFromJson(Map<String, dynamic> json) => ListValue()
   ..selectionIndex = (json['selectionIndex'] as num?)?.toInt()
   ..topIndex = (json['topIndex'] as num?)?.toInt();
 
-Map<String, dynamic> _$ListValueToJson(ListValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('orientation', instance.orientation);
-  writeNotNull('textDirection', instance.textDirection);
-  writeNotNull('bounds', instance.bounds?.toJson());
-  writeNotNull('dragDetect', instance.dragDetect);
-  writeNotNull('enabled', instance.enabled);
-  writeNotNull('layoutData', instance.layoutData);
-  writeNotNull('menu', instance.menu?.toJson());
-  writeNotNull('toolTipText', instance.toolTipText);
-  writeNotNull('touchEnabled', instance.touchEnabled);
-  writeNotNull('visible', instance.visible);
-  writeNotNull('items', instance.items);
-  writeNotNull('selection', instance.selection);
-  writeNotNull('selectionIndex', instance.selectionIndex);
-  writeNotNull('topIndex', instance.topIndex);
-  return val;
-}
+Map<String, dynamic> _$ListValueToJson(ListValue instance) => <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'orientation': instance.orientation,
+      'textDirection': instance.textDirection,
+      'bounds': instance.bounds,
+      'dragDetect': instance.dragDetect,
+      'enabled': instance.enabled,
+      'layoutData': instance.layoutData,
+      'menu': instance.menu,
+      'toolTipText': instance.toolTipText,
+      'touchEnabled': instance.touchEnabled,
+      'visible': instance.visible,
+      'items': instance.items,
+      'selection': instance.selection,
+      'selectionIndex': instance.selectionIndex,
+      'topIndex': instance.topIndex,
+    };

@@ -15,31 +15,24 @@ TableColumnValue _$TableColumnValueFromJson(Map<String, dynamic> json) =>
           .toList()
       ..style = (json['style'] as num).toInt()
       ..text = json['text'] as String?
+      ..image = json['image'] as String?
       ..alignment = (json['alignment'] as num?)?.toInt()
       ..moveable = json['moveable'] as bool?
       ..resizable = json['resizable'] as bool?
       ..toolTipText = json['toolTipText'] as String?
       ..width = (json['width'] as num?)?.toInt();
 
-Map<String, dynamic> _$TableColumnValueToJson(TableColumnValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('text', instance.text);
-  writeNotNull('alignment', instance.alignment);
-  writeNotNull('moveable', instance.moveable);
-  writeNotNull('resizable', instance.resizable);
-  writeNotNull('toolTipText', instance.toolTipText);
-  writeNotNull('width', instance.width);
-  return val;
-}
+Map<String, dynamic> _$TableColumnValueToJson(TableColumnValue instance) =>
+    <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'text': instance.text,
+      'image': instance.image,
+      'alignment': instance.alignment,
+      'moveable': instance.moveable,
+      'resizable': instance.resizable,
+      'toolTipText': instance.toolTipText,
+      'width': instance.width,
+    };

@@ -15,25 +15,18 @@ ExpandItemValue _$ExpandItemValueFromJson(Map<String, dynamic> json) =>
           .toList()
       ..style = (json['style'] as num).toInt()
       ..text = json['text'] as String?
+      ..image = json['image'] as String?
       ..expanded = json['expanded'] as bool?
       ..height = (json['height'] as num?)?.toInt();
 
-Map<String, dynamic> _$ExpandItemValueToJson(ExpandItemValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('text', instance.text);
-  writeNotNull('expanded', instance.expanded);
-  writeNotNull('height', instance.height);
-  return val;
-}
+Map<String, dynamic> _$ExpandItemValueToJson(ExpandItemValue instance) =>
+    <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'text': instance.text,
+      'image': instance.image,
+      'expanded': instance.expanded,
+      'height': instance.height,
+    };

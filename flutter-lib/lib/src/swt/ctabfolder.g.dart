@@ -47,49 +47,44 @@ CTabFolderValue _$CTabFolderValueFromJson(Map<String, dynamic> json) =>
       ..tabPosition = (json['tabPosition'] as num?)?.toInt()
       ..unselectedCloseVisible = json['unselectedCloseVisible'] as bool?
       ..unselectedImageVisible = json['unselectedImageVisible'] as bool?
-      ..highlightEnabled = json['highlightEnabled'] as bool?;
+      ..highlightEnabled = json['highlightEnabled'] as bool?
+      ..items = (json['items'] as List<dynamic>?)
+          ?.map((e) => CTabItemValue.fromJson(e as Map<String, dynamic>))
+          .toList();
 
-Map<String, dynamic> _$CTabFolderValueToJson(CTabFolderValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('orientation', instance.orientation);
-  writeNotNull('textDirection', instance.textDirection);
-  writeNotNull('bounds', instance.bounds?.toJson());
-  writeNotNull('dragDetect', instance.dragDetect);
-  writeNotNull('enabled', instance.enabled);
-  writeNotNull('layoutData', instance.layoutData);
-  writeNotNull('menu', instance.menu?.toJson());
-  writeNotNull('toolTipText', instance.toolTipText);
-  writeNotNull('touchEnabled', instance.touchEnabled);
-  writeNotNull('visible', instance.visible);
-  writeNotNull('backgroundMode', instance.backgroundMode);
-  writeNotNull('layout', instance.layout?.toJson());
-  writeNotNull('layoutDeferred', instance.layoutDeferred);
-  writeNotNull('borderVisible', instance.borderVisible);
-  writeNotNull('minimized', instance.minimized);
-  writeNotNull('minimizeVisible', instance.minimizeVisible);
-  writeNotNull('minimumCharacters', instance.minimumCharacters);
-  writeNotNull('maximized', instance.maximized);
-  writeNotNull('maximizeVisible', instance.maximizeVisible);
-  writeNotNull('mRUVisible', instance.mRUVisible);
-  writeNotNull('selectionIndex', instance.selectionIndex);
-  writeNotNull('simple', instance.simple);
-  writeNotNull('single', instance.single);
-  writeNotNull('tabHeight', instance.tabHeight);
-  writeNotNull('tabPosition', instance.tabPosition);
-  writeNotNull('unselectedCloseVisible', instance.unselectedCloseVisible);
-  writeNotNull('unselectedImageVisible', instance.unselectedImageVisible);
-  writeNotNull('highlightEnabled', instance.highlightEnabled);
-  return val;
-}
+Map<String, dynamic> _$CTabFolderValueToJson(CTabFolderValue instance) =>
+    <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'orientation': instance.orientation,
+      'textDirection': instance.textDirection,
+      'bounds': instance.bounds,
+      'dragDetect': instance.dragDetect,
+      'enabled': instance.enabled,
+      'layoutData': instance.layoutData,
+      'menu': instance.menu,
+      'toolTipText': instance.toolTipText,
+      'touchEnabled': instance.touchEnabled,
+      'visible': instance.visible,
+      'backgroundMode': instance.backgroundMode,
+      'layout': instance.layout,
+      'layoutDeferred': instance.layoutDeferred,
+      'borderVisible': instance.borderVisible,
+      'minimized': instance.minimized,
+      'minimizeVisible': instance.minimizeVisible,
+      'minimumCharacters': instance.minimumCharacters,
+      'maximized': instance.maximized,
+      'maximizeVisible': instance.maximizeVisible,
+      'mRUVisible': instance.mRUVisible,
+      'selectionIndex': instance.selectionIndex,
+      'simple': instance.simple,
+      'single': instance.single,
+      'tabHeight': instance.tabHeight,
+      'tabPosition': instance.tabPosition,
+      'unselectedCloseVisible': instance.unselectedCloseVisible,
+      'unselectedImageVisible': instance.unselectedImageVisible,
+      'highlightEnabled': instance.highlightEnabled,
+      'items': instance.items,
+    };

@@ -18,21 +18,12 @@ CaretValue _$CaretValueFromJson(Map<String, dynamic> json) => CaretValue()
       : RectangleValue.fromJson(json['bounds'] as Map<String, dynamic>)
   ..visible = json['visible'] as bool?;
 
-Map<String, dynamic> _$CaretValueToJson(CaretValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('bounds', instance.bounds?.toJson());
-  writeNotNull('visible', instance.visible);
-  return val;
-}
+Map<String, dynamic> _$CaretValueToJson(CaretValue instance) =>
+    <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'bounds': instance.bounds,
+      'visible': instance.visible,
+    };

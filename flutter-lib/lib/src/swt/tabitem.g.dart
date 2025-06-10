@@ -14,23 +14,16 @@ TabItemValue _$TabItemValueFromJson(Map<String, dynamic> json) => TabItemValue()
       .toList()
   ..style = (json['style'] as num).toInt()
   ..text = json['text'] as String?
+  ..image = json['image'] as String?
   ..toolTipText = json['toolTipText'] as String?;
 
-Map<String, dynamic> _$TabItemValueToJson(TabItemValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('text', instance.text);
-  writeNotNull('toolTipText', instance.toolTipText);
-  return val;
-}
+Map<String, dynamic> _$TabItemValueToJson(TabItemValue instance) =>
+    <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'text': instance.text,
+      'image': instance.image,
+      'toolTipText': instance.toolTipText,
+    };

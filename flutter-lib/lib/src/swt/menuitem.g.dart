@@ -15,6 +15,7 @@ MenuItemValue _$MenuItemValueFromJson(Map<String, dynamic> json) =>
           .toList()
       ..style = (json['style'] as num).toInt()
       ..text = json['text'] as String?
+      ..image = json['image'] as String?
       ..accelerator = (json['accelerator'] as num?)?.toInt()
       ..enabled = json['enabled'] as bool?
       ..iD = (json['iD'] as num?)?.toInt()
@@ -24,26 +25,18 @@ MenuItemValue _$MenuItemValueFromJson(Map<String, dynamic> json) =>
       ..selection = json['selection'] as bool?
       ..toolTipText = json['toolTipText'] as String?;
 
-Map<String, dynamic> _$MenuItemValueToJson(MenuItemValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('text', instance.text);
-  writeNotNull('accelerator', instance.accelerator);
-  writeNotNull('enabled', instance.enabled);
-  writeNotNull('iD', instance.iD);
-  writeNotNull('menu', instance.menu?.toJson());
-  writeNotNull('selection', instance.selection);
-  writeNotNull('toolTipText', instance.toolTipText);
-  return val;
-}
+Map<String, dynamic> _$MenuItemValueToJson(MenuItemValue instance) =>
+    <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'text': instance.text,
+      'image': instance.image,
+      'accelerator': instance.accelerator,
+      'enabled': instance.enabled,
+      'iD': instance.iD,
+      'menu': instance.menu,
+      'selection': instance.selection,
+      'toolTipText': instance.toolTipText,
+    };

@@ -42,39 +42,30 @@ TableValue _$TableValueFromJson(Map<String, dynamic> json) => TableValue()
       ?.map((e) => (e as num).toInt())
       .toList();
 
-Map<String, dynamic> _$TableValueToJson(TableValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('orientation', instance.orientation);
-  writeNotNull('textDirection', instance.textDirection);
-  writeNotNull('bounds', instance.bounds?.toJson());
-  writeNotNull('dragDetect', instance.dragDetect);
-  writeNotNull('enabled', instance.enabled);
-  writeNotNull('layoutData', instance.layoutData);
-  writeNotNull('menu', instance.menu?.toJson());
-  writeNotNull('toolTipText', instance.toolTipText);
-  writeNotNull('touchEnabled', instance.touchEnabled);
-  writeNotNull('visible', instance.visible);
-  writeNotNull('backgroundMode', instance.backgroundMode);
-  writeNotNull('layout', instance.layout?.toJson());
-  writeNotNull('layoutDeferred', instance.layoutDeferred);
-  writeNotNull('headerVisible', instance.headerVisible);
-  writeNotNull('itemCount', instance.itemCount);
-  writeNotNull('linesVisible', instance.linesVisible);
-  writeNotNull('selectionIndex', instance.selectionIndex);
-  writeNotNull('sortDirection', instance.sortDirection);
-  writeNotNull('topIndex', instance.topIndex);
-  writeNotNull('selection', instance.selection);
-  return val;
-}
+Map<String, dynamic> _$TableValueToJson(TableValue instance) =>
+    <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'orientation': instance.orientation,
+      'textDirection': instance.textDirection,
+      'bounds': instance.bounds,
+      'dragDetect': instance.dragDetect,
+      'enabled': instance.enabled,
+      'layoutData': instance.layoutData,
+      'menu': instance.menu,
+      'toolTipText': instance.toolTipText,
+      'touchEnabled': instance.touchEnabled,
+      'visible': instance.visible,
+      'backgroundMode': instance.backgroundMode,
+      'layout': instance.layout,
+      'layoutDeferred': instance.layoutDeferred,
+      'headerVisible': instance.headerVisible,
+      'itemCount': instance.itemCount,
+      'linesVisible': instance.linesVisible,
+      'selectionIndex': instance.selectionIndex,
+      'sortDirection': instance.sortDirection,
+      'topIndex': instance.topIndex,
+      'selection': instance.selection,
+    };

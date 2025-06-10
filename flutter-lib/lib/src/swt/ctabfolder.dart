@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:swtflutter/src/swt/control.dart';
+import 'package:swtflutter/src/swt/ctabitem.dart';
 import '../swt/composite.dart';
 import '../impl/ctabfolder_impl.dart';
 import '../comm/comm.dart';
@@ -49,6 +51,7 @@ class CTabFolderValue extends CompositeValue {
   bool? unselectedCloseVisible;
   bool? unselectedImageVisible;
   bool? highlightEnabled;
+  List<CTabItemValue>? items;
 
   factory CTabFolderValue.fromJson(Map<String, dynamic> json) =>
       _$CTabFolderValueFromJson(json);

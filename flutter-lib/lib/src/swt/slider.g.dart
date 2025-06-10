@@ -34,35 +34,26 @@ SliderValue _$SliderValueFromJson(Map<String, dynamic> json) => SliderValue()
   ..selection = (json['selection'] as num?)?.toInt()
   ..thumb = (json['thumb'] as num?)?.toInt();
 
-Map<String, dynamic> _$SliderValueToJson(SliderValue instance) {
-  final val = <String, dynamic>{
-    'swt': instance.swt,
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('children', instance.children?.map((e) => e.toJson()).toList());
-  val['style'] = instance.style;
-  writeNotNull('orientation', instance.orientation);
-  writeNotNull('textDirection', instance.textDirection);
-  writeNotNull('bounds', instance.bounds?.toJson());
-  writeNotNull('dragDetect', instance.dragDetect);
-  writeNotNull('enabled', instance.enabled);
-  writeNotNull('layoutData', instance.layoutData);
-  writeNotNull('menu', instance.menu?.toJson());
-  writeNotNull('toolTipText', instance.toolTipText);
-  writeNotNull('touchEnabled', instance.touchEnabled);
-  writeNotNull('visible', instance.visible);
-  writeNotNull('increment', instance.increment);
-  writeNotNull('maximum', instance.maximum);
-  writeNotNull('minimum', instance.minimum);
-  writeNotNull('pageIncrement', instance.pageIncrement);
-  writeNotNull('selection', instance.selection);
-  writeNotNull('thumb', instance.thumb);
-  return val;
-}
+Map<String, dynamic> _$SliderValueToJson(SliderValue instance) =>
+    <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'children': instance.children,
+      'style': instance.style,
+      'orientation': instance.orientation,
+      'textDirection': instance.textDirection,
+      'bounds': instance.bounds,
+      'dragDetect': instance.dragDetect,
+      'enabled': instance.enabled,
+      'layoutData': instance.layoutData,
+      'menu': instance.menu,
+      'toolTipText': instance.toolTipText,
+      'touchEnabled': instance.touchEnabled,
+      'visible': instance.visible,
+      'increment': instance.increment,
+      'maximum': instance.maximum,
+      'minimum': instance.minimum,
+      'pageIncrement': instance.pageIncrement,
+      'selection': instance.selection,
+      'thumb': instance.thumb,
+    };

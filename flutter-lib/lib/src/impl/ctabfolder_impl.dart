@@ -391,10 +391,10 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends CTabFolderValue>
   }
 
   List<CTabItem> getTabItems() {
-    if (state.children == null) {
+    if (state.items == null) {
       return [];
     }
-    return state.children!
+    return state.items!
         .whereType<CTabItemValue>()
         .map((tabItem) => getWidgetForTabItem(tabItem))
         .toList();
