@@ -2421,14 +2421,17 @@ public class SwtShell extends SwtDecorations implements IShell {
         Control control = ((SwtDisplay) display.getImpl()).findControl(false);
         if (control == null)
             return 0;
-        Widget target = ((SwtControl) control.getImpl()).findTooltip(new NSView(view).convertPoint_toView_(pt, null));
-        String string = ((SwtWidget) target.getImpl()).tooltipText();
-        if (string == null)
-            return 0;
-        char[] chars = new char[string.length()];
-        string.getChars(0, chars.length, chars, 0);
-        int length = fixMnemonic(chars);
-        return NSString.stringWithCharacters(chars, length).id;
+        if (control == null || control.getImpl() instanceof SwtControl) {
+            Widget target = ((SwtControl) control.getImpl()).findTooltip(new NSView(view).convertPoint_toView_(pt, null));
+            String string = ((SwtWidget) target.getImpl()).tooltipText();
+            if (string == null)
+                return 0;
+            char[] chars = new char[string.length()];
+            string.getChars(0, chars.length, chars, 0);
+            int length = fixMnemonic(chars);
+            return NSString.stringWithCharacters(chars, length).id;
+        }
+        return 0;
     }
 
     @Override

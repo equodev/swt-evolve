@@ -975,7 +975,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     @Override
-    boolean setTabGroupFocus() {
+    public boolean setTabGroupFocus() {
         if (isTabItem())
             return setTabItemFocus();
         boolean takeFocus = (getApi().style & SWT.NO_FOCUS) == 0;
@@ -1125,6 +1125,10 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     public boolean _layoutDeferred() {
         return layoutDeferred;
+    }
+
+    Object contentView() {
+        return getBridge().container(this);
     }
 
     public Composite getApi() {

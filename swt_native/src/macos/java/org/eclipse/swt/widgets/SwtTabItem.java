@@ -370,7 +370,8 @@ public class SwtTabItem extends SwtItem implements ITabItem {
                 if (topView.superview() == null) {
                     if (parent == null || parent.getImpl() instanceof SwtControl) {
                         ((SwtControl) parent.getImpl()).contentView().addSubview(topView, OS.NSWindowBelow, null);
-                    }
+                    } else
+                        ((NSView) ((DartComposite) parent.getImpl()).contentView()).addSubview(topView, OS.NSWindowBelow, null);
                 }
             }
         }

@@ -163,6 +163,7 @@ public class SwtAccessible implements IAccessible {
                 long handle = OS.objc_msgSend(view.id, OS.sel_accessibleHandle);
                 return new id(handle);
             }
+            return null;
         }
         return null;
     }

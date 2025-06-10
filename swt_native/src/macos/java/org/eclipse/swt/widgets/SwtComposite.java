@@ -1257,7 +1257,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     }
 
     @Override
-    boolean setTabGroupFocus() {
+    public boolean setTabGroupFocus() {
         if (isTabItem())
             return setTabItemFocus();
         boolean takeFocus = (getApi().style & SWT.NO_FOCUS) == 0;

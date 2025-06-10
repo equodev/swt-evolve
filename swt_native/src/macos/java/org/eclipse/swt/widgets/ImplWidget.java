@@ -28,4 +28,6 @@ public interface ImplWidget {
     void sendEvent(int eventType, Event event);
 
     void sendEvent(int eventType, Event event, boolean send);
+
+    boolean setTabGroupFocus();
 }

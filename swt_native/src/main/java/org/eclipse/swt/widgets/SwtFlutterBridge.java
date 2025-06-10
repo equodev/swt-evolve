@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterLibraryLoader;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.DartCTabFolder;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.cocoa.NSView;
 import org.eclipse.swt.internal.cocoa.OS;
@@ -23,7 +24,7 @@ public class SwtFlutterBridge extends FlutterBridge {
             SwtFlutterBridge bridge = new SwtFlutterBridge();
             // TODO abstract view.id in getHandle()
 //            bridge.initFlutterView(parentComposite.getApi().view.id, dartControl);
-            bridge.initFlutterView(dartControl.parent.view.id, dartControl);
+            bridge.initFlutterView(dartControl.parent, dartControl);
             return bridge;
         }
         if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof DartComposite c) {
@@ -34,9 +35,9 @@ public class SwtFlutterBridge extends FlutterBridge {
         return null;
     }
 
-    void initFlutterView(long parent, DartControl control) {
+    void initFlutterView(Composite parent, DartControl control) {
         super.onReady(control);
-        context = InitializeFlutterWindow(client.getPort(), parent, control.hashCode(), widgetName(control));
+        context = InitializeFlutterWindow(client.getPort(), parent.view.id, control.hashCode(), widgetName(control));
         long view = GetView(context);
         control.getApi().view = new NSView(view);
         control.jniRef = OS.NewGlobalRef(control.getApi());
@@ -62,15 +63,26 @@ public class SwtFlutterBridge extends FlutterBridge {
     @Override
     public void setBounds(DartControl dartControl, Rectangle bounds) {
         if (dartControl.bridge != null) {
-            SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height);
+            if (dartControl instanceof DartCTabFolder) {
+                SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
+                        bounds.x, bounds.y, bounds.width, 28);
+            } else {
+                SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
+                        bounds.x, bounds.y, bounds.width, bounds.height);
+            }
         }
+    }
+
+    @Override
+    public Object container(DartComposite parent) {
+        return parent.getApi().view;
     }
 
     static native long InitializeFlutterWindow(int port, long parentHandle, long widgetId, String widgetName);
 
     static native long Dispose(long context);
 
-    static native long SetBounds(long context, int x, int y, int w, int h);
+    static native long SetBounds(long context, int x, int y, int w, int h, int vx, int vy, int vw, int vh);
 
     static native long GetView(long context);
 

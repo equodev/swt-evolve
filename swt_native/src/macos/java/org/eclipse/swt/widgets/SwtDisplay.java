@@ -5650,8 +5650,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             } while (view != null);
         }
         if (checkTrim) {
-            if (control != null && ((SwtControl) control.getImpl()).isTrim(view))
-                control = null;
+            if (control == null || control.getImpl() instanceof SwtControl) {
+                if (control != null && ((SwtControl) control.getImpl()).isTrim(view))
+                    control = null;
+            }
         }
         if (control != null && hitView != null)
             hitView[0] = view;

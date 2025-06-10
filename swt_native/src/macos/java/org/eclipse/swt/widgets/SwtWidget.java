@@ -2295,7 +2295,7 @@ public abstract class SwtWidget implements IWidget {
     void setShouldScrollClipView(long id, long sel, boolean shouldScroll) {
     }
 
-    boolean setTabGroupFocus() {
+    public boolean setTabGroupFocus() {
         return setTabItemFocus();
     }
 

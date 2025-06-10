@@ -13,6 +13,6 @@ JNIEXPORT jlong JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridge_GetView(JN
 
 JNIEXPORT void JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridge_Dispose(JNIEnv* env, jclass cls, jlong context);
 
-JNIEXPORT void JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridge_SetBounds(JNIEnv* env, jclass cls, jlong context, jint x, jint y, jint width, jint height);
+JNIEXPORT void JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridge_SetBounds(JNIEnv* env, jclass cls, jlong context, jint x, jint y, jint width, jint height, jint vx, jint vy, jint vwidth, jint vheight);
 
 #endif /* BridgingHeader_h */

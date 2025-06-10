@@ -110,4 +110,8 @@ public abstract class FlutterBridge {
 
     public void setBounds(DartControl dartControl, Rectangle bounds) {
     }
+
+    public Object container(DartComposite parent) {
+        return null;
+    }
 }

@@ -415,9 +415,12 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     NSAttributedString createString() {
         double[] fg = foreground != null ? foreground.handle : ((SwtControl) parent.getImpl()).foreground;
-        NSAttributedString attribStr = ((SwtControl) parent.getImpl()).createString(text, null, fg, SWT.CENTER, false, true, true);
-        attribStr.autorelease();
-        return attribStr;
+        if (parent == null || parent.getImpl() instanceof SwtControl) {
+            NSAttributedString attribStr = ((SwtControl) parent.getImpl()).createString(text, null, fg, SWT.CENTER, false, true, true);
+            attribStr.autorelease();
+            return attribStr;
+        }
+        return null;
     }
 
     @Override
@@ -828,7 +831,10 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     long menuForEvent(long id, long sel, long theEvent) {
-        return ((SwtControl) parent.getImpl()).menuForEvent(id, sel, theEvent);
+        if (parent == null || parent.getImpl() instanceof SwtControl) {
+            return ((SwtControl) parent.getImpl()).menuForEvent(id, sel, theEvent);
+        } else
+            return 0;
     }
 
     @Override

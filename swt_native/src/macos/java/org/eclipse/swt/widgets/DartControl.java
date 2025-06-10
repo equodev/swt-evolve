@@ -3782,13 +3782,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         int start = index, offset = (next) ? 1 : -1;
         while ((index = ((index + offset + length) % length)) != start) {
             Widget widget = list[index];
-            if (!widget.isDisposed() && ((DartWidget) widget.getImpl()).setTabGroupFocus()) {
+            if (!widget.isDisposed() && widget.getImpl().setTabGroupFocus()) {
                 return true;
             }
         }
         if (group.isDisposed())
             return false;
-        return ((DartWidget) group.getImpl()).setTabGroupFocus();
+        return group.getImpl().setTabGroupFocus();
     }
 
     boolean traverseItem(boolean next) {

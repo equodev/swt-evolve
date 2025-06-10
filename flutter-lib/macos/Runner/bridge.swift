@@ -12,11 +12,11 @@ import FlutterMacOS
 // Class to hold our Flutter instances
 @MainActor
 class FlutterBridgeController {
-//     static let shared = FlutterBridgeController()
-    
-    var flutterViewController: FlutterViewController?
+
+    private var flutterViewController: FlutterViewController?
     private var window: NSWindow? // Keep for standalone window case if needed
-    
+    private var view: NSView?
+
     init() {
         print("FlutterBridgeController.init")
     }
@@ -37,16 +37,22 @@ class FlutterBridgeController {
 //             print("FlutterBridgeController.initialize 3")
             let frame = parent.frame
 
+            let container = FlippedView()
+            container.frame = frame
+//             container.wantsLayer = true
+//             container.layer?.backgroundColor = NSColor.red.cgColor
+            parent.addSubview(container, positioned: .below, relativeTo: nil) // add it last, otherwise appears first to swt
+            self.view = container
+
             if let flutterView = flutterViewController?.view {
-//                let flutterViewFrame = NSRect(x: 0, y: 0, width: 400, height: 500)
-                flutterView.frame = frame
-//                 flutterView.frame = NSRect(x: frame.origin.x, y: frame.origin.y, width: frame.width, height: 29)
+// //                let flutterViewFrame = NSRect(x: 0, y: 0, width: 400, height: 500)
+                flutterView.frame = container.frame
+//                 flutterView.frame = NSRect(x: frame.origin.x, y: frame.origin.y, width: frame.width, height: frame.height)
 //                 flutterView.autoresizingMask = [.width]
 //                flutterView.frame = parent.bounds
                 flutterView.autoresizingMask = [.width, .height]
                 print("FlutterBridgeController.initialize 4 ", parent, flutterView, flutterView.frame)
-//                 parent.addSubview(flutterView)
-                parent.addSubview(flutterView, positioned: .below, relativeTo: nil) // add it last, otherwise appears first to swt
+                container.addSubview(flutterView)
                 return flutterView
             }
         } else {
@@ -68,9 +74,21 @@ class FlutterBridgeController {
         return nil
     }
 
-    func setFrame(x: Int32, y: Int32, w: Int32, h: Int32) {
+    func getView() -> NSView? {
+//         return flutterViewController?.view
+        return view
+    }
+
+    func setFrame(x: Int32, y: Int32, w: Int32, h: Int32, vx: Int32, vy: Int32, vw: Int32, vh: Int32) {
+        if let v = view {
+            v.frame = NSRect(x: CGFloat(x), y: CGFloat(y), width: CGFloat(w), height: CGFloat(h))
+            v.autoresizingMask = []
+        }
+        if (x == vx && y == vy && w == vw && h == vh) {
+            return
+        }
         if let flutterView = flutterViewController?.view {
-            flutterView.frame = NSRect(x: CGFloat(x), y: CGFloat(y), width: CGFloat(w), height: CGFloat(h))
+            flutterView.frame = NSRect(x: CGFloat(vx), y: CGFloat(vy), width: CGFloat(vw), height: CGFloat(vh))
             flutterView.autoresizingMask = []
         }
     }
@@ -112,9 +130,8 @@ public func InitializeFlutterWindow(env: UnsafeMutablePointer<JNIEnv?>, cls: jcl
 @MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridge_GetView")
 public func GetView(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) -> jlong {
 print("Java_org_eclipse_swt_widgets_SwtFlutterBridge_GetView")
-
     let controller = context != 0 ? unsafeBitCast(UInt(context), to: FlutterBridgeController.self) : nil
-    if let view = controller?.flutterViewController?.view {
+    if let view = controller?.getView() {
         let viewPtr = Unmanaged.passRetained(view).toOpaque()
         return jlong(Int(bitPattern: viewPtr))
     }
@@ -129,9 +146,14 @@ print("Java_org_eclipse_swt_widgets_SwtFlutterBridge_Dispose")
 }
 
 @MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridge_SetBounds")
-public func SetBounds(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong, x: jint, y: jint, width: jint, height: jint) {
+public func SetBounds(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong, x: jint, y: jint, width: jint, height: jint, vx: jint, vy: jint, vwidth: jint, vheight: jint) {
 print("Java_org_eclipse_swt_widgets_SwtFlutterBridge_SetBounds")
-
     let controller = context != 0 ? unsafeBitCast(UInt(context), to: FlutterBridgeController.self) : nil
-    controller!.setFrame(x: x, y: y, w: width, h: height)
+    controller!.setFrame(x: x, y: y, w: width, h: height, vx: vx, vy: vy, vw: vwidth, vh: vheight)
+}
+
+class FlippedView: NSView {
+    override var isFlipped: Bool {
+        return true
+    }
 }

@@ -4607,7 +4607,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         NSView topView = topView();
         if (parent == null || parent.getImpl() instanceof SwtControl) {
             ((SwtControl) parent.getImpl()).contentView().addSubview(topView, OS.NSWindowBelow, null);
-        }
+        } else
+            ((NSView) ((DartComposite) parent.getImpl()).contentView()).addSubview(topView, OS.NSWindowBelow, null);
     }
 
     @Override
@@ -4657,7 +4658,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             topView.removeFromSuperview();
             if (parent == null || parent.getImpl() instanceof SwtControl) {
                 ((SwtControl) parent.getImpl()).contentView().addSubview(topView, above ? OS.NSWindowAbove : OS.NSWindowBelow, otherView);
-            }
+            } else
+                ((NSView) ((DartComposite) parent.getImpl()).contentView()).addSubview(topView, above ? OS.NSWindowAbove : OS.NSWindowBelow, otherView);
             topView.release();
         }
         invalidateVisibleRegion();
@@ -5294,13 +5296,13 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         int start = index, offset = (next) ? 1 : -1;
         while ((index = ((index + offset + length) % length)) != start) {
             Widget widget = list[index];
-            if (!widget.isDisposed() && ((SwtWidget) widget.getImpl()).setTabGroupFocus()) {
+            if (!widget.isDisposed() && widget.getImpl().setTabGroupFocus()) {
                 return true;
             }
         }
         if (group.isDisposed())
             return false;
-        return ((SwtWidget) group.getImpl()).setTabGroupFocus();
+        return group.getImpl().setTabGroupFocus();
     }
 
     boolean traverseItem(boolean next) {

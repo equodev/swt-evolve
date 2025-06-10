@@ -12,9 +12,9 @@ public class Config {
 
     public enum Impl { eclipse, equo }
 
-    static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.eclipse.name()));
+    static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.equo.name()));
 
-    static final Map<Class<?>, Impl> equoDefaults = Map.of(
+    static final Map<Class<?>, Impl> equoEnabled = Map.of(
             Button.class, Impl.equo,
             CTabFolder.class, Impl.equo,
             CTabItem.class, Impl.equo,
@@ -44,7 +44,7 @@ public class Config {
     }
 
     public static boolean isEquo(Class<?> clazz) {
-        if ((defaultImpl == Impl.equo || equoDefaults.containsKey(clazz)) && notNegatedDefault(clazz, Impl.equo))
+        if ((defaultImpl == Impl.equo && equoEnabled.containsKey(clazz)) && notNegatedDefault(clazz, Impl.equo))
             return true;
         if (defaultImpl == Impl.eclipse && !notNegatedDefault(clazz, Impl.eclipse))
             return true;

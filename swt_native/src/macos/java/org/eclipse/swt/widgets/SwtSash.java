@@ -161,9 +161,12 @@ public class SwtSash extends SwtControl implements ISash {
             int value = (getApi().style & SWT.VERTICAL) != 0 ? location.x : location.y;
             return NSNumber.numberWithInt(value).id;
         } else if (attributeName.isEqualToString(OS.NSAccessibilityMaxValueAttribute)) {
-            NSRect parentFrame = ((SwtScrollable) parent.getImpl()).topView().frame();
-            double maxValue = (getApi().style & SWT.VERTICAL) != 0 ? parentFrame.width : parentFrame.height;
-            return NSNumber.numberWithDouble(maxValue).id;
+            if (parent == null || parent.getImpl() instanceof SwtScrollable) {
+                NSRect parentFrame = ((SwtScrollable) parent.getImpl()).topView().frame();
+                double maxValue = (getApi().style & SWT.VERTICAL) != 0 ? parentFrame.width : parentFrame.height;
+                return NSNumber.numberWithDouble(maxValue).id;
+            }
+            return 0;
         } else if (attributeName.isEqualToString(OS.NSAccessibilityMinValueAttribute)) {
             return NSNumber.numberWithInt(0).id;
         } else if (attributeName.isEqualToString(OS.NSAccessibilityNextContentsAttribute)) {

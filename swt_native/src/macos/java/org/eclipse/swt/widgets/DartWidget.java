@@ -1198,7 +1198,7 @@ public abstract class DartWidget implements IWidget {
     void setOrientation() {
     }
 
-    boolean setTabGroupFocus() {
+    public boolean setTabGroupFocus() {
         return setTabItemFocus();
     }
 
