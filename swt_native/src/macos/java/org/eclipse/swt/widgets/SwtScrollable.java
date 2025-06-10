@@ -357,11 +357,11 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
     @Override
     void releaseChildren(boolean destroy) {
         if (horizontalBar != null) {
-            ((SwtWidget) horizontalBar.getImpl()).release(false);
+            horizontalBar.getImpl().release(false);
             horizontalBar = null;
         }
         if (verticalBar != null) {
-            ((SwtWidget) verticalBar.getImpl()).release(false);
+            verticalBar.getImpl().release(false);
             verticalBar = null;
         }
         super.releaseChildren(destroy);

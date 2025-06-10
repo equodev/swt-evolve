@@ -38,13 +38,27 @@ public interface ImplControl extends ImplWidget {
 
     void addRelation(Control control);
 
+    Widget[] computeTabList();
+
     Cursor findCursor();
+
+    Menu[] findMenus(Control control);
 
     Control[] getPath();
 
+    void invalidateChildrenVisibleRegion();
+
     boolean isDrawing();
 
+    boolean isTabItem();
+
     boolean isTransparent();
+
+    Decorations menuShell();
+
+    void release(boolean destroy);
+
+    void removeRelation();
 
     void resetVisibleRegion();
 }

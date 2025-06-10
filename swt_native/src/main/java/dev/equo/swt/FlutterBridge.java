@@ -1,5 +1,6 @@
 package dev.equo.swt;
 
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.*;
 
 import java.io.ByteArrayOutputStream;
@@ -103,5 +104,10 @@ public abstract class FlutterBridge {
         if (events.length > 0)
             ev += "/" + String.join("/", events);
         return ev;
+    }
+
+    public abstract void destroy(DartWidget control);
+
+    public void setBounds(DartControl dartControl, Rectangle bounds) {
     }
 }

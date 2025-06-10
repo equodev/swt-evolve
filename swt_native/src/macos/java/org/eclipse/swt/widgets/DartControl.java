@@ -642,7 +642,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return ((DartControl) parent.getImpl()).computeTabGroup();
     }
 
-    Widget[] computeTabList() {
+    public Widget[] computeTabList() {
         if (isTabGroup()) {
             if (getVisible() && getEnabled()) {
                 return new Widget[] { this.getApi() };
@@ -652,7 +652,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     Control computeTabRoot() {
-        Control[] tabList = ((DartComposite) parent.getImpl())._getTabList();
+        Control[] tabList = parent.getImpl()._getTabList();
         if (tabList != null) {
             int index = 0;
             while (index < tabList.length) {
@@ -846,7 +846,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return (parent != null && !isTransparent() && (getApi().state & PARENT_BACKGROUND) != 0) ? ((DartControl) parent.getImpl()).findBackgroundControl() : null;
     }
 
-    Menu[] findMenus(Control control) {
+    public Menu[] findMenus(Control control) {
         if (menu != null && this.getApi() != control)
             return new Menu[] { menu };
         return new Menu[0];
@@ -1535,7 +1535,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         }
     }
 
-    void invalidateChildrenVisibleRegion() {
+    public void invalidateChildrenVisibleRegion() {
     }
 
     void invalidateVisibleRegion() {
@@ -1545,7 +1545,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         for (int i = index; i < siblings.length; i++) {
             Control sibling = siblings[i];
             sibling.getImpl().resetVisibleRegion();
-            ((DartControl) sibling.getImpl()).invalidateChildrenVisibleRegion();
+            sibling.getImpl().invalidateChildrenVisibleRegion();
         }
         parent.getImpl().resetVisibleRegion();
     }
@@ -1669,7 +1669,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     boolean isTabGroup() {
-        Control[] tabList = ((DartComposite) parent.getImpl())._getTabList();
+        Control[] tabList = parent.getImpl()._getTabList();
         if (tabList != null) {
             for (int i = 0; i < tabList.length; i++) {
                 if (tabList[i] == this.getApi())
@@ -1679,8 +1679,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return false;
     }
 
-    boolean isTabItem() {
-        Control[] tabList = ((DartComposite) parent.getImpl())._getTabList();
+    public boolean isTabItem() {
+        Control[] tabList = parent.getImpl()._getTabList();
         if (tabList != null) {
             for (int i = 0; i < tabList.length; i++) {
                 if (tabList[i] == this.getApi())
@@ -1723,8 +1723,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         /* Do nothing */
     }
 
-    Decorations menuShell() {
-        return ((DartControl) parent.getImpl()).menuShell();
+    public Decorations menuShell() {
+        return parent.getImpl().menuShell();
     }
 
     boolean isEventView(long id) {
@@ -1974,7 +1974,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     @Override
-    void release(boolean destroy) {
+    public void release(boolean destroy) {
         Control next = null, previous = null;
         if (destroy && parent != null) {
             Control[] children = parent.getImpl()._getChildren();
@@ -2005,7 +2005,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     @Override
     void releaseParent() {
         invalidateVisibleRegion();
-        ((DartComposite) parent.getImpl()).removeControl(this.getApi());
+        parent.getImpl().removeControl(this.getApi());
     }
 
     @Override
@@ -2363,7 +2363,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     /*
  * Remove "Labeled by" relations from the receiver.
  */
-    void removeRelation() {
+    public void removeRelation() {
         if (!isDescribedByLabel())
             return;
     }
@@ -2614,6 +2614,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else if (resize) {
         }
         ((SwtDisplay) display.getImpl()).ignoreFocusControl = oldIgnoreFocusControl;
+        getBridge().setBounds(this, this.bounds);
         getBridge().dirty(this);
     }
 
@@ -2992,9 +2993,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return false;
         releaseParent();
         Shell newShell = parent.getShell(), oldShell = getShell();
-        Decorations newDecorations = ((DartControl) parent.getImpl()).menuShell(), oldDecorations = menuShell();
+        Decorations newDecorations = parent.getImpl().menuShell(), oldDecorations = menuShell();
         if (oldShell != newShell || oldDecorations != newDecorations) {
-            Menu[] menus = ((DartComposite) oldShell.getImpl()).findMenus(this.getApi());
+            Menu[] menus = oldShell.getImpl().findMenus(this.getApi());
             fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
         }
         this.parent = parent;
@@ -3343,14 +3344,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         removeRelation();
         if (index + 1 < children.length) {
             oldNextIndex = index + 1;
-            ((DartControl) children[oldNextIndex].getImpl()).removeRelation();
+            children[oldNextIndex].getImpl().removeRelation();
         }
         if (sibling != null) {
             if (above) {
-                ((DartControl) sibling.getImpl()).removeRelation();
+                sibling.getImpl().removeRelation();
             } else {
                 if (siblingIndex + 1 < children.length) {
-                    ((DartControl) children[siblingIndex + 1].getImpl()).removeRelation();
+                    children[siblingIndex + 1].getImpl().removeRelation();
                 }
             }
         }
@@ -3762,7 +3763,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     boolean traverseGroup(boolean next) {
         Control root = computeTabRoot();
         Widget group = computeTabGroup();
-        Widget[] list = ((DartControl) root.getImpl()).computeTabList();
+        Widget[] list = root.getImpl().computeTabList();
         int length = list.length;
         int index = 0;
         while (index < length) {
@@ -3810,7 +3811,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         int start = index, offset = (next) ? 1 : -1;
         while ((index = (index + offset + length) % length) != start) {
             Control child = children[index];
-            if (!child.isDisposed() && ((DartControl) child.getImpl()).isTabItem()) {
+            if (!child.isDisposed() && child.getImpl().isTabItem()) {
                 if (((DartControl) child.getImpl()).setTabItemFocus())
                     return true;
             }

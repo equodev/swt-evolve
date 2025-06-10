@@ -503,7 +503,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     @Override
     void releaseChildren(boolean destroy) {
         if (menu != null) {
-            ((SwtWidget) menu.getImpl()).release(false);
+            menu.getImpl().release(false);
             menu = null;
         }
         super.releaseChildren(destroy);

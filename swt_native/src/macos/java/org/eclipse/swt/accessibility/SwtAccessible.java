@@ -3142,7 +3142,7 @@ public class SwtAccessible implements IAccessible {
         }
     }
 
-    void release(boolean destroy) {
+    public void release(boolean destroy) {
         if (actionNames != null)
             actionNames.release();
         actionNames = null;

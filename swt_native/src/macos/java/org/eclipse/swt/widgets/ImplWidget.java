@@ -13,9 +13,13 @@ public interface ImplWidget {
 
     Object _data();
 
+    long _jniRef();
+
     void checkOpen();
 
     boolean isDrawing();
+
+    void release(boolean destroy);
 
     void sendEvent(Event event);
 

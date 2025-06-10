@@ -184,7 +184,7 @@ public class SwtTaskBar extends SwtWidget implements ITaskBar {
             for (int i = 0; i < items.length; i++) {
                 TaskItem item = items[i];
                 if (item != null && !item.isDisposed()) {
-                    ((SwtWidget) item.getImpl()).release(false);
+                    item.getImpl().release(false);
                 }
             }
             items = null;

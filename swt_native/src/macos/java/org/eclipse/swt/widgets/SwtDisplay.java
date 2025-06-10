@@ -588,12 +588,12 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     void addWidget(NSObject view, Widget widget) {
         if (view == null)
             return;
-        long ivar = OS.object_setInstanceVariable(view.id, SWT_OBJECT, ((SwtWidget) widget.getImpl()).jniRef);
+        long ivar = OS.object_setInstanceVariable(view.id, SWT_OBJECT, widget.getImpl()._jniRef());
         if (ivar == 0) {
             if (dynamicObjectMap == null) {
                 dynamicObjectMap = new HashMap<>();
             }
-            LONG JNIRef = new LONG(((SwtWidget) widget.getImpl()).jniRef);
+            LONG JNIRef = new LONG(widget.getImpl()._jniRef());
             dynamicObjectMap.put(view, JNIRef);
         }
     }

@@ -126,7 +126,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         return newChildren;
     }
 
-    Control[] _getTabList() {
+    public Control[] _getTabList() {
         if (tabList == null)
             return null;
         int count = 0;
@@ -266,14 +266,14 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     }
 
     @Override
-    Widget[] computeTabList() {
+    public Widget[] computeTabList() {
         Widget[] result = super.computeTabList();
         if (result.length == 0)
             return result;
         Control[] list = tabList != null ? _getTabList() : _getChildren();
         for (int i = 0; i < list.length; i++) {
             Control child = list[i];
-            Widget[] childList = ((SwtControl) child.getImpl()).computeTabList();
+            Widget[] childList = child.getImpl().computeTabList();
             if (childList.length != 0) {
                 Widget[] newResult = new Widget[result.length + childList.length];
                 System.arraycopy(result, 0, newResult, 0, result.length);
@@ -389,14 +389,14 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     }
 
     @Override
-    Menu[] findMenus(Control control) {
+    public Menu[] findMenus(Control control) {
         if (control == this.getApi())
             return new Menu[0];
         Menu[] result = super.findMenus(control);
         Control[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
             Control child = children[i];
-            Menu[] menuList = ((SwtControl) child.getImpl()).findMenus(control);
+            Menu[] menuList = child.getImpl().findMenus(control);
             if (menuList.length != 0) {
                 Menu[] newResult = new Menu[result.length + menuList.length];
                 System.arraycopy(result, 0, newResult, 0, result.length);
@@ -565,12 +565,12 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     }
 
     @Override
-    void invalidateChildrenVisibleRegion() {
+    public void invalidateChildrenVisibleRegion() {
         Control[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
             Control child = children[i];
             child.getImpl().resetVisibleRegion();
-            ((SwtControl) child.getImpl()).invalidateChildrenVisibleRegion();
+            child.getImpl().invalidateChildrenVisibleRegion();
         }
     }
 
@@ -1040,7 +1040,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                 if (child == null || child.isDisposed())
                     continue;
                 try {
-                    ((SwtControl) child.getImpl()).release(false);
+                    child.getImpl().release(false);
                 } catch (Error | RuntimeException ex) {
                     exceptions.stash(ex);
                 }
@@ -1056,7 +1056,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         tabList = null;
     }
 
-    void removeControl(Control control) {
+    public void removeControl(Control control) {
         if (control == null || control.getImpl() instanceof SwtControl) {
             if (((SwtControl) control.getImpl()).hasFocus())
                 redrawWidget(getApi().view, true);
@@ -1272,7 +1272,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 		 * It is unlikely but possible that a child is disposed at this point, for more
 		 * details refer bug 381668.
 		 */
-            if (!child.isDisposed() && ((SwtControl) child.getImpl()).isTabItem() && ((SwtControl) child.getImpl()).setTabItemFocus())
+            if (!child.isDisposed() && child.getImpl().isTabItem() && ((SwtControl) child.getImpl()).setTabItemFocus())
                 return true;
         }
         return false;

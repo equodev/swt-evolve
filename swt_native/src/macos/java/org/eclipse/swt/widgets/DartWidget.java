@@ -57,6 +57,8 @@ public abstract class DartWidget implements IWidget {
 
     Object data;
 
+    long jniRef;
+
     /* Global state flags */
     static final int DISPOSED = 1 << 0;
 
@@ -443,7 +445,6 @@ public abstract class DartWidget implements IWidget {
     }
 
     void createJNIRef() {
-        bridge = FlutterBridge.of(this);
     }
 
     void createWidget() {
@@ -454,9 +455,12 @@ public abstract class DartWidget implements IWidget {
     }
 
     void deregister() {
+        if (bridge != null)
+            bridge.destroy(this);
     }
 
     void destroyJNIRef() {
+        jniRef = 0;
     }
 
     void destroyWidget() {
@@ -815,9 +819,38 @@ public abstract class DartWidget implements IWidget {
     }
 
     void register() {
+        bridge = FlutterBridge.of(this);
     }
 
-    void release(boolean destroy) {
+    public void release(boolean destroy) {
+        try (ExceptionStash exceptions = new ExceptionStash()) {
+            if ((getApi().state & DISPOSE_SENT) == 0) {
+                getApi().state |= DISPOSE_SENT;
+                try {
+                    sendEvent(SWT.Dispose);
+                } catch (Error | RuntimeException ex) {
+                    exceptions.stash(ex);
+                }
+            }
+            if ((getApi().state & DISPOSED) == 0) {
+                try {
+                    releaseChildren(destroy);
+                } catch (Error | RuntimeException ex) {
+                    exceptions.stash(ex);
+                }
+            }
+            if ((getApi().state & RELEASED) == 0) {
+                getApi().state |= RELEASED;
+                if (destroy) {
+                    releaseParent();
+                    releaseWidget();
+                    destroyWidget();
+                } else {
+                    releaseWidget();
+                    releaseHandle();
+                }
+            }
+        }
         notifyDisposalTracker();
     }
 
@@ -871,6 +904,37 @@ public abstract class DartWidget implements IWidget {
         if (eventTable == null)
             return;
         eventTable.unhook(eventType, listener);
+    }
+
+    /**
+     * Removes the listener from the collection of listeners who will
+     * be notified when an event of the given type occurs.
+     * <p>
+     * <b>IMPORTANT:</b> This method is <em>not</em> part of the SWT
+     * public API. It is marked public only so that it can be shared
+     * within the packages provided by SWT. It should never be
+     * referenced from application code.
+     * </p>
+     *
+     * @param eventType the type of event to listen for
+     * @param listener the listener which should no longer be notified
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see Listener
+     * @see #addListener
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     * @nooverride This method is not intended to be re-implemented or extended by clients.
+     */
+    public void removeListener(int eventType, SWTEventListener listener) {
+        removeTypedListener(eventType, listener);
     }
 
     /**
@@ -1164,9 +1228,15 @@ public abstract class DartWidget implements IWidget {
     }
 
     void notifyCreationTracker() {
+        if (WidgetSpy.isEnabled) {
+            WidgetSpy.getInstance().widgetCreated(this.getApi());
+        }
     }
 
     void notifyDisposalTracker() {
+        if (WidgetSpy.isEnabled) {
+            WidgetSpy.getInstance().widgetDisposed(this.getApi());
+        }
     }
 
     public Display _display() {
@@ -1179,6 +1249,10 @@ public abstract class DartWidget implements IWidget {
 
     public Object _data() {
         return data;
+    }
+
+    public long _jniRef() {
+        return jniRef;
     }
 
     protected FlutterBridge bridge;

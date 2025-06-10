@@ -2602,7 +2602,7 @@ public class SwtTree extends SwtComposite implements ITree {
         for (int i = 0; i < items.length; i++) {
             TreeItem item = items[i];
             if (item != null && !item.isDisposed()) {
-                ((SwtTreeItem) item.getImpl()).release(false);
+                item.getImpl().release(false);
             }
         }
         items = null;
@@ -2610,7 +2610,7 @@ public class SwtTree extends SwtComposite implements ITree {
             for (int i = 0; i < columnCount; i++) {
                 TreeColumn column = columns[i];
                 if (column != null && !column.isDisposed()) {
-                    ((SwtWidget) column.getImpl()).release(false);
+                    column.getImpl().release(false);
                 }
             }
             columns = null;
@@ -2657,7 +2657,7 @@ public class SwtTree extends SwtComposite implements ITree {
         for (int i = 0; i < items.length; i++) {
             TreeItem item = items[i];
             if (item != null && !item.isDisposed())
-                ((SwtTreeItem) item.getImpl()).release(false);
+                item.getImpl().release(false);
         }
         items = new TreeItem[4];
         itemCount = 0;
@@ -3251,7 +3251,7 @@ public class SwtTree extends SwtComposite implements ITree {
             for (int index = count; index < itemCount; index++) {
                 TreeItem item = children[index];
                 if (item != null && !item.isDisposed())
-                    ((SwtTreeItem) item.getImpl()).release(false);
+                    item.getImpl().release(false);
             }
             selectItems(selectedItems, true);
             TreeItem[] newItems = new TreeItem[length];

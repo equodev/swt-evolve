@@ -2242,7 +2242,7 @@ public class SwtTable extends SwtComposite implements ITable {
             for (int i = 0; i < itemCount; i++) {
                 TableItem item = items[i];
                 if (item != null && !item.isDisposed()) {
-                    ((SwtWidget) item.getImpl()).release(false);
+                    item.getImpl().release(false);
                 }
             }
             items = null;
@@ -2251,7 +2251,7 @@ public class SwtTable extends SwtComposite implements ITable {
             for (int i = 0; i < columnCount; i++) {
                 TableColumn column = columns[i];
                 if (column != null && !column.isDisposed()) {
-                    ((SwtWidget) column.getImpl()).release(false);
+                    column.getImpl().release(false);
                 }
             }
             columns = null;
@@ -2306,7 +2306,7 @@ public class SwtTable extends SwtComposite implements ITable {
             error(SWT.ERROR_INVALID_RANGE);
         TableItem item = items[index];
         if (item != null)
-            ((SwtWidget) item.getImpl()).release(false);
+            item.getImpl().release(false);
         if (index != itemCount - 1)
             fixSelection(index, false);
         System.arraycopy(items, index + 1, items, index, --itemCount - index);
@@ -2347,7 +2347,7 @@ public class SwtTable extends SwtComposite implements ITable {
             for (int i = start; i <= end; i++) {
                 TableItem item = items[i];
                 if (item != null)
-                    ((SwtWidget) item.getImpl()).release(false);
+                    item.getImpl().release(false);
             }
             //fix selection
             int[] selection = getSelectionIndices();
@@ -2416,7 +2416,7 @@ public class SwtTable extends SwtComposite implements ITable {
             if (index != last) {
                 TableItem item = items[index];
                 if (item != null)
-                    ((SwtWidget) item.getImpl()).release(false);
+                    item.getImpl().release(false);
                 if (index != itemCount - 1)
                     fixSelection(index, false);
                 System.arraycopy(items, index + 1, items, index, --itemCount - index);
@@ -2443,7 +2443,7 @@ public class SwtTable extends SwtComposite implements ITable {
         for (int i = 0; i < itemCount; i++) {
             TableItem item = items[i];
             if (item != null && !item.isDisposed())
-                ((SwtWidget) item.getImpl()).release(false);
+                item.getImpl().release(false);
         }
         setTableEmpty();
         updateRowCount();
@@ -2889,7 +2889,7 @@ public class SwtTable extends SwtComposite implements ITable {
             for (int index = count; index < itemCount; index++) {
                 TableItem item = children[index];
                 if (item != null && !item.isDisposed())
-                    ((SwtWidget) item.getImpl()).release(false);
+                    item.getImpl().release(false);
             }
         }
         if (count > itemCount) {

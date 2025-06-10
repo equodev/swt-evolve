@@ -15,4 +15,14 @@ public interface ImplComposite extends ImplScrollable {
     int _backgroundMode();
 
     Control[] _getChildren();
+
+    Control[] _getTabList();
+
+    Widget[] computeTabList();
+
+    Menu[] findMenus(Control control);
+
+    void invalidateChildrenVisibleRegion();
+
+    void removeControl(Control control);
 }

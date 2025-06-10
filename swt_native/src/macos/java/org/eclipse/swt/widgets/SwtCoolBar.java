@@ -825,7 +825,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     @Override
-    void removeControl(Control control) {
+    public void removeControl(Control control) {
         super.removeControl(control);
         CoolItem[] items = getItems();
         for (int i = 0; i < items.length; i++) {

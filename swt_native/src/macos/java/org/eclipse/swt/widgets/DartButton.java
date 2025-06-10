@@ -176,7 +176,7 @@ public class DartButton extends DartControl implements IButton {
         if ((getApi().style & SWT.WRAP) != 0 && wHint != SWT.DEFAULT) {
         } else {
         }
-        return null;
+        return Sizes.compute(this);
     }
 
     @Override

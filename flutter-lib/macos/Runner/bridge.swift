@@ -14,22 +14,15 @@ import FlutterMacOS
 class FlutterBridgeController {
 //     static let shared = FlutterBridgeController()
     
-    private var flutterViewController: FlutterViewController?
+    var flutterViewController: FlutterViewController?
     private var window: NSWindow? // Keep for standalone window case if needed
     
     init() {
         print("FlutterBridgeController.init")
     }
-    
-    func initialize(parentView: NSView?, port: Int32, widgetId: Int64, widgetName: String) {
+
+    func initialize(parentView: NSView?, port: Int32, widgetId: Int64, widgetName: String) -> NSView? {
         print("FlutterBridgeController.initialize port:\(port) parent:\(String(describing: parentView)) id:\(widgetId) name:\(widgetName)")
-        // Ensure we're on the main thread
-        if !Thread.isMainThread {
-            DispatchQueue.main.sync {
-                self.initialize(parentView: parentView, port: port, widgetId: widgetId, widgetName: widgetName)
-            }
-            return
-        }
 
         let arguments = [String(port), String(widgetId), widgetName]
         let frameworkPath = getDylibDirectory()! + "/swtflutter.app/Contents/Frameworks/App.framework"
@@ -47,11 +40,14 @@ class FlutterBridgeController {
             if let flutterView = flutterViewController?.view {
 //                let flutterViewFrame = NSRect(x: 0, y: 0, width: 400, height: 500)
                 flutterView.frame = frame
-
+//                 flutterView.frame = NSRect(x: frame.origin.x, y: frame.origin.y, width: frame.width, height: 29)
+//                 flutterView.autoresizingMask = [.width]
 //                flutterView.frame = parent.bounds
                 flutterView.autoresizingMask = [.width, .height]
                 print("FlutterBridgeController.initialize 4 ", parent, flutterView, flutterView.frame)
-                parent.addSubview(flutterView)
+//                 parent.addSubview(flutterView)
+                parent.addSubview(flutterView, positioned: .below, relativeTo: nil) // add it last, otherwise appears first to swt
+                return flutterView
             }
         } else {
             print("FlutterBridgeController.initialize 5")
@@ -69,6 +65,20 @@ class FlutterBridgeController {
             self.window = window
         }
         RegisterGeneratedPlugins(registry: flutterViewController!)
+        return nil
+    }
+
+    func setFrame(x: Int32, y: Int32, w: Int32, h: Int32) {
+        if let flutterView = flutterViewController?.view {
+            flutterView.frame = NSRect(x: CGFloat(x), y: CGFloat(y), width: CGFloat(w), height: CGFloat(h))
+            flutterView.autoresizingMask = []
+        }
+    }
+
+    func destroy() {
+        flutterViewController?.view.removeFromSuperview()
+        flutterViewController?.engine.shutDownEngine()
+        flutterViewController = nil
     }
 
 }
@@ -91,8 +101,37 @@ public func InitializeFlutterWindow(env: UnsafeMutablePointer<JNIEnv?>, cls: jcl
     let swiftString = String(cString: cString!)
     env.pointee?.pointee.ReleaseStringUTFChars(env, widget_name, cString)
     let controller = FlutterBridgeController()
-    controller.initialize(parentView: parentView, port: port, widgetId: Int64(widget_id), widgetName: swiftString)
-    let pointer = Unmanaged.passRetained(controller).toOpaque()
-    return jlong(Int(bitPattern: pointer))
+    let _ = controller.initialize(parentView: parentView, port: port, widgetId: Int64(widget_id), widgetName: swiftString)
+    let controllerPtr = Unmanaged.passRetained(controller).toOpaque() // ToDo: return this
+//     let viewPtr = Unmanaged.passRetained(view!).toOpaque()
+    return jlong(Int(bitPattern: controllerPtr))
+//     return jlong(Int(bitPattern: viewPtr))
 //     FlutterBridgeController.shared.initialize(parentView: parentView, port: port, widgetId: Int64(widget_id), widgetName: swiftString)
+}
+
+@MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridge_GetView")
+public func GetView(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) -> jlong {
+print("Java_org_eclipse_swt_widgets_SwtFlutterBridge_GetView")
+
+    let controller = context != 0 ? unsafeBitCast(UInt(context), to: FlutterBridgeController.self) : nil
+    if let view = controller?.flutterViewController?.view {
+        let viewPtr = Unmanaged.passRetained(view).toOpaque()
+        return jlong(Int(bitPattern: viewPtr))
+    }
+    return 0
+}
+
+@MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridge_Dispose")
+public func Dispose(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) {
+print("Java_org_eclipse_swt_widgets_SwtFlutterBridge_Dispose")
+    let controller = context != 0 ? unsafeBitCast(UInt(context), to: FlutterBridgeController.self) : nil
+    controller!.destroy()
+}
+
+@MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridge_SetBounds")
+public func SetBounds(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong, x: jint, y: jint, width: jint, height: jint) {
+print("Java_org_eclipse_swt_widgets_SwtFlutterBridge_SetBounds")
+
+    let controller = context != 0 ? unsafeBitCast(UInt(context), to: FlutterBridgeController.self) : nil
+    controller!.setFrame(x: x, y: y, w: width, h: height)
 }

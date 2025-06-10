@@ -140,7 +140,7 @@ public class SwtTray extends SwtWidget implements ITray {
         if (items != null) {
             for (TrayItem item : items) {
                 if (item != null && !item.isDisposed()) {
-                    ((SwtWidget) item.getImpl()).release(false);
+                    item.getImpl().release(false);
                 }
             }
             items = null;

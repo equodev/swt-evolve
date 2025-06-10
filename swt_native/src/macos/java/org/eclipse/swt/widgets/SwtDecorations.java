@@ -407,12 +407,12 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
     }
 
     @Override
-    boolean isTabItem() {
+    public boolean isTabItem() {
         return false;
     }
 
     @Override
-    Decorations menuShell() {
+    public Decorations menuShell() {
         return this.getApi();
     }
 
@@ -473,7 +473,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
 
     void saveFocus() {
         Control control = ((SwtDisplay) display.getImpl())._getFocusControl(getApi().view.window());
-        if (control != null && control != this.getApi() && this.getApi() == ((SwtControl) control.getImpl()).menuShell()) {
+        if (control != null && control != this.getApi() && this.getApi() == control.getImpl().menuShell()) {
             setSavedFocus(control);
         }
     }
@@ -508,10 +508,8 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
         if (button != null) {
             if (button.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if (button == null || button.getImpl() instanceof SwtControl) {
-                if (((SwtControl) button.getImpl()).menuShell() != this.getApi())
-                    error(SWT.ERROR_INVALID_PARENT);
-            }
+            if (button.getImpl().menuShell() != this.getApi())
+                error(SWT.ERROR_INVALID_PARENT);
             if ((button.style & SWT.PUSH) == 0)
                 return;
         }

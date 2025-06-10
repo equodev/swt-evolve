@@ -282,11 +282,11 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     @Override
     void releaseChildren(boolean destroy) {
         if (horizontalBar != null) {
-            ((DartWidget) horizontalBar.getImpl()).release(false);
+            horizontalBar.getImpl().release(false);
             horizontalBar = null;
         }
         if (verticalBar != null) {
-            ((DartWidget) verticalBar.getImpl()).release(false);
+            verticalBar.getImpl().release(false);
             verticalBar = null;
         }
         super.releaseChildren(destroy);

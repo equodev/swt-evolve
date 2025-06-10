@@ -356,11 +356,11 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
     @Override
     void releaseChildren(boolean destroy) {
         if (caret != null) {
-            ((SwtWidget) caret.getImpl()).release(false);
+            caret.getImpl().release(false);
             caret = null;
         }
         if (ime != null) {
-            ((SwtWidget) ime.getImpl()).release(false);
+            ime.getImpl().release(false);
             ime = null;
         }
         super.releaseChildren(destroy);

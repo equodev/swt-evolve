@@ -428,7 +428,7 @@ public class SwtLabel extends SwtControl implements ILabel {
  * Remove "Labeled by" relations from the receiver.
  */
     @Override
-    void removeRelation() {
+    public void removeRelation() {
         if (textView != null) {
             textView.cell().accessibilitySetOverrideValue(null, OS.NSAccessibilityServesAsTitleForUIElementsAttribute);
         }

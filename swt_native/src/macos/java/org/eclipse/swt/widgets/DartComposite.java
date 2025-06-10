@@ -109,7 +109,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         return newChildren;
     }
 
-    Control[] _getTabList() {
+    public Control[] _getTabList() {
         if (tabList == null)
             return null;
         int count = 0;
@@ -188,14 +188,14 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     @Override
-    Widget[] computeTabList() {
+    public Widget[] computeTabList() {
         Widget[] result = super.computeTabList();
         if (result.length == 0)
             return result;
         Control[] list = tabList != null ? _getTabList() : _getChildren();
         for (int i = 0; i < list.length; i++) {
             Control child = list[i];
-            Widget[] childList = ((DartControl) child.getImpl()).computeTabList();
+            Widget[] childList = child.getImpl().computeTabList();
             if (childList.length != 0) {
                 Widget[] newResult = new Widget[result.length + childList.length];
                 System.arraycopy(result, 0, newResult, 0, result.length);
@@ -265,14 +265,14 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     @Override
-    Menu[] findMenus(Control control) {
+    public Menu[] findMenus(Control control) {
         if (control == this.getApi())
             return new Menu[0];
         Menu[] result = super.findMenus(control);
         Control[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
             Control child = children[i];
-            Menu[] menuList = ((DartControl) child.getImpl()).findMenus(control);
+            Menu[] menuList = child.getImpl().findMenus(control);
             if (menuList.length != 0) {
                 Menu[] newResult = new Menu[result.length + menuList.length];
                 System.arraycopy(result, 0, newResult, 0, result.length);
@@ -441,12 +441,12 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     @Override
-    void invalidateChildrenVisibleRegion() {
+    public void invalidateChildrenVisibleRegion() {
         Control[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
             Control child = children[i];
             child.getImpl().resetVisibleRegion();
-            ((DartControl) child.getImpl()).invalidateChildrenVisibleRegion();
+            child.getImpl().invalidateChildrenVisibleRegion();
         }
     }
 
@@ -823,6 +823,18 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     @Override
     void releaseChildren(boolean destroy) {
+        try (ExceptionStash exceptions = new ExceptionStash()) {
+            for (Control child : _getChildren()) {
+                if (child == null || child.isDisposed())
+                    continue;
+                try {
+                    child.getImpl().release(false);
+                } catch (Error | RuntimeException ex) {
+                    exceptions.stash(ex);
+                }
+            }
+            super.releaseChildren(destroy);
+        }
     }
 
     @Override
@@ -832,7 +844,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         tabList = null;
     }
 
-    void removeControl(Control control) {
+    public void removeControl(Control control) {
         fixTabList(control);
     }
 
@@ -978,7 +990,7 @@ public class DartComposite extends DartScrollable implements IComposite {
 		 * It is unlikely but possible that a child is disposed at this point, for more
 		 * details refer bug 381668.
 		 */
-            if (!child.isDisposed() && ((DartControl) child.getImpl()).isTabItem() && ((DartControl) child.getImpl()).setTabItemFocus())
+            if (!child.isDisposed() && child.getImpl().isTabItem() && ((DartControl) child.getImpl()).setTabItemFocus())
                 return true;
         }
         return false;

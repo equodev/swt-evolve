@@ -2,6 +2,8 @@ package org.eclipse.swt.graphics;
 
 import java.io.*;
 import org.eclipse.swt.*;
+import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.graphics.*;
 
 public interface IImage extends IResource {
 

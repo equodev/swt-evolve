@@ -1013,7 +1013,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
     }
 
     @Override
-    void release(boolean destroy) {
+    public void release(boolean destroy) {
         TreeItem[] selectedItems = null;
         Tree parent = this.parent;
         if (destroy) {
@@ -1030,7 +1030,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         for (int i = 0; i < items.length; i++) {
             TreeItem item = items[i];
             if (item != null && !item.isDisposed()) {
-                ((SwtTreeItem) item.getImpl()).release(false);
+                item.getImpl().release(false);
             }
         }
         items = null;

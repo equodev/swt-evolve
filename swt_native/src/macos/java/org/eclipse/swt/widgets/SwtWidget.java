@@ -1478,7 +1478,7 @@ public abstract class SwtWidget implements IWidget {
     void register() {
     }
 
-    void release(boolean destroy) {
+    public void release(boolean destroy) {
         try (ExceptionStash exceptions = new ExceptionStash()) {
             if ((getApi().state & DISPOSE_SENT) == 0) {
                 getApi().state |= DISPOSE_SENT;
@@ -1589,7 +1589,7 @@ public abstract class SwtWidget implements IWidget {
      * @noreference This method is not intended to be referenced by clients.
      * @nooverride This method is not intended to be re-implemented or extended by clients.
      */
-    protected void removeListener(int eventType, SWTEventListener listener) {
+    public void removeListener(int eventType, SWTEventListener listener) {
         removeTypedListener(eventType, listener);
     }
 
@@ -2565,6 +2565,10 @@ public abstract class SwtWidget implements IWidget {
 
     public Object _data() {
         return data;
+    }
+
+    public long _jniRef() {
+        return jniRef;
     }
 
     public Widget getApi() {

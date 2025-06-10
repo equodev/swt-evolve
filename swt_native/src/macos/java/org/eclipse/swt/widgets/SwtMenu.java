@@ -83,7 +83,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
      * @see Widget#getStyle
      */
     public SwtMenu(Control parent, Menu api) {
-        this(((SwtControl) checkNull(parent).getImpl()).menuShell(), SWT.POP_UP, api);
+        this(checkNull(parent).getImpl().menuShell(), SWT.POP_UP, api);
     }
 
     /**
@@ -729,7 +729,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             if (this.getApi() == ((SwtDisplay) display.getImpl()).appMenuBar)
                 return ((SwtDisplay) display.getImpl()).application.isActive();
             else
-                return this.getApi() == ((SwtDecorations) ((SwtDecorations) parent.getImpl()).menuShell().getImpl()).menuBar;
+                return this.getApi() == ((SwtDecorations) parent.getImpl().menuShell().getImpl()).menuBar;
         }
         if ((getApi().style & SWT.POP_UP) != 0) {
             Menu[] popups = ((SwtDisplay) display.getImpl()).popups;
@@ -928,7 +928,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             for (int i = 0; i < items.length; i++) {
                 MenuItem item = items[i];
                 if (item != null && !item.isDisposed()) {
-                    ((SwtWidget) item.getImpl()).release(false);
+                    item.getImpl().release(false);
                 }
             }
             items = null;

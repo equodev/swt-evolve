@@ -473,7 +473,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
             for (int i = 0; i < items.length; i++) {
                 TabItem item = items[i];
                 if (item != null && !item.isDisposed()) {
-                    ((SwtWidget) item.getImpl()).release(false);
+                    item.getImpl().release(false);
                 }
             }
             items = null;
@@ -482,7 +482,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
     }
 
     @Override
-    void removeControl(Control control) {
+    public void removeControl(Control control) {
         super.removeControl(control);
         int count = itemCount;
         for (int i = 0; i < count; i++) {

@@ -3,6 +3,9 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterLibraryLoader;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.internal.cocoa.NSView;
+import org.eclipse.swt.internal.cocoa.OS;
 
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -16,10 +19,11 @@ public class SwtFlutterBridge extends FlutterBridge {
 
     public static SwtFlutterBridge of(DartWidget widget) {
         if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof SwtComposite) {
-            SwtComposite parentComposite = new SwtComposite(dartControl.parent, SWT.NONE, null);
+//            SwtComposite parentComposite = new SwtComposite(dartControl.parent, SWT.NONE, null);
             SwtFlutterBridge bridge = new SwtFlutterBridge();
             // TODO abstract view.id in getHandle()
-            bridge.initFlutterView(parentComposite.getApi().view.id, dartControl);
+//            bridge.initFlutterView(parentComposite.getApi().view.id, dartControl);
+            bridge.initFlutterView(dartControl.parent.view.id, dartControl);
             return bridge;
         }
         if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof DartComposite c) {
@@ -33,8 +37,43 @@ public class SwtFlutterBridge extends FlutterBridge {
     void initFlutterView(long parent, DartControl control) {
         super.onReady(control);
         context = InitializeFlutterWindow(client.getPort(), parent, control.hashCode(), widgetName(control));
+        long view = GetView(context);
+        control.getApi().view = new NSView(view);
+        control.jniRef = OS.NewGlobalRef(control.getApi());
+        if (control.jniRef == 0)
+            SWT.error(SWT.ERROR_NO_HANDLES);
+        ((SwtDisplay) control.display.getImpl()).addWidget(control.getApi().view, control.getApi());
+    }
+
+    @Override
+    public void destroy(DartWidget control) {
+        if (control instanceof DartControl dartControl) {
+            ((SwtDisplay) control.display.getImpl()).removeWidget(dartControl.getApi().view);
+            if (dartControl.jniRef != 0) {
+                OS.DeleteGlobalRef(dartControl.jniRef);
+            }
+            control.jniRef = 0;
+            dartControl.getApi().view = null;
+            Dispose(context);
+            context = 0;
+        }
+    }
+
+    @Override
+    public void setBounds(DartControl dartControl, Rectangle bounds) {
+        if (dartControl.bridge != null) {
+            SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height);
+        }
     }
 
     static native long InitializeFlutterWindow(int port, long parentHandle, long widgetId, String widgetName);
 
+    static native long Dispose(long context);
+
+    static native long SetBounds(long context, int x, int y, int w, int h);
+
+    static native long GetView(long context);
+
+
 }
+

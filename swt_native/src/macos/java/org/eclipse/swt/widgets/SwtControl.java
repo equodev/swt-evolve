@@ -914,7 +914,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return ((SwtControl) parent.getImpl()).computeTabGroup();
     }
 
-    Widget[] computeTabList() {
+    public Widget[] computeTabList() {
         if (isTabGroup()) {
             if (getVisible() && getEnabled()) {
                 return new Widget[] { this.getApi() };
@@ -924,7 +924,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     Control computeTabRoot() {
-        Control[] tabList = ((SwtComposite) parent.getImpl())._getTabList();
+        Control[] tabList = parent.getImpl()._getTabList();
         if (tabList != null) {
             int index = 0;
             while (index < tabList.length) {
@@ -1343,7 +1343,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return (parent != null && !isTransparent() && (getApi().state & PARENT_BACKGROUND) != 0) ? ((SwtControl) parent.getImpl()).findBackgroundControl() : null;
     }
 
-    Menu[] findMenus(Control control) {
+    public Menu[] findMenus(Control control) {
         if (menu != null && this.getApi() != control)
             return new Menu[] { menu };
         return new Menu[0];
@@ -2272,7 +2272,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         }
     }
 
-    void invalidateChildrenVisibleRegion() {
+    public void invalidateChildrenVisibleRegion() {
     }
 
     void invalidateVisibleRegion() {
@@ -2282,7 +2282,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         for (int i = index; i < siblings.length; i++) {
             Control sibling = siblings[i];
             sibling.getImpl().resetVisibleRegion();
-            ((SwtControl) sibling.getImpl()).invalidateChildrenVisibleRegion();
+            sibling.getImpl().invalidateChildrenVisibleRegion();
         }
         parent.getImpl().resetVisibleRegion();
     }
@@ -2418,7 +2418,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     boolean isTabGroup() {
-        Control[] tabList = ((SwtComposite) parent.getImpl())._getTabList();
+        Control[] tabList = parent.getImpl()._getTabList();
         if (tabList != null) {
             for (int i = 0; i < tabList.length; i++) {
                 if (tabList[i] == this.getApi())
@@ -2431,8 +2431,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return (code & (SWT.TRAVERSE_TAB_PREVIOUS | SWT.TRAVERSE_TAB_NEXT)) != 0;
     }
 
-    boolean isTabItem() {
-        Control[] tabList = ((SwtComposite) parent.getImpl())._getTabList();
+    public boolean isTabItem() {
+        Control[] tabList = parent.getImpl()._getTabList();
         if (tabList != null) {
             for (int i = 0; i < tabList.length; i++) {
                 if (tabList[i] == this.getApi())
@@ -2572,8 +2572,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return super.menuForEvent(id, sel, theEvent);
     }
 
-    Decorations menuShell() {
-        return ((SwtControl) parent.getImpl()).menuShell();
+    public Decorations menuShell() {
+        return parent.getImpl().menuShell();
     }
 
     @Override
@@ -3019,7 +3019,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
-    void release(boolean destroy) {
+    public void release(boolean destroy) {
         Control next = null, previous = null;
         if (destroy && parent != null) {
             Control[] children = parent.getImpl()._getChildren();
@@ -3053,7 +3053,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     @Override
     void releaseParent() {
         invalidateVisibleRegion();
-        ((SwtComposite) parent.getImpl()).removeControl(this.getApi());
+        parent.getImpl().removeControl(this.getApi());
     }
 
     @Override
@@ -3416,7 +3416,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     /*
  * Remove "Labeled by" relations from the receiver.
  */
-    void removeRelation() {
+    public void removeRelation() {
         if (!isDescribedByLabel())
             return;
         NSObject accessibleElement = focusView();
@@ -4269,9 +4269,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             return false;
         releaseParent();
         Shell newShell = parent.getShell(), oldShell = getShell();
-        Decorations newDecorations = ((SwtControl) parent.getImpl()).menuShell(), oldDecorations = menuShell();
+        Decorations newDecorations = parent.getImpl().menuShell(), oldDecorations = menuShell();
         if (oldShell != newShell || oldDecorations != newDecorations) {
-            Menu[] menus = ((SwtComposite) oldShell.getImpl()).findMenus(this.getApi());
+            Menu[] menus = oldShell.getImpl().findMenus(this.getApi());
             fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
         }
         NSView topView = topView();
@@ -4639,16 +4639,14 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         removeRelation();
         if (index + 1 < children.length) {
             oldNextIndex = index + 1;
-            ((SwtControl) children[oldNextIndex].getImpl()).removeRelation();
+            children[oldNextIndex].getImpl().removeRelation();
         }
         if (sibling != null) {
             if (above) {
-                if (sibling == null || sibling.getImpl() instanceof SwtControl) {
-                    ((SwtControl) sibling.getImpl()).removeRelation();
-                }
+                sibling.getImpl().removeRelation();
             } else {
                 if (siblingIndex + 1 < children.length) {
-                    ((SwtControl) children[siblingIndex + 1].getImpl()).removeRelation();
+                    children[siblingIndex + 1].getImpl().removeRelation();
                 }
             }
         }
@@ -5277,7 +5275,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     boolean traverseGroup(boolean next) {
         Control root = computeTabRoot();
         Widget group = computeTabGroup();
-        Widget[] list = ((SwtControl) root.getImpl()).computeTabList();
+        Widget[] list = root.getImpl().computeTabList();
         int length = list.length;
         int index = 0;
         while (index < length) {
@@ -5325,7 +5323,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         int start = index, offset = (next) ? 1 : -1;
         while ((index = (index + offset + length) % length) != start) {
             Control child = children[index];
-            if (!child.isDisposed() && ((SwtControl) child.getImpl()).isTabItem()) {
+            if (!child.isDisposed() && child.getImpl().isTabItem()) {
                 if (((SwtControl) child.getImpl()).setTabItemFocus())
                     return true;
             }

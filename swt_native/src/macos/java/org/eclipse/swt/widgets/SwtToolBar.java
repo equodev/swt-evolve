@@ -699,7 +699,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             for (int i = 0; i < itemCount; i++) {
                 ToolItem item = items[i];
                 if (item != null && !item.isDisposed()) {
-                    ((SwtWidget) item.getImpl()).release(false);
+                    item.getImpl().release(false);
                 }
             }
             itemCount = 0;
@@ -721,7 +721,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     }
 
     @Override
-    void removeControl(Control control) {
+    public void removeControl(Control control) {
         super.removeControl(control);
         for (int i = 0; i < itemCount; i++) {
             ToolItem item = items[i];
