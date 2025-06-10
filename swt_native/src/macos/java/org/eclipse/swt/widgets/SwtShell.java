@@ -2275,7 +2275,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             return;
         NSView[] hitView = new NSView[1];
         Control control = ((SwtDisplay) display.getImpl()).findControl(false, hitView);
-        if (control != null && (!((SwtControl) control.getImpl()).isActive() || !control.isEnabled()))
+        if (control != null && (!control.getImpl().isActive() || !control.isEnabled()))
             control = null;
         Control trimControl = control;
         if (trimControl == null || trimControl.getImpl() instanceof SwtControl) {
@@ -2545,7 +2545,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             case OS.NSMouseMoved:
                 NSView[] hitView = new NSView[1];
                 Control control = ((SwtDisplay) display.getImpl()).findControl(false, hitView);
-                if (control != null && (!((SwtControl) control.getImpl()).isActive() || !control.isEnabled()))
+                if (control != null && (!control.getImpl().isActive() || !control.isEnabled()))
                     control = null;
                 if (type == OS.NSMouseMoved) {
                     Control trimControl = control;

@@ -1551,7 +1551,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     @Override
-    boolean isActive() {
+    public boolean isActive() {
         if (((SwtShell) getShell().getImpl()).getModalShell() != null)
             return false;
         Dialog dialog = ((SwtDisplay) display.getImpl()).getModalDialog();
@@ -2451,7 +2451,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return event.doit;
     }
 
-    void sendFocusEvent(int type) {
+    public void sendFocusEvent(int type) {
         Display display = this.display;
         Shell shell = getShell();
         ((SwtDisplay) display.getImpl()).focusEvent = type;
@@ -2614,8 +2614,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else if (resize) {
         }
         ((SwtDisplay) display.getImpl()).ignoreFocusControl = oldIgnoreFocusControl;
-        getBridge().setBounds(this, this.bounds);
         getBridge().dirty(this);
+        getBridge().setBounds(this, bounds);
     }
 
     /**

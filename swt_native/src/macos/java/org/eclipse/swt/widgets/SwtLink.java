@@ -615,7 +615,7 @@ public class SwtLink extends SwtControl implements ILink {
     }
 
     @Override
-    void sendFocusEvent(int type) {
+    public void sendFocusEvent(int type) {
         if (focusIndex != -1)
             redrawWidget(getApi().view, false);
         super.sendFocusEvent(type);

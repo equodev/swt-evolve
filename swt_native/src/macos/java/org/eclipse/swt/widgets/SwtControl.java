@@ -2288,7 +2288,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
-    boolean isActive() {
+    public boolean isActive() {
         if (((SwtShell) getShell().getImpl()).getModalShell() != null)
             return false;
         Dialog dialog = ((SwtDisplay) display.getImpl()).getModalDialog();
@@ -3526,7 +3526,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return event.doit;
     }
 
-    void sendFocusEvent(int type) {
+    public void sendFocusEvent(int type) {
         Display display = this.display;
         Shell shell = getShell();
         ((SwtDisplay) display.getImpl()).focusEvent = type;

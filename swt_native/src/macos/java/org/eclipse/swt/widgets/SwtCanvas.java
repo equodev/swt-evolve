@@ -76,7 +76,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
     }
 
     @Override
-    void sendFocusEvent(int type) {
+    public void sendFocusEvent(int type) {
         if (caret != null) {
             if (type == SWT.FocusIn) {
                 ((SwtCaret) caret.getImpl()).setFocus();

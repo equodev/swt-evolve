@@ -760,11 +760,11 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         }
         if (oldControl != newControl) {
             if (oldControl != null && !oldControl.isDisposed()) {
-                ((SwtControl) oldControl.getImpl()).sendFocusEvent(SWT.FocusOut);
+                oldControl.getImpl().sendFocusEvent(SWT.FocusOut);
             }
             currentFocusControl = newControl;
             if (newControl != null && !newControl.isDisposed()) {
-                ((SwtControl) newControl.getImpl()).sendFocusEvent(SWT.FocusIn);
+                newControl.getImpl().sendFocusEvent(SWT.FocusIn);
             }
         }
     }
@@ -4878,7 +4878,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     Runnable hoverTimer = () -> {
         if (currentControl != null && !currentControl.isDisposed()) {
-            ((SwtControl) currentControl.getImpl()).sendMouseEvent(null, SWT.MouseHover, trackingControl != null && !trackingControl.isDisposed());
+            if (currentControl == null || currentControl.getImpl() instanceof SwtControl) {
+                ((SwtControl) currentControl.getImpl()).sendMouseEvent(null, SWT.MouseHover, trackingControl != null && !trackingControl.isDisposed());
+            }
         }
     };
 

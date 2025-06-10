@@ -48,6 +48,8 @@ public interface ImplControl extends ImplWidget {
 
     void invalidateChildrenVisibleRegion();
 
+    boolean isActive();
+
     boolean isDrawing();
 
     boolean isTabItem();
@@ -61,4 +63,6 @@ public interface ImplControl extends ImplWidget {
     void removeRelation();
 
     void resetVisibleRegion();
+
+    void sendFocusEvent(int type);
 }
