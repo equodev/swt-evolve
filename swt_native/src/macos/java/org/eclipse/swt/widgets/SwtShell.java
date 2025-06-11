@@ -1267,7 +1267,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
-    float getThemeAlpha() {
+    public float getThemeAlpha() {
         return 1;
     }
 
@@ -1301,7 +1301,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
-    boolean hasRegion() {
+    public boolean hasRegion() {
         return region != null;
     }
 

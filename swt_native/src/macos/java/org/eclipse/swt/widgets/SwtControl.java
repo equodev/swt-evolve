@@ -2004,8 +2004,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
     }
 
-    float getThemeAlpha() {
-        return 1 * ((SwtControl) parent.getImpl()).getThemeAlpha();
+    public float getThemeAlpha() {
+        return 1 * parent.getImpl().getThemeAlpha();
     }
 
     /**
@@ -2089,8 +2089,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return display.getFocusControl() == this.getApi();
     }
 
-    boolean hasRegion() {
-        return region != null || ((SwtControl) parent.getImpl()).hasRegion();
+    public boolean hasRegion() {
+        return region != null || parent.getImpl().hasRegion();
     }
 
     @Override

@@ -33,7 +33,7 @@ public class SerializeTestBase {
 
     @BeforeAll
     static void useEquo() {
-        Config.defaultToEquo();
+        Config.forceEquo();
     }
 
     @AfterAll

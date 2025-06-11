@@ -10,22 +10,34 @@ import java.util.Map;
 
 public class Config {
 
-    public enum Impl { eclipse, equo }
+    public enum Impl { eclipse, equo, force_equo }
 
     static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.equo.name()));
 
-    static final Map<Class<?>, Impl> equoEnabled = Map.of(
-            Button.class, Impl.equo,
-            CTabFolder.class, Impl.equo,
-            CTabItem.class, Impl.equo,
-            CTabFolderRenderer.class, Impl.equo
-    );
+    static final Map<Class<?>, Impl> equoEnabled;
+
+    static {
+        try {
+            equoEnabled = Map.of(
+                    Button.class, Impl.equo,
+                    CTabFolder.class, Impl.equo,
+                    CTabItem.class, Impl.equo,
+                    CTabFolderRenderer.class, Impl.equo,
+                    Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo
+            );
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     static final String PROPERTY_PREFIX = "dev.equo.swt.";
 
-
     public static void defaultToEquo() {
         defaultImpl = Impl.equo;
+    }
+
+    static void forceEquo() {
+        defaultImpl = Impl.force_equo;
     }
 
     public static void defaultToEclipse() {
@@ -44,6 +56,8 @@ public class Config {
     }
 
     public static boolean isEquo(Class<?> clazz) {
+        if (defaultImpl == Impl.force_equo && notNegatedDefault(clazz, Impl.equo))
+            return true;
         if ((defaultImpl == Impl.equo && equoEnabled.containsKey(clazz)) && notNegatedDefault(clazz, Impl.equo))
             return true;
         if (defaultImpl == Impl.eclipse && !notNegatedDefault(clazz, Impl.eclipse))

@@ -403,8 +403,8 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
     }
 
     @Override
-    float getThemeAlpha() {
-        return (background != null ? 1 : 0.25f) * ((SwtControl) parent.getImpl()).getThemeAlpha();
+    public float getThemeAlpha() {
+        return (background != null ? 1 : 0.25f) * parent.getImpl().getThemeAlpha();
     }
 
     /**

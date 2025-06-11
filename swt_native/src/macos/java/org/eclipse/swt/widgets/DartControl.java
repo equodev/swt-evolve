@@ -1386,8 +1386,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
     }
 
-    float getThemeAlpha() {
-        return 1 * ((DartControl) parent.getImpl()).getThemeAlpha();
+    public float getThemeAlpha() {
+        return 1 * parent.getImpl().getThemeAlpha();
     }
 
     /**
@@ -1467,8 +1467,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return display.getFocusControl() == this.getApi();
     }
 
-    boolean hasRegion() {
-        return region != null || ((DartControl) parent.getImpl()).hasRegion();
+    public boolean hasRegion() {
+        return region != null || parent.getImpl().hasRegion();
     }
 
     boolean imeInComposition() {
@@ -1570,7 +1570,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     @Override
     public boolean isDrawing() {
-        return getDrawing() && parent.getImpl().isDrawing();
+        return getDrawing() && parent != null && parent.getImpl().isDrawing();
     }
 
     /**

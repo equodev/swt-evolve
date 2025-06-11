@@ -1,4 +1,4 @@
 #include "ephemeral/Flutter-Generated.xcconfig"
 
 // Default architecture settings if not overridden
-FLUTTER_MACOS_ARCHS = x86_64
+FLUTTER_MACOS_ARCHS = arm64

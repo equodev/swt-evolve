@@ -46,6 +46,10 @@ public interface ImplControl extends ImplWidget {
 
     Control[] getPath();
 
+    float getThemeAlpha();
+
+    boolean hasRegion();
+
     void invalidateChildrenVisibleRegion();
 
     boolean isActive();
