@@ -316,7 +316,8 @@ platforms.forEach { platform ->
     tasks.register<Copy>("${platform}ExtractNatives") {
         from(configurations["${platform}SwtImpl"].map { zipTree(it) })
         into(layout.buildDirectory.dir("natives/$platform"))
-        include("*.so", "*.dll", "*.dylib", "*.jnilib")
+        include("*.so", "*.dll", "*.dylib", "*.jnilib", "**/*.css")
+        includeEmptyDirs = false
     }
 
     tasks.register<Jar>("${platform}Jar") {
