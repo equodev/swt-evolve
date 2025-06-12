@@ -75,6 +75,7 @@ public class SwtFlutterBridge extends FlutterBridge {
                         bounds.x, bounds.y, bounds.width, bounds.height);
             }
         }
+        dartControl.resized();
     }
 
     @Override
