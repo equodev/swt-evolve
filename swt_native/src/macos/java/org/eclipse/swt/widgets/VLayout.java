@@ -9,11 +9,11 @@ public class VLayout {
     protected VLayout() {
     }
 
-    protected VLayout(DartLayout impl) {
+    protected VLayout(ILayout impl) {
         this.impl = impl;
     }
 
-    protected DartLayout impl;
+    protected ILayout impl;
 
     @JsonConverter(target = Layout.class)
     public static class LayoutJson implements Configuration {

@@ -871,7 +871,7 @@ public class SwtLink extends SwtControl implements ILink {
     }
 
     @Override
-    void updateCursorRects(boolean enabled) {
+    public void updateCursorRects(boolean enabled) {
         super.updateCursorRects(enabled);
         if (scrollView == null)
             return;

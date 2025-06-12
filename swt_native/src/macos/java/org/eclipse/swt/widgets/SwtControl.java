@@ -1337,10 +1337,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return parent.getImpl().findCursor();
     }
 
-    Control findBackgroundControl() {
+    public Control findBackgroundControl() {
         if ((backgroundImage != null || background != null) && backgroundAlpha > 0)
             return this.getApi();
-        return (parent != null && !isTransparent() && (getApi().state & PARENT_BACKGROUND) != 0) ? ((SwtControl) parent.getImpl()).findBackgroundControl() : null;
+        return (parent != null && !isTransparent() && (getApi().state & PARENT_BACKGROUND) != 0) ? parent.getImpl().findBackgroundControl() : null;
     }
 
     public Menu[] findMenus(Control control) {
@@ -1353,7 +1353,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return this.getApi();
     }
 
-    void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus) {
+    public void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus) {
         ((SwtShell) oldShell.getImpl()).fixShell(newShell, this.getApi());
         ((SwtDecorations) oldDecorations.getImpl()).fixDecorations(newDecorations, this.getApi(), menus);
     }
@@ -1595,11 +1595,11 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             Control control = findBackgroundControl();
             if (control == null)
                 control = this.getApi();
-            return ((SwtControl) control.getImpl()).getBackgroundColor();
+            return control.getImpl().getBackgroundColor();
         }
     }
 
-    Color getBackgroundColor() {
+    public Color getBackgroundColor() {
         return background != null ? SwtColor.cocoa_new(display, background, backgroundAlpha) : defaultBackground();
     }
 
@@ -2228,7 +2228,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             Control control = findBackgroundControl();
             if (control == null)
                 control = this.getApi();
-            data.background = ((SwtControl) control.getImpl()).getBackgroundColor().handle;
+            data.background = control.getImpl().getBackgroundColor().handle;
             data.font = font != null ? font : defaultFont();
         }
         if (graphicsContext != null) {
@@ -2535,7 +2535,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         super.magnifyWithEvent(id, sel, event);
     }
 
-    void markLayout(boolean changed, boolean all) {
+    public void markLayout(boolean changed, boolean all) {
         /* Do nothing */
     }
 
@@ -5445,7 +5445,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         setBackgroundImage(image != null ? image.handle : null);
     }
 
-    void updateBackgroundMode() {
+    public void updateBackgroundMode() {
         int oldState = getApi().state & PARENT_BACKGROUND;
         checkBackground();
         if (oldState != (getApi().state & PARENT_BACKGROUND)) {
@@ -5465,7 +5465,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             callSuper(id, sel);
     }
 
-    void updateCursorRects(boolean enabled) {
+    public void updateCursorRects(boolean enabled) {
         updateCursorRects(enabled, getApi().view);
     }
 
@@ -5482,7 +5482,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         }
     }
 
-    void updateLayout(boolean all) {
+    public void updateLayout(boolean all) {
         /* Do nothing */
     }
 

@@ -28,7 +28,6 @@ class FlutterBridgeController {
         let frameworkPath = getDylibDirectory()! + "/Frameworks/App.framework"
         let project = FlutterDartProject(precompiledDartBundle: Bundle(path: frameworkPath))
         project.dartEntrypointArguments = arguments
-        // Create Flutter view controller
         flutterViewController = FlutterViewController.init(project: project)
 //         print("FlutterBridgeController.initialize 2")
 
@@ -39,8 +38,14 @@ class FlutterBridgeController {
 
             let container = FlippedView()
             container.frame = frame
-//             container.wantsLayer = true
-//             container.layer?.backgroundColor = NSColor.red.cgColor
+            container.wantsLayer = true
+//             let randomColor = NSColor(
+//                red: CGFloat.random(in: 0...1),
+//                green: CGFloat.random(in: 0...1),
+//                blue: CGFloat.random(in: 0...1),
+//                alpha: 1.0
+//             )
+//             container.layer?.backgroundColor = randomColor.cgColor
             parent.addSubview(container, positioned: .below, relativeTo: nil) // add it last, otherwise appears first to swt
             self.view = container
 

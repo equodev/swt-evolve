@@ -63,9 +63,10 @@ public class SwtFlutterBridge extends FlutterBridge {
     @Override
     public void setBounds(DartControl dartControl, Rectangle bounds) {
         if (dartControl.bridge != null) {
+//            System.out.println("SET BOUNDS: "+bounds);
             if (dartControl instanceof DartCTabFolder) {
                 SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
-                        bounds.x, bounds.y, bounds.width, 28);
+                        0, 0, bounds.width, 28);
             } else {
                 SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
                         bounds.x, bounds.y, bounds.width, bounds.height);

@@ -12,11 +12,11 @@ public class VWidget {
     protected VWidget() {
     }
 
-    protected VWidget(DartWidget impl) {
+    protected VWidget(IWidget impl) {
         this.impl = impl;
     }
 
-    protected DartWidget impl;
+    protected IWidget impl;
 
     @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getStyle() {

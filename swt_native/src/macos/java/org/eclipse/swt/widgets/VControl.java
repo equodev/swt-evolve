@@ -13,7 +13,7 @@ public class VControl extends VWidget {
     protected VControl() {
     }
 
-    protected VControl(DartControl impl) {
+    protected VControl(IControl impl) {
         super(impl);
     }
 

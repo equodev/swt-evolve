@@ -877,12 +877,12 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
-    Control findBackgroundControl() {
+    public Control findBackgroundControl() {
         return background != null || backgroundImage != null ? this.getApi() : null;
     }
 
     @Override
-    Composite findDeferredControl() {
+    public Composite findDeferredControl() {
         return layoutCount > 0 ? this.getApi() : null;
     }
 
@@ -2328,10 +2328,10 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
-    void updateCursorRects(boolean enabled) {
+    public void updateCursorRects(boolean enabled) {
         super.updateCursorRects(enabled);
         if (toolBar != null)
-            ((SwtComposite) toolBar.getImpl()).updateCursorRects(enabled);
+            toolBar.getImpl().updateCursorRects(enabled);
     }
 
     void updateModal() {

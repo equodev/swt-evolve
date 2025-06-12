@@ -91,10 +91,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public Color getSelectionBackground() {
-        Color val = ((DartCTabFolder) impl).selectionBackground;
-        if (val != null && !(val.getImpl() instanceof DartColor))
-            return null;
-        return val;
+        return ((DartCTabFolder) impl).selectionBackground;
     }
 
     public void setSelectionBackground(Color value) {
@@ -102,10 +99,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public Color getSelectionForeground() {
-        Color val = ((DartCTabFolder) impl).selectionForeground;
-        if (val != null && !(val.getImpl() instanceof DartColor))
-            return null;
-        return val;
+        return ((DartCTabFolder) impl).selectionForeground;
     }
 
     public void setSelectionForeground(Color value) {

@@ -8,4 +8,6 @@ public interface ImplScrollable extends ImplControl {
     ScrollBar _horizontalBar();
 
     ScrollBar _verticalBar();
+
+    void updateCursorRects(boolean enabled);
 }

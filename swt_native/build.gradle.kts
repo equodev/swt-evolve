@@ -332,13 +332,14 @@ platforms.forEach { platform ->
         exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "OSGI-OPT/")
 
         // Add manifest attributes if needed
+        val eclipseV = "3.128.0.v20241113-2009"
         manifest {
             attributes(
-                "Fragment-Host" to "org.eclipse.swt;bundle-version=\"[3.128.0,4.0.0)\"",
+                "Fragment-Host" to "org.eclipse.swt;bundle-version=\"[${eclipseV.substring(0..6)},4.0.0)\"",
                 "Bundle-Name" to "Equo SWT for ${osArch[0]} on ${osArch[1]}",
                 "Bundle-Vendor" to "Equo Tech, Inc.",
                 "Bundle-SymbolicName" to "org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}; singleton:=true",
-                "Bundle-Version" to "3.128.0.v20241113-2009",
+                "Bundle-Version" to eclipseV,
                 "Bundle-ManifestVersion" to 2,
                 "Export-Package" to "org.eclipse.swt,org.eclipse.swt.accessibility,"+
                         "org.eclipse.swt.awt,org.eclipse.swt.browser,org.eclipse.swt.custom,"+

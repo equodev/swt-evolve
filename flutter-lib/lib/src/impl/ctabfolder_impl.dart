@@ -36,7 +36,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends CTabFolderValue>
     final tabBodies = getTabBodies();
 
     // Decidir si usar una implementación simple o avanzada basada en el estado
-    final useSimpleStyle = state.simple ?? false;
+    // final useSimpleStyle = state.simple ?? false;
+    final useSimpleStyle = false;
     final isSingle = state.single ?? false;
     final isTabBottom = state.tabPosition == SWT.BOTTOM;
 

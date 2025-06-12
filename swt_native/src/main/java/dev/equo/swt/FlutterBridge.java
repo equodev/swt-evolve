@@ -36,6 +36,7 @@ public abstract class FlutterBridge {
 
     public static void update() {
         for (DartWidget widget : dirty) {
+            if (widget.isDisposed()) break;
             widget.getBridge().clientReady.thenRun(() -> {
                 try {
                     if (!isNew(widget)) { // send with the parent

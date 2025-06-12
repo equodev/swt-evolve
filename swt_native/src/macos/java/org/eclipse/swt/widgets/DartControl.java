@@ -519,30 +519,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void checkBackground() {
-        Shell shell = getShell();
-        if (this.getApi() == shell)
-            return;
-        getApi().state &= ~PARENT_BACKGROUND;
-        Composite composite = parent;
-        do {
-            int mode = composite.getImpl()._backgroundMode();
-            if (mode != 0 || backgroundAlpha == 0) {
-                if (mode == SWT.INHERIT_DEFAULT || backgroundAlpha == 0) {
-                    Control control = this.getApi();
-                    do {
-                        if ((control.state & THEME_BACKGROUND) == 0) {
-                            return;
-                        }
-                        control = control.getImpl()._parent();
-                    } while (control != composite);
-                }
-                getApi().state |= PARENT_BACKGROUND;
-                return;
-            }
-            if (composite == shell)
-                break;
-            composite = composite.getImpl()._parent();
-        } while (true);
     }
 
     void checkBuffered() {
@@ -840,10 +816,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return parent.getImpl().findCursor();
     }
 
-    Control findBackgroundControl() {
-        if ((backgroundImage != null || background != null) && backgroundAlpha > 0)
-            return this.getApi();
-        return (parent != null && !isTransparent() && (getApi().state & PARENT_BACKGROUND) != 0) ? ((DartControl) parent.getImpl()).findBackgroundControl() : null;
+    public Control findBackgroundControl() {
+        return parent.getImpl().findBackgroundControl();
     }
 
     public Menu[] findMenus(Control control) {
@@ -852,7 +826,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return new Menu[0];
     }
 
-    void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus) {
+    public void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus) {
         ((SwtShell) oldShell.getImpl()).fixShell(newShell, this.getApi());
         ((SwtDecorations) oldDecorations.getImpl()).fixDecorations(newDecorations, this.getApi(), menus);
     }
@@ -997,11 +971,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             Control control = findBackgroundControl();
             if (control == null)
                 control = this.getApi();
-            return ((DartControl) control.getImpl()).getBackgroundColor();
+            return control.getImpl().getBackgroundColor();
         }
     }
 
-    Color getBackgroundColor() {
+    public Color getBackgroundColor() {
         return background != null ? SwtColor.cocoa_new(display, background, backgroundAlpha) : defaultBackground();
     }
 
@@ -1504,7 +1478,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             Control control = findBackgroundControl();
             if (control == null)
                 control = this.getApi();
-            data.background = ((DartControl) control.getImpl()).getBackgroundColor().handle;
+            data.background = control.getImpl().getBackgroundColor().handle;
             data.font = font != null ? font : defaultFont();
         }
         return 0;
@@ -1626,7 +1600,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     boolean isObscured() {
-        short[] rect = new short[4];
         return false;
     }
 
@@ -1719,7 +1692,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return false;
     }
 
-    void markLayout(boolean changed, boolean all) {
+    public void markLayout(boolean changed, boolean all) {
         /* Do nothing */
     }
 
@@ -2488,7 +2461,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             control = this.getApi();
         if (control.getImpl()._backgroundImage() != null) {
         } else {
-            double[] color = ((DartControl) control.getImpl()).background != null ? ((DartControl) control.getImpl()).background : ((DartControl) control.getImpl()).defaultBackground().handle;
         }
         getBridge().dirty(this);
     }
@@ -3882,15 +3854,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        double[] color = ((DartControl) control.getImpl()).background != null ? ((DartControl) control.getImpl()).background : ((DartControl) control.getImpl()).defaultBackground().handle;
     }
 
     void updateBackgroundImage() {
-        Control control = findBackgroundControl();
-        Image image = control != null ? control.getImpl()._backgroundImage() : backgroundImage;
     }
 
-    void updateBackgroundMode() {
+    public void updateBackgroundMode() {
         int oldState = getApi().state & PARENT_BACKGROUND;
         checkBackground();
         if (oldState != (getApi().state & PARENT_BACKGROUND)) {
@@ -3898,10 +3867,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         }
     }
 
-    void updateCursorRects(boolean enabled) {
+    public void updateCursorRects(boolean enabled) {
     }
 
-    void updateLayout(boolean all) {
+    public void updateLayout(boolean all) {
         /* Do nothing */
     }
 

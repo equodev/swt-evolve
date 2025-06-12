@@ -37,10 +37,7 @@ public class VCTabItem extends VItem {
     }
 
     public Color getForeground() {
-        Color val = ((DartCTabItem) impl).foreground;
-        if (val != null && !(val.getImpl() instanceof DartColor))
-            return null;
-        return val;
+        return ((DartCTabItem) impl).foreground;
     }
 
     public void setForeground(Color value) {
@@ -48,10 +45,7 @@ public class VCTabItem extends VItem {
     }
 
     public Color getSelectionForeground() {
-        Color val = ((DartCTabItem) impl).selectionForeground;
-        if (val != null && !(val.getImpl() instanceof DartColor))
-            return null;
-        return val;
+        return ((DartCTabItem) impl).selectionForeground;
     }
 
     public void setSelectionForeground(Color value) {

@@ -42,7 +42,13 @@ public interface ImplControl extends ImplWidget {
 
     Cursor findCursor();
 
+    Control findBackgroundControl();
+
     Menu[] findMenus(Control control);
+
+    void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus);
+
+    Color getBackgroundColor();
 
     Control[] getPath();
 
@@ -60,6 +66,8 @@ public interface ImplControl extends ImplWidget {
 
     boolean isTransparent();
 
+    void markLayout(boolean changed, boolean all);
+
     Decorations menuShell();
 
     void release(boolean destroy);
@@ -69,4 +77,10 @@ public interface ImplControl extends ImplWidget {
     void resetVisibleRegion();
 
     void sendFocusEvent(int type);
+
+    void updateBackgroundMode();
+
+    void updateCursorRects(boolean enabled);
+
+    void updateLayout(boolean all);
 }

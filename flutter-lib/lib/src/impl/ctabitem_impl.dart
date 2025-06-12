@@ -55,26 +55,26 @@ class CTabItemImpl<T extends CTabItemSwt, V extends CTabItemValue>
               ),
             ),
           ),
-          if (state.showClose == true) ...[
-            const SizedBox(width: 6),
-            MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () {
-                  // Implementar cierre de la pestaña
-                  onCloseRequest();
-                },
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 1.0),
-                  child: Icon(
-                    Icons.close,
-                    size: 14,
-                    color: iconColor,
-                  ),
-                ),
-              ),
-            ),
-          ],
+          // if (state.showClose == true) ...[
+          //   const SizedBox(width: 6),
+          //   MouseRegion(
+          //     cursor: SystemMouseCursors.click,
+          //     child: GestureDetector(
+          //       onTap: () {
+          //         // Implementar cierre de la pestaña
+          //         onCloseRequest();
+          //       },
+          //       child: Padding(
+          //         padding: const EdgeInsets.only(bottom: 1.0),
+          //         child: Icon(
+          //           Icons.close,
+          //           size: 14,
+          //           color: iconColor,
+          //         ),
+          //       ),
+          //     ),
+          //   ),
+          // ],
         ],
       ),
     );

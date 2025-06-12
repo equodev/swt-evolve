@@ -10,33 +10,33 @@ public class VColor extends VResource {
     protected VColor() {
     }
 
-    protected VColor(DartColor impl) {
+    protected VColor(IColor impl) {
         super(impl);
     }
 
     public int getAlpha() {
-        return ((DartColor) impl).getAlpha();
+        return ((IColor) impl).getAlpha();
     }
 
     public void setAlpha(int value) {
     }
 
     public int getBlue() {
-        return ((DartColor) impl).getBlue();
+        return ((IColor) impl).getBlue();
     }
 
     public void setBlue(int value) {
     }
 
     public int getGreen() {
-        return ((DartColor) impl).getGreen();
+        return ((IColor) impl).getGreen();
     }
 
     public void setGreen(int value) {
     }
 
     public int getRed() {
-        return ((DartColor) impl).getRed();
+        return ((IColor) impl).getRed();
     }
 
     public void setRed(int value) {
@@ -65,6 +65,8 @@ public class VColor extends VResource {
         public static void write(JsonWriter writer, Color api) {
             if (api == null)
                 writer.writeNull();
+            else if (api.getImpl() instanceof SwtColor s)
+                writer.serializeObject(new VColor(s));
             else
                 writer.serializeObject(api.getImpl());
         }

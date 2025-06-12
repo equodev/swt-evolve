@@ -346,7 +346,7 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     }
 
     @Override
-    void updateCursorRects(boolean enabled) {
+    public void updateCursorRects(boolean enabled) {
         super.updateCursorRects(enabled);
     }
 

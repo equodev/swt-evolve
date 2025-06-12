@@ -3741,7 +3741,7 @@ public class SwtTree extends SwtComposite implements ITree {
     }
 
     @Override
-    void updateCursorRects(boolean enabled) {
+    public void updateCursorRects(boolean enabled) {
         super.updateCursorRects(enabled);
         if (headerView == null)
             return;

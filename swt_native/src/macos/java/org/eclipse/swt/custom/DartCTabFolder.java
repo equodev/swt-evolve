@@ -4032,7 +4032,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
                 @Override
                 public void widgetSelected(SelectionEvent e) {
-                    MenuItem menuItem = (MenuItem) e.widget;
                 }
             });
         }

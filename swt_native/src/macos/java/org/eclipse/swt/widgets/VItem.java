@@ -10,7 +10,7 @@ public class VItem extends VWidget {
     protected VItem() {
     }
 
-    protected VItem(DartItem impl) {
+    protected VItem(IItem impl) {
         super(impl);
     }
 

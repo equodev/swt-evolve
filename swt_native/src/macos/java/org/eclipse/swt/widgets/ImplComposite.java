@@ -20,11 +20,23 @@ public interface ImplComposite extends ImplScrollable {
 
     Widget[] computeTabList();
 
+    Composite findDeferredControl();
+
     Menu[] findMenus(Control control);
 
+    void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus);
+
     void invalidateChildrenVisibleRegion();
+
+    void markLayout(boolean changed, boolean all);
 
     void removeControl(Control control);
 
     boolean setTabGroupFocus();
+
+    void updateBackgroundMode();
+
+    void updateCursorRects(boolean enabled);
+
+    void updateLayout(boolean all);
 }

@@ -10,7 +10,7 @@ public class VScrollable extends VControl {
     protected VScrollable() {
     }
 
-    protected VScrollable(DartScrollable impl) {
+    protected VScrollable(IScrollable impl) {
         super(impl);
     }
 

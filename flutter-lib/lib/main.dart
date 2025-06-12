@@ -19,7 +19,7 @@ void main(List<String> args) async {
   if (widgetId == null || widgetName == null) {
       return;
   }
-  var theme = getTheme(args) == "dark" ? ThemeMode.dark : ThemeMode.light;
+  var theme = getTheme(args) == "light" ? ThemeMode.light : ThemeMode.dark;
 
   WidgetsFlutterBinding.ensureInitialized();
 

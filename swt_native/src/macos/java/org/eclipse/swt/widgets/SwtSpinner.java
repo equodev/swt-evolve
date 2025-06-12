@@ -1154,7 +1154,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
     }
 
     @Override
-    void updateCursorRects(boolean enabled) {
+    public void updateCursorRects(boolean enabled) {
         super.updateCursorRects(enabled);
         updateCursorRects(enabled, textView);
         updateCursorRects(enabled, buttonView);

@@ -11,11 +11,11 @@ public class VResource {
     protected VResource() {
     }
 
-    protected VResource(DartResource impl) {
+    protected VResource(IResource impl) {
         this.impl = impl;
     }
 
-    protected DartResource impl;
+    protected IResource impl;
 
     @JsonConverter(target = Resource.class)
     public static class ResourceJson implements Configuration {

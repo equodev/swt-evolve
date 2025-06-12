@@ -452,7 +452,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
     }
 
     @Override
-    void updateCursorRects(boolean enabled) {
+    public void updateCursorRects(boolean enabled) {
         super.updateCursorRects(enabled);
         if (scrollView == null)
             return;

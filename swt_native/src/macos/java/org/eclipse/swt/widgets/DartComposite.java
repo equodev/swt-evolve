@@ -260,8 +260,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         }
     }
 
-    Composite findDeferredControl() {
-        return layoutCount > 0 ? this.getApi() : ((DartComposite) parent.getImpl()).findDeferredControl();
+    public Composite findDeferredControl() {
+        return layoutCount > 0 ? this.getApi() : parent.getImpl().findDeferredControl();
     }
 
     @Override
@@ -284,11 +284,11 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     @Override
-    void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus) {
+    public void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus) {
         super.fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
         Control[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
-            ((DartControl) children[i].getImpl()).fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
+            children[i].getImpl().fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
         }
     }
 
@@ -746,7 +746,7 @@ public class DartComposite extends DartScrollable implements IComposite {
                 Composite composite = child.getImpl()._parent();
                 // Update layout when the list of children has changed.
                 // See bug 497812.
-                ((DartControl) child.getImpl()).markLayout(false, false);
+                child.getImpl().markLayout(false, false);
                 while (child != this.getApi()) {
                     if (composite.getImpl()._layout() != null) {
                         composite.state |= LAYOUT_NEEDED;
@@ -768,7 +768,7 @@ public class DartComposite extends DartScrollable implements IComposite {
                 ((SwtDisplay) display.getImpl()).addLayoutDeferred(this.getApi());
             }
             for (int i = updateCount - 1; i >= 0; i--) {
-                ((DartComposite) update[i].getImpl()).updateLayout(false);
+                update[i].getImpl().updateLayout(false);
             }
         } else {
             if (layout == null && (flags & SWT.ALL) == 0)
@@ -783,7 +783,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     @Override
-    void markLayout(boolean changed, boolean all) {
+    public void markLayout(boolean changed, boolean all) {
         if (layout != null) {
             getApi().state |= LAYOUT_NEEDED;
             if (changed)
@@ -792,7 +792,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         if (all) {
             Control[] children = _getChildren();
             for (int i = 0; i < children.length; i++) {
-                ((DartControl) children[i].getImpl()).markLayout(changed, all);
+                children[i].getImpl().markLayout(changed, all);
             }
         }
     }
@@ -890,7 +890,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         backgroundMode = mode;
         Control[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
-            ((DartControl) children[i].getImpl()).updateBackgroundMode();
+            children[i].getImpl().updateBackgroundMode();
         }
         getBridge().dirty(this);
     }
@@ -1054,26 +1054,26 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     @Override
-    void updateBackgroundMode() {
+    public void updateBackgroundMode() {
         super.updateBackgroundMode();
         Control[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
-            ((DartControl) children[i].getImpl()).updateBackgroundMode();
+            children[i].getImpl().updateBackgroundMode();
         }
     }
 
     @Override
-    void updateCursorRects(boolean enabled) {
+    public void updateCursorRects(boolean enabled) {
         super.updateCursorRects(enabled);
         Control[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
             Control control = children[i];
-            ((DartControl) control.getImpl()).updateCursorRects(enabled && control.isEnabled());
+            control.getImpl().updateCursorRects(enabled && control.isEnabled());
         }
     }
 
     @Override
-    void updateLayout(boolean all) {
+    public void updateLayout(boolean all) {
         Composite parent = findDeferredControl();
         if (parent != null) {
             parent.state |= LAYOUT_CHILD;
@@ -1089,7 +1089,7 @@ public class DartComposite extends DartScrollable implements IComposite {
             getApi().state &= ~LAYOUT_CHILD;
             Control[] children = _getChildren();
             for (int i = 0; i < children.length; i++) {
-                ((DartControl) children[i].getImpl()).updateLayout(all);
+                children[i].getImpl().updateLayout(all);
             }
         }
     }

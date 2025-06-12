@@ -26,6 +26,7 @@ public class Mocks {
         when(shell.getImpl()).thenReturn(swtShell);
         swtShell.display = display;
         when(shell.getShell()).thenReturn(shell);
+        when(shell.getBackground()).thenReturn(new Color(red(), green(), blue()));
         when(swtShell._display()).thenCallRealMethod();
         when(swtShell._getChildren()).thenReturn(new Control[0]);
         return shell;
@@ -38,6 +39,7 @@ public class Mocks {
         when(display.getThread()).thenCallRealMethod();
         when(display.getImpl()).thenReturn(swtDisplay);
         when(swtDisplay.getWidgetColor(anyInt())).thenReturn(new Color(10, 10, 10));
+        when(display.getSystemColor(anyInt())).thenReturn(new Color(red(), green(), blue()));
         when(swtDisplay.getThread()).thenCallRealMethod();
         Font font = mock(Font.class);
         when(display.getSystemFont()).thenReturn(font);
