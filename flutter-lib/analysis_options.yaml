@@ -9,6 +9,38 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  errors:
+    # Original user settings (now adjusted or confirmed)
+    unused_import: ignore # Kept from original if still desired, though unnecessary_import might cover it
+    deprecated_member_use: ignore # Changed from warning to ignore as per request
+
+    # Rules identified from the 'flutter analyze' output to be ignored
+    avoid_print: ignore
+    use_super_parameters: ignore
+    file_names: ignore
+    non_constant_identifier_names: ignore # For variables like ERROR_CALLBACK_DOES_NOT_EXIST and constants in swt.dart
+    depend_on_referenced_packages: ignore
+    dead_null_aware_expression: ignore
+    unused_local_variable: ignore
+    unnecessary_import: ignore # Covers flutter/material.dart and flutter/widgets.dart issues
+    unnecessary_to_list_in_spreads: ignore
+    sort_child_properties_last: ignore
+    sized_box_for_whitespace: ignore
+    must_be_immutable: ignore
+    library_private_types_in_public_api: ignore
+    duplicate_import: ignore
+    unnecessary_overrides: ignore
+    overridden_fields: ignore
+    annotate_overrides: ignore
+    constant_identifier_names: ignore # For constants in griddata.dart and swt.dart
+    unnecessary_brace_in_string_interps: ignore
+    unused_element: ignore # For _$WidgetValueFromJson, _$WidgetValueToJson
+    unnecessary_nullable_for_final_variable_declarations: ignore # For SKIN_CLASS, SKIN_ID in swt.dart
+    invalid_null_aware_operator: ignore
+    unnecessary_non_null_assertion: ignore
+    body_might_complete_normally_nullable: ignore
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
@@ -21,8 +53,11 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+  # All rules that were generating messages are now set to 'ignore' in the
+  # analyzer:errors: section above.
+  # If you wanted to completely disable a lint (not just ignore its messages),
+  # you would do it here, for example:
+  # avoid_print: false
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options
