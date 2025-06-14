@@ -320,6 +320,8 @@ platforms.forEach { platform ->
         includeEmptyDirs = false
     }
 
+    val swtVersionProvider = project.extensions.findByName("swtVersionProvider") as Provider<String>?
+
     tasks.register<Jar>("${platform}Jar") {
         group = "build"
         description = "Assembles a jar archive for $platform"
@@ -331,8 +333,7 @@ platforms.forEach { platform ->
         from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
         exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "OSGI-OPT/")
 
-        // Add manifest attributes if needed
-        val eclipseV = "3.128.0.v20241113-2009"
+        val eclipseV = swtVersionProvider?.orNull ?: "3.128.0.v20241113-2009"
         manifest {
             attributes(
                 "Fragment-Host" to "org.eclipse.swt;bundle-version=\"[${eclipseV.substring(0..6)},4.0.0)\"",
