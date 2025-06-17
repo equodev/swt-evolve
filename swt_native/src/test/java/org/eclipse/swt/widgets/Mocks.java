@@ -63,6 +63,15 @@ public class Mocks {
         return w;
     }
 
+    public static ToolBar toolBar() {
+        ToolBar w = mock(ToolBar.class);
+        DartToolBar impl = mock(DartToolBar.class);
+        when(w.getImpl()).thenReturn(impl);
+        Display display = display();
+        when(impl._display()).thenReturn(display);
+        return w;
+    }
+
     public static int aInt() {
         return Instancio.gen().ints().get();
     }

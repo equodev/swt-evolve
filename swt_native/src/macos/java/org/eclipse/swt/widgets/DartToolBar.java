@@ -18,7 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class support the layout of selectable
@@ -48,15 +48,11 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtToolBar extends SwtComposite implements IToolBar {
+public class DartToolBar extends DartComposite implements IToolBar {
 
     int itemCount;
 
     ToolItem[] items;
-
-    NSToolbar nsToolbar;
-
-    NSArray accessibilityAttributes = null;
 
     ToolItem lastFocus;
 
@@ -95,11 +91,11 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
      * @see Widget#checkSubclass()
      * @see Widget#getStyle()
      */
-    public SwtToolBar(Composite parent, int style, ToolBar api) {
+    public DartToolBar(Composite parent, int style, ToolBar api) {
         this(parent, style, false, api);
     }
 
-    SwtToolBar(Composite parent, int style, boolean internal, ToolBar api) {
+    DartToolBar(Composite parent, int style, boolean internal, ToolBar api) {
         super(parent, checkStyle(parent, style, internal), api);
         /*
 	* Ensure that either of HORIZONTAL or VERTICAL is set.
@@ -114,45 +110,6 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         } else {
             this.getApi().style |= SWT.HORIZONTAL;
         }
-    }
-
-    @Override
-    long accessibilityAttributeValue(long id, long sel, long arg0) {
-        NSString nsAttributeName = new NSString(arg0);
-        if (id == accessibleHandle() && accessible != null) {
-            id returnObject = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue(nsAttributeName, ACC.CHILDID_SELF);
-            if (returnObject != null)
-                return returnObject.id;
-        }
-        if (nsAttributeName.isEqualToString(OS.NSAccessibilityRoleAttribute) || nsAttributeName.isEqualToString(OS.NSAccessibilityRoleDescriptionAttribute)) {
-            NSString role = OS.NSAccessibilityToolbarRole;
-            if (nsAttributeName.isEqualToString(OS.NSAccessibilityRoleAttribute))
-                return role.id;
-            else {
-                long roleDescription = OS.NSAccessibilityRoleDescription(role.id, 0);
-                return roleDescription;
-            }
-        } else if (nsAttributeName.isEqualToString(OS.NSAccessibilityChildrenAttribute)) {
-            NSMutableArray returnValue = NSMutableArray.arrayWithCapacity(itemCount);
-            for (int i = 0; i < itemCount; i++) {
-                returnValue.addObject(new id(((SwtToolItem) getItem(i).getImpl()).accessibleHandle()));
-            }
-            return returnValue.id;
-        } else if (nsAttributeName.isEqualToString(OS.NSAccessibilityEnabledAttribute)) {
-            return NSNumber.numberWithBool(isEnabled()).id;
-        } else if (nsAttributeName.isEqualToString(OS.NSAccessibilityFocusedAttribute)) {
-            boolean focused = (getApi().view.id == getApi().view.window().firstResponder().id);
-            return NSNumber.numberWithBool(focused).id;
-        }
-        return super.accessibilityAttributeValue(id, sel, arg0);
-    }
-
-    @Override
-    boolean accessibilityIsIgnored(long id, long sel) {
-        // Toolbars aren't ignored.
-        if (id == getApi().view.id)
-            return false;
-        return super.accessibilityIsIgnored(id, sel);
     }
 
     static int checkStyle(Composite parent, int style, boolean internal) {
@@ -177,8 +134,6 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 	 */
         if ((style & SWT.SMOOTH) != 0) {
             if (parent instanceof Shell s) {
-                if (((SwtShell) s.getImpl()).window.toolbar() != null)
-                    newStyle &= ~SWT.SMOOTH;
             } else {
                 newStyle &= ~SWT.SMOOTH;
             }
@@ -220,72 +175,18 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
         checkWidget();
-        if (nsToolbar != null) {
-            NSRect outer = getApi().view.frame();
-            NSRect inner = new NSView(getApi().view.subviews().objectAtIndex(0)).frame();
-            width += (int) outer.width - (int) inner.width;
-        } else if (scrollView != null) {
-            NSSize size = new NSSize();
-            size.width = width;
-            size.height = height;
-            size = NSScrollView.frameSizeForContentSize(size, false, false, OS.NSBezelBorder);
-            width = (int) size.width;
-            height = (int) size.height;
-            NSRect frame = scrollView.contentView().frame();
-            x -= frame.x;
-            y -= frame.y;
-        }
         return new Rectangle(x, y, width, height);
     }
 
     @Override
     void createHandle() {
         if ((getApi().style & SWT.SMOOTH) != 0) {
-            nsToolbar = ((NSToolbar) new SWTToolbar().alloc()).initWithIdentifier(NSString.stringWith(String.valueOf(NEXT_ID++)));
-            nsToolbar.setDelegate(nsToolbar);
-            nsToolbar.setDisplayMode(OS.NSToolbarDisplayModeIconOnly);
-            if (parent == null || parent.getImpl() instanceof SwtComposite) {
-                NSWindow window = parent.view.window();
-                window.setToolbar(nsToolbar);
-                nsToolbar.setVisible(true);
-                NSArray views = window.contentView().superview().subviews();
-                int i = 0;
-                while (i < views.count()) {
-                    id id = views.objectAtIndex(i);
-                    String className = new NSObject(id).className().getString();
-                    if (className.equals("NSToolbarView")) {
-                        getApi().view = new NSView(id);
-                        OS.object_setClass(getApi().view.id, OS.objc_getClass("SWTToolbarView"));
-                        getApi().view.retain();
-                        break;
-                    }
-                    if (className.equals("NSTitlebarContainerView")) {
-                        views = new NSView(id).subviews();
-                        i = 0;
-                    } else if (className.equals("NSTitlebarView")) {
-                        views = new NSView(id).subviews();
-                        i = 0;
-                    } else {
-                        i++;
-                    }
-                }
-            }
+            int i = 0;
             getApi().style &= ~SWT.SMOOTH;
         } else {
             getApi().state |= THEME_BACKGROUND;
             if (hasBorder()) {
-                NSRect rect = new NSRect();
-                NSScrollView scrollWidget = (NSScrollView) new SWTScrollView().alloc();
-                scrollWidget.initWithFrame(rect);
-                scrollWidget.setDrawsBackground(false);
-                scrollWidget.setBorderType(OS.NSBezelBorder);
-                scrollView = scrollWidget;
             }
-            NSView widget = (NSView) new SWTView().alloc();
-            widget.init();
-            getApi().view = widget;
-            if (scrollView != null)
-                getApi().view.setAutoresizingMask(OS.NSViewHeightSizable | OS.NSViewWidthSizable);
         }
     }
 
@@ -297,18 +198,9 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             System.arraycopy(items, 0, newItems, 0, items.length);
             items = newItems;
         }
-        if (item == null || item.getImpl() instanceof SwtWidget) {
-            ((SwtWidget) item.getImpl()).createWidget();
-        }
+        ((DartWidget) item.getImpl()).createWidget();
         System.arraycopy(items, index, items, index + 1, itemCount++ - index);
         items[index] = item;
-        if (nsToolbar != null) {
-            if (item == null || item.getImpl() instanceof SwtToolItem) {
-                nsToolbar.insertItemWithItemIdentifier(((SwtToolItem) item.getImpl()).getItemID(), index);
-            }
-        } else {
-            getApi().view.addSubview(((SwtToolItem) item.getImpl()).view);
-        }
         relayout();
     }
 
@@ -320,15 +212,8 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     }
 
     @Override
-    NSFont defaultNSFont() {
-        return NSFont.systemFontOfSize(11.0f);
-    }
-
-    @Override
     void deregister() {
         super.deregister();
-        if (nsToolbar != null)
-            ((SwtDisplay) display.getImpl()).removeWidget(nsToolbar);
     }
 
     void destroyItem(ToolItem item) {
@@ -344,21 +229,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             lastFocus = null;
         System.arraycopy(items, index + 1, items, index, --itemCount - index);
         items[itemCount] = null;
-        if (nsToolbar != null) {
-            nsToolbar.removeItemAtIndex(index);
-        } else {
-            ((SwtToolItem) item.getImpl()).view.removeFromSuperview();
-        }
         relayout();
-    }
-
-    @Override
-    void drawBackground(long id, NSGraphicsContext context, NSRect rect) {
-        if (id != getApi().view.id)
-            return;
-        if (background != null) {
-            fillBackground(getApi().view, context, rect, -1);
-        }
     }
 
     @Override
@@ -367,55 +238,20 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         for (int i = 0; i < itemCount; i++) {
             ToolItem item = items[i];
             if (item != null) {
-                ((SwtToolItem) item.getImpl()).enableWidget(enabled && item.getEnabled());
+                ((DartToolItem) item.getImpl()).enableWidget(enabled && item.getEnabled());
             }
         }
     }
 
     @Override
-    Widget findTooltip(NSPoint pt) {
-        pt = getApi().view.convertPoint_fromView_(pt, null);
-        for (int i = 0; i < itemCount; i++) {
-            ToolItem item = items[i];
-            if (OS.NSPointInRect(pt, ((SwtToolItem) item.getImpl()).view.frame()))
-                return item;
-        }
-        return super.findTooltip(pt);
-    }
-
-    @Override
     void setZOrder() {
-        if (nsToolbar != null)
-            return;
         super.setZOrder();
     }
 
     @Override
     public Rectangle getBounds() {
         checkWidget();
-        if (nsToolbar != null) {
-            // The NSToolbar's view will always be a child of the Shell, so we can just
-            // convert the frame to window-relative coordinates.
-            NSRect rect = getApi().view.frame();
-            rect = getApi().view.convertRect_toView_(rect, null);
-            return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
-        }
         return super.getBounds();
-    }
-
-    @Override
-    boolean forceFocus(NSView focusView) {
-        if (lastFocus != null && ((SwtToolItem) lastFocus.getImpl()).setFocus())
-            return true;
-        ToolItem[] items = getItems();
-        for (int i = 0; i < items.length; i++) {
-            ToolItem item = items[i];
-            if (((SwtToolItem) item.getImpl()).setFocus()) {
-                lastFocus = item;
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -571,7 +407,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         int itemHeight = 0;
         Point[] sizes = new Point[itemCount];
         for (int i = 0; i < itemCount; i++) {
-            Point size = sizes[i] = ((SwtToolItem) items[i].getImpl()).computeSize();
+            Point size = sizes[i] = ((DartToolItem) items[i].getImpl()).computeSize();
             itemHeight = Math.max(itemHeight, size.y);
         }
         for (int i = 0; i < itemCount; i++) {
@@ -583,10 +419,10 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                 y += ySpacing + itemHeight;
             }
             if (resize) {
-                ((SwtToolItem) item.getImpl()).setBounds(x, y, size.x, itemHeight);
+                ((DartToolItem) item.getImpl()).setBounds(x, y, size.x, itemHeight);
                 boolean visible = x + size.x <= width && y + itemHeight <= height;
-                ((SwtToolItem) item.getImpl()).setVisible(visible);
-                Control control = ((SwtToolItem) item.getImpl()).control;
+                ((DartToolItem) item.getImpl()).setVisible(visible);
+                Control control = ((DartToolItem) item.getImpl()).control;
                 if (control != null) {
                     control.setBounds(x, y, size.x, itemHeight);
                 }
@@ -601,35 +437,21 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         int x = 0, y = 0;
         int itemHeight = 0, maxX = 0;
         Point[] sizes = new Point[itemCount];
-        NSRect[] containerRects = new NSRect[itemCount];
         // This next line relies on the observation that all of the toolbar item views are children of the first
-        // subview of the NSToolbarView.
-        NSArray itemViewers = new NSView(getApi().view.subviews().objectAtIndex(0)).subviews();
         for (int i = 0; i < itemCount; i++) {
-            Point size = sizes[i] = ((SwtToolItem) items[i].getImpl()).computeSize();
-            containerRects[i] = new NSView(itemViewers.objectAtIndex(i)).frame();
-            // workaround for https://bugs.eclipse.org/bugs/show_bug.cgi?id=539693
-            if (containerRects[i].width < 0 || containerRects[i].width > 100000) {
-                containerRects[i].x = 0;
-                containerRects[i].y = 0;
-                containerRects[i].width = 0;
-                containerRects[i].height = 0;
-            }
-            if (i == 0)
-                x = (int) containerRects[0].x;
+            Point size = sizes[i] = ((DartToolItem) items[i].getImpl()).computeSize();
             itemHeight = Math.max(itemHeight, size.y);
         }
         for (int i = 0; i < itemCount; i++) {
             ToolItem item = items[i];
             Point size = sizes[i];
             if (resize) {
-                ((SwtToolItem) item.getImpl()).setBounds(0, 0, size.x, itemHeight);
-                Control control = ((SwtToolItem) item.getImpl()).control;
+                ((DartToolItem) item.getImpl()).setBounds(0, 0, size.x, itemHeight);
+                Control control = ((DartToolItem) item.getImpl()).control;
                 if (control != null) {
                     control.setBounds(x, y, size.x, itemHeight);
                 }
             }
-            x += containerRects[i].width;
             maxX = Math.max(maxX, x);
         }
         return new int[] { 1, maxX, itemHeight };
@@ -644,7 +466,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         int itemWidth = 0;
         Point[] sizes = new Point[itemCount];
         for (int i = 0; i < itemCount; i++) {
-            Point size = sizes[i] = ((SwtToolItem) items[i].getImpl()).computeSize();
+            Point size = sizes[i] = ((DartToolItem) items[i].getImpl()).computeSize();
             itemWidth = Math.max(itemWidth, size.x);
         }
         for (int i = 0; i < itemCount; i++) {
@@ -656,10 +478,10 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                 y = marginHeight;
             }
             if (resize) {
-                ((SwtToolItem) item.getImpl()).setBounds(x, y, itemWidth, size.y);
+                ((DartToolItem) item.getImpl()).setBounds(x, y, itemWidth, size.y);
                 boolean visible = x + itemWidth <= width && y + size.y <= height;
-                ((SwtToolItem) item.getImpl()).setVisible(visible);
-                Control control = ((SwtToolItem) item.getImpl()).control;
+                ((DartToolItem) item.getImpl()).setVisible(visible);
+                Control control = ((DartToolItem) item.getImpl()).control;
                 if (control != null) {
                     control.setBounds(x, y, itemWidth, size.y);
                 }
@@ -671,9 +493,6 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     }
 
     int[] layout(int nWidth, int nHeight, boolean resize) {
-        if (nsToolbar != null) {
-            return layoutUnified(nWidth, nHeight, resize);
-        }
         if ((getApi().style & SWT.VERTICAL) != 0) {
             return layoutVertical(nWidth, nHeight, resize);
         } else {
@@ -684,8 +503,6 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     @Override
     void register() {
         super.register();
-        if (nsToolbar != null)
-            ((SwtDisplay) display.getImpl()).addWidget(nsToolbar, this.getApi());
     }
 
     void relayout() {
@@ -713,13 +530,6 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     @Override
     void releaseHandle() {
         super.releaseHandle();
-        if (nsToolbar != null) {
-            nsToolbar.release();
-            nsToolbar = null;
-        }
-        if (accessibilityAttributes != null)
-            accessibilityAttributes.release();
-        accessibilityAttributes = null;
     }
 
     @Override
@@ -727,7 +537,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         super.removeControl(control);
         for (int i = 0; i < itemCount; i++) {
             ToolItem item = items[i];
-            if (((SwtToolItem) item.getImpl()).control == control)
+            if (((DartToolItem) item.getImpl()).control == control)
                 item.setControl(null);
         }
     }
@@ -751,61 +561,17 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     }
 
     @Override
-    boolean sendMouseEvent(NSEvent nsEvent, int type, boolean send) {
-        switch(type) {
-            case SWT.MouseEnter:
-            case SWT.MouseMove:
-                // Start with the global mouse location, as the MouseEnter may occur due to
-                // an application-activated event, which isn't associated with a window.
-                NSPoint windowPoint = NSEvent.mouseLocation();
-                windowPoint = getApi().view.window().convertScreenToBase(windowPoint);
-                for (int i = 0; i < itemCount; i++) {
-                    ToolItem item = items[i];
-                    int currState = item.state;
-                    NSPoint viewPoint = ((SwtToolItem) item.getImpl()).view.convertPoint_fromView_(windowPoint, null);
-                    if (((SwtToolItem) item.getImpl()).view.mouse(viewPoint, ((SwtToolItem) item.getImpl()).view.bounds())) {
-                        item.state |= SwtWidget.HOT;
-                    } else {
-                        item.state &= ~SwtWidget.HOT;
-                    }
-                    if (currState != item.state)
-                        ((SwtToolItem) item.getImpl()).updateImage(true);
-                }
-                break;
-            case SWT.MouseExit:
-                for (int i = 0; i < itemCount; i++) {
-                    ToolItem item = items[i];
-                    int currState = item.state;
-                    item.state &= ~SwtWidget.HOT;
-                    if (currState != item.state)
-                        ((SwtToolItem) item.getImpl()).updateImage(true);
-                }
-                break;
-        }
-        return super.sendMouseEvent(nsEvent, type, send);
-    }
-
-    @Override
     void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
         // In the unified toolbar case, the toolbar view size and position is completely controlled
-        // by the window, so don't change its bounds or location.
-        if (nsToolbar != null)
-            return;
         super.setBounds(x, y, width, height, move, resize);
-    }
-
-    @Override
-    void setFont(NSFont font) {
-        for (int i = 0; i < itemCount; i++) {
-            ((SwtToolItem) items[i].getImpl()).updateStyle();
-        }
+        getBridge().dirty(this);
     }
 
     @Override
     void setForeground(double[] color) {
         super.setForeground(color);
         for (int i = 0; i < itemCount; i++) {
-            ((SwtToolItem) items[i].getImpl()).updateStyle();
+            ((DartToolItem) items[i].getImpl()).updateStyle();
         }
     }
 
@@ -815,124 +581,13 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         super.setRedraw(redraw);
         if (redraw && drawCount == 0)
             relayout();
+        getBridge().dirty(this);
     }
 
     @Override
     public void setVisible(boolean visible) {
-        if (nsToolbar != null)
-            nsToolbar.setVisible(visible);
         super.setVisible(visible);
-    }
-
-    @Override
-    long toolbar_itemForItemIdentifier_willBeInsertedIntoToolbar(long id, long sel, long toolbar, long itemIdentifier, boolean flag) {
-        NSString itemID = new NSString(itemIdentifier);
-        for (int j = 0; j < itemCount; j++) {
-            ToolItem item = items[j];
-            if (itemID.isEqual(((SwtToolItem) item.getImpl()).nsItem.itemIdentifier())) {
-                return ((SwtToolItem) item.getImpl()).nsItem.id;
-            }
-        }
-        return 0;
-    }
-
-    /*
- * Returns an array of all toolbar item IDs allowed to be in the toolbar. Since the ToolBar created all of the ToolItems
- * return all of the item IDs.
- */
-    @Override
-    long toolbarAllowedItemIdentifiers(long id, long sel, long toolbar) {
-        NSMutableArray array = NSMutableArray.arrayWithCapacity(itemCount);
-        for (int i = 0; i < itemCount; i++) {
-            array.addObject(((SwtToolItem) items[i].getImpl()).nsItem.itemIdentifier());
-        }
-        return array.id;
-    }
-
-    /*
- * This delegate method isn't really needed because ToolBars aren't customizable, but it's required according to the documentation.
- */
-    @Override
-    long toolbarDefaultItemIdentifiers(long id, long sel, long toolbar) {
-        return toolbarAllowedItemIdentifiers(id, sel, toolbar);
-    }
-
-    /*
- * toolbarSelectableItemIdentifiers returns an array of all items that can be the selected item, as determined
- * by setSelectedItemIdentifier.
- */
-    @Override
-    long toolbarSelectableItemIdentifiers(long id, long sel, long toolbar) {
-        NSMutableArray array = NSMutableArray.arrayWithCapacity(itemCount);
-        for (int i = 0; i < itemCount; i++) {
-            if ((items[i].style & SWT.RADIO) != 0)
-                array.addObject(((SwtToolItem) items[i].getImpl()).nsItem.itemIdentifier());
-        }
-        return array.id;
-    }
-
-    @Override
-    boolean translateTraversal(int key, NSEvent theEvent, boolean[] consume) {
-        boolean result = super.translateTraversal(key, theEvent, consume);
-        if (result)
-            return result;
-        boolean next = false;
-        boolean checkPopup = false;
-        switch(key) {
-            case 123:
-                /* Left arrow */
-                next = false;
-                break;
-            case 124:
-                /* Right arrow */
-                next = true;
-                break;
-            case 126:
-                /* Up arrow */
-                next = false;
-                checkPopup = true;
-                break;
-            case 125:
-                /* Down arrow */
-                next = true;
-                checkPopup = true;
-                break;
-            default:
-                return false;
-        }
-        consume[0] = true;
-        if (checkPopup && lastFocus != null) {
-            if (((SwtToolItem) lastFocus.getImpl()).handleKeyDown())
-                return false;
-        }
-        ToolItem[] items = getItems();
-        ToolItem item = lastFocus;
-        int length = items.length;
-        int index = 0;
-        while (index < length) {
-            if (items[index] == item)
-                break;
-            index++;
-        }
-        /*
-	 * It is possible (but unlikely), that application
-	 * code could have disposed the widget in focus in
-	 * or out events.  Ensure that a disposed widget is
-	 * not accessed.
-	 */
-        if (index == length)
-            return false;
-        int start = index, offset = (next) ? 1 : -1;
-        while ((index = (index + offset + length) % length) != start) {
-            ToolItem child = items[index];
-            if (!child.isDisposed()) {
-                if (((SwtToolItem) child.getImpl()).setFocus()) {
-                    lastFocus = child;
-                    return false;
-                }
-            }
-        }
-        return false;
+        getBridge().dirty(this);
     }
 
     public int _itemCount() {
@@ -951,5 +606,11 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         if (api == null)
             api = ToolBar.createApi(this);
         return (ToolBar) api;
+    }
+
+    public VToolBar getValue() {
+        if (value == null)
+            value = new VToolBar(this);
+        return (VToolBar) value;
     }
 }

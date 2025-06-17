@@ -7,6 +7,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.util.ArrayList;
 
 @CompiledJson()
 public class VCTabFolder extends VComposite {
@@ -27,7 +28,13 @@ public class VCTabFolder extends VComposite {
     }
 
     public CTabItem[] getItems() {
-        return ((DartCTabFolder) impl).items;
+        CTabItem[] values = ((DartCTabFolder) impl).items;
+        if (values == null)
+            return null;
+        ArrayList<CTabItem> result = new ArrayList<>(values.length);
+        for (CTabItem v : values) if (v != null)
+            result.add(v);
+        return result.toArray(CTabItem[]::new);
     }
 
     public void setItems(CTabItem[] value) {
@@ -166,7 +173,13 @@ public class VCTabFolder extends VComposite {
     }
 
     public Color[] getGradientColors() {
-        return ((DartCTabFolder) impl).gradientColors;
+        Color[] values = ((DartCTabFolder) impl).gradientColors;
+        if (values == null)
+            return null;
+        ArrayList<Color> result = new ArrayList<>(values.length);
+        for (Color v : values) if (v != null)
+            result.add(v);
+        return result.toArray(Color[]::new);
     }
 
     public void setGradientColors(Color[] value) {
@@ -199,7 +212,13 @@ public class VCTabFolder extends VComposite {
     }
 
     public Color[] getSelectionGradientColors() {
-        return ((DartCTabFolder) impl).selectionGradientColors;
+        Color[] values = ((DartCTabFolder) impl).selectionGradientColors;
+        if (values == null)
+            return null;
+        ArrayList<Color> result = new ArrayList<>(values.length);
+        for (Color v : values) if (v != null)
+            result.add(v);
+        return result.toArray(Color[]::new);
     }
 
     public void setSelectionGradientColors(Color[] value) {

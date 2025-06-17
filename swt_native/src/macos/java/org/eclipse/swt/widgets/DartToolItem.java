@@ -19,8 +19,7 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Config;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -42,7 +41,31 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ToolItem extends Item {
+public class DartToolItem extends DartItem implements IToolItem {
+
+    int width = DEFAULT_SEPARATOR_WIDTH;
+
+    ToolBar parent;
+
+    Image hotImage, disabledImage;
+
+    Color background, foreground;
+
+    String toolTipText;
+
+    Control control;
+
+    boolean selection;
+
+    static final int DEFAULT_WIDTH = 24;
+
+    static final int DEFAULT_HEIGHT = 22;
+
+    static final int DEFAULT_SEPARATOR_WIDTH = 6;
+
+    static final int INSET = 3;
+
+    static final int ARROW_WIDTH = 5;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -78,9 +101,10 @@ public class ToolItem extends Item {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public ToolItem(ToolBar parent, int style) {
-        this((IToolItem) null);
-        setImpl(Config.isEquo(ToolItem.class, parent) ? new DartToolItem(parent, style, this) : new SwtToolItem(parent, style, this));
+    public DartToolItem(ToolBar parent, int style, ToolItem api) {
+        super(parent, checkStyle(style), api);
+        this.parent = parent;
+        ((DartToolBar) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
     }
 
     /**
@@ -119,9 +143,15 @@ public class ToolItem extends Item {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public ToolItem(ToolBar parent, int style, int index) {
-        this((IToolItem) null);
-        setImpl(Config.isEquo(ToolItem.class, parent) ? new DartToolItem(parent, style, index, this) : new SwtToolItem(parent, style, index, this));
+    public DartToolItem(ToolBar parent, int style, int index, ToolItem api) {
+        super(parent, checkStyle(style), api);
+        this.parent = parent;
+        ((DartToolBar) parent.getImpl()).createItem(this.getApi(), index);
+    }
+
+    @Override
+    long accessibleHandle() {
+        return 0;
     }
 
     /**
@@ -156,11 +186,84 @@ public class ToolItem extends Item {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getImpl().addSelectionListener(listener);
+        addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
     }
 
-    protected void checkSubclass() {
-        getImpl().checkSubclass();
+    static int checkStyle(int style) {
+        return checkBits(style, SWT.PUSH, SWT.CHECK, SWT.RADIO, SWT.SEPARATOR, SWT.DROP_DOWN, 0);
+    }
+
+    @Override
+    public void checkSubclass() {
+        if (!isValidSubclass())
+            error(SWT.ERROR_INVALID_SUBCLASS);
+    }
+
+    boolean handleKeyDown() {
+        if ((getApi().style & SWT.DROP_DOWN) != 0) {
+            Event event = new Event();
+            event.detail = SWT.ARROW;
+            sendSelectionEvent(SWT.Selection, event, false);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    Point computeSize() {
+        checkWidget();
+        int width = 0, height = 0;
+        if ((getApi().style & SWT.SEPARATOR) != 0) {
+            // In the unified toolbar case the width is ignored if 0, DEFAULT, or SEPARATOR_FILL.
+            if ((parent.style & SWT.HORIZONTAL) != 0) {
+                width = getWidth();
+                if (width <= 0)
+                    width = DEFAULT_SEPARATOR_WIDTH;
+                height = DEFAULT_HEIGHT;
+            } else {
+                width = DEFAULT_WIDTH;
+                height = getWidth();
+                if (height <= 0)
+                    height = DEFAULT_SEPARATOR_WIDTH;
+            }
+            if (control != null) {
+                height = Math.max(height, ((DartControl) control.getImpl()).getMininumHeight());
+            }
+        } else {
+            if (text.length() != 0 || image != null) {
+            } else {
+                width = DEFAULT_WIDTH;
+                height = DEFAULT_HEIGHT;
+            }
+            if ((getApi().style & SWT.DROP_DOWN) != 0) {
+                width += ARROW_WIDTH + INSET;
+            }
+        }
+        return new Point(width, height);
+    }
+
+    @Override
+    void createHandle() {
+        if ((getApi().style & SWT.SEPARATOR) != 0) {
+        } else {
+        }
+    }
+
+    @Override
+    void deregister() {
+        super.deregister();
+    }
+
+    @Override
+    void destroyWidget() {
+        ((DartToolBar) parent.getImpl()).destroyItem(this.getApi());
+        super.destroyWidget();
+    }
+
+    void enableWidget(boolean enabled) {
+        if ((getApi().style & SWT.SEPARATOR) == 0) {
+            updateImage(true);
+        }
     }
 
     /**
@@ -180,7 +283,8 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public Color getBackground() {
-        return getImpl().getBackground();
+        checkWidget();
+        return background != null ? background : parent.getBackground();
     }
 
     /**
@@ -195,7 +299,8 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getImpl().getBounds();
+        checkWidget();
+        return this.bounds;
     }
 
     /**
@@ -210,7 +315,8 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        return getImpl().getControl();
+        checkWidget();
+        return control;
     }
 
     /**
@@ -228,7 +334,13 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Image getDisabledImage() {
-        return getImpl().getDisabledImage();
+        checkWidget();
+        return disabledImage;
+    }
+
+    @Override
+    boolean getDrawing() {
+        return ((DartControl) parent.getImpl()).getDrawing();
     }
 
     /**
@@ -247,7 +359,8 @@ public class ToolItem extends Item {
      * @see #isEnabled
      */
     public boolean getEnabled() {
-        return getImpl().getEnabled();
+        checkWidget();
+        return (getApi().state & DISABLED) == 0;
     }
 
     /**
@@ -263,7 +376,8 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public Color getForeground() {
-        return getImpl().getForeground();
+        checkWidget();
+        return foreground != null ? foreground : parent.getForeground();
     }
 
     /**
@@ -281,7 +395,8 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Image getHotImage() {
-        return getImpl().getHotImage();
+        checkWidget();
+        return hotImage;
     }
 
     /**
@@ -295,8 +410,9 @@ public class ToolItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
+    @Override
     public Image getImage() {
-        return getImpl().getImage();
+        return super.getImage();
     }
 
     /**
@@ -310,7 +426,8 @@ public class ToolItem extends Item {
      * </ul>
      */
     public ToolBar getParent() {
-        return getImpl().getParent();
+        checkWidget();
+        return parent;
     }
 
     /**
@@ -331,7 +448,10 @@ public class ToolItem extends Item {
      * </ul>
      */
     public boolean getSelection() {
-        return getImpl().getSelection();
+        checkWidget();
+        if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
+            return false;
+        return selection;
     }
 
     /**
@@ -345,7 +465,8 @@ public class ToolItem extends Item {
      * </ul>
      */
     public String getToolTipText() {
-        return getImpl().getToolTipText();
+        checkWidget();
+        return toolTipText;
     }
 
     /**
@@ -359,7 +480,8 @@ public class ToolItem extends Item {
      * </ul>
      */
     public int getWidth() {
-        return getImpl().getWidth();
+        checkWidget();
+        return width;
     }
 
     /**
@@ -378,7 +500,18 @@ public class ToolItem extends Item {
      * @see #getEnabled
      */
     public boolean isEnabled() {
-        return getImpl().isEnabled();
+        checkWidget();
+        return getEnabled() && parent.isEnabled();
+    }
+
+    @Override
+    public boolean isDrawing() {
+        return getDrawing() && parent.getImpl().isDrawing();
+    }
+
+    @Override
+    void register() {
+        super.register();
     }
 
     /**
@@ -399,7 +532,61 @@ public class ToolItem extends Item {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getImpl().removeSelectionListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Selection, listener);
+        eventTable.unhook(SWT.DefaultSelection, listener);
+    }
+
+    @Override
+    void releaseParent() {
+        super.releaseParent();
+        setVisible(false);
+    }
+
+    @Override
+    void releaseHandle() {
+        super.releaseHandle();
+        parent = null;
+    }
+
+    @Override
+    void releaseWidget() {
+        super.releaseWidget();
+        control = null;
+        toolTipText = null;
+        image = disabledImage = hotImage = null;
+    }
+
+    void selectRadio() {
+        int index = 0;
+        ToolItem[] items = parent.getItems();
+        while (index < items.length && items[index] != this.getApi()) index++;
+        int i = index - 1;
+        while (i >= 0 && ((DartToolItem) items[i].getImpl()).setRadioSelection(false)) --i;
+        int j = index + 1;
+        while (j < items.length && ((DartToolItem) items[j].getImpl()).setRadioSelection(false)) j++;
+        setSelection(true);
+    }
+
+    @Override
+    void sendSelection() {
+        if ((getApi().style & SWT.RADIO) != 0) {
+            if ((parent.getStyle() & SWT.NO_RADIO_GROUP) == 0) {
+                selectRadio();
+            }
+        }
+        if ((getApi().style & SWT.CHECK) != 0)
+            setSelection(!getSelection());
+        sendSelectionEvent(SWT.Selection);
+    }
+
+    void setBounds(int x, int y, int width, int height) {
+        this.bounds = new Rectangle(x, y, width, height);
+        getBridge().dirty(this);
     }
 
     /**
@@ -422,7 +609,15 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public void setBackground(Color color) {
-        getImpl().setBackground(color);
+        checkWidget();
+        if (color != null && color.isDisposed()) {
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        Color oldColor = background;
+        background = color;
+        if (Objects.equals(oldColor, background))
+            return;
+        getBridge().dirty(this);
     }
 
     /**
@@ -441,7 +636,23 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        getImpl().setControl(control);
+        checkWidget();
+        if (control != null) {
+            if (control.isDisposed())
+                error(SWT.ERROR_INVALID_ARGUMENT);
+            if (((DartControl) control.getImpl()).parent != parent)
+                error(SWT.ERROR_INVALID_PARENT);
+        }
+        if ((getApi().style & SWT.SEPARATOR) == 0)
+            return;
+        if (this.control == control)
+            return;
+        this.control = control;
+        if (control != null && !control.isDisposed()) {
+            control.moveAbove(null);
+        }
+        ((DartToolBar) parent.getImpl()).relayout();
+        getBridge().dirty(this);
     }
 
     /**
@@ -461,7 +672,17 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        getImpl().setEnabled(enabled);
+        checkWidget();
+        this.enabled = enabled;
+        if ((getApi().state & DISABLED) == 0 && enabled)
+            return;
+        if (enabled) {
+            getApi().state &= ~DISABLED;
+        } else {
+            getApi().state |= DISABLED;
+        }
+        enableWidget(enabled);
+        getBridge().dirty(this);
     }
 
     /**
@@ -482,7 +703,22 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setDisabledImage(Image image) {
-        getImpl().setDisabledImage(image);
+        checkWidget();
+        if (this.disabledImage == image)
+            return;
+        if (image != null && image.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        if ((getApi().style & SWT.SEPARATOR) != 0)
+            return;
+        disabledImage = image;
+        updateImage(true);
+        getBridge().dirty(this);
+    }
+
+    boolean setFocus() {
+        if (!isEnabled())
+            return false;
+        return false;
     }
 
     /**
@@ -505,7 +741,16 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public void setForeground(Color color) {
-        getImpl().setForeground(color);
+        checkWidget();
+        if (color != null && color.isDisposed()) {
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        Color oldColor = foreground;
+        foreground = color;
+        if (Objects.equals(oldColor, foreground))
+            return;
+        updateStyle();
+        getBridge().dirty(this);
     }
 
     /**
@@ -526,11 +771,40 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setHotImage(Image image) {
-        getImpl().setHotImage(image);
+        checkWidget();
+        if (this.hotImage == image)
+            return;
+        if (image != null && image.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        if ((getApi().style & SWT.SEPARATOR) != 0)
+            return;
+        hotImage = image;
+        updateImage(true);
+        getBridge().dirty(this);
     }
 
+    @Override
     public void setImage(Image image) {
-        getImpl().setImage(image);
+        checkWidget();
+        if (this.image == image)
+            return;
+        if (image != null && image.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        if ((getApi().style & SWT.SEPARATOR) != 0)
+            return;
+        super.setImage(image);
+        updateImage(true);
+        getBridge().dirty(this);
+    }
+
+    boolean setRadioSelection(boolean value) {
+        if ((getApi().style & SWT.RADIO) == 0)
+            return false;
+        if (getSelection() != value) {
+            setSelection(value);
+            sendSelectionEvent(SWT.Selection);
+        }
+        return true;
     }
 
     /**
@@ -549,7 +823,11 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setSelection(boolean selected) {
-        getImpl().setSelection(selected);
+        checkWidget();
+        if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
+            return;
+        this.selection = selected;
+        getBridge().dirty(this);
     }
 
     /**
@@ -579,8 +857,24 @@ public class ToolItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
+    @Override
     public void setText(String string) {
-        getImpl().setText(string);
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if ((getApi().style & SWT.SEPARATOR) != 0)
+            return;
+        if (string.equals(getText()))
+            return;
+        super.setText(string);
+        if (text.length() != 0 && image != null) {
+            if ((parent.style & SWT.RIGHT) != 0) {
+            } else {
+            }
+        } else {
+        }
+        ((DartToolBar) parent.getImpl()).relayout();
+        getBridge().dirty(this);
     }
 
     /**
@@ -609,7 +903,25 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setToolTipText(String string) {
-        getImpl().setToolTipText(string);
+        checkWidget();
+        if (string == null && toolTipText == null)
+            return;
+        if (string != null && string.equals(toolTipText))
+            return;
+        toolTipText = string;
+        getBridge().dirty(this);
+    }
+
+    void setVisible(boolean visible) {
+        if (visible) {
+            if ((getApi().state & HIDDEN) == 0)
+                return;
+            getApi().state &= ~HIDDEN;
+        } else {
+            if ((getApi().state & HIDDEN) != 0)
+                return;
+            getApi().state |= HIDDEN;
+        }
     }
 
     /**
@@ -629,18 +941,103 @@ public class ToolItem extends Item {
      * </ul>
      */
     public void setWidth(int width) {
-        getImpl().setWidth(width);
+        checkWidget();
+        if ((getApi().style & SWT.SEPARATOR) == 0)
+            return;
+        if (width < SWT.SEPARATOR_FILL || this.width == width)
+            return;
+        this.width = width;
+        ((DartToolBar) parent.getImpl()).relayout();
+        getBridge().dirty(this);
     }
 
-    protected ToolItem(IToolItem impl) {
-        super(impl);
+    @Override
+    String tooltipText() {
+        return toolTipText;
     }
 
-    static ToolItem createApi(IToolItem impl) {
-        return new ToolItem(impl);
+    void updateImage(boolean layout) {
+        if ((getApi().style & SWT.SEPARATOR) != 0)
+            return;
+        Image newImage = null;
+        if ((getApi().state & DISABLED) == DISABLED && disabledImage != null) {
+            newImage = disabledImage;
+        } else {
+            if ((getApi().state & HOT) == HOT && hotImage != null) {
+                newImage = hotImage;
+            } else {
+                newImage = image;
+            }
+        }
+        if (text.length() != 0 && newImage != null) {
+            if ((parent.style & SWT.RIGHT) != 0) {
+            } else {
+            }
+        } else {
+        }
+        ((DartToolBar) parent.getImpl()).relayout();
     }
 
-    public IToolItem getImpl() {
-        return (IToolItem) super.getImpl();
+    void updateStyle() {
+    }
+
+    Rectangle bounds = new Rectangle(0, 0, 0, 0);
+
+    boolean enabled;
+
+    public int _width() {
+        return width;
+    }
+
+    public ToolBar _parent() {
+        return parent;
+    }
+
+    public Image _hotImage() {
+        return hotImage;
+    }
+
+    public Image _disabledImage() {
+        return disabledImage;
+    }
+
+    public String _toolTipText() {
+        return toolTipText;
+    }
+
+    public Control _control() {
+        return control;
+    }
+
+    public boolean _selection() {
+        return selection;
+    }
+
+    public Rectangle _bounds() {
+        return bounds;
+    }
+
+    public boolean _enabled() {
+        return enabled;
+    }
+
+    public FlutterBridge getBridge() {
+        if (bridge != null)
+            return bridge;
+        Composite p = parent;
+        while (!(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return ((DartWidget) p.getImpl()).getBridge();
+    }
+
+    public ToolItem getApi() {
+        if (api == null)
+            api = ToolItem.createApi(this);
+        return (ToolItem) api;
+    }
+
+    public VToolItem getValue() {
+        if (value == null)
+            value = new VToolItem(this);
+        return (VToolItem) value;
     }
 }

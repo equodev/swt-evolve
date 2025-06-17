@@ -656,7 +656,9 @@ public class DartCTabItem extends DartItem implements ICTabItem {
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
-        return ((DartWidget) parent.getImpl()).getBridge();
+        Composite p = parent;
+        while (!(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return ((DartWidget) p.getImpl()).getBridge();
     }
 
     public CTabItem getApi() {

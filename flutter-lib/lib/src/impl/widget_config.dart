@@ -1,4 +1,4 @@
-final bool useDarkTheme = false;
+final bool useDarkTheme = true;
 
 bool getCurrentTheme() {
   return useDarkTheme;
