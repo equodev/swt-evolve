@@ -1099,7 +1099,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         return super.toString() + " [layout=" + layout + "]";
     }
 
-    Control[] children;
+    Control[] children = new Control[0];
 
     boolean layoutDeferred;
 

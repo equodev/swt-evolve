@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class support the layout of selectable
@@ -85,12 +86,12 @@ public class ToolBar extends Composite {
      */
     public ToolBar(Composite parent, int style) {
         this((IToolBar) null);
-        setImpl(new SwtToolBar(parent, style, this));
+        setImpl(Config.isEquo(ToolBar.class, parent) ? new DartToolBar(parent, style, this) : new SwtToolBar(parent, style, this));
     }
 
     ToolBar(Composite parent, int style, boolean internal) {
         this((IToolBar) null);
-        setImpl(new SwtToolBar(parent, style, internal, this));
+        setImpl(Config.isEquo(ToolBar.class, parent) ? new DartToolBar(parent, style, internal, this) : new SwtToolBar(parent, style, internal, this));
     }
 
     protected void checkSubclass() {

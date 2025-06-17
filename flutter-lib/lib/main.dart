@@ -1,6 +1,8 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart' as mat;
+import 'src/custom/maintoolbar_impl.dart';
+import 'src/swt/composite.dart';
 
 import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
 
@@ -40,7 +42,17 @@ Widget createContentWidget(String widgetName, int widgetId) {
     'id': widgetId,
     'style': 0,
   };
-  return mapWidget(child);
+  return customWidget(child) ?? mapWidget(child);
+}
+
+Widget? customWidget(Map<String, dynamic> child) {
+  var type = child['swt'];
+  var id = child['id'];
+  return switch (type) {
+    "MainToolbar" =>
+        MainToolbarSwt(key: ValueKey(id), value: CompositeValue.fromJson(child)),
+    _ => null
+  };
 }
 
 class MyApp extends StatelessWidget {

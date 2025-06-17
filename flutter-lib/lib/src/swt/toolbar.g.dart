@@ -31,7 +31,10 @@ ToolBarValue _$ToolBarValueFromJson(Map<String, dynamic> json) => ToolBarValue()
   ..layout = json['layout'] == null
       ? null
       : LayoutValue.fromJson(json['layout'] as Map<String, dynamic>)
-  ..layoutDeferred = json['layoutDeferred'] as bool?;
+  ..layoutDeferred = json['layoutDeferred'] as bool?
+  ..items = (json['items'] as List<dynamic>?)
+      ?.map((e) => ToolItemValue.fromJson(e as Map<String, dynamic>))
+      .toList();
 
 Map<String, dynamic> _$ToolBarValueToJson(ToolBarValue instance) =>
     <String, dynamic>{
@@ -52,4 +55,5 @@ Map<String, dynamic> _$ToolBarValueToJson(ToolBarValue instance) =>
       'backgroundMode': instance.backgroundMode,
       'layout': instance.layout,
       'layoutDeferred': instance.layoutDeferred,
+      'items': instance.items,
     };

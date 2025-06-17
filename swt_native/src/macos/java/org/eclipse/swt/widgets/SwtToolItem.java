@@ -248,8 +248,11 @@ public class SwtToolItem extends SwtItem implements IToolItem {
             NSArray value = NSArray.array();
             return value.id;
         } else if (nsAttributeName.isEqualToString(OS.NSAccessibilityParentAttribute)) {
-            // Parent of the toolitem is always its toolbar.
-            return parent.view.id;
+            if (parent == null || parent.getImpl() instanceof SwtToolBar) {
+                // Parent of the toolitem is always its toolbar.
+                return parent.view.id;
+            } else
+                return 0;
         }
         return super.accessibilityAttributeValue(id, sel, arg0);
     }
@@ -590,10 +593,12 @@ public class SwtToolItem extends SwtItem implements IToolItem {
         checkWidget();
         if (((SwtToolBar) parent.getImpl()).nsToolbar != null) {
             NSRect rect = view.frame();
+            if (parent == null || parent.getImpl() instanceof SwtToolBar) {
+                // parent, the toolbar, relative coordinates.
+                rect = parent.view.convertRect_fromView_(rect, view);
+            }
             // ToolItems in the unified toolbar are not contained directly within the Toolbar.
             // Convert the toolitem rect from toolitem-relative coordinates to its
-            // parent, the toolbar, relative coordinates.
-            rect = parent.view.convertRect_fromView_(rect, view);
             return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
         }
         NSRect rect = view.frame();
@@ -839,7 +844,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     void mouseDown(long id, long sel, long theEvent) {
-        if (parent == null || parent.getImpl() instanceof SwtComposite) {
+        if (parent == null || parent.getImpl() instanceof SwtToolBar) {
             if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseDown))
                 return;
         }
@@ -866,7 +871,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     void mouseUp(long id, long sel, long theEvent) {
-        if (parent == null || parent.getImpl() instanceof SwtComposite) {
+        if (parent == null || parent.getImpl() instanceof SwtToolBar) {
             if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseUp))
                 return;
         }
@@ -875,7 +880,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     void mouseDragged(long id, long sel, long theEvent) {
-        if (parent == null || parent.getImpl() instanceof SwtComposite) {
+        if (parent == null || parent.getImpl() instanceof SwtToolBar) {
             if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseMove))
                 return;
         }
@@ -884,7 +889,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     void rightMouseDown(long id, long sel, long theEvent) {
-        if (parent == null || parent.getImpl() instanceof SwtComposite) {
+        if (parent == null || parent.getImpl() instanceof SwtToolBar) {
             if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseDown))
                 return;
         }
@@ -893,7 +898,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     void rightMouseUp(long id, long sel, long theEvent) {
-        if (parent == null || parent.getImpl() instanceof SwtComposite) {
+        if (parent == null || parent.getImpl() instanceof SwtToolBar) {
             if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseUp))
                 return;
         }
@@ -902,7 +907,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     void rightMouseDragged(long id, long sel, long theEvent) {
-        if (parent == null || parent.getImpl() instanceof SwtComposite) {
+        if (parent == null || parent.getImpl() instanceof SwtToolBar) {
             if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseMove))
                 return;
         }
@@ -911,7 +916,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     void otherMouseDown(long id, long sel, long theEvent) {
-        if (parent == null || parent.getImpl() instanceof SwtComposite) {
+        if (parent == null || parent.getImpl() instanceof SwtToolBar) {
             if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseDown))
                 return;
         }
@@ -920,7 +925,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     void otherMouseUp(long id, long sel, long theEvent) {
-        if (parent == null || parent.getImpl() instanceof SwtComposite) {
+        if (parent == null || parent.getImpl() instanceof SwtToolBar) {
             if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseUp))
                 return;
         }
@@ -929,7 +934,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     void otherMouseDragged(long id, long sel, long theEvent) {
-        if (parent == null || parent.getImpl() instanceof SwtComposite) {
+        if (parent == null || parent.getImpl() instanceof SwtToolBar) {
             if (!((SwtComposite) parent.getImpl()).mouseEvent(parent.view.id, sel, theEvent, SWT.MouseMove))
                 return;
         }
@@ -1519,6 +1524,34 @@ public class SwtToolItem extends SwtItem implements IToolItem {
     @Override
     boolean validateMenuItem(long id, long sel, long menuItem) {
         return isEnabled();
+    }
+
+    public int _width() {
+        return width;
+    }
+
+    public ToolBar _parent() {
+        return parent;
+    }
+
+    public Image _hotImage() {
+        return hotImage;
+    }
+
+    public Image _disabledImage() {
+        return disabledImage;
+    }
+
+    public String _toolTipText() {
+        return toolTipText;
+    }
+
+    public Control _control() {
+        return control;
+    }
+
+    public boolean _selection() {
+        return selection;
     }
 
     public ToolItem getApi() {

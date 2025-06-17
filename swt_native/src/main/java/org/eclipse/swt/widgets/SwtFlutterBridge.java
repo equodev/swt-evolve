@@ -31,6 +31,9 @@ public class SwtFlutterBridge extends FlutterBridge {
             Control[] newArray = c.children != null ? Arrays.copyOf(c.children, c.children.length + 1) : new Control[1];
             newArray[newArray.length - 1] = dartControl.getApi();
             c.children = newArray;
+            FlutterBridge bridge = c.getBridge();
+            bridge.dirty(c);
+            return (SwtFlutterBridge) bridge;
         }
         return null;
     }

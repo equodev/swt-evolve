@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 
-public interface IToolBar extends IComposite {
+public interface IToolBar extends IComposite, ImplToolBar {
 
     void checkSubclass();
 

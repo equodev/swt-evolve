@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:swtflutter/src/swt/toolitem.dart';
 import '../swt/composite.dart';
 import '../impl/toolbar_impl.dart';
 import '../widgets.dart';
@@ -23,6 +24,8 @@ class ToolBarValue extends CompositeValue {
   ToolBarValue.empty() {
     swt = "ToolBar";
   }
+
+  List<ToolItemValue>? items;
 
   factory ToolBarValue.fromJson(Map<String, dynamic> json) =>
       _$ToolBarValueFromJson(json);

@@ -93,7 +93,7 @@ public class Composite extends Scrollable {
      */
     public Composite(Composite parent, int style) {
         this((IComposite) null);
-        setImpl(Config.isEquo(Composite.class, parent) ? new DartComposite(parent, style, this) : new SwtComposite(parent, style, this));
+        setImpl(Config.getCompositeImpl(parent, style, this));
     }
 
     /**

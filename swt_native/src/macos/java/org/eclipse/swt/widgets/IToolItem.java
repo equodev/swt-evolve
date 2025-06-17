@@ -5,7 +5,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 
-public interface IToolItem extends IItem {
+public interface IToolItem extends IItem, ImplToolItem {
 
     /**
      * Adds the listener to the collection of listeners who will

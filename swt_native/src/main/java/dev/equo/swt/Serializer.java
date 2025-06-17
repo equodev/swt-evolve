@@ -45,7 +45,8 @@ public class Serializer {
         NumberConverter.serialize(api.hashCode(), writer);
         writer.writeByte((byte)',');
         writer.writeByte((byte)'"'); writer.writeAscii(name_swt); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
-        StringConverter.serialize(api.getClass().getSimpleName(), writer);
+        Class<? extends Widget> aClass = api.getClass();
+        StringConverter.serialize(aClass.isAnonymousClass() ? aClass.getSuperclass().getSimpleName() : aClass.getSimpleName(), writer);
         writer.writeByte((byte)',');
 //        writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
 //        NumberConverter.serialize(api.getStyle(), writer);
