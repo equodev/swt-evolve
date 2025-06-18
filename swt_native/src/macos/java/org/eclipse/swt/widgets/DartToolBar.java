@@ -602,6 +602,10 @@ public class DartToolBar extends DartComposite implements IToolBar {
         return lastFocus;
     }
 
+    protected void hookEvents() {
+        super.hookEvents();
+    }
+
     public ToolBar getApi() {
         if (api == null)
             api = ToolBar.createApi(this);

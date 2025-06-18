@@ -16,6 +16,8 @@
 package org.eclipse.swt.graphics;
 
 import java.io.*;
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
 
 /**
  * Instances of this class represent places on the (x, y)
@@ -41,6 +43,7 @@ import java.io.*;
  * @see Rectangle
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
 public final class Point implements Serializable {
 
     /**

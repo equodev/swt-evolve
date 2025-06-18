@@ -8,6 +8,7 @@ import com.dslplatform.json.runtime.FormatConverter;
 import com.dslplatform.json.runtime.Settings;
 import org.eclipse.swt.widgets.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -31,6 +32,10 @@ public class Serializer {
         dsl.serialize(p, out);
     }
 
+    public <T> T from(Class<T> type, ByteArrayInputStream in) throws IOException {
+        return dsl.deserialize(type, in);
+    }
+
     public static <T extends DartWidget> void writeWithId(DslJson json, JsonWriter writer, T impl) {
         if (impl == null) {
             writer.writeNull();
@@ -42,7 +47,7 @@ public class Serializer {
         FormatConverter converter = ((FormatConverter) json.tryFindWriter(value.getClass()));
         writer.writeByte((byte)'{');
         writer.writeByte((byte)'"'); writer.writeAscii(name_id); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
-        NumberConverter.serialize(api.hashCode(), writer);
+        NumberConverter.serialize(FlutterBridge.id(api), writer);
         writer.writeByte((byte)',');
         writer.writeByte((byte)'"'); writer.writeAscii(name_swt); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
         Class<? extends Widget> aClass = api.getClass();

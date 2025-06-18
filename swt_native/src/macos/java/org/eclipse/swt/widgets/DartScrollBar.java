@@ -764,6 +764,20 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         return ((DartWidget) parent.getImpl()).getBridge();
     }
 
+    protected void hookEvents() {
+        super.hookEvents();
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                setSelection(e.index);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+    }
+
     public ScrollBar getApi() {
         if (api == null)
             api = ScrollBar.createApi(this);

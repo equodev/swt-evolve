@@ -18,6 +18,9 @@ package org.eclipse.swt.graphics;
 import java.io.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class are device-independent descriptions
@@ -37,16 +40,19 @@ import org.eclipse.swt.internal.*;
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ImageAnalyzer</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
 public final class ImageData implements Cloneable {
 
     /**
      * The width of the image, in pixels.
      */
+    @JsonAttribute()
     public int width;
 
     /**
      * The height of the image, in pixels.
      */
+    @JsonAttribute()
     public int height;
 
     /**
@@ -58,6 +64,7 @@ public final class ImageData implements Cloneable {
      * the image is direct color.  Check the associated
      * PaletteData's isDirect field for such determinations.
      */
+    @JsonAttribute()
     public int depth;
 
     /**
@@ -67,6 +74,7 @@ public final class ImageData implements Cloneable {
      * this number, it will be padded with zeros until it is.
      * </p>
      */
+    @JsonAttribute()
     public int scanlinePad;
 
     /**
@@ -75,6 +83,7 @@ public final class ImageData implements Cloneable {
      * This is a multiple of the scanline padding.
      * </p>
      */
+    @JsonAttribute()
     public int bytesPerLine;
 
     /**
@@ -86,6 +95,7 @@ public final class ImageData implements Cloneable {
      * significant byte order.
      * </p>
      */
+    @JsonAttribute()
     public byte[] data;
 
     /**
@@ -101,6 +111,7 @@ public final class ImageData implements Cloneable {
      * The default is -1 which means 'no transparent pixel'.
      * </p>
      */
+    @JsonAttribute()
     public int transparentPixel;
 
     /**
@@ -113,6 +124,7 @@ public final class ImageData implements Cloneable {
      * The default is null which means 'no transparency mask'.
      * </p>
      */
+    @JsonAttribute()
     public byte[] maskData;
 
     /**
@@ -123,6 +135,7 @@ public final class ImageData implements Cloneable {
      * it is.
      * </p>
      */
+    @JsonAttribute()
     public int maskPad;
 
     /**
@@ -134,6 +147,7 @@ public final class ImageData implements Cloneable {
      * 'width'.
      * </p>
      */
+    @JsonAttribute()
     public byte[] alphaData;
 
     /**
@@ -147,6 +161,7 @@ public final class ImageData implements Cloneable {
      * The default is -1 which means 'no global alpha value'
      * </p>
      */
+    @JsonAttribute()
     public int alpha;
 
     /**
@@ -168,6 +183,7 @@ public final class ImageData implements Cloneable {
      * <dd>PNG file format</dd>
      * </dl>
      */
+    @JsonAttribute()
     public int type;
 
     /**
@@ -175,6 +191,7 @@ public final class ImageData implements Cloneable {
      * within the logical screen (this field corresponds to
      * the GIF89a Image Left Position value).
      */
+    @JsonAttribute()
     public int x;
 
     /**
@@ -182,6 +199,7 @@ public final class ImageData implements Cloneable {
      * within the logical screen (this field corresponds to
      * the GIF89a Image Top Position value).
      */
+    @JsonAttribute()
     public int y;
 
     /**
@@ -201,6 +219,7 @@ public final class ImageData implements Cloneable {
      * </dl>
      * (this field corresponds to the GIF89a Disposal Method value)
      */
+    @JsonAttribute()
     public int disposalMethod;
 
     /**
@@ -208,6 +227,7 @@ public final class ImageData implements Cloneable {
      * in an animation (this field corresponds to the GIF89a
      * Delay Time value).
      */
+    @JsonAttribute()
     public int delayTime;
 
     /**

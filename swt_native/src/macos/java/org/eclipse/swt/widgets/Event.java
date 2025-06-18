@@ -16,6 +16,9 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.graphics.*;
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class provide a description of a particular
@@ -32,6 +35,7 @@ import org.eclipse.swt.graphics.*;
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample, Listeners</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
 public class Event {
 
     /**
@@ -44,6 +48,7 @@ public class Event {
     /**
      * the widget that issued the event
      */
+    @JsonAttribute()
     public Widget widget;
 
     /**
@@ -52,6 +57,7 @@ public class Event {
      *
      * @see org.eclipse.swt.SWT
      */
+    @JsonAttribute()
     public int type;
 
     /**
@@ -60,11 +66,13 @@ public class Event {
      *
      * @see org.eclipse.swt.SWT
      */
+    @JsonAttribute()
     public int detail;
 
     /**
      * the item that the event occurred in (can be null)
      */
+    @JsonAttribute()
     public Widget item;
 
     /**
@@ -72,6 +80,7 @@ public class Event {
      *
      * @since 3.2
      */
+    @JsonAttribute()
     public int index;
 
     /**
@@ -88,6 +97,7 @@ public class Event {
      * widget-relative, x coordinate of the pointer at the
      * time the mouse button was pressed or released
      */
+    @JsonAttribute()
     public int x;
 
     /**
@@ -96,18 +106,21 @@ public class Event {
      * widget-relative, y coordinate of the pointer at the
      * time the mouse button was pressed or released
      */
+    @JsonAttribute()
     public int y;
 
     /**
      * the width of the bounding rectangle of the
      * region that requires painting
      */
+    @JsonAttribute()
     public int width;
 
     /**
      * the height of the bounding rectangle of the
      * region that requires painting
      */
+    @JsonAttribute()
     public int height;
 
     /**
@@ -117,6 +130,7 @@ public class Event {
      * scroll using the mouse wheel, or the number of times the
      * mouse has been clicked
      */
+    @JsonAttribute()
     public int count;
 
     /**
@@ -126,6 +140,7 @@ public class Event {
      * be AND'ed with 0xFFFFFFFFL so that it can be treated
      * as a signed long.
      */
+    @JsonAttribute()
     public int time;
 
     /**
@@ -133,6 +148,7 @@ public class Event {
      * first button, 2 for the second button, and 3 for the
      * third button, etc.
      */
+    @JsonAttribute()
     public int button;
 
     /**
@@ -144,6 +160,7 @@ public class Event {
      * character value based on a stateMask (such as SWT.CTRL) or the
      * resulting character will not be correct.
      */
+    @JsonAttribute()
     public char character;
 
     /**
@@ -212,6 +229,7 @@ public class Event {
 	 *  <li>Files with names containing 'Issue0351_EventKeyCode'</li>
 	 * </ul>
 	 */
+    @JsonAttribute()
     public int keyCode;
 
     /**
@@ -236,6 +254,7 @@ public class Event {
      *
      * @since 3.6
      */
+    @JsonAttribute()
     public int keyLocation;
 
     /**
@@ -245,6 +264,7 @@ public class Event {
      * @see org.eclipse.swt.SWT#MODIFIER_MASK
      * @see org.eclipse.swt.SWT#BUTTON_MASK
      */
+    @JsonAttribute()
     public int stateMask;
 
     /**
@@ -252,6 +272,7 @@ public class Event {
      * Setting these fields only has effect during ImeComposition
      * events.
      */
+    @JsonAttribute()
     public int start, end;
 
     /**
@@ -259,18 +280,21 @@ public class Event {
      * Setting this field will change the text that is about to
      * be inserted or deleted.
      */
+    @JsonAttribute()
     public String text;
 
     /**
      * Bidi segment offsets
      * @since 3.8
      */
+    @JsonAttribute()
     public int[] segments;
 
     /**
      * Characters to be applied on the segment boundaries
      * @since 3.8
      */
+    @JsonAttribute()
     public char[] segmentsChars;
 
     /**
@@ -278,6 +302,7 @@ public class Event {
      * should be allowed.  Setting this field to false will cancel the
      * operation.
      */
+    @JsonAttribute()
     public boolean doit = true;
 
     /**
@@ -298,6 +323,7 @@ public class Event {
      *
      * @since 3.7
      */
+    @JsonAttribute()
     public int xDirection;
 
     /**
@@ -306,6 +332,7 @@ public class Event {
      *
      * @since 3.7
      */
+    @JsonAttribute()
     public int yDirection;
 
     /**
@@ -314,6 +341,7 @@ public class Event {
      *
      * @since 3.7
      */
+    @JsonAttribute()
     public double magnification;
 
     /**
@@ -321,6 +349,7 @@ public class Event {
      *
      * @since 3.7
      */
+    @JsonAttribute()
     public double rotation;
 
     /**

@@ -238,6 +238,10 @@ public abstract class DartItem extends DartWidget implements IItem {
         return image;
     }
 
+    protected void hookEvents() {
+        super.hookEvents();
+    }
+
     public Item getApi() {
         return (Item) api;
     }

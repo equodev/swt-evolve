@@ -3,11 +3,14 @@ package dev.equo.swt;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 public abstract class FlutterBridge {
     private static final String DEV_EQU_SWT_NEW = "dev.equ.swt.new";
@@ -74,6 +77,24 @@ public abstract class FlutterBridge {
         bridge = staticBridge;
     }
 
+    public static void on(DartWidget widget, String listener, String event, Consumer<Event> cb) {
+        String eventName = event(widget, listener, event);
+        client.getComm().on(eventName, p -> {
+            System.out.println(eventName + ", payload:"+p);
+            if (p != null) {
+                ByteArrayInputStream in = new ByteArrayInputStream(p.getBytes(StandardCharsets.UTF_8));
+                try {
+                    Event ev = serializer.from(Event.class, in);
+                    cb.accept(ev);
+                    return;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            cb.accept(null);
+        });
+    }
+
     protected void onReady(DartControl control) {
         setNotNew(control);
         dirty(control);
@@ -101,7 +122,7 @@ public abstract class FlutterBridge {
     }
 
     public static String event(DartWidget w, String... events) {
-        String ev = widgetName(w) + "/" + w.hashCode();
+        String ev = widgetName(w) + "/" + id(w);
         if (events.length > 0)
             ev += "/" + String.join("/", events);
         return ev;
@@ -115,4 +136,13 @@ public abstract class FlutterBridge {
     public Object container(DartComposite parent) {
         return null;
     }
+
+    protected static long id(DartWidget w) {
+        return w.getApi().hashCode();
+    }
+
+    static long id(Widget w) {
+        return w.hashCode();
+    }
+
 }

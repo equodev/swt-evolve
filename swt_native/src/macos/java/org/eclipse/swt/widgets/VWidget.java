@@ -33,10 +33,7 @@ public class VWidget {
         @Override
         public void configure(DslJson json) {
             json.registerWriter(DartWidget.class, (JsonWriter.WriteObject<DartWidget>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
+                Serializer.writeWithId(json, writer, impl);
             });
             json.registerReader(DartWidget.class, (JsonReader.ReadObject<DartWidget>) reader -> {
                 return null;
