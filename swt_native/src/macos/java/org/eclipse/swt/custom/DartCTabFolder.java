@@ -4823,13 +4823,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         super.hookEvents();
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
-                setSelection(e.index);
-                sendEvent(SWT.Selection, e);
+                setSelection(e.index, true);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
-                setSelection(e.index);
                 sendEvent(SWT.DefaultSelection, e);
             });
         });

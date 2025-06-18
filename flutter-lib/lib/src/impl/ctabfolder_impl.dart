@@ -47,6 +47,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends CTabFolderValue>
         ? state.tabHeight!.toDouble()
         : 28.0;
 
+    var e = Event()..index = _selectedIndex;
+    widget.sendSelectionSelection(state, e);
+
     return Column(
       children: [
         if (!isTabBottom)

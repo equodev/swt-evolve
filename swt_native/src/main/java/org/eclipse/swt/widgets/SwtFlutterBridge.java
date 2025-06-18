@@ -4,27 +4,39 @@ import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterLibraryLoader;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.DartCTabFolder;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.cocoa.NSView;
 import org.eclipse.swt.internal.cocoa.OS;
 
-import java.nio.file.Paths;
 import java.util.Arrays;
 
 public class SwtFlutterBridge extends FlutterBridge {
+    private final DartWidget forWidget;
     private long context;
 
     static {
         FlutterLibraryLoader.initialize();
     }
 
+    public SwtFlutterBridge(DartWidget widget) {
+        this.forWidget = widget;
+    }
+
     public static SwtFlutterBridge of(DartWidget widget) {
         if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof SwtComposite) {
 //            SwtComposite parentComposite = new SwtComposite(dartControl.parent, SWT.NONE, null);
-            SwtFlutterBridge bridge = new SwtFlutterBridge();
+            SwtFlutterBridge bridge = new SwtFlutterBridge(widget);
             // TODO abstract view.id in getHandle()
 //            bridge.initFlutterView(parentComposite.getApi().view.id, dartControl);
             bridge.initFlutterView(dartControl.parent, dartControl);
+            if (widget instanceof DartCTabFolder t) { // workaround
+                t.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> {
+                    Rectangle bounds = t.getBounds();
+                    bounds.height = bounds.height + 1;
+                    bridge.setBounds(t, bounds);
+                }));
+            }
             return bridge;
         }
         if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof DartComposite c) {
@@ -51,7 +63,7 @@ public class SwtFlutterBridge extends FlutterBridge {
 
     @Override
     public void destroy(DartWidget control) {
-        if (control instanceof DartControl dartControl) {
+        if (control instanceof DartControl dartControl && control == forWidget) {
             ((SwtDisplay) control.display.getImpl()).removeWidget(dartControl.getApi().view);
             if (dartControl.jniRef != 0) {
                 OS.DeleteGlobalRef(dartControl.jniRef);
@@ -65,7 +77,7 @@ public class SwtFlutterBridge extends FlutterBridge {
 
     @Override
     public void setBounds(DartControl dartControl, Rectangle bounds) {
-        if (dartControl.bridge != null) {
+        if (dartControl.bridge != null && forWidget == dartControl) {
 //            System.out.println("SET BOUNDS: "+bounds);
             if (dartControl instanceof DartCTabFolder) {
                 SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
@@ -74,8 +86,8 @@ public class SwtFlutterBridge extends FlutterBridge {
                 SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
                         bounds.x, bounds.y, bounds.width, bounds.height);
             }
+            dartControl.resized();
         }
-        dartControl.resized();
     }
 
     @Override

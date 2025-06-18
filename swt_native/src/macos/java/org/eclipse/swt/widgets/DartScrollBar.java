@@ -769,12 +769,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
                 setSelection(e.index);
-                sendEvent(SWT.Selection, e);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
-                setSelection(e.index);
                 sendEvent(SWT.DefaultSelection, e);
             });
         });
