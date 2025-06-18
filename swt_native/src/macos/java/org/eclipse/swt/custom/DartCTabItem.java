@@ -661,6 +661,10 @@ public class DartCTabItem extends DartItem implements ICTabItem {
         return ((DartWidget) p.getImpl()).getBridge();
     }
 
+    protected void hookEvents() {
+        super.hookEvents();
+    }
+
     public CTabItem getApi() {
         if (api == null)
             api = CTabItem.createApi(this);

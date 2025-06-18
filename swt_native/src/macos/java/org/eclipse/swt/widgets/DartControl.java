@@ -4011,6 +4011,115 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return ((DartWidget) p.getImpl()).getBridge();
     }
 
+    protected void hookEvents() {
+        super.hookEvents();
+        FlutterBridge.on(this, "Control", "Resize", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Resize, e);
+            });
+        });
+        FlutterBridge.on(this, "Control", "Move", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Move, e);
+            });
+        });
+        FlutterBridge.on(this, "DragDetect", "DragDetect", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DragDetect, e);
+            });
+        });
+        FlutterBridge.on(this, "Focus", "FocusIn", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.FocusIn, e);
+            });
+        });
+        FlutterBridge.on(this, "Focus", "FocusOut", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.FocusOut, e);
+            });
+        });
+        FlutterBridge.on(this, "Gesture", "Gesture", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Gesture, e);
+            });
+        });
+        FlutterBridge.on(this, "Help", "Help", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Help, e);
+            });
+        });
+        FlutterBridge.on(this, "Key", "KeyUp", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.KeyUp, e);
+            });
+        });
+        FlutterBridge.on(this, "Key", "KeyDown", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.KeyDown, e);
+            });
+        });
+        FlutterBridge.on(this, "MenuDetect", "MenuDetect", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.MenuDetect, e);
+            });
+        });
+        FlutterBridge.on(this, "Mouse", "MouseDown", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.MouseDown, e);
+            });
+        });
+        FlutterBridge.on(this, "Mouse", "MouseUp", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.MouseUp, e);
+            });
+        });
+        FlutterBridge.on(this, "Mouse", "MouseDoubleClick", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.MouseDoubleClick, e);
+            });
+        });
+        FlutterBridge.on(this, "MouseTrack", "MouseEnter", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.MouseEnter, e);
+            });
+        });
+        FlutterBridge.on(this, "MouseTrack", "MouseExit", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.MouseExit, e);
+            });
+        });
+        FlutterBridge.on(this, "MouseTrack", "MouseHover", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.MouseHover, e);
+            });
+        });
+        FlutterBridge.on(this, "MouseMove", "MouseMove", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.MouseMove, e);
+            });
+        });
+        FlutterBridge.on(this, "MouseWheel", "MouseWheel", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.MouseWheel, e);
+            });
+        });
+        FlutterBridge.on(this, "Paint", "Paint", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Paint, e);
+            });
+        });
+        FlutterBridge.on(this, "Touch", "Touch", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Touch, e);
+            });
+        });
+        FlutterBridge.on(this, "Traverse", "Traverse", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Traverse, e);
+            });
+        });
+    }
+
     public Control getApi() {
         return (Control) api;
     }

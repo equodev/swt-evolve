@@ -669,6 +669,20 @@ public class DartButton extends DartControl implements IButton {
         return selection;
     }
 
+    protected void hookEvents() {
+        super.hookEvents();
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+    }
+
     public Button getApi() {
         if (api == null)
             api = Button.createApi(this);

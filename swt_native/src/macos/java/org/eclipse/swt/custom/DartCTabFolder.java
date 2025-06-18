@@ -4819,6 +4819,22 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         return oldFont;
     }
 
+    protected void hookEvents() {
+        super.hookEvents();
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                setSelection(e.index);
+                sendEvent(SWT.Selection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                setSelection(e.index);
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+    }
+
     public CTabFolder getApi() {
         if (api == null)
             api = CTabFolder.createApi(this);

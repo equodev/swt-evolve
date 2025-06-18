@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/swt/ctabitem.dart';
+import 'package:swtflutter/src/swt/event.dart';
 import 'package:swtflutter/src/swt/swt.dart';
 import 'package:swtflutter/src/widgets.dart';
 
@@ -370,7 +371,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends CTabFolderValue>
       _selectedIndex = index;
       state.selectionIndex = index;
     });
-    widget.sendSelectionSelection(state, index);
+    var e = Event()..index = index;
+    widget.sendSelectionSelection(state, e);
   }
 
   void _handleTabClose(int index) {

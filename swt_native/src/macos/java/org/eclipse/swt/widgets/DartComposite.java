@@ -1131,6 +1131,10 @@ public class DartComposite extends DartScrollable implements IComposite {
         return getBridge().container(this);
     }
 
+    protected void hookEvents() {
+        super.hookEvents();
+    }
+
     public Composite getApi() {
         if (api == null)
             api = Composite.createApi(this);

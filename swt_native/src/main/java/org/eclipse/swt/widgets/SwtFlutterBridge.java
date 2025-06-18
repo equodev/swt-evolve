@@ -40,7 +40,7 @@ public class SwtFlutterBridge extends FlutterBridge {
 
     void initFlutterView(Composite parent, DartControl control) {
         super.onReady(control);
-        context = InitializeFlutterWindow(client.getPort(), parent.view.id, control.hashCode(), widgetName(control));
+        context = InitializeFlutterWindow(client.getPort(), parent.view.id, id(control), widgetName(control));
         long view = GetView(context);
         control.getApi().view = new NSView(view);
         control.jniRef = OS.NewGlobalRef(control.getApi());

@@ -364,6 +364,10 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
         return scrollbarsMode;
     }
 
+    protected void hookEvents() {
+        super.hookEvents();
+    }
+
     public Scrollable getApi() {
         return (Scrollable) api;
     }

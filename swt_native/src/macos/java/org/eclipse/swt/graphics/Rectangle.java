@@ -17,7 +17,8 @@ package org.eclipse.swt.graphics;
 
 import java.io.*;
 import org.eclipse.swt.*;
-import com.dslplatform.json.*;
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
 
 /**
  * Instances of this class represent rectangular areas in an
@@ -45,7 +46,7 @@ import com.dslplatform.json.*;
  * @see Point
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-@CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.FULL)
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
 public final class Rectangle implements Serializable {
 
     /**
