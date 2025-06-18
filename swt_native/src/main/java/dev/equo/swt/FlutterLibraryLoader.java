@@ -35,23 +35,21 @@ public class FlutterLibraryLoader {
     private static final String MACOS_LIB_NAME = "libFlutterBridge.dylib";
     public static final String CONTENTS = "Contents";
     public static final String SWTFLUTTER_APP = "swtflutter.app";
-    public static final String SWTFLUTTER_APP_CONTENTS = "macos/Build/Products/Release/" + SWTFLUTTER_APP + SEPARATOR+ CONTENTS;
+    public static final String SWTFLUTTER_APP_CONTENTS = "macos/Build/Products/Release/" + SWTFLUTTER_APP + SEPARATOR + CONTENTS;
     private static final String LINUX_RUNNER_DIR_NAME = "runner";
     private static final String LINUX_BUNDLE_DIR_NAME = "bundle";
     private static final String LINUX_LIB_NAME = "libflutter_library.so";
     public static final String LINUX_X_64_RELEASE = "linux/x64/release";
 
-    // Permissions
-    private static final String EXECUTE_PERMISSION = "755";
     private static final String EQUO_LIB_PATH_SUFFIX =
             EQUO_BASE_DIR_NAME + SEPARATOR + SWT_DIR_NAME + SEPARATOR + LIB_SUB_DIR_NAME + SEPARATOR + getOS() + SEPARATOR + getArch();
 
     /**
-     * Initializes the Flutter library loader.
-     * This method is synchronized and ensures that extraction and loading
-     * occur only once.
+     * Initializes the Flutter library loader. This is the main public entry point.
+     * It orchestrates the extraction and loading, wrapping any failure in a single, clear exception.
+     * This method is synchronized and ensures that extraction and loading occur only once.
      *
-     * @throws LibraryLoaderException if initialization fails.
+     * @throws LibraryLoaderException if initialization fails for any reason.
      */
     public static void initialize() {
         try {
@@ -62,92 +60,30 @@ public class FlutterLibraryLoader {
     }
 
     /**
-     * Determines the operating system type.
-     *
-     * @return A string identifier for the OS (e.g., "linux", "macosx", "win32").
-     */
-    private static String getOS() {
-        String osName = System.getProperty("os.name");
-        if (osName.equalsIgnoreCase(OS_LINUX)) return OS_LINUX;
-        if (osName.equalsIgnoreCase("Mac OS X")) return OS_MACOSX; // Common variation
-        if (osName.startsWith(OS_WINDOWS_PREFIX)) return "win32"; // Standardize to "win32"
-        return osName.toLowerCase().replaceAll("\\s+", "");
-    }
-
-    /**
-     * Determines the system architecture.
-     *
-     * @return A string identifier for the architecture (e.g., "x86_64").
-     */
-    private static String getArch() {
-        String osArch = System.getProperty("os.arch");
-        if (osArch.equalsIgnoreCase(ARCH_AMD64)) return ARCH_X86_64;
-        return osArch;
-    }
-
-    /**
-     * Determines if we're running in development mode.
-     * Uses multiple heuristics to detect development environment.
-     *
-     * @return true if in development mode, false if in production
-     */
-    private static boolean isDevelopmentMode() {
-        return findFlutterBuildDirectory() != null;
-    }
-
-    /**
-     * Creates the specified directory if it does not already exist.
-     *
-     * @param directory The directory to create.
-     * @throws IOException if the directory cannot be created.
-     */
-    private static void ensureDirectoryExists(File directory) throws IOException {
-        if (!directory.exists()) {
-            if (!directory.mkdirs()) {
-                throw new IOException("Failed to create directory: " + directory.getAbsolutePath());
-            }
-        }
-    }
-
-    /**
      * Main method to orchestrate library extraction and loading based on OS.
+     * This method now throws IOException to be handled by the public entry point.
      *
-     * @throws LibraryLoaderException if extraction or loading fails.
+     * @throws IOException if any file or directory operation fails.
+     * @throws UnsupportedOperationException if the OS is not supported.
      */
-    private static void extractAndLoadFlutterLibraries() {
+    private static void extractAndLoadFlutterLibraries() throws IOException {
         String os = getOS();
         File equoLibDir = new File(USER_HOME, EQUO_LIB_PATH_SUFFIX);
 
-        try {
-            ensureDirectoryExists(equoLibDir);
-            // Check if we're running from JAR or development environment
-            boolean isDevelopmentMode = isDevelopmentMode();
-            System.out.println("Running in development: " + isDevelopmentMode);
+        ensureDirectoryExists(equoLibDir);
 
-            if (OS_MACOSX.equals(os)) {
-                extractAndLoadMacOSLibraries(equoLibDir, isDevelopmentMode);
-            } else if (OS_LINUX.equals(os)) {
-                extractAndLoadLinuxLibraries(equoLibDir, isDevelopmentMode);
-            } else {
-                throw new UnsupportedOperationException("Unsupported OS: " + os + ". Equo SWT currently supports macOS and Linux.");
-            }
-        } catch (IOException e) {
-            throw new LibraryLoaderException("IO failure during Flutter library extraction", e);
-        } catch (UnsupportedOperationException e) {
-            throw new LibraryLoaderException(e.getMessage(), e);
-        } catch (Exception e) {
-            throw new LibraryLoaderException("Failed to extract and load Flutter libraries", e);
+        boolean isDevelopmentMode = isDevelopmentMode();
+        System.out.println("Running in development: " + isDevelopmentMode);
+
+        if (OS_MACOSX.equals(os)) {
+            extractAndLoadMacOSLibraries(equoLibDir, isDevelopmentMode);
+        } else if (OS_LINUX.equals(os)) {
+            extractAndLoadLinuxLibraries(equoLibDir, isDevelopmentMode);
+        } else {
+            throw new UnsupportedOperationException("Unsupported OS: " + os + ". Equo SWT currently supports macOS and Linux.");
         }
     }
 
-    /**
-     * Extracts and loads libraries specific to macOS.
-     *
-     * @param targetDir         The directory where libraries should be extracted.
-     * @param isDevelopmentMode true if is development env, false otherwise
-     * @throws IOException            if extraction fails.
-     * @throws LibraryLoaderException if loading fails.
-     */
     private static void extractAndLoadMacOSLibraries(File targetDir, boolean isDevelopmentMode) throws IOException {
         if (!isDevelopmentMode) {
             extractDirectoryFromJar(SWTFLUTTER_APP, targetDir);
@@ -158,204 +94,119 @@ public class FlutterLibraryLoader {
         }
     }
 
-    /**
-     * Extracts and loads libraries specific to Linux.
-     *
-     * @param targetDir         The directory where libraries should be extracted.
-     * @param isDevelopmentMode true if is development env, false otherwise
-     * @throws IOException            if extraction fails.
-     * @throws LibraryLoaderException if loading fails.
-     */
     private static void extractAndLoadLinuxLibraries(File targetDir, boolean isDevelopmentMode) throws IOException {
         if (!isDevelopmentMode) {
             extractDirectoryFromJar(LINUX_RUNNER_DIR_NAME, targetDir);
             extractDirectoryFromJar(LINUX_BUNDLE_DIR_NAME, targetDir);
 
             File libFile = new File(targetDir, LINUX_RUNNER_DIR_NAME + SEPARATOR + LINUX_LIB_NAME);
-            if (libFile.exists()) {
-                setExecutablePermission(libFile.getAbsolutePath());
-                loadLibrary(libFile.getAbsolutePath());
-            } else {
-                throw new LibraryLoaderException("Essential Linux library not found after extraction: " + libFile.getAbsolutePath());
+            if (!libFile.exists()) {
+                throw new IOException("Essential Linux library not found after extraction: " + libFile.getAbsolutePath());
             }
+            setExecutablePermission(libFile);
+            loadLibrary(libFile.getAbsolutePath());
         } else {
             loadOSLibraries(LINUX_X_64_RELEASE, LINUX_RUNNER_DIR_NAME + SEPARATOR + LINUX_LIB_NAME);
         }
     }
 
-    /**
-     * Loads macOS libraries directly from file system (development mode).
-     *
-     * @throws IOException if library loading fails.
-     */
-
     private static void loadOSLibraries(String libDirectoryPath, String libName) throws IOException {
         System.out.println("Development mode: loading Flutter libraries directly from build directory");
-        // Find the Flutter build directory
         File flutterBuildDir = findFlutterBuildDirectory();
         if (flutterBuildDir == null) {
-            throw new IOException("Flutter build directory not found. Please build the Flutter app first.");
+            throw new IOException("Flutter build directory not found. Searched in common locations like 'flutter-lib/build'. Please build the Flutter app first.");
         }
 
-        File releaseDir = findReleaseDirectory(flutterBuildDir, libDirectoryPath);
-        File libFile = new File(releaseDir, libName);
-        if (libFile.exists()) {
-            setExecutablePermission(libFile.getAbsolutePath());
-            loadLibrary(libFile.getAbsolutePath());
-        } else {
-            throw new IOException("Essential library not found at: " + libFile.getAbsolutePath());
-        }
-    }
-
-    /**
-     * Finds the Flutter build directory by looking for it relative to the current working directory.
-     *
-     * @return The Flutter build directory or null if not found.
-     */
-    private static File findFlutterBuildDirectory() {
-        // Try common locations relative to current working directory
-        String[] possiblePaths = {
-                "flutter-lib/build",
-                "../flutter-lib/build",
-                "../../flutter-lib/build"
-        };
-
-        for (String path : possiblePaths) {
-            File buildDir = new File(path);
-            if (buildDir.exists() && buildDir.isDirectory()) {
-                System.out.println("Found Flutter build directory at: " + buildDir.getAbsolutePath());
-                return buildDir;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Finds and validates the release directory for the current OS.
-     *
-     * @param flutterBuildDir The Flutter build directory.
-     * @param relativeReleasePath The relative path to the release directory.
-     * @return The validated release directory.
-     * @throws IOException if the release directory is not found.
-     */
-    private static File findReleaseDirectory(File flutterBuildDir, String relativeReleasePath) throws IOException {
-        File releaseDir = new File(flutterBuildDir, relativeReleasePath);
-        if (!releaseDir.exists()) {
+        File releaseDir = new File(flutterBuildDir, libDirectoryPath);
+        if (!releaseDir.exists() || !releaseDir.isDirectory()) {
             throw new IOException("Flutter Release build not found at: " + releaseDir.getAbsolutePath());
         }
-        return releaseDir;
+
+        File libFile = new File(releaseDir, libName);
+        if (!libFile.exists()) {
+            throw new IOException("Essential library not found at: " + libFile.getAbsolutePath());
+        }
+        setExecutablePermission(libFile);
+        loadLibrary(libFile.getAbsolutePath());
     }
 
     /**
      * Extracts a directory and its contents from the JAR file to a target directory.
-     *
-     * @param directoryPathInJar The path of the directory within the JAR (e.g., "frameworks/App.framework").
-     * @param targetBaseDir      The base directory into which the JAR directory's contents will be extracted.
-     *                           The directory structure from the JAR will be preserved under this base.
-     * @throws IOException if an I/O error occurs during extraction or if the code source is not a JAR.
+     * This method now fails fast if any file cannot be extracted.
      */
     private static void extractDirectoryFromJar(String directoryPathInJar, File targetBaseDir) throws IOException {
         URL classUrl = FlutterLibraryLoader.class.getProtectionDomain().getCodeSource().getLocation();
         if (classUrl == null) {
             throw new IOException("Cannot determine JAR location to extract directory: " + directoryPathInJar);
         }
+        File jarFileSource = new File(classUrl.getPath());
 
-        File jarFileSource;
-        try {
-            jarFileSource = Paths.get(classUrl.toURI()).toFile();
-        } catch (URISyntaxException e) {
-            throw new IOException("Invalid JAR URL syntax: " + classUrl, e);
-        }
-
-        System.out.println("Extracting directory '" + directoryPathInJar + "' from JAR " + jarFileSource.getAbsolutePath() + " to " + targetBaseDir.getAbsolutePath());
+        System.out.println("Extracting '" + directoryPathInJar + "' from " + jarFileSource.getAbsolutePath() + " to " + targetBaseDir.getAbsolutePath());
 
         try (JarFile jarFile = new JarFile(jarFileSource)) {
+            String normalizedPath = directoryPathInJar.endsWith("/") ? directoryPathInJar : directoryPathInJar + "/";
             Enumeration<JarEntry> entries = jarFile.entries();
-            String normalizedDirectoryPathInJar = directoryPathInJar.endsWith("/") ? directoryPathInJar : directoryPathInJar + "/";
 
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
-                String entryName = entry.getName();
-
-                if (entryName.startsWith(normalizedDirectoryPathInJar)) {
-                    // Remove the leading directoryPathInJar to get the relative path
-                    String relativePath = entryName.substring(normalizedDirectoryPathInJar.length());
-                    if (relativePath.isEmpty() && !entry.isDirectory()) {
-                        if (!entryName.equals(directoryPathInJar) && !entryName.equals(normalizedDirectoryPathInJar.substring(0, normalizedDirectoryPathInJar.length() - 1))) {
-                        }
-                    }
-
-                    File targetFile = new File(targetBaseDir, entryName);
-
+                if (entry.getName().startsWith(normalizedPath)) {
+                    File targetFile = new File(targetBaseDir, entry.getName());
                     if (entry.isDirectory()) {
                         ensureDirectoryExists(targetFile);
                     } else {
                         ensureDirectoryExists(targetFile.getParentFile());
                         try (InputStream inputStream = jarFile.getInputStream(entry)) {
                             Files.copy(inputStream, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                            System.out.println("Extracted file " + entryName + " to " + targetFile.getAbsolutePath());
-                        } catch (IOException e) {
-                            System.out.println("Failed to extract file " + entryName + " from JAR: " + e.getMessage() + " - Exception: " + e);
-                            // throw new IOException("Failed to extract file " + entryName + " from JAR", e);
                         }
                     }
                 }
             }
-            System.out.println("Successfully extracted directory structure for '" + directoryPathInJar + "'");
-        } catch (IOException e) {
-            throw new IOException("Failed to extract directory " + directoryPathInJar + " from JAR: " + jarFileSource.getAbsolutePath(), e);
         }
     }
 
-
     /**
-     * Sets execute permission on the given file path.
-     * No-op on Windows.
+     * Sets execute permission on the given file. No-op on Windows.
+     * Simplified logic that throws an exception on failure.
      *
-     * @param path The file path.
+     * @param file The file to set as executable.
+     * @throws IOException if the permission cannot be set.
      */
-    private static void setExecutablePermission(String path) {
-        if (OS_WINDOWS_PREFIX.equals(getOS())) {
-            return;
-        }
-        File file = new File(path);
-        if (!file.exists()) {
+    private static void setExecutablePermission(File file) throws IOException {
+        if (getOS().startsWith(OS_WINDOWS_PREFIX) || !file.exists()) {
             return;
         }
 
-        // First, try Java's built-in method (Java 7+)
-        if (file.canExecute() || (file.setExecutable(true, false) && file.canExecute())) {
-            return;
+        // Try Java's built-in method first.
+        if (file.canExecute()) {
+            return; // Already executable
         }
 
-        // Fallback to chmod command for systems where setExecutable might not work as expected
-        // (e.g. for owner-only vs all users, or if more specific permissions are needed)
+        if (file.setExecutable(true, false)) {
+            System.out.println("Successfully set execute permission for: " + file.getAbsolutePath());
+            return; // Success
+        }
+
+        // Fallback to chmod command only if the Java method fails.
+        System.out.println("setExecutable() failed, attempting chmod fallback...");
         try {
-            Process chmodProcess = Runtime.getRuntime().exec(new String[]{"chmod", EXECUTE_PERMISSION, path});
-            int exitCode = chmodProcess.waitFor();
-            if (exitCode == 0 && file.canExecute()) {
-                System.out.println("Execute permission set via chmod for: " + path);
-            } else {
-                System.out.println("chmod command for " + path + " exited with code " + exitCode + " or file is still not executable. Output: " + new String(chmodProcess.getInputStream().readAllBytes()) + ", Error: " + new String(chmodProcess.getErrorStream().readAllBytes()));
-                // As a last resort, try again with a simpler setExecutable if chmod failed
-                if (!file.canExecute() && file.setExecutable(true)) {
-                    System.out.println("Execute permission set via second attempt of setExecutable(true) for: " + path);
-                } else if (!file.canExecute()) {
-                    System.out.println("Failed to set execute permission for: " + path);
-                }
+            Process chmodProcess = Runtime.getRuntime().exec(new String[]{"chmod", "755", file.getAbsolutePath()});
+            if (chmodProcess.waitFor() == 0 && file.canExecute()) {
+                System.out.println("Execute permission set via chmod for: " + file.getAbsolutePath());
+                return;
             }
-        } catch (IOException | InterruptedException e) {
-            // Last attempt with Java's method if chmod fails
-            if (!file.canExecute() && file.setExecutable(true)) {
-                System.out.println("Execute permission set via fallback setExecutable(true) for: " + path);
-            } else if (!file.canExecute()) {
-                System.out.println("All attempts to set execute permission for " + path + " failed. Exception: " + e);
-            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Preserve interrupted status
+            throw new IOException("Chmod process interrupted while setting permissions for " + file.getAbsolutePath(), e);
         }
+
+        // If we're still here, all attempts failed.
+        throw new IOException("Failed to set execute permission for: " + file.getAbsolutePath());
     }
 
     /**
      * Loads a native library from the given absolute path.
+     * This method is a low-level boundary; it catches the specific `UnsatisfiedLinkError`
+     * and wraps it with helpful diagnostic information.
      *
      * @param absoluteLibPath The absolute path to the native library.
      * @throws LibraryLoaderException if loading the library fails.
@@ -366,26 +217,49 @@ public class FlutterLibraryLoader {
             System.out.println("Successfully loaded library: " + absoluteLibPath);
         } catch (UnsatisfiedLinkError e) {
             String errorMessage = String.format("Failed to load library %s. Architecture: %s. OS: %s. Error: %s",
-                    absoluteLibPath, System.getProperty("os.arch"), System.getProperty("os.name"), e.getMessage());
-            File libFile = new File(absoluteLibPath);
-            if (System.getProperty("java.vendor").toLowerCase().contains("ibm") && System.getProperty("os.name").toLowerCase().contains("aix")) {
-                System.out.println("On AIX with IBM JDK, ensure LIBPATH is correctly set or that the library dependencies are met.");
-            }
-            throw new LibraryLoaderException(errorMessage, e);
-        } catch (Throwable e) {
-            String errorMessage = String.format("An unexpected error occurred while loading library %s: %s", absoluteLibPath, e.getMessage());
+                    absoluteLibPath, getArch(), getOS(), e.getMessage());
             throw new LibraryLoaderException(errorMessage, e);
         }
+    }
+
+    private static String getOS() {
+        String osName = System.getProperty("os.name");
+        if (osName.equalsIgnoreCase(OS_LINUX)) return OS_LINUX;
+        if (osName.equalsIgnoreCase("Mac OS X")) return OS_MACOSX;
+        if (osName.startsWith(OS_WINDOWS_PREFIX)) return "win32";
+        return osName.toLowerCase().replaceAll("\\s+", "");
+    }
+
+    private static String getArch() {
+        String osArch = System.getProperty("os.arch");
+        return osArch.equalsIgnoreCase(ARCH_AMD64) ? ARCH_X86_64 : osArch;
+    }
+
+    private static boolean isDevelopmentMode() {
+        return findFlutterBuildDirectory() != null;
+    }
+
+    private static void ensureDirectoryExists(File directory) throws IOException {
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IOException("Failed to create directory: " + directory.getAbsolutePath());
+        }
+    }
+
+    private static File findFlutterBuildDirectory() {
+        String[] possiblePaths = {"flutter-lib/build", "../flutter-lib/build", "../../flutter-lib/build"};
+        for (String path : possiblePaths) {
+            File buildDir = new File(path);
+            if (buildDir.exists() && buildDir.isDirectory()) {
+                return buildDir;
+            }
+        }
+        return null;
     }
 
     /**
      * Custom exception for library loading and extraction failures.
      */
     static class LibraryLoaderException extends RuntimeException {
-        public LibraryLoaderException(String message) {
-            super(message);
-        }
-
         public LibraryLoaderException(String message, Throwable cause) {
             super(message, cause);
         }
