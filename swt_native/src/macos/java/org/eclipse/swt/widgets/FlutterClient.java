@@ -85,8 +85,11 @@ public class FlutterClient implements Delegate {
         System.setProperty("com.equo.comm.api.ICommService", impl);
         System.setProperty("com.equo.comm.api.ICommSendService", sendImpl);
         ServiceLoader<ICommService> serviceLoader = ServiceLoader.load(ICommService.class);
-        return serviceLoader.stream().filter(p -> impl.equals(p.type().getName())).map(ServiceLoader.Provider::get)
+        ICommService c = serviceLoader.stream().filter(p -> impl.equals(p.type().getName())).map(ServiceLoader.Provider::get)
                 .findFirst().orElse(null);
+        if (c == null)
+            c = new EquoWebSocketServiceImpl();
+        return c;
     }
 
     public void createClient() throws Exception {
