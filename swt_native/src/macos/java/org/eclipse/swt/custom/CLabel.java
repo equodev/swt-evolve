@@ -20,6 +20,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  *  A Label which supports aligned text and/or an image and different border styles.
@@ -90,7 +91,7 @@ public class CLabel extends Canvas {
      */
     public CLabel(Composite parent, int style) {
         this((ICLabel) null);
-        setImpl(new SwtCLabel(parent, style, this));
+        setImpl(Config.isEquo(CLabel.class, parent) ? new DartCLabel(parent, style, this) : new SwtCLabel(parent, style, this));
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {

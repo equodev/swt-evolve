@@ -125,9 +125,11 @@ public class SwtIME extends SwtWidget implements IIME {
             return OS.NSNotFound();
         NSPoint pt = new NSPoint();
         OS.memmove(pt, point, NSPoint.sizeof);
-        NSView view = parent.view;
-        pt = view.window().convertScreenToBase(pt);
-        pt = view.convertPoint_fromView_(pt, null);
+        if (parent == null || parent.getImpl() instanceof SwtCanvas) {
+            NSView view = parent.view;
+            pt = view.window().convertScreenToBase(pt);
+            pt = view.convertPoint_fromView_(pt, null);
+        }
         Event event = new Event();
         event.detail = SWT.COMPOSITION_OFFSET;
         event.x = (int) pt.x;
@@ -149,16 +151,18 @@ public class SwtIME extends SwtWidget implements IIME {
     @Override
     NSRect firstRectForCharacterRange(long id, long sel, long range) {
         NSRect rect = new NSRect();
-        Caret caret = ((SwtCanvas) parent.getImpl()).caret;
+        Caret caret = parent.getImpl()._caret();
         if (caret != null) {
-            NSView view = parent.view;
-            NSPoint pt = new NSPoint();
-            pt.x = ((SwtCaret) caret.getImpl()).x;
-            pt.y = ((SwtCaret) caret.getImpl()).y + ((SwtCaret) caret.getImpl()).height;
-            pt = view.convertPoint_toView_(pt, null);
-            pt = view.window().convertBaseToScreen(pt);
-            rect.x = pt.x;
-            rect.y = pt.y;
+            if (parent == null || parent.getImpl() instanceof SwtCanvas) {
+                NSView view = parent.view;
+                NSPoint pt = new NSPoint();
+                pt.x = ((SwtCaret) caret.getImpl()).x;
+                pt.y = ((SwtCaret) caret.getImpl()).y + ((SwtCaret) caret.getImpl()).height;
+                pt = view.convertPoint_toView_(pt, null);
+                pt = view.window().convertBaseToScreen(pt);
+                rect.x = pt.x;
+                rect.y = pt.y;
+            }
             rect.width = ((SwtCaret) caret.getImpl()).width;
             rect.height = ((SwtCaret) caret.getImpl()).height;
         }

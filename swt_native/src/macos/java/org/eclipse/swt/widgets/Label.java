@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a non-selectable
@@ -92,7 +93,7 @@ public class Label extends Control {
      */
     public Label(Composite parent, int style) {
         this((ILabel) null);
-        setImpl(new SwtLabel(parent, style, this));
+        setImpl(Config.isEquo(Label.class, parent) ? new DartLabel(parent, style, this) : new SwtLabel(parent, style, this));
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {

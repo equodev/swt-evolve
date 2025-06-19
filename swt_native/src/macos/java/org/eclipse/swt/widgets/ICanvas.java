@@ -5,7 +5,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.graphics.*;
 
-public interface ICanvas extends IComposite {
+public interface ICanvas extends IComposite, ImplCanvas {
 
     /**
      * Fills the interior of the rectangle specified by the arguments,
