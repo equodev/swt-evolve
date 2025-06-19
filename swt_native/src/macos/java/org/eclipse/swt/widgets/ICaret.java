@@ -3,7 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
-public interface ICaret extends IWidget {
+public interface ICaret extends IWidget, ImplCaret {
 
     /**
      * Returns a rectangle describing the receiver's size and location

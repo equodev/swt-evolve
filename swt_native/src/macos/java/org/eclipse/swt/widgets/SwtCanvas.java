@@ -725,6 +725,14 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         return result;
     }
 
+    public Caret _caret() {
+        return caret;
+    }
+
+    public IME _ime() {
+        return ime;
+    }
+
     public Canvas getApi() {
         if (api == null)
             api = Canvas.createApi(this);

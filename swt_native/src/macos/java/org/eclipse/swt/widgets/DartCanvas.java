@@ -18,9 +18,8 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.internal.graphics.*;
-import dev.equo.swt.Config;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class provide a surface for drawing
@@ -44,11 +43,27 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Canvas extends Composite {
+public class DartCanvas extends DartComposite implements ICanvas {
 
-    Canvas() {
-        this((ICanvas) null);
-        setImpl(Config.isEquo(Canvas.class) ? new DartCanvas(this) : new SwtCanvas(this));
+    Caret caret;
+
+    IME ime;
+
+    DartCanvas(Canvas api) {
+        super(api);
+        /* Do nothing */
+    }
+
+    @Override
+    public void sendFocusEvent(int type) {
+        if (caret != null) {
+            if (type == SWT.FocusIn) {
+                ((DartCaret) caret.getImpl()).setFocus();
+            } else {
+                ((DartCaret) caret.getImpl()).killFocus();
+            }
+        }
+        super.sendFocusEvent(type);
     }
 
     /**
@@ -77,9 +92,8 @@ public class Canvas extends Composite {
      * @see SWT
      * @see Widget#getStyle
      */
-    public Canvas(Composite parent, int style) {
-        this((ICanvas) null);
-        setImpl(Config.isEquo(Canvas.class, parent) ? new DartCanvas(parent, style, this) : new SwtCanvas(parent, style, this));
+    public DartCanvas(Composite parent, int style, Canvas api) {
+        super(parent, style, api);
     }
 
     /**
@@ -104,7 +118,6 @@ public class Canvas extends Composite {
      * @since 3.2
      */
     public void drawBackground(GC gc, int x, int y, int width, int height) {
-        getImpl().drawBackground(gc, x, y, width, height);
     }
 
     /**
@@ -126,7 +139,8 @@ public class Canvas extends Composite {
      * </ul>
      */
     public Caret getCaret() {
-        return getImpl().getCaret();
+        checkWidget();
+        return caret;
     }
 
     /**
@@ -142,7 +156,45 @@ public class Canvas extends Composite {
      * @since 3.4
      */
     public IME getIME() {
-        return getImpl().getIME();
+        checkWidget();
+        return ime;
+    }
+
+    @Override
+    boolean imeInComposition() {
+        return ime != null && ((SwtIME) ime.getImpl()).isInlineEnabled() && ((SwtIME) ime.getImpl()).startOffset != -1;
+    }
+
+    @Override
+    void releaseChildren(boolean destroy) {
+        if (caret != null) {
+            caret.getImpl().release(false);
+            caret = null;
+        }
+        if (ime != null) {
+            ime.getImpl().release(false);
+            ime = null;
+        }
+        super.releaseChildren(destroy);
+    }
+
+    @Override
+    void reskinChildren(int flags) {
+        if (caret != null)
+            caret.reskin(flags);
+        if (ime != null)
+            ime.reskin(flags);
+        super.reskinChildren(flags);
+    }
+
+    @Override
+    void releaseWidget() {
+        super.releaseWidget();
+    }
+
+    @Override
+    public void resetVisibleRegion() {
+        super.resetVisibleRegion();
     }
 
     /**
@@ -168,7 +220,58 @@ public class Canvas extends Composite {
      * </ul>
      */
     public void scroll(int destX, int destY, int x, int y, int width, int height, boolean all) {
-        getImpl().scroll(destX, destY, x, y, width, height, all);
+        checkWidget();
+        if (width <= 0 || height <= 0)
+            return;
+        int deltaX = destX - x, deltaY = destY - y;
+        if (deltaX == 0 && deltaY == 0)
+            return;
+        if (!isDrawing())
+            return;
+        boolean isFocus = caret != null && ((DartCaret) caret.getImpl()).isFocusCaret();
+        if (isFocus)
+            ((DartCaret) caret.getImpl()).killFocus();
+        Rectangle clientRect = getClientArea();
+        Rectangle sourceRect = new Rectangle(x, y, width, height);
+        Control control = findBackgroundControl();
+        boolean redraw = control != null && control.getImpl()._backgroundImage() != null;
+        if (!redraw)
+            redraw = hasRegion();
+        if (!redraw)
+            redraw = isObscured();
+        if (!redraw && sourceRect.intersects(clientRect)) {
+            ((SwtShell) getShell().getImpl()).setScrolling();
+            redraw = !update(all);
+        }
+        if (redraw) {
+        } else {
+            boolean disjoint = (destX + width < x) || (x + width < destX) || (destY + height < y) || (y + height < destY);
+            if (disjoint) {
+            } else {
+                if (deltaX != 0) {
+                    int newX = destX - deltaX;
+                    if (deltaX < 0)
+                        newX = destX + width;
+                }
+                if (deltaY != 0) {
+                    int newY = destY - deltaY;
+                    if (deltaY < 0)
+                        newY = destY + height;
+                }
+            }
+        }
+        if (all) {
+            Control[] children = _getChildren();
+            for (int i = 0; i < children.length; i++) {
+                Control child = children[i];
+                Rectangle rect = child.getBounds();
+                if (Math.min(x + width, rect.x + rect.width) >= Math.max(x, rect.x) && Math.min(y + height, rect.y + rect.height) >= Math.max(y, rect.y)) {
+                    child.setLocation(rect.x + deltaX, rect.y + deltaY);
+                }
+            }
+        }
+        if (isFocus)
+            ((DartCaret) caret.getImpl()).setFocus();
     }
 
     /**
@@ -192,11 +295,35 @@ public class Canvas extends Composite {
      * </ul>
      */
     public void setCaret(Caret caret) {
-        getImpl().setCaret(caret);
+        checkWidget();
+        Caret newCaret = caret;
+        Caret oldCaret = this.caret;
+        this.caret = newCaret;
+        if (hasFocus()) {
+            if (oldCaret != null)
+                ((DartCaret) oldCaret.getImpl()).killFocus();
+            if (newCaret != null) {
+                if (newCaret.isDisposed())
+                    error(SWT.ERROR_INVALID_ARGUMENT);
+                ((DartCaret) newCaret.getImpl()).setFocus();
+            }
+        }
+        getBridge().dirty(this);
     }
 
+    @Override
     public void setFont(Font font) {
-        getImpl().setFont(font);
+        checkWidget();
+        if (caret != null)
+            caret.setFont(font);
+        super.setFont(font);
+        getBridge().dirty(this);
+    }
+
+    @Override
+    void setOpenGLContext(Object value) {
+        Shell shell = getShell();
+        ((SwtShell) shell.getImpl()).updateOpaque();
     }
 
     /**
@@ -215,18 +342,34 @@ public class Canvas extends Composite {
      * @since 3.4
      */
     public void setIME(IME ime) {
-        getImpl().setIME(ime);
+        checkWidget();
+        if (ime != null && ime.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        this.ime = ime;
+        getBridge().dirty(this);
     }
 
-    protected Canvas(ICanvas impl) {
-        super(impl);
+    public Caret _caret() {
+        return caret;
     }
 
-    static Canvas createApi(ICanvas impl) {
-        return new Canvas(impl);
+    public IME _ime() {
+        return ime;
     }
 
-    public ICanvas getImpl() {
-        return (ICanvas) super.getImpl();
+    protected void hookEvents() {
+        super.hookEvents();
+    }
+
+    public Canvas getApi() {
+        if (api == null)
+            api = Canvas.createApi(this);
+        return (Canvas) api;
+    }
+
+    public VCanvas getValue() {
+        if (value == null)
+            value = new VCanvas(this);
+        return (VCanvas) value;
     }
 }

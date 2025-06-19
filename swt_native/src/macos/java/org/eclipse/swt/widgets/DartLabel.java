@@ -17,7 +17,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class represent a non-selectable
@@ -51,19 +51,13 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtLabel extends SwtControl implements ILabel {
+public class DartLabel extends DartControl implements ILabel {
 
     String text;
 
     Image image;
 
     boolean isImage;
-
-    NSTextField textView;
-
-    NSImageView imageView;
-
-    NSView separator;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -102,40 +96,19 @@ public class SwtLabel extends SwtControl implements ILabel {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtLabel(Composite parent, int style, Label api) {
+    public DartLabel(Composite parent, int style, Label api) {
         super(parent, checkStyle(style), api);
     }
 
     @Override
     long accessibleHandle() {
-        return eventView().id;
-    }
-
-    @Override
-    boolean accessibilityIsIgnored(long id, long sel) {
-        if (id == getApi().view.id)
-            return true;
-        return super.accessibilityIsIgnored(id, sel);
+        return 0;
     }
 
     @Override
     public void addRelation(Control control) {
-        if (control == null || control.getImpl() instanceof SwtControl) {
-            if (!((SwtControl) control.getImpl()).isDescribedByLabel())
-                return;
-        }
-        if (textView != null) {
-            if (control == null || control.getImpl() instanceof SwtControl) {
-                NSObject accessibleElement = ((SwtControl) control.getImpl()).focusView();
-                if (accessibleElement instanceof NSControl viewAsControl) {
-                    if (viewAsControl.cell() != null)
-                        accessibleElement = viewAsControl.cell();
-                }
-                accessibleElement.accessibilitySetOverrideValue(textView.cell(), OS.NSAccessibilityTitleUIElementAttribute);
-                NSArray controlArray = NSArray.arrayWithObject(accessibleElement);
-                textView.cell().accessibilitySetOverrideValue(controlArray, OS.NSAccessibilityServesAsTitleForUIElementsAttribute);
-            }
-        }
+        if (!((DartControl) control.getImpl()).isDescribedByLabel())
+            return;
     }
 
     static int checkStyle(int style) {
@@ -153,11 +126,8 @@ public class SwtLabel extends SwtControl implements ILabel {
         int width = DEFAULT_WIDTH;
         int height = DEFAULT_HEIGHT;
         if ((getApi().style & SWT.SEPARATOR) != 0) {
-            double lineWidth = ((NSBox) getApi().view).borderWidth();
             if ((getApi().style & SWT.HORIZONTAL) != 0) {
-                height = (int) Math.ceil(lineWidth * 2);
             } else {
-                width = (int) Math.ceil(lineWidth * 2);
             }
             if (wHint != SWT.DEFAULT)
                 width = wHint;
@@ -170,25 +140,13 @@ public class SwtLabel extends SwtControl implements ILabel {
         }
         if (isImage) {
             if (image != null) {
-                NSImage nsimage = image.handle;
-                NSSize size = nsimage.size();
-                width = (int) size.width;
-                height = (int) size.height;
             } else {
                 width = height = 0;
             }
         } else {
-            NSSize size = null;
             if ((getApi().style & SWT.WRAP) != 0 && wHint != SWT.DEFAULT) {
-                NSRect rect = new NSRect();
-                rect.width = wHint;
-                rect.height = hHint != SWT.DEFAULT ? hHint : Float.MAX_VALUE;
-                size = textView.cell().cellSizeForBounds(rect);
             } else {
-                size = textView.cell().cellSize();
             }
-            width = (int) Math.ceil(size.width);
-            height = (int) Math.ceil(size.height);
         }
         if (wHint != SWT.DEFAULT)
             width = wHint;
@@ -200,72 +158,16 @@ public class SwtLabel extends SwtControl implements ILabel {
     @Override
     void createHandle() {
         getApi().state |= THEME_BACKGROUND;
-        NSBox widget = (NSBox) new SWTBox().alloc();
         if ((getApi().style & SWT.SEPARATOR) != 0) {
-            /*
-		 * Feature in Cocoa: Separator control decides how to orient itself
-		 * based on the width and height. If height > width it orients
-		 * vertically, else it orients horizontally.
-		 * Fix is to have two native controls to implement the separator label.
-		 * The top control (Custom NSBox) honors the bounds set by the
-		 * user and the inner one (Separator NSBox) creates the separator
-		 * with the correct orientation.
-		 */
-            NSRect rect = new NSRect();
-            rect.width = DEFAULT_WIDTH;
-            rect.height = DEFAULT_HEIGHT;
-            widget.initWithFrame(rect);
-            widget.setTitle(NSString.string());
-            widget.setBorderType(OS.NSNoBorder);
-            widget.setBoxType(OS.NSBoxCustom);
-            widget.setContentViewMargins(new NSSize());
-            double lineWidth = widget.borderWidth();
             if ((getApi().style & SWT.HORIZONTAL) != 0) {
-                rect.height = (int) Math.ceil(lineWidth * 2);
-                rect.y = (DEFAULT_HEIGHT / 2) - (rect.height / 2);
             } else {
-                rect.width = (int) Math.ceil(lineWidth * 2);
-                rect.x = (DEFAULT_WIDTH / 2) - (rect.width / 2);
             }
-            NSBox separator = (NSBox) new SWTBox().alloc();
-            separator.initWithFrame(rect);
-            separator.setBoxType(OS.NSBoxSeparator);
             if ((getApi().style & SWT.HORIZONTAL) != 0) {
-                separator.setAutoresizingMask(OS.NSViewWidthSizable | OS.NSViewMinYMargin | OS.NSViewMaxYMargin);
             } else {
-                separator.setAutoresizingMask(OS.NSViewHeightSizable | OS.NSViewMinXMargin | OS.NSViewMaxXMargin);
             }
-            NSView child = (NSView) new NSView().alloc().init();
-            separator.setContentView(child);
-            child.release();
-            widget.addSubview(separator);
-            this.separator = separator;
         } else {
-            widget.init();
-            widget.setTitle(NSString.string());
-            widget.setBorderType(OS.NSNoBorder);
-            widget.setBorderWidth(0);
-            widget.setBoxType(OS.NSBoxCustom);
-            NSSize offsetSize = new NSSize();
-            widget.setContentViewMargins(offsetSize);
-            NSImageView imageWidget = (NSImageView) new SWTImageView().alloc();
-            imageWidget.init();
-            imageWidget.setImageScaling(OS.NSScaleNone);
-            NSTextField textWidget = (NSTextField) new SWTTextField().alloc();
-            textWidget.init();
-            textWidget.setBordered(false);
-            textWidget.setEditable(false);
-            textWidget.setDrawsBackground(false);
-            NSTextFieldCell cell = new NSTextFieldCell(textWidget.cell());
-            cell.setWraps((getApi().style & SWT.WRAP) != 0);
-            widget.addSubview(imageWidget);
-            widget.addSubview(textWidget);
-            widget.setContentView(textWidget);
-            imageView = imageWidget;
-            textView = textWidget;
             _setAlignment();
         }
-        getApi().view = widget;
     }
 
     @Override
@@ -274,55 +176,19 @@ public class SwtLabel extends SwtControl implements ILabel {
         super.createWidget();
     }
 
-    NSAttributedString createString() {
-        NSAttributedString attribStr = createString(text, null, foreground, getApi().style, (getApi().style & SWT.WRAP) != 0, true, true);
-        attribStr.autorelease();
-        return attribStr;
-    }
-
-    @Override
-    NSFont defaultNSFont() {
-        return ((SwtDisplay) display.getImpl()).textFieldFont;
-    }
-
     @Override
     void deregister() {
         super.deregister();
-        if (textView != null) {
-            ((SwtDisplay) display.getImpl()).removeWidget(textView);
-            ((SwtDisplay) display.getImpl()).removeWidget(textView.cell());
-        }
-        if (imageView != null) {
-            ((SwtDisplay) display.getImpl()).removeWidget(imageView);
-            ((SwtDisplay) display.getImpl()).removeWidget(imageView.cell());
-        }
-        if (separator != null)
-            ((SwtDisplay) display.getImpl()).removeWidget(separator);
-    }
-
-    @Override
-    void drawBackground(long id, NSGraphicsContext context, NSRect rect) {
-        if (id != getApi().view.id)
-            return;
-        fillBackground(getApi().view, context, rect, -1);
     }
 
     @Override
     long imageView() {
-        //This function is modified to include a check for SWT Separator NSBox to handle cases where the image view is not present.
-        if (imageView != null)
-            return imageView.id;
         return 0L;
     }
 
     @Override
     boolean drawsBackground() {
         return background != null || backgroundImage != null;
-    }
-
-    @Override
-    NSView eventView() {
-        return ((NSBox) getApi().view).contentView();
     }
 
     /**
@@ -398,30 +264,11 @@ public class SwtLabel extends SwtControl implements ILabel {
     @Override
     void register() {
         super.register();
-        if (textView != null) {
-            ((SwtDisplay) display.getImpl()).addWidget(textView, this.getApi());
-            ((SwtDisplay) display.getImpl()).addWidget(textView.cell(), this.getApi());
-        }
-        if (imageView != null) {
-            ((SwtDisplay) display.getImpl()).addWidget(imageView, this.getApi());
-            ((SwtDisplay) display.getImpl()).addWidget(imageView.cell(), this.getApi());
-        }
-        if (separator != null)
-            ((SwtDisplay) display.getImpl()).addWidget(separator, this.getApi());
     }
 
     @Override
     void releaseHandle() {
         super.releaseHandle();
-        if (textView != null)
-            textView.release();
-        if (imageView != null)
-            imageView.release();
-        if (separator != null)
-            separator.release();
-        textView = null;
-        imageView = null;
-        separator = null;
     }
 
     /*
@@ -429,9 +276,6 @@ public class SwtLabel extends SwtControl implements ILabel {
  */
     @Override
     public void removeRelation() {
-        if (textView != null) {
-            textView.cell().accessibilitySetOverrideValue(null, OS.NSAccessibilityServesAsTitleForUIElementsAttribute);
-        }
     }
 
     /**
@@ -449,6 +293,7 @@ public class SwtLabel extends SwtControl implements ILabel {
      */
     public void setAlignment(int alignment) {
         checkWidget();
+        this.alignment = alignment;
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
         if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
@@ -456,29 +301,13 @@ public class SwtLabel extends SwtControl implements ILabel {
         getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         _setAlignment();
+        getBridge().dirty(this);
     }
 
     void _setAlignment() {
         if (image != null) {
-            if ((getApi().style & SWT.RIGHT) != 0)
-                imageView.setImageAlignment(OS.NSImageAlignRight);
-            if ((getApi().style & SWT.LEFT) != 0)
-                imageView.setImageAlignment(OS.NSImageAlignLeft);
-            if ((getApi().style & SWT.CENTER) != 0)
-                imageView.setImageAlignment(OS.NSImageAlignCenter);
         }
         if (text != null) {
-            NSCell cell = new NSCell(textView.cell());
-            cell.setAttributedStringValue(createString());
-        }
-    }
-
-    @Override
-    void setFont(NSFont font) {
-        if (textView != null) {
-            NSCell cell = new NSCell(textView.cell());
-            cell.setAttributedStringValue(createString());
-            textView.setFont(font);
         }
     }
 
@@ -486,8 +315,6 @@ public class SwtLabel extends SwtControl implements ILabel {
     void setForeground(double[] color) {
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
-        NSCell cell = new NSCell(textView.cell());
-        cell.setAttributedStringValue(createString());
     }
 
     @Override
@@ -518,28 +345,14 @@ public class SwtLabel extends SwtControl implements ILabel {
                 error(SWT.ERROR_INVALID_ARGUMENT);
             this.image = image;
             isImage = true;
-            /*
-		 * Feature in Cocoa.  If the NSImage object being set into the view is
-		 * the same NSImage object that is already there then the new image is
-		 * not taken.  This results in the view's image not changing even if the
-		 * NSImage object's content has changed since it was last set into the
-		 * view.  The workaround is to temporarily set the view's image to null
-		 * so that the new image will then be taken.
-		 */
-            NSImage current = imageView.image();
-            if (current != null && current.id == image.handle.id) {
-                imageView.setImage(null);
-            }
-            imageView.setImage(image.handle);
-            ((NSBox) getApi().view).setContentView(imageView);
         } else {
             // do nothing if image is already null
             if (this.image == null)
                 return;
             this.image = image;
-            imageView.setImage(null);
             _setText();
         }
+        getBridge().dirty(this);
     }
 
     /**
@@ -581,14 +394,14 @@ public class SwtLabel extends SwtControl implements ILabel {
             return;
         text = string;
         _setText();
+        getBridge().dirty(this);
     }
 
     private void _setText() {
         isImage = false;
-        NSCell cell = new NSCell(textView.cell());
-        cell.setAttributedStringValue(createString());
-        ((NSBox) getApi().view).setContentView(textView);
     }
+
+    int alignment;
 
     public String _text() {
         return text;
@@ -602,9 +415,23 @@ public class SwtLabel extends SwtControl implements ILabel {
         return isImage;
     }
 
+    public int _alignment() {
+        return alignment;
+    }
+
+    protected void hookEvents() {
+        super.hookEvents();
+    }
+
     public Label getApi() {
         if (api == null)
             api = Label.createApi(this);
         return (Label) api;
+    }
+
+    public VLabel getValue() {
+        if (value == null)
+            value = new VLabel(this);
+        return (VLabel) value;
     }
 }

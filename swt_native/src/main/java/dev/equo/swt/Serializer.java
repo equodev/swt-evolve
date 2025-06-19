@@ -23,7 +23,7 @@ public class Serializer {
 //        Settings.withAnalyzers(false, false)
 //                .with()
         DslJson.Settings<Object> settings = new DslJson.Settings<>()
-            .includeServiceLoader()
+            .includeServiceLoader(Serializer.class.getClassLoader())
             .skipDefaultValues(true);
         dsl = new DslJson<>(settings);
     }

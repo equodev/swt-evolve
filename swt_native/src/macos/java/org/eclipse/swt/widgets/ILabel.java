@@ -3,7 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
-public interface ILabel extends IControl {
+public interface ILabel extends IControl, ImplLabel {
 
     Point computeSize(int wHint, int hHint, boolean changed);
 

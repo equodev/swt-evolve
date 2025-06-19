@@ -15,9 +15,9 @@
  */
 package org.eclipse.swt.widgets;
 
-import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class provide an i-beam that is typically used
@@ -37,7 +37,7 @@ import org.eclipse.swt.graphics.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtCaret extends SwtWidget implements ICaret {
+public class DartCaret extends DartWidget implements ICaret {
 
     Canvas parent;
 
@@ -81,7 +81,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtCaret(Canvas parent, int style, Caret api) {
+    public DartCaret(Canvas parent, int style, Caret api) {
         super(parent, style, api);
         this.parent = parent;
         createWidget();
@@ -116,17 +116,6 @@ public class SwtCaret extends SwtWidget implements ICaret {
         if (nWidth <= 0)
             nWidth = DEFAULT_WIDTH;
         if (image != null) {
-            NSSize size = image.handle.size();
-            nWidth = (int) size.width;
-            nHeight = (int) size.height;
-        }
-        NSRect rect = new NSRect();
-        rect.x = x;
-        rect.y = y;
-        rect.width = nWidth;
-        rect.height = nHeight;
-        if (parent == null || parent.getImpl() instanceof SwtCanvas) {
-            parent.view.setNeedsDisplayInRect(rect);
         }
         return true;
     }
@@ -286,7 +275,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public boolean isVisible() {
         checkWidget();
-        return isVisible && parent.isVisible() && ((SwtControl) parent.getImpl()).hasFocus();
+        return isVisible && parent.isVisible() && ((DartControl) parent.getImpl()).hasFocus();
     }
 
     boolean isFocusCaret() {
@@ -304,11 +293,11 @@ public class SwtCaret extends SwtWidget implements ICaret {
     @Override
     void releaseParent() {
         super.releaseParent();
-        if (parent != null && this.getApi() == ((SwtCanvas) parent.getImpl()).caret) {
+        if (parent != null && this.getApi() == ((DartCanvas) parent.getImpl()).caret) {
             if (!parent.isDisposed())
                 parent.setCaret(null);
             else
-                ((SwtCanvas) parent.getImpl()).caret = null;
+                ((DartCanvas) parent.getImpl()).caret = null;
         }
     }
 
@@ -352,6 +341,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
         this.height = height;
         if (isFocus && isVisible)
             showCaret();
+        getBridge().dirty(this);
     }
 
     /**
@@ -403,6 +393,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.font = font;
+        getBridge().dirty(this);
     }
 
     /**
@@ -431,6 +422,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
         this.image = image;
         if (isFocus && isVisible)
             showCaret();
+        getBridge().dirty(this);
     }
 
     /**
@@ -449,6 +441,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
     public void setLocation(int x, int y) {
         checkWidget();
         setBounds(x, y, width, height);
+        getBridge().dirty(this);
     }
 
     /**
@@ -484,6 +477,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
     public void setSize(int width, int height) {
         checkWidget();
         setBounds(x, y, width, height);
+        getBridge().dirty(this);
     }
 
     /**
@@ -534,6 +528,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
         } else {
             hideCaret();
         }
+        getBridge().dirty(this);
     }
 
     boolean showCaret() {
@@ -583,9 +578,27 @@ public class SwtCaret extends SwtWidget implements ICaret {
         return font;
     }
 
+    public FlutterBridge getBridge() {
+        if (bridge != null)
+            return bridge;
+        Composite p = parent;
+        while (!(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return ((DartWidget) p.getImpl()).getBridge();
+    }
+
+    protected void hookEvents() {
+        super.hookEvents();
+    }
+
     public Caret getApi() {
         if (api == null)
             api = Caret.createApi(this);
         return (Caret) api;
+    }
+
+    public VCaret getValue() {
+        if (value == null)
+            value = new VCaret(this);
+        return (VCaret) value;
     }
 }

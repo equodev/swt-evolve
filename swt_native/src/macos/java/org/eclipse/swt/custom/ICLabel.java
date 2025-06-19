@@ -6,7 +6,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface ICLabel extends ICanvas {
+public interface ICLabel extends ICanvas, ImplCLabel {
 
     Point computeSize(int wHint, int hHint, boolean changed);
 

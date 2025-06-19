@@ -202,15 +202,6 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).gradientVertical = value;
     }
 
-    @JsonAttribute(ignore = true)
-    public Font getOldFont() {
-        return ((DartCTabFolder) impl).oldFont;
-    }
-
-    public void setOldFont(Font value) {
-        ((DartCTabFolder) impl).oldFont = value;
-    }
-
     public Color[] getSelectionGradientColors() {
         Color[] values = ((DartCTabFolder) impl).selectionGradientColors;
         if (values == null)

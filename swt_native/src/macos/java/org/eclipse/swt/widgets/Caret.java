@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class provide an i-beam that is typically used
@@ -69,7 +70,7 @@ public class Caret extends Widget {
      */
     public Caret(Canvas parent, int style) {
         this((ICaret) null);
-        setImpl(new SwtCaret(parent, style, this));
+        setImpl(Config.isEquo(Caret.class, parent) ? new DartCaret(parent, style, this) : new SwtCaret(parent, style, this));
     }
 
     /**

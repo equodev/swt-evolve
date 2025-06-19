@@ -77,14 +77,6 @@ public class VCTabItem extends VItem {
         ((DartCTabItem) impl).toolTipText = value;
     }
 
-    public String getShortenedText() {
-        return ((DartCTabItem) impl).shortenedText;
-    }
-
-    public void setShortenedText(String value) {
-        ((DartCTabItem) impl).shortenedText = value;
-    }
-
     @JsonConverter(target = CTabItem.class)
     public static class CTabItemJson implements Configuration {
 
