@@ -5022,7 +5022,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     int traversalCode(int key, NSEvent theEvent) {
         int code = SWT.TRAVERSE_RETURN | SWT.TRAVERSE_TAB_NEXT | SWT.TRAVERSE_TAB_PREVIOUS | SWT.TRAVERSE_PAGE_NEXT | SWT.TRAVERSE_PAGE_PREVIOUS;
         Shell shell = getShell();
-        if (((SwtControl) shell.getImpl()).parent != null)
+        if (shell.getImpl()._parent() != null)
             code |= SWT.TRAVERSE_ESCAPE;
         return code;
     }

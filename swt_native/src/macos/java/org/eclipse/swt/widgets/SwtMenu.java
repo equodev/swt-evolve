@@ -129,7 +129,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
         checkParent(parent);
         this.getApi().style = checkStyle(style);
         if (parent != null) {
-            display = ((SwtWidget) parent.getImpl()).display;
+            display = parent.getImpl()._display();
         } else {
             display = SwtDisplay.getCurrent();
             if (display == null)

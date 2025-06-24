@@ -394,7 +394,7 @@ public class SwtShell extends SwtDecorations implements IShell {
      * @see SWT#SHEET
      */
     public SwtShell(Shell parent, int style, Shell api) {
-        this(parent != null ? ((SwtWidget) parent.getImpl()).display : null, parent, style, 0, false, api);
+        this(parent != null ? parent.getImpl()._display() : null, parent, style, 0, false, api);
     }
 
     /**
@@ -1114,7 +1114,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                     if ((modal.style & SWT.PRIMARY_MODAL) != 0) {
                         if (shell == null)
                             shell = getShell();
-                        if (((SwtControl) modal.getImpl()).parent == shell)
+                        if (modal.getImpl()._parent() == shell)
                             return modal;
                     }
                 }
@@ -2369,8 +2369,8 @@ public class SwtShell extends SwtDecorations implements IShell {
 					 * https://bugs.eclipse.org/478975 .
 					 */
                         Shell parentShell = (Shell) parent;
-                        while (((SwtControl) parentShell.getImpl()).parent != null) {
-                            parentShell = (Shell) ((SwtControl) parentShell.getImpl()).parent;
+                        while (parentShell.getImpl()._parent() != null) {
+                            parentShell = (Shell) parentShell.getImpl()._parent();
                             if (((SwtShell) parentShell.getImpl())._getFullScreen()) {
                                 window.setLevel(OS.NSSubmenuWindowLevel);
                                 break;
@@ -2387,7 +2387,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         Shell[] shells = getShells();
         for (int i = 0; i < shells.length; i++) {
             Shell shell = shells[i];
-            if (((SwtControl) shell.getImpl()).parent == this.getApi() && shell.getVisible()) {
+            if (shell.getImpl()._parent() == this.getApi() && shell.getVisible()) {
                 ((SwtShell) shell.getImpl()).updateParent(visible);
             }
         }
@@ -2462,8 +2462,8 @@ public class SwtShell extends SwtDecorations implements IShell {
             return;
         if ((window.collectionBehavior() & OS.NSWindowCollectionBehaviorFullScreenPrimary) == 0) {
             Shell parentShell = this.getApi();
-            while (((SwtControl) parentShell.getImpl()).parent != null) {
-                parentShell = (Shell) ((SwtControl) parentShell.getImpl()).parent;
+            while (parentShell.getImpl()._parent() != null) {
+                parentShell = (Shell) parentShell.getImpl()._parent();
                 if (((SwtShell) parentShell.getImpl())._getFullScreen()) {
                     break;
                 }

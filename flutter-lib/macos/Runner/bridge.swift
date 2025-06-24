@@ -117,7 +117,7 @@ func getDylibDirectory() -> String? {
 }
 
 // JNI bridge function
-@MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridge_InitializeFlutterWindow")
+@MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_InitializeFlutterWindow")
 public func InitializeFlutterWindow(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, port: jint, parent: jlong, widget_id: jlong, widget_name: jstring) -> jlong {
     let parentView = parent != 0 ? unsafeBitCast(UInt(parent), to: NSView.self) : nil
     let cString = env.pointee!.pointee.GetStringUTFChars(env, widget_name, nil)
@@ -132,9 +132,9 @@ public func InitializeFlutterWindow(env: UnsafeMutablePointer<JNIEnv?>, cls: jcl
 //     FlutterBridgeController.shared.initialize(parentView: parentView, port: port, widgetId: Int64(widget_id), widgetName: swiftString)
 }
 
-@MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridge_GetView")
+@MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_GetView")
 public func GetView(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) -> jlong {
-// print("Java_org_eclipse_swt_widgets_SwtFlutterBridge_GetView")
+// print("Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_GetView")
     let controller = context != 0 ? unsafeBitCast(UInt(context), to: FlutterBridgeController.self) : nil
     if let view = controller?.getView() {
         let viewPtr = Unmanaged.passRetained(view).toOpaque()
@@ -143,16 +143,16 @@ public func GetView(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jl
     return 0
 }
 
-@MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridge_Dispose")
+@MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_Dispose")
 public func Dispose(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) {
-// print("Java_org_eclipse_swt_widgets_SwtFlutterBridge_Dispose")
+// print("Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_Dispose")
     let controller = context != 0 ? unsafeBitCast(UInt(context), to: FlutterBridgeController.self) : nil
     controller!.destroy()
 }
 
-@MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridge_SetBounds")
+@MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_SetBounds")
 public func SetBounds(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong, x: jint, y: jint, width: jint, height: jint, vx: jint, vy: jint, vwidth: jint, vheight: jint) {
-// print("Java_org_eclipse_swt_widgets_SwtFlutterBridge_SetBounds")
+// print("Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_SetBounds")
     let controller = context != 0 ? unsafeBitCast(UInt(context), to: FlutterBridgeController.self) : nil
     controller!.setFrame(x: x, y: y, w: width, h: height, vx: vx, vy: vy, vw: vwidth, vh: vheight)
 }

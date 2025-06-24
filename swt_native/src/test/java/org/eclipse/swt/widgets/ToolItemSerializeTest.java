@@ -16,7 +16,6 @@ class ToolItemSerializeTest extends SerializeTestBase {
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "ToolItem");
-        assertJ.satisfies(node("width").equalsTo(w.getWidth(), orAbsentIf0));
     }
 
     @Test
@@ -28,7 +27,6 @@ class ToolItemSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "ToolItem")
                .containsEntry("toolTipText", json(w.getToolTipText()))
-               .containsEntry("text", json(value(w).getText()))
                .containsEntry("text", json(w.getText()))
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));

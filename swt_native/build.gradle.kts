@@ -31,38 +31,10 @@ val currentOs = when {
 
 val swtVersion = "3.128.0"
 
-val swtBundle = when {
-    isWindows -> {
-        when (arch) {
-            "amd64", "x86_64" -> "org.eclipse.platform:org.eclipse.swt.win32.win32.x86_64"
-            "aarch64" -> "org.eclipse.platform:org.eclipse.swt.win32.win32.aarch64"
-            else -> throw GradleException("Unsupported Windows architecture: $arch")
-        }
-    }
-    isMac -> {
-        when (arch) {
-            "amd64", "x86_64" -> "org.eclipse.platform:org.eclipse.swt.cocoa.macosx.x86_64"
-            "aarch64" -> "org.eclipse.platform:org.eclipse.swt.cocoa.macosx.aarch64"
-            else -> throw GradleException("Unsupported macOS architecture: $arch")
-        }
-    }
-    isLinux -> {
-        when (arch) {
-            "amd64", "x86_64" -> "org.eclipse.platform:org.eclipse.swt.gtk.linux.x86_64"
-            "aarch64" -> "org.eclipse.platform:org.eclipse.swt.gtk.linux.aarch64"
-            else -> throw GradleException("Unsupported Linux architecture: $arch")
-        }
-    }
-    else -> throw GradleException("Unsupported operating system")
-}
-
 //val swtImplementation by configurations.creating {
 //    exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
 //}
 //
-val swtSources by configurations.creating {
-    exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
-}
 
 dependencies {
 //    platforms.forEach { platform ->
@@ -71,7 +43,6 @@ dependencies {
 //        swtImplementation
 //    }
 //    swtImplementation("$swtBundle:$swtVersion")
-    swtSources("$swtBundle:$swtVersion:sources")
     implementation("dev.equo:com.equo.comm.ws.provider:3.1.0.202405302201") {
         exclude(group = "dev.equo", module = "com.equo.comm.common")
     }
@@ -93,7 +64,7 @@ sourceSets {
     main {
         java {
             // Include the shared sources and current OS-specific sources for IDE
-            if (currentOs != "macos") // temp exclude src/main from linux
+            if (currentOs == "linux") // temp exclude src/main from linux
                 setSrcDirs(listOf(
                     "src/${currentOs}/java"
                 ))
@@ -109,7 +80,7 @@ sourceSets {
     oss.forEach { os ->
         create(os) {
             java {
-                if (os != "macos") // temp exclude src/main from linux
+                if (os == "linux") // temp exclude src/main from linux
                     setSrcDirs(listOf(
                         "src/${os}/java"
                     ))
@@ -175,37 +146,6 @@ tasks.test {
 //        }
 //    }
 //}
-
-val os = "macos"
-
-val extractSources by tasks.registering {
-    dependsOn(configurations["swtSources"])
-
-    doLast {
-        val sourcesDir = file("build/swt/$os")
-        sourcesDir.mkdirs()
-
-        configurations["swtSources"].files.forEach { jar ->
-            unzipTo(sourcesDir, jar)
-        }
-
-//        configurations["swtSources"].files.forEach { jar ->
-//            ZipFile(jar).use { zip ->
-//                zip.entries().asSequence()
-//                    .filter { !it.isDirectory }
-//                    .forEach { entry ->
-//                        zip.getInputStream(entry).use { input ->
-//                            val outputFile = file("${sourcesDir}/${entry.name}")
-//                            outputFile.parentFile.mkdirs()
-//                            outputFile.outputStream().use { output ->
-//                                input.copyTo(output)
-//                            }
-//                        }
-//                    }
-//            }
-//        }
-    }
-}
 
 tasks.compileJava {
 //    dependsOn(extractSources)

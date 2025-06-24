@@ -169,7 +169,7 @@ public class SwtFontDialog extends SwtDialog implements IFontDialog {
      * </ul>
      */
     public FontData open() {
-        Display display = parent != null ? ((SwtWidget) parent.getImpl()).display : SwtDisplay.getCurrent();
+        Display display = parent != null ? parent.getImpl()._display() : SwtDisplay.getCurrent();
         NSFontPanel panel = NSFontPanel.sharedFontPanel();
         panel.setTitle(NSString.stringWith(title != null ? title : ""));
         boolean create = fontData != null;

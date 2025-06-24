@@ -72,6 +72,15 @@ public class Mocks {
         return w;
     }
 
+    public static Canvas canvas() {
+        Canvas w = mock(Canvas.class);
+        DartCanvas impl = mock(DartCanvas.class);
+        when(w.getImpl()).thenReturn(impl);
+        Display display = display();
+        when(impl._display()).thenReturn(display);
+        return w;
+    }
+
     public static int aInt() {
         return Instancio.gen().ints().get();
     }
