@@ -2462,7 +2462,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (control.getImpl()._backgroundImage() != null) {
         } else {
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -2484,6 +2483,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBackground(Color color) {
         checkWidget();
+        this._background = color;
         _setBackground(color);
         if (color != null) {
             this.updateBackgroundMode();
@@ -2802,6 +2802,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setForeground(Color color) {
         checkWidget();
+        this._foreground = color;
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -3899,11 +3900,15 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return 0.2126f * rgbColor[0] + 0.7152f * rgbColor[1] + 0.0722f * rgbColor[2];
     }
 
+    Color _background;
+
     Rectangle bounds = new Rectangle(0, 0, 0, 0);
 
     boolean dragDetect;
 
     boolean enabled;
+
+    Color _foreground;
 
     int orientation;
 
@@ -3971,6 +3976,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return touchEnabled;
     }
 
+    public Color __background() {
+        return _background;
+    }
+
     public Rectangle _bounds() {
         return bounds;
     }
@@ -3981,6 +3990,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public boolean _enabled() {
         return enabled;
+    }
+
+    public Color __foreground() {
+        return _foreground;
     }
 
     public int _orientation() {

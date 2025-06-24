@@ -72,7 +72,7 @@ public class Config {
         return false;
     }
 
-    public static boolean isEquo(Class<?> clazz, Composite parent) {
+    public static boolean isEquo(Class<?> clazz, Scrollable parent) {
         Object data = parent != null ? parent.getData(getKey(clazz)) : null;
         if (data != null) {
             if (Impl.equo.equals(data)) return true;
@@ -86,7 +86,7 @@ public class Config {
         return false;
     }
 
-    private static boolean isCustomAncestor(Composite parent) {
+    private static boolean isCustomAncestor(Scrollable parent) {
         while (parent != null) {
             if (parent.getImpl() instanceof DartMainToolbar)
                 return true;

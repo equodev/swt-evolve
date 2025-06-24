@@ -729,7 +729,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             if (this.getApi() == ((SwtDisplay) display.getImpl()).appMenuBar)
                 return ((SwtDisplay) display.getImpl()).application.isActive();
             else
-                return this.getApi() == ((SwtDecorations) parent.getImpl().menuShell().getImpl()).menuBar;
+                return this.getApi() == ((SwtDecorations) ((SwtDecorations) parent.getImpl()).menuShell().getImpl()).menuBar;
         }
         if ((getApi().style & SWT.POP_UP) != 0) {
             Menu[] popups = ((SwtDisplay) display.getImpl()).popups;

@@ -1,4 +1,4 @@
-package org.eclipse.swt.widgets;
+package dev.equo.swt;
 
 import com.equo.comm.api.ICommService;
 

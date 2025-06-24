@@ -4,6 +4,7 @@ import static java.util.Arrays.asList;
 
 import com.equo.comm.api.ICommService;
 import com.equo.comm.ws.provider.EquoWebSocketServiceImpl;
+import dev.equo.swt.Delegate;
 
 import java.io.File;
 import java.io.InputStream;

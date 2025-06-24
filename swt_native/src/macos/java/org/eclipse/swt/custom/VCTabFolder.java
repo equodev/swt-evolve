@@ -28,7 +28,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public CTabItem[] getItems() {
-        CTabItem[] values = ((DartCTabFolder) impl).items;
+        CTabItem[] values = ((DartCTabFolder) impl).getItems();
         if (values == null)
             return null;
         ArrayList<CTabItem> result = new ArrayList<>(values.length);

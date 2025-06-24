@@ -6,12 +6,10 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.DartCTabFolder;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.internal.cocoa.NSView;
-import org.eclipse.swt.internal.cocoa.OS;
 
 import java.util.Arrays;
 
-public class SwtFlutterBridge extends FlutterBridge {
+public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     private final DartWidget forWidget;
     private long context;
 
@@ -19,7 +17,7 @@ public class SwtFlutterBridge extends FlutterBridge {
         FlutterLibraryLoader.initialize();
     }
 
-    public SwtFlutterBridge(DartWidget widget) {
+    public SwtFlutterBridgeBase(DartWidget widget) {
         this.forWidget = widget;
     }
 
@@ -27,8 +25,6 @@ public class SwtFlutterBridge extends FlutterBridge {
         if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof SwtComposite) {
 //            SwtComposite parentComposite = new SwtComposite(dartControl.parent, SWT.NONE, null);
             SwtFlutterBridge bridge = new SwtFlutterBridge(widget);
-            // TODO abstract view.id in getHandle()
-//            bridge.initFlutterView(parentComposite.getApi().view.id, dartControl);
             bridge.initFlutterView(dartControl.parent, dartControl);
             if (widget instanceof DartCTabFolder t) { // workaround
                 t.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> {
@@ -52,28 +48,25 @@ public class SwtFlutterBridge extends FlutterBridge {
 
     void initFlutterView(Composite parent, DartControl control) {
         super.onReady(control);
-        context = InitializeFlutterWindow(client.getPort(), parent.view.id, id(control), widgetName(control));
+        context = InitializeFlutterWindow(client.getPort(), getHandle(parent), id(control), widgetName(control));
         long view = GetView(context);
-        control.getApi().view = new NSView(view);
-        control.jniRef = OS.NewGlobalRef(control.getApi());
-        if (control.jniRef == 0)
-            SWT.error(SWT.ERROR_NO_HANDLES);
-        ((SwtDisplay) control.display.getImpl()).addWidget(control.getApi().view, control.getApi());
+        setHandle(control, view);
     }
+
+    protected abstract long getHandle(Control control);
+
+    protected abstract void setHandle(DartControl control, long view);
 
     @Override
     public void destroy(DartWidget control) {
         if (control instanceof DartControl dartControl && control == forWidget) {
-            ((SwtDisplay) control.display.getImpl()).removeWidget(dartControl.getApi().view);
-            if (dartControl.jniRef != 0) {
-                OS.DeleteGlobalRef(dartControl.jniRef);
-            }
-            control.jniRef = 0;
-            dartControl.getApi().view = null;
+            destroyHandle(control, dartControl);
             Dispose(context);
             context = 0;
         }
     }
+
+    protected abstract void destroyHandle(DartWidget control, DartControl dartControl);
 
     @Override
     public void setBounds(DartControl dartControl, Rectangle bounds) {
@@ -86,14 +79,13 @@ public class SwtFlutterBridge extends FlutterBridge {
                 SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
                         bounds.x, bounds.y, bounds.width, bounds.height);
             }
-            dartControl.resized();
+//            dartControl.resized();
+            dartControl.sendEvent(SWT.Resize);
         }
     }
 
     @Override
-    public Object container(DartComposite parent) {
-        return parent.getApi().view;
-    }
+    public abstract Object container(DartComposite parent);
 
     static native long InitializeFlutterWindow(int port, long parentHandle, long widgetId, String widgetName);
 
