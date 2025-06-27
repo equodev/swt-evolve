@@ -14,6 +14,8 @@ public interface ImplWidget {
 
     Object _data();
 
+    void checkOpened();
+
     void release(boolean destroy);
 
     void sendEvent(Event event);

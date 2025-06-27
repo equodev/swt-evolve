@@ -28,12 +28,12 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     @Override
-    protected void destroyHandle(DartWidget control, DartControl dartControl) {
-        ((SwtDisplay) control.display.getImpl()).removeWidget(dartControl.getApi().view);
-        if (dartControl.jniRef != 0)
-            OS.DeleteGlobalRef(dartControl.jniRef);
+    protected void destroyHandle(DartControl control) {
+        ((SwtDisplay) control.display.getImpl()).removeWidget(control.getApi().view);
+        if (control.jniRef != 0)
+            OS.DeleteGlobalRef(control.jniRef);
         control.jniRef = 0;
-        dartControl.getApi().view = null;
+        control.getApi().view = null;
     }
 }
 

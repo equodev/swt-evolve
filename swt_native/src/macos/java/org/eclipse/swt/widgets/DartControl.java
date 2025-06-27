@@ -676,7 +676,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     @Override
     void deregister() {
-        super.deregister();
+        if (bridge != null)
+            bridge.destroy(this);
     }
 
     @Override
@@ -1943,7 +1944,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     @Override
     void register() {
-        super.register();
+        hookEvents();
+        bridge = FlutterBridge.of(this);
     }
 
     @Override

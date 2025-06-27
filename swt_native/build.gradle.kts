@@ -1,7 +1,5 @@
 import org.gradle.kotlin.dsl.*
 
-import org.gradle.kotlin.dsl.support.unzipTo
-
 plugins {
     java
     `java-library`
@@ -11,9 +9,6 @@ repositories {
     mavenCentral()
 }
 
-val isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows
-val isLinux = org.gradle.internal.os.OperatingSystem.current().isLinux
-val isMac = org.gradle.internal.os.OperatingSystem.current().isMacOsX
 val arch = System.getProperty("os.arch")
 
 val oss = listOf("windows", "linux", "macos")
@@ -29,20 +24,11 @@ val currentOs = when {
     else -> "linux"
 }
 
+val currentPlatform = "$currentOs-${if (arch.contains("aarch64") || arch.contains("arm")) "aarch64" else "x86_64"}"
+
 val swtVersion = "3.128.0"
 
-//val swtImplementation by configurations.creating {
-//    exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
-//}
-//
-
 dependencies {
-//    platforms.forEach { platform ->
-//
-//
-//        swtImplementation
-//    }
-//    swtImplementation("$swtBundle:$swtVersion")
     implementation("dev.equo:com.equo.comm.ws.provider:3.1.0.202405302201") {
         exclude(group = "dev.equo", module = "com.equo.comm.common")
     }
@@ -96,22 +82,6 @@ sourceSets {
         }
     }
 }
-//// Configure the main source set
-//java {
-//    sourceSets {
-//        create("macos") {
-//            java {
-//                srcDir("src/macos/java")
-//            }
-//        }
-////        main {
-////            java {
-////                srcDir("src/main/java")
-////            }
-////        }
-//    }
-//}
-
 
 tasks.test {
     useJUnitPlatform()
@@ -119,65 +89,20 @@ tasks.test {
 //        jvmArgs = listOf("-XstartOnFirstThread")
 }
 
-//val extractNatives by tasks.registering {
-//    dependsOn(configurations["swtImplementation"])
-//
-//    doLast {
-//        val nativesDir = layout.buildDirectory.file("natives").get().getAsFile()
-//        nativesDir.mkdirs()
-//
-//        configurations["swtImplementation"].files.forEach { jar ->
-//            ZipFile(jar).use { zip ->
-//                zip.entries().asSequence()
-//                    .filter { it.name.matches(".+\\.(so|dll|dylib|jnilib)$".toRegex()) }
-//                    .forEach { entry ->
-//                        zip.getInputStream(entry).use { input ->
-//                            val outputFile = file("${nativesDir}/${entry.name}")
-//                            outputFile.parentFile.mkdirs()
-//                            outputFile.outputStream().use { output ->
-//                                input.copyTo(output)
-//                            }
-//                            if (!isWindows) {
-//                                outputFile.setExecutable(true)
-//                            }
-//                        }
-//                    }
-//            }
-//        }
-//    }
-//}
-
 tasks.compileJava {
-//    dependsOn(extractSources)
 //    options.setIncremental(false) // dsl-json processor seems to get crazy
 }
 
-//tasks.jar {
-////    dependsOn(extractNatives)
-//
-//    val sourceSets = project.extensions.getByType<SourceSetContainer>()
-//    from(sourceSets.getByName("main").java.srcDirs) {
-//        include("**/*.css")
-//    }
-//
-//    from(layout.buildDirectory.file("natives")) {
-//        into(".")
-//    }
-//
-//    // Add all dependencies to the JAR
-//    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-//
-//    // Exclude META-INF signatures to avoid signature validation errors
-//    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
-//
-//    manifest {
-//        attributes(
-//        )
-//    }
-//
-//    // Avoid duplicate files in the JAR
-//    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-//}
+tasks.jar {
+    from(layout.buildDirectory.dir("natives/$currentPlatform"))
+
+    // Add all dependencies to the JAR
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "OSGI-OPT/")
+
+    dependsOn("${currentPlatform}ExtractNatives")
+    dependsOn("${currentPlatform}CopyFlutterBinaries")
+}
 
 // Create tasks for each platform JAR
 platforms.forEach { platform ->
@@ -223,7 +148,7 @@ platforms.forEach { platform ->
     tasks.register<Copy>("${platform}CopyFlutterBinaries") {
         group = "build"
         description = "Copies Flutter binaries for $platform"
-        
+
         when (osArch[0]) {
             "macos" -> {
                 from("../flutter-lib/build/macos/Build/Products/Release/swtflutter.app") {
@@ -249,7 +174,7 @@ platforms.forEach { platform ->
                 // Add Windows binaries when needed
             }
         }
-        
+
         into(layout.buildDirectory.dir("natives/$platform"))
     }
 
@@ -300,7 +225,6 @@ platforms.forEach { platform ->
     }
 }
 
-// Task to build all platform JARs
 tasks.register("buildAllPlatforms") {
     group = "build"
     description = "Builds JARs for all platforms"

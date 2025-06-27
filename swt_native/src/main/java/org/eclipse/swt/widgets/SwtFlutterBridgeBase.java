@@ -60,13 +60,13 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     @Override
     public void destroy(DartWidget control) {
         if (control instanceof DartControl dartControl && control == forWidget) {
-            destroyHandle(control, dartControl);
+            destroyHandle(dartControl);
             Dispose(context);
             context = 0;
         }
     }
 
-    protected abstract void destroyHandle(DartWidget control, DartControl dartControl);
+    protected abstract void destroyHandle(DartControl dartControl);
 
     @Override
     public void setBounds(DartControl dartControl, Rectangle bounds) {

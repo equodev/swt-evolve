@@ -1,7 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import java.util.Arrays;
-
 public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     public SwtFlutterBridge(DartWidget widget) {
         super(widget);
@@ -14,7 +12,7 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     @Override
     protected void setHandle(DartControl control, long view) {
         control.getApi().handle = view;
-//        ((SwtDisplay) control.display.getImpl()).addWidget(control.getApi().handle, control.getApi());
+        ((SwtDisplay) control.display.getImpl()).addControl(control.getApi().handle, control.getApi());
     }
 
     @Override
@@ -23,12 +21,9 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     @Override
-    protected void destroyHandle(DartWidget control, DartControl dartControl) {
-//        ((SwtDisplay) control.display.getImpl()).removeWidget(dartControl.getApi().view);
-//        if (dartControl.jniRef != 0)
-//            OS.DeleteGlobalRef(dartControl.jniRef);
-//        control.jniRef = 0;
-        dartControl.getApi().handle = 0;
+    protected void destroyHandle(DartControl control) {
+        ((SwtDisplay) control.display.getImpl()).removeControl(control.getApi().handle);
+        control.getApi().handle = 0;
     }
 }
 

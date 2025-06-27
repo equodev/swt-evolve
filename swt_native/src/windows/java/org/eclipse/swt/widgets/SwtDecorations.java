@@ -271,7 +271,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
     }
 
     @Override
-    void checkOpened() {
+    public void checkOpened() {
         if (!opened)
             resized = false;
     }

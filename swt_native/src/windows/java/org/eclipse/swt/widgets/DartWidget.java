@@ -332,7 +332,7 @@ public abstract class DartWidget implements IWidget {
         getApi().style = checkBits(getApi().style, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, 0, 0, 0, 0);
     }
 
-    void checkOpened() {
+    public void checkOpened() {
         /* Do nothing */
     }
 
@@ -354,7 +354,7 @@ public abstract class DartWidget implements IWidget {
         if (parent.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         parent.checkWidget();
-        ((DartWidget) parent.getImpl()).checkOpened();
+        parent.getImpl().checkOpened();
     }
 
     void maybeEnableDarkSystemTheme(long handle) {

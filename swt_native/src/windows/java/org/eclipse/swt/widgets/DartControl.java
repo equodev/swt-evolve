@@ -620,9 +620,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void createHandle() {
-        long hwndParent = widgetParent();
-        if (getApi().handle == 0)
-            error(SWT.ERROR_NO_HANDLES);
     }
 
     void checkGesture() {
@@ -660,7 +657,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void deregister() {
-        ((SwtDisplay) display.getImpl()).removeControl(getApi().handle);
+        if (bridge != null)
+            bridge.destroy(this);
     }
 
     @Override
@@ -2001,7 +1999,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void register() {
-        ((SwtDisplay) display.getImpl()).addControl(getApi().handle, this.getApi());
+        hookEvents();
+        bridge = FlutterBridge.of(this);
     }
 
     @Override
