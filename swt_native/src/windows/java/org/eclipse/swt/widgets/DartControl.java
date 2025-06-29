@@ -584,7 +584,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point computeSize(int wHint, int hHint, boolean changed) {
         checkWidget();
-        return null;
+        return Sizes.compute(this);
     }
 
     Widget computeTabGroup() {

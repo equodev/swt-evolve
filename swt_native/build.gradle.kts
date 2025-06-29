@@ -149,6 +149,7 @@ platforms.forEach { platform ->
         group = "build"
         description = "Copies Flutter binaries for $platform"
 
+        val flutterArch = if (osArch[1] == "aarch64") "arm64" else "x64"
         when (osArch[0]) {
             "macos" -> {
                 from("../flutter-lib/build/macos/Build/Products/Release/swtflutter.app") {
@@ -156,22 +157,24 @@ platforms.forEach { platform ->
                 }
             }
             "linux" -> {
-                val linuxArch = if (osArch[1] == "aarch64") "arm64" else "x64"
-                from("../flutter-lib/build/linux/$linuxArch/release/runner") {
+                from("../flutter-lib/build/linux/$flutterArch/release/runner") {
                     include("libflutter_library.so")
                     into("runner")
                 }
-                from("../flutter-lib/build/linux/$linuxArch/release/bundle/lib") {
+                from("../flutter-lib/build/linux/$flutterArch/release/bundle/lib") {
                     include("libapp.so", "libflutter_linux_gtk.so")
                     into("bundle/lib")
                 }
-                from("../flutter-lib/build/linux/$linuxArch/release/bundle/data") {
+                from("../flutter-lib/build/linux/$flutterArch/release/bundle/data") {
                     include("icudtl.dat", "flutter_assets/**")
                     into("bundle/data")
                 }
             }
             "windows" -> {
-                // Add Windows binaries when needed
+                from("../flutter-lib/build/windows/$flutterArch/runner/Release/") {
+                    include("*.dll", "data/")
+                    into("runner")
+                }
             }
         }
 
