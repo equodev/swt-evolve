@@ -415,7 +415,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             }
             add = false;
         }
-        if (item == null || item.getImpl() instanceof SwtWidget) {
+        if (item.getImpl() instanceof SwtWidget) {
             ((SwtWidget) item.getImpl()).createJNIRef();
         }
         ((SwtMenuItem) item.getImpl()).register();

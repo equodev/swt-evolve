@@ -5363,7 +5363,12 @@ public final class SwtGC extends SwtResource implements IGC {
     public static GC win32_new(Drawable drawable, GCData data) {
         GC gc = new GC();
         long hDC = drawable.internal_new_GC(data);
-        ((SwtResource) gc.getImpl()).device = data.device;
+        if (gc.getImpl() instanceof DartResource) {
+            ((DartResource) gc.getImpl()).device = data.device;
+        }
+        if (gc.getImpl() instanceof SwtResource) {
+            ((SwtResource) gc.getImpl()).device = data.device;
+        }
         ((SwtGC) gc.getImpl()).init(drawable, data, hDC);
         return gc;
     }
@@ -5387,7 +5392,12 @@ public final class SwtGC extends SwtResource implements IGC {
      */
     public static GC win32_new(long hDC, GCData data) {
         GC gc = new GC();
-        ((SwtResource) gc.getImpl()).device = data.device;
+        if (gc.getImpl() instanceof DartResource) {
+            ((DartResource) gc.getImpl()).device = data.device;
+        }
+        if (gc.getImpl() instanceof SwtResource) {
+            ((SwtResource) gc.getImpl()).device = data.device;
+        }
         data.style |= SWT.LEFT_TO_RIGHT;
         int flags = OS.GetLayout(hDC);
         if ((flags & OS.LAYOUT_RTL) != 0) {

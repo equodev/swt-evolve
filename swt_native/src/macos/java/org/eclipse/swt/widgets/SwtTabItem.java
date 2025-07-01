@@ -365,10 +365,10 @@ public class SwtTabItem extends SwtItem implements ITabItem {
 	* it back.
 	*/
         if (oldControl != null) {
-            if (oldControl == null || oldControl.getImpl() instanceof SwtControl) {
+            if (oldControl.getImpl() instanceof SwtControl) {
                 NSView topView = ((SwtControl) oldControl.getImpl()).topView();
                 if (topView.superview() == null) {
-                    if (parent == null || parent.getImpl() instanceof SwtControl) {
+                    if (parent.getImpl() instanceof SwtControl) {
                         ((SwtControl) parent.getImpl()).contentView().addSubview(topView, OS.NSWindowBelow, null);
                     } else
                         ((NSView) ((DartComposite) parent.getImpl()).contentView()).addSubview(topView, OS.NSWindowBelow, null);
@@ -491,7 +491,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
                 foreground = ((SwtControl) parent.getImpl()).defaultForeground().handle;
             }
         }
-        if (parent == null || parent.getImpl() instanceof SwtControl) {
+        if (parent.getImpl() instanceof SwtControl) {
             attriStr = ((SwtControl) parent.getImpl()).createString(text, null, foreground, 0, false, true, true);
         }
         //force parent to resize

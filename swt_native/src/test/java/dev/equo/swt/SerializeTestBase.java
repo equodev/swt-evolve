@@ -4,6 +4,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Mocks;
 import org.eclipse.swt.widgets.Widget;
 import org.instancio.Instancio;
+import org.instancio.InstancioObjectApi;
 import org.instancio.Select;
 import org.instancio.settings.*;
 import org.junit.jupiter.api.AfterAll;
@@ -57,21 +58,21 @@ public class SerializeTestBase {
     }
 
     protected void setAll(Widget w) {
+        InstancioObjectApi<Widget> inst = Instancio.ofObject(w)
+                .withSettings(settings)
+                .ignore(Select.setter(Widget.class, "setImpl"))
+                .ignore(Select.field(Widget.class, "state"))
+                .ignore(Select.field(Widget.class, "style"));
         try {
-            Instancio.ofObject(w)
-                    .withSettings(settings)
-                    .ignore(Select.setter(Widget.class, "setImpl"))
-                    .ignore(Select.field(Widget.class, "state"))
-                    .ignore(Select.field(Widget.class, "style"))
-                    .ignore(Select.types().of(Class.forName("org.eclipse.swt.internal.cocoa.NSObject")))
-                    .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
-                    .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0)) // Always true
-                    .generate(Select.all(int.class), gen -> gen.ints().range(1, Integer.MAX_VALUE))
-                    .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())))
-                    .fill();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+            inst
+                    .ignore(Select.types().of(Class.forName("org.eclipse.swt.internal.cocoa.NSObject")));
+        } catch (ClassNotFoundException e) {}
+        inst
+                .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
+                .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0)) // Always true
+                .generate(Select.all(int.class), gen -> gen.ints().range(1, Integer.MAX_VALUE))
+                .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())))
+                .fill();
     }
 
     protected void setAll(Color w) {

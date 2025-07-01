@@ -550,7 +550,12 @@ public final class SwtColor extends SwtResource implements IColor {
     public static Color win32_new(Device device, int handle, int alpha) {
         Color color = new Color(device);
         color.handle = handle;
-        ((SwtColor) color.getImpl()).alpha = alpha;
+        if (color.getImpl() instanceof DartColor) {
+            ((DartColor) color.getImpl()).alpha = alpha;
+        }
+        if (color.getImpl() instanceof SwtColor) {
+            ((SwtColor) color.getImpl()).alpha = alpha;
+        }
         return color;
     }
 

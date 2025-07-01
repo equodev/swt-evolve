@@ -321,7 +321,11 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public Point getSize() {
         checkWidget();
-        return null;
+        return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
+    }
+
+    Point getSizeInPixels() {
+        return new Point(20, 20);
     }
 
     /**
@@ -356,7 +360,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public Rectangle getThumbBounds() {
         checkWidget();
-        return null;
+        return DPIUtil.scaleDown(getThumbBoundsInPixels(), getZoom());
     }
 
     Rectangle getThumbBoundsInPixels() {
@@ -384,7 +388,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public Rectangle getThumbTrackBounds() {
         checkWidget();
-        return null;
+        return DPIUtil.scaleDown(getThumbTrackBoundsInPixels(), getZoom());
     }
 
     Rectangle getThumbTrackBoundsInPixels() {

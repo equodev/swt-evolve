@@ -315,7 +315,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
     }
 
     @Override
-    Control findThemeControl() {
+    public Control findThemeControl() {
         /* It is not possible to change the background of this control */
         return this.getApi();
     }

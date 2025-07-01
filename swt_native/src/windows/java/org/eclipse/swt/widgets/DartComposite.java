@@ -197,6 +197,39 @@ public class DartComposite extends DartScrollable implements IComposite {
         return result;
     }
 
+    @Override
+    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+        ((SwtDisplay) display.getImpl()).runSkin();
+        Point size;
+        if (layout != null) {
+            if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
+                changed |= (getApi().state & LAYOUT_CHANGED) != 0;
+                getApi().state &= ~LAYOUT_CHANGED;
+                int zoom = getZoom();
+                size = DPIUtil.scaleUp(layout.computeSize(this.getApi(), DPIUtil.scaleDown(wHint, zoom), DPIUtil.scaleDown(hHint, zoom), changed), zoom);
+            } else {
+                size = new Point(wHint, hHint);
+            }
+        } else {
+            size = minimumSize(wHint, hHint, changed);
+            if (size.x == 0)
+                size.x = DEFAULT_WIDTH;
+            if (size.y == 0)
+                size.y = DEFAULT_HEIGHT;
+        }
+        if (wHint != SWT.DEFAULT)
+            size.x = wHint;
+        if (hHint != SWT.DEFAULT)
+            size.y = hHint;
+        /*
+	 * Since computeTrim can be overridden by subclasses, we cannot
+	 * call computeTrimInPixels directly.
+	 */
+        int zoom = getZoom();
+        Rectangle trim = DPIUtil.scaleUp(computeTrim(0, 0, DPIUtil.scaleDown(size.x, zoom), DPIUtil.scaleDown(size.y, zoom)), zoom);
+        return new Point(trim.width, trim.height);
+    }
+
     /**
      * Copies a rectangular area of the receiver at the specified
      * position using the gc.
@@ -286,6 +319,12 @@ public class DartComposite extends DartScrollable implements IComposite {
     public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
         checkWidget();
         int zoom = getZoom();
+        x = DPIUtil.scaleUp(x, zoom);
+        y = DPIUtil.scaleUp(y, zoom);
+        width = DPIUtil.scaleUp(width, zoom);
+        height = DPIUtil.scaleUp(height, zoom);
+        offsetX = DPIUtil.scaleUp(offsetX, zoom);
+        offsetY = DPIUtil.scaleUp(offsetY, zoom);
         drawBackgroundInPixels(gc, x, y, width, height, offsetX, offsetY);
     }
 
@@ -442,13 +481,13 @@ public class DartComposite extends DartScrollable implements IComposite {
             int count = 0;
             Control[] list = _getChildren();
             for (Control element : list) {
-                if (((DartControl) element.getImpl()).isTabGroup())
+                if (element.getImpl().isTabGroup())
                     count++;
             }
             tabList = new Control[count];
             int index = 0;
             for (Control element : list) {
-                if (((DartControl) element.getImpl()).isTabGroup()) {
+                if (element.getImpl().isTabGroup()) {
                     tabList[index++] = element;
                 }
             }
@@ -812,8 +851,12 @@ public class DartComposite extends DartScrollable implements IComposite {
 	 * call getClientAreaInPixels directly.
 	 */
         int zoom = getZoom();
+        Rectangle clientArea = DPIUtil.scaleUp(getClientArea(), zoom);
         int width = 0, height = 0;
         for (Control element : _getChildren()) {
+            Rectangle rect = DPIUtil.scaleUp(element.getBounds(), zoom);
+            width = Math.max(width, rect.x - clientArea.x + rect.width);
+            height = Math.max(height, rect.y - clientArea.y + rect.height);
         }
         return new Point(width, height);
     }
@@ -948,7 +991,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         checkWidget();
         Control[] children = _getChildren();
         for (Control child : children) {
-            if (child.getVisible() && ((DartControl) child.getImpl()).setRadioFocus(false))
+            if (child.getVisible() && child.getImpl().setRadioFocus(false))
                 return true;
         }
         for (Control child : children) {
@@ -1072,11 +1115,11 @@ public class DartComposite extends DartScrollable implements IComposite {
 		 * It is unlikely but possible that a child is disposed at this point, for more
 		 * details refer bug 381668.
 		 */
-            if (!child.isDisposed() && child.getImpl().isTabItem() && ((DartControl) child.getImpl()).setRadioFocus(true))
+            if (!child.isDisposed() && child.getImpl().isTabItem() && child.getImpl().setRadioFocus(true))
                 return true;
         }
         for (Control child : children) {
-            if (!child.isDisposed() && child.getImpl().isTabItem() && !((DartControl) child.getImpl()).isTabGroup() && ((DartControl) child.getImpl()).setTabItemFocus()) {
+            if (!child.isDisposed() && child.getImpl().isTabItem() && !child.getImpl().isTabGroup() && child.getImpl().setTabItemFocus()) {
                 return true;
             }
         }

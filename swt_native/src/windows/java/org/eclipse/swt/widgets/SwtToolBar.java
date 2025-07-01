@@ -325,7 +325,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             index = lastHotId;
         while (index >= 0) {
             ToolItem item = items[index];
-            if (((SwtToolItem) item.getImpl()).isTabGroup())
+            if (item.getImpl().isTabGroup())
                 return item;
             index--;
         }
@@ -428,7 +428,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             System.arraycopy(items, 0, newItems, 0, items.length);
             items = newItems;
         }
-        if (item == null || item.getImpl() instanceof SwtToolItem) {
+        if (item.getImpl() instanceof SwtToolItem) {
             int bits = ((SwtToolItem) item.getImpl()).widgetStyle();
             TBBUTTON lpButton = new TBBUTTON();
             lpButton.idCommand = id;
@@ -1030,7 +1030,8 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     void setBoundsInPixels(int x, int y, int width, int height, int flags) {
-        /*
+        if (parent == null || parent.getImpl() instanceof SwtComposite) {
+            /*
 	* Feature in Windows.  For some reason, when a tool bar is
 	* repositioned more than once using DeferWindowPos () into
 	* the same HDWP, the toolbar redraws more than once, defeating
@@ -1039,10 +1040,11 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 	* ensuring that only one tool bar position is deferred at
 	* any given time.
 	*/
-        if (((SwtComposite) parent.getImpl()).lpwp != null) {
-            if (getDrawing() && OS.IsWindowVisible(getApi().handle)) {
-                ((SwtComposite) parent.getImpl()).setResizeChildren(false);
-                ((SwtComposite) parent.getImpl()).setResizeChildren(true);
+            if (((SwtComposite) parent.getImpl()).lpwp != null) {
+                if (getDrawing() && OS.IsWindowVisible(getApi().handle)) {
+                    ((SwtComposite) parent.getImpl()).setResizeChildren(false);
+                    ((SwtComposite) parent.getImpl()).setResizeChildren(true);
+                }
             }
         }
         super.setBoundsInPixels(x, y, width, height, flags);
@@ -1250,7 +1252,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     }
 
     @Override
-    boolean setTabItemFocus() {
+    public boolean setTabItemFocus() {
         int index = 0;
         while (index < items.length) {
             ToolItem item = items[index];
@@ -1713,7 +1715,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         ToolItem child = items[OS.LOWORD(wParam)];
         if (child == null)
             return null;
-        if (child == null || child.getImpl() instanceof SwtToolItem) {
+        if (child.getImpl() instanceof SwtToolItem) {
             return ((SwtToolItem) child.getImpl()).wmCommandChild(wParam, lParam);
         } else
             return null;
@@ -1898,14 +1900,14 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                 item.setWidth(seperatorWidth[i]);
             }
         }
-        if (toolBar == null || toolBar.getImpl() instanceof SwtToolBar) {
+        if (toolBar.getImpl() instanceof SwtToolBar) {
             // Refresh the image lists so the image list for the correct zoom is used
             ((SwtToolBar) toolBar.getImpl()).setImageList(((SwtToolBar) toolBar.getImpl()).getImageList());
         }
-        if (toolBar == null || toolBar.getImpl() instanceof SwtToolBar) {
+        if (toolBar.getImpl() instanceof SwtToolBar) {
             ((SwtToolBar) toolBar.getImpl()).setDisabledImageList(((SwtToolBar) toolBar.getImpl()).getDisabledImageList());
         }
-        if (toolBar == null || toolBar.getImpl() instanceof SwtToolBar) {
+        if (toolBar.getImpl() instanceof SwtToolBar) {
             ((SwtToolBar) toolBar.getImpl()).setHotImageList(((SwtToolBar) toolBar.getImpl()).getHotImageList());
         }
         OS.SendMessage(toolBar.handle, OS.TB_AUTOSIZE, 0, 0);

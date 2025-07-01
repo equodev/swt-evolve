@@ -490,7 +490,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
         return getEnabled() && parent.isEnabled();
     }
 
-    boolean isTabGroup() {
+    public boolean isTabGroup() {
         ToolItem[] tabList = ((SwtToolBar) parent.getImpl())._getTabItemList();
         if (tabList != null) {
             for (ToolItem item : tabList) {
@@ -550,7 +550,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 	* an image and one is never assigned, this is not a problem.
 	*/
         if ((info.fsStyle & OS.BTNS_SEP) == 0 && info.iImage != OS.I_IMAGENONE) {
-            if (parent == null || parent.getImpl() instanceof SwtToolBar) {
+            if (parent.getImpl() instanceof SwtToolBar) {
                 ImageList imageList = ((SwtToolBar) parent.getImpl()).getImageList();
                 ImageList hotImageList = ((SwtToolBar) parent.getImpl()).getHotImageList();
                 ImageList disabledImageList = ((SwtToolBar) parent.getImpl()).getDisabledImageList();
@@ -964,8 +964,8 @@ public class SwtToolItem extends SwtItem implements IToolItem {
     }
 
     @Override
-    boolean setTabItemFocus() {
-        if (((SwtToolBar) parent.getImpl()).setTabItemFocus()) {
+    public boolean setTabItemFocus() {
+        if (parent.getImpl().setTabItemFocus()) {
             long hwnd = parent.handle;
             int index = (int) OS.SendMessage(hwnd, OS.TB_COMMANDTOINDEX, id, 0);
             OS.SendMessage(hwnd, OS.TB_SETHOTITEM, index, 0);
@@ -1146,7 +1146,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
         OS.SendMessage(hwnd, OS.TB_GETBUTTONINFO, id, info);
         if (info.iImage == OS.I_IMAGENONE && image == null)
             return;
-        if (parent == null || parent.getImpl() instanceof SwtToolBar) {
+        if (parent.getImpl() instanceof SwtToolBar) {
             ImageList imageList = ((SwtToolBar) parent.getImpl()).getImageList();
             ImageList hotImageList = ((SwtToolBar) parent.getImpl()).getHotImageList();
             ImageList disabledImageList = ((SwtToolBar) parent.getImpl()).getDisabledImageList();

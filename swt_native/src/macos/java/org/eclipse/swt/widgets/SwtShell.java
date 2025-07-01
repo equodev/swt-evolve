@@ -2421,7 +2421,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         Control control = ((SwtDisplay) display.getImpl()).findControl(false);
         if (control == null)
             return 0;
-        if (control == null || control.getImpl() instanceof SwtControl) {
+        if (control.getImpl() instanceof SwtControl) {
             Widget target = ((SwtControl) control.getImpl()).findTooltip(new NSView(view).convertPoint_toView_(pt, null));
             String string = ((SwtWidget) target.getImpl()).tooltipText();
             if (string == null)
@@ -2579,7 +2579,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                             eventPoint = hitView[0].window().convertScreenToBase(eventPoint);
                         }
                     }
-                    if (control == null || control.getImpl() instanceof SwtControl) {
+                    if (control.getImpl() instanceof SwtControl) {
                         target = ((SwtControl) control.getImpl()).findTooltip(eventPoint);
                     }
                 }

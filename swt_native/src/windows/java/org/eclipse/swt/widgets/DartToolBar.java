@@ -174,6 +174,11 @@ public class DartToolBar extends DartComposite implements IToolBar {
     }
 
     @Override
+    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+        return Sizes.compute(this);
+    }
+
+    @Override
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
         Rectangle trim = super.computeTrimInPixels(x, y, width, height);
         return trim;
@@ -352,7 +357,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return null;
+        return getItemInPixels(DPIUtil.scaleUp(point, getZoom()));
     }
 
     ToolItem getItemInPixels(Point point) {
@@ -694,7 +699,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
     }
 
     @Override
-    boolean setTabItemFocus() {
+    public boolean setTabItemFocus() {
         int index = 0;
         while (index < items.length) {
             ToolItem item = items[index];

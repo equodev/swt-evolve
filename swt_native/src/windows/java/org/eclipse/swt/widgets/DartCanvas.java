@@ -108,6 +108,10 @@ public class DartCanvas extends DartComposite implements ICanvas {
      */
     public void drawBackground(GC gc, int x, int y, int width, int height) {
         int zoom = getZoom();
+        x = DPIUtil.scaleUp(x, zoom);
+        y = DPIUtil.scaleUp(y, zoom);
+        width = DPIUtil.scaleUp(width, zoom);
+        height = DPIUtil.scaleUp(height, zoom);
         drawBackgroundInPixels(gc, x, y, width, height, 0, 0);
     }
 
@@ -203,6 +207,12 @@ public class DartCanvas extends DartComposite implements ICanvas {
     public void scroll(int destX, int destY, int x, int y, int width, int height, boolean all) {
         checkWidget();
         int zoom = getZoom();
+        destX = DPIUtil.scaleUp(destX, zoom);
+        destY = DPIUtil.scaleUp(destY, zoom);
+        x = DPIUtil.scaleUp(x, zoom);
+        y = DPIUtil.scaleUp(y, zoom);
+        width = DPIUtil.scaleUp(width, zoom);
+        height = DPIUtil.scaleUp(height, zoom);
         scrollInPixels(destX, destY, x, y, width, height, all);
     }
 

@@ -584,7 +584,23 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point computeSize(int wHint, int hHint, boolean changed) {
         checkWidget();
-        return Sizes.compute(this);
+        int zoom = getZoom();
+        wHint = (wHint != SWT.DEFAULT ? DPIUtil.scaleUp(wHint, zoom) : wHint);
+        hHint = (hHint != SWT.DEFAULT ? DPIUtil.scaleUp(hHint, zoom) : hHint);
+        return DPIUtil.scaleDown(computeSizeInPixels(wHint, hHint, changed), zoom);
+    }
+
+    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+        int width = DEFAULT_WIDTH;
+        int height = DEFAULT_HEIGHT;
+        if (wHint != SWT.DEFAULT)
+            width = wHint;
+        if (hHint != SWT.DEFAULT)
+            height = hHint;
+        int border = getBorderWidthInPixels();
+        width += border * 2;
+        height += border * 2;
+        return new Point(width, height);
     }
 
     Widget computeTabGroup() {
@@ -709,7 +725,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (event == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return false;
+        Point loc = event.getLocation();
+        int zoom = getZoom();
+        return dragDetect(event.button, event.count, event.stateMask, DPIUtil.scaleUp(loc.x, zoom), DPIUtil.scaleUp(loc.y, zoom));
     }
 
     /**
@@ -752,7 +770,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (event == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return false;
+        int zoom = getZoom();
+        // To Pixels
+        return dragDetect(event.button, event.count, event.stateMask, DPIUtil.scaleUp(event.x, zoom), DPIUtil.scaleUp(event.y, zoom));
     }
 
     boolean dragDetect(int button, int count, int stateMask, int x, int y) {
@@ -794,8 +814,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return control != null && control.getImpl()._backgroundImage() != null ? control : null;
     }
 
-    Control findThemeControl() {
-        return background == -1 && backgroundImage == null ? ((DartControl) parent.getImpl()).findThemeControl() : null;
+    public Control findThemeControl() {
+        return background == -1 && backgroundImage == null ? parent.getImpl().findThemeControl() : null;
     }
 
     public Menu[] findMenus(Control control) {
@@ -974,7 +994,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public int getBorderWidth() {
         checkWidget();
-        return 0;
+        return DPIUtil.scaleDown(getBorderWidthInPixels(), getZoom());
     }
 
     int getBorderWidthInPixels() {
@@ -997,12 +1017,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Rectangle getBounds() {
         checkWidget();
-        return this.bounds;
+        return DPIUtil.scaleDown(getBoundsInPixels(), getZoom());
     }
 
     Rectangle getBoundsInPixels() {
         forceResize();
-        return null;
+        return this.bounds;
     }
 
     int getCodePage() {
@@ -1143,12 +1163,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point getLocation() {
         checkWidget();
-        return new Point(bounds.x, bounds.y);
+        return DPIUtil.scaleDown(getLocationInPixels(), getZoom());
     }
 
     Point getLocationInPixels() {
         forceResize();
-        return null;
+        return new Point(bounds.x, bounds.y);
     }
 
     /**
@@ -1294,12 +1314,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point getSize() {
         checkWidget();
-        return new Point(bounds.width, bounds.height);
+        return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
     }
 
     Point getSizeInPixels() {
         forceResize();
-        return null;
+        return new Point(bounds.width, bounds.height);
     }
 
     /**
@@ -1654,7 +1674,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         //	return result != OS.NULLREGION;
     }
 
-    boolean isTabGroup() {
+    public boolean isTabGroup() {
         Control[] tabList = parent.getImpl()._getTabList();
         if (tabList != null) {
             for (Control element : tabList) {
@@ -1981,6 +2001,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void redraw(int x, int y, int width, int height, boolean all) {
         checkWidget();
         int zoom = getZoom();
+        x = DPIUtil.scaleUp(x, zoom);
+        y = DPIUtil.scaleUp(y, zoom);
+        width = DPIUtil.scaleUp(width, zoom);
+        height = DPIUtil.scaleUp(height, zoom);
         if (width <= 0 || height <= 0)
             return;
     }
@@ -2614,7 +2638,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setBounds(int x, int y, int width, int height) {
         checkWidget();
         this.bounds = new Rectangle(x, y, width, height);
+        getBridge().setBounds(this, bounds);
         int zoom = getZoom();
+        x = DPIUtil.scaleUp(x, zoom);
+        y = DPIUtil.scaleUp(y, zoom);
+        width = DPIUtil.scaleUp(width, zoom);
+        height = DPIUtil.scaleUp(height, zoom);
         setBoundsInPixels(x, y, width, height);
         getBridge().dirty(this);
     }
@@ -2662,8 +2691,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setBounds(Rectangle rect) {
         checkWidget();
         this.bounds = rect;
+        getBridge().setBounds(this, bounds);
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        setBoundsInPixels(DPIUtil.scaleUp(rect, getZoom()));
         getBridge().dirty(this);
     }
 
@@ -2914,7 +2945,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setLocation(int x, int y) {
         checkWidget();
         this.bounds = new Rectangle(x, y, bounds.width, bounds.height);
+        getBridge().setBounds(this, bounds);
         int zoom = getZoom();
+        x = DPIUtil.scaleUp(x, zoom);
+        y = DPIUtil.scaleUp(y, zoom);
         setLocationInPixels(x, y);
         getBridge().dirty(this);
     }
@@ -2939,8 +2973,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setLocation(Point location) {
         checkWidget();
         this.bounds = new Rectangle(location.x, location.y, bounds.width, bounds.height);
+        getBridge().setBounds(this, bounds);
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        location = DPIUtil.scaleUp(location, getZoom());
         setLocationInPixels(location.x, location.y);
         getBridge().dirty(this);
     }
@@ -3014,7 +3050,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         getBridge().dirty(this);
     }
 
-    boolean setRadioFocus(boolean tabbing) {
+    public boolean setRadioFocus(boolean tabbing) {
         return false;
     }
 
@@ -3126,7 +3162,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setSize(int width, int height) {
         checkWidget();
         this.bounds = new Rectangle(bounds.x, bounds.y, width, height);
+        getBridge().setBounds(this, bounds);
         int zoom = getZoom();
+        width = DPIUtil.scaleUp(width, zoom);
+        height = DPIUtil.scaleUp(height, zoom);
         setSizeInPixels(width, height);
         getBridge().dirty(this);
     }
@@ -3160,14 +3199,16 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setSize(Point size) {
         checkWidget();
         this.bounds = new Rectangle(bounds.x, bounds.y, size.x, size.y);
+        getBridge().setBounds(this, bounds);
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        size = DPIUtil.scaleUp(size, getZoom());
         setSizeInPixels(size.x, size.y);
         getBridge().dirty(this);
     }
 
     @Override
-    boolean setTabItemFocus() {
+    public boolean setTabItemFocus() {
         if (!isShowing())
             return false;
         return forceFocus();
@@ -3381,8 +3422,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         int zoom = getZoom();
         if (getDisplay().isRescalingAtRuntime()) {
+            Point displayPointInPixels = ((SwtDisplay) getDisplay().getImpl()).translateLocationInPixelsInDisplayCoordinateSystem(x, y);
+            final Point controlPointInPixels = toControlInPixels(displayPointInPixels.x, displayPointInPixels.y);
+            return DPIUtil.scaleDown(controlPointInPixels, zoom);
         }
-        return null;
+        return DPIUtil.scaleDown(toControlInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom)), zoom);
     }
 
     Point toControlInPixels(int x, int y) {
@@ -3440,8 +3484,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         int zoom = getZoom();
         if (getDisplay().isRescalingAtRuntime()) {
+            Point displayPointInPixels = toDisplayInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom));
+            return ((SwtDisplay) getDisplay().getImpl()).translateLocationInPointInDisplayCoordinateSystem(displayPointInPixels.x, displayPointInPixels.y);
         }
-        return null;
+        return DPIUtil.scaleDown(toDisplayInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom)), zoom);
     }
 
     Point toDisplayInPixels(int x, int y) {
@@ -3793,7 +3839,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         while ((index = (index + offset + length) % length) != start) {
             Control child = children[index];
             if (!child.isDisposed() && child.getImpl().isTabItem()) {
-                if (((DartControl) child.getImpl()).setTabItemFocus())
+                if (child.getImpl().setTabItemFocus())
                     return true;
             }
         }

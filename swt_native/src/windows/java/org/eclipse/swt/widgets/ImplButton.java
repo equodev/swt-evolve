@@ -21,4 +21,8 @@ public interface ImplButton extends ImplControl {
     boolean _useDarkModeExplorerTheme();
 
     boolean isTabItem();
+
+    void setDefault(boolean value);
+
+    boolean setRadioFocus(boolean tabbing);
 }

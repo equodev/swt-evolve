@@ -738,7 +738,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
     }
 
     @Override
-    boolean isTabGroup() {
+    public boolean isTabGroup() {
         /*
 	* Can't test WS_TAB bits because they are the same as WS_MAXIMIZEBOX.
 	*/
@@ -918,13 +918,13 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
         }
         if (defaultButton != null) {
             if (!defaultButton.isDisposed())
-                ((SwtButton) defaultButton.getImpl()).setDefault(false);
+                defaultButton.getImpl().setDefault(false);
         }
         if ((defaultButton = button) == null)
             defaultButton = saveDefault;
         if (defaultButton != null) {
             if (!defaultButton.isDisposed())
-                ((SwtButton) defaultButton.getImpl()).setDefault(true);
+                defaultButton.getImpl().setDefault(true);
         }
         if (save)
             saveDefault = defaultButton;

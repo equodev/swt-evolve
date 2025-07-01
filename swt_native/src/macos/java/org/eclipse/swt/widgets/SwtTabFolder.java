@@ -187,7 +187,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         itemCount++;
         NSTabViewItem nsItem = (NSTabViewItem) new SWTTabViewItem().alloc().init();
         ((SwtTabItem) item.getImpl()).nsItem = nsItem;
-        if (item == null || item.getImpl() instanceof SwtWidget) {
+        if (item.getImpl() instanceof SwtWidget) {
             ((SwtWidget) item.getImpl()).createJNIRef();
         }
         ((SwtTabItem) item.getImpl()).register();
@@ -721,7 +721,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
 		*/
             Control control = ((SwtTabItem) item.getImpl()).control;
             if (control != null) {
-                if (control == null || control.getImpl() instanceof SwtControl) {
+                if (control.getImpl() instanceof SwtControl) {
                     NSView topView = ((SwtControl) control.getImpl()).topView();
                     if (topView.superview() == null) {
                         contentView().addSubview(topView, OS.NSWindowBelow, null);

@@ -799,7 +799,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                 long handle = ((SwtImage) image.getImpl()).initNative(imageCandidate.element(), zoom);
                 if (handle == 0)
                     ((SwtImage) image.getImpl()).init(imageData, zoom);
-                if (image == null || image.getImpl() instanceof SwtResource) {
+                if (image.getImpl() instanceof SwtResource) {
                     ((SwtResource) image.getImpl()).init();
                 }
             } else {
@@ -815,7 +815,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             ImageData resizedData = DPIUtil.scaleImageData(image.getImpl()._device(), imageCandidate.element(), zoom, imageCandidate.zoom());
             ImageData newData = ((SwtImage) image.getImpl()).adaptImageDataIfDisabledOrGray(resizedData);
             ((SwtImage) image.getImpl()).init(newData, zoom);
-            if (image == null || image.getImpl() instanceof SwtResource) {
+            if (image.getImpl() instanceof SwtResource) {
                 ((SwtResource) image.getImpl()).init();
             }
         } else {
@@ -827,7 +827,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                 ImageData resizedData = image.getImageData(zoom);
                 ImageData newData = ((SwtImage) image.getImpl()).adaptImageDataIfDisabledOrGray(resizedData);
                 ((SwtImage) image.getImpl()).init(newData, zoom);
-                if (image == null || image.getImpl() instanceof SwtResource) {
+                if (image.getImpl() instanceof SwtResource) {
                     ((SwtResource) image.getImpl()).init();
                 }
             }

@@ -35,4 +35,6 @@ public interface ImplToolBar extends ImplComposite {
     Widget[] computeTabList();
 
     void removeControl(Control control);
+
+    boolean setTabItemFocus();
 }

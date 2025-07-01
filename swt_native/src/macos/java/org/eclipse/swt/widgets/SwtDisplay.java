@@ -728,7 +728,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     void checkEnterExit(Control control, NSEvent nsEvent, boolean send) {
         if (control != currentControl) {
             if (currentControl != null && !currentControl.isDisposed()) {
-                if (currentControl == null || currentControl.getImpl() instanceof SwtControl) {
+                if (currentControl.getImpl() instanceof SwtControl) {
                     ((SwtControl) currentControl.getImpl()).sendMouseEvent(nsEvent, SWT.MouseExit, send);
                 }
             }
@@ -4043,6 +4043,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     public boolean readAndDispatch() {
         checkDevice();
+        dev.equo.swt.FlutterBridge.update();
         if (sendEventCount == 0 && loopCount == poolCount - 1 && Callback.getEntryCount() == 0)
             removePool();
         addPool();
@@ -4594,7 +4595,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     boolean runSettings() {
-        dev.equo.swt.FlutterBridge.update();
         if (!runSettings)
             return false;
         runSettings = false;
@@ -4878,7 +4878,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     Runnable hoverTimer = () -> {
         if (currentControl != null && !currentControl.isDisposed()) {
-            if (currentControl == null || currentControl.getImpl() instanceof SwtControl) {
+            if (currentControl.getImpl() instanceof SwtControl) {
                 ((SwtControl) currentControl.getImpl()).sendMouseEvent(null, SWT.MouseHover, trackingControl != null && !trackingControl.isDisposed());
             }
         }
@@ -5726,7 +5726,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             case OS.NSOtherMouseDown:
                 clickCount = (int) (clickCountButton == nsEvent.buttonNumber() ? nsEvent.clickCount() : 1);
                 clickCountButton = (int) nsEvent.buttonNumber();
-                if (trackingControl == null || trackingControl.getImpl() instanceof SwtControl) {
+                if (trackingControl.getImpl() instanceof SwtControl) {
                     ((SwtControl) trackingControl.getImpl()).sendMouseEvent(nsEvent, SWT.MouseDown, true);
                 }
                 break;
@@ -5738,12 +5738,12 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 Control control = trackingControl;
                 this.trackingControl = null;
                 if (clickCount == 2) {
-                    if (control == null || control.getImpl() instanceof SwtControl) {
+                    if (control.getImpl() instanceof SwtControl) {
                         ((SwtControl) control.getImpl()).sendMouseEvent(nsEvent, SWT.MouseDoubleClick, false);
                     }
                 }
                 if (!control.isDisposed())
-                    if (control == null || control.getImpl() instanceof SwtControl) {
+                    if (control.getImpl() instanceof SwtControl) {
                         ((SwtControl) control.getImpl()).sendMouseEvent(nsEvent, SWT.MouseUp, false);
                     }
                 break;
@@ -5754,7 +5754,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 runEnterExitControl = trackingControl;
             //FALL THROUGH
             case OS.NSMouseMoved:
-                if (trackingControl == null || trackingControl.getImpl() instanceof SwtControl) {
+                if (trackingControl.getImpl() instanceof SwtControl) {
                     ((SwtControl) trackingControl.getImpl()).sendMouseEvent(nsEvent, SWT.MouseMove, true);
                 }
                 break;

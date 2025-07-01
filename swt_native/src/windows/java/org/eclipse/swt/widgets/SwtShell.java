@@ -813,7 +813,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
-    Control findThemeControl() {
+    public Control findThemeControl() {
         return null;
     }
 
@@ -849,10 +849,10 @@ public class SwtShell extends SwtDecorations implements IShell {
             setActiveControl(null);
         String toolTipText = control.getImpl()._toolTipText();
         if (toolTipText != null) {
-            if (control == null || control.getImpl() instanceof SwtControl) {
+            if (control.getImpl() instanceof SwtControl) {
                 ((SwtControl) control.getImpl()).setToolTipText(this.getApi(), null);
             }
-            if (control == null || control.getImpl() instanceof SwtControl) {
+            if (control.getImpl() instanceof SwtControl) {
                 ((SwtControl) control.getImpl()).setToolTipText(newShell, toolTipText);
             }
         }

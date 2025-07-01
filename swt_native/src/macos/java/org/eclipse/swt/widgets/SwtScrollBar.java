@@ -547,7 +547,7 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
 
     @Override
     void setClipRegion(NSView view) {
-        if (parent == null || parent.getImpl() instanceof SwtControl) {
+        if (parent.getImpl() instanceof SwtControl) {
             ((SwtControl) parent.getImpl()).setClipRegion(view);
         }
     }
@@ -776,7 +776,9 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
         widget.setKnobProportion(knob);
         widget.setEnabled(range > 0);
         if (target == null && (knob != oldKnob || fraction != oldFraction)) {
-            ((SwtScrollable) parent.getImpl()).scrollView.flashScrollers();
+            if (parent == null || parent.getImpl() instanceof SwtScrollable) {
+                ((SwtScrollable) parent.getImpl()).scrollView.flashScrollers();
+            }
         }
     }
 

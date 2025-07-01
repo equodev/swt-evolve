@@ -959,7 +959,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (control != null) {
             Image image = control.getImpl()._backgroundImage();
             if (image != null) {
-                if (control == null || control.getImpl() instanceof SwtControl) {
+                if (control.getImpl() instanceof SwtControl) {
                     ((SwtControl) control.getImpl()).drawImageBackground(hDC, getApi().handle, SwtImage.win32_getHandle(image, getZoom()), rect, tx, ty);
                 }
             }
@@ -995,8 +995,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return control != null && control.getImpl()._backgroundImage() != null ? control : null;
     }
 
-    Control findThemeControl() {
-        return background == -1 && backgroundImage == null ? ((SwtControl) parent.getImpl()).findThemeControl() : null;
+    public Control findThemeControl() {
+        return background == -1 && backgroundImage == null ? parent.getImpl().findThemeControl() : null;
     }
 
     public Menu[] findMenus(Control control) {
@@ -1086,15 +1086,17 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     void forceResize() {
         if (parent == null)
             return;
-        WINDOWPOS[] lpwp = ((SwtComposite) parent.getImpl()).lpwp;
-        if (lpwp == null)
-            return;
-        for (int i = 0; i < lpwp.length; i++) {
-            WINDOWPOS wp = lpwp[i];
-            if (wp != null && wp.hwnd == getApi().handle) {
-                OS.SetWindowPos(wp.hwnd, 0, wp.x, wp.y, wp.cx, wp.cy, wp.flags);
-                lpwp[i] = null;
+        if (parent == null || parent.getImpl() instanceof SwtComposite) {
+            WINDOWPOS[] lpwp = ((SwtComposite) parent.getImpl()).lpwp;
+            if (lpwp == null)
                 return;
+            for (int i = 0; i < lpwp.length; i++) {
+                WINDOWPOS wp = lpwp[i];
+                if (wp != null && wp.hwnd == getApi().handle) {
+                    OS.SetWindowPos(wp.hwnd, 0, wp.x, wp.y, wp.cx, wp.cy, wp.flags);
+                    lpwp[i] = null;
+                    return;
+                }
             }
         }
     }
@@ -1964,7 +1966,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         //	return result != OS.NULLREGION;
     }
 
-    boolean isTabGroup() {
+    public boolean isTabGroup() {
         Control[] tabList = parent.getImpl()._getTabList();
         if (tabList != null) {
             for (Control element : tabList) {
@@ -2085,7 +2087,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 error(SWT.ERROR_INVALID_ARGUMENT);
             if (parent != control.getImpl()._parent())
                 return;
-            if (control == null || control.getImpl() instanceof SwtControl) {
+            if (control.getImpl() instanceof SwtControl) {
                 long hwnd = ((SwtControl) control.getImpl()).topHandle();
                 if (hwnd == 0 || hwnd == topHandle)
                     return;
@@ -2134,7 +2136,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 error(SWT.ERROR_INVALID_ARGUMENT);
             if (parent != control.getImpl()._parent())
                 return;
-            if (control == null || control.getImpl() instanceof SwtControl) {
+            if (control.getImpl() instanceof SwtControl) {
                 hwndAbove = ((SwtControl) control.getImpl()).topHandle();
             }
         } else {
@@ -3313,28 +3315,30 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         long topHandle = topHandle();
         if (defer && parent != null) {
             forceResize();
-            if (((SwtComposite) parent.getImpl()).lpwp != null) {
-                int index = 0;
-                WINDOWPOS[] lpwp = ((SwtComposite) parent.getImpl()).lpwp;
-                while (index < lpwp.length) {
-                    if (lpwp[index] == null)
-                        break;
-                    index++;
+            if (parent == null || parent.getImpl() instanceof SwtComposite) {
+                if (((SwtComposite) parent.getImpl()).lpwp != null) {
+                    int index = 0;
+                    WINDOWPOS[] lpwp = ((SwtComposite) parent.getImpl()).lpwp;
+                    while (index < lpwp.length) {
+                        if (lpwp[index] == null)
+                            break;
+                        index++;
+                    }
+                    if (index == lpwp.length) {
+                        WINDOWPOS[] newLpwp = new WINDOWPOS[lpwp.length + 4];
+                        System.arraycopy(lpwp, 0, newLpwp, 0, lpwp.length);
+                        ((SwtComposite) parent.getImpl()).lpwp = lpwp = newLpwp;
+                    }
+                    WINDOWPOS wp = new WINDOWPOS();
+                    wp.hwnd = topHandle;
+                    wp.x = x;
+                    wp.y = y;
+                    wp.cx = width;
+                    wp.cy = height;
+                    wp.flags = flags;
+                    lpwp[index] = wp;
+                    return;
                 }
-                if (index == lpwp.length) {
-                    WINDOWPOS[] newLpwp = new WINDOWPOS[lpwp.length + 4];
-                    System.arraycopy(lpwp, 0, newLpwp, 0, lpwp.length);
-                    ((SwtComposite) parent.getImpl()).lpwp = lpwp = newLpwp;
-                }
-                WINDOWPOS wp = new WINDOWPOS();
-                wp.hwnd = topHandle;
-                wp.x = x;
-                wp.y = y;
-                wp.cx = width;
-                wp.cy = height;
-                wp.flags = flags;
-                lpwp[index] = wp;
-                return;
             }
         }
         OS.SetWindowPos(topHandle, 0, x, y, width, height, flags);
@@ -3731,7 +3735,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         checkMirrored();
     }
 
-    boolean setRadioFocus(boolean tabbing) {
+    public boolean setRadioFocus(boolean tabbing) {
         return false;
     }
 
@@ -3900,7 +3904,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
-    boolean setTabItemFocus() {
+    public boolean setTabItemFocus() {
         if (!isShowing())
             return false;
         return forceFocus();
@@ -4705,7 +4709,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         while ((index = (index + offset + length) % length) != start) {
             Control child = children[index];
             if (!child.isDisposed() && child.getImpl().isTabItem()) {
-                if (((SwtControl) child.getImpl()).setTabItemFocus())
+                if (child.getImpl().setTabItemFocus())
                     return true;
             }
         }
@@ -5280,7 +5284,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = ((SwtDisplay) display.getImpl()).getControl(lParam);
         if (control == null)
             return null;
-        if (control == null || control.getImpl() instanceof SwtControl) {
+        if (control.getImpl() instanceof SwtControl) {
             return ((SwtControl) control.getImpl()).wmCommandChild(wParam, lParam);
         } else
             return null;
@@ -5294,7 +5298,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = ((SwtDisplay) display.getImpl()).getControl(lParam);
         if (control == null)
             return null;
-        if (control == null || control.getImpl() instanceof SwtControl) {
+        if (control.getImpl() instanceof SwtControl) {
             return ((SwtControl) control.getImpl()).wmColorChild(wParam, lParam);
         } else
             return null;
@@ -5353,7 +5357,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = ((SwtDisplay) display.getImpl()).getControl(struct.hwndItem);
         if (control == null)
             return null;
-        if (control == null || control.getImpl() instanceof SwtControl) {
+        if (control.getImpl() instanceof SwtControl) {
             return ((SwtControl) control.getImpl()).wmDrawChild(wParam, lParam);
         } else
             return null;
@@ -5477,7 +5481,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = ((SwtDisplay) display.getImpl()).getControl(lParam);
         if (control == null)
             return null;
-        if (control == null || control.getImpl() instanceof SwtControl) {
+        if (control.getImpl() instanceof SwtControl) {
             return ((SwtControl) control.getImpl()).wmScrollChild(wParam, lParam);
         } else
             return null;
@@ -5629,7 +5633,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = ((SwtDisplay) display.getImpl()).getControl(hwnd);
         if (control == null)
             return null;
-        if (control == null || control.getImpl() instanceof SwtControl) {
+        if (control.getImpl() instanceof SwtControl) {
             return ((SwtControl) control.getImpl()).wmMeasureChild(wParam, lParam);
         } else
             return null;
@@ -6110,7 +6114,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = ((SwtDisplay) display.getImpl()).getControl(lParam);
         if (control == null)
             return null;
-        if (control == null || control.getImpl() instanceof SwtControl) {
+        if (control.getImpl() instanceof SwtControl) {
             return ((SwtControl) control.getImpl()).wmScrollChild(wParam, lParam);
         } else
             return null;
@@ -6244,7 +6248,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = ((SwtDisplay) display.getImpl()).getControl(hdr.hwndFrom);
         if (control == null)
             return null;
-        if (control == null || control.getImpl() instanceof SwtControl) {
+        if (control.getImpl() instanceof SwtControl) {
             return ((SwtControl) control.getImpl()).wmNotifyChild(hdr, wParam, lParam);
         } else
             return null;

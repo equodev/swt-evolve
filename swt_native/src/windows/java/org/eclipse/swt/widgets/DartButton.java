@@ -213,6 +213,8 @@ public class DartButton extends DartControl implements IButton {
             return MARGIN;
         int margin = 0;
         if (image != null && text.length() != 0) {
+            Rectangle bounds = DPIUtil.scaleBounds(image.getBounds(), this.getZoom(), 100);
+            margin += bounds.width + MARGIN * 2;
             long oldFont = 0;
             char[] buffer = text.toCharArray();
             if ((getApi().style & SWT.LEFT) != 0) {
@@ -222,6 +224,11 @@ public class DartButton extends DartControl implements IButton {
             }
         }
         return margin;
+    }
+
+    @Override
+    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+        return Sizes.compute(this);
     }
 
     @Override
@@ -578,10 +585,9 @@ public class DartButton extends DartControl implements IButton {
     public void setBackground(Color color) {
         // This method only exists in order to provide custom documentation
         super.setBackground(color);
-        getBridge().dirty(this);
     }
 
-    void setDefault(boolean value) {
+    public void setDefault(boolean value) {
         if ((getApi().style & SWT.PUSH) == 0)
             return;
         long hwndShell = menuShell().handle;
@@ -686,7 +692,7 @@ public class DartButton extends DartControl implements IButton {
     }
 
     @Override
-    boolean setRadioFocus(boolean tabbing) {
+    public boolean setRadioFocus(boolean tabbing) {
         if ((getApi().style & SWT.RADIO) == 0 || !getSelection())
             return false;
         return tabbing ? setTabItemFocus() : setFocus();

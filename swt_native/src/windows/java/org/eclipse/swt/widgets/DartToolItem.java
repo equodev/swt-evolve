@@ -225,7 +225,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return null;
+        return DPIUtil.scaleDown(getBoundsInPixels(), getZoom());
     }
 
     Rectangle getBoundsInPixels() {
@@ -429,11 +429,11 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public int getWidth() {
         checkWidget();
-        return this.width;
+        return DPIUtil.scaleDown(getWidthInPixels(), getZoom());
     }
 
     int getWidthInPixels() {
-        return 0;
+        return this.width;
     }
 
     /**
@@ -456,7 +456,7 @@ public class DartToolItem extends DartItem implements IToolItem {
         return getEnabled() && parent.isEnabled();
     }
 
-    boolean isTabGroup() {
+    public boolean isTabGroup() {
         ToolItem[] tabList = ((DartToolBar) parent.getImpl())._getTabItemList();
         if (tabList != null) {
             for (ToolItem item : tabList) {
@@ -851,8 +851,8 @@ public class DartToolItem extends DartItem implements IToolItem {
     }
 
     @Override
-    boolean setTabItemFocus() {
-        if (((DartToolBar) parent.getImpl()).setTabItemFocus()) {
+    public boolean setTabItemFocus() {
+        if (parent.getImpl().setTabItemFocus()) {
             long hwnd = parent.handle;
             return true;
         }
@@ -985,6 +985,7 @@ public class DartToolItem extends DartItem implements IToolItem {
     public void setWidth(int width) {
         checkWidget();
         this.width = width;
+        setWidthInPixels(DPIUtil.scaleUp(width, getZoom()));
         getBridge().dirty(this);
     }
 

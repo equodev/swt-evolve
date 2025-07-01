@@ -252,7 +252,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
         if (displayText != null) {
             Font font = SwtFont.cocoa_new(display, headerCell.font());
             /* space between image and text */
-            if (parent == null || parent.getImpl() instanceof SwtControl) {
+            if (parent.getImpl() instanceof SwtControl) {
                 attrString = ((SwtControl) parent.getImpl()).createString(displayText, font, ((SwtTree) parent.getImpl()).getHeaderForegroundColor().handle, SWT.LEFT, false, (parent.state & DISABLED) == 0, false);
             }
             stringSize = attrString.size();

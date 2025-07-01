@@ -703,13 +703,13 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public static void win32_setHeight(Caret caret, int height) {
         caret.checkWidget();
-        if (caret == null || caret.getImpl() instanceof SwtCaret) {
+        if (caret.getImpl() instanceof SwtCaret) {
             if (((SwtCaret) caret.getImpl()).height == height && ((SwtCaret) caret.getImpl()).isCurrentCaret())
                 return;
         }
         ((SwtCaret) caret.getImpl()).height = height;
         ((SwtCaret) caret.getImpl()).resized = true;
-        if (caret == null || caret.getImpl() instanceof SwtCaret) {
+        if (caret.getImpl() instanceof SwtCaret) {
             if (((SwtCaret) caret.getImpl()).isVisible && ((SwtCaret) caret.getImpl()).hasFocus())
                 ((SwtCaret) caret.getImpl()).resize();
         }

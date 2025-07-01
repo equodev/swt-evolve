@@ -177,6 +177,7 @@ public abstract class DartWidget implements IWidget {
         checkSubclass();
         checkParent(parent);
         this.getApi().style = style;
+        this.getApi().nativeZoom = parent != null ? parent.nativeZoom : DPIUtil.getNativeDeviceZoom();
         display = parent.getImpl()._display();
         reskinWidget();
         notifyCreationTracker();
@@ -1156,6 +1157,7 @@ public abstract class DartWidget implements IWidget {
         Event event = new Event();
         event.button = button;
         int zoom = getZoom();
+        event.setLocation(DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom));
         setInputState(event, SWT.DragDetect);
         postEvent(SWT.DragDetect, event);
         if (isDisposed())
@@ -1167,6 +1169,7 @@ public abstract class DartWidget implements IWidget {
         Event event = new Event();
         event.button = button;
         int zoom = getZoom();
+        event.setLocation(DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom));
         event.stateMask = stateMask;
         postEvent(SWT.DragDetect, event);
         if (isDisposed())
@@ -1425,7 +1428,7 @@ public abstract class DartWidget implements IWidget {
         return setTabItemFocus();
     }
 
-    boolean setTabItemFocus() {
+    public boolean setTabItemFocus() {
         return false;
     }
 
@@ -1449,6 +1452,11 @@ public abstract class DartWidget implements IWidget {
             return true;
         Menu menu = getMenu();
         if (menu != null && !menu.isDisposed()) {
+            // In Pixels
+            Point locInPixels = DPIUtil.scaleUp(event.getLocation(), getZoom());
+            if (x != locInPixels.x || y != locInPixels.y) {
+                menu.setLocation(event.getLocation());
+            }
             menu.setVisible(true);
             return true;
         }
@@ -1522,7 +1530,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     int getZoom() {
-        return 0;
+        return DPIUtil.getZoomForAutoscaleProperty(getApi().nativeZoom);
     }
 
     private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {

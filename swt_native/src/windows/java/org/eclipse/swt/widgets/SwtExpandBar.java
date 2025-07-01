@@ -328,7 +328,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
     }
 
     @Override
-    Control findThemeControl() {
+    public Control findThemeControl() {
         return isAppThemed() ? this.getApi() : super.findThemeControl();
     }
 

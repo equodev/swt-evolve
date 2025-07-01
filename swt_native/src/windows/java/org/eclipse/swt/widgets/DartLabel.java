@@ -115,6 +115,11 @@ public class DartLabel extends DartControl implements ILabel {
     }
 
     @Override
+    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+        return Sizes.compute(this);
+    }
+
+    @Override
     void createHandle() {
         super.createHandle();
         getApi().state |= THEME_BACKGROUND;

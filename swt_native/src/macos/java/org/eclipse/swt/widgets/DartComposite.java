@@ -421,13 +421,13 @@ public class DartComposite extends DartScrollable implements IComposite {
             int count = 0;
             Control[] list = _getChildren();
             for (int i = 0; i < list.length; i++) {
-                if (((DartControl) list[i].getImpl()).isTabGroup())
+                if (list[i].getImpl().isTabGroup())
                     count++;
             }
             tabList = new Control[count];
             int index = 0;
             for (int i = 0; i < list.length; i++) {
-                if (((DartControl) list[i].getImpl()).isTabGroup()) {
+                if (list[i].getImpl().isTabGroup()) {
                     tabList[index++] = list[i];
                 }
             }
@@ -487,7 +487,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     @Override
-    boolean isTabGroup() {
+    public boolean isTabGroup() {
         if ((getApi().state & CANVAS) != 0)
             return true;
         return super.isTabGroup();
@@ -990,7 +990,7 @@ public class DartComposite extends DartScrollable implements IComposite {
 		 * It is unlikely but possible that a child is disposed at this point, for more
 		 * details refer bug 381668.
 		 */
-            if (!child.isDisposed() && child.getImpl().isTabItem() && ((DartControl) child.getImpl()).setTabItemFocus())
+            if (!child.isDisposed() && child.getImpl().isTabItem() && child.getImpl().setTabItemFocus())
                 return true;
         }
         return false;

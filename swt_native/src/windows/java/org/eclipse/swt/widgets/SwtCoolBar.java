@@ -392,7 +392,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     @Override
-    Control findThemeControl() {
+    public Control findThemeControl() {
         if ((getApi().style & SWT.FLAT) != 0)
             return this.getApi();
         return background == -1 && backgroundImage == null ? this.getApi() : super.findThemeControl();

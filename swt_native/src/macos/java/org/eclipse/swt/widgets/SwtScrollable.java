@@ -131,7 +131,12 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
         ScrollBar bar = new ScrollBar();
         ((SwtScrollBar) bar.getImpl()).parent = this.getApi();
         bar.style = style;
-        ((SwtWidget) bar.getImpl()).display = display;
+        if (bar.getImpl() instanceof DartWidget) {
+            ((DartWidget) bar.getImpl()).display = display;
+        }
+        if (bar.getImpl() instanceof SwtWidget) {
+            ((SwtWidget) bar.getImpl()).display = display;
+        }
         NSScroller scroller;
         long actionSelector;
         NSRect rect = new NSRect();

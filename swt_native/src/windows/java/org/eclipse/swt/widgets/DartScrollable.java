@@ -116,7 +116,12 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      */
     public Rectangle computeTrim(int x, int y, int width, int height) {
         checkWidget();
-        return null;
+        int zoom = getZoom();
+        x = DPIUtil.scaleUp(x, zoom);
+        y = DPIUtil.scaleUp(y, zoom);
+        width = DPIUtil.scaleUp(width, zoom);
+        height = DPIUtil.scaleUp(height, zoom);
+        return DPIUtil.scaleDown(computeTrimInPixels(x, y, width, height), zoom);
     }
 
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
@@ -197,7 +202,7 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      */
     public Rectangle getClientArea() {
         checkWidget();
-        return getBounds();
+        return DPIUtil.scaleDown(getClientAreaInPixels(), getZoom());
     }
 
     Rectangle getClientAreaInPixels() {

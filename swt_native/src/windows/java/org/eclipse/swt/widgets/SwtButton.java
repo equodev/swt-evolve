@@ -888,7 +888,7 @@ public class SwtButton extends SwtControl implements IButton {
         super.setBackground(color);
     }
 
-    void setDefault(boolean value) {
+    public void setDefault(boolean value) {
         if ((getApi().style & SWT.PUSH) == 0)
             return;
         long hwndShell = menuShell().handle;
@@ -1003,7 +1003,7 @@ public class SwtButton extends SwtControl implements IButton {
     }
 
     @Override
-    boolean setRadioFocus(boolean tabbing) {
+    public boolean setRadioFocus(boolean tabbing) {
         if ((getApi().style & SWT.RADIO) == 0 || !getSelection())
             return false;
         return tabbing ? setTabItemFocus() : setFocus();
@@ -1230,7 +1230,7 @@ public class SwtButton extends SwtControl implements IButton {
             final int oldFlag = parent.state & THEME_BACKGROUND;
             try {
                 parent.state &= ~THEME_BACKGROUND;
-                if (parent == null || parent.getImpl() instanceof SwtControl) {
+                if (parent.getImpl() instanceof SwtControl) {
                     return ((SwtControl) parent.getImpl()).wmColorChild(wParam, lParam);
                 } else
                     return null;

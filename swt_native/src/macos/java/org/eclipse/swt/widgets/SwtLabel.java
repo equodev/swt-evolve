@@ -120,12 +120,12 @@ public class SwtLabel extends SwtControl implements ILabel {
 
     @Override
     public void addRelation(Control control) {
-        if (control == null || control.getImpl() instanceof SwtControl) {
+        if (control.getImpl() instanceof SwtControl) {
             if (!((SwtControl) control.getImpl()).isDescribedByLabel())
                 return;
         }
         if (textView != null) {
-            if (control == null || control.getImpl() instanceof SwtControl) {
+            if (control.getImpl() instanceof SwtControl) {
                 NSObject accessibleElement = ((SwtControl) control.getImpl()).focusView();
                 if (accessibleElement instanceof NSControl viewAsControl) {
                     if (viewAsControl.cell() != null)
@@ -491,7 +491,7 @@ public class SwtLabel extends SwtControl implements ILabel {
     }
 
     @Override
-    boolean setTabItemFocus() {
+    public boolean setTabItemFocus() {
         return false;
     }
 

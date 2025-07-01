@@ -4008,6 +4008,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     public boolean readAndDispatch() {
         checkDevice();
+        dev.equo.swt.FlutterBridge.update();
         lpStartupInfo = null;
         drawMenuBars();
         runSkin();
@@ -4489,7 +4490,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     void runSettings() {
-        dev.equo.swt.FlutterBridge.update();
         Font oldFont = getSystemFont();
         saveResources();
         sendEvent(SWT.Settings, null);
@@ -5301,7 +5301,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     boolean translateAccelerator(MSG msg, Control control) {
         accelKeyHit = true;
-        if (control == null || control.getImpl() instanceof SwtControl) {
+        if (control.getImpl() instanceof SwtControl) {
             boolean result = ((SwtControl) control.getImpl()).translateAccelerator(msg);
             accelKeyHit = false;
             return result;
@@ -5321,7 +5321,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         switch(msg.message) {
             case OS.WM_CHAR:
             case OS.WM_SYSCHAR:
-                if (control == null || control.getImpl() instanceof SwtControl) {
+                if (control.getImpl() instanceof SwtControl) {
                     return ((SwtControl) control.getImpl()).translateMnemonic(msg);
                 } else
                     return false;
@@ -5342,7 +5342,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                     case OS.VK_RIGHT:
                     case OS.VK_PRIOR:
                     case OS.VK_NEXT:
-                        if (control == null || control.getImpl() instanceof SwtControl) {
+                        if (control.getImpl() instanceof SwtControl) {
                             return ((SwtControl) control.getImpl()).translateTraversal(msg);
                         } else
                             return false;
@@ -5351,7 +5351,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             case OS.WM_SYSKEYDOWN:
                 switch((int) msg.wParam) {
                     case OS.VK_MENU:
-                        if (control == null || control.getImpl() instanceof SwtControl) {
+                        if (control.getImpl() instanceof SwtControl) {
                             return ((SwtControl) control.getImpl()).translateTraversal(msg);
                         } else
                             return false;

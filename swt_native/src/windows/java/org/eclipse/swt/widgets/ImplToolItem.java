@@ -23,4 +23,8 @@ public interface ImplToolItem extends ImplItem {
     short _cx();
 
     Widget[] computeTabList();
+
+    boolean isTabGroup();
+
+    boolean setTabItemFocus();
 }

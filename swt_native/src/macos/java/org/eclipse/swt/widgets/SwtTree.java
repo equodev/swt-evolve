@@ -725,7 +725,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 outlineView.setOutlineTableColumn(nsColumn);
             }
         }
-        if (column == null || column.getImpl() instanceof SwtWidget) {
+        if (column.getImpl() instanceof SwtWidget) {
             ((SwtWidget) column.getImpl()).createJNIRef();
         }
         NSTableHeaderCell headerCell = (NSTableHeaderCell) new SWTTableHeaderCell().alloc().init();
@@ -780,7 +780,7 @@ public class SwtTree extends SwtComposite implements ITree {
         ((SwtTreeItem) item.getImpl()).items = new TreeItem[4];
         SWTTreeItem handle = (SWTTreeItem) new SWTTreeItem().alloc().init();
         item.handle = handle;
-        if (item == null || item.getImpl() instanceof SwtWidget) {
+        if (item.getImpl() instanceof SwtWidget) {
             ((SwtWidget) item.getImpl()).createJNIRef();
         }
         ((SwtTreeItem) item.getImpl()).register();

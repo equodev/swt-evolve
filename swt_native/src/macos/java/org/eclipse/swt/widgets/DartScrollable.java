@@ -114,7 +114,12 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
         ScrollBar bar = new ScrollBar();
         ((DartScrollBar) bar.getImpl()).parent = this.getApi();
         bar.style = style;
-        ((DartWidget) bar.getImpl()).display = display;
+        if (bar.getImpl() instanceof DartWidget) {
+            ((DartWidget) bar.getImpl()).display = display;
+        }
+        if (bar.getImpl() instanceof SwtWidget) {
+            ((SwtWidget) bar.getImpl()).display = display;
+        }
         long actionSelector;
         if ((style & SWT.H_SCROLL) != 0) {
         } else {

@@ -546,13 +546,13 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             int count = 0;
             Control[] list = _getChildren();
             for (Control element : list) {
-                if (((SwtControl) element.getImpl()).isTabGroup())
+                if (element.getImpl().isTabGroup())
                     count++;
             }
             tabList = new Control[count];
             int index = 0;
             for (Control element : list) {
-                if (((SwtControl) element.getImpl()).isTabGroup()) {
+                if (element.getImpl().isTabGroup()) {
                     tabList[index++] = element;
                 }
             }
@@ -1126,7 +1126,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         checkWidget();
         Control[] children = _getChildren();
         for (Control child : children) {
-            if (child.getVisible() && ((SwtControl) child.getImpl()).setRadioFocus(false))
+            if (child.getVisible() && child.getImpl().setRadioFocus(false))
                 return true;
         }
         for (Control child : children) {
@@ -1252,11 +1252,11 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 		 * It is unlikely but possible that a child is disposed at this point, for more
 		 * details refer bug 381668.
 		 */
-            if (!child.isDisposed() && child.getImpl().isTabItem() && ((SwtControl) child.getImpl()).setRadioFocus(true))
+            if (!child.isDisposed() && child.getImpl().isTabItem() && child.getImpl().setRadioFocus(true))
                 return true;
         }
         for (Control child : children) {
-            if (!child.isDisposed() && child.getImpl().isTabItem() && !((SwtControl) child.getImpl()).isTabGroup() && ((SwtControl) child.getImpl()).setTabItemFocus()) {
+            if (!child.isDisposed() && child.getImpl().isTabItem() && !child.getImpl().isTabGroup() && child.getImpl().setTabItemFocus()) {
                 return true;
             }
         }
@@ -2061,7 +2061,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         for (Control child : composite.getChildren()) {
             DPIZoomChangeRegistry.applyChange(child, newZoom, scalingFactor);
         }
-        if (composite == null || composite.getImpl() instanceof SwtControl) {
+        if (composite.getImpl() instanceof SwtControl) {
             ((SwtControl) composite.getImpl()).redrawInPixels(null, true);
         }
     }

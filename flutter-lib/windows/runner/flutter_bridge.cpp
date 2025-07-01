@@ -12,7 +12,7 @@
 #include "resource.h"
 
 namespace {
-    std::unique_ptr<flutter::DartProject> project;
+//    std::unique_ptr<flutter::DartProject> project;
 //    std::unique_ptr<FlutterWindow> window;
 
     // Window class registration
@@ -133,12 +133,14 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
 
 //  project = std::make_unique<flutter::DartProject>(L"C:\\Users\\Guille\\ws\\swt-flutter\\pocflutter\\build\\windows\\x64\\runner\\Release\\data");
 //  project = std::make_unique<flutter::DartProject>(L"C:\\Users\\Guille\\ws\\swt-flutter\\pocflutter\\build\\windows\\x64\\runner\\Release\\data");
-  project = std::make_unique<flutter::DartProject>(GetDllPath() + L"\\data");
+//  project = std::make_unique<flutter::DartProject>(GetDllPath() + L"\\data");
+  flutter::DartProject project(GetDllPath() + L"\\data");
 
 //  std::vector<std::string> command_line_arguments = GetCommandLineArguments();
   std::vector<std::string> arguments = {std::to_string(port), std::to_string(widgetId), widgetName};
 //  project->set_dart_entrypoint_arguments(std::move(command_line_arguments));
-  project->set_dart_entrypoint_arguments(std::move(arguments));
+//  project->set_dart_entrypoint_arguments(std::move(arguments));
+  project.set_dart_entrypoint_arguments(std::move(arguments));
   // const wchar_t* window_class =
       // WindowClassRegistrar::GetInstance()->GetWindowClass();
 //   MyRegisterClass(GetModuleHandle(nullptr));
@@ -156,14 +158,19 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
   }
 
 //  window = std::make_unique<FlutterWindow>(*project.get());
-  FlutterWindow* window = new FlutterWindow(*project.get());
+//  FlutterWindow* window = new FlutterWindow(*project.get());
+  FlutterWindow* window = new FlutterWindow(project);
   // FlutterWindow window(*project.get());
-  Win32Window::Point origin(10, 10);
-  Win32Window::Size size(600, 500);
+//  Win32Window::Point origin(0, 0);
+//  Win32Window::Size size(600, 500);
+  RECT frame;
+  GetClientRect((HWND)parentWnd, &frame);
+  Win32Window::Point origin(0, 0);
+  Win32Window::Size size(frame.right - frame.left, frame.bottom - frame.top);
   if (!window->Create(L"swtflutter1", origin, size, (HWND)parentWnd)) {
     return 0;
   }
-  window->SetQuitOnClose(true);
+//  window->SetQuitOnClose(true);
 
 //  FlutterWindow* rawPtr = window.release();
   return window;
@@ -262,11 +269,18 @@ JNIEXPORT jlong JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_GetVie
 
 JNIEXPORT void JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_Dispose(JNIEnv* env, jclass cls, jlong context) {
     FlutterWindow* window = reinterpret_cast<FlutterWindow*>(context);
-    project.reset();
+//    project.reset();
 
     ::CoUninitialize();
+    window->Destroy();
     delete window;
 }
 
 JNIEXPORT void JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_SetBounds(JNIEnv* env, jclass cls, jlong context, jint x, jint y, jint width, jint height, jint vx, jint vy, jint vwidth, jint vheight) {
+    FlutterWindow* window = reinterpret_cast<FlutterWindow*>(context);
+    Win32Window::Point origin(x, y);
+    Win32Window::Size size(width, height);
+    Win32Window::Point vorigin(vx, vy);
+    Win32Window::Size vsize(vwidth, vheight);
+    window->Move(origin, size, vorigin, vsize);
 }

@@ -458,11 +458,11 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
             if (!((SwtExpandBar) parent.getImpl()).isAppThemed()) {
                 int width = Math.max(0, this.width - BORDER * 2);
                 int height = Math.max(0, this.height - BORDER);
-                if (control == null || control.getImpl() instanceof SwtControl) {
+                if (control.getImpl() instanceof SwtControl) {
                     ((SwtControl) control.getImpl()).setBoundsInPixels(x + BORDER, y + headerHeight, width, height);
                 }
             } else {
-                if (control == null || control.getImpl() instanceof SwtControl) {
+                if (control.getImpl() instanceof SwtControl) {
                     ((SwtControl) control.getImpl()).setBoundsInPixels(x, y + headerHeight, width, height);
                 }
             }

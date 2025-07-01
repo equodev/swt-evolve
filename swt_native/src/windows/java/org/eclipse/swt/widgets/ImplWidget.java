@@ -29,4 +29,6 @@ public interface ImplWidget {
     boolean sendFocusEvent(int type);
 
     boolean setTabGroupFocus();
+
+    boolean setTabItemFocus();
 }

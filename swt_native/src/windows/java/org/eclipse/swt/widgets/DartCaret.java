@@ -121,7 +121,7 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return null;
+        return DPIUtil.scaleDown(getBoundsInPixels(), getZoom());
     }
 
     Rectangle getBoundsInPixels() {
@@ -211,7 +211,7 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public Point getSize() {
         checkWidget();
-        return null;
+        return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
     }
 
     Point getSizeInPixels() {
@@ -225,19 +225,19 @@ public class DartCaret extends DartWidget implements ICaret {
     }
 
     private int getWidthInPixels() {
-        return 0;
+        return DPIUtil.scaleUp(width, getZoom());
     }
 
     private int getHeightInPixels() {
-        return 0;
+        return DPIUtil.scaleUp(height, getZoom());
     }
 
     private int getXInPixels() {
-        return 0;
+        return DPIUtil.scaleUp(x, getZoom());
     }
 
     private int getYInPixels() {
-        return 0;
+        return DPIUtil.scaleUp(y, getZoom());
     }
 
     /**

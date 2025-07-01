@@ -28,6 +28,8 @@ public interface ImplComposite extends ImplScrollable {
 
     void invalidateChildrenVisibleRegion();
 
+    boolean isTabGroup();
+
     void markLayout(boolean changed, boolean all);
 
     void removeControl(Control control);

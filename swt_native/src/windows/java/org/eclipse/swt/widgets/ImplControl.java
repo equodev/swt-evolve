@@ -38,6 +38,8 @@ public interface ImplControl extends ImplWidget {
 
     Cursor findCursor();
 
+    Control findThemeControl();
+
     Menu[] findMenus(Control control);
 
     void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus);
@@ -46,6 +48,8 @@ public interface ImplControl extends ImplWidget {
 
     boolean isActive();
 
+    boolean isTabGroup();
+
     boolean isTabItem();
 
     void markLayout(boolean changed, boolean all);
@@ -53,6 +57,10 @@ public interface ImplControl extends ImplWidget {
     Decorations menuShell();
 
     boolean sendFocusEvent(int type);
+
+    boolean setRadioFocus(boolean tabbing);
+
+    boolean setTabItemFocus();
 
     void updateBackgroundMode();
 

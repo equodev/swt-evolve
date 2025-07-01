@@ -62,6 +62,8 @@ public interface ImplControl extends ImplWidget {
 
     boolean isDrawing();
 
+    boolean isTabGroup();
+
     boolean isTabItem();
 
     boolean isTransparent();
@@ -77,6 +79,8 @@ public interface ImplControl extends ImplWidget {
     void resetVisibleRegion();
 
     void sendFocusEvent(int type);
+
+    boolean setTabItemFocus();
 
     void updateBackgroundMode();
 

@@ -529,7 +529,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
             long code = callWindowProc(hwnd, msg, wParam, lParam);
             result = code == 0 ? LRESULT.ZERO : new LRESULT(code);
         }
-        if (bar == null || bar.getImpl() instanceof SwtScrollBar) {
+        if (bar.getImpl() instanceof SwtScrollBar) {
             ((SwtScrollBar) bar.getImpl()).wmScrollChild(wParam, lParam);
         }
         return result;

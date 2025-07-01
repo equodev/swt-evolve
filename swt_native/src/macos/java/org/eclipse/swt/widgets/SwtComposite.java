@@ -362,7 +362,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                 NSGraphicsContext.static_saveGraphicsState();
                 NSGraphicsContext.setCurrentContext(context);
             }
-            if (control == null || control.getImpl() instanceof SwtControl) {
+            if (control.getImpl() instanceof SwtControl) {
                 ((SwtControl) control.getImpl()).fillBackground(getApi().view, context, rect, imgHeight, data.view, offsetX, offsetY);
             }
             if (data.flippedContext != null) {
@@ -545,13 +545,13 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             int count = 0;
             Control[] list = _getChildren();
             for (int i = 0; i < list.length; i++) {
-                if (((SwtControl) list[i].getImpl()).isTabGroup())
+                if (list[i].getImpl().isTabGroup())
                     count++;
             }
             tabList = new Control[count];
             int index = 0;
             for (int i = 0; i < list.length; i++) {
-                if (((SwtControl) list[i].getImpl()).isTabGroup()) {
+                if (list[i].getImpl().isTabGroup()) {
                     tabList[index++] = list[i];
                 }
             }
@@ -621,7 +621,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     }
 
     @Override
-    boolean isTabGroup() {
+    public boolean isTabGroup() {
         if ((getApi().state & CANVAS) != 0)
             return true;
         return super.isTabGroup();
@@ -999,7 +999,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             Control[] _getChildren = _getChildren();
             for (Control child : _getChildren) {
                 if (child != null && !child.isDisposed() && child.isVisible()) {
-                    if (child == null || child.getImpl() instanceof SwtWidget) {
+                    if (child.getImpl() instanceof SwtWidget) {
                         ((SwtWidget) child.getImpl()).redrawWidget(child.view, redrawChildren);
                     }
                 }
@@ -1057,7 +1057,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     }
 
     public void removeControl(Control control) {
-        if (control == null || control.getImpl() instanceof SwtControl) {
+        if (control.getImpl() instanceof SwtControl) {
             if (((SwtControl) control.getImpl()).hasFocus())
                 redrawWidget(getApi().view, true);
         }
@@ -1272,7 +1272,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 		 * It is unlikely but possible that a child is disposed at this point, for more
 		 * details refer bug 381668.
 		 */
-            if (!child.isDisposed() && child.getImpl().isTabItem() && ((SwtControl) child.getImpl()).setTabItemFocus())
+            if (!child.isDisposed() && child.getImpl().isTabItem() && child.getImpl().setTabItemFocus())
                 return true;
         }
         return false;
