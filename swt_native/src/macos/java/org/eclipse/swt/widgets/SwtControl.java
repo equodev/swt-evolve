@@ -2417,7 +2417,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return true;
     }
 
-    boolean isTabGroup() {
+    public boolean isTabGroup() {
         Control[] tabList = parent.getImpl()._getTabList();
         if (tabList != null) {
             for (int i = 0; i < tabList.length; i++) {
@@ -3890,7 +3890,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             transform.translateXBy(2 * pt.x, 2 * pt.y);
             regionPath.transformUsingAffineTransform(transform);
         }
-        if (parent == null || parent.getImpl() instanceof SwtControl) {
+        if (parent.getImpl() instanceof SwtControl) {
             ((SwtControl) parent.getImpl()).setClipRegion(view);
         }
     }
@@ -4439,7 +4439,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
-    boolean setTabItemFocus() {
+    public boolean setTabItemFocus() {
         if (!isShowing())
             return false;
         return forceFocus();
@@ -4605,7 +4605,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     void setZOrder() {
         NSView topView = topView();
-        if (parent == null || parent.getImpl() instanceof SwtControl) {
+        if (parent.getImpl() instanceof SwtControl) {
             ((SwtControl) parent.getImpl()).contentView().addSubview(topView, OS.NSWindowBelow, null);
         } else
             ((NSView) ((DartComposite) parent.getImpl()).contentView()).addSubview(topView, OS.NSWindowBelow, null);
@@ -4656,7 +4656,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             NSView topView = topView();
             topView.retain();
             topView.removeFromSuperview();
-            if (parent == null || parent.getImpl() instanceof SwtControl) {
+            if (parent.getImpl() instanceof SwtControl) {
                 ((SwtControl) parent.getImpl()).contentView().addSubview(topView, above ? OS.NSWindowAbove : OS.NSWindowBelow, otherView);
             } else
                 ((NSView) ((DartComposite) parent.getImpl()).contentView()).addSubview(topView, above ? OS.NSWindowAbove : OS.NSWindowBelow, otherView);
@@ -5022,7 +5022,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     int traversalCode(int key, NSEvent theEvent) {
         int code = SWT.TRAVERSE_RETURN | SWT.TRAVERSE_TAB_NEXT | SWT.TRAVERSE_TAB_PREVIOUS | SWT.TRAVERSE_PAGE_NEXT | SWT.TRAVERSE_PAGE_PREVIOUS;
         Shell shell = getShell();
-        if (((SwtControl) shell.getImpl()).parent != null)
+        if (shell.getImpl()._parent() != null)
             code |= SWT.TRAVERSE_ESCAPE;
         return code;
     }
@@ -5326,7 +5326,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         while ((index = (index + offset + length) % length) != start) {
             Control child = children[index];
             if (!child.isDisposed() && child.getImpl().isTabItem()) {
-                if (((SwtControl) child.getImpl()).setTabItemFocus())
+                if (child.getImpl().setTabItemFocus())
                     return true;
             }
         }

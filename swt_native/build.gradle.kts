@@ -1,7 +1,5 @@
 import org.gradle.kotlin.dsl.*
 
-import org.gradle.kotlin.dsl.support.unzipTo
-
 plugins {
     java
     `java-library`
@@ -11,9 +9,6 @@ repositories {
     mavenCentral()
 }
 
-val isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows
-val isLinux = org.gradle.internal.os.OperatingSystem.current().isLinux
-val isMac = org.gradle.internal.os.OperatingSystem.current().isMacOsX
 val arch = System.getProperty("os.arch")
 
 val oss = listOf("windows", "linux", "macos")
@@ -29,49 +24,11 @@ val currentOs = when {
     else -> "linux"
 }
 
+val currentPlatform = "$currentOs-${if (arch.contains("aarch64") || arch.contains("arm")) "aarch64" else "x86_64"}"
+
 val swtVersion = "3.128.0"
 
-val swtBundle = when {
-    isWindows -> {
-        when (arch) {
-            "amd64", "x86_64" -> "org.eclipse.platform:org.eclipse.swt.win32.win32.x86_64"
-            "aarch64" -> "org.eclipse.platform:org.eclipse.swt.win32.win32.aarch64"
-            else -> throw GradleException("Unsupported Windows architecture: $arch")
-        }
-    }
-    isMac -> {
-        when (arch) {
-            "amd64", "x86_64" -> "org.eclipse.platform:org.eclipse.swt.cocoa.macosx.x86_64"
-            "aarch64" -> "org.eclipse.platform:org.eclipse.swt.cocoa.macosx.aarch64"
-            else -> throw GradleException("Unsupported macOS architecture: $arch")
-        }
-    }
-    isLinux -> {
-        when (arch) {
-            "amd64", "x86_64" -> "org.eclipse.platform:org.eclipse.swt.gtk.linux.x86_64"
-            "aarch64" -> "org.eclipse.platform:org.eclipse.swt.gtk.linux.aarch64"
-            else -> throw GradleException("Unsupported Linux architecture: $arch")
-        }
-    }
-    else -> throw GradleException("Unsupported operating system")
-}
-
-//val swtImplementation by configurations.creating {
-//    exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
-//}
-//
-val swtSources by configurations.creating {
-    exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
-}
-
 dependencies {
-//    platforms.forEach { platform ->
-//
-//
-//        swtImplementation
-//    }
-//    swtImplementation("$swtBundle:$swtVersion")
-    swtSources("$swtBundle:$swtVersion:sources")
     implementation("dev.equo:com.equo.comm.ws.provider:3.1.0.202405302201") {
         exclude(group = "dev.equo", module = "com.equo.comm.common")
     }
@@ -81,9 +38,10 @@ dependencies {
     implementation("com.dslplatform:dsl-json:2.0.2")
     annotationProcessor("com.dslplatform:dsl-json:2.0.2")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("org.assertj:assertj-core:3.25.3")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation(libs.assertj)
     testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.1.1")
     testImplementation("org.mockito:mockito-core:5.18.0")
     testImplementation("org.instancio:instancio-junit:5.4.0")
@@ -93,7 +51,7 @@ sourceSets {
     main {
         java {
             // Include the shared sources and current OS-specific sources for IDE
-            if (currentOs != "macos") // temp exclude src/main from linux
+            if (currentOs == "linux") // temp exclude src/main from linux
                 setSrcDirs(listOf(
                     "src/${currentOs}/java"
                 ))
@@ -109,7 +67,7 @@ sourceSets {
     oss.forEach { os ->
         create(os) {
             java {
-                if (os != "macos") // temp exclude src/main from linux
+                if (os == "linux") // temp exclude src/main from linux
                     setSrcDirs(listOf(
                         "src/${os}/java"
                     ))
@@ -125,22 +83,6 @@ sourceSets {
         }
     }
 }
-//// Configure the main source set
-//java {
-//    sourceSets {
-//        create("macos") {
-//            java {
-//                srcDir("src/macos/java")
-//            }
-//        }
-////        main {
-////            java {
-////                srcDir("src/main/java")
-////            }
-////        }
-//    }
-//}
-
 
 tasks.test {
     useJUnitPlatform()
@@ -148,96 +90,20 @@ tasks.test {
 //        jvmArgs = listOf("-XstartOnFirstThread")
 }
 
-//val extractNatives by tasks.registering {
-//    dependsOn(configurations["swtImplementation"])
-//
-//    doLast {
-//        val nativesDir = layout.buildDirectory.file("natives").get().getAsFile()
-//        nativesDir.mkdirs()
-//
-//        configurations["swtImplementation"].files.forEach { jar ->
-//            ZipFile(jar).use { zip ->
-//                zip.entries().asSequence()
-//                    .filter { it.name.matches(".+\\.(so|dll|dylib|jnilib)$".toRegex()) }
-//                    .forEach { entry ->
-//                        zip.getInputStream(entry).use { input ->
-//                            val outputFile = file("${nativesDir}/${entry.name}")
-//                            outputFile.parentFile.mkdirs()
-//                            outputFile.outputStream().use { output ->
-//                                input.copyTo(output)
-//                            }
-//                            if (!isWindows) {
-//                                outputFile.setExecutable(true)
-//                            }
-//                        }
-//                    }
-//            }
-//        }
-//    }
-//}
-
-val os = "macos"
-
-val extractSources by tasks.registering {
-    dependsOn(configurations["swtSources"])
-
-    doLast {
-        val sourcesDir = file("build/swt/$os")
-        sourcesDir.mkdirs()
-
-        configurations["swtSources"].files.forEach { jar ->
-            unzipTo(sourcesDir, jar)
-        }
-
-//        configurations["swtSources"].files.forEach { jar ->
-//            ZipFile(jar).use { zip ->
-//                zip.entries().asSequence()
-//                    .filter { !it.isDirectory }
-//                    .forEach { entry ->
-//                        zip.getInputStream(entry).use { input ->
-//                            val outputFile = file("${sourcesDir}/${entry.name}")
-//                            outputFile.parentFile.mkdirs()
-//                            outputFile.outputStream().use { output ->
-//                                input.copyTo(output)
-//                            }
-//                        }
-//                    }
-//            }
-//        }
-    }
-}
-
 tasks.compileJava {
-//    dependsOn(extractSources)
 //    options.setIncremental(false) // dsl-json processor seems to get crazy
 }
 
-//tasks.jar {
-////    dependsOn(extractNatives)
-//
-//    val sourceSets = project.extensions.getByType<SourceSetContainer>()
-//    from(sourceSets.getByName("main").java.srcDirs) {
-//        include("**/*.css")
-//    }
-//
-//    from(layout.buildDirectory.file("natives")) {
-//        into(".")
-//    }
-//
-//    // Add all dependencies to the JAR
-//    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-//
-//    // Exclude META-INF signatures to avoid signature validation errors
-//    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
-//
-//    manifest {
-//        attributes(
-//        )
-//    }
-//
-//    // Avoid duplicate files in the JAR
-//    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-//}
+tasks.jar {
+    from(layout.buildDirectory.dir("natives/$currentPlatform"))
+
+    // Add all dependencies to the JAR
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "OSGI-OPT/")
+
+    dependsOn("${currentPlatform}ExtractNatives")
+    dependsOn("${currentPlatform}CopyFlutterBinaries")
+}
 
 // Create tasks for each platform JAR
 platforms.forEach { platform ->
@@ -283,7 +149,8 @@ platforms.forEach { platform ->
     tasks.register<Copy>("${platform}CopyFlutterBinaries") {
         group = "build"
         description = "Copies Flutter binaries for $platform"
-        
+
+        val flutterArch = if (osArch[1] == "aarch64") "arm64" else "x64"
         when (osArch[0]) {
             "macos" -> {
                 from("../flutter-lib/build/macos/Build/Products/Release/swtflutter.app") {
@@ -291,25 +158,27 @@ platforms.forEach { platform ->
                 }
             }
             "linux" -> {
-                val linuxArch = if (osArch[1] == "aarch64") "arm64" else "x64"
-                from("../flutter-lib/build/linux/$linuxArch/release/runner") {
+                from("../flutter-lib/build/linux/$flutterArch/release/runner") {
                     include("libflutter_library.so")
                     into("runner")
                 }
-                from("../flutter-lib/build/linux/$linuxArch/release/bundle/lib") {
+                from("../flutter-lib/build/linux/$flutterArch/release/bundle/lib") {
                     include("libapp.so", "libflutter_linux_gtk.so")
                     into("bundle/lib")
                 }
-                from("../flutter-lib/build/linux/$linuxArch/release/bundle/data") {
+                from("../flutter-lib/build/linux/$flutterArch/release/bundle/data") {
                     include("icudtl.dat", "flutter_assets/**")
                     into("bundle/data")
                 }
             }
             "windows" -> {
-                // Add Windows binaries when needed
+                from("../flutter-lib/build/windows/$flutterArch/runner/Release/") {
+                    include("*.dll", "data/")
+                    into("runner")
+                }
             }
         }
-        
+
         into(layout.buildDirectory.dir("natives/$platform"))
     }
 
@@ -360,7 +229,6 @@ platforms.forEach { platform ->
     }
 }
 
-// Task to build all platform JARs
 tasks.register("buildAllPlatforms") {
     group = "build"
     description = "Builds JARs for all platforms"

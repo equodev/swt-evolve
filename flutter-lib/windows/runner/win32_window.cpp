@@ -288,6 +288,14 @@ void Win32Window::SetChildContent(HWND content) {
   SetFocus(child_content_);
 }
 
+void Win32Window::Move(const Point& origin, const Size& size, const Point& vorigin, const Size& vsize) {
+  MoveWindow(window_handle_, origin.x, origin.y, size.width, size.height, true);
+  if (origin.x == vorigin.x && origin.y == vorigin.y && size.width == vsize.width && size.height == vsize.height) {
+    return;
+  }
+  MoveWindow(child_content_, vorigin.x, vorigin.y, vsize.width, vsize.height, true);
+}
+
 RECT Win32Window::GetClientArea() {
   RECT frame;
   GetClientRect(window_handle_, &frame);

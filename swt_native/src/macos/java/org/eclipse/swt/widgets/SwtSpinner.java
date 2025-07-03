@@ -355,7 +355,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
         Image image = control.getImpl()._backgroundImage();
         if (image != null && !image.isDisposed()) {
             NSGraphicsContext context = NSGraphicsContext.currentContext();
-            if (control == null || control.getImpl() instanceof SwtControl) {
+            if (control.getImpl() instanceof SwtControl) {
                 ((SwtControl) control.getImpl()).fillBackground(getApi().view, context, cellFrame, -1);
             }
         }

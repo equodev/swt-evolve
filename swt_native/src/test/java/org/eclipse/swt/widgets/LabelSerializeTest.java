@@ -30,16 +30,17 @@ class LabelSerializeTest extends SerializeTestBase {
                .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
-        assertJ.satisfies(node("background").equalsTo(value(w).getBackground(), orAbsentIfNull));
+        assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
+        assertJ.satisfies(node("bounds").equalsTo(w.getBounds(), orAbsentIfNull));
+        assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));
         assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
-        assertJ.satisfies(node("foreground").equalsTo(value(w).getForeground(), orAbsentIfNull));
+        assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("orientation").equalsTo(w.getOrientation(), orAbsentIf0));
+        assertJ.satisfies(node("redraw").equalsTo(value(w).getRedraw(), orAbsentIfFalse));
         assertJ.satisfies(node("textDirection").equalsTo(w.getTextDirection(), orAbsentIf0));
         assertJ.satisfies(node("touchEnabled").equalsTo(w.getTouchEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
-        assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
-        assertJ.satisfies(node("redraw").equalsTo(value(w).getRedraw(), orAbsentIfFalse));
     }
 
     VLabel value(Label w) {

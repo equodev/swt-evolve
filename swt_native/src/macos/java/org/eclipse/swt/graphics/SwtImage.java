@@ -1105,7 +1105,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             return true;
         if (!(object instanceof Image image))
             return false;
-        if (device != ((SwtResource) image.getImpl()).device || alphaInfo_100.transparentPixel != ((SwtImage) image.getImpl()).alphaInfo_100.transparentPixel)
+        if (device != image.getImpl()._device() || alphaInfo_100.transparentPixel != ((SwtImage) image.getImpl()).alphaInfo_100.transparentPixel)
             return false;
         if (imageDataProvider != null && ((SwtImage) image.getImpl()).imageDataProvider != null) {
             return styleFlag == ((SwtImage) image.getImpl()).styleFlag && imageDataProvider.equals(((SwtImage) image.getImpl()).imageDataProvider);

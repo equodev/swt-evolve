@@ -676,7 +676,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     @Override
     void deregister() {
-        super.deregister();
+        if (bridge != null)
+            bridge.destroy(this);
     }
 
     @Override
@@ -1641,7 +1642,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return true;
     }
 
-    boolean isTabGroup() {
+    public boolean isTabGroup() {
         Control[] tabList = parent.getImpl()._getTabList();
         if (tabList != null) {
             for (int i = 0; i < tabList.length; i++) {
@@ -1943,7 +1944,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     @Override
     void register() {
-        super.register();
+        hookEvents();
+        bridge = FlutterBridge.of(this);
     }
 
     @Override
@@ -2462,7 +2464,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (control.getImpl()._backgroundImage() != null) {
         } else {
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -2484,6 +2485,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBackground(Color color) {
         checkWidget();
+        this._background = color;
         _setBackground(color);
         if (color != null) {
             this.updateBackgroundMode();
@@ -2570,6 +2572,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setBounds(int x, int y, int width, int height) {
         checkWidget();
         this.bounds = new Rectangle(x, y, width, height);
+        getBridge().setBounds(this, bounds);
         setBounds(x, y, Math.max(0, width), Math.max(0, height), true, true);
     }
 
@@ -2587,7 +2590,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         }
         ((SwtDisplay) display.getImpl()).ignoreFocusControl = oldIgnoreFocusControl;
         getBridge().dirty(this);
-        getBridge().setBounds(this, bounds);
     }
 
     /**
@@ -2616,6 +2618,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setBounds(Rectangle rect) {
         checkWidget();
         this.bounds = rect;
+        getBridge().setBounds(this, bounds);
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(rect.x, rect.y, Math.max(0, rect.width), Math.max(0, rect.height), true, true);
@@ -2802,6 +2805,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setForeground(Color color) {
         checkWidget();
+        this._foreground = color;
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -2850,6 +2854,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setLocation(int x, int y) {
         checkWidget();
         this.bounds = new Rectangle(x, y, bounds.width, bounds.height);
+        getBridge().setBounds(this, bounds);
         setBounds(x, y, 0, 0, true, false);
         getBridge().dirty(this);
     }
@@ -2871,6 +2876,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setLocation(Point location) {
         checkWidget();
         this.bounds = new Rectangle(location.x, location.y, bounds.width, bounds.height);
+        getBridge().setBounds(this, bounds);
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(location.x, location.y, 0, 0, true, false);
@@ -3084,6 +3090,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setSize(int width, int height) {
         checkWidget();
         this.bounds = new Rectangle(bounds.x, bounds.y, width, height);
+        getBridge().setBounds(this, bounds);
         setBounds(0, 0, Math.max(0, width), Math.max(0, height), false, true);
         getBridge().dirty(this);
     }
@@ -3114,6 +3121,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setSize(Point size) {
         checkWidget();
         this.bounds = new Rectangle(bounds.x, bounds.y, size.x, size.y);
+        getBridge().setBounds(this, bounds);
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(0, 0, Math.max(0, size.x), Math.max(0, size.y), false, true);
@@ -3124,7 +3132,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     @Override
-    boolean setTabItemFocus() {
+    public boolean setTabItemFocus() {
         if (!isShowing())
             return false;
         return false;
@@ -3784,7 +3792,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         while ((index = (index + offset + length) % length) != start) {
             Control child = children[index];
             if (!child.isDisposed() && child.getImpl().isTabItem()) {
-                if (((DartControl) child.getImpl()).setTabItemFocus())
+                if (child.getImpl().setTabItemFocus())
                     return true;
             }
         }
@@ -3899,11 +3907,15 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return 0.2126f * rgbColor[0] + 0.7152f * rgbColor[1] + 0.0722f * rgbColor[2];
     }
 
+    Color _background;
+
     Rectangle bounds = new Rectangle(0, 0, 0, 0);
 
     boolean dragDetect;
 
     boolean enabled;
+
+    Color _foreground;
 
     int orientation;
 
@@ -3971,6 +3983,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return touchEnabled;
     }
 
+    public Color __background() {
+        return _background;
+    }
+
     public Rectangle _bounds() {
         return bounds;
     }
@@ -3981,6 +3997,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public boolean _enabled() {
         return enabled;
+    }
+
+    public Color __foreground() {
+        return _foreground;
     }
 
     public int _orientation() {

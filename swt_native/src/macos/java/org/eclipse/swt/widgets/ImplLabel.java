@@ -14,4 +14,6 @@ public interface ImplLabel extends ImplControl {
     void addRelation(Control control);
 
     void removeRelation();
+
+    boolean setTabItemFocus();
 }

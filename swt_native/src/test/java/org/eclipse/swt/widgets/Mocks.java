@@ -10,6 +10,9 @@ import org.eclipse.swt.graphics.Font;
 import org.instancio.Instancio;
 import org.mockito.Mockito;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -38,7 +41,10 @@ public class Mocks {
         swtDisplay.thread = Thread.currentThread();
         when(display.getThread()).thenCallRealMethod();
         when(display.getImpl()).thenReturn(swtDisplay);
-        when(swtDisplay.getWidgetColor(anyInt())).thenReturn(new Color(10, 10, 10));
+        try { // mac only
+            Method getSystemColor = SwtDisplay.class.getDeclaredMethod("getWidgetColor", int.class);
+            when(getSystemColor.invoke(swtDisplay, anyInt())).thenReturn(new Color(10, 10, 10));
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {}
         when(display.getSystemColor(anyInt())).thenReturn(new Color(red(), green(), blue()));
         when(swtDisplay.getThread()).thenCallRealMethod();
         Font font = mock(Font.class);
@@ -66,6 +72,15 @@ public class Mocks {
     public static ToolBar toolBar() {
         ToolBar w = mock(ToolBar.class);
         DartToolBar impl = mock(DartToolBar.class);
+        when(w.getImpl()).thenReturn(impl);
+        Display display = display();
+        when(impl._display()).thenReturn(display);
+        return w;
+    }
+
+    public static Canvas canvas() {
+        Canvas w = mock(Canvas.class);
+        DartCanvas impl = mock(DartCanvas.class);
         when(w.getImpl()).thenReturn(impl);
         Display display = display();
         when(impl._display()).thenReturn(display);

@@ -3,10 +3,8 @@ package dev.equo.swt;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
@@ -36,10 +34,13 @@ public class FlutterLibraryLoader {
     public static final String CONTENTS = "Contents";
     public static final String SWTFLUTTER_APP = "swtflutter.app";
     public static final String SWTFLUTTER_APP_CONTENTS = "macos/Build/Products/Release/" + SWTFLUTTER_APP + SEPARATOR + CONTENTS;
-    private static final String LINUX_RUNNER_DIR_NAME = "runner";
+    private static final String RUNNER_DIR_NAME = "runner";
     private static final String LINUX_BUNDLE_DIR_NAME = "bundle";
     private static final String LINUX_LIB_NAME = "libflutter_library.so";
-    public static final String LINUX_X_64_RELEASE = "linux/x64/release";
+    private static final String WIN_LIB1_NAME = "flutter_windows.dll";
+    private static final String WIN_LIB_NAME = "flutter_library.dll";
+    public static final String LINUX_X64_RELEASE = "linux/x64/release";
+    public static final String WIN_X64_RELEASE = "windows/x64/runner/Release";
 
     private static final String EQUO_LIB_PATH_SUFFIX =
             EQUO_BASE_DIR_NAME + SEPARATOR + SWT_DIR_NAME + SEPARATOR + LIB_SUB_DIR_NAME + SEPARATOR + getOS() + SEPARATOR + getArch();
@@ -79,8 +80,10 @@ public class FlutterLibraryLoader {
             extractAndLoadMacOSLibraries(equoLibDir, isDevelopmentMode);
         } else if (OS_LINUX.equals(os)) {
             extractAndLoadLinuxLibraries(equoLibDir, isDevelopmentMode);
+        } else if ("win32".equals(os)) {
+            extractAndLoadWinLibraries(equoLibDir, isDevelopmentMode);
         } else {
-            throw new UnsupportedOperationException("Unsupported OS: " + os + ". Equo SWT currently supports macOS and Linux.");
+            throw new UnsupportedOperationException("Unsupported OS: " + os + ". Equo SWT currently supports macOS, Windows and Linux.");
         }
     }
 
@@ -96,17 +99,34 @@ public class FlutterLibraryLoader {
 
     private static void extractAndLoadLinuxLibraries(File targetDir, boolean isDevelopmentMode) throws IOException {
         if (!isDevelopmentMode) {
-            extractDirectoryFromJar(LINUX_RUNNER_DIR_NAME, targetDir);
+            extractDirectoryFromJar(RUNNER_DIR_NAME, targetDir);
             extractDirectoryFromJar(LINUX_BUNDLE_DIR_NAME, targetDir);
 
-            File libFile = new File(targetDir, LINUX_RUNNER_DIR_NAME + SEPARATOR + LINUX_LIB_NAME);
+            File libFile = new File(targetDir, RUNNER_DIR_NAME + SEPARATOR + LINUX_LIB_NAME);
             if (!libFile.exists()) {
                 throw new IOException("Essential Linux library not found after extraction: " + libFile.getAbsolutePath());
             }
             setExecutablePermission(libFile);
             loadLibrary(libFile.getAbsolutePath());
         } else {
-            loadOSLibraries(LINUX_X_64_RELEASE, LINUX_RUNNER_DIR_NAME + SEPARATOR + LINUX_LIB_NAME);
+            loadOSLibraries(LINUX_X64_RELEASE, RUNNER_DIR_NAME + SEPARATOR + LINUX_LIB_NAME);
+        }
+    }
+
+    private static void extractAndLoadWinLibraries(File targetDir, boolean isDevelopmentMode) throws IOException {
+        if (!isDevelopmentMode) {
+            extractDirectoryFromJar(RUNNER_DIR_NAME, targetDir);
+
+            File lib1File = new File(targetDir, RUNNER_DIR_NAME + SEPARATOR + WIN_LIB1_NAME);
+            File libFile = new File(targetDir, RUNNER_DIR_NAME + SEPARATOR + WIN_LIB_NAME);
+            if (!libFile.exists() || !lib1File.exists()) {
+                throw new IOException("Essential Windows library not found after extraction: " + libFile.getAbsolutePath() + ", "+lib1File.getAbsolutePath());
+            }
+            loadLibrary(lib1File.getAbsolutePath());
+            loadLibrary(libFile.getAbsolutePath());
+        } else {
+            loadOSLibraries(WIN_X64_RELEASE, SEPARATOR + WIN_LIB1_NAME);
+            loadOSLibraries(WIN_X64_RELEASE, SEPARATOR + WIN_LIB_NAME);
         }
     }
 

@@ -676,7 +676,7 @@ public class SwtTable extends SwtComposite implements ITable {
             ((NSTableView) getApi().view).moveColumn(columnCount + checkColumn, index + checkColumn);
             nsColumn.setDataCell(dataCell);
         }
-        if (column == null || column.getImpl() instanceof SwtWidget) {
+        if (column.getImpl() instanceof SwtWidget) {
             ((SwtWidget) column.getImpl()).createJNIRef();
         }
         NSTableHeaderCell headerCell = (NSTableHeaderCell) new SWTTableHeaderCell().alloc().init();

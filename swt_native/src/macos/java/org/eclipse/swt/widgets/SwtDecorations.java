@@ -402,7 +402,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
     }
 
     @Override
-    boolean isTabGroup() {
+    public boolean isTabGroup() {
         return true;
     }
 

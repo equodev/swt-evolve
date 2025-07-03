@@ -33,7 +33,6 @@ class CTabItemSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("selectionForeground").equalsTo(w.getSelectionForeground(), orAbsentIfNull));
         assertJ.satisfies(node("showClose").equalsTo(w.getShowClose(), orAbsentIfFalse));
-        assertJ.satisfies(node("shortenedText").equalsTo(value(w).getShortenedText(), orAbsentIfNull));
     }
 
     VCTabItem value(CTabItem w) {

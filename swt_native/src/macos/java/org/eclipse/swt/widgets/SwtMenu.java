@@ -129,7 +129,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
         checkParent(parent);
         this.getApi().style = checkStyle(style);
         if (parent != null) {
-            display = ((SwtWidget) parent.getImpl()).display;
+            display = parent.getImpl()._display();
         } else {
             display = SwtDisplay.getCurrent();
             if (display == null)
@@ -415,7 +415,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             }
             add = false;
         }
-        if (item == null || item.getImpl() instanceof SwtWidget) {
+        if (item.getImpl() instanceof SwtWidget) {
             ((SwtWidget) item.getImpl()).createJNIRef();
         }
         ((SwtMenuItem) item.getImpl()).register();
@@ -729,7 +729,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             if (this.getApi() == ((SwtDisplay) display.getImpl()).appMenuBar)
                 return ((SwtDisplay) display.getImpl()).application.isActive();
             else
-                return this.getApi() == ((SwtDecorations) parent.getImpl().menuShell().getImpl()).menuBar;
+                return this.getApi() == ((SwtDecorations) ((SwtDecorations) parent.getImpl()).menuShell().getImpl()).menuBar;
         }
         if ((getApi().style & SWT.POP_UP) != 0) {
             Menu[] popups = ((SwtDisplay) display.getImpl()).popups;

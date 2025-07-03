@@ -318,7 +318,7 @@ public class DartLabel extends DartControl implements ILabel {
     }
 
     @Override
-    boolean setTabItemFocus() {
+    public boolean setTabItemFocus() {
         return false;
     }
 

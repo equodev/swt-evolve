@@ -468,7 +468,7 @@ public final class SwtCursor extends SwtResource implements ICursor {
             return true;
         if (!(object instanceof Cursor cursor))
             return false;
-        return device == ((SwtResource) cursor.getImpl()).device && getApi().handle == cursor.handle;
+        return device == cursor.getImpl()._device() && getApi().handle == cursor.handle;
     }
 
     /**

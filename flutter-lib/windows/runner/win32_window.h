@@ -45,6 +45,8 @@ class Win32Window {
   // Inserts |content| into the window tree.
   void SetChildContent(HWND content);
 
+  void Move(const Point& origin, const Size& size, const Point& vorigin, const Size& vsize);
+
   // Returns the backing Window handle to enable clients to set icon and other
   // window properties. Returns nullptr if the window has been destroyed.
   HWND GetHandle();

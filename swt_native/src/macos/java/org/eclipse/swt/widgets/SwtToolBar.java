@@ -297,13 +297,13 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             System.arraycopy(items, 0, newItems, 0, items.length);
             items = newItems;
         }
-        if (item == null || item.getImpl() instanceof SwtWidget) {
+        if (item.getImpl() instanceof SwtWidget) {
             ((SwtWidget) item.getImpl()).createWidget();
         }
         System.arraycopy(items, index, items, index + 1, itemCount++ - index);
         items[index] = item;
         if (nsToolbar != null) {
-            if (item == null || item.getImpl() instanceof SwtToolItem) {
+            if (item.getImpl() instanceof SwtToolItem) {
                 nsToolbar.insertItemWithItemIdentifier(((SwtToolItem) item.getImpl()).getItemID(), index);
             }
         } else {

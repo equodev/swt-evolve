@@ -704,7 +704,7 @@ public class SwtText extends SwtScrollable implements IText {
         Image image = control.getImpl()._backgroundImage();
         if (image != null && !image.isDisposed()) {
             NSGraphicsContext context = NSGraphicsContext.currentContext();
-            if (control == null || control.getImpl() instanceof SwtControl) {
+            if (control.getImpl() instanceof SwtControl) {
                 ((SwtControl) control.getImpl()).fillBackground(getApi().view, context, cellFrame, -1);
             }
         } else if ((getApi().style & SWT.SEARCH) != 0) {

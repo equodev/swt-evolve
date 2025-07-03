@@ -17,12 +17,12 @@ public class VControl extends VWidget {
         super(impl);
     }
 
-    public double[] getBackground() {
-        return ((DartControl) impl).background;
+    public Color getBackground() {
+        return ((DartControl) impl).getBackground();
     }
 
-    public void setBackground(double[] value) {
-        ((DartControl) impl).background = value;
+    public void setBackground(Color value) {
+        ((DartControl) impl).setBackground(value);
     }
 
     @JsonAttribute(ignore = true)
@@ -76,12 +76,12 @@ public class VControl extends VWidget {
         ((DartControl) impl).font = value;
     }
 
-    public double[] getForeground() {
-        return ((DartControl) impl).foreground;
+    public Color getForeground() {
+        return ((DartControl) impl).getForeground();
     }
 
-    public void setForeground(double[] value) {
-        ((DartControl) impl).foreground = value;
+    public void setForeground(Color value) {
+        ((DartControl) impl).setForeground(value);
     }
 
     @JsonAttribute(ignore = true)

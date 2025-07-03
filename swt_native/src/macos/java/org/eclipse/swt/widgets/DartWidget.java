@@ -1203,7 +1203,7 @@ public abstract class DartWidget implements IWidget {
         return setTabItemFocus();
     }
 
-    boolean setTabItemFocus() {
+    public boolean setTabItemFocus() {
         return false;
     }
 

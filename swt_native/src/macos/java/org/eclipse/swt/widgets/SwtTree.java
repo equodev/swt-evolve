@@ -725,7 +725,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 outlineView.setOutlineTableColumn(nsColumn);
             }
         }
-        if (column == null || column.getImpl() instanceof SwtWidget) {
+        if (column.getImpl() instanceof SwtWidget) {
             ((SwtWidget) column.getImpl()).createJNIRef();
         }
         NSTableHeaderCell headerCell = (NSTableHeaderCell) new SWTTableHeaderCell().alloc().init();
@@ -780,7 +780,7 @@ public class SwtTree extends SwtComposite implements ITree {
         ((SwtTreeItem) item.getImpl()).items = new TreeItem[4];
         SWTTreeItem handle = (SWTTreeItem) new SWTTreeItem().alloc().init();
         item.handle = handle;
-        if (item == null || item.getImpl() instanceof SwtWidget) {
+        if (item.getImpl() instanceof SwtWidget) {
             ((SwtWidget) item.getImpl()).createJNIRef();
         }
         ((SwtTreeItem) item.getImpl()).register();
@@ -2602,7 +2602,7 @@ public class SwtTree extends SwtComposite implements ITree {
         for (int i = 0; i < items.length; i++) {
             TreeItem item = items[i];
             if (item != null && !item.isDisposed()) {
-                item.getImpl().release(false);
+                ((SwtTreeItem) item.getImpl()).release(false);
             }
         }
         items = null;
@@ -2657,7 +2657,7 @@ public class SwtTree extends SwtComposite implements ITree {
         for (int i = 0; i < items.length; i++) {
             TreeItem item = items[i];
             if (item != null && !item.isDisposed())
-                item.getImpl().release(false);
+                ((SwtTreeItem) item.getImpl()).release(false);
         }
         items = new TreeItem[4];
         itemCount = 0;
@@ -3251,7 +3251,7 @@ public class SwtTree extends SwtComposite implements ITree {
             for (int index = count; index < itemCount; index++) {
                 TreeItem item = children[index];
                 if (item != null && !item.isDisposed())
-                    item.getImpl().release(false);
+                    ((SwtTreeItem) item.getImpl()).release(false);
             }
             selectItems(selectedItems, true);
             TreeItem[] newItems = new TreeItem[length];
