@@ -9,6 +9,7 @@ import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
 import 'src/swt/button.dart';
 import 'src/comm/comm.dart';
 import 'src/widgets.dart';
+import 'src/gen/widgets.dart' as gen;
 
 void main(List<String> args) async {
   if (args.isNotEmpty) {
@@ -42,7 +43,7 @@ Widget createContentWidget(String widgetName, int widgetId) {
     'id': widgetId,
     'style': 0,
   };
-  return customWidget(child) ?? mapWidget(child);
+  return customWidget(child) ?? gen.mapWidget(child) ?? mapWidget(child);
 }
 
 Widget? customWidget(Map<String, dynamic> child) {
