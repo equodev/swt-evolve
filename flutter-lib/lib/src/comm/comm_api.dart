@@ -1,10 +1,10 @@
 
-import '../swt/widget.dart';
+import '../gen/widget.dart';
 
 typedef CommCallback<V> = void Function(V payload);
 
 class EquoCommService {
-  static void on<V extends WidgetValue>(
+  static void on<V extends VWidget>(
       String userEventActionId, CommCallback<V> onSuccess) => throw UnsupportedError("EquoComm.on");
   static void onRaw(
       String userEventActionId, CommCallback<Object?> onSuccess) => throw UnsupportedError("EquoComm.on");

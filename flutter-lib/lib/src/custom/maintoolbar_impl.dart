@@ -1,26 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
-import '../swt/composite.dart';
-import '../swt/toolitem.dart';
-import '../widgets.dart';
+import '../gen/composite.dart';
+import '../gen/toolitem.dart';
+import '../gen/widgets.dart';
 
 import 'dart:io';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:swtflutter/src/impl/widget_config.dart';
-import '../impl/composite_impl.dart';
-import '../impl/scrollable_impl.dart';
-import '../swt/toolbar.dart';
+import '../impl/widget_config.dart';
+import '../impl/composite_evolve.dart';
+import '../impl/scrollable_evolve.dart';
+import '../gen/toolbar.dart';
 
-class MainToolbarSwt<V extends CompositeValue> extends CompositeSwt<V> {
+class MainToolbarSwt<V extends VComposite> extends CompositeSwt<V> {
   const MainToolbarSwt({super.key, required super.value});
 
   @override
   State createState() =>
-      MainToolbarImpl<MainToolbarSwt<CompositeValue>, CompositeValue>();
+      MainToolbarImpl<MainToolbarSwt<VComposite>, VComposite>();
 }
 
-class MainToolbarImpl<T extends MainToolbarSwt, V extends CompositeValue>
+class MainToolbarImpl<T extends MainToolbarSwt, V extends VComposite>
     extends CompositeImpl<T, V> {
 
   final bool useDarkTheme = getCurrentTheme();
@@ -120,16 +119,16 @@ class MainToolbarImpl<T extends MainToolbarSwt, V extends CompositeValue>
   }
 
   // Helper method to find state by tooltip or text
-  ToolItemValue? _findStateByIdentifier(String identifier) {
+  VToolItem? _findStateByIdentifier(String identifier) {
     var r = _findStateByIdentifierComposite(identifier, state);
     print("${r != null ? "Found" : "Not Found"} identifier!!! ${identifier}");
     return r;
   }
 
-  ToolItemValue? _findStateByIdentifierComposite(String identifier, CompositeValue comp) {
+  VToolItem? _findStateByIdentifierComposite(String identifier, VComposite comp) {
     if (comp.children == null) return null;
     for (var toolbar in comp.children!) {
-      if (toolbar is ToolBarValue) {
+      if (toolbar is VToolBar) {
         final toolbarValue = toolbar;
         if (toolbarValue.items != null) {
           for (var toolItem in toolbar.items!) {
@@ -144,7 +143,7 @@ class MainToolbarImpl<T extends MainToolbarSwt, V extends CompositeValue>
           }
         }
       }
-      else if (toolbar is CompositeValue) {
+      else if (toolbar is VComposite) {
         var r = _findStateByIdentifierComposite(identifier, toolbar);
         if (r != null) return r;
       }
@@ -153,7 +152,7 @@ class MainToolbarImpl<T extends MainToolbarSwt, V extends CompositeValue>
   }
 
   Widget _buildSvgButton(String svgPath, {bool border = false, Color? separatorColor, String? identifier}) {
-    final ToolItemValue? toolItemState = identifier != null ? _findStateByIdentifier(identifier) : null;
+    final VToolItem? toolItemState = identifier != null ? _findStateByIdentifier(identifier) : null;
     final bool isEnabled = toolItemState?.enabled ?? true;
 
     final Widget svgImage = SvgPicture.asset(
@@ -214,7 +213,7 @@ class MainToolbarImpl<T extends MainToolbarSwt, V extends CompositeValue>
   }
 
   Widget _buildSvgButtonWithDropdown(String svgPath, {bool border = false, Color? separatorColor, String? identifier}) {
-    final ToolItemValue? toolItemState = identifier != null ? _findStateByIdentifier(identifier) : null;
+    final VToolItem? toolItemState = identifier != null ? _findStateByIdentifier(identifier) : null;
     final bool isEnabled = toolItemState?.enabled ?? true;
 
     final Widget svgImage = SvgPicture.asset(svgPath,
@@ -294,7 +293,7 @@ class MainToolbarImpl<T extends MainToolbarSwt, V extends CompositeValue>
     required Color newTestCaseBgColor,
     required Color newTestCaseTextColor,
   }) {
-    final ToolItemValue? toolItemState = _findStateByIdentifier("Create new Test Case");
+    final VToolItem? toolItemState = _findStateByIdentifier("Create new Test Case");
     final bool isEnabled = toolItemState?.enabled ?? true;
 
     return Focus(
@@ -368,7 +367,7 @@ class MainToolbarImpl<T extends MainToolbarSwt, V extends CompositeValue>
     required Color keywordButtonTextColor,
     required Color lightThemeIconBorder,
   }) {
-    final ToolItemValue? toolItemState = _findStateByIdentifier("StudioAssist");
+    final VToolItem? toolItemState = _findStateByIdentifier("StudioAssist");
     final bool isEnabled = toolItemState?.enabled ?? true;
 
     return Focus(
@@ -450,15 +449,15 @@ class MainToolbarImpl<T extends MainToolbarSwt, V extends CompositeValue>
     );
   }
 
-  void onPressed_(ToolItemValue toolItemState) {
+  void onPressed_(VToolItem toolItemState) {
     ToolItemSwt(value: toolItemState).sendSelectionSelection(toolItemState, null);
   }
 
-  void handleFocusIn_(ToolItemValue toolItemState) {
+  void handleFocusIn_(VToolItem toolItemState) {
     widget.sendFocusFocusIn(state, null);
   }
 
-  void handleFocusOut_(ToolItemValue toolItemState) {
+  void handleFocusOut_(VToolItem toolItemState) {
     widget.sendFocusFocusOut(state, null);
   }
 }

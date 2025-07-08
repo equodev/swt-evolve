@@ -32,11 +32,11 @@ class VList extends VScrollable {
     swt = "List";
   }
 
+  bool? ignoreSelect;
   List<String>? items;
   List<String>? selection;
   List<int>? selectionIndices;
   int? topIndex;
-  bool? ignoreSelect;
 
   factory VList.fromJson(Map<String, dynamic> json) => _$VListFromJson(json);
   Map<String, dynamic> toJson() => _$VListToJson(this);

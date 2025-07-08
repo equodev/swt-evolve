@@ -105,16 +105,16 @@ class VControl extends VWidget {
 
   VColor? background;
   VRectangle? bounds;
+  bool? capture;
   bool? dragDetect;
   bool? enabled;
   VColor? foreground;
   int? orientation;
+  bool? redraw;
   int? textDirection;
   String? toolTipText;
   bool? touchEnabled;
   bool? visible;
-  bool? capture;
-  bool? redraw;
 
   factory VControl.fromJson(Map<String, dynamic> json) =>
       _$VControlFromJson(json);

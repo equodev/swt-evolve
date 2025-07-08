@@ -7,15 +7,15 @@ part of 'rectangle.dart';
 // **************************************************************************
 
 VRectangle _$VRectangleFromJson(Map<String, dynamic> json) => VRectangle()
-  ..x = (json['x'] as num).toInt()
-  ..y = (json['y'] as num).toInt()
+  ..height = (json['height'] as num).toInt()
   ..width = (json['width'] as num).toInt()
-  ..height = (json['height'] as num).toInt();
+  ..x = (json['x'] as num).toInt()
+  ..y = (json['y'] as num).toInt();
 
 Map<String, dynamic> _$VRectangleToJson(VRectangle instance) =>
     <String, dynamic>{
+      'height': instance.height,
+      'width': instance.width,
       'x': instance.x,
       'y': instance.y,
-      'width': instance.width,
-      'height': instance.height,
     };

@@ -1,12 +1,14 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:fluent_ui/fluent_ui.dart' as fluent;
-import 'package:swtflutter/src/impl/widget_config.dart';
-import '../swt/ctabitem.dart';
-import '../impl/item_impl.dart';
-import 'icons_map.dart';
 
-class CTabItemImpl<T extends CTabItemSwt, V extends CTabItemValue>
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import '../gen/ctabitem.dart';
+import '../gen/widget.dart';
+import '../impl/item_evolve.dart';
+import 'icons_map.dart';
+import 'widget_config.dart';
+
+class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     extends ItemImpl<T, V> {
 
   final bool useDarkTheme = getCurrentTheme();
@@ -30,21 +32,21 @@ class CTabItemImpl<T extends CTabItemSwt, V extends CTabItemValue>
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (state.image != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 1.0, right: 3.0),
-              child: !materialIconMap.containsKey(state.image)
-                  ? Image.file(
-                File(state.image!),
-                width: 16,
-                height: 16,
-              )
-                  : Icon(
-                getMaterialIconByName(state.image!),
-                size: 16,
-                color: iconColor,
-              ),
-            ),
+          // if (state.image != null)
+          //   Padding(
+          //     padding: const EdgeInsets.only(bottom: 1.0, right: 3.0),
+          //     child: !materialIconMap.containsKey(state.image)
+          //         ? Image.file(
+          //       File(state.image!),
+          //       width: 16,
+          //       height: 16,
+          //     )
+          //         : Icon(
+          //       getMaterialIconByName(state.image!),
+          //       size: 16,
+          //       color: iconColor,
+          //     ),
+          //   ),
           Padding(
             padding: const EdgeInsets.only(bottom: 2.0),
             child: Text(
@@ -80,10 +82,8 @@ class CTabItemImpl<T extends CTabItemSwt, V extends CTabItemValue>
     );
   }
 
-
   void onCloseRequest() {
   }
-
 
   void onTabSelected() {
   }

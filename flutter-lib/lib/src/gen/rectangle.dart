@@ -7,10 +7,10 @@ class VRectangle {
   VRectangle() : this.empty();
   VRectangle.empty();
 
+  int height = 0;
+  int width = 0;
   int x = 0;
   int y = 0;
-  int width = 0;
-  int height = 0;
 
   factory VRectangle.fromJson(Map<String, dynamic> json) =>
       _$VRectangleFromJson(json);

@@ -120,12 +120,12 @@ class TreeImpl<T extends TreeSwt, V extends TreeValue>
     eventNames.add(eventName);
     treeItemExpanders[treeItemValue.id] = eventName;
 
-    EquoCommService.on<TreeItemValue>(eventName, (TreeItemValue payload) {
-      setState(() {
-        treeItemValue.children = filterNonEmptyTreeItems(payload.children);
-        treeItemValue.expanded = true;
-      });
-    });
+    // EquoCommService.on<TreeItemValue>(eventName, (TreeItemValue payload) {
+    //   setState(() {
+    //     treeItemValue.children = filterNonEmptyTreeItems(payload.children);
+    //     treeItemValue.expanded = true;
+    //   });
+    // });
   }
 
   List<WidgetValue> filterNonEmptyTreeItems(List<WidgetValue>? items) {

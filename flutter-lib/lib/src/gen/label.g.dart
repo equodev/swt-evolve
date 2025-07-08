@@ -16,18 +16,18 @@ VLabel _$VLabelFromJson(Map<String, dynamic> json) => VLabel()
   ..bounds = json['bounds'] == null
       ? null
       : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>)
+  ..capture = json['capture'] as bool?
   ..dragDetect = json['dragDetect'] as bool?
   ..enabled = json['enabled'] as bool?
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
   ..orientation = (json['orientation'] as num?)?.toInt()
+  ..redraw = json['redraw'] as bool?
   ..textDirection = (json['textDirection'] as num?)?.toInt()
   ..toolTipText = json['toolTipText'] as String?
   ..touchEnabled = json['touchEnabled'] as bool?
   ..visible = json['visible'] as bool?
-  ..capture = json['capture'] as bool?
-  ..redraw = json['redraw'] as bool?
   ..alignment = (json['alignment'] as num?)?.toInt()
   ..text = json['text'] as String?;
 
@@ -37,16 +37,16 @@ Map<String, dynamic> _$VLabelToJson(VLabel instance) => <String, dynamic>{
       'style': instance.style,
       'background': instance.background,
       'bounds': instance.bounds,
+      'capture': instance.capture,
       'dragDetect': instance.dragDetect,
       'enabled': instance.enabled,
       'foreground': instance.foreground,
       'orientation': instance.orientation,
+      'redraw': instance.redraw,
       'textDirection': instance.textDirection,
       'toolTipText': instance.toolTipText,
       'touchEnabled': instance.touchEnabled,
       'visible': instance.visible,
-      'capture': instance.capture,
-      'redraw': instance.redraw,
       'alignment': instance.alignment,
       'text': instance.text,
     };

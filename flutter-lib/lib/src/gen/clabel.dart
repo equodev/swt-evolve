@@ -26,13 +26,13 @@ class VCLabel extends VCanvas {
 
   int? align;
   int? bottomMargin;
+  List<VColor>? gradientColors;
+  List<int>? gradientPercents;
+  bool? gradientVertical;
   int? leftMargin;
   int? rightMargin;
   String? text;
   int? topMargin;
-  List<VColor>? gradientColors;
-  List<int>? gradientPercents;
-  bool? gradientVertical;
 
   factory VCLabel.fromJson(Map<String, dynamic> json) =>
       _$VCLabelFromJson(json);

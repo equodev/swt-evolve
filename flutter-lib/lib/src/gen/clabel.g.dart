@@ -16,18 +16,18 @@ VCLabel _$VCLabelFromJson(Map<String, dynamic> json) => VCLabel()
   ..bounds = json['bounds'] == null
       ? null
       : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>)
+  ..capture = json['capture'] as bool?
   ..dragDetect = json['dragDetect'] as bool?
   ..enabled = json['enabled'] as bool?
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
   ..orientation = (json['orientation'] as num?)?.toInt()
+  ..redraw = json['redraw'] as bool?
   ..textDirection = (json['textDirection'] as num?)?.toInt()
   ..toolTipText = json['toolTipText'] as String?
   ..touchEnabled = json['touchEnabled'] as bool?
   ..visible = json['visible'] as bool?
-  ..capture = json['capture'] as bool?
-  ..redraw = json['redraw'] as bool?
   ..scrollbarsMode = (json['scrollbarsMode'] as num?)?.toInt()
   ..backgroundMode = (json['backgroundMode'] as num?)?.toInt()
   ..children = (json['children'] as List<dynamic>?)
@@ -42,17 +42,17 @@ VCLabel _$VCLabelFromJson(Map<String, dynamic> json) => VCLabel()
       : VCaret.fromJson(json['caret'] as Map<String, dynamic>)
   ..align = (json['align'] as num?)?.toInt()
   ..bottomMargin = (json['bottomMargin'] as num?)?.toInt()
-  ..leftMargin = (json['leftMargin'] as num?)?.toInt()
-  ..rightMargin = (json['rightMargin'] as num?)?.toInt()
-  ..text = json['text'] as String?
-  ..topMargin = (json['topMargin'] as num?)?.toInt()
   ..gradientColors = (json['gradientColors'] as List<dynamic>?)
       ?.map((e) => VColor.fromJson(e as Map<String, dynamic>))
       .toList()
   ..gradientPercents = (json['gradientPercents'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
       .toList()
-  ..gradientVertical = json['gradientVertical'] as bool?;
+  ..gradientVertical = json['gradientVertical'] as bool?
+  ..leftMargin = (json['leftMargin'] as num?)?.toInt()
+  ..rightMargin = (json['rightMargin'] as num?)?.toInt()
+  ..text = json['text'] as String?
+  ..topMargin = (json['topMargin'] as num?)?.toInt();
 
 Map<String, dynamic> _$VCLabelToJson(VCLabel instance) => <String, dynamic>{
       'swt': instance.swt,
@@ -60,16 +60,16 @@ Map<String, dynamic> _$VCLabelToJson(VCLabel instance) => <String, dynamic>{
       'style': instance.style,
       'background': instance.background,
       'bounds': instance.bounds,
+      'capture': instance.capture,
       'dragDetect': instance.dragDetect,
       'enabled': instance.enabled,
       'foreground': instance.foreground,
       'orientation': instance.orientation,
+      'redraw': instance.redraw,
       'textDirection': instance.textDirection,
       'toolTipText': instance.toolTipText,
       'touchEnabled': instance.touchEnabled,
       'visible': instance.visible,
-      'capture': instance.capture,
-      'redraw': instance.redraw,
       'scrollbarsMode': instance.scrollbarsMode,
       'backgroundMode': instance.backgroundMode,
       'children': instance.children,
@@ -78,11 +78,11 @@ Map<String, dynamic> _$VCLabelToJson(VCLabel instance) => <String, dynamic>{
       'caret': instance.caret,
       'align': instance.align,
       'bottomMargin': instance.bottomMargin,
+      'gradientColors': instance.gradientColors,
+      'gradientPercents': instance.gradientPercents,
+      'gradientVertical': instance.gradientVertical,
       'leftMargin': instance.leftMargin,
       'rightMargin': instance.rightMargin,
       'text': instance.text,
       'topMargin': instance.topMargin,
-      'gradientColors': instance.gradientColors,
-      'gradientPercents': instance.gradientPercents,
-      'gradientVertical': instance.gradientVertical,
     };

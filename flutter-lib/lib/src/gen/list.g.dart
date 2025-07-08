@@ -16,27 +16,27 @@ VList _$VListFromJson(Map<String, dynamic> json) => VList()
   ..bounds = json['bounds'] == null
       ? null
       : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>)
+  ..capture = json['capture'] as bool?
   ..dragDetect = json['dragDetect'] as bool?
   ..enabled = json['enabled'] as bool?
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
   ..orientation = (json['orientation'] as num?)?.toInt()
+  ..redraw = json['redraw'] as bool?
   ..textDirection = (json['textDirection'] as num?)?.toInt()
   ..toolTipText = json['toolTipText'] as String?
   ..touchEnabled = json['touchEnabled'] as bool?
   ..visible = json['visible'] as bool?
-  ..capture = json['capture'] as bool?
-  ..redraw = json['redraw'] as bool?
   ..scrollbarsMode = (json['scrollbarsMode'] as num?)?.toInt()
+  ..ignoreSelect = json['ignoreSelect'] as bool?
   ..items = (json['items'] as List<dynamic>?)?.map((e) => e as String).toList()
   ..selection =
       (json['selection'] as List<dynamic>?)?.map((e) => e as String).toList()
   ..selectionIndices = (json['selectionIndices'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
       .toList()
-  ..topIndex = (json['topIndex'] as num?)?.toInt()
-  ..ignoreSelect = json['ignoreSelect'] as bool?;
+  ..topIndex = (json['topIndex'] as num?)?.toInt();
 
 Map<String, dynamic> _$VListToJson(VList instance) => <String, dynamic>{
       'swt': instance.swt,
@@ -44,20 +44,20 @@ Map<String, dynamic> _$VListToJson(VList instance) => <String, dynamic>{
       'style': instance.style,
       'background': instance.background,
       'bounds': instance.bounds,
+      'capture': instance.capture,
       'dragDetect': instance.dragDetect,
       'enabled': instance.enabled,
       'foreground': instance.foreground,
       'orientation': instance.orientation,
+      'redraw': instance.redraw,
       'textDirection': instance.textDirection,
       'toolTipText': instance.toolTipText,
       'touchEnabled': instance.touchEnabled,
       'visible': instance.visible,
-      'capture': instance.capture,
-      'redraw': instance.redraw,
       'scrollbarsMode': instance.scrollbarsMode,
+      'ignoreSelect': instance.ignoreSelect,
       'items': instance.items,
       'selection': instance.selection,
       'selectionIndices': instance.selectionIndices,
       'topIndex': instance.topIndex,
-      'ignoreSelect': instance.ignoreSelect,
     };
