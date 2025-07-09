@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import '../widgets.dart';
-import '../swt/widget.dart';
+import '../gen/widgets.dart';
+import '../gen/widget.dart';
 import 'comm_api.dart';
 
 class EquoCommService {
@@ -21,7 +21,7 @@ class EquoCommService {
     // print("comm chromium on after: $userEventActionId");
   }
 
-  static void on<V extends WidgetValue>(String userEventActionId, CommCallback<V> onSuccess) {
+  static void on<V extends VWidget>(String userEventActionId, CommCallback<V> onSuccess) {
     // print("comm ws on: $userEventActionId");
     void callback(dynamic payload) {
       // print("comm ws on callback: ${payload ?? 'null'}");

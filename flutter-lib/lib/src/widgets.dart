@@ -35,8 +35,6 @@ import 'swt/group.dart';
 import 'swt/spinner.dart';
 import 'swt/scale.dart';
 import 'swt/scrolledcomposite.dart';
-import 'swt/ctabitem.dart';
-import 'swt/ctabfolder.dart';
 import 'swt/expanditem.dart';
 import 'swt/expandbar.dart';
 import 'swt/coolitem.dart';
@@ -91,8 +89,6 @@ WidgetValue mapWidgetValue(Map<String, dynamic> child) {
     "Spinner" => SpinnerValue.fromJson(child),
     "Scale" => ScaleValue.fromJson(child),
     "ScrolledComposite" => ScrolledCompositeValue.fromJson(child),
-    "CTabItem" => CTabItemValue.fromJson(child),
-    "CTabFolder" => CTabFolderValue.fromJson(child),
     "ExpandItem" => ExpandItemValue.fromJson(child),
     "ExpandBar" => ExpandBarValue.fromJson(child),
     "CoolItem" => CoolItemValue.fromJson(child),
@@ -151,10 +147,6 @@ Widget mapWidgetFromValue(WidgetValue child) {
     "Scale" => ScaleSwt(key: ValueKey(id), value: (child as ScaleValue)),
     "ScrolledComposite" => ScrolledCompositeSwt(
         key: ValueKey(id), value: (child as ScrolledCompositeValue)),
-    "CTabItem" =>
-      CTabItemSwt(key: ValueKey(id), value: (child as CTabItemValue)),
-    "CTabFolder" =>
-      CTabFolderSwt(key: ValueKey(id), value: (child as CTabFolderValue)),
     "ExpandItem" =>
       ExpandItemSwt(key: ValueKey(id), value: (child as ExpandItemValue)),
     "ExpandBar" =>

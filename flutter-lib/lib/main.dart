@@ -1,14 +1,15 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart' as mat;
+import 'package:swtflutter/src/gen/composite.dart';
 import 'src/custom/maintoolbar_impl.dart';
 import 'src/swt/composite.dart';
 
 import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
 
-import 'src/swt/button.dart';
 import 'src/comm/comm.dart';
 import 'src/widgets.dart';
+import 'src/gen/widgets.dart' as gen;
 
 void main(List<String> args) async {
   if (args.isNotEmpty) {
@@ -42,7 +43,7 @@ Widget createContentWidget(String widgetName, int widgetId) {
     'id': widgetId,
     'style': 0,
   };
-  return customWidget(child) ?? mapWidget(child);
+  return customWidget(child) ?? gen.mapWidget(child) ?? mapWidget(child);
 }
 
 Widget? customWidget(Map<String, dynamic> child) {
@@ -50,7 +51,7 @@ Widget? customWidget(Map<String, dynamic> child) {
   var id = child['id'];
   return switch (type) {
     "MainToolbar" =>
-        MainToolbarSwt(key: ValueKey(id), value: CompositeValue.fromJson(child)),
+        MainToolbarSwt(key: ValueKey(id), value: VComposite.fromJson(child)),
     _ => null
   };
 }

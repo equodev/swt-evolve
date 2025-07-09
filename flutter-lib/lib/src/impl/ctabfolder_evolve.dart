@@ -1,17 +1,19 @@
 import 'dart:io';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:swtflutter/src/impl/widget_config.dart';
-import 'package:swtflutter/src/swt/ctabitem.dart';
-import 'package:swtflutter/src/swt/event.dart';
-import 'package:swtflutter/src/swt/swt.dart';
-import 'package:swtflutter/src/widgets.dart';
-
-import '../swt/ctabfolder.dart';
-import '../impl/composite_impl.dart';
+import '../gen/ctabfolder.dart';
+import '../gen/ctabitem.dart';
+import '../gen/event.dart';
+import '../gen/swt.dart';
+import '../gen/widget.dart';
+import '../gen/widgets.dart';
+import '../impl/composite_evolve.dart';
 import 'icons_map.dart';
+import 'widget_config.dart';
 
-class CTabFolderImpl<T extends CTabFolderSwt, V extends CTabFolderValue>
+class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     extends CompositeImpl<T, V> {
 
   final bool useDarkTheme = getCurrentTheme();
@@ -20,14 +22,14 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends CTabFolderValue>
   @override
   void initState() {
     super.initState();
-    _selectedIndex = state.selectionIndex ?? 0;
+    _selectedIndex = state.selectedIndex ?? 0;
   }
 
   @override
   void extraSetState() {
     super.extraSetState();
-    if (state.selectionIndex != null && state.selectionIndex != _selectedIndex) {
-      _selectedIndex = state.selectionIndex!;
+    if (state.selectedIndex != null && state.selectedIndex != _selectedIndex) {
+      _selectedIndex = state.selectedIndex!;
     }
   }
 
@@ -40,14 +42,14 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends CTabFolderValue>
     // final useSimpleStyle = state.simple ?? false;
     final useSimpleStyle = false;
     final isSingle = state.single ?? false;
-    final isTabBottom = state.tabPosition == SWT.BOTTOM;
+    final isTabBottom = state.onBottom ?? false;
 
     // Configurar la altura de los tabs si está especificada
-    final double tabHeight = (state.tabHeight != null)
-        ? state.tabHeight!.toDouble()
+    final double tabHeight = (state.fixedTabHeight != null && state.fixedTabHeight != SWT.DEFAULT)
+        ? state.fixedTabHeight!.toDouble()
         : 28.0;
 
-    var e = Event()..index = _selectedIndex;
+    var e = VEvent()..index = _selectedIndex;
     widget.sendSelectionSelection(state, e);
 
     return Column(
@@ -122,8 +124,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends CTabFolderValue>
     final backgroundColor = isDark ? Color(0xFF1A1A1A) : Color(0xFFF2F2F2);
     final borderColor = isDark ? Color(0xFF333333) : Color(0xFFDDDDDD);
 
-    final showMinimizeButton = state.minimizeVisible ?? false;
-    final showMaximizeButton = state.maximizeVisible ?? false;
+    final showMinimizeButton = state.showMin ?? false;
+    final showMaximizeButton = state.showMax ?? false;
     final isMinimized = state.minimized ?? false;
     final isMaximized = state.maximized ?? false;
 
@@ -251,10 +253,10 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends CTabFolderValue>
     final selectedTextColor = isDark ? Colors.white : Colors.grey.shade900;
     final highlightColor = isDark ? Color(0xFF6366F1) : theme.primaryColor;
 
-    final showUnselectedClose = state.unselectedCloseVisible ?? false;
+    final showUnselectedClose = state.showUnselectedClose ?? false;
     final shouldShowClose = (onClose != null) && (isSelected || showUnselectedClose);
 
-    final showUnselectedImage = state.unselectedImageVisible ?? false;
+    final showUnselectedImage = state.showUnselectedImage ?? false;
     final shouldShowImage = isSelected || showUnselectedImage;
 
     final showHighlight = state.highlightEnabled ?? true;
@@ -372,9 +374,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends CTabFolderValue>
   void _handleTabSelection(int index) {
     setState(() {
       _selectedIndex = index;
-      state.selectionIndex = index;
+      state.selectedIndex = index;
     });
-    var e = Event()..index = index;
+    var e = VEvent()..index = index;
     widget.sendSelectionSelection(state, e);
   }
 
@@ -401,17 +403,17 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends CTabFolderValue>
       return [];
     }
     return state.items!
-        .whereType<CTabItemValue>()
+        .whereType<VCTabItem>()
         .map((tabItem) => getWidgetForTabItem(tabItem))
         .toList();
   }
 
-  CTabItem getWidgetForTabItem(CTabItemValue tabItem) {
+  CTabItem getWidgetForTabItem(VCTabItem tabItem) {
     final tabItemWidget = CTabItemSwt(value: tabItem);
 
     return CTabItem(
       label: tabItem.text ?? "",
-      image: tabItem.image,
+      // image: tabItem.image,
       showCloseButton: tabItem.showClose ?? false,
       customContent: tabItemWidget,
       toolTipText: tabItem.toolTipText,
@@ -423,14 +425,14 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends CTabFolderValue>
       return <Widget>[];
     }
     return state.children!
-        .whereType<CTabItemValue>()
+        .whereType<VCTabItem>()
         .map((e) => tabBody(e))
         .toList();
   }
 
-  Widget tabBody(CTabItemValue e) {
-    if (e.children != null && e.children!.isNotEmpty) {
-      return mapWidgetFromValue(e.children!.first);
+  Widget tabBody(VCTabItem e) {
+    if (e.control != null) {
+      return mapWidgetFromValue(e.control!!);
     }
     return Container();
   }
