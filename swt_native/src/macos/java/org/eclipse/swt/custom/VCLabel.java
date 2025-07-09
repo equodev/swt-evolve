@@ -60,7 +60,6 @@ public class VCLabel extends VCanvas {
         ((DartCLabel) impl).rightMargin = value;
     }
 
-    @JsonAttribute(nullable = false)
     public String getText() {
         return ((DartCLabel) impl).text;
     }

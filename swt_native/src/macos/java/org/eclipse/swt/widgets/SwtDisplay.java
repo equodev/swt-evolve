@@ -5703,7 +5703,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 if (dequeue != 0 && currentCombo != null && !currentCombo.isDisposed()) {
                     NSEvent nsEvent = new NSEvent(result);
                     if (nsEvent.type() == OS.NSKeyDown) {
-                        ((SwtCombo) currentCombo.getImpl()).sendTrackingKeyEvent(nsEvent, SWT.KeyDown);
+                        if (currentCombo.getImpl() instanceof SwtCombo) {
+                            ((SwtCombo) currentCombo.getImpl()).sendTrackingKeyEvent(nsEvent, SWT.KeyDown);
+                        }
                     }
                 }
                 if (dequeue != 0 && trackingControl != null && !trackingControl.isDisposed()) {

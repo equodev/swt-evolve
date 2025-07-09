@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2015 IBM Corporation and others.
+ *  Copyright (c) 2000, 2021 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -19,7 +19,8 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.cocoa.*;
+import org.eclipse.swt.internal.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class are controls that allow the user
@@ -60,21 +61,45 @@ import org.eclipse.swt.internal.cocoa.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtCombo extends SwtComposite implements ICombo {
+public class DartCombo extends DartComposite implements ICombo {
 
-    String text;
+    boolean noSelection, ignoreDefaultSelection, ignoreCharacter, ignoreModify, ignoreResize, lockText;
 
-    int textLimit = Combo.LIMIT;
+    int scrollWidth, visibleCount;
 
-    boolean receivingFocus;
+    long cbtHook;
 
-    boolean ignoreSetObject, ignoreSelection;
+    String[] items = new String[0];
 
-    NSRange selectionRange;
+    int[] segments;
 
-    boolean listVisible;
+    int clearSegmentsCount = 0;
+
+    boolean stateFlagsUsable;
+
+    static final char LTR_MARK = '\u200e';
+
+    static final char RTL_MARK = '\u200f';
 
     static final int VISIBLE_COUNT = 5;
+
+    /*
+	 * These are the undocumented control id's for the children of
+	 * a combo box.  Since there are no constants for these values,
+	 * they may change with different versions of Windows (but have
+	 * been the same since Windows 3.0).
+	 */
+    static final int CBID_LIST = 1000;
+
+    static final int CBID_EDIT = 1001;
+
+    static long /*final*/
+    EditProc, ListProc;
+
+    /* Undocumented values. Remained the same at least between Win7 and Win10 */
+    static final int stateFlagsOffset = (C.PTR_SIZEOF == 8) ? 0x68 : 0x54;
+
+    static final int stateFlagsFirstPaint = 0x02000000;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -106,8 +131,9 @@ public class SwtCombo extends SwtComposite implements ICombo {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtCombo(Composite parent, int style, Combo api) {
+    public DartCombo(Composite parent, int style, Combo api) {
         super(parent, checkStyle(style), api);
+        this.getApi().style |= SWT.H_SCROLL;
     }
 
     /**
@@ -132,22 +158,6 @@ public class SwtCombo extends SwtComposite implements ICombo {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        NSAttributedString str = createString(string);
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            NSPopUpButton widget = (NSPopUpButton) getApi().view;
-            long selection = widget.indexOfSelectedItem();
-            NSMenu nsMenu = widget.menu();
-            NSMenuItem nsItem = (NSMenuItem) new NSMenuItem().alloc();
-            NSString empty = NSString.string();
-            nsItem.initWithTitle(empty, 0, empty);
-            nsItem.setAttributedTitle(str);
-            nsMenu.addItem(nsItem);
-            nsItem.release();
-            if (selection == -1)
-                widget.selectItemAtIndex(-1);
-        } else {
-            ((NSComboBox) getApi().view).addItemWithObjectValue(str);
-        }
     }
 
     /**
@@ -180,25 +190,6 @@ public class SwtCombo extends SwtComposite implements ICombo {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        int count = getItemCount();
-        if (0 > index || index > count)
-            error(SWT.ERROR_INVALID_RANGE);
-        NSAttributedString str = createString(string);
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            NSPopUpButton widget = (NSPopUpButton) getApi().view;
-            long selection = widget.indexOfSelectedItem();
-            NSMenu nsMenu = widget.menu();
-            NSMenuItem nsItem = (NSMenuItem) new NSMenuItem().alloc();
-            NSString empty = NSString.string();
-            nsItem.initWithTitle(empty, 0, empty);
-            nsItem.setAttributedTitle(str);
-            nsMenu.insertItem(nsItem, index);
-            nsItem.release();
-            if (selection == -1)
-                widget.selectItemAtIndex(-1);
-        } else {
-            ((NSComboBox) getApi().view).insertItemWithObjectValue(str, index);
-        }
     }
 
     /**
@@ -260,6 +251,11 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void addSegmentListener(SegmentListener listener) {
         addTypedListener(listener, SWT.Segments);
+        if (!noSelection) {
+        }
+        clearSegments(true);
+        applyEditSegments();
+        applyListSegments();
     }
 
     /**
@@ -315,35 +311,70 @@ public class SwtCombo extends SwtComposite implements ICombo {
         addTypedListener(listener, SWT.Verify);
     }
 
+    void applyEditSegments() {
+        if (--clearSegmentsCount != 0)
+            return;
+        if (!hooks(SWT.Segments) && !filters(SWT.Segments) && (getApi().state & HAS_AUTO_DIRECTION) == 0)
+            return;
+        /* Get segments */
+        segments = null;
+        int nSegments = segments.length;
+        if (nSegments == 0)
+            return;
+        int charCount = 0, segmentCount = 0;
+        char defaultSeparator = getOrientation() == SWT.RIGHT_TO_LEFT ? RTL_MARK : LTR_MARK;
+        while (segmentCount < nSegments) {
+            segments[segmentCount] = charCount - segmentCount;
+            segmentCount++;
+        }
+        /* Get the current selection */
+        int[] start = new int[1], end = new int[1];
+        boolean oldIgnoreCharacter = ignoreCharacter, oldIgnoreModify = ignoreModify;
+        ignoreCharacter = ignoreModify = true;
+        /* Restore selection */
+        start[0] = translateOffset(start[0]);
+        end[0] = translateOffset(end[0]);
+        ignoreCharacter = oldIgnoreCharacter;
+        ignoreModify = oldIgnoreModify;
+    }
+
+    void applyListSegments() {
+        int index = items.length;
+        int cp = getCodePage();
+        String string;
+        if (!noSelection) {
+        }
+        while (index-- > 0) {
+        }
+    }
+
     @Override
-    boolean becomeFirstResponder(long id, long sel) {
-        receivingFocus = true;
-        boolean result = super.becomeFirstResponder(id, sel);
-        receivingFocus = false;
-        return result;
+    public void checkSubclass() {
+        if (!isValidSubclass())
+            error(SWT.ERROR_INVALID_SUBCLASS);
     }
 
     static int checkStyle(int style) {
         /*
-	* Feature in Windows.  It is not possible to create
-	* a combo box that has a border using Windows style
-	* bits.  All combo boxes draw their own border and
-	* do not use the standard Windows border styles.
-	* Therefore, no matter what style bits are specified,
-	* clear the BORDER bits so that the SWT style will
-	* match the Windows widget.
-	*
-	* The Windows behavior is currently implemented on
-	* all platforms.
-	*/
+	 * Feature in Windows.  It is not possible to create
+	 * a combo box that has a border using Windows style
+	 * bits.  All combo boxes draw their own border and
+	 * do not use the standard Windows border styles.
+	 * Therefore, no matter what style bits are specified,
+	 * clear the BORDER bits so that the SWT style will
+	 * match the Windows widget.
+	 *
+	 * The Windows behavior is currently implemented on
+	 * all platforms.
+	 */
         style &= ~SWT.BORDER;
         /*
-	* Even though it is legal to create this widget
-	* with scroll bars, they serve no useful purpose
-	* because they do not automatically scroll the
-	* widget's client area.  The fix is to clear
-	* the SWT style.
-	*/
+	 * Even though it is legal to create this widget
+	 * with scroll bars, they serve no useful purpose
+	 * because they do not automatically scroll the
+	 * widget's client area.  The fix is to clear
+	 * the SWT style.
+	 */
         style &= ~(SWT.H_SCROLL | SWT.V_SCROLL);
         style = checkBits(style, SWT.DROP_DOWN, SWT.SIMPLE, 0, 0, 0, 0);
         if ((style & SWT.SIMPLE) != 0)
@@ -351,10 +382,28 @@ public class SwtCombo extends SwtComposite implements ICombo {
         return style;
     }
 
-    @Override
-    public void checkSubclass() {
-        if (!isValidSubclass())
-            error(SWT.ERROR_INVALID_SUBCLASS);
+    void clearSegments(boolean applyText) {
+        if (clearSegmentsCount++ != 0)
+            return;
+        if (segments == null)
+            return;
+        int nSegments = segments.length;
+        if (nSegments == 0)
+            return;
+        if (!applyText) {
+            segments = null;
+            return;
+        }
+        boolean oldIgnoreCharacter = ignoreCharacter, oldIgnoreModify = ignoreModify;
+        ignoreCharacter = ignoreModify = true;
+        int cp = getCodePage();
+        /* Get the current selection */
+        int[] start = new int[1], end = new int[1];
+        start[0] = untranslateOffset(start[0]);
+        end[0] = untranslateOffset(end[0]);
+        segments = null;
+        ignoreCharacter = oldIgnoreCharacter;
+        ignoreModify = oldIgnoreModify;
     }
 
     /**
@@ -376,99 +425,11 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void clearSelection() {
         checkWidget();
-        if ((getApi().style & SWT.READ_ONLY) == 0) {
-            Point selection = getSelection();
-            selection.y = selection.x;
-            setSelection(selection);
-        }
     }
 
     @Override
-    void setObjectValue(long id, long sel, long arg0) {
-        super.setObjectValue(id, sel, ignoreSetObject ? arg0 : createString(text).id);
-    }
-
-    @Override
-    void comboBoxSelectionDidChange(long id, long sel, long notification) {
-        NSComboBox widget = (NSComboBox) getApi().view;
-        long tableSelection = widget.indexOfSelectedItem();
-        widget.selectItemAtIndex(tableSelection);
-        NSAttributedString attStr = new NSAttributedString(widget.itemObjectValueAtIndex(tableSelection));
-        NSString nsString = attStr.string();
-        if (nsString != null)
-            setText(nsString.getString(), true);
-        if (!ignoreSelection)
-            sendSelectionEvent(SWT.Selection, null, ((SwtDisplay) display.getImpl()).trackingControl != this.getApi());
-    }
-
-    @Override
-    public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        int width = 0, height = 0;
-        NSControl widget = (NSControl) getApi().view;
-        NSCell viewCell = widget.cell();
-        NSSize size = viewCell.cellSize();
-        width = (int) Math.ceil(size.width);
-        height = (int) Math.ceil(size.height);
-        if ((getApi().style & SWT.READ_ONLY) == 0) {
-            ignoreSetObject = true;
-            NSComboBoxCell cell = new NSComboBoxCell(viewCell.id);
-            NSArray array = cell.objectValues();
-            int length = (int) array.count();
-            if (length > 0) {
-                cell = new NSComboBoxCell(cell.copy());
-                for (int i = 0; i < length; i++) {
-                    NSAttributedString attStr = new NSAttributedString(array.objectAtIndex(i));
-                    cell.setAttributedStringValue(attStr);
-                    size = cell.cellSize();
-                    width = Math.max(width, (int) Math.ceil(size.width));
-                }
-                cell.release();
-            }
-            ignoreSetObject = false;
-            /*
-		 * Attempting to create an NSComboBox with a height > 27 spews a
-		 * very long warning message to stdout and draws the combo incorrectly.
-		 * Limit height to frame height when combo has multiline text.
-		 */
-            NSString nsStr = widget.stringValue();
-            if (nsStr != null) {
-                String str = nsStr.getString();
-                if (str != null && (str.indexOf('\n') >= 0 || str.indexOf('\r') >= 0)) {
-                    int frameHeight = (int) getApi().view.frame().height;
-                    if (frameHeight > 0) {
-                        height = frameHeight;
-                    }
-                }
-            }
-        } else {
-            /*
-		 * In a SWT.READ_ONLY Combo with single item, but no selection,
-		 * the width of the cell returned by cellSize() is smaller than expected.
-		 * Get the correct width by setting and resetting the selected item.
-		 */
-            NSPopUpButton nsPopUpButton = (NSPopUpButton) getApi().view;
-            if ((nsPopUpButton.numberOfItems() == 1) && (nsPopUpButton.indexOfSelectedItem() == -1)) {
-                nsPopUpButton.selectItemAtIndex(0);
-                size = viewCell.cellSize();
-                width = Math.max(width, (int) Math.ceil(size.width));
-                nsPopUpButton.selectItemAtIndex(-1);
-            }
-        }
-        /*
-	* Feature in Cocoa.  Attempting to create an NSComboBox with a
-	* height > 27 spews a very long warning message to stdout and
-	* often draws the combo incorrectly.  The workaround is to limit
-	* the returned height of editable Combos to the height that is
-	* required to display their text, even if a larger hHint is specified.
-	*/
-        if (hHint != SWT.DEFAULT) {
-            if ((getApi().style & SWT.READ_ONLY) != 0 || hHint < height)
-                height = hHint;
-        }
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        return new Point(width, height);
+    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+        return Sizes.compute(this);
     }
 
     /**
@@ -486,63 +447,46 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void copy() {
         checkWidget();
-        Point selection = getSelection();
-        if (selection.x == selection.y)
-            return;
-        copyToClipboard(getText(selection.x, selection.y));
     }
 
     @Override
     void createHandle() {
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            NSPopUpButton widget = (NSPopUpButton) new SWTPopUpButton().alloc();
-            widget.initWithFrame(new NSRect(), false);
-            widget.menu().setAutoenablesItems(false);
-            widget.setTarget(widget);
-            widget.setAction(OS.sel_sendSelection);
-            widget.menu().setDelegate(widget);
-            getApi().view = widget;
+        /*
+	* Feature in Windows.  When the selection changes in a combo box,
+	* Windows draws the selection, even when the combo box does not
+	* have focus.  Strictly speaking, this is the correct Windows
+	* behavior because the combo box sets ES_NOHIDESEL on the text
+	* control that it creates.  Despite this, it looks strange because
+	* Windows also clears the selection and selects all the text when
+	* the combo box gets focus.  The fix is use the CBT hook to clear
+	* the ES_NOHIDESEL style bit when the text control is created.
+	*/
+        if ((getApi().style & (SWT.READ_ONLY | SWT.SIMPLE)) != 0) {
+            super.createHandle();
         } else {
-            NSComboBox widget = (NSComboBox) new SWTComboBox().alloc();
-            widget.init();
-            widget.setDelegate(widget);
-            NSCell cell = widget.cell();
-            if (cell != null) {
-                cell.setUsesSingleLineMode(true);
-            }
-            getApi().view = widget;
+            super.createHandle();
+            cbtHook = 0;
         }
-    }
-
-    NSAttributedString createString(String string) {
-        NSAttributedString attribStr = createString(string, null, foreground, SWT.LEFT, false, true, false);
-        attribStr.autorelease();
-        return attribStr;
+        getApi().state &= ~(CANVAS | THEME_BACKGROUND);
+        if (((SwtDisplay) display.getImpl()).comboUseDarkTheme) {
+        }
+        stateFlagsUsable = stateFlagsTest();
+        /*
+	* Bug in Windows.  If the combo box has the CBS_SIMPLE style,
+	* the list portion of the combo box is not drawn correctly the
+	* first time, causing pixel corruption.  The fix is to ensure
+	* that the combo box has been resized more than once.
+	*/
+        if ((getApi().style & SWT.SIMPLE) != 0) {
+        }
     }
 
     @Override
     void createWidget() {
-        text = "";
         super.createWidget();
-        if ((getApi().style & SWT.READ_ONLY) == 0) {
-            NSComboBox widget = (NSComboBox) getApi().view;
-            NSScreen screen = widget.window().screen();
-            NSRect rect = screen != null ? screen.frame() : NSScreen.mainScreen().frame();
-            int visibleCount = Math.max(VISIBLE_COUNT, (int) (rect.height / 3 / widget.itemHeight()));
-            widget.setNumberOfVisibleItems(visibleCount);
+        visibleCount = VISIBLE_COUNT;
+        if ((getApi().style & SWT.SIMPLE) == 0) {
         }
-    }
-
-    @Override
-    void comboBoxWillDismiss(long id, long sel, long notification) {
-        ((SwtDisplay) display.getImpl()).currentCombo = null;
-        listVisible = false;
-    }
-
-    @Override
-    void comboBoxWillPopUp(long id, long sel, long notification) {
-        ((SwtDisplay) display.getImpl()).currentCombo = this.getApi();
-        listVisible = true;
     }
 
     /**
@@ -563,50 +507,16 @@ public class SwtCombo extends SwtComposite implements ICombo {
         checkWidget();
         if ((getApi().style & SWT.READ_ONLY) != 0)
             return;
-        Point selection = getSelection();
-        if (selection.x == selection.y)
-            return;
-        int start = selection.x, end = selection.y;
-        String text = getText();
-        String leftText = text.substring(0, start);
-        String rightText = text.substring(end, text.length());
-        String oldText = text.substring(start, end);
-        String newText = "";
-        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-            newText = verifyText(newText, start, end, null);
-            if (newText == null)
-                return;
-        }
-        char[] buffer = new char[oldText.length()];
-        oldText.getChars(0, buffer.length, buffer, 0);
-        copyToClipboard(buffer);
-        setText(leftText + newText + rightText, false);
-        start += newText.length();
-        setSelection(new Point(start, start));
-        sendEvent(SWT.Modify);
     }
 
     @Override
-    Color defaultBackground() {
-        return ((SwtDisplay) display.getImpl()).getWidgetColor(SWT.COLOR_LIST_BACKGROUND);
-    }
-
-    @Override
-    NSFont defaultNSFont() {
-        if ((getApi().style & SWT.READ_ONLY) != 0)
-            return ((SwtDisplay) display.getImpl()).popUpButtonFont;
-        return ((SwtDisplay) display.getImpl()).comboBoxFont;
-    }
-
-    @Override
-    Color defaultForeground() {
-        return ((SwtDisplay) display.getImpl()).getWidgetColor(SWT.COLOR_LIST_FOREGROUND);
+    int defaultBackground() {
+        return 0;
     }
 
     @Override
     void deregister() {
         super.deregister();
-        ((SwtDisplay) display.getImpl()).removeWidget(((NSControl) getApi().view).cell());
     }
 
     /**
@@ -623,16 +533,10 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void deselect(int index) {
         checkWidget();
-        if (index == -1)
-            return;
-        if (index == getSelectionIndex()) {
-            if ((getApi().style & SWT.READ_ONLY) != 0) {
-                ((NSPopUpButton) getApi().view).selectItem(null);
-                sendEvent(SWT.Modify);
-            } else {
-                ((NSComboBox) getApi().view).deselectItemAtIndex(index);
-            }
-        }
+        sendEvent(SWT.Modify);
+        // widget could be disposed at this point
+        clearSegments(false);
+        clearSegmentsCount--;
     }
 
     /**
@@ -651,55 +555,32 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void deselectAll() {
         checkWidget();
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            ((NSPopUpButton) getApi().view).selectItem(null);
-            sendEvent(SWT.Modify);
-        } else {
-            NSComboBox widget = (NSComboBox) getApi().view;
-            long index = widget.indexOfSelectedItem();
-            if (index != -1)
-                widget.deselectItemAtIndex(index);
-        }
+        sendEvent(SWT.Modify);
+        // widget could be disposed at this point
+        clearSegments(false);
+        clearSegmentsCount--;
     }
 
-    @Override
-    boolean dragDetect(int x, int y, boolean filter, boolean[] consume) {
-        if ((getApi().style & SWT.READ_ONLY) == 0) {
-            NSText fieldEditor = ((NSControl) getApi().view).currentEditor();
-            if (fieldEditor != null) {
-                NSRange selectedRange = fieldEditor.selectedRange();
-                if (selectedRange.length > 0) {
-                    NSTextView feAsTextView = new NSTextView(fieldEditor);
-                    NSPoint textViewMouse = new NSPoint();
-                    textViewMouse.x = x;
-                    textViewMouse.y = y;
-                    long charPosition = feAsTextView.characterIndexForInsertionAtPoint(textViewMouse);
-                    if (charPosition != OS.NSNotFound() && charPosition >= selectedRange.location && charPosition < (selectedRange.location + selectedRange.length)) {
-                        if (super.dragDetect(x, y, filter, consume)) {
-                            if (consume != null)
-                                consume[0] = true;
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-        return super.dragDetect(x, y, filter, consume);
+    /**
+     * Returns a point describing the location of the caret relative
+     * to the receiver.
+     *
+     * @return a point, the location of the caret
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @since 3.8
+     */
+    public Point getCaretLocation() {
+        checkWidget();
+        return DPIUtil.scaleDown(getCaretLocationInPixels(), getZoom());
     }
 
-    @Override
-    public Cursor findCursor() {
-        Cursor cursor = super.findCursor();
-        if (cursor == null && (getApi().style & SWT.READ_ONLY) == 0 && OS.VERSION < OS.VERSION(10, 14, 0)) {
-            cursor = display.getSystemCursor(SWT.CURSOR_IBEAM);
-        }
-        return cursor;
-    }
-
-    @Override
-    NSRect focusRingMaskBoundsForFrame(long id, long sel, NSRect cellFrame, long view) {
-        return cellFrame;
+    Point getCaretLocationInPixels() {
+        return null;
     }
 
     /**
@@ -719,55 +600,21 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public int getCaretPosition() {
         checkWidget();
-        return selectionRange != null ? (int) selectionRange.location : 0;
-    }
-
-    /**
-     * Returns a point describing the location of the caret relative
-     * to the receiver.
-     *
-     * @return a point, the location of the caret
-     *
-     * @exception SWTException <ul>
-     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
-     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
-     * </ul>
-     *
-     * @since 3.8
-     */
-    public Point getCaretLocation() {
-        checkWidget();
-        NSTextView widget = null;
-        if (this.hasFocus()) {
-            widget = new NSTextView(getApi().view.window().fieldEditor(true, getApi().view));
+        int[] start = new int[1], end = new int[1];
+        /*
+	* In Windows, there is no API to get the position of the caret
+	* when the selection is not an i-beam.  The best that can be done
+	* is to query the pixel position of the current caret and compare
+	* it to the pixel position of the start and end of the selection.
+	*
+	* NOTE:  This does not work when the i-beam belongs to another
+	* control.  In this case, guess that the i-beam is at the start
+	* of the selection.
+	*/
+        int caret = start[0];
+        if (start[0] != end[0]) {
         }
-        if (widget == null)
-            return new Point(0, 0);
-        NSLayoutManager layoutManager = widget.layoutManager();
-        NSTextContainer container = widget.textContainer();
-        NSRange range = widget.selectedRange();
-        long[] rectCount = new long[1];
-        long pArray = layoutManager.rectArrayForCharacterRange(range, range, container, rectCount);
-        NSRect rect = new NSRect();
-        if (rectCount[0] > 0)
-            OS.memmove(rect, pArray, NSRect.sizeof);
-        NSPoint pt = new NSPoint();
-        pt.x = (int) rect.x;
-        pt.y = (int) rect.y;
-        pt = widget.convertPoint_toView_(pt, getApi().view);
-        return new Point((int) pt.x, (int) pt.y);
-    }
-
-    int getCharCount() {
-        NSString str;
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            str = ((NSPopUpButton) getApi().view).titleOfSelectedItem();
-        } else {
-            str = new NSCell(((NSComboBox) getApi().view).cell()).title();
-        }
-        if (str == null)
-            return 0;
-        return (int) str.length();
+        return untranslateOffset(caret);
     }
 
     /**
@@ -788,20 +635,8 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public String getItem(int index) {
         checkWidget();
-        int count = getItemCount();
-        if (0 > index || index >= count)
-            error(SWT.ERROR_INVALID_RANGE);
-        NSString str = null;
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            str = ((NSPopUpButton) getApi().view).itemTitleAtIndex(index);
-        } else {
-            NSAttributedString attString = new NSAttributedString(((NSComboBox) getApi().view).itemObjectValueAtIndex(index));
-            if (attString != null)
-                str = attString.string();
-        }
-        if (str == null)
-            error(SWT.ERROR_CANNOT_GET_ITEM);
-        return str.getString();
+        error(SWT.ERROR_INVALID_RANGE);
+        return "";
     }
 
     /**
@@ -816,11 +651,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public int getItemCount() {
         checkWidget();
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            return (int) ((NSPopUpButton) getApi().view).numberOfItems();
-        } else {
-            return (int) ((NSComboBox) getApi().view).numberOfItems();
-        }
+        return 0;
     }
 
     /**
@@ -836,8 +667,11 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public int getItemHeight() {
         checkWidget();
-        //TODO - not supported by the OS
-        return 26;
+        return DPIUtil.scaleDown(getItemHeightInPixels(), getZoom());
+    }
+
+    int getItemHeightInPixels() {
+        return 0;
     }
 
     /**
@@ -858,8 +692,9 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public String[] getItems() {
         checkWidget();
+        String[] result;
         int count = getItemCount();
-        String[] result = new String[count];
+        result = new String[count];
         for (int i = 0; i < count; i++) result[i] = getItem(i);
         return result;
     }
@@ -885,7 +720,9 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public boolean getListVisible() {
         checkWidget();
-        return listVisible;
+        if ((getApi().style & SWT.DROP_DOWN) != 0) {
+        }
+        return true;
     }
 
     @Override
@@ -893,9 +730,28 @@ public class SwtCombo extends SwtComposite implements ICombo {
         return getText();
     }
 
-    @Override
-    int getMininumHeight() {
-        return getTextHeight();
+    /**
+     * Marks the receiver's list as visible if the argument is <code>true</code>,
+     * and marks it invisible otherwise.
+     * <p>
+     * If one of the receiver's ancestors is not visible or some
+     * other condition makes the receiver not visible, marking
+     * it visible may not actually cause it to be displayed.
+     * </p>
+     *
+     * @param visible the new visibility state
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @since 3.4
+     */
+    public void setListVisible(boolean visible) {
+        checkWidget();
+        this.listVisible = visible;
+        getBridge().dirty(this);
     }
 
     /**
@@ -912,8 +768,77 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     @Override
     public int getOrientation() {
-        checkWidget();
-        return getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+        return super.getOrientation();
+    }
+
+    Event getSegments(String string) {
+        Event event = null;
+        if (hooks(SWT.Segments) || filters(SWT.Segments)) {
+            event = new Event();
+            event.text = string;
+            sendEvent(SWT.Segments, event);
+            if (event != null && event.segments != null) {
+                for (int i = 1, segmentCount = event.segments.length, lineLength = string == null ? 0 : string.length(); i < segmentCount; i++) {
+                    if (event.segments[i] < event.segments[i - 1] || event.segments[i] > lineLength) {
+                        SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                    }
+                }
+            }
+        }
+        if ((getApi().state & HAS_AUTO_DIRECTION) != 0) {
+            int[] oldSegments = null;
+            char[] oldSegmentsChars = null;
+            if (event == null) {
+                event = new Event();
+            } else {
+                oldSegments = event.segments;
+                oldSegmentsChars = event.segmentsChars;
+            }
+            int nSegments = oldSegments == null ? 0 : oldSegments.length;
+            event.segments = new int[nSegments + 1];
+            event.segmentsChars = new char[nSegments + 1];
+            if (oldSegments != null) {
+                System.arraycopy(oldSegments, 0, event.segments, 1, nSegments);
+            }
+            if (oldSegmentsChars != null) {
+                System.arraycopy(oldSegmentsChars, 0, event.segmentsChars, 1, nSegments);
+            }
+            event.segments[0] = 0;
+        }
+        return event;
+    }
+
+    String getSegmentsText(String text, Event event) {
+        if (text == null || event == null)
+            return text;
+        int[] segments = event.segments;
+        if (segments == null)
+            return text;
+        int nSegments = segments.length;
+        if (nSegments == 0)
+            return text;
+        char[] segmentsChars = /*event == null ? this.segmentsChars : */
+        event.segmentsChars;
+        int length = text.length();
+        char[] oldChars = new char[length];
+        text.getChars(0, length, oldChars, 0);
+        char[] newChars = new char[length + nSegments];
+        int charCount = 0, segmentCount = 0;
+        char defaultSeparator = getOrientation() == SWT.RIGHT_TO_LEFT ? RTL_MARK : LTR_MARK;
+        while (charCount < length) {
+            if (segmentCount < nSegments && charCount == segments[segmentCount]) {
+                char separator = segmentsChars != null && segmentsChars.length > segmentCount ? segmentsChars[segmentCount] : defaultSeparator;
+                newChars[charCount + segmentCount++] = separator;
+            } else {
+                newChars[charCount + segmentCount] = oldChars[charCount++];
+            }
+        }
+        while (segmentCount < nSegments) {
+            segments[segmentCount] = charCount;
+            char separator = segmentsChars != null && segmentsChars.length > segmentCount ? segmentsChars[segmentCount] : defaultSeparator;
+            newChars[charCount + segmentCount++] = separator;
+        }
+        return new String(newChars, 0, newChars.length);
     }
 
     /**
@@ -937,15 +862,10 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public Point getSelection() {
         checkWidget();
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            return new Point(0, getCharCount());
-        } else {
-            if (selectionRange == null) {
-                NSString str = new NSTextFieldCell(((NSTextField) getApi().view).cell()).title();
-                return new Point((int) str.length(), (int) str.length());
-            }
-            return new Point((int) selectionRange.location, (int) (selectionRange.location + selectionRange.length));
+        if ((getApi().style & SWT.DROP_DOWN) != 0 && (getApi().style & SWT.READ_ONLY) != 0) {
         }
+        int[] start = new int[1], end = new int[1];
+        return new Point(untranslateOffset(start[0]), untranslateOffset(end[0]));
     }
 
     /**
@@ -961,11 +881,9 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public int getSelectionIndex() {
         checkWidget();
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            return (int) ((NSPopUpButton) getApi().view).indexOfSelectedItem();
-        } else {
-            return (int) ((NSComboBox) getApi().view).indexOfSelectedItem();
-        }
+        if (noSelection)
+            return -1;
+        return 0;
     }
 
     /**
@@ -982,29 +900,9 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public String getText() {
         checkWidget();
-        return new String(getText(0, -1));
-    }
-
-    char[] getText(int start, int end) {
-        NSString str;
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            str = ((NSPopUpButton) getApi().view).titleOfSelectedItem();
-        } else {
-            str = new NSCell(((NSComboBox) getApi().view).cell()).title();
+        if (segments != null) {
         }
-        if (str == null)
-            return new char[0];
-        NSRange range = new NSRange();
-        range.location = start;
-        if (end == -1) {
-            long length = str.length();
-            range.length = length - start;
-        } else {
-            range.length = end - start;
-        }
-        char[] buffer = new char[(int) range.length];
-        str.getCharacters(buffer, range);
-        return buffer;
+        return this.text;
     }
 
     /**
@@ -1019,13 +917,11 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public int getTextHeight() {
         checkWidget();
-        NSCell cell;
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            cell = ((NSPopUpButton) getApi().view).cell();
-        } else {
-            cell = ((NSComboBox) getApi().view).cell();
-        }
-        return (int) cell.cellSize().height;
+        return DPIUtil.scaleDown(getTextHeightInPixels(), getZoom());
+    }
+
+    int getTextHeightInPixels() {
+        return 0;
     }
 
     /**
@@ -1045,7 +941,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public int getTextLimit() {
         checkWidget();
-        return textLimit;
+        return this.textLimit;
     }
 
     /**
@@ -1067,11 +963,12 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public int getVisibleItemCount() {
         checkWidget();
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            return getItemCount();
-        } else {
-            return (int) ((NSComboBox) getApi().view).numberOfVisibleItems();
-        }
+        return visibleCount;
+    }
+
+    @Override
+    boolean hasFocus() {
+        return false;
     }
 
     /**
@@ -1118,47 +1015,24 @@ public class SwtCombo extends SwtComposite implements ICombo {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        int count = getItemCount();
-        if (!(0 <= start && start < count))
-            return -1;
-        for (int i = start; i < count; i++) {
-            if (string.equals(getItem(i))) {
-                return i;
+        /*
+	* Bug in Windows.  For some reason, CB_FINDSTRINGEXACT
+	* will not find empty strings even though it is legal
+	* to insert an empty string into a combo.  The fix is
+	* to search the combo, an item at a time.
+	*/
+        if (string.length() == 0) {
+            int count = getItemCount();
+            for (int i = start; i < count; i++) {
+                if (string.equals(getItem(i)))
+                    return i;
             }
+            return -1;
         }
-        return -1;
-    }
-
-    @Override
-    boolean isEventView(long id) {
-        return true;
-    }
-
-    @Override
-    void menuWillOpen(long id, long sel, long menu) {
-        listVisible = true;
-    }
-
-    @Override
-    void menuDidClose(long id, long sel, long menu) {
-        listVisible = false;
-    }
-
-    @Override
-    void mouseDown(long id, long sel, long theEvent) {
-        // If the control is disposed in below 'super.mouseDown()', both fields
-        // 'view' and 'display' will be nulled. Hence keep their references:
-        final Display display = this.display;
-        final NSView view = this.getApi().view;
-        display.sendPreExternalEventDispatchEvent();
-        // If this is a combo box with an editor field and the control is disposed
-        // while the view's cell editor is open we crash while tearing down the
-        // popup window. Fix is to retain the view before letting Cocoa track
-        // the mouse events.
-        view.retain();
-        super.mouseDown(id, sel, theEvent);
-        view.release();
-        display.sendPostExternalEventDispatchEvent();
+        int index = start - 1, last = 0;
+        do {
+        } while (!string.equals(getItem(index)));
+        return index;
     }
 
     /**
@@ -1179,48 +1053,32 @@ public class SwtCombo extends SwtComposite implements ICombo {
         checkWidget();
         if ((getApi().style & SWT.READ_ONLY) != 0)
             return;
-        Point selection = getSelection();
-        int start = selection.x, end = selection.y;
-        String text = getText();
-        String leftText = text.substring(0, start);
-        String rightText = text.substring(end, text.length());
-        String newText = getClipboardText();
-        if (newText == null)
-            return;
-        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-            newText = verifyText(newText, start, end, null);
-            if (newText == null)
-                return;
-        }
-        if (textLimit != Combo.LIMIT) {
-            int charCount = text.length();
-            if (charCount - (end - start) + newText.length() > textLimit) {
-                newText = newText.substring(0, textLimit - charCount + (end - start));
-            }
-        }
-        setText(leftText + newText + rightText, false);
-        start += newText.length();
-        setSelection(new Point(start, start));
-        sendEvent(SWT.Modify);
+    }
+
+    void stateFlagsAdd(int flags) {
+        int[] stateFlags = new int[1];
+        stateFlags[0] |= flags;
+    }
+
+    /*
+ * Verify that undocumented internal data is in expected location.
+ * The test is performed at creation time, when the value of state flags is predictable.
+ * For simplicity, only SWT.READ_ONLY combos are handled.
+ */
+    boolean stateFlagsTest() {
+        int[] stateFlags = new int[1];
+        /*
+	 * 0x00000002 is unknown
+	 * 0x00002000 is set in WM_NCCREATE
+	 * 0x00004000 means CBS_DROPDOWNLIST (SWT.READ_ONLY)
+	 * 0x02000000 is set in WM_NCCREATE and reset after first WM_PAINT
+	 */
+        return (stateFlags[0] == 0x02006002);
     }
 
     @Override
     void register() {
         super.register();
-        ((SwtDisplay) display.getImpl()).addWidget(((NSControl) getApi().view).cell(), this.getApi());
-    }
-
-    @Override
-    void releaseWidget() {
-        if (((SwtDisplay) display.getImpl()).currentCombo == this.getApi()) {
-            ((SwtDisplay) display.getImpl()).currentCombo = null;
-        }
-        super.releaseWidget();
-        if ((getApi().style & SWT.READ_ONLY) == 0) {
-            ((NSControl) getApi().view).abortEditing();
-        }
-        text = null;
-        selectionRange = null;
     }
 
     /**
@@ -1239,16 +1097,15 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void remove(int index) {
         checkWidget();
-        if (index == -1)
-            error(SWT.ERROR_INVALID_RANGE);
-        int count = getItemCount();
-        if (0 > index || index >= count)
-            error(SWT.ERROR_INVALID_RANGE);
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            ((NSPopUpButton) getApi().view).removeItemAtIndex(index);
-        } else {
-            ((NSComboBox) getApi().view).removeItemAtIndex(index);
+        remove(index, true);
+    }
+
+    void remove(int index, boolean notify) {
+        char[] buffer = null;
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
         }
+        if ((getApi().style & SWT.H_SCROLL) != 0)
+            setScrollWidth(buffer, true);
     }
 
     /**
@@ -1271,13 +1128,19 @@ public class SwtCombo extends SwtComposite implements ICombo {
         checkWidget();
         if (start > end)
             return;
-        int count = getItemCount();
-        if (!(0 <= start && start <= end && end < count)) {
-            error(SWT.ERROR_INVALID_RANGE);
+        long hDC = 0, oldFont = 0, newFont = 0;
+        int newWidth = 0;
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
         }
-        int newEnd = Math.min(end, count - 1);
-        for (int i = newEnd; i >= start; i--) {
-            remove(i);
+        for (int i = start; i <= end; i++) {
+            char[] buffer = null;
+            if ((getApi().style & SWT.H_SCROLL) != 0) {
+            }
+            if ((getApi().style & SWT.H_SCROLL) != 0) {
+            }
+        }
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
+            setScrollWidth(newWidth, false);
         }
     }
 
@@ -1317,14 +1180,11 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void removeAll() {
         checkWidget();
-        ignoreSelection = true;
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            ((NSPopUpButton) getApi().view).removeAllItems();
-        } else {
-            setText("", true);
-            ((NSComboBox) getApi().view).removeAllItems();
-        }
-        ignoreSelection = false;
+        sendEvent(SWT.Modify);
+        if (isDisposed())
+            return;
+        if ((getApi().style & SWT.H_SCROLL) != 0)
+            setScrollWidth(0);
     }
 
     /**
@@ -1378,6 +1238,11 @@ public class SwtCombo extends SwtComposite implements ICombo {
         if (listener == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         eventTable.unhook(SWT.Segments, listener);
+        if (!noSelection) {
+        }
+        clearSegments(true);
+        applyEditSegments();
+        applyListSegments();
     }
 
     /**
@@ -1449,167 +1314,71 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void select(int index) {
         checkWidget();
-        int count = getItemCount();
-        if (0 <= index && index < count) {
-            if (index == getSelectionIndex())
-                return;
-            ignoreSelection = true;
-            if ((getApi().style & SWT.READ_ONLY) != 0) {
-                ((NSPopUpButton) getApi().view).selectItemAtIndex(index);
-                sendEvent(SWT.Modify);
-            } else {
-                NSComboBox widget = (NSComboBox) getApi().view;
-                widget.deselectItemAtIndex(index);
-                widget.selectItemAtIndex(index);
-            }
-            ignoreSelection = false;
-        }
     }
 
     @Override
-    void sendSelection() {
-        sendEvent(SWT.Modify);
-        if (!ignoreSelection)
-            sendSelectionEvent(SWT.Selection);
+    void setBackgroundImage(long hBitmap) {
+        super.setBackgroundImage(hBitmap);
     }
 
     @Override
-    boolean sendKeyEvent(NSEvent nsEvent, int type) {
-        boolean result = super.sendKeyEvent(nsEvent, type);
-        if (!result)
-            return result;
-        int stateMask = 0;
-        long modifierFlags = nsEvent.modifierFlags();
-        if ((modifierFlags & OS.NSAlternateKeyMask) != 0)
-            stateMask |= SWT.ALT;
-        if ((modifierFlags & OS.NSShiftKeyMask) != 0)
-            stateMask |= SWT.SHIFT;
-        if ((modifierFlags & OS.NSControlKeyMask) != 0)
-            stateMask |= SWT.CONTROL;
-        if ((modifierFlags & OS.NSCommandKeyMask) != 0)
-            stateMask |= SWT.COMMAND;
-        if (type != SWT.KeyDown)
-            return result;
-        short keyCode = nsEvent.keyCode();
-        if (stateMask == SWT.COMMAND) {
-            switch(keyCode) {
-                case 7:
-                    /* X */
-                    cut();
-                    return false;
-                case 8:
-                    /* C */
-                    copy();
-                    return false;
-                case 9:
-                    /* V */
-                    paste();
-                    return false;
-                case 0:
-                    /* A */
-                    if ((getApi().style & SWT.READ_ONLY) == 0) {
-                        ((NSComboBox) getApi().view).selectText(null);
-                        return false;
-                    }
-            }
-        }
-        switch(keyCode) {
-            case 76:
-            /* KP Enter */
-            case 36:
-                /* Return */
-                sendSelectionEvent(SWT.DefaultSelection);
-        }
-        return result;
+    void setBackgroundPixel(int pixel) {
+        super.setBackgroundPixel(pixel);
     }
 
-    boolean sendTrackingKeyEvent(NSEvent nsEvent, int type) {
+    @Override
+    void setBoundsInPixels(int x, int y, int width, int height, int flags) {
         /*
-	* Feature in Cocoa.  Combo does not send arrow down/up
-	* key down events while the list is showing.  The fix is
-	* to send these events when the event is removed from the
-	* queue.
+	* Feature in Windows.  If the combo box has the CBS_DROPDOWN
+	* or CBS_DROPDOWNLIST style, Windows uses the height that the
+	* programmer sets in SetWindowPos () to control height of the
+	* drop down list.  When the width is non-zero, Windows remembers
+	* this value and sets the height to be the height of the text
+	* field part of the combo box.  If the width is zero, Windows
+	* allows the height to have any value.  Therefore, when the
+	* programmer sets and then queries the height, the values can
+	* be different depending on the width.  The problem occurs when
+	* the programmer uses computeSize () to determine the preferred
+	* height (always the height of the text field) and then uses
+	* this value to set the height of the combo box.  The result
+	* is a combo box with a zero size drop down list.  The fix, is
+	* to always set the height to show a fixed number of combo box
+	* items and ignore the height value that the programmer supplies.
 	*/
-        long modifiers = nsEvent.modifierFlags();
-        if ((modifiers & OS.NSShiftKeyMask) == 0) {
-            short keyCode = nsEvent.keyCode();
-            switch(keyCode) {
-                case 125:
-                /* Arrow Down */
-                case 126:
-                    /* Arrow Up */
-                    sendKeyEvent(nsEvent, type);
-                    return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    void setBackgroundColor(NSColor nsColor) {
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            //TODO
+        if ((getApi().style & SWT.DROP_DOWN) != 0) {
+            int visibleCount = getItemCount() == 0 ? VISIBLE_COUNT : this.visibleCount;
+            height = getTextHeightInPixels() + (getItemHeightInPixels() * visibleCount) + 2;
         } else {
-            ((NSTextField) getApi().view).setBackgroundColor(nsColor);
+            super.setBoundsInPixels(x, y, width, height, flags);
         }
     }
 
     @Override
-    void setBackgroundImage(NSImage image) {
-        //TODO setDrawsBackground is ignored by NSComboBox?
-    }
-
-    @Override
-    void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
+    public void setFont(Font font) {
+        checkWidget();
         /*
-	 * Feature in Cocoa.  Attempting to create an NSComboBox with a
-	 * height > 27 spews a very long warning message to stdout and
-	 * often draws the combo incorrectly.
-	 * The workaround is to limit the height of editable Combos to the
-	 * height that is required to display their text. For multiline text,
-	 * limit the height to frame height.
-	 */
-        if ((getApi().style & SWT.READ_ONLY) == 0) {
-            NSControl widget = (NSControl) getApi().view;
-            int hLimit = 0;
-            NSString nsStr = widget.stringValue();
-            if (nsStr != null) {
-                String str = nsStr.getString();
-                if (str != null && (str.indexOf('\n') >= 0 || str.indexOf('\r') >= 0)) {
-                    int frameHeight = (int) getApi().view.frame().height;
-                    if (frameHeight > 0) {
-                        hLimit = frameHeight;
-                    }
-                }
-            }
-            if (hLimit == 0) {
-                NSSize size = widget.cell().cellSize();
-                hLimit = (int) Math.ceil(size.height);
-            }
-            height = Math.min(height, hLimit);
-        }
-        super.setBounds(x, y, width, height, move, resize);
-    }
-
-    @Override
-    void setFont(NSFont font) {
+	* Feature in Windows.  For some reason, in a editable combo box,
+	* when WM_SETFONT is used to set the font of the control
+	* and the current text does not match an item in the
+	* list, Windows selects the item that most closely matches the
+	* contents of the combo.  The fix is to lock the current text
+	* by ignoring all WM_SETTEXT messages during processing of
+	* WM_SETFONT.
+	*/
+        boolean oldLockText = lockText;
+        if ((getApi().style & SWT.READ_ONLY) == 0)
+            lockText = true;
         super.setFont(font);
-        updateItems();
+        if ((getApi().style & SWT.READ_ONLY) == 0)
+            lockText = oldLockText;
+        if ((getApi().style & SWT.H_SCROLL) != 0)
+            setScrollWidth();
+        getBridge().dirty(this);
     }
 
     @Override
-    void setForeground(double[] color) {
-        super.setForeground(color);
-        updateItems();
-        if ((getApi().style & SWT.READ_ONLY) == 0) {
-            NSColor nsColor;
-            if (color == null) {
-                nsColor = NSColor.textColor();
-            } else {
-                nsColor = NSColor.colorWithDeviceRed(color[0], color[1], color[2], 1);
-            }
-            ((NSTextField) getApi().view).setTextColor(nsColor);
-        }
+    void setForegroundPixel(int pixel) {
+        super.setForegroundPixel(pixel);
     }
 
     /**
@@ -1632,31 +1401,13 @@ public class SwtCombo extends SwtComposite implements ICombo {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        int count = getItemCount();
-        if (0 > index || index >= count)
-            error(SWT.ERROR_INVALID_RANGE);
         int selection = getSelectionIndex();
-        NSAttributedString str = createString(string);
-        ignoreSelection = true;
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            NSMenuItem nsItem = ((NSPopUpButton) getApi().view).itemAtIndex(index);
-            nsItem.setAttributedTitle(str);
-            /*
-		 * Feature in Cocoa.  Setting the attributed title on an NSMenuItem
-		 * also sets the title, but clearing the attributed title does not
-		 * clear the title.  The fix is to explicitly set the title to an
-		 * empty string in this case.
-		 */
-            if (string.length() == 0)
-                nsItem.setTitle(NSString.string());
-        } else {
-            NSComboBox widget = (NSComboBox) getApi().view;
-            widget.insertItemWithObjectValue(str, index);
-            widget.removeItemAtIndex(index + 1);
-        }
+        remove(index, false);
+        if (isDisposed())
+            return;
+        add(string, index);
         if (selection != -1)
             select(selection);
-        ignoreSelection = false;
     }
 
     /**
@@ -1677,57 +1428,26 @@ public class SwtCombo extends SwtComposite implements ICombo {
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        for (int i = 0; i < items.length; i++) {
-            if (items[i] == null)
+        for (String item : items) {
+            if (item == null)
                 error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        removeAll();
-        if (items.length == 0)
-            return;
-        ignoreSelection = true;
-        for (int i = 0; i < items.length; i++) {
-            NSAttributedString str = createString(items[i]);
-            if ((getApi().style & SWT.READ_ONLY) != 0) {
-                NSMenu nsMenu = ((NSPopUpButton) getApi().view).menu();
-                NSMenuItem nsItem = (NSMenuItem) new NSMenuItem().alloc();
-                NSString empty = NSString.string();
-                nsItem.initWithTitle(empty, 0, empty);
-                nsItem.setAttributedTitle(str);
-                nsMenu.addItem(nsItem);
-                nsItem.release();
-                //clear the selection
-                ((NSPopUpButton) getApi().view).selectItemAtIndex(-1);
-            } else {
-                ((NSComboBox) getApi().view).addItemWithObjectValue(str);
+        long hDC = 0, oldFont = 0, newFont = 0;
+        int newWidth = 0;
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
+            setScrollWidth(0);
+        }
+        int codePage = getCodePage();
+        for (String item : items) {
+            if ((getApi().style & SWT.H_SCROLL) != 0) {
             }
         }
-        ignoreSelection = false;
-    }
-
-    /**
-     * Marks the receiver's list as visible if the argument is <code>true</code>,
-     * and marks it invisible otherwise.
-     * <p>
-     * If one of the receiver's ancestors is not visible or some
-     * other condition makes the receiver not visible, marking
-     * it visible may not actually cause it to be displayed.
-     * </p>
-     *
-     * @param visible the new visibility state
-     *
-     * @exception SWTException <ul>
-     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
-     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
-     * </ul>
-     *
-     * @since 3.4
-     */
-    public void setListVisible(boolean visible) {
-        checkWidget();
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            ((NSPopUpButton) getApi().view).setPullsDown(visible);
-        } else {
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
+            setScrollWidth(newWidth + 3);
         }
+        sendEvent(SWT.Modify);
+        getBridge().dirty(this);
+        // widget could be disposed at this point
     }
 
     /**
@@ -1745,13 +1465,54 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     @Override
     public void setOrientation(int orientation) {
-        checkWidget();
+        super.setOrientation(orientation);
+        getBridge().dirty(this);
     }
 
-    @Override
-    void setOrientation() {
-        int direction = (getApi().style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
-        ((NSControl) getApi().view).setBaseWritingDirection(direction);
+    void setScrollWidth() {
+        int newWidth = 0;
+        long newFont, oldFont = 0;
+        setScrollWidth(newWidth + 3);
+    }
+
+    void setScrollWidth(int scrollWidth) {
+        this.scrollWidth = scrollWidth;
+        if ((getApi().style & SWT.SIMPLE) != 0) {
+            return;
+        }
+        boolean scroll = false;
+        /*
+	* Feature in Windows.  For some reason, in a editable combo box,
+	* when CB_SETDROPPEDWIDTH is used to set the width of the drop
+	* down list and the current text does not match an item in the
+	* list, Windows selects the item that most closely matches the
+	* contents of the combo.  The fix is to lock the current text
+	* by ignoring all WM_SETTEXT messages during processing of
+	* CB_SETDROPPEDWIDTH.
+	*/
+        boolean oldLockText = lockText;
+        if ((getApi().style & SWT.READ_ONLY) == 0)
+            lockText = true;
+        if (scroll) {
+        } else {
+        }
+        if ((getApi().style & SWT.READ_ONLY) == 0)
+            lockText = oldLockText;
+    }
+
+    void setScrollWidth(char[] buffer, boolean grow) {
+    }
+
+    void setScrollWidth(int newWidth, boolean grow) {
+        if (grow) {
+            if (newWidth <= scrollWidth)
+                return;
+            setScrollWidth(newWidth + 3);
+        } else {
+            if (newWidth < scrollWidth)
+                return;
+            setScrollWidth();
+        }
     }
 
     /**
@@ -1772,21 +1533,10 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void setSelection(Point selection) {
         checkWidget();
+        this.selection = selection;
         if (selection == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if ((getApi().style & SWT.READ_ONLY) == 0) {
-            NSComboBox widget = (NSComboBox) getApi().view;
-            NSString str = new NSCell(widget.cell()).title();
-            int length = (int) str.length();
-            int start = Math.min(Math.max(Math.min(selection.x, selection.y), 0), length);
-            int end = Math.min(Math.max(Math.max(selection.x, selection.y), 0), length);
-            selectionRange = new NSRange();
-            selectionRange.location = start;
-            selectionRange.length = end - start;
-            NSText fieldEditor = widget.currentEditor();
-            if (fieldEditor != null)
-                fieldEditor.setSelectedRange(selectionRange);
-        }
+        getBridge().dirty(this);
     }
 
     /**
@@ -1819,33 +1569,20 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void setText(String string) {
         checkWidget();
+        this.text = string;
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        setText(string, true);
-    }
-
-    void setText(String string, boolean notify) {
-        if (notify) {
-            if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-                string = verifyText(string, 0, getCharCount(), null);
-                if (string == null)
-                    return;
-            }
-        }
         if ((getApi().style & SWT.READ_ONLY) != 0) {
             int index = indexOf(string);
-            if (index != -1) {
+            if (index != -1)
                 select(index);
-            }
-        } else {
-            char[] buffer = new char[Math.min(string.length(), textLimit)];
-            string.getChars(0, buffer.length, buffer, 0);
-            text = new String(buffer, 0, buffer.length);
-            ((NSComboBox) getApi().view).cell().setAttributedStringValue(createString(text));
-            if (notify)
-                sendEvent(SWT.Modify);
+            return;
         }
-        selectionRange = null;
+        clearSegments(false);
+        int limit = Combo.LIMIT;
+        if (string.length() > limit)
+            string = string.substring(0, limit);
+        getBridge().dirty(this);
     }
 
     /**
@@ -1870,9 +1607,17 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public void setTextLimit(int limit) {
         checkWidget();
+        this.textLimit = limit;
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
-        textLimit = limit;
+        if (segments != null && limit > 0) {
+        } else {
+        }
+        getBridge().dirty(this);
+    }
+
+    @Override
+    void setToolTipText(Shell shell, String string) {
     }
 
     /**
@@ -1896,125 +1641,217 @@ public class SwtCombo extends SwtComposite implements ICombo {
         checkWidget();
         if (count < 0)
             return;
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            //TODO
-        } else {
-            ((NSComboBox) getApi().view).setNumberOfVisibleItems(count);
+        visibleCount = count;
+        updateDropDownHeight();
+        getBridge().dirty(this);
+    }
+
+    @Override
+    void subclass() {
+        super.subclass();
+    }
+
+    int translateOffset(int offset) {
+        if (segments == null)
+            return offset;
+        for (int i = 0, nSegments = segments.length; i < nSegments && offset - i >= segments[i]; i++) {
+            offset++;
         }
+        return offset;
     }
 
     @Override
-    boolean shouldChangeTextInRange_replacementString(long id, long sel, long affectedCharRange, long replacementString) {
-        NSRange range = new NSRange();
-        OS.memmove(range, affectedCharRange, NSRange.sizeof);
-        boolean result = callSuperBoolean(id, sel, range, replacementString);
-        if (hooks(SWT.Verify)) {
-            String string = new NSString(replacementString).getString();
-            NSEvent currentEvent = ((SwtDisplay) display.getImpl()).application.currentEvent();
-            long type = currentEvent.type();
-            if (type != OS.NSKeyDown && type != OS.NSKeyUp)
-                currentEvent = null;
-            String newText = verifyText(string, (int) range.location, (int) (range.location + range.length), currentEvent);
-            if (newText == null)
-                return false;
-            if (!string.equals(newText)) {
-                int length = newText.length();
-                Point selection = getSelection();
-                if (textLimit != Combo.LIMIT) {
-                    int charCount = getCharCount();
-                    if (charCount - (selection.y - selection.x) + length > textLimit) {
-                        length = textLimit - charCount + (selection.y - selection.x);
-                    }
-                }
-                char[] buffer = new char[length];
-                newText.getChars(0, buffer.length, buffer, 0);
-                NSString nsstring = NSString.stringWithCharacters(buffer, buffer.length);
-                NSText fieldEditor = ((NSTextField) getApi().view).currentEditor();
-                fieldEditor.replaceCharactersInRange(fieldEditor.selectedRange(), nsstring);
-                text = fieldEditor.string().getString();
-                sendEvent(SWT.Modify);
-                result = false;
-            }
+    boolean traverseEscape() {
+        if ((getApi().style & SWT.DROP_DOWN) != 0) {
         }
-        if (result) {
-            char[] chars = new char[text.length()];
-            text.getChars(0, chars.length, chars, 0);
-            NSMutableString mutable = (NSMutableString) NSMutableString.stringWithCharacters(chars, chars.length);
-            mutable.replaceCharactersInRange(range, new NSString(replacementString));
-            text = mutable.getString();
-            selectionRange = null;
+        return super.traverseEscape();
+    }
+
+    @Override
+    boolean traverseReturn() {
+        if ((getApi().style & SWT.DROP_DOWN) != 0) {
         }
-        return result;
+        return super.traverseReturn();
     }
 
     @Override
-    void textViewDidChangeSelection(long id, long sel, long aNotification) {
-        NSNotification notification = new NSNotification(aNotification);
-        NSText editor = new NSText(notification.object().id);
-        selectionRange = editor.selectedRange();
+    void unsubclass() {
+        super.unsubclass();
     }
 
-    @Override
-    void textDidChange(long id, long sel, long aNotification) {
-        super.textDidChange(id, sel, aNotification);
-        postEvent(SWT.Modify);
+    int untranslateOffset(int offset) {
+        if (segments == null)
+            return offset;
+        for (int i = 0, nSegments = segments.length; i < nSegments && offset > segments[i]; i++) {
+            offset--;
+        }
+        return offset;
     }
 
-    @Override
-    NSRange textView_willChangeSelectionFromCharacterRange_toCharacterRange(long id, long sel, long aTextView, long oldSelectedCharRange, long newSelectedCharRange) {
+    void updateDropDownHeight() {
         /*
-	* If the selection is changing as a result of the receiver getting focus
-	* then return the receiver's last selection range, otherwise the full
-	* text will be automatically selected.
+	* Feature in Windows.  If the combo box has the CBS_DROPDOWN
+	* or CBS_DROPDOWNLIST style, Windows uses the height that the
+	* programmer sets in SetWindowPos () to control height of the
+	* drop down list.  See #setBounds() for more details.
 	*/
-        if (receivingFocus && selectionRange != null)
-            return selectionRange;
-        /* allow the selection change to proceed */
-        NSRange result = new NSRange();
-        OS.memmove(result, newSelectedCharRange, NSRange.sizeof);
-        return result;
-    }
-
-    void updateItems() {
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-            NSPopUpButton widget = (NSPopUpButton) getApi().view;
-            int count = (int) widget.numberOfItems();
-            for (int i = 0; i < count; i++) {
-                NSMenuItem item = new NSMenuItem(widget.itemAtIndex(i));
-                NSAttributedString attStr = item.attributedTitle();
-                String string = attStr.string().getString();
-                item.setAttributedTitle(createString(string));
-            }
-        } else {
-            NSComboBox widget = (NSComboBox) getApi().view;
-            int count = (int) widget.numberOfItems();
-            for (int i = 0; i < count; i++) {
-                NSAttributedString attStr = new NSAttributedString(widget.itemObjectValueAtIndex(i));
-                String string = attStr.string().getString();
-                widget.insertItemWithObjectValue(createString(string), i);
-                widget.removeItemAtIndex(i + 1);
-            }
-            widget.cell().setAttributedStringValue(createString(text));
+        if ((getApi().style & SWT.DROP_DOWN) != 0) {
         }
     }
 
-    String verifyText(String string, int start, int end, NSEvent keyEvent) {
+    void updateDropDownTheme() {
+    }
+
+    @Override
+    boolean updateTextDirection(int textDirection) {
+        if (super.updateTextDirection(textDirection)) {
+            clearSegments(true);
+            applyEditSegments();
+            applyListSegments();
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    void updateOrientation() {
+        if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0) {
+        } else {
+        }
+        long hwndText = 0, hwndList = 0;
+        if (hwndText != 0) {
+            if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0) {
+            } else {
+            }
+        }
+        if (hwndList != 0) {
+            if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0) {
+            } else {
+            }
+        }
+    }
+
+    String verifyText(String string, int start, int end, Event keyEvent) {
         Event event = new Event();
-        if (keyEvent != null)
-            setKeyState(event, SWT.MouseDown, keyEvent);
         event.text = string;
         event.start = start;
         event.end = end;
+        if (keyEvent != null) {
+            event.character = keyEvent.character;
+            event.keyCode = keyEvent.keyCode;
+            event.stateMask = keyEvent.stateMask;
+        }
+        event.start = untranslateOffset(event.start);
+        event.end = untranslateOffset(event.end);
         /*
-	 * It is possible (but unlikely), that application
-	 * code could have disposed the widget in the verify
-	 * event.  If this happens, answer null to cancel
-	 * the operation.
-	 */
+	* It is possible (but unlikely), that application
+	* code could have disposed the widget in the verify
+	* event.  If this happens, answer null to cancel
+	* the operation.
+	*/
         sendEvent(SWT.Verify, event);
         if (!event.doit || isDisposed())
             return null;
         return event.text;
+    }
+
+    @Override
+    int widgetExtStyle() {
+        return 0;
+    }
+
+    @Override
+    int widgetStyle() {
+        return 0;
+    }
+
+    void forceScrollingToCaret() {
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
+            Point oldSelection = this.getSelection();
+            Point tmpSelection = new Point(0, 0);
+            if (!oldSelection.equals(tmpSelection)) {
+                this.setSelection(tmpSelection);
+                this.setSelection(oldSelection);
+            }
+        }
+    }
+
+    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
+        if (!(widget instanceof Combo combo)) {
+            return;
+        }
+        if ((combo.style & SWT.H_SCROLL) != 0) {
+            ((DartCombo) combo.getImpl()).scrollWidth = 0;
+            ((DartCombo) combo.getImpl()).setScrollWidth();
+        }
+    }
+
+    boolean listVisible;
+
+    Point selection;
+
+    String text;
+
+    int textLimit;
+
+    public boolean _noSelection() {
+        return noSelection;
+    }
+
+    public boolean _ignoreDefaultSelection() {
+        return ignoreDefaultSelection;
+    }
+
+    public boolean _ignoreCharacter() {
+        return ignoreCharacter;
+    }
+
+    public boolean _ignoreModify() {
+        return ignoreModify;
+    }
+
+    public boolean _ignoreResize() {
+        return ignoreResize;
+    }
+
+    public boolean _lockText() {
+        return lockText;
+    }
+
+    public int _scrollWidth() {
+        return scrollWidth;
+    }
+
+    public int _visibleCount() {
+        return visibleCount;
+    }
+
+    public long _cbtHook() {
+        return cbtHook;
+    }
+
+    public String[] _items() {
+        return items;
+    }
+
+    public int[] _segments() {
+        return segments;
+    }
+
+    public int _clearSegmentsCount() {
+        return clearSegmentsCount;
+    }
+
+    public boolean _stateFlagsUsable() {
+        return stateFlagsUsable;
+    }
+
+    public boolean _listVisible() {
+        return listVisible;
+    }
+
+    public Point _selection() {
+        return selection;
     }
 
     public String _text() {
@@ -2025,25 +1862,44 @@ public class SwtCombo extends SwtComposite implements ICombo {
         return textLimit;
     }
 
-    public boolean _receivingFocus() {
-        return receivingFocus;
-    }
-
-    public boolean _ignoreSetObject() {
-        return ignoreSetObject;
-    }
-
-    public boolean _ignoreSelection() {
-        return ignoreSelection;
-    }
-
-    public boolean _listVisible() {
-        return listVisible;
+    protected void hookEvents() {
+        super.hookEvents();
+        FlutterBridge.on(this, "Modify", "Modify", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Modify, e);
+            });
+        });
+        FlutterBridge.on(this, "Segment", "Segments", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Segments, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Verify", "Verify", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Verify, e);
+            });
+        });
     }
 
     public Combo getApi() {
         if (api == null)
             api = Combo.createApi(this);
         return (Combo) api;
+    }
+
+    public VCombo getValue() {
+        if (value == null)
+            value = new VCombo(this);
+        return (VCombo) value;
     }
 }

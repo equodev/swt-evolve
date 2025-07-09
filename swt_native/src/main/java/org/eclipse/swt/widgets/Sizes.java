@@ -15,6 +15,10 @@ public class Sizes {
         return new Point((int) totalWidth, 25);
     }
 
+    public static Point compute(DartCombo c) {
+        return new Point(c.text.length()*15+20, 25);
+    }
+
     public static Point compute(DartLabel c) {
         return new Point(c.text.length()*15, 18);
     }

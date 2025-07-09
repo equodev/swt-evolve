@@ -1,10 +1,112 @@
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2015 IBM Corporation and others.
+ *
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
+ *
+ *  SPDX-License-Identifier: EPL-2.0
+ *
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ *      Lars Vogel <Lars.Vogel@vogella.com> - Bug 483540
+ * *****************************************************************************
+ */
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import dev.equo.swt.*;
 
-public interface ICombo extends IComposite, ImplCombo {
+/**
+ * Instances of this class are controls that allow the user
+ * to choose an item from a list of items, or optionally
+ * enter a new value by typing it into an editable text
+ * field. Often, <code>Combo</code>s are used in the same place
+ * where a single selection <code>List</code> widget could
+ * be used but space is limited. A <code>Combo</code> takes
+ * less space than a <code>List</code> widget and shows
+ * similar information.
+ * <p>
+ * Note: Since <code>Combo</code>s can contain both a list
+ * and an editable text field, it is possible to confuse methods
+ * which access one versus the other (compare for example,
+ * <code>clearSelection()</code> and <code>deselectAll()</code>).
+ * The API documentation is careful to indicate either "the
+ * receiver's list" or the "the receiver's text field" to
+ * distinguish between the two cases.
+ * </p><p>
+ * Note that although this class is a subclass of <code>Composite</code>,
+ * it does not make sense to add children to it, or set a layout on it.
+ * </p>
+ * <dl>
+ * <dt><b>Styles:</b></dt>
+ * <dd>DROP_DOWN, READ_ONLY, SIMPLE</dd>
+ * <dt><b>Events:</b></dt>
+ * <dd>DefaultSelection, Modify, Selection, Verify, OrientationChange</dd>
+ * </dl>
+ * <p>
+ * Note: Only one of the styles DROP_DOWN and SIMPLE may be specified.
+ * </p><p>
+ * IMPORTANT: This class is <em>not</em> intended to be subclassed.
+ * </p>
+ *
+ * @see List
+ * @see <a href="http://www.eclipse.org/swt/snippets/#combo">Combo snippets</a>
+ * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
+ * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @noextend This class is not intended to be subclassed by clients.
+ */
+public class DartCombo extends DartComposite implements ICombo {
+
+    String text;
+
+    int textLimit = Combo.LIMIT;
+
+    boolean receivingFocus;
+
+    boolean ignoreSetObject, ignoreSelection;
+
+    boolean listVisible;
+
+    static final int VISIBLE_COUNT = 5;
+
+    /**
+     * Constructs a new instance of this class given its parent
+     * and a style value describing its behavior and appearance.
+     * <p>
+     * The style value is either one of the style constants defined in
+     * class <code>SWT</code> which is applicable to instances of this
+     * class, or must be built by <em>bitwise OR</em>'ing together
+     * (that is, using the <code>int</code> "|" operator) two or more
+     * of those <code>SWT</code> style constants. The class description
+     * lists the style constants that are applicable to the class.
+     * Style bits are also inherited from superclasses.
+     * </p>
+     *
+     * @param parent a composite control which will be the parent of the new instance (cannot be null)
+     * @param style the style of control to construct
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the parent</li>
+     *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
+     * </ul>
+     *
+     * @see SWT#DROP_DOWN
+     * @see SWT#READ_ONLY
+     * @see SWT#SIMPLE
+     * @see Widget#checkSubclass
+     * @see Widget#getStyle
+     */
+    public DartCombo(Composite parent, int style, Combo api) {
+        super(parent, checkStyle(style), api);
+    }
 
     /**
      * Adds the argument to the end of the receiver's list.
@@ -24,7 +126,14 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @see #add(String,int)
      */
-    void add(String string);
+    public void add(String string) {
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+        }
+    }
 
     /**
      * Adds the argument to the receiver's list at the given
@@ -52,7 +161,17 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @see #add(String)
      */
-    void add(String string, int index);
+    public void add(String string, int index) {
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        int count = getItemCount();
+        if (0 > index || index > count)
+            error(SWT.ERROR_INVALID_RANGE);
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+        }
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -73,7 +192,9 @@ public interface ICombo extends IComposite, ImplCombo {
      * @see ModifyListener
      * @see #removeModifyListener
      */
-    void addModifyListener(ModifyListener listener);
+    public void addModifyListener(ModifyListener listener) {
+        addTypedListener(listener, SWT.Modify);
+    }
 
     /**
      * Adds a segment listener.
@@ -109,7 +230,9 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 3.103
      */
-    void addSegmentListener(SegmentListener listener);
+    public void addSegmentListener(SegmentListener listener) {
+        addTypedListener(listener, SWT.Segments);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -135,7 +258,9 @@ public interface ICombo extends IComposite, ImplCombo {
      * @see #removeSelectionListener
      * @see SelectionEvent
      */
-    void addSelectionListener(SelectionListener listener);
+    public void addSelectionListener(SelectionListener listener) {
+        addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -158,9 +283,43 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 3.1
      */
-    void addVerifyListener(VerifyListener listener);
+    public void addVerifyListener(VerifyListener listener) {
+        addTypedListener(listener, SWT.Verify);
+    }
 
-    void checkSubclass();
+    static int checkStyle(int style) {
+        /*
+	* Feature in Windows.  It is not possible to create
+	* a combo box that has a border using Windows style
+	* bits.  All combo boxes draw their own border and
+	* do not use the standard Windows border styles.
+	* Therefore, no matter what style bits are specified,
+	* clear the BORDER bits so that the SWT style will
+	* match the Windows widget.
+	*
+	* The Windows behavior is currently implemented on
+	* all platforms.
+	*/
+        style &= ~SWT.BORDER;
+        /*
+	* Even though it is legal to create this widget
+	* with scroll bars, they serve no useful purpose
+	* because they do not automatically scroll the
+	* widget's client area.  The fix is to clear
+	* the SWT style.
+	*/
+        style &= ~(SWT.H_SCROLL | SWT.V_SCROLL);
+        style = checkBits(style, SWT.DROP_DOWN, SWT.SIMPLE, 0, 0, 0, 0);
+        if ((style & SWT.SIMPLE) != 0)
+            return style & ~SWT.READ_ONLY;
+        return style;
+    }
+
+    @Override
+    public void checkSubclass() {
+        if (!isValidSubclass())
+            error(SWT.ERROR_INVALID_SUBCLASS);
+    }
 
     /**
      * Sets the selection in the receiver's text field to an empty
@@ -179,9 +338,39 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @see #deselectAll
      */
-    void clearSelection();
+    public void clearSelection() {
+        checkWidget();
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
+            Point selection = getSelection();
+            selection.y = selection.x;
+            setSelection(selection);
+        }
+    }
 
-    Point computeSize(int wHint, int hHint, boolean changed);
+    @Override
+    public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
+        int width = 0, height = 0;
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
+            ignoreSetObject = true;
+            ignoreSetObject = false;
+        } else {
+        }
+        /*
+	* Feature in Cocoa.  Attempting to create an NSComboBox with a
+	* height > 27 spews a very long warning message to stdout and
+	* often draws the combo incorrectly.  The workaround is to limit
+	* the returned height of editable Combos to the height that is
+	* required to display their text, even if a larger hHint is specified.
+	*/
+        if (hHint != SWT.DEFAULT) {
+            if ((getApi().style & SWT.READ_ONLY) != 0 || hHint < height)
+                height = hHint;
+        }
+        if (wHint != SWT.DEFAULT)
+            width = wHint;
+        return new Point(width, height);
+    }
 
     /**
      * Copies the selected text.
@@ -196,7 +385,28 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 2.1
      */
-    void copy();
+    public void copy() {
+        checkWidget();
+        Point selection = getSelection();
+        if (selection.x == selection.y)
+            return;
+        copyToClipboard(getText(selection.x, selection.y));
+    }
+
+    @Override
+    void createHandle() {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+        }
+    }
+
+    @Override
+    void createWidget() {
+        text = "";
+        super.createWidget();
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
+        }
+    }
 
     /**
      * Cuts the selected text.
@@ -212,7 +422,46 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 2.1
      */
-    void cut();
+    public void cut() {
+        checkWidget();
+        if ((getApi().style & SWT.READ_ONLY) != 0)
+            return;
+        Point selection = getSelection();
+        if (selection.x == selection.y)
+            return;
+        int start = selection.x, end = selection.y;
+        String text = getText();
+        String leftText = text.substring(0, start);
+        String rightText = text.substring(end, text.length());
+        String oldText = text.substring(start, end);
+        String newText = "";
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            if (newText == null)
+                return;
+        }
+        char[] buffer = new char[oldText.length()];
+        oldText.getChars(0, buffer.length, buffer, 0);
+        copyToClipboard(buffer);
+        setText(leftText + newText + rightText, false);
+        start += newText.length();
+        setSelection(new Point(start, start));
+        sendEvent(SWT.Modify);
+    }
+
+    @Override
+    Color defaultBackground() {
+        return ((SwtDisplay) display.getImpl()).getWidgetColor(SWT.COLOR_LIST_BACKGROUND);
+    }
+
+    @Override
+    Color defaultForeground() {
+        return ((SwtDisplay) display.getImpl()).getWidgetColor(SWT.COLOR_LIST_FOREGROUND);
+    }
+
+    @Override
+    void deregister() {
+        super.deregister();
+    }
 
     /**
      * Deselects the item at the given zero-relative index in the receiver's
@@ -226,7 +475,17 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void deselect(int index);
+    public void deselect(int index) {
+        checkWidget();
+        if (index == -1)
+            return;
+        if (index == getSelectionIndex()) {
+            if ((getApi().style & SWT.READ_ONLY) != 0) {
+                sendEvent(SWT.Modify);
+            } else {
+            }
+        }
+    }
 
     /**
      * Deselects all selected items in the receiver's list.
@@ -242,7 +501,27 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @see #clearSelection
      */
-    void deselectAll();
+    public void deselectAll() {
+        checkWidget();
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+            sendEvent(SWT.Modify);
+        } else {
+        }
+    }
+
+    @Override
+    boolean dragDetect(int x, int y, boolean filter, boolean[] consume) {
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
+            return false;
+        }
+        return super.dragDetect(x, y, filter, consume);
+    }
+
+    @Override
+    public Cursor findCursor() {
+        Cursor cursor = super.findCursor();
+        return cursor;
+    }
 
     /**
      * Returns the character position of the caret.
@@ -259,7 +538,10 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 3.8
      */
-    int getCaretPosition();
+    public int getCaretPosition() {
+        checkWidget();
+        return 0;
+    }
 
     /**
      * Returns a point describing the location of the caret relative
@@ -274,7 +556,19 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 3.8
      */
-    Point getCaretLocation();
+    public Point getCaretLocation() {
+        checkWidget();
+        if (this.hasFocus()) {
+        }
+        return null;
+    }
+
+    int getCharCount() {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+        }
+        return 0;
+    }
 
     /**
      * Returns the item at the given, zero-relative index in the
@@ -292,7 +586,16 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    String getItem(int index);
+    public String getItem(int index) {
+        checkWidget();
+        int count = getItemCount();
+        if (0 > index || index >= count)
+            error(SWT.ERROR_INVALID_RANGE);
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+        }
+        return null;
+    }
 
     /**
      * Returns the number of items contained in the receiver's list.
@@ -304,7 +607,13 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int getItemCount();
+    public int getItemCount() {
+        checkWidget();
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+        }
+        return 0;
+    }
 
     /**
      * Returns the height of the area which would be used to
@@ -317,7 +626,11 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int getItemHeight();
+    public int getItemHeight() {
+        checkWidget();
+        //TODO - not supported by the OS
+        return 26;
+    }
 
     /**
      * Returns a (possibly empty) array of <code>String</code>s which are
@@ -335,7 +648,13 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    String[] getItems();
+    public String[] getItems() {
+        checkWidget();
+        int count = getItemCount();
+        String[] result = new String[count];
+        for (int i = 0; i < count; i++) result[i] = getItem(i);
+        return result;
+    }
 
     /**
      * Returns <code>true</code> if the receiver's list is visible,
@@ -356,7 +675,20 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 3.4
      */
-    boolean getListVisible();
+    public boolean getListVisible() {
+        checkWidget();
+        return listVisible;
+    }
+
+    @Override
+    String getNameText() {
+        return getText();
+    }
+
+    @Override
+    int getMininumHeight() {
+        return getTextHeight();
+    }
 
     /**
      * Returns the orientation of the receiver.
@@ -370,7 +702,11 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 2.1.2
      */
-    int getOrientation();
+    @Override
+    public int getOrientation() {
+        checkWidget();
+        return getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+    }
 
     /**
      * Returns a <code>Point</code> whose x coordinate is the
@@ -391,7 +727,14 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    Point getSelection();
+    public Point getSelection() {
+        checkWidget();
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+            return new Point(0, getCharCount());
+        } else {
+        }
+        return this.selection;
+    }
 
     /**
      * Returns the zero-relative index of the item which is currently
@@ -404,7 +747,13 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int getSelectionIndex();
+    public int getSelectionIndex() {
+        checkWidget();
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+        }
+        return 0;
+    }
 
     /**
      * Returns a string containing a copy of the contents of the
@@ -418,7 +767,20 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    String getText();
+    public String getText() {
+        checkWidget();
+        return new String(getText(0, -1));
+    }
+
+    char[] getText(int start, int end) {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+        }
+        if (end == -1) {
+        } else {
+        }
+        return text.substring(start, end == -1 ? text.length() : end).toCharArray();
+    }
 
     /**
      * Returns the height of the receivers's text field.
@@ -430,7 +792,13 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int getTextHeight();
+    public int getTextHeight() {
+        checkWidget();
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+        }
+        return 0;
+    }
 
     /**
      * Returns the maximum number of characters that the receiver's
@@ -447,7 +815,10 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @see #LIMIT
      */
-    int getTextLimit();
+    public int getTextLimit() {
+        checkWidget();
+        return textLimit;
+    }
 
     /**
      * Gets the number of items that are visible in the drop
@@ -466,7 +837,14 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 3.0
      */
-    int getVisibleItemCount();
+    public int getVisibleItemCount() {
+        checkWidget();
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+            return getItemCount();
+        } else {
+        }
+        return this.visibleItemCount;
+    }
 
     /**
      * Searches the receiver's list starting at the first item
@@ -485,7 +863,9 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int indexOf(String string);
+    public int indexOf(String string) {
+        return indexOf(string, 0);
+    }
 
     /**
      * Searches the receiver's list starting at the given,
@@ -506,7 +886,25 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int indexOf(String string, int start);
+    public int indexOf(String string, int start) {
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        int count = getItemCount();
+        if (!(0 <= start && start < count))
+            return -1;
+        for (int i = start; i < count; i++) {
+            if (string.equals(getItem(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    boolean isEventView(long id) {
+        return true;
+    }
 
     /**
      * Pastes text from clipboard.
@@ -522,7 +920,49 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 2.1
      */
-    void paste();
+    public void paste() {
+        checkWidget();
+        if ((getApi().style & SWT.READ_ONLY) != 0)
+            return;
+        Point selection = getSelection();
+        int start = selection.x, end = selection.y;
+        String text = getText();
+        String leftText = text.substring(0, start);
+        String rightText = text.substring(end, text.length());
+        String newText = getClipboardText();
+        if (newText == null)
+            return;
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            if (newText == null)
+                return;
+        }
+        if (textLimit != Combo.LIMIT) {
+            int charCount = text.length();
+            if (charCount - (end - start) + newText.length() > textLimit) {
+                newText = newText.substring(0, textLimit - charCount + (end - start));
+            }
+        }
+        setText(leftText + newText + rightText, false);
+        start += newText.length();
+        setSelection(new Point(start, start));
+        sendEvent(SWT.Modify);
+    }
+
+    @Override
+    void register() {
+        super.register();
+    }
+
+    @Override
+    void releaseWidget() {
+        if (((SwtDisplay) display.getImpl()).currentCombo == this.getApi()) {
+            ((SwtDisplay) display.getImpl()).currentCombo = null;
+        }
+        super.releaseWidget();
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
+        }
+        text = null;
+    }
 
     /**
      * Removes the item from the receiver's list at the given
@@ -538,7 +978,17 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void remove(int index);
+    public void remove(int index) {
+        checkWidget();
+        if (index == -1)
+            error(SWT.ERROR_INVALID_RANGE);
+        int count = getItemCount();
+        if (0 > index || index >= count)
+            error(SWT.ERROR_INVALID_RANGE);
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+        }
+    }
 
     /**
      * Removes the items from the receiver's list which are
@@ -556,7 +1006,19 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void remove(int start, int end);
+    public void remove(int start, int end) {
+        checkWidget();
+        if (start > end)
+            return;
+        int count = getItemCount();
+        if (!(0 <= start && start <= end && end < count)) {
+            error(SWT.ERROR_INVALID_RANGE);
+        }
+        int newEnd = Math.min(end, count - 1);
+        for (int i = newEnd; i >= start; i--) {
+            remove(i);
+        }
+    }
 
     /**
      * Searches the receiver's list starting at the first item
@@ -574,7 +1036,15 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void remove(String string);
+    public void remove(String string) {
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        int index = indexOf(string, 0);
+        if (index == -1)
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        remove(index);
+    }
 
     /**
      * Removes all of the items from the receiver's list and clear the
@@ -584,7 +1054,15 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void removeAll();
+    public void removeAll() {
+        checkWidget();
+        ignoreSelection = true;
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+            setText("", true);
+        }
+        ignoreSelection = false;
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -603,7 +1081,14 @@ public interface ICombo extends IComposite, ImplCombo {
      * @see ModifyListener
      * @see #addModifyListener
      */
-    void removeModifyListener(ModifyListener listener);
+    public void removeModifyListener(ModifyListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Modify, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -625,7 +1110,12 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 3.103
      */
-    void removeSegmentListener(SegmentListener listener);
+    public void removeSegmentListener(SegmentListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        eventTable.unhook(SWT.Segments, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -644,7 +1134,15 @@ public interface ICombo extends IComposite, ImplCombo {
      * @see SelectionListener
      * @see #addSelectionListener
      */
-    void removeSelectionListener(SelectionListener listener);
+    public void removeSelectionListener(SelectionListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Selection, listener);
+        eventTable.unhook(SWT.DefaultSelection, listener);
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -665,7 +1163,14 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 3.1
      */
-    void removeVerifyListener(VerifyListener listener);
+    public void removeVerifyListener(VerifyListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Verify, listener);
+    }
 
     /**
      * Selects the item at the given zero-relative index in the receiver's
@@ -679,7 +1184,57 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void select(int index);
+    public void select(int index) {
+        checkWidget();
+        int count = getItemCount();
+        if (0 <= index && index < count) {
+            if (index == getSelectionIndex())
+                return;
+            ignoreSelection = true;
+            if ((getApi().style & SWT.READ_ONLY) != 0) {
+                sendEvent(SWT.Modify);
+            } else {
+            }
+            ignoreSelection = false;
+        }
+    }
+
+    @Override
+    void sendSelection() {
+        sendEvent(SWT.Modify);
+        if (!ignoreSelection)
+            sendSelectionEvent(SWT.Selection);
+    }
+
+    @Override
+    void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
+        /*
+	 * Feature in Cocoa.  Attempting to create an NSComboBox with a
+	 * height > 27 spews a very long warning message to stdout and
+	 * often draws the combo incorrectly.
+	 * The workaround is to limit the height of editable Combos to the
+	 * height that is required to display their text. For multiline text,
+	 * limit the height to frame height.
+	 */
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
+            int hLimit = 0;
+            if (hLimit == 0) {
+            }
+            height = Math.min(height, hLimit);
+        }
+        super.setBounds(x, y, width, height, move, resize);
+    }
+
+    @Override
+    void setForeground(double[] color) {
+        super.setForeground(color);
+        updateItems();
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
+            if (color == null) {
+            } else {
+            }
+        }
+    }
 
     /**
      * Sets the text of the item in the receiver's list at the given
@@ -697,7 +1252,23 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setItem(int index, String string);
+    public void setItem(int index, String string) {
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        int count = getItemCount();
+        if (0 > index || index >= count)
+            error(SWT.ERROR_INVALID_RANGE);
+        int selection = getSelectionIndex();
+        ignoreSelection = true;
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+        }
+        if (selection != -1)
+            select(selection);
+        ignoreSelection = false;
+        getBridge().dirty(this);
+    }
 
     /**
      * Sets the receiver's list to be the given array of items.
@@ -713,7 +1284,26 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setItems(String... items);
+    public void setItems(String... items) {
+        checkWidget();
+        if (items == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] == null)
+                error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        removeAll();
+        if (items.length == 0)
+            return;
+        ignoreSelection = true;
+        for (int i = 0; i < items.length; i++) {
+            if ((getApi().style & SWT.READ_ONLY) != 0) {
+            } else {
+            }
+        }
+        ignoreSelection = false;
+        getBridge().dirty(this);
+    }
 
     /**
      * Marks the receiver's list as visible if the argument is <code>true</code>,
@@ -733,7 +1323,13 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 3.4
      */
-    void setListVisible(boolean visible);
+    public void setListVisible(boolean visible) {
+        checkWidget();
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+        }
+        getBridge().dirty(this);
+    }
 
     /**
      * Sets the orientation of the receiver, which must be one
@@ -748,7 +1344,15 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 2.1.2
      */
-    void setOrientation(int orientation);
+    @Override
+    public void setOrientation(int orientation) {
+        checkWidget();
+        getBridge().dirty(this);
+    }
+
+    @Override
+    void setOrientation() {
+    }
 
     /**
      * Sets the selection in the receiver's text field to the
@@ -766,7 +1370,15 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSelection(Point selection);
+    public void setSelection(Point selection) {
+        checkWidget();
+        this.selection = selection;
+        if (selection == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if ((getApi().style & SWT.READ_ONLY) == 0) {
+        }
+        getBridge().dirty(this);
+    }
 
     /**
      * Sets the contents of the receiver's text field to the
@@ -796,7 +1408,34 @@ public interface ICombo extends IComposite, ImplCombo {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setText(String string);
+    public void setText(String string) {
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        setText(string, true);
+    }
+
+    void setText(String string, boolean notify) {
+        if (notify) {
+            if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+                if (string == null)
+                    return;
+            }
+        }
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+            int index = indexOf(string);
+            if (index != -1) {
+                select(index);
+            }
+        } else {
+            char[] buffer = new char[Math.min(string.length(), textLimit)];
+            string.getChars(0, buffer.length, buffer, 0);
+            text = new String(buffer, 0, buffer.length);
+            if (notify)
+                sendEvent(SWT.Modify);
+        }
+        getBridge().dirty(this);
+    }
 
     /**
      * Sets the maximum number of characters that the receiver's
@@ -818,7 +1457,13 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @see #LIMIT
      */
-    void setTextLimit(int limit);
+    public void setTextLimit(int limit) {
+        checkWidget();
+        if (limit == 0)
+            error(SWT.ERROR_CANNOT_BE_ZERO);
+        textLimit = limit;
+        getBridge().dirty(this);
+    }
 
     /**
      * Sets the number of items that are visible in the drop
@@ -837,7 +1482,104 @@ public interface ICombo extends IComposite, ImplCombo {
      *
      * @since 3.0
      */
-    void setVisibleItemCount(int count);
+    public void setVisibleItemCount(int count) {
+        checkWidget();
+        this.visibleItemCount = count;
+        if (count < 0)
+            return;
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+            //TODO
+        } else {
+        }
+        getBridge().dirty(this);
+    }
 
-    Combo getApi();
+    void updateItems() {
+        if ((getApi().style & SWT.READ_ONLY) != 0) {
+        } else {
+        }
+    }
+
+    String[] items = new String[0];
+
+    Point selection;
+
+    int visibleItemCount;
+
+    public String _text() {
+        return text;
+    }
+
+    public int _textLimit() {
+        return textLimit;
+    }
+
+    public boolean _receivingFocus() {
+        return receivingFocus;
+    }
+
+    public boolean _ignoreSetObject() {
+        return ignoreSetObject;
+    }
+
+    public boolean _ignoreSelection() {
+        return ignoreSelection;
+    }
+
+    public boolean _listVisible() {
+        return listVisible;
+    }
+
+    public String[] _items() {
+        return items;
+    }
+
+    public Point _selection() {
+        return selection;
+    }
+
+    public int _visibleItemCount() {
+        return visibleItemCount;
+    }
+
+    protected void hookEvents() {
+        super.hookEvents();
+        FlutterBridge.on(this, "Modify", "Modify", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Modify, e);
+            });
+        });
+        FlutterBridge.on(this, "Segment", "Segments", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Segments, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Verify", "Verify", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Verify, e);
+            });
+        });
+    }
+
+    public Combo getApi() {
+        if (api == null)
+            api = Combo.createApi(this);
+        return (Combo) api;
+    }
+
+    public VCombo getValue() {
+        if (value == null)
+            value = new VCombo(this);
+        return (VCombo) value;
+    }
 }

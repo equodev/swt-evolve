@@ -3584,6 +3584,58 @@ public class SwtCombo extends SwtComposite implements ICombo {
         }
     }
 
+    public boolean _noSelection() {
+        return noSelection;
+    }
+
+    public boolean _ignoreDefaultSelection() {
+        return ignoreDefaultSelection;
+    }
+
+    public boolean _ignoreCharacter() {
+        return ignoreCharacter;
+    }
+
+    public boolean _ignoreModify() {
+        return ignoreModify;
+    }
+
+    public boolean _ignoreResize() {
+        return ignoreResize;
+    }
+
+    public boolean _lockText() {
+        return lockText;
+    }
+
+    public int _scrollWidth() {
+        return scrollWidth;
+    }
+
+    public int _visibleCount() {
+        return visibleCount;
+    }
+
+    public long _cbtHook() {
+        return cbtHook;
+    }
+
+    public String[] _items() {
+        return items;
+    }
+
+    public int[] _segments() {
+        return segments;
+    }
+
+    public int _clearSegmentsCount() {
+        return clearSegmentsCount;
+    }
+
+    public boolean _stateFlagsUsable() {
+        return stateFlagsUsable;
+    }
+
     public Combo getApi() {
         if (api == null)
             api = Combo.createApi(this);
