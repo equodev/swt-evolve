@@ -30,6 +30,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.printing.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.*;
 
 /**
  * A StyledText is an editable user interface object that displays lines
@@ -88,7 +89,7 @@ import org.eclipse.swt.widgets.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtStyledText extends SwtCanvas implements IStyledText {
+public class DartStyledText extends DartCanvas implements IStyledText {
 
     static final char TAB = '\t';
 
@@ -116,7 +117,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         return p.x;
     }
 
-    static final Comparator<Point> SELECTION_COMPARATOR = Comparator.comparingInt(SwtStyledText::getX).thenComparingInt(p -> p.y);
+    static final Comparator<Point> SELECTION_COMPARATOR = Comparator.comparingInt(DartStyledText::getX).thenComparingInt(p -> p.y);
 
     // selection background color
     Color selectionBackground;
@@ -414,7 +415,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             this.printer = printer;
             this.printOptions = printOptions;
             this.mirrored = (styledText.getStyle() & SWT.MIRRORED) != 0;
-            singleLine = ((SwtStyledText) styledText.getImpl()).isSingleLine();
+            singleLine = ((DartStyledText) styledText.getImpl()).isSingleLine();
             startPage = 1;
             endPage = Integer.MAX_VALUE;
             PrinterData data = printer.getPrinterData();
@@ -431,7 +432,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 selection = Arrays.copyOf(styledText.getImpl()._selection(), styledText.getImpl()._selection().length);
             }
             printerRenderer = new StyledTextRenderer(printer, null);
-            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setContent(copyContent(styledText.getContent()));
+            ((DartStyledTextRenderer) printerRenderer.getImpl()).setContent(copyContent(styledText.getContent()));
             cacheLineData(styledText);
         }
 
@@ -443,35 +444,33 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
          */
         void cacheLineData(StyledText styledText) {
             StyledTextRenderer renderer = styledText.getImpl()._renderer();
-            ((SwtStyledTextRenderer) renderer.getImpl()).copyInto(printerRenderer);
+            ((DartStyledTextRenderer) renderer.getImpl()).copyInto(printerRenderer);
             fontData = styledText.getFont().getFontData()[0];
             tabLength = styledText.getImpl()._tabLength();
-            int lineCount = ((SwtStyledTextRenderer) printerRenderer.getImpl()).lineCount;
+            int lineCount = ((DartStyledTextRenderer) printerRenderer.getImpl()).lineCount;
             if (styledText.isListening(ST.LineGetBackground) || (styledText.isListening(ST.LineGetSegments)) || styledText.isListening(ST.LineGetStyle)) {
-                StyledTextContent content = ((SwtStyledTextRenderer) printerRenderer.getImpl()).content;
+                StyledTextContent content = ((DartStyledTextRenderer) printerRenderer.getImpl()).content;
                 for (int i = 0; i < lineCount; i++) {
                     String line = content.getLine(i);
                     int lineOffset = content.getOffsetAtLine(i);
-                    if (styledText.getImpl() instanceof SwtStyledText) {
-                        StyledTextEvent event = ((SwtStyledText) styledText.getImpl()).getLineBackgroundData(lineOffset, line);
-                        if (event != null && event.lineBackground != null) {
-                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineBackground(i, 1, event.lineBackground);
-                        }
-                        event = ((SwtStyledText) styledText.getImpl()).getBidiSegments(lineOffset, line);
-                        if (event != null) {
-                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineSegments(i, 1, event.segments);
-                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineSegmentChars(i, 1, event.segmentsChars);
-                        }
-                        event = ((SwtStyledText) styledText.getImpl()).getLineStyleData(lineOffset, line);
-                        if (event != null) {
-                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineIndent(i, 1, event.indent);
-                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineAlignment(i, 1, event.alignment);
-                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineJustify(i, 1, event.justify);
-                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineBullet(i, 1, event.bullet);
-                            StyleRange[] styles = event.styles;
-                            if (styles != null && styles.length > 0) {
-                                ((SwtStyledTextRenderer) printerRenderer.getImpl()).setStyleRanges(event.ranges, styles);
-                            }
+                    StyledTextEvent event = ((DartStyledText) styledText.getImpl()).getLineBackgroundData(lineOffset, line);
+                    if (event != null && event.lineBackground != null) {
+                        ((DartStyledTextRenderer) printerRenderer.getImpl()).setLineBackground(i, 1, event.lineBackground);
+                    }
+                    event = ((DartStyledText) styledText.getImpl()).getBidiSegments(lineOffset, line);
+                    if (event != null) {
+                        ((DartStyledTextRenderer) printerRenderer.getImpl()).setLineSegments(i, 1, event.segments);
+                        ((DartStyledTextRenderer) printerRenderer.getImpl()).setLineSegmentChars(i, 1, event.segmentsChars);
+                    }
+                    event = ((DartStyledText) styledText.getImpl()).getLineStyleData(lineOffset, line);
+                    if (event != null) {
+                        ((DartStyledTextRenderer) printerRenderer.getImpl()).setLineIndent(i, 1, event.indent);
+                        ((DartStyledTextRenderer) printerRenderer.getImpl()).setLineAlignment(i, 1, event.alignment);
+                        ((DartStyledTextRenderer) printerRenderer.getImpl()).setLineJustify(i, 1, event.justify);
+                        ((DartStyledTextRenderer) printerRenderer.getImpl()).setLineBullet(i, 1, event.bullet);
+                        StyleRange[] styles = event.styles;
+                        if (styles != null && styles.length > 0) {
+                            ((DartStyledTextRenderer) printerRenderer.getImpl()).setStyleRanges(event.ranges, styles);
                         }
                     }
                 }
@@ -480,7 +479,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             Point printerDPI = printer.getDPI();
             resources = new HashMap<>();
             for (int i = 0; i < lineCount; i++) {
-                Color color = ((SwtStyledTextRenderer) printerRenderer.getImpl()).getLineBackground(i, null);
+                Color color = ((DartStyledTextRenderer) printerRenderer.getImpl()).getLineBackground(i, null);
                 if (color != null) {
                     if (printOptions.printLineBackground) {
                         Color printerColor = (Color) resources.get(color);
@@ -488,18 +487,18 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                             printerColor = new Color(color.getRGB());
                             resources.put(color, printerColor);
                         }
-                        ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineBackground(i, 1, printerColor);
+                        ((DartStyledTextRenderer) printerRenderer.getImpl()).setLineBackground(i, 1, printerColor);
                     } else {
-                        ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineBackground(i, 1, null);
+                        ((DartStyledTextRenderer) printerRenderer.getImpl()).setLineBackground(i, 1, null);
                     }
                 }
-                int indent = ((SwtStyledTextRenderer) printerRenderer.getImpl()).getLineIndent(i, 0);
+                int indent = ((DartStyledTextRenderer) printerRenderer.getImpl()).getLineIndent(i, 0);
                 if (indent != 0) {
-                    ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineIndent(i, 1, indent * printerDPI.x / screenDPI.x);
+                    ((DartStyledTextRenderer) printerRenderer.getImpl()).setLineIndent(i, 1, indent * printerDPI.x / screenDPI.x);
                 }
             }
-            StyleRange[] styles = ((SwtStyledTextRenderer) printerRenderer.getImpl()).styles;
-            for (int i = 0; i < ((SwtStyledTextRenderer) printerRenderer.getImpl()).styleCount; i++) {
+            StyleRange[] styles = ((DartStyledTextRenderer) printerRenderer.getImpl()).styles;
+            for (int i = 0; i < ((DartStyledTextRenderer) printerRenderer.getImpl()).styleCount; i++) {
                 StyleRange style = styles[i];
                 Font font = style.font;
                 if (style.font != null) {
@@ -593,7 +592,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 printerFont = null;
             }
             if (printerRenderer != null) {
-                ((SwtStyledTextRenderer) printerRenderer.getImpl()).dispose();
+                ((DartStyledTextRenderer) printerRenderer.getImpl()).dispose();
                 printerRenderer = null;
             }
         }
@@ -612,8 +611,8 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             int style = mirrored ? SWT.RIGHT_TO_LEFT : SWT.LEFT_TO_RIGHT;
             gc = new GC(printer, style);
             gc.setFont(printerFont);
-            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setFont(printerFont, tabLength);
-            int lineHeight = ((SwtStyledTextRenderer) printerRenderer.getImpl()).getLineHeight();
+            ((DartStyledTextRenderer) printerRenderer.getImpl()).setFont(printerFont, tabLength);
+            int lineHeight = ((DartStyledTextRenderer) printerRenderer.getImpl()).getLineHeight();
             if (printOptions.header != null) {
                 clientArea.y += lineHeight * 2;
                 clientArea.height -= lineHeight * 2;
@@ -622,7 +621,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 clientArea.height -= lineHeight * 2;
             }
             // TODO not wrapped
-            StyledTextContent content = ((SwtStyledTextRenderer) printerRenderer.getImpl()).content;
+            StyledTextContent content = ((DartStyledTextRenderer) printerRenderer.getImpl()).content;
             startLine = 0;
             endLine = singleLine ? 0 : content.getLineCount() - 1;
             if (scope == PrinterData.PAGE_RANGE) {
@@ -685,8 +684,8 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     printer.startPage();
                     printDecoration(page, true, printLayout);
                 }
-                TextLayout layout = ((SwtStyledTextRenderer) printerRenderer.getImpl()).getTextLayout(i, orientation, width, lineSpacing);
-                Color lineBackground = ((SwtStyledTextRenderer) printerRenderer.getImpl()).getLineBackground(i, background);
+                TextLayout layout = ((DartStyledTextRenderer) printerRenderer.getImpl()).getTextLayout(i, orientation, width, lineSpacing);
+                Color lineBackground = ((DartStyledTextRenderer) printerRenderer.getImpl()).getLineBackground(i, background);
                 int paragraphBottom = paintY + layout.getBounds().height;
                 if (paragraphBottom <= pageBottom) {
                     //normal case, the whole paragraph fits in the current page
@@ -731,7 +730,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                         }
                     }
                 }
-                ((SwtStyledTextRenderer) printerRenderer.getImpl()).disposeTextLayout(layout);
+                ((DartStyledTextRenderer) printerRenderer.getImpl()).disposeTextLayout(layout);
             }
             if (page <= endPage && paintY > clientArea.y) {
                 // close partial page
@@ -790,7 +789,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             if (segment.length() > 0) {
                 layout.setText(segment);
                 int segmentWidth = layout.getBounds().width;
-                int segmentHeight = ((SwtStyledTextRenderer) printerRenderer.getImpl()).getLineHeight();
+                int segmentHeight = ((DartStyledTextRenderer) printerRenderer.getImpl()).getLineHeight();
                 int drawX = 0, drawY;
                 if (alignment == LEFT) {
                     drawX = clientArea.x;
@@ -893,7 +892,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      * @see SWT#WRAP
      * @see #getStyle
      */
-    public SwtStyledText(Composite parent, int style, StyledText api) {
+    public DartStyledText(Composite parent, int style, StyledText api) {
         super(parent, checkStyle(style), api);
         // set the fg in the OS to ensure that these are the same as StyledText, necessary
         // for ensuring that the bg/fg the IME box uses is the same as what StyledText uses
@@ -913,8 +912,8 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         clipboard = new Clipboard(display);
         installDefaultContent();
         renderer = new StyledTextRenderer(getDisplay(), this.getApi());
-        ((SwtStyledTextRenderer) renderer.getImpl()).setContent(content);
-        ((SwtStyledTextRenderer) renderer.getImpl()).setFont(getFont(), tabLength);
+        ((DartStyledTextRenderer) renderer.getImpl()).setContent(content);
+        ((DartStyledTextRenderer) renderer.getImpl()).setFont(getFont(), tabLength);
         ime = new IME(this.getApi(), SWT.NONE);
         defaultCaret = new Caret(this.getApi(), SWT.NONE);
         if ((style & SWT.WRAP) != 0) {
@@ -922,15 +921,6 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         }
         if (isBidiCaret()) {
             createCaretBitmaps();
-            Runnable runnable = () -> {
-                int direction = BidiUtil.getKeyboardLanguage() == BidiUtil.KEYBOARD_BIDI ? SWT.RIGHT : SWT.LEFT;
-                if (direction == caretDirection)
-                    return;
-                if (getCaret() != defaultCaret)
-                    return;
-                setCaretLocations(Arrays.stream(caretOffsets).mapToObj(this::getPointAtOffset).toArray(Point[]::new), direction);
-            };
-            BidiUtil.addLanguageListener(this.getApi(), runnable);
         }
         setCaret(defaultCaret);
         calculateScrollBars();
@@ -1038,7 +1028,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (listener == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (!isListening(ST.LineGetBackground)) {
-            ((SwtStyledTextRenderer) renderer.getImpl()).clearLineBackground(0, content.getLineCount());
+            ((DartStyledTextRenderer) renderer.getImpl()).clearLineBackground(0, content.getLineCount());
         }
         addListener(ST.LineGetBackground, new StyledTextListener(listener));
     }
@@ -1062,7 +1052,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (!isListening(ST.LineGetStyle)) {
             setStyleRanges(0, 0, null, null, true);
-            ((SwtStyledTextRenderer) renderer.getImpl()).clearLineStyle(0, content.getLineCount());
+            ((DartStyledTextRenderer) renderer.getImpl()).clearLineStyle(0, content.getLineCount());
         }
         addListener(ST.LineGetStyle, new StyledTextListener(listener));
         setCaretLocations();
@@ -1260,7 +1250,6 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             if (verticalIncrement == 0) {
                 return;
             }
-            topIndex = Compatibility.ceil(getVerticalScrollOffset(), verticalIncrement);
             // Set top index to partially visible top line if no line is fully
             // visible but at least some of the widget client area is visible.
             // Fixes bug 15088.
@@ -1288,31 +1277,31 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 while (lineIndex < lineCount) {
                     if (delta <= 0)
                         break;
-                    delta -= ((SwtStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex++);
+                    delta -= ((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex++);
                 }
-                if (lineIndex < lineCount && -delta + ((SwtStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex) <= clientAreaHeight - topMargin - bottomMargin) {
+                if (lineIndex < lineCount && -delta + ((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex) <= clientAreaHeight - topMargin - bottomMargin) {
                     topIndex = lineIndex;
                     topIndexY = -delta;
                 } else {
                     topIndex = lineIndex - 1;
-                    topIndexY = -((SwtStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(topIndex) - delta;
+                    topIndexY = -((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(topIndex) - delta;
                 }
             } else {
                 delta -= topIndexY;
                 int lineIndex = topIndex;
                 while (lineIndex > 0) {
-                    int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex - 1);
+                    int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex - 1);
                     if (delta + lineHeight > 0)
                         break;
                     delta += lineHeight;
                     lineIndex--;
                 }
-                if (lineIndex == 0 || -delta + ((SwtStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex) <= clientAreaHeight - topMargin - bottomMargin) {
+                if (lineIndex == 0 || -delta + ((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex) <= clientAreaHeight - topMargin - bottomMargin) {
                     topIndex = lineIndex;
                     topIndexY = -delta;
                 } else {
                     topIndex = lineIndex - 1;
-                    topIndexY = -((SwtStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(topIndex) - delta;
+                    topIndexY = -((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(topIndex) - delta;
                 }
             }
         }
@@ -1323,9 +1312,9 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             topIndex = 0;
         }
         if (topIndex != oldTopIndex || oldTopIndexY != topIndexY) {
-            int width = ((SwtStyledTextRenderer) renderer.getImpl()).getWidth();
-            ((SwtStyledTextRenderer) renderer.getImpl()).calculateClientArea();
-            if (width != ((SwtStyledTextRenderer) renderer.getImpl()).getWidth()) {
+            int width = ((DartStyledTextRenderer) renderer.getImpl()).getWidth();
+            ((DartStyledTextRenderer) renderer.getImpl()).calculateClientArea();
+            if (width != ((DartStyledTextRenderer) renderer.getImpl()).getWidth()) {
                 setScrollBars(false);
             }
         }
@@ -1356,7 +1345,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (ime.getCompositionOffset() != -1)
             return;
         if (isFixedLineHeight()) {
-            int newVerticalOffset = Math.max(0, ((SwtStyledTextRenderer) renderer.getImpl()).getHeight() - clientAreaHeight);
+            int newVerticalOffset = Math.max(0, ((DartStyledTextRenderer) renderer.getImpl()).getHeight() - clientAreaHeight);
             if (newVerticalOffset < getVerticalScrollOffset()) {
                 scrollVertical(newVerticalOffset - getVerticalScrollOffset(), true);
             }
@@ -1373,7 +1362,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      * Scrolls text to the right to use new space made available by a resize.
      */
     void claimRightFreeSpace() {
-        int newHorizontalOffset = Math.max(0, ((SwtStyledTextRenderer) renderer.getImpl()).getWidth() - clientAreaWidth);
+        int newHorizontalOffset = Math.max(0, ((DartStyledTextRenderer) renderer.getImpl()).getWidth() - clientAreaWidth);
         if (newHorizontalOffset < horizontalScrollOffset) {
             // item is no longer drawn past the right border of the client area
             // align the right end of the item with the right border of the
@@ -1429,7 +1418,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             Display display = getDisplay();
             int maxHeight = display.getClientArea().height;
             for (int lineIndex = 0; lineIndex < lineCount; lineIndex++) {
-                TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+                TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
                 int wrapWidth = layout.getWidth();
                 if (wordWrap)
                     layout.setWidth(wHint == 0 ? 1 : wHint == SWT.DEFAULT ? SWT.DEFAULT : Math.max(1, wHint - leftMargin - rightMargin));
@@ -1437,12 +1426,12 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 height += rect.height;
                 width = Math.max(width, rect.width);
                 layout.setWidth(wrapWidth);
-                ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
                 if (isFixedLineHeight() && height > maxHeight)
                     break;
             }
             if (isFixedLineHeight()) {
-                height = lineCount * ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+                height = lineCount * ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
             }
         }
         // Use default values if no text is defined.
@@ -1598,10 +1587,10 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             int lineIndex = topIndex - 1;
             maxHeight = -topIndexY;
             if (topIndexY > 0) {
-                maxHeight += ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex--);
+                maxHeight += ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex--);
             }
             while (height > maxHeight && lineIndex >= 0) {
-                maxHeight += ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex--);
+                maxHeight += ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex--);
             }
         }
         return Math.min(height, maxHeight);
@@ -1610,7 +1599,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     int getAvailableHeightBellow(int height) {
         int partialBottomIndex = getPartialBottomIndex();
         int topY = getLinePixel(partialBottomIndex);
-        int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(partialBottomIndex);
+        int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(partialBottomIndex);
         int availableHeight = 0;
         int clientAreaHeight = this.clientAreaHeight - topMargin - bottomMargin;
         if (topY + lineHeight > clientAreaHeight) {
@@ -1619,7 +1608,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         int lineIndex = partialBottomIndex + 1;
         int lineCount = content.getLineCount();
         while (height > availableHeight && lineIndex < lineCount) {
-            availableHeight += ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex++);
+            availableHeight += ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex++);
         }
         return Math.min(height, availableHeight);
     }
@@ -1817,7 +1806,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             }
             leftCaretBitmap.dispose();
         }
-        int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+        int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
         leftCaretBitmap = new Image(display, caretWidth, lineHeight);
         GC gc = new GC(leftCaretBitmap);
         gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
@@ -1945,7 +1934,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                         if (blockSelection) {
                             int verticalScrollOffset = getVerticalScrollOffset();
                             int y = blockYLocation - verticalScrollOffset;
-                            int max = ((SwtStyledTextRenderer) renderer.getImpl()).getHeight() - verticalScrollOffset - clientAreaHeight;
+                            int max = ((DartStyledTextRenderer) renderer.getImpl()).getHeight() - verticalScrollOffset - clientAreaHeight;
                             int pixels = Math.min(autoScrollDistance, Math.max(0, max));
                             if (pixels != 0) {
                                 setBlockSelectionLocation(blockXLocation - horizontalScrollOffset, y + pixels, true);
@@ -1974,7 +1963,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     if (autoScrollDirection == ST.COLUMN_NEXT) {
                         if (blockSelection) {
                             int x = blockXLocation - horizontalScrollOffset;
-                            int max = ((SwtStyledTextRenderer) renderer.getImpl()).getWidth() - horizontalScrollOffset - clientAreaWidth;
+                            int max = ((DartStyledTextRenderer) renderer.getImpl()).getWidth() - horizontalScrollOffset - clientAreaWidth;
                             int pixels = Math.min(autoScrollDistance, Math.max(0, max));
                             if (pixels != 0) {
                                 setBlockSelectionLocation(x + pixels, blockYLocation - getVerticalScrollOffset(), true);
@@ -2061,9 +2050,9 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                                 isSurrogate = 0xD800 <= ch && ch <= 0xDBFF;
                             }
                         }
-                        TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+                        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
                         int start = layout.getPreviousOffset(caretOffset - lineOffset, isSurrogate ? SWT.MOVEMENT_CLUSTER : SWT.MOVEMENT_CHAR);
-                        ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
                         event.start = start + lineOffset;
                         event.end = caretOffset;
                     }
@@ -2095,8 +2084,8 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             setBlockSelectionOffset(offset, true);
             showCaret();
         } else {
-            int width = next ? ((SwtStyledTextRenderer) renderer.getImpl()).averageCharWidth : -((SwtStyledTextRenderer) renderer.getImpl()).averageCharWidth;
-            int maxWidth = Math.max(clientAreaWidth - rightMargin - leftMargin, ((SwtStyledTextRenderer) renderer.getImpl()).getWidth());
+            int width = next ? ((DartStyledTextRenderer) renderer.getImpl()).averageCharWidth : -((DartStyledTextRenderer) renderer.getImpl()).averageCharWidth;
+            int maxWidth = Math.max(clientAreaWidth - rightMargin - leftMargin, ((DartStyledTextRenderer) renderer.getImpl()).getWidth());
             x = Math.max(0, Math.min(blockXLocation + width, maxWidth)) - horizontalScrollOffset;
             setBlockSelectionLocation(x, y, true);
             Rectangle rect = new Rectangle(x, y, 0, 0);
@@ -2141,8 +2130,8 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             setBlockSelectionOffset(offset, true);
             showCaret();
         } else {
-            int width = (next ? ((SwtStyledTextRenderer) renderer.getImpl()).averageCharWidth : -((SwtStyledTextRenderer) renderer.getImpl()).averageCharWidth) * 6;
-            int maxWidth = Math.max(clientAreaWidth - rightMargin - leftMargin, ((SwtStyledTextRenderer) renderer.getImpl()).getWidth());
+            int width = (next ? ((DartStyledTextRenderer) renderer.getImpl()).averageCharWidth : -((DartStyledTextRenderer) renderer.getImpl()).averageCharWidth) * 6;
+            int maxWidth = Math.max(clientAreaWidth - rightMargin - leftMargin, ((DartStyledTextRenderer) renderer.getImpl()).getWidth());
             x = Math.max(0, Math.min(blockXLocation + width, maxWidth)) - horizontalScrollOffset;
             setBlockSelectionLocation(x, y, true);
             Rectangle rect = new Rectangle(x, y, 0, 0);
@@ -2208,7 +2197,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             setBlockSelectionOffset(offset, true);
             showCaret();
         } else {
-            int maxWidth = Math.max(clientAreaWidth - rightMargin - leftMargin, ((SwtStyledTextRenderer) renderer.getImpl()).getWidth());
+            int maxWidth = Math.max(clientAreaWidth - rightMargin - leftMargin, ((DartStyledTextRenderer) renderer.getImpl()).getWidth());
             x = (end ? maxWidth : 0) - horizontalScrollOffset;
             setBlockSelectionLocation(x, y, true);
             Rectangle rect = new Rectangle(x, y, 0, 0);
@@ -2430,7 +2419,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             if (isWordWrap()) {
                 int lineOffset = content.getOffsetAtLine(caretLine);
                 int offsetInLine = caretOffset - lineOffset;
-                TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
+                TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
                 int lineIndex = getVisualLineIndex(layout, offsetInLine);
                 int layoutLineCount = layout.getLineCount();
                 if (lineIndex == layoutLineCount - 1) {
@@ -2441,7 +2430,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     // bug 485722: workaround for fractional line heights
                     y++;
                 }
-                ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
             } else {
                 lastLine = caretLine == lineCount - 1;
                 caretLine++;
@@ -2478,12 +2467,12 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             int lineOffset = content.getOffsetAtLine(caretLine);
             int lineEndOffset;
             if (isWordWrap()) {
-                TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
+                TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
                 int offsetInLine = caretOffset - lineOffset;
                 int lineIndex = getVisualLineIndex(layout, offsetInLine);
                 int[] offsets = layout.getLineOffsets();
                 lineEndOffset = lineOffset + offsets[lineIndex + 1];
-                ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
             } else {
                 int lineLength = content.getLine(caretLine).length();
                 lineEndOffset = lineOffset + lineLength;
@@ -2504,12 +2493,12 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             int caretLine = content.getLineAtOffset(caretOffset);
             int lineOffset = content.getOffsetAtLine(caretLine);
             if (isWordWrap()) {
-                TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
+                TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
                 int offsetInLine = caretOffset - lineOffset;
                 int lineIndex = getVisualLineIndex(layout, offsetInLine);
                 int[] offsets = layout.getLineOffsets();
                 lineOffset += offsets[lineIndex];
-                ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
             }
             newCaretOffsets[i] = lineOffset;
         }
@@ -2535,13 +2524,13 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             if (isWordWrap()) {
                 int lineOffset = content.getOffsetAtLine(caretLine);
                 int offsetInLine = caretOffset - lineOffset;
-                TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
+                TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
                 int lineIndex = getVisualLineIndex(layout, offsetInLine);
                 if (lineIndex == 0) {
                     firstLine = caretLine == 0;
                     if (!firstLine) {
                         caretLine--;
-                        y = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(caretLine) - 1;
+                        y = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(caretLine) - 1;
                         // bug 485722: workaround for fractional line heights
                         y--;
                     }
@@ -2550,7 +2539,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     // bug 485722: workaround for fractional line heights
                     y++;
                 }
-                ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
             } else {
                 firstLine = caretLine == 0;
                 caretLine--;
@@ -2584,7 +2573,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         int offset = getOffsetAtPoint(x, y, null, true);
         Display display = getDisplay();
         Cursor newCursor = cursor;
-        if (((SwtStyledTextRenderer) renderer.getImpl()).hasLink(offset)) {
+        if (((DartStyledTextRenderer) renderer.getImpl()).hasLink(offset)) {
             newCursor = display.getSystemCursor(SWT.CURSOR_HAND);
         } else {
             if (cursor == null) {
@@ -2652,8 +2641,8 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                         return;
                     }
                 } else {
-                    if (isFixedLineHeight() && ((SwtStyledTextRenderer) renderer.getImpl()).fixedPitch) {
-                        int avg = ((SwtStyledTextRenderer) renderer.getImpl()).averageCharWidth;
+                    if (isFixedLineHeight() && ((DartStyledTextRenderer) renderer.getImpl()).fixedPitch) {
+                        int avg = ((DartStyledTextRenderer) renderer.getImpl()).averageCharWidth;
                         x = ((x + avg / 2 - leftMargin + horizontalScrollOffset) / avg * avg) + leftMargin - horizontalScrollOffset;
                     }
                     setBlockSelectionLocation(x, y, true);
@@ -2768,7 +2757,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             int lineCount = content.getLineCount();
             int caretLine = getFirstCaretLine();
             if (caretLine < lineCount - 1) {
-                int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+                int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
                 int lines = (height == -1 ? clientAreaHeight : height) / lineHeight;
                 int scrollLines = Math.min(lineCount - caretLine - 1, lines);
                 // ensure that scrollLines never gets negative and at least one
@@ -2798,13 +2787,13 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             if (height == -1) {
                 lineIndex = getPartialBottomIndex();
                 int topY = getLinePixel(lineIndex);
-                lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
+                lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
                 height = topY;
                 if (topY + lineHeight <= clientAreaHeight) {
                     height += lineHeight;
                 } else {
                     if (isWordWrap()) {
-                        TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+                        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
                         int y = clientAreaHeight - topY;
                         for (int i = 0; i < layout.getLineCount(); i++) {
                             Rectangle bounds = layout.getLineBounds(i);
@@ -2813,14 +2802,14 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                                 break;
                             }
                         }
-                        ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
                     }
                 }
             } else {
                 lineIndex = getLineIndex(height);
                 int topLineY = getLinePixel(lineIndex);
                 if (isWordWrap()) {
-                    TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+                    TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
                     int y = height - topLineY;
                     for (int i = 0; i < layout.getLineCount(); i++) {
                         Rectangle bounds = layout.getLineBounds(i);
@@ -2829,27 +2818,27 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                             break;
                         }
                     }
-                    ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                    ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
                 } else {
-                    height = topLineY + ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
+                    height = topLineY + ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
                 }
             }
             int caretHeight = height;
             if (isWordWrap()) {
                 for (int caretOffset : caretOffsets) {
                     int caretLine = content.getLineAtOffset(caretOffset);
-                    TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
+                    TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
                     int offsetInLine = caretOffset - content.getOffsetAtLine(caretLine);
                     lineIndex = getVisualLineIndex(layout, offsetInLine);
                     caretHeight += layout.getLineBounds(lineIndex).y;
-                    ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                    ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
                 }
             }
             lineIndex = getFirstCaretLine();
-            lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
+            lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
             while (caretHeight - lineHeight >= 0 && lineIndex < lineCount - 1) {
                 caretHeight -= lineHeight;
-                lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(++lineIndex);
+                lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(++lineIndex);
             }
             int[] alignment = new int[1];
             int offset = getOffsetAtPoint(columnX, caretHeight, lineIndex, alignment);
@@ -2878,7 +2867,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             int bottomOffset;
             if (isWordWrap()) {
                 int lineIndex = getPartialBottomIndex();
-                TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+                TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
                 int y = (clientAreaHeight - bottomMargin) - getLinePixel(lineIndex);
                 int index = layout.getLineCount() - 1;
                 while (index >= 0) {
@@ -2892,7 +2881,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 } else {
                     bottomOffset = content.getOffsetAtLine(lineIndex) + Math.max(0, layout.getLineOffsets()[index + 1] - 1);
                 }
-                ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
             } else {
                 int lineIndex = getBottomIndex();
                 bottomOffset = content.getOffsetAtLine(lineIndex) + content.getLine(lineIndex).length();
@@ -2913,12 +2902,12 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             int y, lineIndex;
             if (topIndexY > 0) {
                 lineIndex = topIndex - 1;
-                y = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex) - topIndexY;
+                y = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex) - topIndexY;
             } else {
                 lineIndex = topIndex;
                 y = -topIndexY;
             }
-            TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+            TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
             int index = 0;
             int lineCount = layout.getLineCount();
             while (index < lineCount) {
@@ -2932,7 +2921,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             } else {
                 topOffset = content.getOffsetAtLine(lineIndex) + layout.getLineOffsets()[index];
             }
-            ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+            ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
         } else {
             topOffset = content.getOffsetAtLine(topIndex);
         }
@@ -2958,7 +2947,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (isFixedLineHeight()) {
             int caretLine = getFirstCaretLine();
             if (caretLine > 0) {
-                int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+                int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
                 int lines = (height == -1 ? clientAreaHeight : height) / lineHeight;
                 int scrollLines = Math.max(1, Math.min(caretLine, lines));
                 caretLine -= scrollLines;
@@ -2983,17 +2972,17 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     int y;
                     if (topIndex > 0) {
                         lineIndex = topIndex - 1;
-                        lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
+                        lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
                         height = clientAreaHeight - topIndexY;
                         y = lineHeight - topIndexY;
                     } else {
                         lineIndex = topIndex;
-                        lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
+                        lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
                         height = clientAreaHeight - (lineHeight + topIndexY);
                         y = -topIndexY;
                     }
                     if (isWordWrap()) {
-                        TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+                        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
                         for (int i = 0; i < layout.getLineCount(); i++) {
                             Rectangle bounds = layout.getLineBounds(i);
                             if (bounds.contains(bounds.x, y)) {
@@ -3001,14 +2990,14 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                                 break;
                             }
                         }
-                        ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
                     }
                 }
             } else {
                 lineIndex = getLineIndex(clientAreaHeight - height);
                 int topLineY = getLinePixel(lineIndex);
                 if (isWordWrap()) {
-                    TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+                    TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
                     int y = topLineY;
                     for (int i = 0; i < layout.getLineCount(); i++) {
                         Rectangle bounds = layout.getLineBounds(i);
@@ -3017,7 +3006,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                             break;
                         }
                     }
-                    ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                    ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
                 } else {
                     height = clientAreaHeight - topLineY;
                 }
@@ -3026,20 +3015,20 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             if (isWordWrap()) {
                 for (int caretOffset : caretOffsets) {
                     int caretLine = content.getLineAtOffset(caretOffset);
-                    TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
+                    TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
                     int offsetInLine = caretOffset - content.getOffsetAtLine(caretLine);
                     lineIndex = getVisualLineIndex(layout, offsetInLine);
                     caretHeight += layout.getBounds().height - layout.getLineBounds(lineIndex).y;
-                    ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                    ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
                 }
             }
             lineIndex = getFirstCaretLine();
-            lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
+            lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
             while (caretHeight - lineHeight >= 0 && lineIndex > 0) {
                 caretHeight -= lineHeight;
-                lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(--lineIndex);
+                lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(--lineIndex);
             }
-            lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
+            lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
             int[] alignment = new int[1];
             int offset = getOffsetAtPoint(columnX, lineHeight - caretHeight, lineIndex, alignment);
             setCaretOffsets(new int[] { offset }, alignment[0]);
@@ -3152,10 +3141,10 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             int offsetInLine = caretOffset - lineOffset;
             int offset;
             if (offsetInLine < content.getLine(caretLine).length()) {
-                TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
+                TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
                 offsetInLine = layout.getNextOffset(offsetInLine, SWT.MOVEMENT_CLUSTER);
                 int lineStart = layout.getLineOffsets()[layout.getLineIndex(offsetInLine)];
-                ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
                 offset = offsetInLine + lineOffset;
                 newAlignment = offsetInLine == lineStart ? OFFSET_LEADING : PREVIOUS_OFFSET_TRAILING;
                 newCarets[i] = offset;
@@ -3386,7 +3375,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     public int getBaseline() {
         checkWidget();
-        return ((SwtStyledTextRenderer) renderer.getImpl()).getBaseline();
+        return ((DartStyledTextRenderer) renderer.getImpl()).getBaseline();
     }
 
     /**
@@ -3412,14 +3401,14 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_RANGE);
         }
         if (isFixedLineHeight()) {
-            return ((SwtStyledTextRenderer) renderer.getImpl()).getBaseline();
+            return ((DartStyledTextRenderer) renderer.getImpl()).getBaseline();
         }
         int lineIndex = content.getLineAtOffset(offset);
         int lineOffset = content.getOffsetAtLine(lineIndex);
-        TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
         int lineInParagraph = layout.getLineIndex(Math.min(offset - lineOffset, layout.getText().length()));
         FontMetrics metrics = layout.getLineMetrics(lineInParagraph);
-        ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
         return metrics.getAscent() + metrics.getLeading();
     }
 
@@ -3547,7 +3536,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         int bottomIndex;
         if (isFixedLineHeight()) {
             int lineCount = 1;
-            int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+            int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
             if (lineHeight != 0) {
                 // calculate the number of lines that are fully visible
                 int partialTopLineHeight = topIndex * lineHeight - getVerticalScrollOffset();
@@ -3559,7 +3548,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             bottomIndex = getLineIndex(clientAreaHeight);
             if (bottomIndex > 0) {
                 int linePixel = getLinePixel(bottomIndex);
-                int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(bottomIndex);
+                int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(bottomIndex);
                 if (linePixel + lineHeight > clientAreaHeight) {
                     if (getLinePixel(bottomIndex - 1) >= topMargin) {
                         bottomIndex--;
@@ -3592,7 +3581,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         String line = content.getLine(lineIndex);
         Rectangle bounds;
         if (line.length() != 0) {
-            TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+            TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
             int offsetInLine = Math.min(layout.getText().length(), Math.max(0, offset - lineOffset));
             bounds = layout.getBounds(offsetInLine, offsetInLine);
             if (getListeners(ST.LineGetSegments).length > 0 && caretAlignment == PREVIOUS_OFFSET_TRAILING && offsetInLine != 0) {
@@ -3600,9 +3589,9 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 Point point = layout.getLocation(offsetInLine, true);
                 bounds = new Rectangle(point.x, point.y, 0, bounds.height);
             }
-            ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+            ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
         } else {
-            bounds = new Rectangle(0, 0, 0, ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight());
+            bounds = new Rectangle(0, 0, 0, ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight());
         }
         if (Arrays.binarySearch(caretOffsets, offset) >= 0 && !isWordWrap()) {
             int lineEnd = lineOffset + line.length();
@@ -3648,21 +3637,21 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
     int getClusterNext(int offset, int lineIndex) {
         int lineOffset = content.getOffsetAtLine(lineIndex);
-        TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
         offset -= lineOffset;
         offset = layout.getNextOffset(offset, SWT.MOVEMENT_CLUSTER);
         offset += lineOffset;
-        ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
         return offset;
     }
 
     int getClusterPrevious(int offset, int lineIndex) {
         int lineOffset = content.getOffsetAtLine(lineIndex);
-        TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
         offset -= lineOffset;
         offset = layout.getPreviousOffset(offset, SWT.MOVEMENT_CLUSTER);
         offset += lineOffset;
-        ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
         return offset;
     }
 
@@ -3732,7 +3721,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      * @return horizontal scroll increment.
      */
     int getHorizontalIncrement() {
-        return ((SwtStyledTextRenderer) renderer.getImpl()).averageCharWidth;
+        return ((DartStyledTextRenderer) renderer.getImpl()).averageCharWidth;
     }
 
     /**
@@ -3888,7 +3877,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (index < 0 || index > content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        return ((SwtStyledTextRenderer) renderer.getImpl()).getLineAlignment(index, alignment);
+        return ((DartStyledTextRenderer) renderer.getImpl()).getLineAlignment(index, alignment);
     }
 
     /**
@@ -3938,7 +3927,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (index < 0 || index > content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        return isListening(ST.LineGetBackground) ? null : ((SwtStyledTextRenderer) renderer.getImpl()).getLineBackground(index, null);
+        return isListening(ST.LineGetBackground) ? null : ((DartStyledTextRenderer) renderer.getImpl()).getLineBackground(index, null);
     }
 
     /**
@@ -3963,7 +3952,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (index < 0 || index > content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        return isListening(ST.LineGetStyle) ? null : ((SwtStyledTextRenderer) renderer.getImpl()).getLineBullet(index, null);
+        return isListening(ST.LineGetStyle) ? null : ((DartStyledTextRenderer) renderer.getImpl()).getLineBullet(index, null);
     }
 
     /**
@@ -4002,7 +3991,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     int getLineCountWhole() {
         if (isFixedLineHeight()) {
-            int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+            int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
             return lineHeight != 0 ? clientAreaHeight / lineHeight : 1;
         }
         return getBottomIndex() - topIndex + 1;
@@ -4040,7 +4029,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     public int getLineHeight() {
         checkWidget();
-        return ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+        return ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
     }
 
     /**
@@ -4066,14 +4055,14 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_RANGE);
         }
         if (isFixedLineHeight()) {
-            return ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+            return ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
         }
         int lineIndex = content.getLineAtOffset(offset);
         int lineOffset = content.getOffsetAtLine(lineIndex);
-        TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
         int lineInParagraph = layout.getLineIndex(Math.min(offset - lineOffset, layout.getText().length()));
         int height = layout.getLineBounds(lineInParagraph).height;
-        ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
         return height;
     }
 
@@ -4101,7 +4090,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (index < 0 || index > content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        return isListening(ST.LineGetStyle) ? 0 : ((SwtStyledTextRenderer) renderer.getImpl()).getLineIndent(index, indent);
+        return isListening(ST.LineGetStyle) ? 0 : ((DartStyledTextRenderer) renderer.getImpl()).getLineIndent(index, indent);
     }
 
     /**
@@ -4126,7 +4115,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (index < 0 || index >= content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        return isListening(ST.LineGetStyle) ? 0 : ((SwtStyledTextRenderer) renderer.getImpl()).getLineVerticalIndent(index);
+        return isListening(ST.LineGetStyle) ? 0 : ((DartStyledTextRenderer) renderer.getImpl()).getLineVerticalIndent(index);
     }
 
     /**
@@ -4153,7 +4142,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (index < 0 || index > content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        return isListening(ST.LineGetStyle) ? false : ((SwtStyledTextRenderer) renderer.getImpl()).getLineJustify(index, justify);
+        return isListening(ST.LineGetStyle) ? false : ((DartStyledTextRenderer) renderer.getImpl()).getLineJustify(index, justify);
     }
 
     /**
@@ -4209,7 +4198,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         int lineCount = content.getLineCount();
         lineIndex = Math.max(0, Math.min(lineCount, lineIndex));
         if (isFixedLineHeight()) {
-            int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+            int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
             return lineIndex * lineHeight - getVerticalScrollOffset() + topMargin;
         }
         if (lineIndex == topIndex)
@@ -4217,11 +4206,11 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         int height = topIndexY;
         if (lineIndex > topIndex) {
             for (int i = topIndex; i < lineIndex; i++) {
-                height += ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(i);
+                height += ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(i);
             }
         } else {
             for (int i = topIndex - 1; i >= lineIndex; i--) {
-                height -= ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(i);
+                height -= ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(i);
             }
         }
         return height + topMargin;
@@ -4241,7 +4230,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         checkWidget();
         y -= topMargin;
         if (isFixedLineHeight()) {
-            int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+            int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
             int lineIndex = (y + getVerticalScrollOffset()) / lineHeight;
             int lineCount = content.getLineCount();
             lineIndex = Math.max(0, Math.min(lineCount - 1, lineIndex));
@@ -4252,14 +4241,14 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         int line = topIndex;
         if (y < topIndexY) {
             while (y < topIndexY && line > 0) {
-                y += ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(--line);
+                y += ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(--line);
             }
         } else {
             int lineCount = content.getLineCount();
-            int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(line);
+            int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(line);
             while (y - lineHeight >= topIndexY && line < lineCount - 1) {
                 y -= lineHeight;
-                lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(++line);
+                lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(++line);
             }
         }
         return line;
@@ -4291,11 +4280,11 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         }
         if (isListening(ST.LineGetStyle))
             return null;
-        int[] tabs = ((SwtStyledTextRenderer) renderer.getImpl()).getLineTabStops(index, null);
+        int[] tabs = ((DartStyledTextRenderer) renderer.getImpl()).getLineTabStops(index, null);
         if (tabs == null)
             tabs = this.tabs;
         if (tabs == null)
-            return new int[] { ((SwtStyledTextRenderer) renderer.getImpl()).tabWidth };
+            return new int[] { ((DartStyledTextRenderer) renderer.getImpl()).tabWidth };
         int[] result = new int[tabs.length];
         System.arraycopy(tabs, 0, result, 0, tabs.length);
         return result;
@@ -4325,7 +4314,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (index < 0 || index > content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        return isListening(ST.LineGetStyle) ? 0 : ((SwtStyledTextRenderer) renderer.getImpl()).getLineWrapIndent(index, wrapIndent);
+        return isListening(ST.LineGetStyle) ? 0 : ((DartStyledTextRenderer) renderer.getImpl()).getLineWrapIndent(index, wrapIndent);
     }
 
     /**
@@ -4499,7 +4488,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     }
 
     int getOffsetAtPoint(int x, int y, int lineIndex, int[] alignment) {
-        TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
         x += horizontalScrollOffset - leftMargin;
         int[] trailing = new int[1];
         int offsetInLine = layout.getOffset(x, y, trailing);
@@ -4535,7 +4524,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 }
             }
         }
-        ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
         return offsetInLine + content.getOffsetAtLine(lineIndex);
     }
 
@@ -4550,12 +4539,12 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         }
         int lineIndex = getLineIndex(y);
         int lineOffset = content.getOffsetAtLine(lineIndex);
-        TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
         x += horizontalScrollOffset - leftMargin;
         y -= getLinePixel(lineIndex);
         int offset = layout.getOffset(x, y, trailing);
         Rectangle rect = layout.getLineBounds(layout.getLineIndex(offset));
-        ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
         if (inTextOnly && !(rect.x <= x && x <= rect.x + rect.width)) {
             return -1;
         }
@@ -4586,9 +4575,6 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     int getPartialBottomIndex() {
         if (isFixedLineHeight()) {
-            int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
-            int partialLineCount = Compatibility.ceil(clientAreaHeight, lineHeight);
-            return Math.max(0, Math.min(content.getLineCount(), topIndex + partialLineCount) - 1);
         }
         return getLineIndex(clientAreaHeight - bottomMargin);
     }
@@ -4600,7 +4586,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     int getPartialTopIndex() {
         if (isFixedLineHeight()) {
-            int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+            int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
             return getVerticalScrollOffset() / lineHeight;
         }
         return topIndexY <= 0 ? topIndex : topIndex - 1;
@@ -4659,7 +4645,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     public int[] getRanges() {
         checkWidget();
         if (!isListening(ST.LineGetStyle)) {
-            int[] ranges = ((SwtStyledTextRenderer) renderer.getImpl()).getRanges(0, content.getCharCount());
+            int[] ranges = ((DartStyledTextRenderer) renderer.getImpl()).getRanges(0, content.getCharCount());
             if (ranges != null)
                 return ranges;
         }
@@ -4703,7 +4689,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_RANGE);
         }
         if (!isListening(ST.LineGetStyle)) {
-            int[] ranges = ((SwtStyledTextRenderer) renderer.getImpl()).getRanges(start, length);
+            int[] ranges = ((DartStyledTextRenderer) renderer.getImpl()).getRanges(start, length);
             if (ranges != null)
                 return ranges;
         }
@@ -4949,7 +4935,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (event != null) {
             styles = event.styles;
         } else {
-            styles = ((SwtStyledTextRenderer) renderer.getImpl()).getStyleRanges(lineOffset, lineLength, true);
+            styles = ((DartStyledTextRenderer) renderer.getImpl()).getStyleRanges(lineOffset, lineLength, true);
         }
         if (styles == null || styles.length == 0) {
             return new int[] { 0, lineLength };
@@ -5017,7 +5003,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (!isListening(ST.LineGetStyle)) {
-            StyleRange[] ranges = ((SwtStyledTextRenderer) renderer.getImpl()).getStyleRanges(offset, 1, true);
+            StyleRange[] ranges = ((DartStyledTextRenderer) renderer.getImpl()).getStyleRanges(offset, 1, true);
             if (ranges != null)
                 return ranges[0];
         }
@@ -5169,7 +5155,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_RANGE);
         }
         if (!isListening(ST.LineGetStyle)) {
-            StyleRange[] ranges = ((SwtStyledTextRenderer) renderer.getImpl()).getStyleRanges(start, length, includeRanges);
+            StyleRange[] ranges = ((DartStyledTextRenderer) renderer.getImpl()).getStyleRanges(start, length, includeRanges);
             if (ranges != null)
                 return ranges;
         }
@@ -5206,7 +5192,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     public int[] getTabStops() {
         checkWidget();
         if (tabs == null)
-            return new int[] { ((SwtStyledTextRenderer) renderer.getImpl()).tabWidth };
+            return new int[] { ((DartStyledTextRenderer) renderer.getImpl()).tabWidth };
         int[] result = new int[tabs.length];
         System.arraycopy(tabs, 0, result, 0, tabs.length);
         return result;
@@ -5279,7 +5265,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         int left = Integer.MAX_VALUE, right = 0;
         for (int i = lineStart; i <= lineEnd; i++) {
             int lineOffset = content.getOffsetAtLine(i);
-            TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(i);
+            TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(i);
             int length = layout.getText().length();
             if (length > 0) {
                 if (i == lineStart) {
@@ -5298,9 +5284,9 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 right = Math.max(right, rect.x + rect.width);
                 height += rect.height;
             } else {
-                height += ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+                height += ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
             }
-            ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+            ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
         }
         if (left == Integer.MAX_VALUE) {
             left = 0;
@@ -5411,15 +5397,15 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      * @return vertical scroll increment.
      */
     int getVerticalIncrement() {
-        return ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+        return ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
     }
 
     int getVerticalScrollOffset() {
         if (verticalScrollOffset == -1) {
-            ((SwtStyledTextRenderer) renderer.getImpl()).calculate(0, topIndex);
+            ((DartStyledTextRenderer) renderer.getImpl()).calculate(0, topIndex);
             int height = 0;
             for (int i = 0; i < topIndex; i++) {
-                height += ((SwtStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(i);
+                height += ((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(i);
             }
             height -= topIndexY;
             verticalScrollOffset = height;
@@ -5464,9 +5450,9 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (offset == 0 && Character.isDigit(line.charAt(offset))) {
             return isMirrored() ? SWT.RIGHT : SWT.LEFT;
         }
-        TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
+        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(caretLine);
         int level = layout.getLevel(offset);
-        ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
         return ((level & 1) != 0) ? SWT.RIGHT : SWT.LEFT;
     }
 
@@ -5505,9 +5491,9 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             if (offset >= lineOffset + lineLength) {
                 newOffset = content.getOffsetAtLine(lineIndex + 1);
             } else {
-                TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+                TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
                 newOffset = lineOffset + layout.getNextOffset(offset - lineOffset, movement);
-                ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
             }
         }
         if (ignoreListener)
@@ -5537,9 +5523,9 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 newOffset = nextLineOffset + nextLineText.length();
             } else {
                 int layoutOffset = Math.min(offset - lineOffset, lineText.length());
-                TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+                TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
                 newOffset = lineOffset + layout.getPreviousOffset(layoutOffset, movement);
-                ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
             }
         }
         if (ignoreListener)
@@ -5598,7 +5584,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             }
         }
         Point point;
-        TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
         if (lineLength != 0 && offsetInLine <= lineLength) {
             if (offsetInLine == lineLength) {
                 offsetInLine = layout.getPreviousOffset(offsetInLine, SWT.MOVEMENT_CLUSTER);
@@ -5638,7 +5624,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         } else {
             point = new Point(layout.getIndent(), layout.getVerticalIndent());
         }
-        ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
         point.x += leftMargin - horizontalScrollOffset;
         point.y += getLinePixel(lineIndex);
         return point;
@@ -5936,7 +5922,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         } else {
             end -= content.getOffsetAtLine(endLine);
         }
-        TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(startLine);
+        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(startLine);
         int lineX = leftMargin - horizontalScrollOffset, startLineY = getLinePixel(startLine);
         int[] offsets = layout.getLineOffsets();
         int startIndex = layout.getLineIndex(Math.min(start, layout.getText().length()));
@@ -5957,7 +5943,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 rect.x += lineX;
                 rect.y += startLineY;
                 super.redraw(rect.x, rect.y, rect.width, rect.height, false);
-                ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
                 return;
             }
         }
@@ -5975,8 +5961,8 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         super.redraw(startRect.x, startRect.y, startRect.width, startRect.height, false);
         /* Redraw end line from the beginning of the line to the end offset */
         if (startLine != endLine) {
-            ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
-            layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(endLine);
+            ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+            layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(endLine);
             offsets = layout.getLineOffsets();
         }
         int endIndex = layout.getLineIndex(Math.min(end, layout.getText().length()));
@@ -5989,7 +5975,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         endRect.x += lineX;
         endRect.y += getLinePixel(endLine);
         super.redraw(endRect.x, endRect.y, endRect.width, endRect.height, false);
-        ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
         /* Redraw all lines in between start and end line */
         int y = startRect.y + startRect.height;
         if (endRect.y > y) {
@@ -6041,9 +6027,9 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 for (int caretOffset : caretOffsets) {
                     int lineIndex = content.getLineAtOffset(caretOffset);
                     int lineOffset = content.getOffsetAtLine(lineIndex);
-                    TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+                    TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
                     caretWidth = layout.getBounds(start - lineOffset, start + length - 1 - lineOffset).width;
-                    ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                    ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
                 }
                 alignment = OFFSET_LEADING;
             }
@@ -6062,7 +6048,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         event.type = SWT.None;
         clipboard.dispose();
         if (renderer != null) {
-            ((SwtStyledTextRenderer) renderer.getImpl()).dispose();
+            ((DartStyledTextRenderer) renderer.getImpl()).dispose();
             renderer = null;
         }
         if (content != null) {
@@ -6090,7 +6076,6 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             carets = null;
         }
         if (isBidiCaret()) {
-            BidiUtil.removeLanguageListener(this.getApi());
         }
         selectionBackground = null;
         selectionForeground = null;
@@ -6343,7 +6328,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             doAutoScroll(event);
             doMouseLocationChange(event.x, event.y, true);
         }
-        if (((SwtStyledTextRenderer) renderer.getImpl()).hasLinks) {
+        if (((DartStyledTextRenderer) renderer.getImpl()).hasLinks) {
             doMouseLinkCursor(event.x, event.y);
         }
     }
@@ -6379,7 +6364,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             final int endLine = isSingleLine() ? 1 : content.getLineCount();
             final int x = leftMargin - horizontalScrollOffset;
             int y = getLinePixel(startLine);
-            y += ((SwtStyledTextRenderer) renderer.getImpl()).drawLines(startLine, endLine, x, y, endY, gc, background, foreground);
+            y += ((DartStyledTextRenderer) renderer.getImpl()).drawLines(startLine, endLine, x, y, endY, gc, background, foreground);
             if (y < endY) {
                 gc.setBackground(background);
                 drawBackground(gc, 0, y, clientAreaWidth, endY - y);
@@ -6442,9 +6427,9 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         redrawMargins(oldHeight, oldWidth);
         if (wordWrap) {
             if (oldWidth != clientAreaWidth) {
-                ((SwtStyledTextRenderer) renderer.getImpl()).reset(0, content.getLineCount());
+                ((DartStyledTextRenderer) renderer.getImpl()).reset(0, content.getLineCount());
                 verticalScrollOffset = -1;
-                ((SwtStyledTextRenderer) renderer.getImpl()).calculateIdle();
+                ((DartStyledTextRenderer) renderer.getImpl()).calculateIdle();
                 super.redraw();
             }
             if (oldHeight != clientAreaHeight) {
@@ -6454,7 +6439,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             }
             setCaretLocations();
         } else {
-            ((SwtStyledTextRenderer) renderer.getImpl()).calculateClientArea();
+            ((DartStyledTextRenderer) renderer.getImpl()).calculateClientArea();
             setScrollBars(true);
             claimRightFreeSpace();
             // StyledText allows any value for horizontalScrollOffset when clientArea is zero
@@ -6513,10 +6498,10 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 super.redraw();
             } else {
                 super.redraw(0, firstLineTop, clientAreaWidth, newLastLineBottom - firstLineTop, false);
-                redrawLinesBullet(((SwtStyledTextRenderer) renderer.getImpl()).redrawLines);
+                redrawLinesBullet(((DartStyledTextRenderer) renderer.getImpl()).redrawLines);
             }
         }
-        ((SwtStyledTextRenderer) renderer.getImpl()).redrawLines = null;
+        ((DartStyledTextRenderer) renderer.getImpl()).redrawLines = null;
         // update selection/caret location after styles have been changed.
         // otherwise any text measuring could be incorrect
         //
@@ -6562,7 +6547,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         lastTextChangeReplaceCharCount = event.replaceCharCount;
         int lineIndex = content.getLineAtOffset(event.start);
         int srcY = getLinePixel(lineIndex + event.replaceLineCount + 1);
-        int destY = getLinePixel(lineIndex + 1) + event.newLineCount * ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+        int destY = getLinePixel(lineIndex + 1) + event.newLineCount * ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
         lastLineBottom = destY;
         if (srcY < 0 && destY < 0) {
             lastLineBottom += srcY - destY;
@@ -6573,7 +6558,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             scrollText(srcY, destY);
         }
         sendAccessibleTextChanged(lastTextChangeStart, 0, lastTextChangeReplaceCharCount);
-        ((SwtStyledTextRenderer) renderer.getImpl()).textChanging(event);
+        ((DartStyledTextRenderer) renderer.getImpl()).textChanging(event);
         // Update the caret offset if it is greater than the length of the content.
         // This is necessary since style range API may be called between the
         // handleTextChanging and handleTextChanged events and this API sets the
@@ -6684,25 +6669,25 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getCaretOffset(AccessibleTextEvent e) {
-                e.offset = SwtStyledText.this.getApi().getCaretOffset();
+                e.offset = DartStyledText.this.getApi().getCaretOffset();
             }
 
             @Override
             public void setCaretOffset(AccessibleTextEvent e) {
-                SwtStyledText.this.getApi().setCaretOffset(e.offset);
+                DartStyledText.this.getApi().setCaretOffset(e.offset);
                 e.result = ACC.OK;
             }
 
             @Override
             public void getSelectionRange(AccessibleTextEvent e) {
-                Point selection = SwtStyledText.this.getApi().getSelectionRange();
+                Point selection = DartStyledText.this.getApi().getSelectionRange();
                 e.offset = selection.x;
                 e.length = selection.y;
             }
 
             @Override
             public void addSelection(AccessibleTextEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 Point point = st.getSelection();
                 if (point.x == point.y) {
                     int end = e.end;
@@ -6715,9 +6700,9 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getSelection(AccessibleTextEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 if (st.getImpl()._blockSelection() && st.getImpl()._blockXLocation() != -1) {
-                    Rectangle rect = ((SwtStyledText) st.getImpl()).getBlockSelectionPosition();
+                    Rectangle rect = ((DartStyledText) st.getImpl()).getBlockSelectionPosition();
                     int lineIndex = rect.y + e.index;
                     int linePixel = st.getLinePixel(lineIndex);
                     e.ranges = getRanges(rect.x, linePixel, rect.width, linePixel);
@@ -6741,9 +6726,9 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getSelectionCount(AccessibleTextEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 if (st.getImpl()._blockSelection() && st.getImpl()._blockXLocation() != -1) {
-                    Rectangle rect = ((SwtStyledText) st.getImpl()).getBlockSelectionPosition();
+                    Rectangle rect = ((DartStyledText) st.getImpl()).getBlockSelectionPosition();
                     e.count = rect.height - rect.y + 1;
                 } else {
                     Point point = st.getSelection();
@@ -6753,12 +6738,12 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void removeSelection(AccessibleTextEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 if (e.index == 0) {
                     if (st.getImpl()._blockSelection()) {
-                        ((SwtStyledText) st.getImpl()).clearBlockSelection(true, false);
+                        ((DartStyledText) st.getImpl()).clearBlockSelection(true, false);
                     } else {
-                        ((SwtStyledText) st.getImpl()).clearSelection(false);
+                        ((DartStyledText) st.getImpl()).clearSelection(false);
                     }
                     e.result = ACC.OK;
                 }
@@ -6768,7 +6753,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             public void setSelection(AccessibleTextEvent e) {
                 if (e.index != 0)
                     return;
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 Point point = st.getSelection();
                 if (point.x == point.y)
                     return;
@@ -6781,21 +6766,21 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getCharacterCount(AccessibleTextEvent e) {
-                e.count = SwtStyledText.this.getApi().getCharCount();
+                e.count = DartStyledText.this.getApi().getCharCount();
             }
 
             @Override
             public void getOffsetAtPoint(AccessibleTextEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 Point point = new Point(e.x, e.y);
                 Display display = st.getDisplay();
                 point = display.map(null, st, point);
-                e.offset = ((SwtStyledText) st.getImpl()).getOffsetAtPoint(point.x, point.y, null, true);
+                e.offset = ((DartStyledText) st.getImpl()).getOffsetAtPoint(point.x, point.y, null, true);
             }
 
             @Override
             public void getTextBounds(AccessibleTextEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 int start = e.start;
                 int end = e.end;
                 int contentLength = st.getCharCount();
@@ -6815,18 +6800,18 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 for (int lineIndex = startLine; lineIndex <= endLine; lineIndex++) {
                     Rectangle rect = new Rectangle(0, 0, 0, 0);
                     rect.y = st.getLinePixel(lineIndex);
-                    rect.height = ((SwtStyledTextRenderer) st.getImpl()._renderer().getImpl()).getLineHeight(lineIndex);
+                    rect.height = ((DartStyledTextRenderer) st.getImpl()._renderer().getImpl()).getLineHeight(lineIndex);
                     if (lineIndex == startLine) {
-                        rect.x = ((SwtStyledText) st.getImpl()).getPointAtOffset(start).x;
+                        rect.x = ((DartStyledText) st.getImpl()).getPointAtOffset(start).x;
                     } else {
                         rect.x = st.getImpl()._leftMargin() - st.getImpl()._horizontalScrollOffset();
                     }
                     if (lineIndex == endLine) {
-                        rect.width = ((SwtStyledText) st.getImpl()).getPointAtOffset(end).x - rect.x;
+                        rect.width = ((DartStyledText) st.getImpl()).getPointAtOffset(end).x - rect.x;
                     } else {
-                        TextLayout layout = ((SwtStyledTextRenderer) st.getImpl()._renderer().getImpl()).getTextLayout(lineIndex);
+                        TextLayout layout = ((DartStyledTextRenderer) st.getImpl()._renderer().getImpl()).getTextLayout(lineIndex);
                         rect.width = layout.getBounds().width - rect.x;
-                        ((SwtStyledTextRenderer) st.getImpl()._renderer().getImpl()).disposeTextLayout(layout);
+                        ((DartStyledTextRenderer) st.getImpl()._renderer().getImpl()).disposeTextLayout(layout);
                     }
                     rects[index++] = rect = display.map(st, null, rect);
                     if (bounds == null) {
@@ -6845,7 +6830,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             }
 
             int[] getRanges(int left, int top, int right, int bottom) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 int lineStart = st.getLineIndex(top);
                 int lineEnd = st.getLineIndex(bottom);
                 int count = lineEnd - lineStart + 1;
@@ -6856,12 +6841,12 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     int lineOffset = st.getImpl()._content().getOffsetAtLine(lineIndex);
                     int lineEndOffset = lineOffset + line.length();
                     int linePixel = st.getLinePixel(lineIndex);
-                    int start = ((SwtStyledText) st.getImpl()).getOffsetAtPoint(left, linePixel, null, true);
+                    int start = ((DartStyledText) st.getImpl()).getOffsetAtPoint(left, linePixel, null, true);
                     if (start == -1) {
                         start = left < st.getImpl()._leftMargin() ? lineOffset : lineEndOffset;
                     }
                     int[] trailing = new int[1];
-                    int end = ((SwtStyledText) st.getImpl()).getOffsetAtPoint(right, linePixel, trailing, true);
+                    int end = ((DartStyledText) st.getImpl()).getOffsetAtPoint(right, linePixel, trailing, true);
                     if (end == -1) {
                         end = right < st.getImpl()._leftMargin() ? lineOffset : lineEndOffset;
                     } else {
@@ -6880,7 +6865,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getRanges(AccessibleTextEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 Point point = new Point(e.x, e.y);
                 Display display = st.getDisplay();
                 point = display.map(null, st, point);
@@ -6893,7 +6878,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getText(AccessibleTextEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 int start = e.start;
                 int end = e.end;
                 int contentLength = st.getCharCount();
@@ -6916,7 +6901,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                             int newCount = 0;
                             if (count > 0) {
                                 while (count-- > 0) {
-                                    int newEnd = ((SwtStyledText) st.getImpl()).getWordNext(end, SWT.MOVEMENT_CLUSTER);
+                                    int newEnd = ((DartStyledText) st.getImpl()).getWordNext(end, SWT.MOVEMENT_CLUSTER);
                                     if (newEnd == contentLength)
                                         break;
                                     if (newEnd == end)
@@ -6925,16 +6910,16 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                                     newCount++;
                                 }
                                 start = end;
-                                end = ((SwtStyledText) st.getImpl()).getWordNext(end, SWT.MOVEMENT_CLUSTER);
+                                end = ((DartStyledText) st.getImpl()).getWordNext(end, SWT.MOVEMENT_CLUSTER);
                             } else {
                                 while (count++ < 0) {
-                                    int newStart = ((SwtStyledText) st.getImpl()).getWordPrevious(start, SWT.MOVEMENT_CLUSTER);
+                                    int newStart = ((DartStyledText) st.getImpl()).getWordPrevious(start, SWT.MOVEMENT_CLUSTER);
                                     if (newStart == start)
                                         break;
                                     start = newStart;
                                     newCount--;
                                 }
-                                end = ((SwtStyledText) st.getImpl()).getWordNext(start, SWT.MOVEMENT_CLUSTER);
+                                end = ((DartStyledText) st.getImpl()).getWordNext(start, SWT.MOVEMENT_CLUSTER);
                             }
                             count = newCount;
                             break;
@@ -6944,21 +6929,21 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                             int newCount = 0;
                             if (count > 0) {
                                 while (count-- > 0) {
-                                    int newEnd = ((SwtStyledText) st.getImpl()).getWordNext(end, SWT.MOVEMENT_WORD_START, true);
+                                    int newEnd = ((DartStyledText) st.getImpl()).getWordNext(end, SWT.MOVEMENT_WORD_START, true);
                                     if (newEnd == end)
                                         break;
                                     newCount++;
                                     end = newEnd;
                                 }
                                 start = end;
-                                end = ((SwtStyledText) st.getImpl()).getWordNext(start, SWT.MOVEMENT_WORD_END, true);
+                                end = ((DartStyledText) st.getImpl()).getWordNext(start, SWT.MOVEMENT_WORD_END, true);
                             } else {
-                                if (((SwtStyledText) st.getImpl()).getWordPrevious(Math.min(start + 1, contentLength), SWT.MOVEMENT_WORD_START, true) == start) {
+                                if (((DartStyledText) st.getImpl()).getWordPrevious(Math.min(start + 1, contentLength), SWT.MOVEMENT_WORD_START, true) == start) {
                                     //start is a word start already
                                     count++;
                                 }
                                 while (count <= 0) {
-                                    int newStart = ((SwtStyledText) st.getImpl()).getWordPrevious(start, SWT.MOVEMENT_WORD_START, true);
+                                    int newStart = ((DartStyledText) st.getImpl()).getWordPrevious(start, SWT.MOVEMENT_WORD_START, true);
                                     if (newStart == start)
                                         break;
                                     count++;
@@ -6969,7 +6954,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                                 if (count <= 0 && start == 0) {
                                     end = start;
                                 } else {
-                                    end = ((SwtStyledText) st.getImpl()).getWordNext(start, SWT.MOVEMENT_WORD_END, true);
+                                    end = ((DartStyledText) st.getImpl()).getWordNext(start, SWT.MOVEMENT_WORD_END, true);
                                 }
                             }
                             count = newCount;
@@ -7007,7 +6992,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void scrollText(AccessibleTextEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 int topPixel = getTopPixel(), horizontalPixel = st.getHorizontalPixel();
                 switch(e.type) {
                     case ACC.SCROLL_TYPE_ANYWHERE:
@@ -7015,7 +7000,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     case ACC.SCROLL_TYPE_LEFT_EDGE:
                     case ACC.SCROLL_TYPE_TOP_EDGE:
                         {
-                            Rectangle rect = ((SwtStyledText) st.getImpl()).getBoundsAtOffset(e.start);
+                            Rectangle rect = ((DartStyledText) st.getImpl()).getBoundsAtOffset(e.start);
                             if (e.type != ACC.SCROLL_TYPE_TOP_EDGE) {
                                 horizontalPixel = horizontalPixel + rect.x - st.getImpl()._leftMargin();
                             }
@@ -7028,7 +7013,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     case ACC.SCROLL_TYPE_BOTTOM_EDGE:
                     case ACC.SCROLL_TYPE_RIGHT_EDGE:
                         {
-                            Rectangle rect = ((SwtStyledText) st.getImpl()).getBoundsAtOffset(e.end - 1);
+                            Rectangle rect = ((DartStyledText) st.getImpl()).getBoundsAtOffset(e.end - 1);
                             if (e.type != ACC.SCROLL_TYPE_BOTTOM_EDGE) {
                                 horizontalPixel = horizontalPixel - st.getImpl()._clientAreaWidth() + rect.x + rect.width + st.getImpl()._rightMargin();
                             }
@@ -7042,7 +7027,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                             Point point = new Point(e.x, e.y);
                             Display display = st.getDisplay();
                             point = display.map(null, st, point);
-                            Rectangle rect = ((SwtStyledText) st.getImpl()).getBoundsAtOffset(e.start);
+                            Rectangle rect = ((DartStyledText) st.getImpl()).getBoundsAtOffset(e.start);
                             topPixel = topPixel - point.y + rect.y;
                             horizontalPixel = horizontalPixel - point.x + rect.x;
                             break;
@@ -7064,14 +7049,14 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void replaceText(AccessibleEditableTextEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 st.replaceTextRange(e.start, e.end - e.start, e.string);
                 e.result = ACC.OK;
             }
 
             @Override
             public void pasteText(AccessibleEditableTextEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 st.setSelection(e.start);
                 st.paste();
                 e.result = ACC.OK;
@@ -7079,7 +7064,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void cutText(AccessibleEditableTextEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 st.setSelection(e.start, e.end);
                 st.cut();
                 e.result = ACC.OK;
@@ -7087,7 +7072,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void copyText(AccessibleEditableTextEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 st.setSelection(e.start, e.end);
                 st.copy();
                 e.result = ACC.OK;
@@ -7098,7 +7083,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getAttributes(AccessibleAttributeEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 e.leftMargin = st.getLeftMargin();
                 e.topMargin = st.getTopMargin();
                 e.rightMargin = st.getRightMargin();
@@ -7111,12 +7096,12 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getTextAttributes(AccessibleTextAttributeEvent e) {
-                StyledText st = SwtStyledText.this.getApi();
+                StyledText st = DartStyledText.this.getApi();
                 int contentLength = st.getCharCount();
-                if (!isListening(ST.LineGetStyle) && ((SwtStyledTextRenderer) st.getImpl()._renderer().getImpl()).styleCount == 0) {
+                if (!isListening(ST.LineGetStyle) && ((DartStyledTextRenderer) st.getImpl()._renderer().getImpl()).styleCount == 0) {
                     e.start = 0;
                     e.end = contentLength;
-                    e.textStyle = new TextStyle(st.getFont(), ((SwtStyledText) st.getImpl()).foreground, ((SwtStyledText) st.getImpl()).background);
+                    e.textStyle = new TextStyle(st.getFont(), ((DartStyledText) st.getImpl()).foreground, ((DartStyledText) st.getImpl()).background);
                     return;
                 }
                 int offset = Math.max(0, Math.min(e.offset, contentLength - 1));
@@ -7124,21 +7109,21 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 int lineOffset = st.getOffsetAtLine(lineIndex);
                 int lineCount = st.getLineCount();
                 offset = offset - lineOffset;
-                TextLayout layout = ((SwtStyledTextRenderer) st.getImpl()._renderer().getImpl()).getTextLayout(lineIndex);
+                TextLayout layout = ((DartStyledTextRenderer) st.getImpl()._renderer().getImpl()).getTextLayout(lineIndex);
                 int lineLength = layout.getText().length();
                 if (lineLength > 0) {
                     e.textStyle = layout.getStyle(Math.max(0, Math.min(offset, lineLength - 1)));
                 }
                 // If no override info available, use defaults. Don't supply default colors, though.
                 if (e.textStyle == null) {
-                    e.textStyle = new TextStyle(st.getFont(), ((SwtStyledText) st.getImpl()).foreground, ((SwtStyledText) st.getImpl()).background);
+                    e.textStyle = new TextStyle(st.getFont(), ((DartStyledText) st.getImpl()).foreground, ((DartStyledText) st.getImpl()).background);
                 } else {
                     if (e.textStyle.foreground == null || e.textStyle.background == null || e.textStyle.font == null) {
                         TextStyle textStyle = new TextStyle(e.textStyle);
                         if (textStyle.foreground == null)
-                            textStyle.foreground = ((SwtStyledText) st.getImpl()).foreground;
+                            textStyle.foreground = ((DartStyledText) st.getImpl()).foreground;
                         if (textStyle.background == null)
-                            textStyle.background = ((SwtStyledText) st.getImpl()).background;
+                            textStyle.background = ((DartStyledText) st.getImpl()).background;
                         if (textStyle.font == null)
                             textStyle.font = st.getFont();
                         e.textStyle = textStyle;
@@ -7155,7 +7140,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     return;
                 }
                 int[] ranges = layout.getRanges();
-                ((SwtStyledTextRenderer) st.getImpl()._renderer().getImpl()).disposeTextLayout(layout);
+                ((DartStyledTextRenderer) st.getImpl()._renderer().getImpl()).disposeTextLayout(layout);
                 int index = 0;
                 int end = 0;
                 while (index < ranges.length) {
@@ -7211,7 +7196,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
 
             @Override
             public void getValue(AccessibleControlEvent e) {
-                e.result = SwtStyledText.this.getApi().getText();
+                e.result = DartStyledText.this.getApi().getText();
             }
         };
         acc.addAccessibleControlListener(accControlAdapter);
@@ -7236,7 +7221,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     String getAssociatedLabel() {
         Control[] siblings = getParent().getChildren();
         for (int i = 0; i < siblings.length; i++) {
-            if (siblings[i] == SwtStyledText.this.getApi()) {
+            if (siblings[i] == DartStyledText.this.getApi()) {
                 if (i > 0) {
                     Control sibling = siblings[i - 1];
                     if (sibling instanceof Label)
@@ -7526,11 +7511,11 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     }
 
     boolean isBidiCaret() {
-        return BidiUtil.isBidiPlatform();
+        return false;
     }
 
     boolean isFixedLineHeight() {
-        return !isWordWrap() && lineSpacing == 0 && ((SwtStyledTextRenderer) renderer.getImpl()).lineSpacingProvider == null && !hasStyleWithVariableHeight && !hasVerticalIndent;
+        return !isWordWrap() && lineSpacing == 0 && ((DartStyledTextRenderer) renderer.getImpl()).lineSpacingProvider == null && !hasStyleWithVariableHeight && !hasVerticalIndent;
     }
 
     /**
@@ -7623,16 +7608,16 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 if (event.text.length() == 0) {
                     int lineIndex = content.getLineAtOffset(event.start);
                     int lineOffset = content.getOffsetAtLine(lineIndex);
-                    TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+                    TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
                     int levelStart = layout.getLevel(event.start - lineOffset);
                     int lineIndexEnd = content.getLineAtOffset(event.end);
                     if (lineIndex != lineIndexEnd) {
-                        ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
                         lineOffset = content.getOffsetAtLine(lineIndexEnd);
-                        layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndexEnd);
+                        layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndexEnd);
                     }
                     int levelEnd = layout.getLevel(event.end - lineOffset);
-                    ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                    ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
                     if (levelStart != levelEnd) {
                         caretAlignment = PREVIOUS_OFFSET_TRAILING;
                     } else {
@@ -7694,7 +7679,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         String text = (String) getClipboardContent(DND.CLIPBOARD);
         if (text != null && text.length() > 0) {
             if (blockSelection) {
-                boolean fillWithSpaces = isFixedLineHeight() && ((SwtStyledTextRenderer) renderer.getImpl()).fixedPitch;
+                boolean fillWithSpaces = isFixedLineHeight() && ((DartStyledTextRenderer) renderer.getImpl()).fixedPitch;
                 int offset = insertBlockSelectionText(text, fillWithSpaces);
                 setCaretOffsets(new int[] { offset }, SWT.DEFAULT);
                 clearBlockSelection(true, true);
@@ -7854,8 +7839,8 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     public void redraw() {
         super.redraw();
         int itemCount = getPartialBottomIndex() - topIndex + 1;
-        ((SwtStyledTextRenderer) renderer.getImpl()).reset(topIndex, itemCount);
-        ((SwtStyledTextRenderer) renderer.getImpl()).calculate(topIndex, itemCount);
+        ((DartStyledTextRenderer) renderer.getImpl()).reset(topIndex, itemCount);
+        ((DartStyledTextRenderer) renderer.getImpl()).calculate(topIndex, itemCount);
         setScrollBars(false);
         doMouseLinkCursor();
     }
@@ -7934,7 +7919,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             if (!(topIndex <= lineIndex && lineIndex <= bottomIndex))
                 continue;
             int width = -1;
-            Bullet bullet = ((SwtStyledTextRenderer) renderer.getImpl()).getLineBullet(lineIndex, null);
+            Bullet bullet = ((DartStyledTextRenderer) renderer.getImpl()).getLineBullet(lineIndex, null);
             if (bullet != null) {
                 StyleRange style = bullet.style;
                 GlyphMetrics metrics = style.metrics;
@@ -7942,7 +7927,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             }
             if (width == -1)
                 width = getClientArea().width;
-            int height = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
+            int height = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
             int y = getLinePixel(lineIndex);
             super.redraw(0, y, width, height, false);
         }
@@ -8347,7 +8332,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         verticalScrollOffset = 0;
         horizontalScrollOffset = 0;
         resetSelection();
-        ((SwtStyledTextRenderer) renderer.getImpl()).setContent(content);
+        ((DartStyledTextRenderer) renderer.getImpl()).setContent(content);
         if (verticalBar != null) {
             verticalBar.setSelection(0);
         }
@@ -8371,34 +8356,34 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     void resetCache(SortedSet<Integer> lines) {
         if (lines == null || lines.isEmpty())
             return;
-        int maxLineIndex = ((SwtStyledTextRenderer) renderer.getImpl()).maxWidthLineIndex;
-        ((SwtStyledTextRenderer) renderer.getImpl()).reset(lines);
-        ((SwtStyledTextRenderer) renderer.getImpl()).calculateClientArea();
+        int maxLineIndex = ((DartStyledTextRenderer) renderer.getImpl()).maxWidthLineIndex;
+        ((DartStyledTextRenderer) renderer.getImpl()).reset(lines);
+        ((DartStyledTextRenderer) renderer.getImpl()).calculateClientArea();
         if (0 <= maxLineIndex && maxLineIndex < content.getLineCount()) {
-            ((SwtStyledTextRenderer) renderer.getImpl()).calculate(maxLineIndex, 1);
+            ((DartStyledTextRenderer) renderer.getImpl()).calculate(maxLineIndex, 1);
         }
         setScrollBars(true);
         if (!isFixedLineHeight()) {
             if (topIndex > lines.iterator().next()) {
                 verticalScrollOffset = -1;
             }
-            ((SwtStyledTextRenderer) renderer.getImpl()).calculateIdle();
+            ((DartStyledTextRenderer) renderer.getImpl()).calculateIdle();
         }
     }
 
     void resetCache(int firstLine, int count) {
-        int maxLineIndex = ((SwtStyledTextRenderer) renderer.getImpl()).maxWidthLineIndex;
-        ((SwtStyledTextRenderer) renderer.getImpl()).reset(firstLine, count);
-        ((SwtStyledTextRenderer) renderer.getImpl()).calculateClientArea();
+        int maxLineIndex = ((DartStyledTextRenderer) renderer.getImpl()).maxWidthLineIndex;
+        ((DartStyledTextRenderer) renderer.getImpl()).reset(firstLine, count);
+        ((DartStyledTextRenderer) renderer.getImpl()).calculateClientArea();
         if (0 <= maxLineIndex && maxLineIndex < content.getLineCount()) {
-            ((SwtStyledTextRenderer) renderer.getImpl()).calculate(maxLineIndex, 1);
+            ((DartStyledTextRenderer) renderer.getImpl()).calculate(maxLineIndex, 1);
         }
         setScrollBars(true);
         if (!isFixedLineHeight()) {
             if (topIndex > firstLine) {
                 verticalScrollOffset = -1;
             }
-            ((SwtStyledTextRenderer) renderer.getImpl()).calculateIdle();
+            ((DartStyledTextRenderer) renderer.getImpl()).calculateIdle();
         }
     }
 
@@ -8572,13 +8557,13 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     public void selectAll() {
         checkWidget();
         if (blockSelection) {
-            ((SwtStyledTextRenderer) renderer.getImpl()).calculate(0, content.getLineCount());
+            ((DartStyledTextRenderer) renderer.getImpl()).calculate(0, content.getLineCount());
             setScrollBars(false);
             int verticalScrollOffset = getVerticalScrollOffset();
             int left = leftMargin - horizontalScrollOffset;
             int top = topMargin - verticalScrollOffset;
-            int right = ((SwtStyledTextRenderer) renderer.getImpl()).getWidth() - rightMargin - horizontalScrollOffset;
-            int bottom = ((SwtStyledTextRenderer) renderer.getImpl()).getHeight() - bottomMargin - verticalScrollOffset;
+            int right = ((DartStyledTextRenderer) renderer.getImpl()).getWidth() - rightMargin - horizontalScrollOffset;
+            int bottom = ((DartStyledTextRenderer) renderer.getImpl()).getHeight() - bottomMargin - verticalScrollOffset;
             setBlockSelectionLocation(left, top, right, bottom, false);
             return;
         }
@@ -8654,9 +8639,9 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 int lineLegth = content.getLine(lineIndex).length();
                 start = end = lineOffset + lineLegth;
                 if (fillWithSpaces) {
-                    TextLayout layout = ((SwtStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+                    TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
                     lineWidth = layout.getBounds().width;
-                    ((SwtStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+                    ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
                 }
             } else {
                 start += trailing[0];
@@ -8674,7 +8659,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         }
         if (fillWithSpaces) {
             int spacesWidth = left - lineWidth + horizontalScrollOffset - leftMargin;
-            int spacesCount = spacesWidth / ((SwtStyledTextRenderer) renderer.getImpl()).averageCharWidth;
+            int spacesCount = spacesWidth / ((DartStyledTextRenderer) renderer.getImpl()).averageCharWidth;
             for (int i = 0; i < spacesCount; i++) {
                 buffer.append(' ');
             }
@@ -8718,11 +8703,11 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     void setAlignment() {
         if ((getStyle() & SWT.SINGLE) == 0)
             return;
-        int alignment = ((SwtStyledTextRenderer) renderer.getImpl()).getLineAlignment(0, this.alignment);
+        int alignment = ((DartStyledTextRenderer) renderer.getImpl()).getLineAlignment(0, this.alignment);
         int newAlignmentMargin = 0;
         if (alignment != SWT.LEFT) {
-            ((SwtStyledTextRenderer) renderer.getImpl()).calculate(0, 1);
-            int width = ((SwtStyledTextRenderer) renderer.getImpl()).getWidth() - alignmentMargin;
+            ((DartStyledTextRenderer) renderer.getImpl()).calculate(0, 1);
+            int width = ((DartStyledTextRenderer) renderer.getImpl()).getWidth() - alignmentMargin;
             newAlignmentMargin = clientAreaWidth - width;
             if (newAlignmentMargin < 0)
                 newAlignmentMargin = 0;
@@ -8768,6 +8753,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         setCaretLocations();
         setAlignment();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     /**
@@ -8792,6 +8778,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             return;
         alwaysShowScroll = show;
         setScrollBars(true);
+        getBridge().dirty(this);
     }
 
     /**
@@ -8818,6 +8805,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         resetCache(0, content.getLineCount());
         setCaretLocations();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     /**
@@ -8850,6 +8838,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         } else {
             clearBlockSelection(false, false);
         }
+        getBridge().dirty(this);
     }
 
     /**
@@ -8871,6 +8860,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     public void setBlockSelectionBounds(Rectangle rect) {
         checkWidget();
+        this.blockSelectionBounds = rect;
         if (rect == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         setBlockSelectionBounds(rect.x, rect.y, rect.width, rect.height);
@@ -8906,18 +8896,19 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         }
         int minY = topMargin;
         int minX = leftMargin;
-        int maxY = ((SwtStyledTextRenderer) renderer.getImpl()).getHeight() - bottomMargin;
-        int maxX = Math.max(clientAreaWidth, ((SwtStyledTextRenderer) renderer.getImpl()).getWidth()) - rightMargin;
+        int maxY = ((DartStyledTextRenderer) renderer.getImpl()).getHeight() - bottomMargin;
+        int maxX = Math.max(clientAreaWidth, ((DartStyledTextRenderer) renderer.getImpl()).getWidth()) - rightMargin;
         int anchorX = Math.max(minX, Math.min(maxX, x)) - horizontalScrollOffset;
         int anchorY = Math.max(minY, Math.min(maxY, y)) - verticalScrollOffset;
         int locationX = Math.max(minX, Math.min(maxX, x + width)) - horizontalScrollOffset;
         int locationY = Math.max(minY, Math.min(maxY, y + height - 1)) - verticalScrollOffset;
-        if (isFixedLineHeight() && ((SwtStyledTextRenderer) renderer.getImpl()).fixedPitch) {
-            int avg = ((SwtStyledTextRenderer) renderer.getImpl()).averageCharWidth;
+        if (isFixedLineHeight() && ((DartStyledTextRenderer) renderer.getImpl()).fixedPitch) {
+            int avg = ((DartStyledTextRenderer) renderer.getImpl()).averageCharWidth;
             anchorX = ((anchorX - leftMargin + horizontalScrollOffset) / avg * avg) + leftMargin - horizontalScrollOffset;
             locationX = ((locationX + avg / 2 - leftMargin + horizontalScrollOffset) / avg * avg) + leftMargin - horizontalScrollOffset;
         }
         setBlockSelectionLocation(anchorX, anchorY, locationX, locationY, false);
+        getBridge().dirty(this);
     }
 
     void setBlockSelectionLocation(int x, int y, boolean sendEvent) {
@@ -8992,6 +8983,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         } else {
             carets = null;
         }
+        getBridge().dirty(this);
     }
 
     /**
@@ -9011,6 +9003,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     public void setBidiColoring(boolean mode) {
         checkWidget();
         bidiColoring = mode;
+        getBridge().dirty(this);
     }
 
     /**
@@ -9027,6 +9020,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     public void setBottomMargin(int bottomMargin) {
         checkWidget();
         setMargins(getLeftMargin(), topMargin, rightMargin, bottomMargin);
+        getBridge().dirty(this);
     }
 
     /**
@@ -9072,7 +9066,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 int graphicalLineFirstOffset = lineStartOffset;
                 final int lineEndOffset = lineStartOffset + getLine(caretLine).length();
                 int graphicalLineLastOffset = lineEndOffset;
-                if (caretLine < getLineCount() && ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight(caretLine) != getLineHeight()) {
+                if (caretLine < getLineCount() && ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(caretLine) != getLineHeight()) {
                     // word wrap, metrics, styles...
                     graphicalLineHeight = getLineHeight(caretOffset);
                     final Rectangle characterBounds = getBoundsAtOffset(caretOffset);
@@ -9128,9 +9122,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                         }
                     }
                     if (caretDirection == SWT.LEFT) {
-                        BidiUtil.setKeyboardLanguage(BidiUtil.KEYBOARD_NON_BIDI);
                     } else if (caretDirection == SWT.RIGHT) {
-                        BidiUtil.setKeyboardLanguage(BidiUtil.KEYBOARD_BIDI);
                     }
                 }
             }
@@ -9155,6 +9147,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     public void setCaretOffset(int offset) {
         checkWidget();
+        this._caretOffsets = offset;
         int length = getCharCount();
         if (length > 0 && !Arrays.equals(caretOffsets, new int[] { offset })) {
             if (offset < 0) {
@@ -9195,6 +9188,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (alignment != SWT.DEFAULT) {
             caretAlignment = alignment;
         }
+        getBridge().dirty(this);
     }
 
     /**
@@ -9268,6 +9262,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         content = newContent;
         content.addTextChangeListener(textChangeListener);
         reset();
+        getBridge().dirty(this);
     }
 
     /**
@@ -9290,6 +9285,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         } else {
             super.setCursor(cursor);
         }
+        getBridge().dirty(this);
     }
 
     /**
@@ -9305,12 +9301,14 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     public void setDoubleClickEnabled(boolean enable) {
         checkWidget();
         doubleClickEnabled = enable;
+        getBridge().dirty(this);
     }
 
     @Override
     public void setDragDetect(boolean dragDetect) {
         checkWidget();
         this.dragDetect = dragDetect;
+        getBridge().dirty(this);
     }
 
     /**
@@ -9326,6 +9324,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     public void setEditable(boolean editable) {
         checkWidget();
         this.editable = editable;
+        getBridge().dirty(this);
     }
 
     @Override
@@ -9354,6 +9353,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         } finally {
             this.insideSetEnableCall = false;
         }
+        getBridge().dirty(this);
     }
 
     @Override
@@ -9377,6 +9377,8 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     public void setFixedLineMetrics(FontMetrics metrics) {
         renderer.setFixedLineMetrics(metrics);
+        this.fixedLineMetrics = metrics;
+        getBridge().dirty(this);
     }
 
     /**
@@ -9395,12 +9397,12 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     @Override
     public void setFont(Font font) {
         checkWidget();
-        int oldLineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+        int oldLineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
         super.setFont(font);
-        ((SwtStyledTextRenderer) renderer.getImpl()).setFont(getFont(), tabLength);
+        ((DartStyledTextRenderer) renderer.getImpl()).setFont(getFont(), tabLength);
         // keep the same top line visible. fixes 5815
         if (isFixedLineHeight()) {
-            int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+            int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
             if (lineHeight != oldLineHeight) {
                 int vscroll = (getVerticalScrollOffset() * lineHeight / oldLineHeight) - getVerticalScrollOffset();
                 scrollVertical(vscroll, true);
@@ -9414,6 +9416,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         caretDirection = SWT.NULL;
         setCaretLocations();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     @Override
@@ -9437,6 +9440,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         resetCache(0, content.getLineCount());
         setCaretLocations();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     /**
@@ -9457,6 +9461,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     public void setHorizontalIndex(int offset) {
         checkWidget();
+        this.horizontalIndex = offset;
         if (getCharCount() == 0) {
             return;
         }
@@ -9469,7 +9474,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         // don't use isVisible since width is known even if widget
         // is temporarily invisible
         if (clientAreaWidth > 0) {
-            int width = ((SwtStyledTextRenderer) renderer.getImpl()).getWidth();
+            int width = ((DartStyledTextRenderer) renderer.getImpl()).getWidth();
             // prevent scrolling if the content fits in the client area.
             // align end of longest line with right border of client area
             // if offset is out of range.
@@ -9478,6 +9483,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             }
         }
         scrollHorizontal(offset - horizontalScrollOffset, true);
+        getBridge().dirty(this);
     }
 
     /**
@@ -9498,6 +9504,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     public void setHorizontalPixel(int pixel) {
         checkWidget();
+        this.horizontalPixel = pixel;
         if (getCharCount() == 0) {
             return;
         }
@@ -9509,7 +9516,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         // don't use isVisible since width is known even if widget
         // is temporarily invisible
         if (clientAreaWidth > 0) {
-            int width = ((SwtStyledTextRenderer) renderer.getImpl()).getWidth();
+            int width = ((DartStyledTextRenderer) renderer.getImpl()).getWidth();
             // prevent scrolling if the content fits in the client area.
             // align end of longest line with right border of client area
             // if offset is out of range.
@@ -9518,6 +9525,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             }
         }
         scrollHorizontal(pixel - horizontalScrollOffset, true);
+        getBridge().dirty(this);
     }
 
     /**
@@ -9546,6 +9554,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         resetCache(0, content.getLineCount());
         setCaretLocations();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     /**
@@ -9570,6 +9579,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         resetCache(0, content.getLineCount());
         setCaretLocations();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     /**
@@ -9641,6 +9651,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     public void setLeftMargin(int leftMargin) {
         checkWidget();
         setMargins(leftMargin, topMargin, rightMargin, bottomMargin);
+        getBridge().dirty(this);
     }
 
     /**
@@ -9686,7 +9697,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (startLine < 0 || startLine + lineCount > content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        ((SwtStyledTextRenderer) renderer.getImpl()).setLineAlignment(startLine, lineCount, alignment);
+        ((DartStyledTextRenderer) renderer.getImpl()).setLineAlignment(startLine, lineCount, alignment);
         resetCache(startLine, lineCount);
         redrawLines(startLine, lineCount, false);
         if (Arrays.stream(caretOffsets).map(content::getLineAtOffset).anyMatch(caretLine -> startLine <= caretLine && caretLine < startLine + lineCount)) {
@@ -9738,9 +9749,9 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (background != null) {
-            ((SwtStyledTextRenderer) renderer.getImpl()).setLineBackground(startLine, lineCount, background);
+            ((DartStyledTextRenderer) renderer.getImpl()).setLineBackground(startLine, lineCount, background);
         } else {
-            ((SwtStyledTextRenderer) renderer.getImpl()).clearLineBackground(startLine, lineCount);
+            ((DartStyledTextRenderer) renderer.getImpl()).clearLineBackground(startLine, lineCount);
         }
         redrawLines(startLine, lineCount, false);
     }
@@ -9785,7 +9796,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         int oldBottom = getLinePixel(startLine + lineCount);
-        ((SwtStyledTextRenderer) renderer.getImpl()).setLineBullet(startLine, lineCount, bullet);
+        ((DartStyledTextRenderer) renderer.getImpl()).setLineBullet(startLine, lineCount, bullet);
         resetCache(startLine, lineCount);
         int newBottom = getLinePixel(startLine + lineCount);
         redrawLines(startLine, lineCount, oldBottom != newBottom);
@@ -9844,7 +9855,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         int oldBottom = getLinePixel(startLine + lineCount);
-        ((SwtStyledTextRenderer) renderer.getImpl()).setLineIndent(startLine, lineCount, indent);
+        ((DartStyledTextRenderer) renderer.getImpl()).setLineIndent(startLine, lineCount, indent);
         resetCache(startLine, lineCount);
         int newBottom = getLinePixel(startLine + lineCount);
         redrawLines(startLine, lineCount, oldBottom != newBottom);
@@ -9894,7 +9905,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (lineIndex < 0 || lineIndex >= content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        int previousVerticalIndent = ((SwtStyledTextRenderer) renderer.getImpl()).getLineVerticalIndent(lineIndex);
+        int previousVerticalIndent = ((DartStyledTextRenderer) renderer.getImpl()).getLineVerticalIndent(lineIndex);
         if (verticalLineIndent == previousVerticalIndent) {
             return;
         }
@@ -9902,7 +9913,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         int initialTopIndex = getPartialTopIndex();
         int initialBottomIndex = getPartialBottomIndex();
         int verticalIndentDiff = verticalLineIndent - previousVerticalIndent;
-        ((SwtStyledTextRenderer) renderer.getImpl()).setLineVerticalIndent(lineIndex, verticalLineIndent);
+        ((DartStyledTextRenderer) renderer.getImpl()).setLineVerticalIndent(lineIndex, verticalLineIndent);
         this.hasVerticalIndent = verticalLineIndent != 0 || renderer.hasVerticalIndent();
         ScrollBar verticalScrollbar = getVerticalBar();
         if (lineIndex < initialTopIndex) {
@@ -9940,6 +9951,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             }
             setScrollBars(true);
         }
+        getBridge().dirty(this);
     }
 
     /**
@@ -9982,7 +9994,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (startLine < 0 || startLine + lineCount > content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        ((SwtStyledTextRenderer) renderer.getImpl()).setLineJustify(startLine, lineCount, justify);
+        ((DartStyledTextRenderer) renderer.getImpl()).setLineJustify(startLine, lineCount, justify);
         resetCache(startLine, lineCount);
         redrawLines(startLine, lineCount, false);
         if (Arrays.stream(caretOffsets).map(content::getLineAtOffset).anyMatch(caretLine -> startLine <= caretLine && caretLine < startLine + lineCount)) {
@@ -10011,6 +10023,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         resetCache(0, content.getLineCount());
         setCaretLocations();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     /**
@@ -10027,10 +10040,11 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     public void setLineSpacingProvider(StyledTextLineSpacingProvider lineSpacingProvider) {
         checkWidget();
+        this.lineSpacingProvider = lineSpacingProvider;
         boolean wasFixedLineHeight = isFixedLineHeight();
-        if (((SwtStyledTextRenderer) renderer.getImpl()).getLineSpacingProvider() == null && lineSpacingProvider == null || (((SwtStyledTextRenderer) renderer.getImpl()).getLineSpacingProvider() != null && ((SwtStyledTextRenderer) renderer.getImpl()).getLineSpacingProvider().equals(lineSpacingProvider)))
+        if (((DartStyledTextRenderer) renderer.getImpl()).getLineSpacingProvider() == null && lineSpacingProvider == null || (((DartStyledTextRenderer) renderer.getImpl()).getLineSpacingProvider() != null && ((DartStyledTextRenderer) renderer.getImpl()).getLineSpacingProvider().equals(lineSpacingProvider)))
             return;
-        ((SwtStyledTextRenderer) renderer.getImpl()).setLineSpacingProvider(lineSpacingProvider);
+        ((DartStyledTextRenderer) renderer.getImpl()).setLineSpacingProvider(lineSpacingProvider);
         // reset lines cache if needed
         if (lineSpacingProvider == null) {
             if (!wasFixedLineHeight) {
@@ -10044,7 +10058,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     if (lineSpacing != null && lineSpacing > 0) {
                         // there is a custom line spacing, set StyledText as variable line height mode
                         // reset only the line size
-                        ((SwtStyledTextRenderer) renderer.getImpl()).reset(i, 1);
+                        ((DartStyledTextRenderer) renderer.getImpl()).reset(i, 1);
                         if (firstLine == -1) {
                             firstLine = i;
                         }
@@ -10058,6 +10072,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         }
         setCaretLocations();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     /**
@@ -10108,9 +10123,9 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     SWT.error(SWT.ERROR_INVALID_ARGUMENT);
                 newTabs[i] = pos = tabStops[i];
             }
-            ((SwtStyledTextRenderer) renderer.getImpl()).setLineTabStops(startLine, lineCount, newTabs);
+            ((DartStyledTextRenderer) renderer.getImpl()).setLineTabStops(startLine, lineCount, newTabs);
         } else {
-            ((SwtStyledTextRenderer) renderer.getImpl()).setLineTabStops(startLine, lineCount, null);
+            ((DartStyledTextRenderer) renderer.getImpl()).setLineTabStops(startLine, lineCount, null);
         }
         resetCache(startLine, lineCount);
         redrawLines(startLine, lineCount, false);
@@ -10160,7 +10175,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         int oldBottom = getLinePixel(startLine + lineCount);
-        ((SwtStyledTextRenderer) renderer.getImpl()).setLineWrapIndent(startLine, lineCount, wrapIndent);
+        ((DartStyledTextRenderer) renderer.getImpl()).setLineWrapIndent(startLine, lineCount, wrapIndent);
         resetCache(startLine, lineCount);
         int newBottom = getLinePixel(startLine + lineCount);
         redrawLines(startLine, lineCount, oldBottom != newBottom);
@@ -10189,6 +10204,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         marginColor = color;
         super.redraw();
+        getBridge().dirty(this);
     }
 
     /**
@@ -10216,6 +10232,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         setCaretLocations();
         setAlignment();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     /**
@@ -10240,6 +10257,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             mouseNavigator.dispose();
             mouseNavigator = null;
         }
+        getBridge().dirty(this);
     }
 
     /**
@@ -10276,6 +10294,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (oldOrientation != newOrientation) {
             resetBidiData();
         }
+        getBridge().dirty(this);
     }
 
     /**
@@ -10292,6 +10311,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     public void setRightMargin(int rightMargin) {
         checkWidget();
         setMargins(getLeftMargin(), topMargin, rightMargin, bottomMargin);
+        getBridge().dirty(this);
     }
 
     void setScrollBar(ScrollBar bar, int clientArea, int maximum, int margin) {
@@ -10328,14 +10348,14 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 horizontalBar.setVisible(false);
         }
         if (verticalBar != null) {
-            setScrollBar(verticalBar, clientAreaHeight, ((SwtStyledTextRenderer) renderer.getImpl()).getHeight(), topMargin + bottomMargin);
+            setScrollBar(verticalBar, clientAreaHeight, ((DartStyledTextRenderer) renderer.getImpl()).getHeight(), topMargin + bottomMargin);
         }
         if (horizontalBar != null && !wordWrap) {
-            setScrollBar(horizontalBar, clientAreaWidth, ((SwtStyledTextRenderer) renderer.getImpl()).getWidth(), leftMargin + rightMargin);
+            setScrollBar(horizontalBar, clientAreaWidth, ((DartStyledTextRenderer) renderer.getImpl()).getWidth(), leftMargin + rightMargin);
             if (!alwaysShowScroll && horizontalBar.getVisible() && verticalBar != null) {
-                setScrollBar(verticalBar, clientAreaHeight, ((SwtStyledTextRenderer) renderer.getImpl()).getHeight(), topMargin + bottomMargin);
+                setScrollBar(verticalBar, clientAreaHeight, ((DartStyledTextRenderer) renderer.getImpl()).getHeight(), topMargin + bottomMargin);
                 if (verticalBar.getVisible()) {
-                    setScrollBar(horizontalBar, clientAreaWidth, ((SwtStyledTextRenderer) renderer.getImpl()).getWidth(), leftMargin + rightMargin);
+                    setScrollBar(horizontalBar, clientAreaWidth, ((DartStyledTextRenderer) renderer.getImpl()).getWidth(), leftMargin + rightMargin);
                 }
             }
         }
@@ -10362,6 +10382,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     public void setSelection(int start) {
         // checkWidget test done in setSelectionRange
         setSelection(start, start);
+        this._selection = new Point(_selection.x, _selection.y);
     }
 
     /**
@@ -10387,6 +10408,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     public void setSelection(Point point) {
         checkWidget();
+        this._selection = point;
         if (point == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         setSelection(point.x, point.y);
@@ -10418,6 +10440,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         resetCache(0, content.getLineCount());
         setCaretLocations();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     /**
@@ -10449,6 +10472,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         resetCache(0, content.getLineCount());
         setCaretLocations();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     /**
@@ -10474,6 +10498,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     public void setSelection(int start, int end) {
         setSelectionRange(start, end - start);
+        this.selectionRange = new Point(selectionRange.x, selectionRange.y);
         showSelection();
     }
 
@@ -10608,6 +10633,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             }
             sendAccessibleTextCaretMoved();
         }
+        getBridge().dirty(this);
     }
 
     /**
@@ -10631,6 +10657,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     public void setSelectionRange(int start, int length) {
         setSelectionRanges(new int[] { start, length });
+        getBridge().dirty(this);
     }
 
     /**
@@ -10681,6 +10708,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         }
         setSelection(fixedRanges, false, true);
         setCaretLocations();
+        getBridge().dirty(this);
     }
 
     /**
@@ -10875,12 +10903,12 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             }
         }
         if (reset) {
-            ((SwtStyledTextRenderer) renderer.getImpl()).setStyleRanges(null, null);
+            ((DartStyledTextRenderer) renderer.getImpl()).setStyleRanges(null, null);
         } else {
-            ((SwtStyledTextRenderer) renderer.getImpl()).updateRanges(start, length, length);
+            ((DartStyledTextRenderer) renderer.getImpl()).updateRanges(start, length, length);
         }
         if (styles != null && styles.length > 0) {
-            ((SwtStyledTextRenderer) renderer.getImpl()).setStyleRanges(ranges, styles);
+            ((DartStyledTextRenderer) renderer.getImpl()).setStyleRanges(ranges, styles);
         }
         // re-evaluate variable height with all styles (including new ones)
         hasStyleWithVariableHeight = false;
@@ -10917,6 +10945,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         setCaretLocations();
         columnX = oldColumnX;
         doMouseLinkCursor();
+        getBridge().dirty(this);
     }
 
     /**
@@ -11075,10 +11104,11 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     public void setTabs(int tabs) {
         checkWidget();
         tabLength = tabs;
-        ((SwtStyledTextRenderer) renderer.getImpl()).setFont(null, tabs);
+        ((DartStyledTextRenderer) renderer.getImpl()).setFont(null, tabs);
         resetCache(0, content.getLineCount());
         setCaretLocations();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     /**
@@ -11117,6 +11147,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         resetCache(0, content.getLineCount());
         setCaretLocations();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     /**
@@ -11143,6 +11174,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     public void setText(String text) {
         checkWidget();
+        this.text = text;
         if (text == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
@@ -11166,6 +11198,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 notifyListeners(ST.ExtendedModify, styledTextEvent);
             }
         }
+        getBridge().dirty(this);
     }
 
     /**
@@ -11198,6 +11231,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (isAutoDirection() || oldStyle != getStyle()) {
             resetBidiData();
         }
+        getBridge().dirty(this);
     }
 
     /**
@@ -11222,6 +11256,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_CANNOT_BE_ZERO);
         }
         textLimit = limit;
+        getBridge().dirty(this);
     }
 
     /**
@@ -11266,6 +11301,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             }
         }
         scrollVertical(pixel, true);
+        getBridge().dirty(this);
     }
 
     /**
@@ -11282,6 +11318,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     public void setTopMargin(int topMargin) {
         checkWidget();
         setMargins(getLeftMargin(), topMargin, rightMargin, bottomMargin);
+        getBridge().dirty(this);
     }
 
     /**
@@ -11304,6 +11341,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     public void setTopPixel(int pixel) {
         checkWidget();
+        this.topPixel = pixel;
         if (getCharCount() == 0) {
             return;
         }
@@ -11324,6 +11362,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             }
         }
         scrollVertical(pixel, true);
+        getBridge().dirty(this);
     }
 
     /**
@@ -11353,6 +11392,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         setScrollBars(true);
         setCaretLocations();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     /**
@@ -11382,6 +11422,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         resetCache(0, content.getLineCount());
         setCaretLocations();
         super.redraw();
+        getBridge().dirty(this);
     }
 
     boolean showLocation(Rectangle rect, boolean scrollPage) {
@@ -11404,7 +11445,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 scrolled = scrollHorizontal(-Math.min(maxScroll, scrollWidth), true);
             } else if (rect.x + rect.width > (clientAreaWidth - rightMargin)) {
                 int scrollWidth = Math.max(rect.x + rect.width - (clientAreaWidth - rightMargin), minScroll);
-                int maxScroll = ((SwtStyledTextRenderer) renderer.getImpl()).getWidth() - horizontalScrollOffset - clientAreaWidth;
+                int maxScroll = ((DartStyledTextRenderer) renderer.getImpl()).getWidth() - horizontalScrollOffset - clientAreaWidth;
                 scrolled = scrollHorizontal(Math.min(maxScroll, scrollWidth), true);
             }
         }
@@ -11552,13 +11593,37 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         for (Caret caret : styledText.getImpl()._carets()) {
             caretUpdater.accept(caret);
         }
-        if (styledText.getImpl() instanceof SwtStyledText) {
-            ((SwtStyledText) styledText.getImpl()).updateCaretVisibility();
-        }
-        if (styledText.getImpl() instanceof SwtStyledText) {
-            ((SwtStyledText) styledText.getImpl()).setCaretLocations();
-        }
+        ((DartStyledText) styledText.getImpl()).updateCaretVisibility();
+        ((DartStyledText) styledText.getImpl()).setCaretLocations();
     }
+
+    Rectangle blockSelectionBounds = new Rectangle(0, 0, 0, 0);
+
+    int _caretOffsets;
+
+    int horizontalIndex;
+
+    int[] ranges = new int[0];
+
+    Point _selection;
+
+    Point selectionRange;
+
+    int[] selectionRanges = new int[0];
+
+    StyleRange[] styleRanges = new StyleRange[0];
+
+    int[] tabStops = new int[0];
+
+    String text;
+
+    int topPixel;
+
+    FontMetrics fixedLineMetrics;
+
+    int horizontalPixel;
+
+    StyledTextLineSpacingProvider lineSpacingProvider;
 
     public Color _selectionBackground() {
         return selectionBackground;
@@ -11896,9 +11961,90 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         return blockYLocation;
     }
 
+    public Rectangle _blockSelectionBounds() {
+        return blockSelectionBounds;
+    }
+
+    public int __caretOffsets() {
+        return _caretOffsets;
+    }
+
+    public int _horizontalIndex() {
+        return horizontalIndex;
+    }
+
+    public int[] _ranges() {
+        return ranges;
+    }
+
+    public Point __selection() {
+        return _selection;
+    }
+
+    public Point _selectionRange() {
+        return selectionRange;
+    }
+
+    public int[] _selectionRanges() {
+        return selectionRanges;
+    }
+
+    public StyleRange[] _styleRanges() {
+        return styleRanges;
+    }
+
+    public int[] _tabStops() {
+        return tabStops;
+    }
+
+    public String _text() {
+        return text;
+    }
+
+    public int _topPixel() {
+        return topPixel;
+    }
+
+    public FontMetrics _fixedLineMetrics() {
+        return fixedLineMetrics;
+    }
+
+    public int _horizontalPixel() {
+        return horizontalPixel;
+    }
+
+    public StyledTextLineSpacingProvider _lineSpacingProvider() {
+        return lineSpacingProvider;
+    }
+
+    protected void hookEvents() {
+        super.hookEvents();
+        FlutterBridge.on(this, "Modify", "Modify", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Modify, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                setSelection(e.index);
+            });
+        });
+        FlutterBridge.on(this, "Verify", "Verify", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Verify, e);
+            });
+        });
+    }
+
     public StyledText getApi() {
         if (api == null)
             api = StyledText.createApi(this);
         return (StyledText) api;
+    }
+
+    public VStyledText getValue() {
+        if (value == null)
+            value = new VStyledText(this);
+        return (VStyledText) value;
     }
 }

@@ -1,8 +1,6 @@
 package dev.equo.swt;
 
-import org.eclipse.swt.custom.CTabFolder;
-import org.eclipse.swt.custom.CTabFolderRenderer;
-import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.custom.*;
 import org.eclipse.swt.widgets.*;
 
 import java.util.Map;
@@ -24,7 +22,9 @@ public class Config {
                 CTabFolder.class, Impl.equo,
                 CTabItem.class, Impl.equo,
                 CTabFolderRenderer.class, Impl.equo,
-                Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo
+                Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo,
+                StyledText.class, Impl.equo,
+                Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo
             );
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);

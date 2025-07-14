@@ -2784,6 +2784,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.font = font;
+        getBridge().dirty(this);
     }
 
     /**
@@ -2815,6 +2816,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return;
         this.foreground = foreground;
         setForeground(foreground);
+        getBridge().dirty(this);
     }
 
     void setForeground(double[] color) {

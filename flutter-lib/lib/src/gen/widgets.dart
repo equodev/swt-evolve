@@ -10,6 +10,7 @@ import '../gen/ctabitem.dart';
 import '../gen/label.dart';
 import '../gen/list.dart';
 import '../gen/scrollbar.dart';
+import '../gen/styledtext.dart';
 import '../gen/toolbar.dart';
 import '../gen/toolitem.dart';
 import '../gen/widget.dart';
@@ -18,6 +19,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
   var type = child['swt'];
   // print("value: $type");
   return switch (type) {
+    "StyledText" => VStyledText.fromJson(child),
     "CLabel" => VCLabel.fromJson(child),
     "CTabFolder" => VCTabFolder.fromJson(child),
     "Combo" => VCombo.fromJson(child),
@@ -39,6 +41,7 @@ Widget mapWidgetFromValue(VWidget child) {
   var type = child.swt;
   var id = child.id;
   return switch (child) {
+    VStyledText() => StyledTextSwt(key: ValueKey(id), value: child),
     VCLabel() => CLabelSwt(key: ValueKey(id), value: child),
     VCTabFolder() => CTabFolderSwt(key: ValueKey(id), value: child),
     VCombo() => ComboSwt(key: ValueKey(id), value: child),
