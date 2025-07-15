@@ -34,14 +34,6 @@ public class VControl extends VWidget {
         ((DartControl) impl).backgroundImage = value;
     }
 
-    public Rectangle getBounds() {
-        return ((DartControl) impl).bounds;
-    }
-
-    public void setBounds(Rectangle value) {
-        ((DartControl) impl).bounds = value;
-    }
-
     @JsonAttribute(ignore = true)
     public Cursor getCursor() {
         return ((DartControl) impl).cursor;

@@ -54,6 +54,8 @@ public interface ImplControl extends ImplWidget {
 
     Control[] getPath();
 
+    Point getSizeInPixels();
+
     boolean isActive();
 
     boolean isTabGroup();

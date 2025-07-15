@@ -136,40 +136,32 @@ bool Win32Window::Create(const std::wstring& title,
   UINT dpi = FlutterDesktopGetDpiForMonitor(monitor);
   double scale_factor = dpi / 96.0;
 
-  // std::cout<<"Win32Window::Create 0 "<<__FILE__<<__LINE__<<std::endl;
+  std::cout << "Win32Window::Create with parent=" << parentWnd << std::endl;
 
-  // HWND parentWnd = CreateWindowW(window_class, L"mainWindow", WS_OVERLAPPEDWINDOW,
-  //     CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
-
-  // std::cout<<"Win32Window::Create 1 "<<__FILE__<<__LINE__<<std::endl;
-
-  if (!parentWnd)
-  {
-  std::cout<<"Win32Window::Create END1 "<<__FILE__<<__LINE__<<std::endl;
-    return FALSE;
+  if (!parentWnd) {
+    std::cout << "Win32Window::Create - No parent window provided" << std::endl;
+    return false;
   }
 
-//  std::cout<<"Win32Window::Create 2 "<<__FILE__<<__LINE__<<std::endl;
-  // int style = WS_OVERLAPPEDWINDOW;
+  //std::cout << "Win32Window::Create - Creating child window" << std::endl;
+
   int style = WS_CHILD | WS_VISIBLE;
-  // HWND parentWnd = nullptr;
-  // parentWnd = nullptr;
 
   HWND window = CreateWindow(
       window_class, title.c_str(), style,
       Scale(origin.x, scale_factor), Scale(origin.y, scale_factor),
       Scale(size.width, scale_factor), Scale(size.height, scale_factor),
       parentWnd, nullptr, GetModuleHandle(nullptr), this);
-//  std::cout<<"Win32Window::Create 3 "<<__FILE__<<__LINE__<<std::endl;
+
+  std::cout << "Win32Window::Create - Created window=" << window << std::endl;
 
   if (!window) {
+    DWORD error = GetLastError();
+    std::cout << "Win32Window::Create - Failed to create window, error=" << error << std::endl;
     return false;
   }
-//  std::cout<<"Win32Window::Create 4 "<<__FILE__<<__LINE__<<std::endl;
 
   UpdateTheme(window);
-
-  std::cout<<"Win32Window::Create 5 "<<__FILE__<<__LINE__<<std::endl;
 
   return OnCreate();
 }
@@ -183,31 +175,28 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
                                       UINT const message,
                                       WPARAM const wparam,
                                       LPARAM const lparam) noexcept {
-//    std::cout<<"Win32Window::WndProc msg "<<message<<" w:"<<window<<" wp:"<<wparam<<" lp:"<<lparam<<std::endl;
+  //std::cout << "Win32Window::WndProc msg=" << message << " hwnd=" << window
+  //          << " wp=" << wparam << " lp=" << lparam << std::endl;
 
   if (message == WM_NCCREATE) {
     auto window_struct = reinterpret_cast<CREATESTRUCT*>(lparam);
     if (window_struct->lpCreateParams) {
-      std::cout<<"Win32Window::WndProc WM_NCCREATE is flutter win "<<__FILE__<<__LINE__<<std::endl;      
+      std::cout << "Win32Window::WndProc WM_NCCREATE - Setting up Flutter window" << std::endl;
       SetWindowLongPtr(window, GWLP_USERDATA,
                       reinterpret_cast<LONG_PTR>(window_struct->lpCreateParams));
-      std::cout<<"Win32Window::WndProc WM_NCCREATE 1"<<__FILE__<<__LINE__<<std::endl;
 
       auto that = static_cast<Win32Window*>(window_struct->lpCreateParams);
-      std::cout<<"Win32Window::WndProc WM_NCCREATE 2"<<__FILE__<<__LINE__<<std::endl;
       EnableFullDpiSupportIfAvailable(window);
-      std::cout<<"Win32Window::WndProc WM_NCCREATE 3"<<__FILE__<<__LINE__<<std::endl;
       that->window_handle_ = window;
     } else {
-      std::cout<<"Win32Window::WndProc WM_NCCREATE Not flutter win "<<__FILE__<<__LINE__<<std::endl;      
+      std::cout << "Win32Window::WndProc WM_NCCREATE - Not a Flutter window" << std::endl;
       ShowWindow(window, SW_SHOWNORMAL);
     }
   } else if (Win32Window* that = GetThisFromHandle(window)) {
-    // std::cout<<"Win32Window::WndProc GetThisFromHandle 4"<<__FILE__<<__LINE__<<std::endl;
-//    std::cout<<"Win32Window::WndProc a flutter win "<<__FILE__<<__LINE__<<std::endl;
+    //std::cout << "Win32Window::WndProc - Routing to Flutter window MessageHandler" << std::endl;
     return that->MessageHandler(window, message, wparam, lparam);
   }
-  // std::cout<<"Win32Window::WndProc WM_NCCREATE"<<__FILE__<<__LINE__<<std::endl;
+
   return DefWindowProc(window, message, wparam, lparam);
 }
 
@@ -216,49 +205,88 @@ Win32Window::MessageHandler(HWND hwnd,
                             UINT const message,
                             WPARAM const wparam,
                             LPARAM const lparam) noexcept {
-//    std::cout<<"Win32Window::MessageHandler 1 "<<__FILE__<<__LINE__<<std::endl;
-  switch (message) {
-    case WM_DESTROY:
-      window_handle_ = nullptr;
-      Destroy();
-      if (quit_on_close_) {
-        PostQuitMessage(0);
-      }
-      return 0;
 
-    case WM_DPICHANGED: {
-      auto newRectSize = reinterpret_cast<RECT*>(lparam);
-      LONG newWidth = newRectSize->right - newRectSize->left;
-      LONG newHeight = newRectSize->bottom - newRectSize->top;
+    switch (message) {
+        case WM_DESTROY:
+            std::cout << "Win32Window: WM_DESTROY" << std::endl;
+            window_handle_ = nullptr;
+            Destroy();
+            if (quit_on_close_) {
+                PostQuitMessage(0);
+            }
+            return 0;
 
-      SetWindowPos(hwnd, nullptr, newRectSize->left, newRectSize->top, newWidth,
-                   newHeight, SWP_NOZORDER | SWP_NOACTIVATE);
+        // ===== EVENTOS DE TECLADO - DELEGACIÓN AUTOMÁTICA VIA SWT =====
+        case WM_KEYDOWN:
+        case WM_KEYUP:
+        case WM_CHAR:
+        case WM_SYSKEYDOWN:
+        case WM_SYSKEYUP:
+        case WM_SYSCHAR:
+        {
+            std::cout << "Win32Window: Keyboard event - msg=" << message
+                      << " key=" << wparam << " (SWT auto-delegation active)" << std::endl;
 
-      return 0;
+            // SWT ahora maneja automáticamente la delegación de eventos
+            // No necesitamos reenvío manual - simplemente procesamos normalmente
+            // Esto permite que FlutterWindow::MessageHandler procese directamente
+            break;
+        }
+
+        case WM_DPICHANGED: {
+            std::cout << "Win32Window: WM_DPICHANGED" << std::endl;
+            auto newRectSize = reinterpret_cast<RECT*>(lparam);
+            LONG newWidth = newRectSize->right - newRectSize->left;
+            LONG newHeight = newRectSize->bottom - newRectSize->top;
+
+            SetWindowPos(hwnd, nullptr, newRectSize->left, newRectSize->top, newWidth,
+                       newHeight, SWP_NOZORDER | SWP_NOACTIVATE);
+            return 0;
+        }
+
+        case WM_SIZE: {
+            std::cout << "Win32Window: WM_SIZE" << std::endl;
+            RECT rect = GetClientArea();
+            if (child_content_ != nullptr) {
+                MoveWindow(child_content_, rect.left, rect.top, rect.right - rect.left,
+                         rect.bottom - rect.top, TRUE);
+            }
+            return 0;
+        }
+
+        case WM_ACTIVATE:
+            std::cout << "Win32Window: WM_ACTIVATE - setting focus to Flutter" << std::endl;
+            if (child_content_ != nullptr) {
+                SetFocus(child_content_);
+            }
+            return 0;
+
+        case WM_LBUTTONDOWN:
+        case WM_RBUTTONDOWN:
+        case WM_MBUTTONDOWN:
+        {
+            std::cout << "Win32Window: Mouse click - ensuring Flutter has focus" << std::endl;
+            if (child_content_ != nullptr) {
+                SetFocus(child_content_);
+                SendMessage(child_content_, message, wparam, lparam);
+            }
+            return 0;
+        }
+
+        case WM_SETFOCUS:
+            std::cout << "Win32Window: WM_SETFOCUS - delegating to Flutter child" << std::endl;
+            if (child_content_ != nullptr) {
+                SetFocus(child_content_);
+            }
+            return 0;
+
+        case WM_DWMCOLORIZATIONCOLORCHANGED:
+            std::cout << "Win32Window: WM_DWMCOLORIZATIONCOLORCHANGED" << std::endl;
+            UpdateTheme(hwnd);
+            return 0;
     }
-    case WM_SIZE: {
-      RECT rect = GetClientArea();
-      if (child_content_ != nullptr) {
-        // Size and position the child window.
-        MoveWindow(child_content_, rect.left, rect.top, rect.right - rect.left,
-                   rect.bottom - rect.top, TRUE);
-      }
-      return 0;
-    }
 
-    case WM_ACTIVATE:
-      // Skip focus management to prevent message cascading to parent SWT shell
-//      if (child_content_ != nullptr) {
-//        SetFocus(child_content_);
-//      }
-      return 0;
-
-    case WM_DWMCOLORIZATIONCOLORCHANGED:
-      UpdateTheme(hwnd);
-      return 0;
-  }
-
-  return DefWindowProc(window_handle_, message, wparam, lparam);
+    return DefWindowProc(window_handle_, message, wparam, lparam);
 }
 
 void Win32Window::Destroy() {
@@ -279,6 +307,7 @@ Win32Window* Win32Window::GetThisFromHandle(HWND const window) noexcept {
 }
 
 void Win32Window::SetChildContent(HWND content) {
+  //std::cout << "Win32Window::SetChildContent - content=" << content << std::endl;
   child_content_ = content;
   SetParent(content, window_handle_);
   RECT frame = GetClientArea();
@@ -286,11 +315,13 @@ void Win32Window::SetChildContent(HWND content) {
   MoveWindow(content, frame.left, frame.top, frame.right - frame.left,
              frame.bottom - frame.top, true);
 
-  // Skip SetFocus to prevent message cascading to parent SWT shell during initialization
-//  SetFocus(child_content_);
+  SetFocus(child_content_);
+  std::cout << "Win32Window::SetChildContent - Complete, child focus set" << std::endl;
 }
 
 void Win32Window::Move(const Point& origin, const Size& size, const Point& vorigin, const Size& vsize) {
+  std::cout << "Win32Window::Move - origin=(" << origin.x << "," << origin.y
+            << ") size=(" << size.width << "x" << size.height << ")" << std::endl;
   MoveWindow(window_handle_, origin.x, origin.y, size.width, size.height, true);
   if (origin.x == vorigin.x && origin.y == vorigin.y && size.width == vsize.width && size.height == vsize.height) {
     return;

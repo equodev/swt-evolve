@@ -85,14 +85,6 @@ public class VToolItem extends VItem {
         ((DartToolItem) impl).toolTipText = value;
     }
 
-    public int getWidth() {
-        return ((DartToolItem) impl).getWidth();
-    }
-
-    public void setWidth(int value) {
-        ((DartToolItem) impl).width = value;
-    }
-
     @JsonConverter(target = ToolItem.class)
     public static class ToolItemJson implements Configuration {
 

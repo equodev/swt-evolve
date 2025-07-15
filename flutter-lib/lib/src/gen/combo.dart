@@ -5,7 +5,6 @@ import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/point.dart';
-import '../gen/rectangle.dart';
 import '../impl/combo_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -46,13 +45,12 @@ class VCombo extends VComposite {
     swt = "Combo";
   }
 
-  bool? ignoreSelection;
   List<String>? items;
   bool? listVisible;
   VPoint? selection;
   String? text;
   int? textLimit;
-  int? visibleItemCount;
+  int? visibleCount;
 
   factory VCombo.fromJson(Map<String, dynamic> json) => _$VComboFromJson(json);
   Map<String, dynamic> toJson() => _$VComboToJson(this);

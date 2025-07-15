@@ -4,7 +4,6 @@ import '../gen/caret.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
-import '../gen/rectangle.dart';
 import '../impl/canvas_evolve.dart';
 import 'widgets.dart';
 

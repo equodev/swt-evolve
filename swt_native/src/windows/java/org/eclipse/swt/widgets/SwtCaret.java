@@ -229,7 +229,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
         return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
     }
 
-    Point getSizeInPixels() {
+    public Point getSizeInPixels() {
         if (image != null) {
             Rectangle rect = image.getBoundsInPixels();
             return new Point(rect.width, rect.height);

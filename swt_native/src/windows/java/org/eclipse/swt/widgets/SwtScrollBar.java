@@ -361,7 +361,7 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
         return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
     }
 
-    Point getSizeInPixels() {
+    public Point getSizeInPixels() {
         ((SwtControl) parent.getImpl()).forceResize();
         RECT rect = new RECT();
         OS.GetClientRect(((SwtScrollable) parent.getImpl()).scrolledHandle(), rect);

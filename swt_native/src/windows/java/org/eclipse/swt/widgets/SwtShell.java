@@ -1195,7 +1195,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
-    Point getSizeInPixels() {
+    public Point getSizeInPixels() {
         if (OS.IsIconic(getApi().handle))
             return super.getSizeInPixels();
         RECT rect = new RECT();

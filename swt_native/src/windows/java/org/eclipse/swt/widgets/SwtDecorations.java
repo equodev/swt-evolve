@@ -684,7 +684,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
     }
 
     @Override
-    Point getSizeInPixels() {
+    public Point getSizeInPixels() {
         checkWidget();
         if (OS.IsIconic(getApi().handle)) {
             WINDOWPLACEMENT lpwndpl = new WINDOWPLACEMENT();

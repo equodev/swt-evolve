@@ -22,6 +22,7 @@ class VCaret extends VWidget {
 
   int? height;
   bool? isVisible;
+  int? y;
 
   factory VCaret.fromJson(Map<String, dynamic> json) => _$VCaretFromJson(json);
   Map<String, dynamic> toJson() => _$VCaretToJson(this);

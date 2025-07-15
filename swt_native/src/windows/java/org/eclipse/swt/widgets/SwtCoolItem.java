@@ -506,7 +506,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
         return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
     }
 
-    Point getSizeInPixels() {
+    public Point getSizeInPixels() {
         int index = parent.indexOf(this.getApi());
         if (index == -1)
             return new Point(0, 0);

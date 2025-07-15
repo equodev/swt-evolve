@@ -110,6 +110,7 @@ public class VStyledText extends VCanvas {
 
     public void setEditable(boolean value) {
         ((DartStyledText) impl).editable = value;
+        ((DartStyledText) impl).getBridge().dirty((DartStyledText) impl);
     }
 
     public int getHorizontalIndex() {
@@ -286,6 +287,7 @@ public class VStyledText extends VCanvas {
 
     public void setWordWrap(boolean value) {
         ((DartStyledText) impl).wordWrap = value;
+        ((DartStyledText) impl).getBridge().dirty((DartStyledText) impl);
     }
 
     public int getWrapIndent() {

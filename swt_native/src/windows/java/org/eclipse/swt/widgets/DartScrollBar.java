@@ -324,7 +324,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
     }
 
-    Point getSizeInPixels() {
+    public Point getSizeInPixels() {
         return new Point(20, 20);
     }
 
@@ -745,7 +745,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         getBridge().dirty(this);
     }
 
-    boolean enabled;
+    boolean enabled = true;
 
     int maximum;
 
@@ -755,7 +755,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
 
     int thumb;
 
-    boolean visible;
+    boolean visible = true;
 
     public Scrollable _parent() {
         return parent;

@@ -26,19 +26,19 @@ class ComboSerializeTest extends SerializeTestBase {
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Combo")
+               .hasEntrySatisfying("items", p -> assertThatJson(p).isArray()
+                                                                  .hasSameSizeAs(w.getItems()))
                .containsEntry("text", json(w.getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("style", w.getStyle());
-        assertJ.satisfies(node("ignoreSelection").equalsTo(value(w).getIgnoreSelection(), orAbsentIfFalse));
         assertJ.satisfies(node("listVisible").equalsTo(w.getListVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("selection").equalsTo(w.getSelection(), orAbsentIfNull));
         assertJ.satisfies(node("textLimit").equalsTo(w.getTextLimit(), orAbsentIf0));
-        assertJ.satisfies(node("visibleItemCount").equalsTo(w.getVisibleItemCount(), orAbsentIf0));
+        assertJ.satisfies(node("visibleCount").equalsTo(w.getVisibleItemCount(), orAbsentIf0));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
         assertJ.satisfies(node("layoutDeferred").equalsTo(w.getLayoutDeferred(), orAbsentIfFalse));
         assertJ.satisfies(node("scrollbarsMode").equalsTo(w.getScrollbarsMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
-        assertJ.satisfies(node("bounds").equalsTo(w.getBounds(), orAbsentIfNull));
         assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));
         assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));

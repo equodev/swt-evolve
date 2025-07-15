@@ -1,6 +1,8 @@
 #include "flutter_window.h"
 
 #include <optional>
+#include <flutter/method_channel.h>
+#include <flutter/standard_method_codec.h>
 
 #include "flutter/generated_plugin_registrant.h"
 
@@ -51,19 +53,45 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
-  // Give Flutter, including plugins, an opportunity to handle window messages.
+  switch (message) {
+    case WM_KEYDOWN:
+    case WM_KEYUP:
+    case WM_CHAR:
+    case WM_SYSKEYDOWN:
+    case WM_SYSKEYUP:
+    case WM_SYSCHAR:
+    {
+      if (flutter_controller_) {
+        HWND focusedWindow = GetFocus();
+        bool hadFocus = (focusedWindow == hwnd);
+        
+        // Only process if Flutter has focus
+        if (hadFocus) {
+          std::optional<LRESULT> result = flutter_controller_->HandleTopLevelWindowProc(
+              hwnd, message, wparam, lparam);
+          if (result.has_value()) {
+            return result.value();
+          }
+        }
+      }
+      break;
+    }
+  }
+
+  // Give Flutter a chance to handle other events
   if (flutter_controller_) {
     std::optional<LRESULT> result =
-        flutter_controller_->HandleTopLevelWindowProc(hwnd, message, wparam,
-                                                      lparam);
-    if (result) {
-      return *result;
+        flutter_controller_->HandleTopLevelWindowProc(hwnd, message, wparam, lparam);
+    if (result.has_value()) {
+      return result.value();
     }
   }
 
   switch (message) {
     case WM_FONTCHANGE:
-      flutter_controller_->engine()->ReloadSystemFonts();
+      if (flutter_controller_ && flutter_controller_->engine()) {
+        flutter_controller_->engine()->ReloadSystemFonts();
+      }
       break;
   }
 

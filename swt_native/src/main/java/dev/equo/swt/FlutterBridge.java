@@ -1,5 +1,6 @@
 package dev.equo.swt;
 
+import org.eclipse.swt.custom.*;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.*;
 
@@ -7,6 +8,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +44,29 @@ public abstract class FlutterBridge {
             if (widget.isDisposed()) break;
             widget.getBridge().clientReady.thenRun(() -> {
                 try {
-                    if (!isNew(widget)) { // send with the parent
+                    if (widget instanceof DartStyledText){
+                        if (!isNew(widget)) { // sends StyledText widget info
+                            String event = event(widget);
+                            System.out.println("will send: " + event);
+                            try {
+                                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                                serializer.to(widget.getApi(), out);
+                                String payload = out.toString(StandardCharsets.UTF_8);
+                                System.out.println("send: " + event + ": " + payload);
+                                client.getComm().send(event, payload);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        StyledTextBridge.drawStyledText((DartStyledText) widget,
+                                ((DartStyledText) widget).getLocation().x,
+                                ((DartStyledText) widget).getLocation().y,
+                                ((DartStyledText) widget).getCaret(),
+                                id(widget),
+                                client);
+
+                    }
+                    else if (!isNew(widget)) { // send with the parent
                         String event = event(widget);
                         System.out.println("will send: " + event);
                         try {
@@ -64,6 +88,7 @@ public abstract class FlutterBridge {
         }
         dirty.clear();
     }
+
 
     private static boolean isNew(DartWidget widget) {
         return widget.getData("dev.equ.swt.new") == null;
@@ -92,6 +117,14 @@ public abstract class FlutterBridge {
                 }
             }
             cb.accept(null);
+        });
+    }
+
+    public static void onPayload(DartWidget widget, String event, Consumer<Object> cb) {
+        String eventName =  widgetName(widget)  + "/" + id(widget) + "/" + event;
+        client.getComm().on(eventName, p -> {
+            System.out.println(eventName + ", payload:"+p);
+            cb.accept(p);
         });
     }
 
@@ -133,16 +166,18 @@ public abstract class FlutterBridge {
     public void setBounds(DartControl dartControl, Rectangle bounds) {
     }
 
+    public void setFocus(DartControl dartControl) {
+    }
+
     public Object container(DartComposite parent) {
         return null;
     }
 
-    protected static long id(DartWidget w) {
+    public static long id(DartWidget w) {
         return w.getApi().hashCode();
     }
 
     static long id(Widget w) {
         return w.hashCode();
     }
-
 }

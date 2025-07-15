@@ -29,6 +29,7 @@ class CaretSerializeTest extends SerializeTestBase {
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("height").equalsTo(value(w).getHeight(), orAbsentIf0));
         assertJ.satisfies(node("isVisible").equalsTo(w.getVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("y").equalsTo(value(w).getY(), orAbsentIf0));
     }
 
     VCaret value(Caret w) {

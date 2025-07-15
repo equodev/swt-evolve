@@ -433,7 +433,7 @@ public class DartToolItem extends DartItem implements IToolItem {
     }
 
     int getWidthInPixels() {
-        return this.width;
+        return 0;
     }
 
     /**
@@ -984,9 +984,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setWidth(int width) {
         checkWidget();
-        this.width = width;
         setWidthInPixels(DPIUtil.scaleUp(width, getZoom()));
-        getBridge().dirty(this);
     }
 
     void setWidthInPixels(int width) {
@@ -1016,13 +1014,11 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     Color _background;
 
-    boolean enabled;
+    boolean enabled = true;
 
     Color _foreground;
 
     boolean selection;
-
-    int width;
 
     public ToolBar _parent() {
         return parent;
@@ -1078,10 +1074,6 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     public boolean _selection() {
         return selection;
-    }
-
-    public int _width() {
-        return width;
     }
 
     public FlutterBridge getBridge() {

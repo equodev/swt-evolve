@@ -3,7 +3,6 @@ import 'package:json_annotation/json_annotation.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
-import '../gen/rectangle.dart';
 import '../gen/toolitem.dart';
 import '../impl/toolbar_evolve.dart';
 import 'widgets.dart';
@@ -25,6 +24,7 @@ class VToolBar extends VComposite {
   }
 
   List<VToolItem>? items;
+  int? rowCount;
 
   factory VToolBar.fromJson(Map<String, dynamic> json) =>
       _$VToolBarFromJson(json);

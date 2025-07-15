@@ -2,7 +2,6 @@ import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
-import '../gen/rectangle.dart';
 import '../gen/scrollable.dart';
 import '../impl/composite_evolve.dart';
 import 'widgets.dart';

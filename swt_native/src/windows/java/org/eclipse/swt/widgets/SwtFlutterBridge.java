@@ -1,5 +1,7 @@
 package org.eclipse.swt.widgets;
 
+import org.eclipse.swt.internal.win32.OS;
+
 public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     public SwtFlutterBridge(DartWidget widget) {
         super(widget);
@@ -24,6 +26,11 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     protected void destroyHandle(DartControl control) {
         ((SwtDisplay) control.display.getImpl()).removeControl(control.getApi().handle);
         control.getApi().handle = 0;
+    }
+
+    @Override
+    public void setFocus(DartControl control) {
+        OS.SetFocus(control.getApi().handle);
     }
 }
 
