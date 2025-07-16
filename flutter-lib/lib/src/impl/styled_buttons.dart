@@ -374,6 +374,7 @@ class _PushButtonState extends State<PushButton> {
 
   @override
   Widget build(BuildContext context) {
+
     final Color darkSelectedColor = const Color(0xFF6366F1);
     final Color darkUnselectedColor = const Color(0xFF6366F1);
     final Color darkSelectedTextColor = const Color(0xFFFFFFFF);
@@ -394,7 +395,6 @@ class _PushButtonState extends State<PushButton> {
     final bool isIconOnly = widget.image != null && (widget.text == null || widget.text!.isEmpty);
     const double iconSize = 24.0;
 
-    // Para botones de solo ícono
     if (isIconOnly) {
       return MouseRegion(
         onEnter: (_) => widget.onMouseEnter?.call(),
@@ -413,7 +413,6 @@ class _PushButtonState extends State<PushButton> {
                 _isPressed = true;
               });
               widget.onPressed();
-              // Resetear el estado después de un breve delay para mostrar el efecto visual
               Future.delayed(const Duration(milliseconds: 200), () {
                 if (mounted) {
                   setState(() {
@@ -470,7 +469,6 @@ class _PushButtonState extends State<PushButton> {
               _isPressed = true;
             });
             widget.onPressed();
-            // Resetear el estado después de un breve delay
             Future.delayed(const Duration(milliseconds: 200), () {
               if (mounted) {
                 setState(() {
@@ -492,6 +490,7 @@ class _PushButtonState extends State<PushButton> {
               : unselectedColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(widget.borderRadius),
+            side: BorderSide.none,
           ),
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           child: Row(
@@ -521,6 +520,7 @@ class _PushButtonState extends State<PushButton> {
                 style: TextStyle(
                   color: _isPressed ? selectedTextColor : unselectedTextColor,
                   fontWeight: FontWeight.w500,
+                  fontSize: 10.0,
                 ),
               ),
             ],
