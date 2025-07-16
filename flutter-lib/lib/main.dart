@@ -2,8 +2,10 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart' as mat;
 import 'package:swtflutter/src/gen/composite.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 import 'src/custom/maintoolbar_impl.dart';
 import 'src/swt/composite.dart';
+import 'src/styles.dart';
 
 import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
 
@@ -20,7 +22,7 @@ void main(List<String> args) async {
   int? widgetId = getWidgetId(args);
   String? widgetName = getWidgetName(args);
   if (widgetId == null || widgetName == null) {
-      return;
+    return;
   }
   var theme = getTheme(args) == "light" ? ThemeMode.light : ThemeMode.dark;
 
@@ -68,17 +70,26 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    final bool useDarkTheme = getCurrentTheme();
+    final Color backgroundColor = useDarkTheme ? Colors.black : Colors.white;
+
     return FluentApp(
       title: 'Flutter Demo',
-      darkTheme: FluentThemeData.dark().copyWith(
+      darkTheme: FluentThemeData.light().copyWith(
         accentColor: Colors.blue,
+        scaffoldBackgroundColor: backgroundColor,
       ),
       theme: FluentThemeData.light().copyWith(
         accentColor: Colors.blue,
+        scaffoldBackgroundColor: backgroundColor,
       ),
-      themeMode: theme,
+      themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,
-      home: Acrylic(child: contentWidget),
+      home: Container(
+        color: backgroundColor,
+        child: contentWidget,
+      ),
     );
   }
 }
