@@ -484,7 +484,7 @@ class _PushButtonState extends State<PushButton> {
           disabledElevation: 0,
           height: widget.height,
           minWidth: widget.minWidth,
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 5.0),
           color: _isPressed
               ? (widget.enabled ? selectedColor : selectedColor.withOpacity(0.5))
               : unselectedColor,

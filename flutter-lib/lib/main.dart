@@ -24,7 +24,7 @@ void main(List<String> args) async {
   if (widgetId == null || widgetName == null) {
     return;
   }
-  var theme = getTheme(args) == "light" ? ThemeMode.light : ThemeMode.dark;
+  var theme = getTheme(args) == "dark" ? ThemeMode.dark : ThemeMode.light;
 
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -65,14 +65,14 @@ class MyApp extends StatelessWidget {
   const MyApp({
     Key? key,
     required this.contentWidget,
-    this.theme = ThemeMode.light,
+    this.theme = ThemeMode.dark,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-
     final bool useDarkTheme = getCurrentTheme();
-    final Color backgroundColor = useDarkTheme ? Colors.black : Colors.white;
+    final Color backgroundColor = useDarkTheme ? Color(0xFF2C2C2C) : Color(0xFFF2F4F7);
+    final ThemeMode currentTheme = useDarkTheme ? ThemeMode.dark : ThemeMode.light;
 
     return FluentApp(
       title: 'Flutter Demo',
@@ -84,6 +84,8 @@ class MyApp extends StatelessWidget {
         accentColor: Colors.blue,
         scaffoldBackgroundColor: backgroundColor,
       ),
+      themeMode: currentTheme,
+
       themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,
       home: Container(
