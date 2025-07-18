@@ -803,7 +803,7 @@ public class SwtTree extends SwtComposite implements ITree {
                                                 Control control = findBackgroundControl();
                                                 if (control == null)
                                                     control = this.getApi();
-                                                clrTextBk = ((SwtControl) control.getImpl()).getBackgroundPixel();
+                                                clrTextBk = control.getImpl().getBackgroundPixel();
                                             }
                                         }
                                     }
@@ -2876,7 +2876,7 @@ public class SwtTree extends SwtComposite implements ITree {
         if (control == null)
             control = this.getApi();
         if (control.getImpl()._backgroundImage() == null) {
-            _setBackgroundPixel(hasCustomBackground() ? ((SwtControl) control.getImpl()).getBackgroundPixel() : -1);
+            _setBackgroundPixel(hasCustomBackground() ? control.getImpl().getBackgroundPixel() : -1);
         }
         if (hwndParent != 0)
             OS.EnableWindow(hwndParent, enabled);
@@ -4823,7 +4823,7 @@ public class SwtTree extends SwtComposite implements ITree {
             if (control == null)
                 control = this.getApi();
             if (control.getImpl()._backgroundImage() == null) {
-                setBackgroundPixel(((SwtControl) control.getImpl()).getBackgroundPixel());
+                setBackgroundPixel(control.getImpl().getBackgroundPixel());
             }
         }
         /*
@@ -4973,7 +4973,7 @@ public class SwtTree extends SwtComposite implements ITree {
             Control control = findBackgroundControl();
             if (control == null)
                 control = this.getApi();
-            clrBackground = ((SwtControl) control.getImpl()).getBackgroundPixel();
+            clrBackground = control.getImpl().getBackgroundPixel();
         } else {
             clrBackground = 0x020000FF;
             if ((clrBackground & 0xFFFFFF) == OS.GetSysColor(OS.COLOR_WINDOW)) {

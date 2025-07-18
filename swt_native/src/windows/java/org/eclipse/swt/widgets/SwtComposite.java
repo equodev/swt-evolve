@@ -1596,7 +1596,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                     Control control = findBackgroundControl();
                     if (control == null)
                         control = this.getApi();
-                    data.background = ((SwtControl) control.getImpl()).getBackgroundPixel();
+                    data.background = control.getImpl().getBackgroundPixel();
                     data.font = SwtFont.win32_new(display, OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0), getApi().nativeZoom);
                     data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
                     if ((getApi().style & SWT.NO_BACKGROUND) != 0) {
@@ -1773,7 +1773,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                 Control control = findBackgroundControl();
                 if (control == null)
                     control = this.getApi();
-                data.background = ((SwtControl) control.getImpl()).getBackgroundPixel();
+                data.background = control.getImpl().getBackgroundPixel();
                 data.font = SwtFont.win32_new(display, OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0));
                 data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
                 GC gc = createNewGC(wParam, data);

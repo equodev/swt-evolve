@@ -183,7 +183,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
                                       UINT const message,
                                       WPARAM const wparam,
                                       LPARAM const lparam) noexcept {
-    std::cout<<"Win32Window::WndProc msg "<<message<<" w:"<<window<<" wp:"<<wparam<<" lp:"<<lparam<<std::endl;
+//    std::cout<<"Win32Window::WndProc msg "<<message<<" w:"<<window<<" wp:"<<wparam<<" lp:"<<lparam<<std::endl;
 
   if (message == WM_NCCREATE) {
     auto window_struct = reinterpret_cast<CREATESTRUCT*>(lparam);
@@ -204,7 +204,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
     }
   } else if (Win32Window* that = GetThisFromHandle(window)) {
     // std::cout<<"Win32Window::WndProc GetThisFromHandle 4"<<__FILE__<<__LINE__<<std::endl;
-    std::cout<<"Win32Window::WndProc a flutter win "<<__FILE__<<__LINE__<<std::endl;      
+//    std::cout<<"Win32Window::WndProc a flutter win "<<__FILE__<<__LINE__<<std::endl;
     return that->MessageHandler(window, message, wparam, lparam);
   }
   // std::cout<<"Win32Window::WndProc WM_NCCREATE"<<__FILE__<<__LINE__<<std::endl;
@@ -216,7 +216,7 @@ Win32Window::MessageHandler(HWND hwnd,
                             UINT const message,
                             WPARAM const wparam,
                             LPARAM const lparam) noexcept {
-    std::cout<<"Win32Window::MessageHandler 1 "<<__FILE__<<__LINE__<<std::endl;
+//    std::cout<<"Win32Window::MessageHandler 1 "<<__FILE__<<__LINE__<<std::endl;
   switch (message) {
     case WM_DESTROY:
       window_handle_ = nullptr;

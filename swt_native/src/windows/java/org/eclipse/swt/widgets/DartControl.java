@@ -799,8 +799,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return parent.getImpl().findBackgroundControl();
     }
 
-    long findBrush(long value, int lbStyle) {
-        return ((DartControl) parent.getImpl()).findBrush(value, lbStyle);
+    public long findBrush(long value, int lbStyle) {
+        return parent.getImpl().findBrush(value, lbStyle);
     }
 
     public Cursor findCursor() {
@@ -954,7 +954,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             Control control = findBackgroundControl();
             if (control == null)
                 control = this.getApi();
-            return SwtColor.win32_new(display, ((DartControl) control.getImpl()).getBackgroundPixel(), backgroundAlpha);
+            return SwtColor.win32_new(display, control.getImpl().getBackgroundPixel(), backgroundAlpha);
         }
     }
 
@@ -978,7 +978,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return control.getImpl()._backgroundImage();
     }
 
-    int getBackgroundPixel() {
+    public int getBackgroundPixel() {
         return background != -1 ? background : defaultBackground();
     }
 

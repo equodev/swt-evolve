@@ -36,6 +36,8 @@ public interface ImplControl extends ImplWidget {
 
     Control findBackgroundControl();
 
+    long findBrush(long value, int lbStyle);
+
     Cursor findCursor();
 
     Control findThemeControl();
@@ -43,6 +45,8 @@ public interface ImplControl extends ImplWidget {
     Menu[] findMenus(Control control);
 
     void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus);
+
+    int getBackgroundPixel();
 
     Control[] getPath();
 

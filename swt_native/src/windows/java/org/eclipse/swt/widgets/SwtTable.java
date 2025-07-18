@@ -934,7 +934,7 @@ public class SwtTable extends SwtComposite implements ITable {
                     if (enabled && (int) OS.SendMessage(getApi().handle, OS.LVM_GETBKCOLOR, 0, 0) == OS.CLR_NONE || !enabled && hasCustomBackground()) {
                         if (control == null)
                             control = this.getApi();
-                        fillBackground(nmcd.hdc, ((SwtControl) control.getImpl()).getBackgroundPixel(), rect);
+                        fillBackground(nmcd.hdc, control.getImpl().getBackgroundPixel(), rect);
                         if (OS.IsAppThemed()) {
                             if (sortColumn != null && sortDirection != SWT.NONE) {
                                 int index = indexOf(sortColumn);
@@ -1144,7 +1144,7 @@ public class SwtTable extends SwtComposite implements ITable {
                                 control = this.getApi();
                             if (control.getImpl()._backgroundImage() == null) {
                                 if ((int) OS.SendMessage(getApi().handle, OS.LVM_GETBKCOLOR, 0, 0) != OS.CLR_NONE) {
-                                    nmcd.clrTextBk = ((SwtControl) control.getImpl()).getBackgroundPixel();
+                                    nmcd.clrTextBk = control.getImpl().getBackgroundPixel();
                                 }
                             }
                         }
@@ -3619,7 +3619,7 @@ public class SwtTable extends SwtComposite implements ITable {
                     if (clrText == -1)
                         clrText = ((SwtControl) control.getImpl()).getForegroundPixel();
                     if (clrTextBk == -1)
-                        clrTextBk = ((SwtControl) control.getImpl()).getBackgroundPixel();
+                        clrTextBk = control.getImpl().getBackgroundPixel();
                 }
                 data.foreground = clrText != -1 ? clrText : OS.GetTextColor(hDC);
                 data.background = clrTextBk != -1 ? clrTextBk : OS.GetBkColor(hDC);
@@ -4081,7 +4081,7 @@ public class SwtTable extends SwtComposite implements ITable {
                     if (clrText == -1)
                         clrText = ((SwtControl) control.getImpl()).getForegroundPixel();
                     if (clrTextBk == -1)
-                        clrTextBk = ((SwtControl) control.getImpl()).getBackgroundPixel();
+                        clrTextBk = control.getImpl().getBackgroundPixel();
                 }
                 data.foreground = clrText != -1 ? clrText : OS.GetTextColor(hDC);
                 data.background = clrTextBk != -1 ? clrTextBk : OS.GetBkColor(hDC);
@@ -4238,7 +4238,7 @@ public class SwtTable extends SwtComposite implements ITable {
                 if (control == null)
                     control = this.getApi();
                 if (control.getImpl()._backgroundImage() == null) {
-                    int newPixel = ((SwtControl) control.getImpl()).getBackgroundPixel();
+                    int newPixel = control.getImpl().getBackgroundPixel();
                     OS.SendMessage(getApi().handle, OS.LVM_SETBKCOLOR, 0, newPixel);
                     OS.SendMessage(getApi().handle, OS.LVM_SETTEXTBKCOLOR, 0, newPixel);
                     if ((getApi().style & SWT.CHECK) != 0)
@@ -4444,7 +4444,7 @@ public class SwtTable extends SwtComposite implements ITable {
             Control control = findBackgroundControl();
             if (control == null)
                 control = this.getApi();
-            clrBackground = ((SwtControl) control.getImpl()).getBackgroundPixel();
+            clrBackground = control.getImpl().getBackgroundPixel();
         } else {
             clrBackground = 0x020000FF;
             if ((clrBackground & 0xFFFFFF) == OS.GetSysColor(OS.COLOR_WINDOW)) {

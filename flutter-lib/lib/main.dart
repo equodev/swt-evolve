@@ -85,8 +85,6 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: backgroundColor,
       ),
       themeMode: currentTheme,
-
-      themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,
       home: Container(
         color: backgroundColor,

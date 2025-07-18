@@ -899,7 +899,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 fillImageBackground(hDC, control, rect, tx, ty);
                 return;
             }
-            pixel = ((SwtControl) control.getImpl()).getBackgroundPixel();
+            pixel = control.getImpl().getBackgroundPixel();
         }
         if (pixel == -1) {
             if ((getApi().state & THEME_BACKGROUND) != 0) {
@@ -980,8 +980,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return (parent != null && (getApi().state & PARENT_BACKGROUND) != 0) ? parent.getImpl().findBackgroundControl() : null;
     }
 
-    long findBrush(long value, int lbStyle) {
-        return ((SwtControl) parent.getImpl()).findBrush(value, lbStyle);
+    public long findBrush(long value, int lbStyle) {
+        return parent.getImpl().findBrush(value, lbStyle);
     }
 
     public Cursor findCursor() {
@@ -1151,7 +1151,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             Control control = findBackgroundControl();
             if (control == null)
                 control = this.getApi();
-            return SwtColor.win32_new(display, ((SwtControl) control.getImpl()).getBackgroundPixel(), backgroundAlpha);
+            return SwtColor.win32_new(display, control.getImpl().getBackgroundPixel(), backgroundAlpha);
         }
     }
 
@@ -1175,7 +1175,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return control.getImpl()._backgroundImage();
     }
 
-    int getBackgroundPixel() {
+    public int getBackgroundPixel() {
         return background != -1 ? background : defaultBackground();
     }
 
@@ -1795,7 +1795,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             Control control = findBackgroundControl();
             if (control == null)
                 control = this.getApi();
-            int background = ((SwtControl) control.getImpl()).getBackgroundPixel();
+            int background = control.getImpl().getBackgroundPixel();
             if (background != OS.GetBkColor(hDC))
                 data.background = background;
             data.font = font != null ? font : SwtFont.win32_new(display, OS.SendMessage(hwnd, OS.WM_GETFONT, 0, 0));
@@ -6199,7 +6199,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (control == null)
             control = this.getApi();
         int forePixel = getForegroundPixel();
-        int backPixel = ((SwtControl) control.getImpl()).getBackgroundPixel();
+        int backPixel = control.getImpl().getBackgroundPixel();
         OS.SetTextColor(wParam, forePixel);
         OS.SetBkColor(wParam, backPixel);
         if (control.getImpl()._backgroundImage() != null) {
