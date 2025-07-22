@@ -31,4 +31,6 @@ public interface ImplWidget {
     boolean setTabGroupFocus();
 
     boolean setTabItemFocus();
+
+    int getZoom();
 }

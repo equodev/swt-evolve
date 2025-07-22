@@ -22,6 +22,10 @@ public interface ImplToolItem extends ImplItem {
 
     short _cx();
 
+    int _foreground();
+
+    int _background();
+
     Widget[] computeTabList();
 
     boolean isTabGroup();

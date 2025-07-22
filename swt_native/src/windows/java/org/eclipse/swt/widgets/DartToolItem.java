@@ -1056,6 +1056,14 @@ public class DartToolItem extends DartItem implements IToolItem {
         return cx;
     }
 
+    public int _foreground() {
+        return foreground;
+    }
+
+    public int _background() {
+        return background;
+    }
+
     public Color __background() {
         return _background;
     }

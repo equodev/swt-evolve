@@ -20,6 +20,10 @@ public interface ImplControl extends ImplWidget {
 
     Menu _menu();
 
+    double[] _foreground();
+
+    double[] _background();
+
     Image _backgroundImage();
 
     Font _font();
@@ -81,6 +85,10 @@ public interface ImplControl extends ImplWidget {
     void sendFocusEvent(int type);
 
     boolean setTabItemFocus();
+
+    boolean traverse(int traversal, char character, int keyCode, int keyLocation, int stateMask, boolean doit);
+
+    boolean traverse(Event event);
 
     void updateBackgroundMode();
 

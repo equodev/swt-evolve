@@ -1151,7 +1151,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
             ImageList hotImageList = ((SwtToolBar) parent.getImpl()).getHotImageList();
             ImageList disabledImageList = ((SwtToolBar) parent.getImpl()).getDisabledImageList();
             if (info.iImage == OS.I_IMAGENONE) {
-                Rectangle bounds = DPIUtil.scaleBounds(image.getBounds(), ((SwtWidget) getParent().getImpl()).getZoom(), 100);
+                Rectangle bounds = DPIUtil.scaleBounds(image.getBounds(), getParent().getImpl().getZoom(), 100);
                 int listStyle = parent.style & SWT.RIGHT_TO_LEFT;
                 if (imageList == null) {
                     imageList = ((SwtDisplay) display.getImpl()).getImageListToolBar(listStyle, bounds.width, bounds.height, getZoom());
@@ -1303,6 +1303,14 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     public short _cx() {
         return cx;
+    }
+
+    public int _foreground() {
+        return foreground;
+    }
+
+    public int _background() {
+        return background;
     }
 
     public ToolItem getApi() {

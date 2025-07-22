@@ -3159,7 +3159,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             ((SwtShell) shell.getImpl()).releaseBrushes();
             setBackgroundImage(SwtImage.win32_getHandle(control.getImpl()._backgroundImage(), getZoom()));
         } else {
-            setBackgroundPixel(((SwtControl) control.getImpl()).background == -1 ? ((SwtControl) control.getImpl()).defaultBackground() : ((SwtControl) control.getImpl()).background);
+            setBackgroundPixel(control.getImpl()._background() == -1 ? ((SwtControl) control.getImpl()).defaultBackground() : control.getImpl()._background());
         }
     }
 
@@ -3402,7 +3402,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         }
     }
 
-    void setCursor() {
+    public void setCursor() {
         long lParam = OS.MAKELPARAM(OS.HTCLIENT, OS.WM_MOUSEMOVE);
         OS.SendMessage(getApi().handle, OS.WM_SETCURSOR, getApi().handle, lParam);
     }
@@ -3446,7 +3446,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = ((SwtDisplay) display.getImpl()).getControl(hwndCursor);
         if (control == null)
             control = this.getApi();
-        ((SwtControl) control.getImpl()).setCursor();
+        control.getImpl().setCursor();
     }
 
     void setDefaultFont() {
@@ -4236,7 +4236,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return ((SwtDecorations) menuShell().getImpl()).translateAccelerator(msg);
     }
 
-    boolean translateMnemonic(Event event, Control control) {
+    public boolean translateMnemonic(Event event, Control control) {
         if (control == this.getApi())
             return false;
         if (!isVisible() || !isEnabled())
@@ -4263,7 +4263,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             Event event = new Event();
             event.detail = SWT.TRAVERSE_MNEMONIC;
             if (setKeyState(event, SWT.Traverse, msg.wParam, msg.lParam)) {
-                return translateMnemonic(event, null) || ((SwtComposite) shell.getImpl()).translateMnemonic(event, this.getApi());
+                return translateMnemonic(event, null) || shell.getImpl().translateMnemonic(event, this.getApi());
             }
         }
         return false;
@@ -4389,7 +4389,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Shell shell = getShell();
         Control control = this.getApi();
         do {
-            if (((SwtControl) control.getImpl()).traverse(event)) {
+            if (control.getImpl().traverse(event)) {
                 OS.SendMessage(hwnd, OS.WM_CHANGEUISTATE, OS.UIS_INITIALIZE, 0);
                 return true;
             }
@@ -4402,7 +4402,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return false;
     }
 
-    boolean traverse(Event event) {
+    public boolean traverse(Event event) {
         /*
 	* It is possible (but unlikely), that application
 	* code could have disposed the widget in the traverse
@@ -4541,7 +4541,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return traverse(traversal, event.character, event.keyCode, event.keyLocation, event.stateMask, event.doit);
     }
 
-    boolean traverse(int traversal, char character, int keyCode, int keyLocation, int stateMask, boolean doit) {
+    public boolean traverse(int traversal, char character, int keyCode, int keyLocation, int stateMask, boolean doit) {
         if (traversal == SWT.TRAVERSE_NONE) {
             switch(keyCode) {
                 case SWT.ESC:
@@ -4630,7 +4630,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 }
             case SWT.TRAVERSE_MNEMONIC:
                 {
-                    return translateMnemonic(event, null) || ((SwtComposite) shell.getImpl()).translateMnemonic(event, this.getApi());
+                    return translateMnemonic(event, null) || shell.getImpl().translateMnemonic(event, this.getApi());
                 }
             default:
                 {
@@ -4640,7 +4640,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         }
         Control control = this.getApi();
         do {
-            if (((SwtControl) control.getImpl()).traverse(event)) {
+            if (control.getImpl().traverse(event)) {
                 OS.SendMessage(getApi().handle, OS.WM_CHANGEUISTATE, OS.UIS_INITIALIZE, 0);
                 return true;
             }
@@ -4779,7 +4779,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        setBackgroundPixel(((SwtControl) control.getImpl()).background);
+        setBackgroundPixel(control.getImpl()._background());
     }
 
     void updateBackgroundImage() {
@@ -6337,6 +6337,14 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     public int _drawCount() {
         return drawCount;
+    }
+
+    public int _foreground() {
+        return foreground;
+    }
+
+    public int _background() {
+        return background;
     }
 
     public int _backgroundAlpha() {

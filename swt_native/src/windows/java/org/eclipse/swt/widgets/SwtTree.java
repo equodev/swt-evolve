@@ -4857,7 +4857,7 @@ public class SwtTree extends SwtComposite implements ITree {
     }
 
     @Override
-    void setCursor() {
+    public void setCursor() {
         /*
 	* Bug in Windows.  Under certain circumstances, when WM_SETCURSOR
 	* is sent from SendMessage(), Windows GP's in the window proc for

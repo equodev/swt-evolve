@@ -30,6 +30,10 @@ public interface ImplControl extends ImplWidget {
 
     int _drawCount();
 
+    int _foreground();
+
+    int _background();
+
     int _backgroundAlpha();
 
     Widget[] computeTabList();
@@ -62,9 +66,17 @@ public interface ImplControl extends ImplWidget {
 
     boolean sendFocusEvent(int type);
 
+    void setCursor();
+
     boolean setRadioFocus(boolean tabbing);
 
     boolean setTabItemFocus();
+
+    boolean translateMnemonic(Event event, Control control);
+
+    boolean traverse(Event event);
+
+    boolean traverse(int traversal, char character, int keyCode, int keyLocation, int stateMask, boolean doit);
 
     void updateBackgroundMode();
 

@@ -3172,13 +3172,13 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             Point mappedPointInPoints;
             if (from == null) {
                 Point mappedPointInpixels = mapInPixels(from, to, getPixelsFromPoint(to.getShell().getMonitor(), x, y));
-                mappedPointInPoints = DPIUtil.scaleDown(mappedPointInpixels, ((SwtWidget) to.getImpl()).getZoom());
+                mappedPointInPoints = DPIUtil.scaleDown(mappedPointInpixels, to.getImpl().getZoom());
             } else if (to == null) {
-                Point mappedPointInpixels = mapInPixels(from, to, DPIUtil.scaleUp(new Point(x, y), ((SwtWidget) from.getImpl()).getZoom()));
+                Point mappedPointInpixels = mapInPixels(from, to, DPIUtil.scaleUp(new Point(x, y), from.getImpl().getZoom()));
                 mappedPointInPoints = getPointFromPixels(from.getShell().getMonitor(), mappedPointInpixels.x, mappedPointInpixels.y);
             } else {
-                Point mappedPointInpixels = mapInPixels(from, to, DPIUtil.scaleUp(new Point(x, y), ((SwtWidget) from.getImpl()).getZoom()));
-                mappedPointInPoints = DPIUtil.scaleDown(mappedPointInpixels, ((SwtWidget) to.getImpl()).getZoom());
+                Point mappedPointInpixels = mapInPixels(from, to, DPIUtil.scaleUp(new Point(x, y), from.getImpl().getZoom()));
+                mappedPointInPoints = DPIUtil.scaleDown(mappedPointInpixels, to.getImpl().getZoom());
             }
             return mappedPointInPoints;
         }
@@ -3210,9 +3210,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (to != null && to.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (to != null) {
-            return ((SwtWidget) to.getImpl()).getZoom();
+            return to.getImpl().getZoom();
         }
-        return ((SwtWidget) from.getImpl()).getZoom();
+        return from.getImpl().getZoom();
     }
 
     /**
@@ -3311,13 +3311,13 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             Rectangle mappedRectangleInPoints;
             if (from == null) {
                 Rectangle mappedRectangleInPixels = mapInPixels(from, to, translateRectangleInPixelsInDisplayCoordinateSystem(x, y, width, height, to.getShell().getMonitor()));
-                mappedRectangleInPoints = DPIUtil.scaleDown(mappedRectangleInPixels, ((SwtWidget) to.getImpl()).getZoom());
+                mappedRectangleInPoints = DPIUtil.scaleDown(mappedRectangleInPixels, to.getImpl().getZoom());
             } else if (to == null) {
-                Rectangle mappedRectangleInPixels = mapInPixels(from, to, DPIUtil.scaleUp(new Rectangle(x, y, width, height), ((SwtWidget) from.getImpl()).getZoom()));
+                Rectangle mappedRectangleInPixels = mapInPixels(from, to, DPIUtil.scaleUp(new Rectangle(x, y, width, height), from.getImpl().getZoom()));
                 mappedRectangleInPoints = translateRectangleInPointsInDisplayCoordinateSystem(mappedRectangleInPixels.x, mappedRectangleInPixels.y, mappedRectangleInPixels.width, mappedRectangleInPixels.height, from.getShell().getMonitor());
             } else {
-                Rectangle mappedRectangleInPixels = mapInPixels(from, to, DPIUtil.scaleUp(new Rectangle(x, y, width, height), ((SwtWidget) from.getImpl()).getZoom()));
-                mappedRectangleInPoints = DPIUtil.scaleDown(mappedRectangleInPixels, ((SwtWidget) to.getImpl()).getZoom());
+                Rectangle mappedRectangleInPixels = mapInPixels(from, to, DPIUtil.scaleUp(new Rectangle(x, y, width, height), from.getImpl().getZoom()));
+                mappedRectangleInPoints = DPIUtil.scaleDown(mappedRectangleInPixels, to.getImpl().getZoom());
             }
             return mappedRectangleInPoints;
         }

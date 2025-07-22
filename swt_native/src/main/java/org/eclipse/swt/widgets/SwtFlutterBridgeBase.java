@@ -6,6 +6,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.DartCTabFolder;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.internal.Platform;
 
 import java.util.Arrays;
 
@@ -25,13 +26,16 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
         if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof SwtComposite) {
 //            SwtComposite parentComposite = new SwtComposite(dartControl.parent, SWT.NONE, null);
             SwtFlutterBridge bridge = new SwtFlutterBridge(widget);
+            widget.bridge = bridge;
             bridge.initFlutterView(dartControl.parent, dartControl);
             if (widget instanceof DartCTabFolder t) { // workaround
-                t.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> {
-                    Rectangle bounds = t.getBounds();
-                    bounds.height = bounds.height + 1;
-                    bridge.setBounds(t, bounds);
-                }));
+                if (!Platform.PLATFORM.equals("win32")) {
+                    t.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> {
+                        Rectangle bounds = t.getBounds();
+                        bounds.height = bounds.height + 1;
+                        bridge.setBounds(t, bounds);
+                    }));
+                }
             }
             return bridge;
         }
@@ -71,7 +75,7 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     @Override
     public void setBounds(DartControl dartControl, Rectangle bounds) {
         if (dartControl.bridge != null && forWidget == dartControl) {
-//            System.out.println("SET BOUNDS: "+bounds);
+            System.out.println("SET BOUNDS: " + dartControl + " " + bounds);
             if (dartControl instanceof DartCTabFolder) {
                 SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
                         0, 0, bounds.width, 28);

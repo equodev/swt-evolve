@@ -1311,12 +1311,12 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     }
 
     @Override
-    boolean translateMnemonic(Event event, Control control) {
+    public boolean translateMnemonic(Event event, Control control) {
         if (super.translateMnemonic(event, control))
             return true;
         if (control != null) {
             for (Control child : _getChildren()) {
-                if (((SwtControl) child.getImpl()).translateMnemonic(event, control))
+                if (child.getImpl().translateMnemonic(event, control))
                     return true;
             }
         }

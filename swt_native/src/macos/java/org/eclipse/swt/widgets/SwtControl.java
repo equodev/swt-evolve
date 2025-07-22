@@ -1315,7 +1315,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             context.restoreGraphicsState();
             return;
         }
-        double[] background = ((SwtControl) control.getImpl()).background;
+        double[] background = control.getImpl()._background();
         double alpha;
         if (background == null) {
             if (isTransparent())
@@ -3680,7 +3680,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (control.getImpl()._backgroundImage() != null) {
             setBackgroundImage(control.getImpl()._backgroundImage().handle);
         } else {
-            double[] color = ((SwtControl) control.getImpl()).background != null ? ((SwtControl) control.getImpl()).background : ((SwtControl) control.getImpl()).defaultBackground().handle;
+            double[] color = control.getImpl()._background() != null ? control.getImpl()._background() : ((SwtControl) control.getImpl()).defaultBackground().handle;
             NSColor nsColor = NSColor.colorWithDeviceRed(color[0], color[1], color[2], color[3]);
             setBackgroundColor(nsColor);
         }
@@ -5007,7 +5007,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Shell shell = getShell();
         Control control = this.getApi();
         do {
-            if (((SwtControl) control.getImpl()).traverse(event))
+            if (control.getImpl().traverse(event))
                 return true;
             if (!event.doit && ((SwtWidget) control.getImpl()).hooks(SWT.Traverse)) {
                 return false;
@@ -5109,7 +5109,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return traverse(traversal, event.character, event.keyCode, event.keyLocation, event.stateMask, event.doit);
     }
 
-    boolean traverse(int traversal, char character, int keyCode, int keyLocation, int stateMask, boolean doit) {
+    public boolean traverse(int traversal, char character, int keyCode, int keyLocation, int stateMask, boolean doit) {
         if (traversal == SWT.TRAVERSE_NONE) {
             switch(keyCode) {
                 case SWT.ESC:
@@ -5204,7 +5204,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         }
         Control control = this.getApi();
         do {
-            if (((SwtControl) control.getImpl()).traverse(event))
+            if (control.getImpl().traverse(event))
                 return true;
             if (!event.doit && ((SwtWidget) control.getImpl()).hooks(SWT.Traverse))
                 return false;
@@ -5239,7 +5239,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return traverse(event);
     }
 
-    boolean traverse(Event event) {
+    public boolean traverse(Event event) {
         sendEvent(SWT.Traverse, event);
         if (isDisposed())
             return true;
@@ -5434,7 +5434,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        double[] color = ((SwtControl) control.getImpl()).background != null ? ((SwtControl) control.getImpl()).background : ((SwtControl) control.getImpl()).defaultBackground().handle;
+        double[] color = control.getImpl()._background() != null ? control.getImpl()._background() : ((SwtControl) control.getImpl()).defaultBackground().handle;
         NSColor nsColor = NSColor.colorWithDeviceRed(color[0], color[1], color[2], color[3]);
         setBackgroundColor(nsColor);
     }
@@ -5533,6 +5533,14 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     public Menu _menu() {
         return menu;
+    }
+
+    public double[] _foreground() {
+        return foreground;
+    }
+
+    public double[] _background() {
+        return background;
     }
 
     public Image _backgroundImage() {

@@ -3575,7 +3575,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return traverse(traversal, event.character, event.keyCode, event.keyLocation, event.stateMask, event.doit);
     }
 
-    boolean traverse(int traversal, char character, int keyCode, int keyLocation, int stateMask, boolean doit) {
+    public boolean traverse(int traversal, char character, int keyCode, int keyLocation, int stateMask, boolean doit) {
         if (traversal == SWT.TRAVERSE_NONE) {
             switch(keyCode) {
                 case SWT.ESC:
@@ -3670,7 +3670,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         }
         Control control = this.getApi();
         do {
-            if (((DartControl) control.getImpl()).traverse(event))
+            if (control.getImpl().traverse(event))
                 return true;
             if (!event.doit && ((DartWidget) control.getImpl()).hooks(SWT.Traverse))
                 return false;
@@ -3705,7 +3705,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return traverse(event);
     }
 
-    boolean traverse(Event event) {
+    public boolean traverse(Event event) {
         sendEvent(SWT.Traverse, event);
         if (isDisposed())
             return true;
@@ -3949,6 +3949,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public Menu _menu() {
         return menu;
+    }
+
+    public double[] _foreground() {
+        return foreground;
+    }
+
+    public double[] _background() {
+        return background;
     }
 
     public Image _backgroundImage() {
