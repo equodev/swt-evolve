@@ -1267,7 +1267,6 @@ public class DartCombo extends DartComposite implements ICombo {
         if (selection != -1)
             select(selection);
         ignoreSelection = false;
-        getBridge().dirty(this);
     }
 
     /**
@@ -1546,7 +1545,7 @@ public class DartCombo extends DartComposite implements ICombo {
         super.hookEvents();
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Modify, e);
+                setText(e.text);
             });
         });
         FlutterBridge.on(this, "Segment", "Segments", e -> {

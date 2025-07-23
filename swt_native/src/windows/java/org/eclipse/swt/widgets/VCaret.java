@@ -15,6 +15,14 @@ public class VCaret extends VWidget {
         super(impl);
     }
 
+    public Rectangle getBounds() {
+        return ((DartCaret) impl).bounds;
+    }
+
+    public void setBounds(Rectangle value) {
+        ((DartCaret) impl).bounds = value;
+    }
+
     @JsonAttribute(ignore = true)
     public Font getFont() {
         return ((DartCaret) impl).font;
@@ -22,6 +30,14 @@ public class VCaret extends VWidget {
 
     public void setFont(Font value) {
         ((DartCaret) impl).font = value;
+    }
+
+    public int getHeight() {
+        return ((DartCaret) impl).height;
+    }
+
+    public void setHeight(int value) {
+        ((DartCaret) impl).height = value;
     }
 
     @JsonAttribute(ignore = true)
@@ -33,28 +49,12 @@ public class VCaret extends VWidget {
         ((DartCaret) impl).image = value;
     }
 
-    public boolean getIsVisible() {
+    public boolean getVisible() {
         return ((DartCaret) impl).getVisible();
     }
 
-    public void setIsVisible(boolean value) {
+    public void setVisible(boolean value) {
         ((DartCaret) impl).isVisible = value;
-    }
-
-    public int getHeight() {
-        return ((DartCaret) impl).height;
-    }
-
-    public void setHeight(int value) {
-        ((DartCaret) impl).height = value;
-    }
-
-    public int getY() {
-        return ((DartCaret) impl).y;
-    }
-
-    public void setY(int value) {
-        ((DartCaret) impl).y = value;
     }
 
     @JsonConverter(target = Caret.class)

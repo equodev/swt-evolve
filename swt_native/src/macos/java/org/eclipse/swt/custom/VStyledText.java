@@ -31,20 +31,12 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).alignment = value;
     }
 
-    public boolean getAlwaysShowScroll() {
+    public boolean getAlwaysShowScrollBars() {
         return ((DartStyledText) impl).getAlwaysShowScrollBars();
     }
 
-    public void setAlwaysShowScroll(boolean value) {
+    public void setAlwaysShowScrollBars(boolean value) {
         ((DartStyledText) impl).alwaysShowScroll = value;
-    }
-
-    public Color getMarginColor() {
-        return ((DartStyledText) impl).marginColor;
-    }
-
-    public void setMarginColor(Color value) {
-        ((DartStyledText) impl).marginColor = value;
     }
 
     public boolean getBidiColoring() {
@@ -79,12 +71,20 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).bottomMargin = value;
     }
 
-    public int getCaretOffsets() {
+    public int getCaretOffset() {
         return ((DartStyledText) impl).getCaretOffset();
     }
 
-    public void setCaretOffsets(int value) {
+    public void setCaretOffset(int value) {
         ((DartStyledText) impl).setCaretOffset(value);
+    }
+
+    public int getColumnX() {
+        return ((DartStyledText) impl).columnX;
+    }
+
+    public void setColumnX(int value) {
+        ((DartStyledText) impl).columnX = value;
     }
 
     @JsonAttribute(ignore = true)
@@ -110,7 +110,15 @@ public class VStyledText extends VCanvas {
 
     public void setEditable(boolean value) {
         ((DartStyledText) impl).editable = value;
-        ((DartStyledText) impl).getBridge().dirty((DartStyledText) impl);
+    }
+
+    @JsonAttribute(ignore = true)
+    public FontMetrics getFixedLineMetrics() {
+        return ((DartStyledText) impl).fixedLineMetrics;
+    }
+
+    public void setFixedLineMetrics(FontMetrics value) {
+        ((DartStyledText) impl).fixedLineMetrics = value;
     }
 
     public int getHorizontalIndex() {
@@ -119,6 +127,14 @@ public class VStyledText extends VCanvas {
 
     public void setHorizontalIndex(int value) {
         ((DartStyledText) impl).horizontalIndex = value;
+    }
+
+    public int getHorizontalPixel() {
+        return ((DartStyledText) impl).getHorizontalPixel();
+    }
+
+    public void setHorizontalPixel(int value) {
+        ((DartStyledText) impl).horizontalScrollOffset = value;
     }
 
     public int getIndent() {
@@ -137,6 +153,14 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).justify = value;
     }
 
+    public int getLeftMargin() {
+        return ((DartStyledText) impl).getLeftMargin();
+    }
+
+    public void setLeftMargin(int value) {
+        ((DartStyledText) impl).leftMargin = value;
+    }
+
     public int getLineSpacing() {
         return ((DartStyledText) impl).getLineSpacing();
     }
@@ -145,12 +169,20 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).lineSpacing = value;
     }
 
-    public int getLeftMargin() {
-        return ((DartStyledText) impl).getLeftMargin();
+    public Color getMarginColor() {
+        return ((DartStyledText) impl).marginColor;
     }
 
-    public void setLeftMargin(int value) {
-        ((DartStyledText) impl).leftMargin = value;
+    public void setMarginColor(Color value) {
+        ((DartStyledText) impl).marginColor = value;
+    }
+
+    public boolean getMouseNavigatorEnabled() {
+        return ((DartStyledText) impl).getMouseNavigatorEnabled();
+    }
+
+    public void setMouseNavigatorEnabled(boolean value) {
+        ((DartStyledText) impl).mouseNavigatorEnabled = value;
     }
 
     public int[] getRanges() {
@@ -177,6 +209,22 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).setSelection(value);
     }
 
+    public Color getSelectionBackground() {
+        return ((DartStyledText) impl).selectionBackground;
+    }
+
+    public void setSelectionBackground(Color value) {
+        ((DartStyledText) impl).selectionBackground = value;
+    }
+
+    public Color getSelectionForeground() {
+        return ((DartStyledText) impl).selectionForeground;
+    }
+
+    public void setSelectionForeground(Color value) {
+        ((DartStyledText) impl).selectionForeground = value;
+    }
+
     public Point getSelectionRange() {
         return ((DartStyledText) impl).selectionRange;
     }
@@ -193,20 +241,12 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).selectionRanges = value;
     }
 
-    public Color getSelectionBackground() {
-        return ((DartStyledText) impl).selectionBackground;
+    public int getStyleRange() {
+        return ((DartStyledText) impl).columnX;
     }
 
-    public void setSelectionBackground(Color value) {
-        ((DartStyledText) impl).selectionBackground = value;
-    }
-
-    public Color getSelectionForeground() {
-        return ((DartStyledText) impl).selectionForeground;
-    }
-
-    public void setSelectionForeground(Color value) {
-        ((DartStyledText) impl).selectionForeground = value;
+    public void setStyleRange(int value) {
+        ((DartStyledText) impl).columnX = value;
     }
 
     @JsonAttribute(ignore = true)
@@ -224,20 +264,20 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).styleRanges = value;
     }
 
-    public int getTabLength() {
-        return ((DartStyledText) impl).getTabs();
-    }
-
-    public void setTabLength(int value) {
-        ((DartStyledText) impl).tabLength = value;
-    }
-
     public int[] getTabStops() {
         return ((DartStyledText) impl).tabStops;
     }
 
     public void setTabStops(int[] value) {
         ((DartStyledText) impl).tabStops = value;
+    }
+
+    public int getTabs() {
+        return ((DartStyledText) impl).getTabs();
+    }
+
+    public void setTabs(int value) {
+        ((DartStyledText) impl).tabLength = value;
     }
 
     @JsonAttribute(nullable = false)
@@ -281,40 +321,6 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).topPixel = value;
     }
 
-    public boolean getWordWrap() {
-        return ((DartStyledText) impl).getWordWrap();
-    }
-
-    public void setWordWrap(boolean value) {
-        ((DartStyledText) impl).wordWrap = value;
-        ((DartStyledText) impl).getBridge().dirty((DartStyledText) impl);
-    }
-
-    public int getWrapIndent() {
-        return ((DartStyledText) impl).getWrapIndent();
-    }
-
-    public void setWrapIndent(int value) {
-        ((DartStyledText) impl).wrapIndent = value;
-    }
-
-    @JsonAttribute(ignore = true)
-    public FontMetrics getFixedLineMetrics() {
-        return ((DartStyledText) impl).fixedLineMetrics;
-    }
-
-    public void setFixedLineMetrics(FontMetrics value) {
-        ((DartStyledText) impl).fixedLineMetrics = value;
-    }
-
-    public int getHorizontalPixel() {
-        return ((DartStyledText) impl).horizontalPixel;
-    }
-
-    public void setHorizontalPixel(int value) {
-        ((DartStyledText) impl).horizontalPixel = value;
-    }
-
     public int getVerticalScrollOffset() {
         return ((DartStyledText) impl).verticalScrollOffset;
     }
@@ -323,30 +329,20 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).verticalScrollOffset = value;
     }
 
-    @JsonAttribute(ignore = true)
-    public StyledTextLineSpacingProvider getLineSpacingProvider() {
-        return ((DartStyledText) impl).lineSpacingProvider;
+    public boolean getWordWrap() {
+        return ((DartStyledText) impl).getWordWrap();
     }
 
-    public void setLineSpacingProvider(StyledTextLineSpacingProvider value) {
-        ((DartStyledText) impl).lineSpacingProvider = value;
+    public void setWordWrap(boolean value) {
+        ((DartStyledText) impl).wordWrap = value;
     }
 
-    @JsonAttribute(ignore = true)
-    public MouseNavigator getMouseNavigator() {
-        return ((DartStyledText) impl).mouseNavigator;
+    public int getWrapIndent() {
+        return ((DartStyledText) impl).getWrapIndent();
     }
 
-    public void setMouseNavigator(MouseNavigator value) {
-        ((DartStyledText) impl).mouseNavigator = value;
-    }
-
-    public int[] getTabs() {
-        return ((DartStyledText) impl).tabs;
-    }
-
-    public void setTabs(int[] value) {
-        ((DartStyledText) impl).tabs = value;
+    public void setWrapIndent(int value) {
+        ((DartStyledText) impl).wrapIndent = value;
     }
 
     @JsonConverter(target = StyledText.class)

@@ -41,7 +41,7 @@ VStyledText _$VStyledTextFromJson(Map<String, dynamic> json) => VStyledText()
       ? null
       : VCaret.fromJson(json['caret'] as Map<String, dynamic>)
   ..alignment = (json['alignment'] as num?)?.toInt()
-  ..alwaysShowScroll = json['alwaysShowScroll'] as bool?
+  ..alwaysShowScrollBars = json['alwaysShowScrollBars'] as bool?
   ..bidiColoring = json['bidiColoring'] as bool?
   ..blockSelection = json['blockSelection'] as bool?
   ..blockSelectionBounds = json['blockSelectionBounds'] == null
@@ -49,7 +49,8 @@ VStyledText _$VStyledTextFromJson(Map<String, dynamic> json) => VStyledText()
       : VRectangle.fromJson(
           json['blockSelectionBounds'] as Map<String, dynamic>)
   ..bottomMargin = (json['bottomMargin'] as num?)?.toInt()
-  ..caretOffsets = (json['caretOffsets'] as num?)?.toInt()
+  ..caretOffset = (json['caretOffset'] as num?)?.toInt()
+  ..columnX = (json['columnX'] as num?)?.toInt()
   ..doubleClickEnabled = json['doubleClickEnabled'] as bool?
   ..editable = json['editable'] as bool?
   ..horizontalIndex = (json['horizontalIndex'] as num?)?.toInt()
@@ -61,6 +62,7 @@ VStyledText _$VStyledTextFromJson(Map<String, dynamic> json) => VStyledText()
   ..marginColor = json['marginColor'] == null
       ? null
       : VColor.fromJson(json['marginColor'] as Map<String, dynamic>)
+  ..mouseNavigatorEnabled = json['mouseNavigatorEnabled'] as bool?
   ..ranges = (json['ranges'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
       .toList()
@@ -80,12 +82,11 @@ VStyledText _$VStyledTextFromJson(Map<String, dynamic> json) => VStyledText()
   ..selectionRanges = (json['selectionRanges'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
       .toList()
-  ..tabLength = (json['tabLength'] as num?)?.toInt()
+  ..styleRange = (json['styleRange'] as num?)?.toInt()
   ..tabStops = (json['tabStops'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
       .toList()
-  ..tabs =
-      (json['tabs'] as List<dynamic>?)?.map((e) => (e as num).toInt()).toList()
+  ..tabs = (json['tabs'] as num?)?.toInt()
   ..text = json['text'] as String?
   ..textLimit = (json['textLimit'] as num?)?.toInt()
   ..topIndex = (json['topIndex'] as num?)?.toInt()
@@ -119,12 +120,13 @@ Map<String, dynamic> _$VStyledTextToJson(VStyledText instance) =>
       'tabList': instance.tabList,
       'caret': instance.caret,
       'alignment': instance.alignment,
-      'alwaysShowScroll': instance.alwaysShowScroll,
+      'alwaysShowScrollBars': instance.alwaysShowScrollBars,
       'bidiColoring': instance.bidiColoring,
       'blockSelection': instance.blockSelection,
       'blockSelectionBounds': instance.blockSelectionBounds,
       'bottomMargin': instance.bottomMargin,
-      'caretOffsets': instance.caretOffsets,
+      'caretOffset': instance.caretOffset,
+      'columnX': instance.columnX,
       'doubleClickEnabled': instance.doubleClickEnabled,
       'editable': instance.editable,
       'horizontalIndex': instance.horizontalIndex,
@@ -134,6 +136,7 @@ Map<String, dynamic> _$VStyledTextToJson(VStyledText instance) =>
       'leftMargin': instance.leftMargin,
       'lineSpacing': instance.lineSpacing,
       'marginColor': instance.marginColor,
+      'mouseNavigatorEnabled': instance.mouseNavigatorEnabled,
       'ranges': instance.ranges,
       'rightMargin': instance.rightMargin,
       'selection': instance.selection,
@@ -141,7 +144,7 @@ Map<String, dynamic> _$VStyledTextToJson(VStyledText instance) =>
       'selectionForeground': instance.selectionForeground,
       'selectionRange': instance.selectionRange,
       'selectionRanges': instance.selectionRanges,
-      'tabLength': instance.tabLength,
+      'styleRange': instance.styleRange,
       'tabStops': instance.tabStops,
       'tabs': instance.tabs,
       'text': instance.text,

@@ -30,14 +30,6 @@ public class VToolBar extends VComposite {
         ((DartToolBar) impl).items = value;
     }
 
-    public int getRowCount() {
-        return ((DartToolBar) impl).getRowCount();
-    }
-
-    public void setRowCount(int value) {
-        ((DartToolBar) impl).rowCount = value;
-    }
-
     @JsonConverter(target = ToolBar.class)
     public static class ToolBarJson implements Configuration {
 

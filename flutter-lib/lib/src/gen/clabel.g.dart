@@ -40,7 +40,7 @@ VCLabel _$VCLabelFromJson(Map<String, dynamic> json) => VCLabel()
   ..caret = json['caret'] == null
       ? null
       : VCaret.fromJson(json['caret'] as Map<String, dynamic>)
-  ..align = (json['align'] as num?)?.toInt()
+  ..alignment = (json['alignment'] as num?)?.toInt()
   ..bottomMargin = (json['bottomMargin'] as num?)?.toInt()
   ..gradientColors = (json['gradientColors'] as List<dynamic>?)
       ?.map((e) => VColor.fromJson(e as Map<String, dynamic>))
@@ -76,7 +76,7 @@ Map<String, dynamic> _$VCLabelToJson(VCLabel instance) => <String, dynamic>{
       'layoutDeferred': instance.layoutDeferred,
       'tabList': instance.tabList,
       'caret': instance.caret,
-      'align': instance.align,
+      'alignment': instance.alignment,
       'bottomMargin': instance.bottomMargin,
       'gradientColors': instance.gradientColors,
       'gradientPercents': instance.gradientPercents,

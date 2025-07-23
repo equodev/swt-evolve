@@ -19,12 +19,21 @@ public class VCLabel extends VCanvas {
         super(impl);
     }
 
-    public int getAlign() {
+    public int getAlignment() {
         return ((DartCLabel) impl).getAlignment();
     }
 
-    public void setAlign(int value) {
+    public void setAlignment(int value) {
         ((DartCLabel) impl).align = value;
+    }
+
+    @JsonAttribute(ignore = true)
+    public Image getBackgroundImage() {
+        return ((DartCLabel) impl).backgroundImage;
+    }
+
+    public void setBackgroundImage(Image value) {
+        ((DartCLabel) impl).backgroundImage = value;
     }
 
     public int getBottomMargin() {
@@ -33,6 +42,36 @@ public class VCLabel extends VCanvas {
 
     public void setBottomMargin(int value) {
         ((DartCLabel) impl).bottomMargin = value;
+    }
+
+    public Color[] getGradientColors() {
+        Color[] values = ((DartCLabel) impl).gradientColors;
+        if (values == null)
+            return null;
+        ArrayList<Color> result = new ArrayList<>(values.length);
+        for (Color v : values) if (v != null)
+            result.add(v);
+        return result.toArray(Color[]::new);
+    }
+
+    public void setGradientColors(Color[] value) {
+        ((DartCLabel) impl).gradientColors = value;
+    }
+
+    public int[] getGradientPercents() {
+        return ((DartCLabel) impl).gradientPercents;
+    }
+
+    public void setGradientPercents(int[] value) {
+        ((DartCLabel) impl).gradientPercents = value;
+    }
+
+    public boolean getGradientVertical() {
+        return ((DartCLabel) impl).gradientVertical;
+    }
+
+    public void setGradientVertical(boolean value) {
+        ((DartCLabel) impl).gradientVertical = value;
     }
 
     @JsonAttribute(ignore = true)
@@ -74,45 +113,6 @@ public class VCLabel extends VCanvas {
 
     public void setTopMargin(int value) {
         ((DartCLabel) impl).topMargin = value;
-    }
-
-    public Color[] getGradientColors() {
-        Color[] values = ((DartCLabel) impl).gradientColors;
-        if (values == null)
-            return null;
-        ArrayList<Color> result = new ArrayList<>(values.length);
-        for (Color v : values) if (v != null)
-            result.add(v);
-        return result.toArray(Color[]::new);
-    }
-
-    public void setGradientColors(Color[] value) {
-        ((DartCLabel) impl).gradientColors = value;
-    }
-
-    public int[] getGradientPercents() {
-        return ((DartCLabel) impl).gradientPercents;
-    }
-
-    public void setGradientPercents(int[] value) {
-        ((DartCLabel) impl).gradientPercents = value;
-    }
-
-    public boolean getGradientVertical() {
-        return ((DartCLabel) impl).gradientVertical;
-    }
-
-    public void setGradientVertical(boolean value) {
-        ((DartCLabel) impl).gradientVertical = value;
-    }
-
-    @JsonAttribute(ignore = true)
-    public Image getBackgroundImage() {
-        return ((DartCLabel) impl).backgroundImage;
-    }
-
-    public void setBackgroundImage(Image value) {
-        ((DartCLabel) impl).backgroundImage = value;
     }
 
     @JsonConverter(target = CLabel.class)

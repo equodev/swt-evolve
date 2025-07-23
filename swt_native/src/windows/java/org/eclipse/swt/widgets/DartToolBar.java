@@ -426,7 +426,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
         checkWidget();
         if ((getApi().style & SWT.VERTICAL) != 0) {
         }
-        return this.rowCount;
+        return 0;
     }
 
     ToolItem[] _getTabItemList() {
@@ -675,8 +675,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
             count += 2;
             ignoreResize = false;
         }
-        this.rowCount = count;
-        getBridge().dirty(this);
     }
 
     /*public*/
@@ -780,8 +778,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
         toolBar.layout(true);
     }
 
-    int rowCount;
-
     public int _lastFocusId() {
         return lastFocusId;
     }
@@ -832,10 +828,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     public boolean _ignoreMouse() {
         return ignoreMouse;
-    }
-
-    public int _rowCount() {
-        return rowCount;
     }
 
     protected void hookEvents() {

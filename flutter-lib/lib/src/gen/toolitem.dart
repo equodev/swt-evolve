@@ -38,6 +38,7 @@ class VToolItem extends VItem {
   VColor? foreground;
   bool? selection;
   String? toolTipText;
+  int? width;
 
   factory VToolItem.fromJson(Map<String, dynamic> json) =>
       _$VToolItemFromJson(json);

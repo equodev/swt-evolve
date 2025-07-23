@@ -34,6 +34,7 @@ class ToolItemSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("selection").equalsTo(w.getSelection(), orAbsentIfFalse));
+        assertJ.satisfies(node("width").equalsTo(w.getWidth(), orAbsentIf0));
     }
 
     VToolItem value(ToolItem w) {

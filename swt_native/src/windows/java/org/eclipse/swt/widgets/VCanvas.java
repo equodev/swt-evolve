@@ -27,11 +27,11 @@ public class VCanvas extends VComposite {
     }
 
     @JsonAttribute(ignore = true)
-    public IME getIme() {
+    public IME getIME() {
         return ((DartCanvas) impl).ime;
     }
 
-    public void setIme(IME value) {
+    public void setIME(IME value) {
         ((DartCanvas) impl).ime = value;
     }
 

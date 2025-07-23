@@ -38,6 +38,14 @@ public class VComposite extends VScrollable {
         ((DartComposite) impl).children = value;
     }
 
+    public boolean getLayoutDeferred() {
+        return ((DartComposite) impl).getLayoutDeferred();
+    }
+
+    public void setLayoutDeferred(boolean value) {
+        ((DartComposite) impl).layoutDeferred = value;
+    }
+
     public Control[] getTabList() {
         Control[] values = ((DartComposite) impl).tabList;
         if (values == null)
@@ -50,14 +58,6 @@ public class VComposite extends VScrollable {
 
     public void setTabList(Control[] value) {
         ((DartComposite) impl).tabList = value;
-    }
-
-    public boolean getLayoutDeferred() {
-        return ((DartComposite) impl).getLayoutDeferred();
-    }
-
-    public void setLayoutDeferred(boolean value) {
-        ((DartComposite) impl).layoutDeferred = value;
     }
 
     @JsonConverter(target = Composite.class)

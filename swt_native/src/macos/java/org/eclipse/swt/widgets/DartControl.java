@@ -868,6 +868,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (isFocusControl())
             return true;
         ((SwtDecorations) shell.getImpl()).setSavedFocus(null);
+        getBridge().setFocus(this);
         if (isDisposed())
             return false;
         ((SwtDecorations) shell.getImpl()).setSavedFocus(this.getApi());
@@ -3913,21 +3914,21 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     Rectangle bounds = new Rectangle(0, 0, 0, 0);
 
+    boolean capture;
+
     boolean dragDetect;
 
-    boolean enabled;
+    boolean enabled = true;
 
     Color _foreground;
 
     int orientation;
 
+    boolean redraw;
+
     int textDirection;
 
-    boolean visible;
-
-    boolean capture;
-
-    boolean redraw;
+    boolean visible = true;
 
     public Composite _parent() {
         return parent;
@@ -4001,6 +4002,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return bounds;
     }
 
+    public boolean _capture() {
+        return capture;
+    }
+
     public boolean _dragDetect() {
         return dragDetect;
     }
@@ -4017,20 +4022,16 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return orientation;
     }
 
+    public boolean _redraw() {
+        return redraw;
+    }
+
     public int _textDirection() {
         return textDirection;
     }
 
     public boolean _visible() {
         return visible;
-    }
-
-    public boolean _capture() {
-        return capture;
-    }
-
-    public boolean _redraw() {
-        return redraw;
     }
 
     public FlutterBridge getBridge() {

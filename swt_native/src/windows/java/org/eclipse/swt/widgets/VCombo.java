@@ -64,11 +64,11 @@ public class VCombo extends VComposite {
         ((DartCombo) impl).textLimit = value;
     }
 
-    public int getVisibleCount() {
+    public int getVisibleItemCount() {
         return ((DartCombo) impl).getVisibleItemCount();
     }
 
-    public void setVisibleCount(int value) {
+    public void setVisibleItemCount(int value) {
         ((DartCombo) impl).visibleCount = value;
     }
 

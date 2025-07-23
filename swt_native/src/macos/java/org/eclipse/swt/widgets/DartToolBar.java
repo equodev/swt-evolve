@@ -564,7 +564,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
     void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
         // In the unified toolbar case, the toolbar view size and position is completely controlled
         super.setBounds(x, y, width, height, move, resize);
-        getBridge().dirty(this);
     }
 
     @Override

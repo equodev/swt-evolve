@@ -1410,43 +1410,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        int lineCount = (getStyle() & SWT.SINGLE) != 0 ? 1 : content.getLineCount();
-        int width = 0;
-        int height = 0;
-        if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
-            Display display = getDisplay();
-            int maxHeight = display.getClientArea().height;
-            for (int lineIndex = 0; lineIndex < lineCount; lineIndex++) {
-                TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
-                int wrapWidth = layout.getWidth();
-                if (wordWrap)
-                    layout.setWidth(wHint == 0 ? 1 : wHint == SWT.DEFAULT ? SWT.DEFAULT : Math.max(1, wHint - leftMargin - rightMargin));
-                Rectangle rect = layout.getBounds();
-                height += rect.height;
-                width = Math.max(width, rect.width);
-                layout.setWidth(wrapWidth);
-                ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
-                if (isFixedLineHeight() && height > maxHeight)
-                    break;
-            }
-            if (isFixedLineHeight()) {
-                height = lineCount * ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
-            }
-        }
-        // Use default values if no text is defined.
-        if (width == 0)
-            width = DEFAULT_WIDTH;
-        if (height == 0)
-            height = DEFAULT_HEIGHT;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
-        int wTrim = getLeftMargin() + rightMargin + getCaretWidth();
-        int hTrim = topMargin + bottomMargin;
-        Rectangle rect = computeTrim(0, 0, width + wTrim, height + hTrim);
-        return new Point(rect.width, rect.height);
+        return Sizes.compute(this);
     }
 
     /**
@@ -5572,62 +5536,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * @return location of the character at the given offset in the line.
      */
     Point getPointAtOffset(int offset) {
-        int lineIndex = content.getLineAtOffset(offset);
-        String line = content.getLine(lineIndex);
-        int lineOffset = content.getOffsetAtLine(lineIndex);
-        int offsetInLine = Math.max(0, offset - lineOffset);
-        int lineLength = line.length();
-        if (lineIndex < content.getLineCount() - 1) {
-            int endLineOffset = content.getOffsetAtLine(lineIndex + 1) - 1;
-            if (lineLength < offsetInLine && offsetInLine <= endLineOffset) {
-                offsetInLine = lineLength;
-            }
-        }
-        Point point;
-        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
-        if (lineLength != 0 && offsetInLine <= lineLength) {
-            if (offsetInLine == lineLength) {
-                offsetInLine = layout.getPreviousOffset(offsetInLine, SWT.MOVEMENT_CLUSTER);
-                point = layout.getLocation(offsetInLine, true);
-            } else {
-                switch(caretAlignment) {
-                    case OFFSET_LEADING:
-                        point = layout.getLocation(offsetInLine, false);
-                        break;
-                    case PREVIOUS_OFFSET_TRAILING:
-                    default:
-                        boolean lineBegin = offsetInLine == 0;
-                        // If word wrap is enabled, we should also consider offsets
-                        // of wrapped line parts as line begin and do NOT go back.
-                        // This prevents clients to jump one line higher than
-                        // expected, see bug 488172.
-                        // Respect caretAlignment at the caretOffset, unless there's
-                        // a non-empty selection, see bug 488172 comment 6.
-                        if (wordWrap && !lineBegin && (Arrays.binarySearch(caretOffsets, offset) < 0 || Arrays.stream(selection).allMatch(p -> p.x == p.y))) {
-                            int[] offsets = layout.getLineOffsets();
-                            for (int i : offsets) {
-                                if (i == offsetInLine) {
-                                    lineBegin = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if (lineBegin) {
-                            point = layout.getLocation(offsetInLine, false);
-                        } else {
-                            offsetInLine = layout.getPreviousOffset(offsetInLine, SWT.MOVEMENT_CLUSTER);
-                            point = layout.getLocation(offsetInLine, true);
-                        }
-                        break;
-                }
-            }
-        } else {
-            point = new Point(layout.getIndent(), layout.getVerticalIndent());
-        }
-        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
-        point.x += leftMargin - horizontalScrollOffset;
-        point.y += getLinePixel(lineIndex);
-        return point;
+        return new Point(0, 0);
     }
 
     /**
@@ -6417,46 +6326,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * @param event resize event
      */
     void handleResize(Event event) {
-        int oldHeight = clientAreaHeight;
-        int oldWidth = clientAreaWidth;
-        Rectangle clientArea = getClientArea();
-        clientAreaHeight = clientArea.height;
-        clientAreaWidth = clientArea.width;
-        if (!alwaysShowScroll && ignoreResize != 0)
-            return;
-        redrawMargins(oldHeight, oldWidth);
-        if (wordWrap) {
-            if (oldWidth != clientAreaWidth) {
-                ((DartStyledTextRenderer) renderer.getImpl()).reset(0, content.getLineCount());
-                verticalScrollOffset = -1;
-                ((DartStyledTextRenderer) renderer.getImpl()).calculateIdle();
-                super.redraw();
-            }
-            if (oldHeight != clientAreaHeight) {
-                if (oldHeight == 0)
-                    topIndexY = 0;
-                setScrollBars(true);
-            }
-            setCaretLocations();
-        } else {
-            ((DartStyledTextRenderer) renderer.getImpl()).calculateClientArea();
-            setScrollBars(true);
-            claimRightFreeSpace();
-            // StyledText allows any value for horizontalScrollOffset when clientArea is zero
-            // in setHorizontalPixel() and setHorisontalOffset(). Fixes bug 168429.
-            if (clientAreaWidth != 0) {
-                ScrollBar horizontalBar = getHorizontalBar();
-                if (horizontalBar != null && horizontalBar.getVisible()) {
-                    if (horizontalScrollOffset != horizontalBar.getSelection()) {
-                        horizontalBar.setSelection(horizontalScrollOffset);
-                        horizontalScrollOffset = horizontalBar.getSelection();
-                    }
-                }
-            }
-        }
-        updateCaretVisibility();
-        claimBottomFreeSpace();
-        setAlignment();
         //TODO FIX TOP INDEX DURING RESIZE
         //	if (oldHeight != clientAreaHeight || wordWrap) {
         //		calculateTopIndex(0);
@@ -9147,7 +9016,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setCaretOffset(int offset) {
         checkWidget();
-        this._caretOffsets = offset;
         int length = getCharCount();
         if (length > 0 && !Arrays.equals(caretOffsets, new int[] { offset })) {
             if (offset < 0) {
@@ -9504,7 +9372,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setHorizontalPixel(int pixel) {
         checkWidget();
-        this.horizontalPixel = pixel;
         if (getCharCount() == 0) {
             return;
         }
@@ -10040,7 +9907,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setLineSpacingProvider(StyledTextLineSpacingProvider lineSpacingProvider) {
         checkWidget();
-        this.lineSpacingProvider = lineSpacingProvider;
         boolean wasFixedLineHeight = isFixedLineHeight();
         if (((DartStyledTextRenderer) renderer.getImpl()).getLineSpacingProvider() == null && lineSpacingProvider == null || (((DartStyledTextRenderer) renderer.getImpl()).getLineSpacingProvider() != null && ((DartStyledTextRenderer) renderer.getImpl()).getLineSpacingProvider().equals(lineSpacingProvider)))
             return;
@@ -10072,7 +9938,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         }
         setCaretLocations();
         super.redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -10248,6 +10113,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setMouseNavigatorEnabled(boolean enabled) {
         checkWidget();
+        this.mouseNavigatorEnabled = enabled;
         if ((enabled && mouseNavigator != null) || (!enabled && mouseNavigator == null)) {
             return;
         }
@@ -10382,7 +10248,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setSelection(int start) {
         // checkWidget test done in setSelectionRange
         setSelection(start, start);
-        this._selection = new Point(_selection.x, _selection.y);
     }
 
     /**
@@ -10408,7 +10273,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setSelection(Point point) {
         checkWidget();
-        this._selection = point;
         if (point == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         setSelection(point.x, point.y);
@@ -10498,8 +10362,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setSelection(int start, int end) {
         setSelectionRange(start, end - start);
-        this.selectionRange = new Point(selectionRange.x, selectionRange.y);
         showSelection();
+        getBridge().dirty(this);
     }
 
     /**
@@ -10657,6 +10521,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setSelectionRange(int start, int length) {
         setSelectionRanges(new int[] { start, length });
+        this.selectionRange = new Point(selectionRange.x, selectionRange.y);
         getBridge().dirty(this);
     }
 
@@ -11599,13 +11464,13 @@ public class DartStyledText extends DartCanvas implements IStyledText {
 
     Rectangle blockSelectionBounds = new Rectangle(0, 0, 0, 0);
 
-    int _caretOffsets;
+    FontMetrics fixedLineMetrics;
 
     int horizontalIndex;
 
-    int[] ranges = new int[0];
+    boolean mouseNavigatorEnabled;
 
-    Point _selection;
+    int[] ranges = new int[0];
 
     Point selectionRange;
 
@@ -11615,15 +11480,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
 
     int[] tabStops = new int[0];
 
-    String text;
+    String text = "";
 
     int topPixel;
-
-    FontMetrics fixedLineMetrics;
-
-    int horizontalPixel;
-
-    StyledTextLineSpacingProvider lineSpacingProvider;
 
     public Color _selectionBackground() {
         return selectionBackground;
@@ -11965,20 +11824,20 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         return blockSelectionBounds;
     }
 
-    public int __caretOffsets() {
-        return _caretOffsets;
+    public FontMetrics _fixedLineMetrics() {
+        return fixedLineMetrics;
     }
 
     public int _horizontalIndex() {
         return horizontalIndex;
     }
 
-    public int[] _ranges() {
-        return ranges;
+    public boolean _mouseNavigatorEnabled() {
+        return mouseNavigatorEnabled;
     }
 
-    public Point __selection() {
-        return _selection;
+    public int[] _ranges() {
+        return ranges;
     }
 
     public Point _selectionRange() {
@@ -12005,23 +11864,11 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         return topPixel;
     }
 
-    public FontMetrics _fixedLineMetrics() {
-        return fixedLineMetrics;
-    }
-
-    public int _horizontalPixel() {
-        return horizontalPixel;
-    }
-
-    public StyledTextLineSpacingProvider _lineSpacingProvider() {
-        return lineSpacingProvider;
-    }
-
     protected void hookEvents() {
         super.hookEvents();
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Modify, e);
+                setText(e.text);
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {

@@ -51,7 +51,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
 
     int ascent, descent;
 
-    int averageCharWidth;
+    int averageCharWidth = 12;
 
     //tab length in spaces
     int tabLength;
@@ -1630,49 +1630,6 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     }
 
     void setFont(Font font, int tabs) {
-        TextLayout layout = new TextLayout(device);
-        layout.setFont(regularFont);
-        tabLength = tabs;
-        if (font != null) {
-            if (boldFont != null)
-                boldFont.dispose();
-            if (italicFont != null)
-                italicFont.dispose();
-            if (boldItalicFont != null)
-                boldItalicFont.dispose();
-            boldFont = italicFont = boldItalicFont = null;
-            regularFont = font;
-            layout.setText("    ");
-            layout.setFont(font);
-            layout.setStyle(new TextStyle(getFont(SWT.NORMAL), null, null), 0, 0);
-            layout.setStyle(new TextStyle(getFont(SWT.BOLD), null, null), 1, 1);
-            layout.setStyle(new TextStyle(getFont(SWT.ITALIC), null, null), 2, 2);
-            layout.setStyle(new TextStyle(getFont(SWT.BOLD | SWT.ITALIC), null, null), 3, 3);
-            FontMetrics metrics = layout.getLineMetrics(0);
-            ascent = metrics.getAscent() + metrics.getLeading();
-            descent = metrics.getDescent();
-            boldFont.dispose();
-            italicFont.dispose();
-            boldItalicFont.dispose();
-            boldFont = italicFont = boldItalicFont = null;
-        }
-        layout.dispose();
-        layout = new TextLayout(device);
-        layout.setFont(regularFont);
-        StringBuilder tabBuffer = new StringBuilder(tabs);
-        for (int i = 0; i < tabs; i++) {
-            tabBuffer.append(' ');
-        }
-        layout.setText(tabBuffer.toString());
-        tabWidth = layout.getBounds().width;
-        layout.dispose();
-        if (styledText != null) {
-            GC gc = new GC(styledText);
-            averageCharWidth = (int) gc.getFontMetrics().getAverageCharacterWidth();
-            //$NON-NLS-1$ //$NON-NLS-2$
-            fixedPitch = gc.stringExtent("l").x == gc.stringExtent("W").x;
-            gc.dispose();
-        }
     }
 
     void setLineAlignment(int startLine, int count, int alignment) {

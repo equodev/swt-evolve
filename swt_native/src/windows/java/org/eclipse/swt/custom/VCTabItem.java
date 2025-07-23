@@ -36,6 +36,15 @@ public class VCTabItem extends VItem {
         ((DartCTabItem) impl).disabledImage = value;
     }
 
+    @JsonAttribute(ignore = true)
+    public Font getFont() {
+        return ((DartCTabItem) impl).font;
+    }
+
+    public void setFont(Font value) {
+        ((DartCTabItem) impl).font = value;
+    }
+
     public Color getForeground() {
         return ((DartCTabItem) impl).foreground;
     }
@@ -50,15 +59,6 @@ public class VCTabItem extends VItem {
 
     public void setSelectionForeground(Color value) {
         ((DartCTabItem) impl).selectionForeground = value;
-    }
-
-    @JsonAttribute(ignore = true)
-    public Font getFont() {
-        return ((DartCTabItem) impl).font;
-    }
-
-    public void setFont(Font value) {
-        ((DartCTabItem) impl).font = value;
     }
 
     public boolean getShowClose() {

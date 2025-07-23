@@ -1790,7 +1790,7 @@ public class DartCombo extends DartComposite implements ICombo {
 
     Point selection;
 
-    String text;
+    String text = "";
 
     int textLimit;
 

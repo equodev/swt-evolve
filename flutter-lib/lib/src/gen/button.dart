@@ -3,6 +3,7 @@ import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
+import '../gen/rectangle.dart';
 import '../impl/button_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';

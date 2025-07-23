@@ -41,12 +41,13 @@ class VStyledText extends VCanvas {
   }
 
   int? alignment;
-  bool? alwaysShowScroll;
+  bool? alwaysShowScrollBars;
   bool? bidiColoring;
   bool? blockSelection;
   VRectangle? blockSelectionBounds;
   int? bottomMargin;
-  int? caretOffsets;
+  int? caretOffset;
+  int? columnX;
   bool? doubleClickEnabled;
   bool? editable;
   int? horizontalIndex;
@@ -56,6 +57,7 @@ class VStyledText extends VCanvas {
   int? leftMargin;
   int? lineSpacing;
   VColor? marginColor;
+  bool? mouseNavigatorEnabled;
   List<int>? ranges;
   int? rightMargin;
   VPoint? selection;
@@ -63,9 +65,9 @@ class VStyledText extends VCanvas {
   VColor? selectionForeground;
   VPoint? selectionRange;
   List<int>? selectionRanges;
-  int? tabLength;
+  int? styleRange;
   List<int>? tabStops;
-  List<int>? tabs;
+  int? tabs;
   String? text;
   int? textLimit;
   int? topIndex;

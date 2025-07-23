@@ -359,6 +359,7 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public void setBounds(Rectangle rect) {
         checkWidget();
+        this.bounds = rect;
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(rect.x, rect.y, rect.width, rect.height);
@@ -538,6 +539,8 @@ public class DartCaret extends DartWidget implements ICaret {
         return drawCaret();
     }
 
+    Rectangle bounds = new Rectangle(0, 0, 0, 0);
+
     public Canvas _parent() {
         return parent;
     }
@@ -576,6 +579,10 @@ public class DartCaret extends DartWidget implements ICaret {
 
     public Font _font() {
         return font;
+    }
+
+    public Rectangle _bounds() {
+        return bounds;
     }
 
     public FlutterBridge getBridge() {

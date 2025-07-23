@@ -27,151 +27,6 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).borderVisible = value;
     }
 
-    public CTabItem[] getItems() {
-        CTabItem[] values = ((DartCTabFolder) impl).getItems();
-        if (values == null)
-            return null;
-        ArrayList<CTabItem> result = new ArrayList<>(values.length);
-        for (CTabItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(CTabItem[]::new);
-    }
-
-    public void setItems(CTabItem[] value) {
-        ((DartCTabFolder) impl).items = value;
-    }
-
-    public boolean getMinimized() {
-        return ((DartCTabFolder) impl).getMinimized();
-    }
-
-    public void setMinimized(boolean value) {
-        ((DartCTabFolder) impl).minimized = value;
-    }
-
-    public boolean getShowMin() {
-        return ((DartCTabFolder) impl).getMinimizeVisible();
-    }
-
-    public void setShowMin(boolean value) {
-        ((DartCTabFolder) impl).showMin = value;
-    }
-
-    public int getMinChars() {
-        return ((DartCTabFolder) impl).getMinimumCharacters();
-    }
-
-    public void setMinChars(int value) {
-        ((DartCTabFolder) impl).minChars = value;
-    }
-
-    public boolean getMaximized() {
-        return ((DartCTabFolder) impl).getMaximized();
-    }
-
-    public void setMaximized(boolean value) {
-        ((DartCTabFolder) impl).maximized = value;
-    }
-
-    public boolean getShowMax() {
-        return ((DartCTabFolder) impl).getMaximizeVisible();
-    }
-
-    public void setShowMax(boolean value) {
-        ((DartCTabFolder) impl).showMax = value;
-    }
-
-    public boolean getMru() {
-        return ((DartCTabFolder) impl).getMRUVisible();
-    }
-
-    public void setMru(boolean value) {
-        ((DartCTabFolder) impl).mru = value;
-    }
-
-    public int getSelectedIndex() {
-        return ((DartCTabFolder) impl).selectedIndex;
-    }
-
-    public void setSelectedIndex(int value) {
-        ((DartCTabFolder) impl).selectedIndex = value;
-    }
-
-    public Color getSelectionBackground() {
-        return ((DartCTabFolder) impl).selectionBackground;
-    }
-
-    public void setSelectionBackground(Color value) {
-        ((DartCTabFolder) impl).selectionBackground = value;
-    }
-
-    public Color getSelectionForeground() {
-        return ((DartCTabFolder) impl).selectionForeground;
-    }
-
-    public void setSelectionForeground(Color value) {
-        ((DartCTabFolder) impl).selectionForeground = value;
-    }
-
-    public boolean getSimple() {
-        return ((DartCTabFolder) impl).getSimple();
-    }
-
-    public void setSimple(boolean value) {
-        ((DartCTabFolder) impl).simple = value;
-    }
-
-    public boolean getSingle() {
-        return ((DartCTabFolder) impl).getSingle();
-    }
-
-    public void setSingle(boolean value) {
-        ((DartCTabFolder) impl).single = value;
-    }
-
-    public Control getTopRight() {
-        Control val = ((DartCTabFolder) impl).topRight;
-        if (val != null && !(val.getImpl() instanceof DartControl))
-            return null;
-        return val;
-    }
-
-    public void setTopRight(Control value) {
-        ((DartCTabFolder) impl).topRight = value;
-    }
-
-    public int getTopRightAlignment() {
-        return ((DartCTabFolder) impl).getTopRightAlignment();
-    }
-
-    public void setTopRightAlignment(int value) {
-        ((DartCTabFolder) impl).topRightAlignment = value;
-    }
-
-    public boolean getShowUnselectedClose() {
-        return ((DartCTabFolder) impl).getUnselectedCloseVisible();
-    }
-
-    public void setShowUnselectedClose(boolean value) {
-        ((DartCTabFolder) impl).showUnselectedClose = value;
-    }
-
-    public boolean getShowUnselectedImage() {
-        return ((DartCTabFolder) impl).getUnselectedImageVisible();
-    }
-
-    public void setShowUnselectedImage(boolean value) {
-        ((DartCTabFolder) impl).showUnselectedImage = value;
-    }
-
-    public boolean getShowSelectedImage() {
-        return ((DartCTabFolder) impl).getSelectedImageVisible();
-    }
-
-    public void setShowSelectedImage(boolean value) {
-        ((DartCTabFolder) impl).showSelectedImage = value;
-    }
-
     public Color[] getGradientColors() {
         Color[] values = ((DartCTabFolder) impl).gradientColors;
         if (values == null)
@@ -200,6 +55,125 @@ public class VCTabFolder extends VComposite {
 
     public void setGradientVertical(boolean value) {
         ((DartCTabFolder) impl).gradientVertical = value;
+    }
+
+    public boolean getHighlightEnabled() {
+        return ((DartCTabFolder) impl).getHighlightEnabled();
+    }
+
+    public void setHighlightEnabled(boolean value) {
+        ((DartCTabFolder) impl).highlightEnabled = value;
+    }
+
+    public CTabItem[] getItems() {
+        CTabItem[] values = ((DartCTabFolder) impl).getItems();
+        if (values == null)
+            return null;
+        ArrayList<CTabItem> result = new ArrayList<>(values.length);
+        for (CTabItem v : values) if (v != null)
+            result.add(v);
+        return result.toArray(CTabItem[]::new);
+    }
+
+    public void setItems(CTabItem[] value) {
+        ((DartCTabFolder) impl).items = value;
+    }
+
+    public boolean getMRUVisible() {
+        return ((DartCTabFolder) impl).getMRUVisible();
+    }
+
+    public void setMRUVisible(boolean value) {
+        ((DartCTabFolder) impl).mru = value;
+    }
+
+    public boolean getMaximizeVisible() {
+        return ((DartCTabFolder) impl).getMaximizeVisible();
+    }
+
+    public void setMaximizeVisible(boolean value) {
+        ((DartCTabFolder) impl).showMax = value;
+    }
+
+    public boolean getMaximized() {
+        return ((DartCTabFolder) impl).getMaximized();
+    }
+
+    public void setMaximized(boolean value) {
+        ((DartCTabFolder) impl).maximized = value;
+    }
+
+    public boolean getMinimizeVisible() {
+        return ((DartCTabFolder) impl).getMinimizeVisible();
+    }
+
+    public void setMinimizeVisible(boolean value) {
+        ((DartCTabFolder) impl).showMin = value;
+    }
+
+    public boolean getMinimized() {
+        return ((DartCTabFolder) impl).getMinimized();
+    }
+
+    public void setMinimized(boolean value) {
+        ((DartCTabFolder) impl).minimized = value;
+    }
+
+    public int getMinimumCharacters() {
+        return ((DartCTabFolder) impl).getMinimumCharacters();
+    }
+
+    public void setMinimumCharacters(int value) {
+        ((DartCTabFolder) impl).minChars = value;
+    }
+
+    public boolean getSelectedImageVisible() {
+        return ((DartCTabFolder) impl).getSelectedImageVisible();
+    }
+
+    public void setSelectedImageVisible(boolean value) {
+        ((DartCTabFolder) impl).showSelectedImage = value;
+    }
+
+    public int getSelection() {
+        return ((DartCTabFolder) impl).selectedIndex;
+    }
+
+    public void setSelection(int value) {
+        ((DartCTabFolder) impl).selectedIndex = value;
+    }
+
+    public Color getSelectionBackground() {
+        return ((DartCTabFolder) impl).selectionBackground;
+    }
+
+    public void setSelectionBackground(Color value) {
+        ((DartCTabFolder) impl).selectionBackground = value;
+    }
+
+    public int getSelectionBarThickness() {
+        return ((DartCTabFolder) impl).selectionHighlightBarThickness;
+    }
+
+    public void setSelectionBarThickness(int value) {
+        ((DartCTabFolder) impl).selectionHighlightBarThickness = value;
+    }
+
+    @JsonAttribute(ignore = true)
+    public Image getSelectionBgImage() {
+        return ((DartCTabFolder) impl).selectionBgImage;
+    }
+
+    public void setSelectionBgImage(Image value) {
+        ((DartCTabFolder) impl).selectionBgImage = value;
+    }
+
+    public Color getSelectionForeground() {
+        return ((DartCTabFolder) impl).selectionForeground;
+    }
+
+    public void setSelectionForeground(Color value) {
+        ((DartCTabFolder) impl).selectionForeground = value;
     }
 
     public Color[] getSelectionGradientColors() {
@@ -232,45 +206,71 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).selectionGradientVertical = value;
     }
 
-    @JsonAttribute(ignore = true)
-    public Image getSelectionBgImage() {
-        return ((DartCTabFolder) impl).selectionBgImage;
+    public boolean getSimple() {
+        return ((DartCTabFolder) impl).getSimple();
     }
 
-    public void setSelectionBgImage(Image value) {
-        ((DartCTabFolder) impl).selectionBgImage = value;
+    public void setSimple(boolean value) {
+        ((DartCTabFolder) impl).simple = value;
     }
 
-    public int getSelectionHighlightBarThickness() {
-        return ((DartCTabFolder) impl).selectionHighlightBarThickness;
+    public boolean getSingle() {
+        return ((DartCTabFolder) impl).getSingle();
     }
 
-    public void setSelectionHighlightBarThickness(int value) {
-        ((DartCTabFolder) impl).selectionHighlightBarThickness = value;
+    public void setSingle(boolean value) {
+        ((DartCTabFolder) impl).single = value;
     }
 
-    public int getFixedTabHeight() {
-        return ((DartCTabFolder) impl).fixedTabHeight;
+    public int getTabHeight() {
+        return ((DartCTabFolder) impl).getTabHeight();
     }
 
-    public void setFixedTabHeight(int value) {
-        ((DartCTabFolder) impl).fixedTabHeight = value;
+    public void setTabHeight(int value) {
+        ((DartCTabFolder) impl).tabHeight = value;
     }
 
-    public boolean getOnBottom() {
-        return ((DartCTabFolder) impl).onBottom;
+    public int getTabPosition() {
+        return ((DartCTabFolder) impl).getTabPosition();
     }
 
-    public void setOnBottom(boolean value) {
-        ((DartCTabFolder) impl).onBottom = value;
+    public void setTabPosition(int value) {
+        ((DartCTabFolder) impl).tabPosition = value;
     }
 
-    public boolean getHighlightEnabled() {
-        return ((DartCTabFolder) impl).getHighlightEnabled();
+    public Control getTopRight() {
+        Control val = ((DartCTabFolder) impl).topRight;
+        if (val != null && !(val.getImpl() instanceof DartControl))
+            return null;
+        return val;
     }
 
-    public void setHighlightEnabled(boolean value) {
-        ((DartCTabFolder) impl).highlightEnabled = value;
+    public void setTopRight(Control value) {
+        ((DartCTabFolder) impl).topRight = value;
+    }
+
+    public int getTopRightAlignment() {
+        return ((DartCTabFolder) impl).getTopRightAlignment();
+    }
+
+    public void setTopRightAlignment(int value) {
+        ((DartCTabFolder) impl).topRightAlignment = value;
+    }
+
+    public boolean getUnselectedCloseVisible() {
+        return ((DartCTabFolder) impl).getUnselectedCloseVisible();
+    }
+
+    public void setUnselectedCloseVisible(boolean value) {
+        ((DartCTabFolder) impl).showUnselectedClose = value;
+    }
+
+    public boolean getUnselectedImageVisible() {
+        return ((DartCTabFolder) impl).getUnselectedImageVisible();
+    }
+
+    public void setUnselectedImageVisible(boolean value) {
+        ((DartCTabFolder) impl).showUnselectedImage = value;
     }
 
     @JsonConverter(target = CTabFolder.class)

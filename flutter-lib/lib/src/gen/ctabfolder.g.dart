@@ -38,7 +38,6 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
       .toList()
   ..borderVisible = json['borderVisible'] as bool?
-  ..fixedTabHeight = (json['fixedTabHeight'] as num?)?.toInt()
   ..gradientColors = (json['gradientColors'] as List<dynamic>?)
       ?.map((e) => VColor.fromJson(e as Map<String, dynamic>))
       .toList()
@@ -50,15 +49,18 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
   ..items = (json['items'] as List<dynamic>?)
       ?.map((e) => VCTabItem.fromJson(e as Map<String, dynamic>))
       .toList()
+  ..mRUVisible = json['mRUVisible'] as bool?
+  ..maximizeVisible = json['maximizeVisible'] as bool?
   ..maximized = json['maximized'] as bool?
-  ..minChars = (json['minChars'] as num?)?.toInt()
+  ..minimizeVisible = json['minimizeVisible'] as bool?
   ..minimized = json['minimized'] as bool?
-  ..mru = json['mru'] as bool?
-  ..onBottom = json['onBottom'] as bool?
-  ..selectedIndex = (json['selectedIndex'] as num?)?.toInt()
+  ..minimumCharacters = (json['minimumCharacters'] as num?)?.toInt()
+  ..selectedImageVisible = json['selectedImageVisible'] as bool?
+  ..selection = (json['selection'] as num?)?.toInt()
   ..selectionBackground = json['selectionBackground'] == null
       ? null
       : VColor.fromJson(json['selectionBackground'] as Map<String, dynamic>)
+  ..selectionBarThickness = (json['selectionBarThickness'] as num?)?.toInt()
   ..selectionForeground = json['selectionForeground'] == null
       ? null
       : VColor.fromJson(json['selectionForeground'] as Map<String, dynamic>)
@@ -71,19 +73,16 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
           ?.map((e) => (e as num).toInt())
           .toList()
   ..selectionGradientVertical = json['selectionGradientVertical'] as bool?
-  ..selectionHighlightBarThickness =
-      (json['selectionHighlightBarThickness'] as num?)?.toInt()
-  ..showMax = json['showMax'] as bool?
-  ..showMin = json['showMin'] as bool?
-  ..showSelectedImage = json['showSelectedImage'] as bool?
-  ..showUnselectedClose = json['showUnselectedClose'] as bool?
-  ..showUnselectedImage = json['showUnselectedImage'] as bool?
   ..simple = json['simple'] as bool?
   ..single = json['single'] as bool?
+  ..tabHeight = (json['tabHeight'] as num?)?.toInt()
+  ..tabPosition = (json['tabPosition'] as num?)?.toInt()
   ..topRight = json['topRight'] == null
       ? null
       : VControl.fromJson(json['topRight'] as Map<String, dynamic>)
-  ..topRightAlignment = (json['topRightAlignment'] as num?)?.toInt();
+  ..topRightAlignment = (json['topRightAlignment'] as num?)?.toInt()
+  ..unselectedCloseVisible = json['unselectedCloseVisible'] as bool?
+  ..unselectedImageVisible = json['unselectedImageVisible'] as bool?;
 
 Map<String, dynamic> _$VCTabFolderToJson(VCTabFolder instance) =>
     <String, dynamic>{
@@ -108,31 +107,31 @@ Map<String, dynamic> _$VCTabFolderToJson(VCTabFolder instance) =>
       'layoutDeferred': instance.layoutDeferred,
       'tabList': instance.tabList,
       'borderVisible': instance.borderVisible,
-      'fixedTabHeight': instance.fixedTabHeight,
       'gradientColors': instance.gradientColors,
       'gradientPercents': instance.gradientPercents,
       'gradientVertical': instance.gradientVertical,
       'highlightEnabled': instance.highlightEnabled,
       'items': instance.items,
+      'mRUVisible': instance.mRUVisible,
+      'maximizeVisible': instance.maximizeVisible,
       'maximized': instance.maximized,
-      'minChars': instance.minChars,
+      'minimizeVisible': instance.minimizeVisible,
       'minimized': instance.minimized,
-      'mru': instance.mru,
-      'onBottom': instance.onBottom,
-      'selectedIndex': instance.selectedIndex,
+      'minimumCharacters': instance.minimumCharacters,
+      'selectedImageVisible': instance.selectedImageVisible,
+      'selection': instance.selection,
       'selectionBackground': instance.selectionBackground,
+      'selectionBarThickness': instance.selectionBarThickness,
       'selectionForeground': instance.selectionForeground,
       'selectionGradientColors': instance.selectionGradientColors,
       'selectionGradientPercents': instance.selectionGradientPercents,
       'selectionGradientVertical': instance.selectionGradientVertical,
-      'selectionHighlightBarThickness': instance.selectionHighlightBarThickness,
-      'showMax': instance.showMax,
-      'showMin': instance.showMin,
-      'showSelectedImage': instance.showSelectedImage,
-      'showUnselectedClose': instance.showUnselectedClose,
-      'showUnselectedImage': instance.showUnselectedImage,
       'simple': instance.simple,
       'single': instance.single,
+      'tabHeight': instance.tabHeight,
+      'tabPosition': instance.tabPosition,
       'topRight': instance.topRight,
       'topRightAlignment': instance.topRightAlignment,
+      'unselectedCloseVisible': instance.unselectedCloseVisible,
+      'unselectedImageVisible': instance.unselectedImageVisible,
     };

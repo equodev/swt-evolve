@@ -29,7 +29,6 @@ VList _$VListFromJson(Map<String, dynamic> json) => VList()
   ..touchEnabled = json['touchEnabled'] as bool?
   ..visible = json['visible'] as bool?
   ..scrollbarsMode = (json['scrollbarsMode'] as num?)?.toInt()
-  ..ignoreSelect = json['ignoreSelect'] as bool?
   ..items = (json['items'] as List<dynamic>?)?.map((e) => e as String).toList()
   ..selection =
       (json['selection'] as List<dynamic>?)?.map((e) => e as String).toList()
@@ -55,7 +54,6 @@ Map<String, dynamic> _$VListToJson(VList instance) => <String, dynamic>{
       'touchEnabled': instance.touchEnabled,
       'visible': instance.visible,
       'scrollbarsMode': instance.scrollbarsMode,
-      'ignoreSelect': instance.ignoreSelect,
       'items': instance.items,
       'selection': instance.selection,
       'selectionIndices': instance.selectionIndices,

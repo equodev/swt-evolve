@@ -16,6 +16,14 @@ public class VToolItem extends VItem {
         super(impl);
     }
 
+    public Color getBackground() {
+        return ((DartToolItem) impl).getBackground();
+    }
+
+    public void setBackground(Color value) {
+        ((DartToolItem) impl).setBackground(value);
+    }
+
     public Control getControl() {
         Control val = ((DartToolItem) impl).control;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -34,14 +42,6 @@ public class VToolItem extends VItem {
 
     public void setDisabledImage(Image value) {
         ((DartToolItem) impl).disabledImage = value;
-    }
-
-    public Color getBackground() {
-        return ((DartToolItem) impl).getBackground();
-    }
-
-    public void setBackground(Color value) {
-        ((DartToolItem) impl).setBackground(value);
     }
 
     public boolean getEnabled() {
@@ -83,6 +83,14 @@ public class VToolItem extends VItem {
 
     public void setToolTipText(String value) {
         ((DartToolItem) impl).toolTipText = value;
+    }
+
+    public int getWidth() {
+        return ((DartToolItem) impl).getWidth();
+    }
+
+    public void setWidth(int value) {
+        ((DartToolItem) impl).width = value;
     }
 
     @JsonConverter(target = ToolItem.class)

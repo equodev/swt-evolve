@@ -37,7 +37,6 @@ VCombo _$VComboFromJson(Map<String, dynamic> json) => VCombo()
   ..tabList = (json['tabList'] as List<dynamic>?)
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
       .toList()
-  ..ignoreSelection = json['ignoreSelection'] as bool?
   ..items = (json['items'] as List<dynamic>?)?.map((e) => e as String).toList()
   ..listVisible = json['listVisible'] as bool?
   ..selection = json['selection'] == null
@@ -68,7 +67,6 @@ Map<String, dynamic> _$VComboToJson(VCombo instance) => <String, dynamic>{
       'children': instance.children,
       'layoutDeferred': instance.layoutDeferred,
       'tabList': instance.tabList,
-      'ignoreSelection': instance.ignoreSelection,
       'items': instance.items,
       'listVisible': instance.listVisible,
       'selection': instance.selection,

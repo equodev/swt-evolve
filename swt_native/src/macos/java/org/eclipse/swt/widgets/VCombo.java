@@ -72,14 +72,6 @@ public class VCombo extends VComposite {
         ((DartCombo) impl).visibleItemCount = value;
     }
 
-    public boolean getIgnoreSelection() {
-        return ((DartCombo) impl).ignoreSelection;
-    }
-
-    public void setIgnoreSelection(boolean value) {
-        ((DartCombo) impl).ignoreSelection = value;
-    }
-
     @JsonConverter(target = Combo.class)
     public static class ComboJson implements Configuration {
 

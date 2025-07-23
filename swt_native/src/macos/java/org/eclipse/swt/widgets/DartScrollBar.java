@@ -712,11 +712,11 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         selection = Math.max(minimum, Math.min(maximum - thumb, selection));
     }
 
-    boolean enabled;
+    boolean enabled = true;
 
     int selection;
 
-    boolean visible;
+    boolean visible = true;
 
     public Scrollable _parent() {
         return parent;

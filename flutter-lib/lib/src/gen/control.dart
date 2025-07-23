@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
 import '../gen/color.dart';
+import '../gen/rectangle.dart';
 import '../gen/widget.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -103,6 +104,7 @@ class VControl extends VWidget {
   }
 
   VColor? background;
+  VRectangle? bounds;
   bool? capture;
   bool? dragDetect;
   bool? enabled;

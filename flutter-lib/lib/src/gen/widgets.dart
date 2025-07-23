@@ -21,18 +21,18 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
   return switch (type) {
     "StyledText" => VStyledText.fromJson(child),
     "CLabel" => VCLabel.fromJson(child),
+    "CTabFolder" => VCTabFolder.fromJson(child),
     "Combo" => VCombo.fromJson(child),
     "Canvas" => VCanvas.fromJson(child),
-    "CTabFolder" => VCTabFolder.fromJson(child),
     "ToolBar" => VToolBar.fromJson(child),
     "Composite" => VComposite.fromJson(child),
     "List" => VList.fromJson(child),
     "Label" => VLabel.fromJson(child),
     "Button" => VButton.fromJson(child),
-    "ToolItem" => VToolItem.fromJson(child),
     "CTabItem" => VCTabItem.fromJson(child),
-    "Caret" => VCaret.fromJson(child),
+    "ToolItem" => VToolItem.fromJson(child),
     "ScrollBar" => VScrollBar.fromJson(child),
+    "Caret" => VCaret.fromJson(child),
     _ => throw "Unknown Widget Value $type"
   };
 }
@@ -43,18 +43,18 @@ Widget mapWidgetFromValue(VWidget child) {
   return switch (child) {
     VStyledText() => StyledTextSwt(key: ValueKey(id), value: child),
     VCLabel() => CLabelSwt(key: ValueKey(id), value: child),
+    VCTabFolder() => CTabFolderSwt(key: ValueKey(id), value: child),
     VCombo() => ComboSwt(key: ValueKey(id), value: child),
     VCanvas() => CanvasSwt(key: ValueKey(id), value: child),
-    VCTabFolder() => CTabFolderSwt(key: ValueKey(id), value: child),
     VToolBar() => ToolBarSwt(key: ValueKey(id), value: child),
     VComposite() => CompositeSwt(key: ValueKey(id), value: child),
     VList() => ListSwt(key: ValueKey(id), value: child),
     VLabel() => LabelSwt(key: ValueKey(id), value: child),
     VButton() => ButtonSwt(key: ValueKey(id), value: child),
-    VToolItem() => ToolItemSwt(key: ValueKey(id), value: child),
     VCTabItem() => CTabItemSwt(key: ValueKey(id), value: child),
-    VCaret() => CaretSwt(key: ValueKey(id), value: child),
+    VToolItem() => ToolItemSwt(key: ValueKey(id), value: child),
     VScrollBar() => ScrollBarSwt(key: ValueKey(id), value: child),
+    VCaret() => CaretSwt(key: ValueKey(id), value: child),
     _ => throw "No widget for Value $type"
   };
 }
