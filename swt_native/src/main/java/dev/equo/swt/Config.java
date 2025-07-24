@@ -12,7 +12,7 @@ public class Config {
     public enum Impl { eclipse, equo, force_equo }
 
     static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.equo.name()));
-    static Impl toolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.toolbar", Impl.eclipse.name()));
+    static Impl toolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.toolbar", Impl.equo.name()));
 
     static final Map<Class<?>, Impl> equoEnabled;
     private static boolean toolBarDrawn;
@@ -20,7 +20,7 @@ public class Config {
     static {
         try {
             equoEnabled = Map.of(
-//                Button.class, Impl.equo,
+                Button.class, Impl.equo,
                 CTabFolder.class, Impl.equo,
                 CTabItem.class, Impl.equo,
                 CTabFolderRenderer.class, Impl.equo,
@@ -86,7 +86,7 @@ public class Config {
         return false;
     }
 
-    private static boolean isCustomAncestor(Scrollable parent) {
+    static boolean isCustomAncestor(Scrollable parent) {
         while (parent != null) {
             if (parent.getImpl() instanceof DartMainToolbar)
                 return true;

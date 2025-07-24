@@ -85,6 +85,10 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
             }
 //            dartControl.resized();
             dartControl.sendEvent(SWT.Resize);
+            if (dartControl instanceof DartComposite c && c.layout != null) {
+                c.markLayout(false, false);
+                c.updateLayout(false);
+            }
         }
     }
 
