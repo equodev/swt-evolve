@@ -49,7 +49,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
 
     int tabWidth;
 
-    int ascent, descent;
+    int ascent = 11, descent = 4;
 
     int averageCharWidth = 12;
 

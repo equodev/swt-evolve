@@ -11868,7 +11868,10 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         super.hookEvents();
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
-                setText(e.text);
+                if (e.text != null)
+                    setText(e.text);
+                if (e.start >= 0)
+                    setCaretOffset(e.start);
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {

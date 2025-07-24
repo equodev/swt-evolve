@@ -24,7 +24,8 @@ public class Config {
                 CTabFolderRenderer.class, Impl.equo,
                 Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo,
                 StyledText.class, Impl.equo,
-                Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo
+                Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo,
+                    Caret.class, Impl.equo
             );
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);

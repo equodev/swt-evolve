@@ -805,7 +805,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                         if ((control.state & THEME_BACKGROUND) == 0) {
                             return;
                         }
-                        control = control.getImpl()._parent();
+                        control = ((SwtControl) control.getImpl()).parent;
                     } while (control != composite);
                 }
                 getApi().state |= PARENT_BACKGROUND;
@@ -1286,7 +1286,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        Image image = control.getImpl()._backgroundImage();
+        Image image = ((SwtControl) control.getImpl()).backgroundImage;
         if (image != null && !image.isDisposed()) {
             context.saveGraphicsState();
             NSColor.colorWithPatternImage(image.handle).setFill();
@@ -1361,7 +1361,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     void fixFocus(Control focusControl) {
         Shell shell = getShell();
         Control control = this.getApi();
-        while (control != shell && (control = control.getImpl()._parent()) != null) {
+        while (control != shell && (control = ((SwtControl) control.getImpl()).parent) != null) {
             if (control.setFocus())
                 return;
         }
@@ -1595,7 +1595,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             Control control = findBackgroundControl();
             if (control == null)
                 control = this.getApi();
-            return control.getImpl().getBackgroundColor();
+            return ((SwtControl) control.getImpl()).getBackgroundColor();
         }
     }
 
@@ -1620,7 +1620,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        return control.getImpl()._backgroundImage();
+        return ((SwtControl) control.getImpl()).backgroundImage;
     }
 
     /**
@@ -1900,13 +1900,13 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = this.getApi();
         while (control != shell) {
             count++;
-            control = control.getImpl()._parent();
+            control = ((SwtControl) control.getImpl()).parent;
         }
         control = this.getApi();
         Control[] result = new Control[count];
         while (control != shell) {
             result[--count] = control;
-            control = control.getImpl()._parent();
+            control = ((SwtControl) control.getImpl()).parent;
         }
         return result;
     }
@@ -2228,7 +2228,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             Control control = findBackgroundControl();
             if (control == null)
                 control = this.getApi();
-            data.background = control.getImpl().getBackgroundColor().handle;
+            data.background = ((SwtControl) control.getImpl()).getBackgroundColor().handle;
             data.font = font != null ? font : defaultFont();
         }
         if (graphicsContext != null) {
@@ -2281,8 +2281,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         while (index < siblings.length && siblings[index] != this.getApi()) index++;
         for (int i = index; i < siblings.length; i++) {
             Control sibling = siblings[i];
-            sibling.getImpl().resetVisibleRegion();
-            sibling.getImpl().invalidateChildrenVisibleRegion();
+            ((SwtControl) sibling.getImpl()).resetVisibleRegion();
+            ((SwtControl) sibling.getImpl()).invalidateChildrenVisibleRegion();
         }
         parent.getImpl().resetVisibleRegion();
     }
@@ -2341,7 +2341,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     boolean isFocusAncestor(Control control) {
         while (control != null && control != this.getApi() && !(control instanceof Shell)) {
-            control = control.getImpl()._parent();
+            control = ((SwtControl) control.getImpl()).parent;
         }
         return control == this.getApi();
     }
@@ -2412,7 +2412,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             if (size.x == 0 || size.y == 0) {
                 return false;
             }
-            control = control.getImpl()._parent();
+            control = ((SwtControl) control.getImpl()).parent;
         }
         return true;
     }
@@ -2764,7 +2764,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if (parent != control.getImpl()._parent())
+            if (parent != ((SwtControl) control.getImpl()).parent)
                 return;
         }
         setZOrder(control, true);
@@ -2795,7 +2795,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if (parent != control.getImpl()._parent())
+            if (parent != ((SwtControl) control.getImpl()).parent)
                 return;
         }
         setZOrder(control, false);
@@ -3037,7 +3037,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         super.release(destroy);
         if (destroy) {
             if (previous != null)
-                previous.getImpl().addRelation(next);
+                ((SwtControl) previous.getImpl()).addRelation(next);
         }
     }
 
@@ -3677,8 +3677,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        if (control.getImpl()._backgroundImage() != null) {
-            setBackgroundImage(control.getImpl()._backgroundImage().handle);
+        if (((SwtControl) control.getImpl()).backgroundImage != null) {
+            setBackgroundImage(((SwtControl) control.getImpl()).backgroundImage.handle);
         } else {
             double[] color = control.getImpl()._background() != null ? control.getImpl()._background() : ((SwtControl) control.getImpl()).defaultBackground().handle;
             NSColor nsColor = NSColor.colorWithDeviceRed(color[0], color[1], color[2], color[3]);
@@ -4365,7 +4365,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 		 */
             Control child = children[count - 2];
             if (child != this.getApi()) {
-                child.getImpl().addRelation(this.getApi());
+                ((SwtControl) child.getImpl()).addRelation(this.getApi());
             }
         }
     }
@@ -4640,14 +4640,14 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         removeRelation();
         if (index + 1 < children.length) {
             oldNextIndex = index + 1;
-            children[oldNextIndex].getImpl().removeRelation();
+            ((SwtControl) children[oldNextIndex].getImpl()).removeRelation();
         }
         if (sibling != null) {
             if (above) {
-                sibling.getImpl().removeRelation();
+                ((SwtControl) sibling.getImpl()).removeRelation();
             } else {
                 if (siblingIndex + 1 < children.length) {
-                    children[siblingIndex + 1].getImpl().removeRelation();
+                    ((SwtControl) children[siblingIndex + 1].getImpl()).removeRelation();
                 }
             }
         }
@@ -4680,7 +4680,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         /* add new "Labeled by" relations as needed */
         children = parent.getImpl()._getChildren();
         if (0 < index) {
-            children[index - 1].getImpl().addRelation(this.getApi());
+            ((SwtControl) children[index - 1].getImpl()).addRelation(this.getApi());
         }
         if (index + 1 < children.length) {
             addRelation(children[index + 1]);
@@ -4690,7 +4690,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 oldNextIndex--;
             /* the last two conditions below ensure that duplicate relations are not hooked */
             if (0 < oldNextIndex && oldNextIndex != index && oldNextIndex != index + 1) {
-                children[oldNextIndex - 1].getImpl().addRelation(children[oldNextIndex]);
+                ((SwtControl) children[oldNextIndex - 1].getImpl()).addRelation(children[oldNextIndex]);
             }
         }
     }
@@ -5014,7 +5014,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             }
             if (control == shell)
                 return false;
-            control = control.getImpl()._parent();
+            control = ((SwtControl) control.getImpl()).parent;
         } while (all && control != null);
         return false;
     }
@@ -5210,7 +5210,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 return false;
             if (control == shell)
                 return false;
-            control = control.getImpl()._parent();
+            control = ((SwtControl) control.getImpl()).parent;
         } while (all && control != null);
         return false;
     }
@@ -5277,7 +5277,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     boolean traverseGroup(boolean next) {
         Control root = computeTabRoot();
         Widget group = computeTabGroup();
-        Widget[] list = root.getImpl().computeTabList();
+        Widget[] list = ((SwtControl) root.getImpl()).computeTabList();
         int length = list.length;
         int index = 0;
         while (index < length) {
@@ -5325,8 +5325,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         int start = index, offset = (next) ? 1 : -1;
         while ((index = (index + offset + length) % length) != start) {
             Control child = children[index];
-            if (!child.isDisposed() && child.getImpl().isTabItem()) {
-                if (child.getImpl().setTabItemFocus())
+            if (!child.isDisposed() && ((SwtControl) child.getImpl()).isTabItem()) {
+                if (((SwtControl) child.getImpl()).setTabItemFocus())
                     return true;
             }
         }
@@ -5441,7 +5441,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     void updateBackgroundImage() {
         Control control = findBackgroundControl();
-        Image image = control != null ? control.getImpl()._backgroundImage() : backgroundImage;
+        Image image = control != null ? ((SwtControl) control.getImpl()).backgroundImage : backgroundImage;
         setBackgroundImage(image != null ? image.handle : null);
     }
 

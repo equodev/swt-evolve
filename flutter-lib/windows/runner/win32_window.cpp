@@ -136,8 +136,6 @@ bool Win32Window::Create(const std::wstring& title,
   UINT dpi = FlutterDesktopGetDpiForMonitor(monitor);
   double scale_factor = dpi / 96.0;
 
-  std::cout << "Win32Window::Create with parent=" << parentWnd << std::endl;
-
   if (!parentWnd) {
     std::cout << "Win32Window::Create - No parent window provided" << std::endl;
     return false;
@@ -175,8 +173,8 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
                                       UINT const message,
                                       WPARAM const wparam,
                                       LPARAM const lparam) noexcept {
-  //std::cout << "Win32Window::WndProc msg=" << message << " hwnd=" << window
-  //          << " wp=" << wparam << " lp=" << lparam << std::endl;
+  std::cout << "Win32Window::WndProc msg=" << message << " hwnd=" << window
+            << " wp=" << wparam << " lp=" << lparam << std::endl;
 
   if (message == WM_NCCREATE) {
     auto window_struct = reinterpret_cast<CREATESTRUCT*>(lparam);
@@ -193,7 +191,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
       ShowWindow(window, SW_SHOWNORMAL);
     }
   } else if (Win32Window* that = GetThisFromHandle(window)) {
-    //std::cout << "Win32Window::WndProc - Routing to Flutter window MessageHandler" << std::endl;
+    std::cout << "Win32Window::WndProc - Routing to Flutter window MessageHandler" << std::endl;
     return that->MessageHandler(window, message, wparam, lparam);
   }
 
@@ -216,23 +214,11 @@ Win32Window::MessageHandler(HWND hwnd,
             }
             return 0;
 
-        // ===== EVENTOS DE TECLADO - DELEGACIÓN AUTOMÁTICA VIA SWT =====
         case WM_KEYDOWN:
         case WM_KEYUP:
         case WM_CHAR:
         case WM_SYSKEYDOWN:
         case WM_SYSKEYUP:
-        case WM_SYSCHAR:
-        {
-            std::cout << "Win32Window: Keyboard event - msg=" << message
-                      << " key=" << wparam << " (SWT auto-delegation active)" << std::endl;
-
-            // SWT ahora maneja automáticamente la delegación de eventos
-            // No necesitamos reenvío manual - simplemente procesamos normalmente
-            // Esto permite que FlutterWindow::MessageHandler procese directamente
-            break;
-        }
-
         case WM_DPICHANGED: {
             std::cout << "Win32Window: WM_DPICHANGED" << std::endl;
             auto newRectSize = reinterpret_cast<RECT*>(lparam);

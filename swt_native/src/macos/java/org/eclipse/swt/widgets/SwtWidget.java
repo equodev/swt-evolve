@@ -172,7 +172,7 @@ public abstract class SwtWidget implements IWidget {
         checkSubclass();
         checkParent(parent);
         this.getApi().style = style;
-        display = parent.getImpl()._display();
+        display = ((SwtWidget) parent.getImpl()).display;
         reskinWidget();
         notifyCreationTracker();
     }
@@ -612,7 +612,7 @@ public abstract class SwtWidget implements IWidget {
         if (parent.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         parent.checkWidget();
-        parent.getImpl().checkOpen();
+        ((SwtWidget) parent.getImpl()).checkOpen();
     }
 
     /**

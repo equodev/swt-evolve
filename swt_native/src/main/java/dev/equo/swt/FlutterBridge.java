@@ -2,6 +2,7 @@ package dev.equo.swt;
 
 import org.eclipse.swt.custom.*;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.internal.win32.OS;
 import org.eclipse.swt.widgets.*;
 
 import java.io.ByteArrayInputStream;
@@ -45,28 +46,17 @@ public abstract class FlutterBridge {
             widget.getBridge().clientReady.thenRun(() -> {
                 try {
                     if (widget instanceof DartStyledText){
-                        if (!isNew(widget)) { // sends StyledText widget info
-                            String event = event(widget);
-                            System.out.println("will send: " + event);
-                            try {
-                                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                                serializer.to(widget.getApi(), out);
-                                String payload = out.toString(StandardCharsets.UTF_8);
-                                System.out.println("send: " + event + ": " + payload);
-                                client.getComm().send(event, payload);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        StyledTextBridge.drawStyledText((DartStyledText) widget,
-                                ((DartStyledText) widget).getLocation().x,
-                                ((DartStyledText) widget).getLocation().y,
-                                ((DartStyledText) widget).getCaret(),
-                                id(widget),
-                                client);
+                        widget.getDisplay().asyncExec(() -> {
+                            StyledTextBridge.drawStyledText((DartStyledText) widget,
+                                    ((DartStyledText) widget).getLocation().x,
+                                    ((DartStyledText) widget).getLocation().y,
+                                    ((DartStyledText) widget).getCaret(),
+                                    id(widget),
+                                    client);
+                        });
 
                     }
-                    else if (!isNew(widget)) { // send with the parent
+                    if (!isNew(widget)) { // send with the parent
                         String event = event(widget);
                         System.out.println("will send: " + event);
                         try {
@@ -88,7 +78,6 @@ public abstract class FlutterBridge {
         }
         dirty.clear();
     }
-
 
     private static boolean isNew(DartWidget widget) {
         return widget.getData("dev.equ.swt.new") == null;
@@ -167,6 +156,10 @@ public abstract class FlutterBridge {
     }
 
     public void setFocus(DartControl dartControl) {
+    }
+
+    public boolean hasFocus(DartControl dartControl) {
+        return false;
     }
 
     public Object container(DartComposite parent) {

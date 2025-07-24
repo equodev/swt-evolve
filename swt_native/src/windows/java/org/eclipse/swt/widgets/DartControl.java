@@ -1474,7 +1474,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     boolean hasFocus() {
-        return false;
+        return getBridge().hasFocus(this);
     }
 
     /**

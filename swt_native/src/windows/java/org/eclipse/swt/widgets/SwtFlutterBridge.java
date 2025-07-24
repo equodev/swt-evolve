@@ -32,5 +32,24 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     public void setFocus(DartControl control) {
         OS.SetFocus(control.getApi().handle);
     }
+
+    @Override
+    public boolean hasFocus(DartControl widget) {
+        /*
+         * If a non-SWT child of the control has focus,
+         * then this control is considered to have focus
+         * even though it does not have focus in Windows.
+         */
+        long hwndFocus = OS.GetFocus();
+        while (hwndFocus != 0) {
+            if (hwndFocus == widget.getApi().handle)
+                return true;
+            if (((SwtDisplay) widget.getDisplay().getImpl()).getControl(hwndFocus) != null) {
+                return false;
+            }
+            hwndFocus = OS.GetParent(hwndFocus);
+        }
+        return false;
+    }
 }
 

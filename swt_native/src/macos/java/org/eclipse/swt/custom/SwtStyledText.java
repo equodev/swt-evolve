@@ -428,7 +428,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     startPage = temp;
                 }
             } else if (scope == PrinterData.SELECTION) {
-                selection = Arrays.copyOf(styledText.getImpl()._selection(), styledText.getImpl()._selection().length);
+                selection = Arrays.copyOf(((SwtStyledText) styledText.getImpl()).selection, ((SwtStyledText) styledText.getImpl()).selection.length);
             }
             printerRenderer = new StyledTextRenderer(printer, null);
             ((SwtStyledTextRenderer) printerRenderer.getImpl()).setContent(copyContent(styledText.getContent()));
@@ -442,10 +442,10 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
          * 	line data for.
          */
         void cacheLineData(StyledText styledText) {
-            StyledTextRenderer renderer = styledText.getImpl()._renderer();
+            StyledTextRenderer renderer = ((SwtStyledText) styledText.getImpl()).renderer;
             ((SwtStyledTextRenderer) renderer.getImpl()).copyInto(printerRenderer);
             fontData = styledText.getFont().getFontData()[0];
-            tabLength = styledText.getImpl()._tabLength();
+            tabLength = ((SwtStyledText) styledText.getImpl()).tabLength;
             int lineCount = ((SwtStyledTextRenderer) printerRenderer.getImpl()).lineCount;
             if (styledText.isListening(ST.LineGetBackground) || (styledText.isListening(ST.LineGetSegments)) || styledText.isListening(ST.LineGetStyle)) {
                 StyledTextContent content = ((SwtStyledTextRenderer) printerRenderer.getImpl()).content;
@@ -547,7 +547,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     metrics.width = metrics.width * printerDPI.x / screenDPI.x;
                 }
             }
-            lineSpacing = styledText.getImpl()._lineSpacing() * printerDPI.y / screenDPI.y;
+            lineSpacing = ((SwtStyledText) styledText.getImpl()).lineSpacing * printerDPI.y / screenDPI.y;
             if (printOptions.printLineNumbers) {
                 printMargin = 3 * printerDPI.x / screenDPI.x;
             }
@@ -6716,7 +6716,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             @Override
             public void getSelection(AccessibleTextEvent e) {
                 StyledText st = SwtStyledText.this.getApi();
-                if (st.getImpl()._blockSelection() && st.getImpl()._blockXLocation() != -1) {
+                if (((SwtStyledText) st.getImpl()).blockSelection && ((SwtStyledText) st.getImpl()).blockXLocation != -1) {
                     Rectangle rect = ((SwtStyledText) st.getImpl()).getBlockSelectionPosition();
                     int lineIndex = rect.y + e.index;
                     int linePixel = st.getLinePixel(lineIndex);
@@ -6742,7 +6742,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             @Override
             public void getSelectionCount(AccessibleTextEvent e) {
                 StyledText st = SwtStyledText.this.getApi();
-                if (st.getImpl()._blockSelection() && st.getImpl()._blockXLocation() != -1) {
+                if (((SwtStyledText) st.getImpl()).blockSelection && ((SwtStyledText) st.getImpl()).blockXLocation != -1) {
                     Rectangle rect = ((SwtStyledText) st.getImpl()).getBlockSelectionPosition();
                     e.count = rect.height - rect.y + 1;
                 } else {
@@ -6755,7 +6755,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             public void removeSelection(AccessibleTextEvent e) {
                 StyledText st = SwtStyledText.this.getApi();
                 if (e.index == 0) {
-                    if (st.getImpl()._blockSelection()) {
+                    if (((SwtStyledText) st.getImpl()).blockSelection) {
                         ((SwtStyledText) st.getImpl()).clearBlockSelection(true, false);
                     } else {
                         ((SwtStyledText) st.getImpl()).clearSelection(false);
@@ -6815,18 +6815,18 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 for (int lineIndex = startLine; lineIndex <= endLine; lineIndex++) {
                     Rectangle rect = new Rectangle(0, 0, 0, 0);
                     rect.y = st.getLinePixel(lineIndex);
-                    rect.height = ((SwtStyledTextRenderer) st.getImpl()._renderer().getImpl()).getLineHeight(lineIndex);
+                    rect.height = ((SwtStyledTextRenderer) ((SwtStyledText) st.getImpl()).renderer.getImpl()).getLineHeight(lineIndex);
                     if (lineIndex == startLine) {
                         rect.x = ((SwtStyledText) st.getImpl()).getPointAtOffset(start).x;
                     } else {
-                        rect.x = st.getImpl()._leftMargin() - st.getImpl()._horizontalScrollOffset();
+                        rect.x = ((SwtStyledText) st.getImpl()).leftMargin - ((SwtStyledText) st.getImpl()).horizontalScrollOffset;
                     }
                     if (lineIndex == endLine) {
                         rect.width = ((SwtStyledText) st.getImpl()).getPointAtOffset(end).x - rect.x;
                     } else {
-                        TextLayout layout = ((SwtStyledTextRenderer) st.getImpl()._renderer().getImpl()).getTextLayout(lineIndex);
+                        TextLayout layout = ((SwtStyledTextRenderer) ((SwtStyledText) st.getImpl()).renderer.getImpl()).getTextLayout(lineIndex);
                         rect.width = layout.getBounds().width - rect.x;
-                        ((SwtStyledTextRenderer) st.getImpl()._renderer().getImpl()).disposeTextLayout(layout);
+                        ((SwtStyledTextRenderer) ((SwtStyledText) st.getImpl()).renderer.getImpl()).disposeTextLayout(layout);
                     }
                     rects[index++] = rect = display.map(st, null, rect);
                     if (bounds == null) {
@@ -6852,18 +6852,18 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 int[] ranges = new int[count * 2];
                 int index = 0;
                 for (int lineIndex = lineStart; lineIndex <= lineEnd; lineIndex++) {
-                    String line = st.getImpl()._content().getLine(lineIndex);
-                    int lineOffset = st.getImpl()._content().getOffsetAtLine(lineIndex);
+                    String line = ((SwtStyledText) st.getImpl()).content.getLine(lineIndex);
+                    int lineOffset = ((SwtStyledText) st.getImpl()).content.getOffsetAtLine(lineIndex);
                     int lineEndOffset = lineOffset + line.length();
                     int linePixel = st.getLinePixel(lineIndex);
                     int start = ((SwtStyledText) st.getImpl()).getOffsetAtPoint(left, linePixel, null, true);
                     if (start == -1) {
-                        start = left < st.getImpl()._leftMargin() ? lineOffset : lineEndOffset;
+                        start = left < ((SwtStyledText) st.getImpl()).leftMargin ? lineOffset : lineEndOffset;
                     }
                     int[] trailing = new int[1];
                     int end = ((SwtStyledText) st.getImpl()).getOffsetAtPoint(right, linePixel, trailing, true);
                     if (end == -1) {
-                        end = right < st.getImpl()._leftMargin() ? lineOffset : lineEndOffset;
+                        end = right < ((SwtStyledText) st.getImpl()).leftMargin ? lineOffset : lineEndOffset;
                     } else {
                         end += trailing[0];
                     }
@@ -6993,7 +6993,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 e.start = start;
                 e.end = end;
                 e.count = count;
-                e.result = st.getImpl()._content().getTextRange(start, end - start);
+                e.result = ((SwtStyledText) st.getImpl()).content.getTextRange(start, end - start);
             }
 
             @Override
@@ -7017,10 +7017,10 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                         {
                             Rectangle rect = ((SwtStyledText) st.getImpl()).getBoundsAtOffset(e.start);
                             if (e.type != ACC.SCROLL_TYPE_TOP_EDGE) {
-                                horizontalPixel = horizontalPixel + rect.x - st.getImpl()._leftMargin();
+                                horizontalPixel = horizontalPixel + rect.x - ((SwtStyledText) st.getImpl()).leftMargin;
                             }
                             if (e.type != ACC.SCROLL_TYPE_LEFT_EDGE) {
-                                topPixel = topPixel + rect.y - st.getImpl()._topMargin();
+                                topPixel = topPixel + rect.y - ((SwtStyledText) st.getImpl()).topMargin;
                             }
                             break;
                         }
@@ -7030,10 +7030,10 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                         {
                             Rectangle rect = ((SwtStyledText) st.getImpl()).getBoundsAtOffset(e.end - 1);
                             if (e.type != ACC.SCROLL_TYPE_BOTTOM_EDGE) {
-                                horizontalPixel = horizontalPixel - st.getImpl()._clientAreaWidth() + rect.x + rect.width + st.getImpl()._rightMargin();
+                                horizontalPixel = horizontalPixel - ((SwtStyledText) st.getImpl()).clientAreaWidth + rect.x + rect.width + ((SwtStyledText) st.getImpl()).rightMargin;
                             }
                             if (e.type != ACC.SCROLL_TYPE_RIGHT_EDGE) {
-                                topPixel = topPixel - st.getImpl()._clientAreaHeight() + rect.y + rect.height + st.getImpl()._bottomMargin();
+                                topPixel = topPixel - ((SwtStyledText) st.getImpl()).clientAreaHeight + rect.y + rect.height + ((SwtStyledText) st.getImpl()).bottomMargin;
                             }
                             break;
                         }
@@ -7113,7 +7113,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             public void getTextAttributes(AccessibleTextAttributeEvent e) {
                 StyledText st = SwtStyledText.this.getApi();
                 int contentLength = st.getCharCount();
-                if (!isListening(ST.LineGetStyle) && ((SwtStyledTextRenderer) st.getImpl()._renderer().getImpl()).styleCount == 0) {
+                if (!isListening(ST.LineGetStyle) && ((SwtStyledTextRenderer) ((SwtStyledText) st.getImpl()).renderer.getImpl()).styleCount == 0) {
                     e.start = 0;
                     e.end = contentLength;
                     e.textStyle = new TextStyle(st.getFont(), ((SwtStyledText) st.getImpl()).foreground, ((SwtStyledText) st.getImpl()).background);
@@ -7124,7 +7124,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 int lineOffset = st.getOffsetAtLine(lineIndex);
                 int lineCount = st.getLineCount();
                 offset = offset - lineOffset;
-                TextLayout layout = ((SwtStyledTextRenderer) st.getImpl()._renderer().getImpl()).getTextLayout(lineIndex);
+                TextLayout layout = ((SwtStyledTextRenderer) ((SwtStyledText) st.getImpl()).renderer.getImpl()).getTextLayout(lineIndex);
                 int lineLength = layout.getText().length();
                 if (lineLength > 0) {
                     e.textStyle = layout.getStyle(Math.max(0, Math.min(offset, lineLength - 1)));
@@ -7155,7 +7155,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     return;
                 }
                 int[] ranges = layout.getRanges();
-                ((SwtStyledTextRenderer) st.getImpl()._renderer().getImpl()).disposeTextLayout(layout);
+                ((SwtStyledTextRenderer) ((SwtStyledText) st.getImpl()).renderer.getImpl()).disposeTextLayout(layout);
                 int index = 0;
                 int end = 0;
                 while (index < ranges.length) {
@@ -11548,8 +11548,8 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     public static void updateAndRefreshCarets(StyledText styledText, Consumer<Caret> caretUpdater) {
         caretUpdater.accept(styledText.getCaret());
-        caretUpdater.accept(styledText.getImpl()._defaultCaret());
-        for (Caret caret : styledText.getImpl()._carets()) {
+        caretUpdater.accept(((SwtStyledText) styledText.getImpl()).defaultCaret);
+        for (Caret caret : ((SwtStyledText) styledText.getImpl()).carets) {
             caretUpdater.accept(caret);
         }
         if (styledText.getImpl() instanceof SwtStyledText) {

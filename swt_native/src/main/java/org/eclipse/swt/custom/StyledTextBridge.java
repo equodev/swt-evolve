@@ -127,11 +127,9 @@ public class StyledTextBridge {
 
         // gets StyleRanges from the renderer
         StyleRange[] styles = rendererImpl._styles();
-        System.out.println("STYLES : " + Arrays.toString(styles));
 
         // gets LineInfo from the renderer
         DartStyledTextRenderer.LineInfo[] lineInfo = rendererImpl.lines;
-        System.out.println("LINEINFO : " + Arrays.toString(styles));
 
         // creates the array of chars that will contain the ranges info
         StyledCharacter[] styledChars = new StyledCharacter[text.length()];
@@ -154,21 +152,17 @@ public class StyledTextBridge {
             payload.put("styledTextId", styledTextId);
         }
 
-        if (caret != null) {
+        DartCaret dartCaret = (DartCaret) caret.getImpl();
+
+        if (dartCaret != null) {
             Map<String, Object> caretInfo = new HashMap<>();
-            caretInfo.put("visible", caret.getVisible());
+            caretInfo.put("visible", dartCaret.getVisible());
             // caretInfo.put("blinkRate", caret.getBlinkRate());
+            caretInfo.put("offset", widget.getCaretOffset());
 
-            if (caret.getParent() != null && caret.getParent().getParent() instanceof StyledText) {
-                StyledText styledText = (StyledText)caret.getParent().getParent();
-                caretInfo.put("offset", styledText.getCaretOffset());
-            } else {
-                caretInfo.put("offset", 0);
-            }
-
-            Point size = caret.getSize();
+            Point size = dartCaret.getSize();
             if (size != null) {
-                caretInfo.put("width", size.x);
+                caretInfo.put("width", size.x > 0 ? size.x : 1);
                 caretInfo.put("height", size.y);
             } else {
                 caretInfo.put("width", 1);
