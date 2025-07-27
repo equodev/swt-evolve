@@ -799,8 +799,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return parent.getImpl().findBackgroundControl();
     }
 
-    long findBrush(long value, int lbStyle) {
-        return ((DartControl) parent.getImpl()).findBrush(value, lbStyle);
+    public long findBrush(long value, int lbStyle) {
+        return parent.getImpl().findBrush(value, lbStyle);
     }
 
     public Cursor findCursor() {
@@ -954,7 +954,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             Control control = findBackgroundControl();
             if (control == null)
                 control = this.getApi();
-            return SwtColor.win32_new(display, ((DartControl) control.getImpl()).getBackgroundPixel(), backgroundAlpha);
+            return SwtColor.win32_new(display, control.getImpl().getBackgroundPixel(), backgroundAlpha);
         }
     }
 
@@ -978,7 +978,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return control.getImpl()._backgroundImage();
     }
 
-    int getBackgroundPixel() {
+    public int getBackgroundPixel() {
         return background != -1 ? background : defaultBackground();
     }
 
@@ -2513,7 +2513,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             Shell shell = getShell();
             ((SwtShell) shell.getImpl()).releaseBrushes();
         } else {
-            setBackgroundPixel(((DartControl) control.getImpl()).background == -1 ? ((DartControl) control.getImpl()).defaultBackground() : ((DartControl) control.getImpl()).background);
+            setBackgroundPixel(control.getImpl()._background() == -1 ? ((DartControl) control.getImpl()).defaultBackground() : control.getImpl()._background());
         }
     }
 
@@ -2724,7 +2724,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         getBridge().dirty(this);
     }
 
-    void setCursor() {
+    public void setCursor() {
     }
 
     /**
@@ -3525,7 +3525,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return getApi().handle;
     }
 
-    boolean translateMnemonic(Event event, Control control) {
+    public boolean translateMnemonic(Event event, Control control) {
         if (control == this.getApi())
             return false;
         if (!isVisible() || !isEnabled())
@@ -3534,7 +3534,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return traverse(event);
     }
 
-    boolean traverse(Event event) {
+    public boolean traverse(Event event) {
         /*
 	* It is possible (but unlikely), that application
 	* code could have disposed the widget in the traverse
@@ -3673,7 +3673,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return traverse(traversal, event.character, event.keyCode, event.keyLocation, event.stateMask, event.doit);
     }
 
-    boolean traverse(int traversal, char character, int keyCode, int keyLocation, int stateMask, boolean doit) {
+    public boolean traverse(int traversal, char character, int keyCode, int keyLocation, int stateMask, boolean doit) {
         if (traversal == SWT.TRAVERSE_NONE) {
             switch(keyCode) {
                 case SWT.ESC:
@@ -3771,7 +3771,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         }
         Control control = this.getApi();
         do {
-            if (((DartControl) control.getImpl()).traverse(event)) {
+            if (control.getImpl().traverse(event)) {
                 return true;
             }
             if (!event.doit && ((DartWidget) control.getImpl()).hooks(SWT.Traverse))
@@ -3898,7 +3898,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        setBackgroundPixel(((DartControl) control.getImpl()).background);
+        setBackgroundPixel(control.getImpl()._background());
     }
 
     void updateBackgroundImage() {
@@ -4090,6 +4090,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public int _drawCount() {
         return drawCount;
+    }
+
+    public int _foreground() {
+        return foreground;
+    }
+
+    public int _background() {
+        return background;
     }
 
     public int _backgroundAlpha() {

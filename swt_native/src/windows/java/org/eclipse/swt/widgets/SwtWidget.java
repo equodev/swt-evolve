@@ -2740,7 +2740,7 @@ public abstract class SwtWidget implements IWidget {
         return SwtGC.win32_new(hDC, data);
     }
 
-    int getZoom() {
+    public int getZoom() {
         return DPIUtil.getZoomForAutoscaleProperty(getApi().nativeZoom);
     }
 

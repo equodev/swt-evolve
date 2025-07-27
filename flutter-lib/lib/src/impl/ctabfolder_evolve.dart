@@ -23,6 +23,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   void initState() {
     super.initState();
     _selectedIndex = state.selectedIndex ?? 0;
+
+    var e = VEvent()..index = _selectedIndex;
+    widget.sendSelectionSelection(state, e);
   }
 
   @override
@@ -48,9 +51,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     final double tabHeight = (state.fixedTabHeight != null && state.fixedTabHeight != SWT.DEFAULT)
         ? state.fixedTabHeight!.toDouble()
         : 28.0;
-
-    var e = VEvent()..index = _selectedIndex;
-    widget.sendSelectionSelection(state, e);
 
     return Column(
       children: [
@@ -189,47 +189,50 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     final textColor = isDark ? Colors.grey.shade400 : Colors.grey.shade700;
     final selectedTextColor = isDark ? Colors.white : Colors.grey.shade900;
 
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        height: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? selectedColor : backgroundColor,
-          border: Border(
-            right: BorderSide(color: borderColor, width: 1),
-            bottom: isSelected
-                ? BorderSide(color: selectedColor, width: 1)
-                : BorderSide(color: borderColor, width: 1),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          height: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? selectedColor : backgroundColor,
+            border: Border(
+              right: BorderSide(color: borderColor, width: 1),
+              bottom: isSelected
+                  ? BorderSide(color: selectedColor, width: 1)
+                  : BorderSide(color: borderColor, width: 1),
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Contenido del tab
-            tab.customContent ??
-                Text(
-                  tab.label,
-                  style: TextStyle(
-                    fontSize: 12,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Contenido del tab
+              tab.customContent ??
+                  Text(
+                    tab.label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isSelected ? selectedTextColor : textColor,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+
+              // Botón de cierre
+              if (onClose != null) ...[
+                const SizedBox(width: 4),
+                InkWell(
+                  onTap: onClose,
+                  child: Icon(
+                    Icons.close,
+                    size: 14,
                     color: isSelected ? selectedTextColor : textColor,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
-
-            // Botón de cierre
-            if (onClose != null) ...[
-              const SizedBox(width: 4),
-              InkWell(
-                onTap: onClose,
-                child: Icon(
-                  Icons.close,
-                  size: 14,
-                  color: isSelected ? selectedTextColor : textColor,
-                ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -261,90 +264,93 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
     final showHighlight = state.highlightEnabled ?? true;
 
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        height: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? selectedColor : backgroundColor,
-          border: Border(
-            top: isSelected && showHighlight
-                ? BorderSide(color: highlightColor, width: 2)
-                : BorderSide.none,
-            right: BorderSide(color: borderColor, width: 1),
-            left: isSelected
-                ? BorderSide(color: borderColor, width: 1)
-                : BorderSide.none,
-            bottom: isSelected
-                ? BorderSide(color: selectedColor, width: 1)
-                : BorderSide(color: borderColor, width: 1),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          height: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? selectedColor : backgroundColor,
+            border: Border(
+              top: isSelected && showHighlight
+                  ? BorderSide(color: highlightColor, width: 2)
+                  : BorderSide.none,
+              right: BorderSide(color: borderColor, width: 1),
+              left: isSelected
+                  ? BorderSide(color: borderColor, width: 1)
+                  : BorderSide.none,
+              bottom: isSelected
+                  ? BorderSide(color: selectedColor, width: 1)
+                  : BorderSide(color: borderColor, width: 1),
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            tab.customContent != null
-                ? DefaultTextStyle(
-              style: TextStyle(
-                fontSize: 12,
-                color: isSelected ? selectedTextColor : textColor,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-              child: tab.customContent!,
-            )
-                : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (tab.image != null && shouldShowImage)
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              tab.customContent != null
+                  ? DefaultTextStyle(
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isSelected ? selectedTextColor : textColor,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+                child: tab.customContent!,
+              )
+                  : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (tab.image != null && shouldShowImage)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 1.0, right: 3.0),
+                      child: !materialIconMap.containsKey(tab.image)
+                          ? Image.file(
+                        File(tab.image!),
+                        width: 16,
+                        height: 16,
+                      )
+                          : Icon(
+                        getMaterialIconByName(tab.image!),
+                        size: 16,
+                        color: isSelected ? selectedTextColor : textColor,
+                      ),
+                    ),
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 1.0, right: 3.0),
-                    child: !materialIconMap.containsKey(tab.image)
-                        ? Image.file(
-                      File(tab.image!),
-                      width: 16,
-                      height: 16,
-                    )
-                        : Icon(
-                      getMaterialIconByName(tab.image!),
-                      size: 16,
-                      color: isSelected ? selectedTextColor : textColor,
+                    padding: const EdgeInsets.only(bottom: 2.0),
+                    child: Text(
+                      tab.label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isSelected ? selectedTextColor : textColor,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
                     ),
                   ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2.0),
-                  child: Text(
-                    tab.label,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isSelected ? selectedTextColor : textColor,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ],
+              ),
+
+              if (shouldShowClose) ...[
+                const SizedBox(width: 6),
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: onClose,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 1.0),
+                      child: Icon(
+                        Icons.close,
+                        size: 14,
+                        color: isSelected
+                            ? selectedTextColor.withOpacity(0.9)
+                            : textColor.withOpacity(0.7),
+                      ),
                     ),
                   ),
                 ),
               ],
-            ),
-
-            if (shouldShowClose) ...[
-              const SizedBox(width: 6),
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onTap: onClose,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 1.0),
-                    child: Icon(
-                      Icons.close,
-                      size: 14,
-                      color: isSelected
-                          ? selectedTextColor.withOpacity(0.9)
-                          : textColor.withOpacity(0.7),
-                    ),
-                  ),
-                ),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -358,14 +364,17 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     final isDark = theme.brightness == Brightness.dark;
     final iconColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
 
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Icon(
-          icon,
-          size: 16,
-          color: iconColor,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Icon(
+            icon,
+            size: 16,
+            color: iconColor,
+          ),
         ),
       ),
     );

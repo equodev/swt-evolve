@@ -149,7 +149,7 @@ bool Win32Window::Create(const std::wstring& title,
     return FALSE;
   }
 
-  std::cout<<"Win32Window::Create 2 "<<__FILE__<<__LINE__<<std::endl;
+//  std::cout<<"Win32Window::Create 2 "<<__FILE__<<__LINE__<<std::endl;
   // int style = WS_OVERLAPPEDWINDOW;
   int style = WS_CHILD | WS_VISIBLE;
   // HWND parentWnd = nullptr;
@@ -160,12 +160,12 @@ bool Win32Window::Create(const std::wstring& title,
       Scale(origin.x, scale_factor), Scale(origin.y, scale_factor),
       Scale(size.width, scale_factor), Scale(size.height, scale_factor),
       parentWnd, nullptr, GetModuleHandle(nullptr), this);
-  std::cout<<"Win32Window::Create 3 "<<__FILE__<<__LINE__<<std::endl;
+//  std::cout<<"Win32Window::Create 3 "<<__FILE__<<__LINE__<<std::endl;
 
   if (!window) {
     return false;
   }
-  std::cout<<"Win32Window::Create 4 "<<__FILE__<<__LINE__<<std::endl;
+//  std::cout<<"Win32Window::Create 4 "<<__FILE__<<__LINE__<<std::endl;
 
   UpdateTheme(window);
 
@@ -183,7 +183,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
                                       UINT const message,
                                       WPARAM const wparam,
                                       LPARAM const lparam) noexcept {
-    std::cout<<"Win32Window::WndProc msg "<<message<<" w:"<<window<<" wp:"<<wparam<<" lp:"<<lparam<<std::endl;
+//    std::cout<<"Win32Window::WndProc msg "<<message<<" w:"<<window<<" wp:"<<wparam<<" lp:"<<lparam<<std::endl;
 
   if (message == WM_NCCREATE) {
     auto window_struct = reinterpret_cast<CREATESTRUCT*>(lparam);
@@ -204,7 +204,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
     }
   } else if (Win32Window* that = GetThisFromHandle(window)) {
     // std::cout<<"Win32Window::WndProc GetThisFromHandle 4"<<__FILE__<<__LINE__<<std::endl;
-    std::cout<<"Win32Window::WndProc a flutter win "<<__FILE__<<__LINE__<<std::endl;      
+//    std::cout<<"Win32Window::WndProc a flutter win "<<__FILE__<<__LINE__<<std::endl;
     return that->MessageHandler(window, message, wparam, lparam);
   }
   // std::cout<<"Win32Window::WndProc WM_NCCREATE"<<__FILE__<<__LINE__<<std::endl;
@@ -216,7 +216,7 @@ Win32Window::MessageHandler(HWND hwnd,
                             UINT const message,
                             WPARAM const wparam,
                             LPARAM const lparam) noexcept {
-    std::cout<<"Win32Window::MessageHandler 1 "<<__FILE__<<__LINE__<<std::endl;
+//    std::cout<<"Win32Window::MessageHandler 1 "<<__FILE__<<__LINE__<<std::endl;
   switch (message) {
     case WM_DESTROY:
       window_handle_ = nullptr;
@@ -247,9 +247,10 @@ Win32Window::MessageHandler(HWND hwnd,
     }
 
     case WM_ACTIVATE:
-      if (child_content_ != nullptr) {
-        SetFocus(child_content_);
-      }
+      // Skip focus management to prevent message cascading to parent SWT shell
+//      if (child_content_ != nullptr) {
+//        SetFocus(child_content_);
+//      }
       return 0;
 
     case WM_DWMCOLORIZATIONCOLORCHANGED:
@@ -285,7 +286,8 @@ void Win32Window::SetChildContent(HWND content) {
   MoveWindow(content, frame.left, frame.top, frame.right - frame.left,
              frame.bottom - frame.top, true);
 
-  SetFocus(child_content_);
+  // Skip SetFocus to prevent message cascading to parent SWT shell during initialization
+//  SetFocus(child_content_);
 }
 
 void Win32Window::Move(const Point& origin, const Size& size, const Point& vorigin, const Size& vsize) {

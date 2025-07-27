@@ -749,23 +749,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     Image createButtonImage(Display display, int button) {
-        return new Image(display, (ImageDataProvider) zoom -> {
-            GC tempGC = new GC(DartCTabFolder.this.getApi());
-            Point size = renderer.computeSize(button, SWT.NONE, tempGC, SWT.DEFAULT, SWT.DEFAULT);
-            tempGC.dispose();
-            Rectangle trim = renderer.computeTrim(button, SWT.NONE, 0, 0, 0, 0);
-            Image image = new Image(display, size.x - trim.width, size.y - trim.height);
-            GC gc = new GC(image);
-            Color transColor = renderer.parent.getBackground();
-            gc.setBackground(transColor);
-            gc.fillRectangle(image.getBounds());
-            renderer.draw(button, SWT.NONE, new Rectangle(trim.x, trim.y, size.x, size.y), gc);
-            gc.dispose();
-            final ImageData imageData = image.getImageData(zoom);
-            imageData.transparentPixel = imageData.palette.getPixel(transColor.getRGB());
-            image.dispose();
-            return imageData;
-        });
+        return null;
     }
 
     private void notifyItemCountChange() {

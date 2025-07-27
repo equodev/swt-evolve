@@ -26,6 +26,8 @@ public interface ImplCTabItem extends ImplItem {
 
     Font _font();
 
+    Color _foreground();
+
     Color _selectionForeground();
 
     Image _disabledImage();

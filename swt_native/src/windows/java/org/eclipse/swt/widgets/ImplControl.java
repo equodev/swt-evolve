@@ -30,11 +30,17 @@ public interface ImplControl extends ImplWidget {
 
     int _drawCount();
 
+    int _foreground();
+
+    int _background();
+
     int _backgroundAlpha();
 
     Widget[] computeTabList();
 
     Control findBackgroundControl();
+
+    long findBrush(long value, int lbStyle);
 
     Cursor findCursor();
 
@@ -43,6 +49,8 @@ public interface ImplControl extends ImplWidget {
     Menu[] findMenus(Control control);
 
     void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus);
+
+    int getBackgroundPixel();
 
     Control[] getPath();
 
@@ -58,9 +66,17 @@ public interface ImplControl extends ImplWidget {
 
     boolean sendFocusEvent(int type);
 
+    void setCursor();
+
     boolean setRadioFocus(boolean tabbing);
 
     boolean setTabItemFocus();
+
+    boolean translateMnemonic(Event event, Control control);
+
+    boolean traverse(Event event);
+
+    boolean traverse(int traversal, char character, int keyCode, int keyLocation, int stateMask, boolean doit);
 
     void updateBackgroundMode();
 

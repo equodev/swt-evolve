@@ -629,6 +629,10 @@ public class DartCTabItem extends DartItem implements ICTabItem {
         return font;
     }
 
+    public Color _foreground() {
+        return foreground;
+    }
+
     public Color _selectionForeground() {
         return selectionForeground;
     }

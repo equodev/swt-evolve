@@ -42,9 +42,9 @@ class EquoCommService {
   }
 
   static Future sendPayload(String userEventActionId, Object payload) {
-    print("comm ws sendPayload");
+    // print("comm ws sendPayload");
     final fut = impl.send(userEventActionId, payload);
-    print("comm ws after sendPayload");
+    // print("comm ws after sendPayload");
     return fut;
   }
 
@@ -197,7 +197,7 @@ class EquoComm {
     });
     print("ws about to send: $event");
     return ws.then((ws) {
-      print("ws sent");
+      // print("ws sent");
       ws.add(event);
     });
   }

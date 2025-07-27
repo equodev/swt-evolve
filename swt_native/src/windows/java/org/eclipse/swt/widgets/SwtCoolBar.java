@@ -377,7 +377,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             if (background == -1 && (getApi().style & SWT.FLAT) != 0) {
                 Control control = findBackgroundControl();
                 if (control != null && ((SwtControl) control.getImpl()).backgroundImage != null) {
-                    fillBackground(hDC, ((SwtControl) control.getImpl()).getBackgroundPixel(), rect);
+                    fillBackground(hDC, control.getImpl().getBackgroundPixel(), rect);
                     return;
                 }
             }

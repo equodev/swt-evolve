@@ -756,7 +756,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
-    long findBrush(long value, int lbStyle) {
+    public long findBrush(long value, int lbStyle) {
         if (lbStyle == OS.BS_SOLID) {
             for (int element : SYSTEM_COLORS) {
                 if (value == OS.GetSysColor(element)) {

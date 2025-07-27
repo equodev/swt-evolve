@@ -619,6 +619,10 @@ public class SwtCTabItem extends SwtItem implements ICTabItem {
         return font;
     }
 
+    public Color _foreground() {
+        return foreground;
+    }
+
     public Color _selectionForeground() {
         return selectionForeground;
     }

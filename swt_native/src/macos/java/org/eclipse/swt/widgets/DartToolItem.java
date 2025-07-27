@@ -1001,6 +1001,14 @@ public class DartToolItem extends DartItem implements IToolItem {
         return disabledImage;
     }
 
+    public Color _background() {
+        return background;
+    }
+
+    public Color _foreground() {
+        return foreground;
+    }
+
     public String _toolTipText() {
         return toolTipText;
     }

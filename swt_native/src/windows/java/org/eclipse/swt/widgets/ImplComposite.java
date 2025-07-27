@@ -31,6 +31,8 @@ public interface ImplComposite extends ImplScrollable {
 
     boolean setTabGroupFocus();
 
+    boolean translateMnemonic(Event event, Control control);
+
     void updateBackgroundMode();
 
     void updateLayout(boolean all);

@@ -1311,12 +1311,12 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     }
 
     @Override
-    boolean translateMnemonic(Event event, Control control) {
+    public boolean translateMnemonic(Event event, Control control) {
         if (super.translateMnemonic(event, control))
             return true;
         if (control != null) {
             for (Control child : _getChildren()) {
-                if (((SwtControl) child.getImpl()).translateMnemonic(event, control))
+                if (child.getImpl().translateMnemonic(event, control))
                     return true;
             }
         }
@@ -1596,7 +1596,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                     Control control = findBackgroundControl();
                     if (control == null)
                         control = this.getApi();
-                    data.background = ((SwtControl) control.getImpl()).getBackgroundPixel();
+                    data.background = control.getImpl().getBackgroundPixel();
                     data.font = SwtFont.win32_new(display, OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0), getApi().nativeZoom);
                     data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
                     if ((getApi().style & SWT.NO_BACKGROUND) != 0) {
@@ -1773,7 +1773,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                 Control control = findBackgroundControl();
                 if (control == null)
                     control = this.getApi();
-                data.background = ((SwtControl) control.getImpl()).getBackgroundPixel();
+                data.background = control.getImpl().getBackgroundPixel();
                 data.font = SwtFont.win32_new(display, OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0));
                 data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
                 GC gc = createNewGC(wParam, data);

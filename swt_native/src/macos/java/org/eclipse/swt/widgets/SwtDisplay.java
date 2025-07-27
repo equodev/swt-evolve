@@ -4933,7 +4933,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         timerExec(blinkRate, caretTimer);
     }
 
-    void setCursor(Control control) {
+    public void setCursor(Control control) {
         Cursor cursor = null;
         if (control != null && !control.isDisposed())
             cursor = control.getImpl().findCursor();

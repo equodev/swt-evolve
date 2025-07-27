@@ -15,6 +15,10 @@ public interface ImplToolItem extends ImplItem {
 
     Image _disabledImage();
 
+    Color _background();
+
+    Color _foreground();
+
     String _toolTipText();
 
     Control _control();
