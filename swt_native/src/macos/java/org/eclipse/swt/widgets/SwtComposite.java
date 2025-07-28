@@ -911,9 +911,9 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                 // See bug 497812.
                 child.getImpl().markLayout(false, false);
                 while (child != this.getApi()) {
-                    if (((SwtComposite) composite.getImpl()).layout != null) {
+                    if (composite.getImpl()._layout() != null) {
                         composite.state |= LAYOUT_NEEDED;
-                        if (!((SwtComposite) composite.getImpl()).layout.flushCache(child)) {
+                        if (!composite.getImpl()._layout().flushCache(child)) {
                             composite.state |= LAYOUT_CHANGED;
                         }
                     }
@@ -931,7 +931,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                 ((SwtDisplay) display.getImpl()).addLayoutDeferred(this.getApi());
             }
             for (int i = updateCount - 1; i >= 0; i--) {
-                ((SwtComposite) update[i].getImpl()).updateLayout(false);
+                update[i].getImpl().updateLayout(false);
             }
         } else {
             if (layout == null && (flags & SWT.ALL) == 0)

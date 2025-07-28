@@ -24,8 +24,7 @@ public class Config {
                 CTabFolderRenderer.class, Impl.equo,
                 Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo,
                 StyledText.class, Impl.equo,
-                Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo,
-                    Caret.class, Impl.equo
+                Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo
             );
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -83,6 +82,8 @@ public class Config {
         if (isCustomAncestor(parent))
             return true;
         if (isEquo(clazz))
+            return true;
+        if (parent != null && clazz == Caret.class && parent.getImpl().getClass().getSimpleName().startsWith(DART))
             return true;
         return false;
     }

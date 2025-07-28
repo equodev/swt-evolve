@@ -739,7 +739,12 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     }
 
     FontData[] getFontData(int style) {
-        FontData[] fontDatas = regularFont.getFontData();
+        FontData[] fontDatas;
+        if (regularFont != null) {
+            fontDatas = regularFont.getFontData();
+        } else {
+            fontDatas = new FontData[] { new FontData("Segoe UI", 14, SWT.NORMAL) };
+        }
         for (FontData fontData : fontDatas) {
             fontData.setStyle(style);
         }

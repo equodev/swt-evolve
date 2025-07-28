@@ -795,6 +795,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void enableWidget(boolean enabled) {
+        updateCursorRects(isEnabled());
     }
 
     boolean equals(double[] color1, double[] color2) {
@@ -884,7 +885,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         ((SwtDecorations) shell.getImpl()).bringToTop(false);
         if (isDisposed())
             return false;
-        return false;
+        return true;
     }
 
     boolean gestureEvent(long id, long eventPtr, int detail) {
@@ -1440,7 +1441,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     boolean hasFocus() {
-        return display.getFocusControl() == this.getApi();
+        return getBridge().hasFocus(this);
     }
 
     public boolean hasRegion() {
@@ -1651,7 +1652,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                     return true;
             }
         }
-        return false;
+        int code = traversalCode(0, null);
+        if ((code & (SWT.TRAVERSE_ARROW_PREVIOUS | SWT.TRAVERSE_ARROW_NEXT)) != 0)
+            return false;
+        return (code & (SWT.TRAVERSE_TAB_PREVIOUS | SWT.TRAVERSE_TAB_NEXT)) != 0;
     }
 
     public boolean isTabItem() {
@@ -1662,7 +1666,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                     return false;
             }
         }
-        return false;
+        int code = traversalCode(0, null);
+        return (code & (SWT.TRAVERSE_ARROW_PREVIOUS | SWT.TRAVERSE_ARROW_NEXT)) != 0;
     }
 
     public boolean isTransparent() {
@@ -2760,7 +2765,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if ((getApi().style & SWT.NO_FOCUS) != 0)
             return false;
-        return false;
+        return forceFocus();
     }
 
     /**
@@ -3138,7 +3143,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public boolean setTabItemFocus() {
         if (!isShowing())
             return false;
-        return false;
+        return forceFocus();
     }
 
     /**
@@ -3494,6 +3499,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         return toDisplay(point.x, point.y);
+    }
+
+    int traversalCode(int key, Object theEvent) {
+        int code = SWT.TRAVERSE_RETURN | SWT.TRAVERSE_TAB_NEXT | SWT.TRAVERSE_TAB_PREVIOUS | SWT.TRAVERSE_PAGE_NEXT | SWT.TRAVERSE_PAGE_PREVIOUS;
+        Shell shell = getShell();
+        if (shell.getImpl()._parent() != null)
+            code |= SWT.TRAVERSE_ESCAPE;
+        return code;
     }
 
     boolean traverseMnemonic(char key) {

@@ -161,4 +161,12 @@ class FlippedView: NSView {
     override var isFlipped: Bool {
         return true
     }
+
+//     override var acceptsFirstResponder: Bool {
+//         return true
+//     }
+
+//     override var canBecomeKeyView: Bool {
+//         return true
+//     }
 }

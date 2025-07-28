@@ -87,7 +87,7 @@ public class DartCaret extends DartWidget implements ICaret {
         createWidget();
     }
 
-    boolean blinkCaret() {
+    public boolean blinkCaret() {
         if (!isVisible)
             return true;
         if (!isShowing)
@@ -293,11 +293,17 @@ public class DartCaret extends DartWidget implements ICaret {
     @Override
     void releaseParent() {
         super.releaseParent();
-        if (parent != null && this.getApi() == ((DartCanvas) parent.getImpl()).caret) {
+        if (parent != null && this.getApi() == parent.getImpl()._caret()) {
             if (!parent.isDisposed())
                 parent.setCaret(null);
-            else
-                ((DartCanvas) parent.getImpl()).caret = null;
+            else {
+                if (parent.getImpl() instanceof DartCanvas) {
+                    ((DartCanvas) parent.getImpl()).caret = null;
+                }
+                if (parent.getImpl() instanceof SwtCanvas) {
+                    ((SwtCanvas) parent.getImpl()).caret = null;
+                }
+            }
         }
     }
 

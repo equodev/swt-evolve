@@ -3755,6 +3755,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 }
             case SWT.TRAVERSE_MNEMONIC:
                 {
+                    return translateMnemonic(event, null) || shell.getImpl().translateMnemonic(event, this.getApi());
                 }
             default:
                 {

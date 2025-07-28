@@ -2,14 +2,12 @@ package dev.equo.swt;
 
 import org.eclipse.swt.custom.*;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.internal.win32.OS;
 import org.eclipse.swt.widgets.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;

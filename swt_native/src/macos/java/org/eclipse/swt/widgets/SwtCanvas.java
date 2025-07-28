@@ -185,11 +185,11 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         super.drawWidget(id, context, rect);
         if (caret == null)
             return;
-        if (((SwtCaret) caret.getImpl()).isShowing) {
+        if (caret.getImpl()._isShowing()) {
             long ctx = context.graphicsPort();
             OS.CGContextSaveGState(ctx);
             OS.CGContextSetBlendMode(ctx, OS.kCGBlendModeDifference);
-            Image image = ((SwtCaret) caret.getImpl()).image;
+            Image image = caret.getImpl()._image();
             if (image != null) {
                 NSImage imageHandle = image.handle;
                 NSSize size = imageHandle.size();
@@ -198,8 +198,8 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
                     return;
                 NSBitmapImageRep rep = new NSBitmapImageRep(imageRep);
                 CGRect destRect = new CGRect();
-                destRect.origin.x = ((SwtCaret) caret.getImpl()).x;
-                destRect.origin.y = ((SwtCaret) caret.getImpl()).y;
+                destRect.origin.x = caret.getImpl()._x();
+                destRect.origin.y = caret.getImpl()._y();
                 destRect.size.width = size.width;
                 destRect.size.height = size.height;
                 long data = rep.bitmapData();
@@ -223,10 +223,10 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
                 OS.CGImageRelease(cgImage);
             } else {
                 CGRect drawRect = new CGRect();
-                drawRect.origin.x = ((SwtCaret) caret.getImpl()).x;
-                drawRect.origin.y = ((SwtCaret) caret.getImpl()).y;
-                drawRect.size.width = ((SwtCaret) caret.getImpl()).width != 0 ? ((SwtCaret) caret.getImpl()).width : SwtCaret.DEFAULT_WIDTH;
-                drawRect.size.height = ((SwtCaret) caret.getImpl()).height;
+                drawRect.origin.x = caret.getImpl()._x();
+                drawRect.origin.y = caret.getImpl()._y();
+                drawRect.size.width = caret.getImpl()._width() != 0 ? caret.getImpl()._width() : SwtCaret.DEFAULT_WIDTH;
+                drawRect.size.height = caret.getImpl()._height();
                 long colorspace = OS.CGColorSpaceCreateDeviceRGB();
                 OS.CGContextSetFillColorSpace(ctx, colorspace);
                 OS.CGColorSpaceRelease(colorspace);

@@ -160,14 +160,8 @@ public class StyledTextBridge {
             // caretInfo.put("blinkRate", caret.getBlinkRate());
             caretInfo.put("offset", widget.getCaretOffset());
 
-            Point size = dartCaret.getSize();
-            if (size != null) {
-                caretInfo.put("width", size.x > 0 ? size.x : 1);
-                caretInfo.put("height", size.y);
-            } else {
-                caretInfo.put("width", 1);
-                caretInfo.put("height", 16);
-            }
+            caretInfo.put("width", 1);
+            caretInfo.put("height", 16);
 
             payload.put("caretInfo", caretInfo);
         }

@@ -4892,8 +4892,8 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             if (currentCaret != null) {
                 if (currentCaret == null || currentCaret.isDisposed())
                     return;
-                if (((SwtCaret) currentCaret.getImpl()).blinkCaret()) {
-                    int blinkRate = ((SwtCaret) currentCaret.getImpl()).blinkRate;
+                if (currentCaret.getImpl().blinkCaret()) {
+                    int blinkRate = currentCaret.getImpl()._blinkRate();
                     if (blinkRate != 0)
                         timerExec(blinkRate, this);
                 } else {
@@ -4929,7 +4929,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     void setCurrentCaret(Caret caret) {
         currentCaret = caret;
-        int blinkRate = currentCaret != null ? ((SwtCaret) currentCaret.getImpl()).blinkRate : -1;
+        int blinkRate = currentCaret != null ? currentCaret.getImpl()._blinkRate() : -1;
         timerExec(blinkRate, caretTimer);
     }
 

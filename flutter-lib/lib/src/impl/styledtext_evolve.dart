@@ -8,6 +8,7 @@ import '../comm/comm.dart';
 import '../gen/styledtext.dart';
 import '../gen/widget.dart';
 import '../impl/canvas_evolve.dart';
+import 'widget_config.dart';
 
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     extends CanvasImpl<T, V> {
@@ -24,14 +25,20 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   Offset? _selectionStartPosition;
   int? _selectionStartOffset;
 
-  late bool _editable;
-  late bool _wordWrap;
+  bool _editable = true;
+  bool _wordWrap = true;
+
+  final bool useDarkTheme = getCurrentTheme();
+
+  @override
+  void extraSetState() {
+    super.extraSetState();
+    _editable = state.editable ?? false;
+    _wordWrap = state.wordWrap ?? false;
+  }
 
   @override
   Widget build(BuildContext ctx) {
-    _editable = state.editable ?? false;
-    _wordWrap = state.wordWrap ?? false;
-
     return Stack(
       children: [
         CustomPaint(
@@ -65,7 +72,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   //----------send Java-----------------
   void sendObjectEvent(V val, String ev, Object payload) {
     print("send ${val.swt}/${val.id}/$ev");
-      EquoCommService.sendPayload("${val.swt}/${val.id}/$ev", payload);
+    EquoCommService.sendPayload("${val.swt}/${val.id}/$ev", payload);
   }
 
   void handleTextModify() {
@@ -536,12 +543,14 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     List<StyleRange> characterRanges = [];
 
     if (text.isNotEmpty) {
+      final defaultTextColor = useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
+
       final defaultStyle = TextStyle(
         fontSize: defaultFontSize,
         fontFamily: defaultFontName,
         fontWeight: defaultFontStyle & 1 != 0 ? FontWeight.bold : FontWeight.normal,
         fontStyle: defaultFontStyle & 2 != 0 ? FontStyle.italic : FontStyle.normal,
-        color: applyAlpha(fg),
+        color: defaultTextColor,
       );
 
       characterRanges.add(StyleRange(
@@ -564,9 +573,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
             defaultFontStyle,
           );
 
+          final defaultTextColor = useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
+
           characterRanges.removeWhere((r) =>
           r.start <= start && r.end >= end &&
-              r.style.color == applyAlpha(fg) &&
+              r.style.color == defaultTextColor &&
               r.style.fontSize == defaultFontSize);
 
           characterRanges.add(StyleRange(
@@ -609,10 +620,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (textShape.textSpan != null) {
       _extractCharacterRangesFromTextSpan(textShape.textSpan!, characterRanges, 0);
     } else {
+      final defaultTextColor = useDarkTheme ? Color(0xFFFFFFFF) : textShape.style.color;
+
       characterRanges.add(StyleRange(
         start: 0,
         end: textShape.text.length,
-        style: textShape.style,
+        style: textShape.style.copyWith(color: defaultTextColor),
       ));
     }
 
@@ -815,7 +828,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
     final foreground = range.containsKey('foreground')
         ? rgbMapToColor(range['foreground'])
-        : fg;
+        : (useDarkTheme ? Color(0xFFFFFFFF) : fg);
 
     final background = range.containsKey('background')
         ? rgbMapToColor(range['background'])
@@ -839,12 +852,14 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final weight = styleMap['weight'] as FontWeight;
     final style = styleMap['style'] as FontStyle;
 
+    final defaultTextColor = useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
+
     return TextStyle(
       fontSize: fontSize,
       fontFamily: fontName,
       fontWeight: weight,
       fontStyle: style,
-      color: applyAlpha(fg),
+      color: defaultTextColor,
     );
   }
 
@@ -900,11 +915,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           CaretInfo? caretInfo;
 
           if (caretInfoMap != null && styledTextId != null) {
+            final caretColor = useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
             caretInfo = CaretInfo(
               offset: caretInfoMap['offset'] as int? ?? 0,
               width: (caretInfoMap['width'] as int? ?? 1).toDouble(),
               height: (caretInfoMap['height'] as int? ?? 0).toDouble(),
-              color: applyAlpha(fg),
+              color: caretColor,
               visible: caretInfoMap['visible'] as bool? ?? true,
               blinking: true,
               styledTextId: styledTextId,
@@ -951,7 +967,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
               fontFamily: defaultFontName,
               fontWeight: defaultFontStyle & 1 != 0 ? FontWeight.bold : FontWeight.normal,
               fontStyle: defaultFontStyle & 2 != 0 ? FontStyle.italic : FontStyle.normal,
-              color: applyAlpha(fg),
+              color: useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg),
             ),
             clipRect,
             null,
@@ -1542,7 +1558,8 @@ class TextShape extends Shape {
       }
     }
 
-    return style;
+    final useDarkTheme = getCurrentTheme();
+    return useDarkTheme ? style.copyWith(color: Color(0xFFFFFFFF)) : style;
   }
 
   int _getLineFromOffset(int offset, String text) {
@@ -2310,4 +2327,3 @@ class TextEditor {
     return '\n'.allMatches(text.substring(0, offset)).length;
   }
 }
-

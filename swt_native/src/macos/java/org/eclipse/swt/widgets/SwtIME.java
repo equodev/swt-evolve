@@ -156,15 +156,15 @@ public class SwtIME extends SwtWidget implements IIME {
             if (parent == null || parent.getImpl() instanceof SwtCanvas) {
                 NSView view = parent.view;
                 NSPoint pt = new NSPoint();
-                pt.x = ((SwtCaret) caret.getImpl()).x;
-                pt.y = ((SwtCaret) caret.getImpl()).y + ((SwtCaret) caret.getImpl()).height;
+                pt.x = caret.getImpl()._x();
+                pt.y = caret.getImpl()._y() + caret.getImpl()._height();
                 pt = view.convertPoint_toView_(pt, null);
                 pt = view.window().convertBaseToScreen(pt);
                 rect.x = pt.x;
                 rect.y = pt.y;
             }
-            rect.width = ((SwtCaret) caret.getImpl()).width;
-            rect.height = ((SwtCaret) caret.getImpl()).height;
+            rect.width = caret.getImpl()._width();
+            rect.height = caret.getImpl()._height();
         }
         return rect;
     }

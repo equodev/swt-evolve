@@ -632,6 +632,16 @@ public class DartButton extends DartControl implements IButton {
         getBridge().dirty(this);
     }
 
+    @Override
+    int traversalCode(int key, Object theEvent) {
+        int code = super.traversalCode(key, theEvent);
+        if ((getApi().style & SWT.ARROW) != 0)
+            code &= ~(SWT.TRAVERSE_TAB_NEXT | SWT.TRAVERSE_TAB_PREVIOUS);
+        if ((getApi().style & SWT.RADIO) != 0)
+            code |= SWT.TRAVERSE_ARROW_NEXT | SWT.TRAVERSE_ARROW_PREVIOUS;
+        return code;
+    }
+
     void updateAlignment() {
         if ((getApi().style & (SWT.PUSH | SWT.TOGGLE)) != 0) {
             if (text.length() != 0 && image != null) {
