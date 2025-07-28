@@ -4060,10 +4060,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     boolean updateItems() {
-        return false;
+        return updateItems(selectedIndex);
     }
 
     boolean updateItems(int showIndex) {
+        setButtonBounds();
         return false;
     }
 
