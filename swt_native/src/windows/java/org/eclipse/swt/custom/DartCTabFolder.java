@@ -3800,6 +3800,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setTabPosition(int position) {
         checkWidget();
+        this.tabPosition = position;
         if (position != SWT.TOP && position != SWT.BOTTOM) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -4436,6 +4437,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         }
     }
 
+    int tabPosition;
+
     public boolean _onBottom() {
         return onBottom;
     }
@@ -4702,6 +4705,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     public Font _oldFont() {
         return oldFont;
+    }
+
+    public int _tabPosition() {
+        return tabPosition;
     }
 
     protected void hookEvents() {

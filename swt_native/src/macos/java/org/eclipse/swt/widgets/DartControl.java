@@ -795,6 +795,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void enableWidget(boolean enabled) {
+        updateCursorRects(isEnabled());
     }
 
     boolean equals(double[] color1, double[] color2) {
@@ -868,6 +869,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (isFocusControl())
             return true;
         ((SwtDecorations) shell.getImpl()).setSavedFocus(null);
+        getBridge().setFocus(this);
         if (isDisposed())
             return false;
         ((SwtDecorations) shell.getImpl()).setSavedFocus(this.getApi());
@@ -883,7 +885,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         ((SwtDecorations) shell.getImpl()).bringToTop(false);
         if (isDisposed())
             return false;
-        return false;
+        return true;
     }
 
     boolean gestureEvent(long id, long eventPtr, int detail) {
@@ -1439,7 +1441,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     boolean hasFocus() {
-        return display.getFocusControl() == this.getApi();
+        return getBridge().hasFocus(this);
     }
 
     public boolean hasRegion() {
@@ -1650,7 +1652,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                     return true;
             }
         }
-        return false;
+        int code = traversalCode(0, null);
+        if ((code & (SWT.TRAVERSE_ARROW_PREVIOUS | SWT.TRAVERSE_ARROW_NEXT)) != 0)
+            return false;
+        return (code & (SWT.TRAVERSE_TAB_PREVIOUS | SWT.TRAVERSE_TAB_NEXT)) != 0;
     }
 
     public boolean isTabItem() {
@@ -1661,7 +1666,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                     return false;
             }
         }
-        return false;
+        int code = traversalCode(0, null);
+        return (code & (SWT.TRAVERSE_ARROW_PREVIOUS | SWT.TRAVERSE_ARROW_NEXT)) != 0;
     }
 
     public boolean isTransparent() {
@@ -2759,7 +2765,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if ((getApi().style & SWT.NO_FOCUS) != 0)
             return false;
-        return false;
+        return forceFocus();
     }
 
     /**
@@ -2784,6 +2790,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.font = font;
+        getBridge().dirty(this);
     }
 
     /**
@@ -2815,6 +2822,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return;
         this.foreground = foreground;
         setForeground(foreground);
+        getBridge().dirty(this);
     }
 
     void setForeground(double[] color) {
@@ -3135,7 +3143,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public boolean setTabItemFocus() {
         if (!isShowing())
             return false;
-        return false;
+        return forceFocus();
     }
 
     /**
@@ -3491,6 +3499,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         return toDisplay(point.x, point.y);
+    }
+
+    int traversalCode(int key, Object theEvent) {
+        int code = SWT.TRAVERSE_RETURN | SWT.TRAVERSE_TAB_NEXT | SWT.TRAVERSE_TAB_PREVIOUS | SWT.TRAVERSE_PAGE_NEXT | SWT.TRAVERSE_PAGE_PREVIOUS;
+        Shell shell = getShell();
+        if (shell.getImpl()._parent() != null)
+            code |= SWT.TRAVERSE_ESCAPE;
+        return code;
     }
 
     boolean traverseMnemonic(char key) {
@@ -3911,21 +3927,21 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     Rectangle bounds = new Rectangle(0, 0, 0, 0);
 
+    boolean capture;
+
     boolean dragDetect;
 
-    boolean enabled;
+    boolean enabled = true;
 
     Color _foreground;
 
     int orientation;
 
+    boolean redraw;
+
     int textDirection;
 
-    boolean visible;
-
-    boolean capture;
-
-    boolean redraw;
+    boolean visible = true;
 
     public Composite _parent() {
         return parent;
@@ -3999,6 +4015,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return bounds;
     }
 
+    public boolean _capture() {
+        return capture;
+    }
+
     public boolean _dragDetect() {
         return dragDetect;
     }
@@ -4015,20 +4035,16 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return orientation;
     }
 
+    public boolean _redraw() {
+        return redraw;
+    }
+
     public int _textDirection() {
         return textDirection;
     }
 
     public boolean _visible() {
         return visible;
-    }
-
-    public boolean _capture() {
-        return capture;
-    }
-
-    public boolean _redraw() {
-        return redraw;
     }
 
     public FlutterBridge getBridge() {

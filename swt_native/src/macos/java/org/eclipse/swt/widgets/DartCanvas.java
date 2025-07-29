@@ -118,6 +118,7 @@ public class DartCanvas extends DartComposite implements ICanvas {
      * @since 3.2
      */
     public void drawBackground(GC gc, int x, int y, int width, int height) {
+        drawBackground(gc, x, y, width, height, 0, 0);
     }
 
     /**

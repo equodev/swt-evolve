@@ -166,7 +166,6 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      * @see #computeTrim
      */
     public Rectangle getClientArea() {
-        checkWidget();
         return getBounds();
     }
 

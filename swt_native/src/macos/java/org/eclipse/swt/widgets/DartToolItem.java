@@ -300,7 +300,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return this.bounds;
+        return null;
     }
 
     /**
@@ -585,8 +585,6 @@ public class DartToolItem extends DartItem implements IToolItem {
     }
 
     void setBounds(int x, int y, int width, int height) {
-        this.bounds = new Rectangle(x, y, width, height);
-        getBridge().dirty(this);
     }
 
     /**
@@ -981,9 +979,7 @@ public class DartToolItem extends DartItem implements IToolItem {
     void updateStyle() {
     }
 
-    Rectangle bounds = new Rectangle(0, 0, 0, 0);
-
-    boolean enabled;
+    boolean enabled = true;
 
     public int _width() {
         return width;
@@ -1019,10 +1015,6 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     public boolean _selection() {
         return selection;
-    }
-
-    public Rectangle _bounds() {
-        return bounds;
     }
 
     public boolean _enabled() {

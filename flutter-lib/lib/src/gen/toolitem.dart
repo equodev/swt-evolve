@@ -4,7 +4,6 @@ import '../comm/comm.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
 import '../gen/item.dart';
-import '../gen/rectangle.dart';
 import '../impl/toolitem_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -34,7 +33,6 @@ class VToolItem extends VItem {
   }
 
   VColor? background;
-  VRectangle? bounds;
   VControl? control;
   bool? enabled;
   VColor? foreground;

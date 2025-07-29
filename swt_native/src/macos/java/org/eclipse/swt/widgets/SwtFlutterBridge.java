@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.internal.cocoa.NSView;
+import org.eclipse.swt.internal.cocoa.NSWindow;
 import org.eclipse.swt.internal.cocoa.OS;
 
 public class SwtFlutterBridge extends SwtFlutterBridgeBase {
@@ -28,6 +29,27 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     @Override
+    public void setFocus(DartControl widget) {
+        NSView focusView = widget.getApi().view;
+//        if (!focusView.canBecomeKeyView())
+//            return;
+        boolean rest = forceFocus(widget, focusView);
+    }
+
+    @Override
+    public boolean hasFocus(DartControl widget) {
+        return widget.display.getFocusControl() == widget.getApi();
+    }
+
+    boolean forceFocus(DartControl widget, NSView focusView) {
+        NSWindow window = focusView.window();
+        if (window == null) {
+            return false;
+        }
+        return window.makeFirstResponder(focusView);
+    }
+
+    @Override
     protected void destroyHandle(DartControl control) {
         ((SwtDisplay) control.display.getImpl()).removeWidget(control.getApi().view);
         if (control.jniRef != 0)
@@ -36,4 +58,3 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
         control.getApi().view = null;
     }
 }
-

@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.custom.DartCTabFolder;
+import org.eclipse.swt.custom.DartStyledText;
 import org.eclipse.swt.graphics.Point;
 
 public class Sizes {
@@ -15,6 +16,10 @@ public class Sizes {
         return new Point((int) totalWidth, 25);
     }
 
+    public static Point compute(DartCombo c) {
+        return new Point(c.text.length()*15+20, 25);
+    }
+
     public static Point compute(DartLabel c) {
         return new Point(c.text.length()*15, 18);
     }
@@ -25,5 +30,9 @@ public class Sizes {
 
     public static Point compute(DartCTabFolder impl) {
         return new Point(impl.getItems().length * 80, 28);
+    }
+
+    public static Point compute(DartStyledText c) {
+        return new Point(c.getText().length()*15+20, 25);
     }
 }

@@ -1032,6 +1032,17 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     @Override
+    int traversalCode(int key, Object theEvent) {
+        if ((getApi().state & CANVAS) != 0) {
+            if ((getApi().style & SWT.NO_FOCUS) != 0)
+                return 0;
+            if (hooksKeys())
+                return 0;
+        }
+        return super.traversalCode(key, theEvent);
+    }
+
+    @Override
     void updateBackgroundColor() {
         super.updateBackgroundColor();
         Control[] children = _getChildren();

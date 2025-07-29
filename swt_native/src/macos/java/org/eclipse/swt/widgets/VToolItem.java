@@ -25,14 +25,6 @@ public class VToolItem extends VItem {
         ((DartToolItem) impl).background = value;
     }
 
-    public Rectangle getBounds() {
-        return ((DartToolItem) impl).bounds;
-    }
-
-    public void setBounds(Rectangle value) {
-        ((DartToolItem) impl).bounds = value;
-    }
-
     public Control getControl() {
         Control val = ((DartToolItem) impl).control;
         if (val != null && !(val.getImpl() instanceof DartControl))

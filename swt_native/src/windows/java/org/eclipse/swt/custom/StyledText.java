@@ -30,6 +30,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.printing.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * A StyledText is an editable user interface object that displays lines
@@ -122,7 +123,7 @@ public class StyledText extends Canvas {
      */
     public StyledText(Composite parent, int style) {
         this((IStyledText) null);
-        setImpl(new SwtStyledText(parent, style, this));
+        setImpl(Config.isEquo(StyledText.class, parent) ? new DartStyledText(parent, style, this) : new SwtStyledText(parent, style, this));
     }
 
     /**

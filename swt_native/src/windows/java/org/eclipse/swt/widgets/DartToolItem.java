@@ -986,7 +986,6 @@ public class DartToolItem extends DartItem implements IToolItem {
         checkWidget();
         this.width = width;
         setWidthInPixels(DPIUtil.scaleUp(width, getZoom()));
-        getBridge().dirty(this);
     }
 
     void setWidthInPixels(int width) {
@@ -996,6 +995,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         long hwnd = parent.handle;
         ((DartToolBar) parent.getImpl()).layoutItems();
+        getBridge().dirty(this);
     }
 
     void updateImages(boolean enabled) {
@@ -1016,7 +1016,7 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     Color _background;
 
-    boolean enabled;
+    boolean enabled = true;
 
     Color _foreground;
 

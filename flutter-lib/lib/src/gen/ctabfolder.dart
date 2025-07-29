@@ -36,33 +36,33 @@ class VCTabFolder extends VComposite {
   }
 
   bool? borderVisible;
-  int? fixedTabHeight;
   List<VColor>? gradientColors;
   List<int>? gradientPercents;
   bool? gradientVertical;
   bool? highlightEnabled;
   List<VCTabItem>? items;
+  bool? mRUVisible;
+  bool? maximizeVisible;
   bool? maximized;
-  int? minChars;
+  bool? minimizeVisible;
   bool? minimized;
-  bool? mru;
-  bool? onBottom;
-  int? selectedIndex;
+  int? minimumCharacters;
+  bool? selectedImageVisible;
+  int? selection;
   VColor? selectionBackground;
+  int? selectionBarThickness;
   VColor? selectionForeground;
   List<VColor>? selectionGradientColors;
   List<int>? selectionGradientPercents;
   bool? selectionGradientVertical;
-  int? selectionHighlightBarThickness;
-  bool? showMax;
-  bool? showMin;
-  bool? showSelectedImage;
-  bool? showUnselectedClose;
-  bool? showUnselectedImage;
   bool? simple;
   bool? single;
+  int? tabHeight;
+  int? tabPosition;
   VControl? topRight;
   int? topRightAlignment;
+  bool? unselectedCloseVisible;
+  bool? unselectedImageVisible;
 
   factory VCTabFolder.fromJson(Map<String, dynamic> json) =>
       _$VCTabFolderFromJson(json);

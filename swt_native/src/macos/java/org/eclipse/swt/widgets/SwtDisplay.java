@@ -4892,8 +4892,8 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             if (currentCaret != null) {
                 if (currentCaret == null || currentCaret.isDisposed())
                     return;
-                if (((SwtCaret) currentCaret.getImpl()).blinkCaret()) {
-                    int blinkRate = ((SwtCaret) currentCaret.getImpl()).blinkRate;
+                if (currentCaret.getImpl().blinkCaret()) {
+                    int blinkRate = currentCaret.getImpl()._blinkRate();
                     if (blinkRate != 0)
                         timerExec(blinkRate, this);
                 } else {
@@ -4929,7 +4929,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     void setCurrentCaret(Caret caret) {
         currentCaret = caret;
-        int blinkRate = currentCaret != null ? ((SwtCaret) currentCaret.getImpl()).blinkRate : -1;
+        int blinkRate = currentCaret != null ? currentCaret.getImpl()._blinkRate() : -1;
         timerExec(blinkRate, caretTimer);
     }
 
@@ -5703,7 +5703,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 if (dequeue != 0 && currentCombo != null && !currentCombo.isDisposed()) {
                     NSEvent nsEvent = new NSEvent(result);
                     if (nsEvent.type() == OS.NSKeyDown) {
-                        ((SwtCombo) currentCombo.getImpl()).sendTrackingKeyEvent(nsEvent, SWT.KeyDown);
+                        if (currentCombo.getImpl() instanceof SwtCombo) {
+                            ((SwtCombo) currentCombo.getImpl()).sendTrackingKeyEvent(nsEvent, SWT.KeyDown);
+                        }
                     }
                 }
                 if (dequeue != 0 && trackingControl != null && !trackingControl.isDisposed()) {

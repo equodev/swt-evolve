@@ -11,4 +11,6 @@ public interface ImplScrollBar extends ImplWidget {
     int _increment();
 
     int _pageIncrement();
+
+    Point getSizeInPixels();
 }

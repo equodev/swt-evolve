@@ -5,7 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 
-public interface ICombo extends IComposite {
+public interface ICombo extends IComposite, ImplCombo {
 
     /**
      * Adds the argument to the end of the receiver's list.

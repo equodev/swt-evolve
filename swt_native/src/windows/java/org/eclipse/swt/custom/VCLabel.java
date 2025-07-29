@@ -19,12 +19,21 @@ public class VCLabel extends VCanvas {
         super(impl);
     }
 
-    public int getAlign() {
+    public int getAlignment() {
         return ((DartCLabel) impl).getAlignment();
     }
 
-    public void setAlign(int value) {
+    public void setAlignment(int value) {
         ((DartCLabel) impl).align = value;
+    }
+
+    @JsonAttribute(ignore = true)
+    public Image getBackgroundImage() {
+        return ((DartCLabel) impl).backgroundImage;
+    }
+
+    public void setBackgroundImage(Image value) {
+        ((DartCLabel) impl).backgroundImage = value;
     }
 
     public int getBottomMargin() {
@@ -33,48 +42,6 @@ public class VCLabel extends VCanvas {
 
     public void setBottomMargin(int value) {
         ((DartCLabel) impl).bottomMargin = value;
-    }
-
-    @JsonAttribute(ignore = true)
-    public Image getImage() {
-        return ((DartCLabel) impl).image;
-    }
-
-    public void setImage(Image value) {
-        ((DartCLabel) impl).image = value;
-    }
-
-    public int getLeftMargin() {
-        return ((DartCLabel) impl).getLeftMargin();
-    }
-
-    public void setLeftMargin(int value) {
-        ((DartCLabel) impl).leftMargin = value;
-    }
-
-    public int getRightMargin() {
-        return ((DartCLabel) impl).getRightMargin();
-    }
-
-    public void setRightMargin(int value) {
-        ((DartCLabel) impl).rightMargin = value;
-    }
-
-    @JsonAttribute(nullable = false)
-    public String getText() {
-        return ((DartCLabel) impl).text;
-    }
-
-    public void setText(String value) {
-        ((DartCLabel) impl).text = value;
-    }
-
-    public int getTopMargin() {
-        return ((DartCLabel) impl).getTopMargin();
-    }
-
-    public void setTopMargin(int value) {
-        ((DartCLabel) impl).topMargin = value;
     }
 
     public Color[] getGradientColors() {
@@ -108,12 +75,44 @@ public class VCLabel extends VCanvas {
     }
 
     @JsonAttribute(ignore = true)
-    public Image getBackgroundImage() {
-        return ((DartCLabel) impl).backgroundImage;
+    public Image getImage() {
+        return ((DartCLabel) impl).image;
     }
 
-    public void setBackgroundImage(Image value) {
-        ((DartCLabel) impl).backgroundImage = value;
+    public void setImage(Image value) {
+        ((DartCLabel) impl).image = value;
+    }
+
+    public int getLeftMargin() {
+        return ((DartCLabel) impl).getLeftMargin();
+    }
+
+    public void setLeftMargin(int value) {
+        ((DartCLabel) impl).leftMargin = value;
+    }
+
+    public int getRightMargin() {
+        return ((DartCLabel) impl).getRightMargin();
+    }
+
+    public void setRightMargin(int value) {
+        ((DartCLabel) impl).rightMargin = value;
+    }
+
+    public String getText() {
+        return ((DartCLabel) impl).text;
+    }
+
+    public void setText(String value) {
+        ((DartCLabel) impl).text = value;
+    }
+
+    public int getTopMargin() {
+        return ((DartCLabel) impl).getTopMargin();
+    }
+
+    public void setTopMargin(int value) {
+        ((DartCLabel) impl).topMargin = value;
     }
 
     @JsonConverter(target = CLabel.class)

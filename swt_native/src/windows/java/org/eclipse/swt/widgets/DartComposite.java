@@ -907,6 +907,7 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     public void removeControl(Control control) {
         fixTabList(control);
+        resizeChildren();
     }
 
     @Override
@@ -1090,6 +1091,7 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     void setResizeChildren(boolean resize) {
         if (resize) {
+            resizeChildren();
         } else {
             if (((SwtDisplay) display.getImpl()).resizeCount > SwtDisplay.RESIZE_LIMIT) {
                 return;

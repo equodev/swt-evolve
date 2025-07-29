@@ -2017,6 +2017,30 @@ public class SwtCombo extends SwtComposite implements ICombo {
         return event.text;
     }
 
+    public String _text() {
+        return text;
+    }
+
+    public int _textLimit() {
+        return textLimit;
+    }
+
+    public boolean _receivingFocus() {
+        return receivingFocus;
+    }
+
+    public boolean _ignoreSetObject() {
+        return ignoreSetObject;
+    }
+
+    public boolean _ignoreSelection() {
+        return ignoreSelection;
+    }
+
+    public boolean _listVisible() {
+        return listVisible;
+    }
+
     public Combo getApi() {
         if (api == null)
             api = Combo.createApi(this);

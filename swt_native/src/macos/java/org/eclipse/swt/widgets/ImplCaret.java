@@ -24,4 +24,6 @@ public interface ImplCaret extends ImplWidget {
     Image _image();
 
     Font _font();
+
+    boolean blinkCaret();
 }

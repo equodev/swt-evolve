@@ -29,7 +29,7 @@ class CLabelSerializeTest extends SerializeTestBase {
                .containsEntry("text", json(w.getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("style", w.getStyle());
-        assertJ.satisfies(node("align").equalsTo(w.getAlignment(), orAbsentIf0));
+        assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
         assertJ.satisfies(node("bottomMargin").equalsTo(w.getBottomMargin(), orAbsentIf0));
         assertJ.satisfies(node("leftMargin").equalsTo(w.getLeftMargin(), orAbsentIf0));
         assertJ.satisfies(node("rightMargin").equalsTo(w.getRightMargin(), orAbsentIf0));

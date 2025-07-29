@@ -14,9 +14,6 @@ VToolItem _$VToolItemFromJson(Map<String, dynamic> json) => VToolItem()
   ..background = json['background'] == null
       ? null
       : VColor.fromJson(json['background'] as Map<String, dynamic>)
-  ..bounds = json['bounds'] == null
-      ? null
-      : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>)
   ..control = json['control'] == null
       ? null
       : VControl.fromJson(json['control'] as Map<String, dynamic>)
@@ -34,7 +31,6 @@ Map<String, dynamic> _$VToolItemToJson(VToolItem instance) => <String, dynamic>{
       'style': instance.style,
       'text': instance.text,
       'background': instance.background,
-      'bounds': instance.bounds,
       'control': instance.control,
       'enabled': instance.enabled,
       'foreground': instance.foreground,

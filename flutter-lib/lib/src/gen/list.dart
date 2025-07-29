@@ -32,7 +32,6 @@ class VList extends VScrollable {
     swt = "List";
   }
 
-  bool? ignoreSelect;
   List<String>? items;
   List<String>? selection;
   List<int>? selectionIndices;

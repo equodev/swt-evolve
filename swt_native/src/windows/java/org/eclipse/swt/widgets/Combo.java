@@ -21,6 +21,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class are controls that allow the user
@@ -110,7 +111,7 @@ public class Combo extends Composite {
      */
     public Combo(Composite parent, int style) {
         this((ICombo) null);
-        setImpl(new SwtCombo(parent, style, this));
+        setImpl(Config.isEquo(Combo.class, parent) ? new DartCombo(parent, style, this) : new SwtCombo(parent, style, this));
     }
 
     /**

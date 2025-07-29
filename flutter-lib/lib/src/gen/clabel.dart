@@ -24,7 +24,7 @@ class VCLabel extends VCanvas {
     swt = "CLabel";
   }
 
-  int? align;
+  int? alignment;
   int? bottomMargin;
   List<VColor>? gradientColors;
   List<int>? gradientPercents;

@@ -22,7 +22,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   @override
   void initState() {
     super.initState();
-    _selectedIndex = state.selectedIndex ?? 0;
+    _selectedIndex = state.selection ?? 0;
 
     var e = VEvent()..index = _selectedIndex;
     widget.sendSelectionSelection(state, e);
@@ -31,8 +31,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   @override
   void extraSetState() {
     super.extraSetState();
-    if (state.selectedIndex != null && state.selectedIndex != _selectedIndex) {
-      _selectedIndex = state.selectedIndex!;
+    if (state.selection != null && state.selection != _selectedIndex) {
+      _selectedIndex = state.selection!;
     }
   }
 
@@ -45,11 +45,11 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     // final useSimpleStyle = state.simple ?? false;
     final useSimpleStyle = false;
     final isSingle = state.single ?? false;
-    final isTabBottom = state.onBottom ?? false;
+    final isTabBottom = state.tabPosition == SWT.BOTTOM ?? false;
 
     // Configurar la altura de los tabs si está especificada
-    final double tabHeight = (state.fixedTabHeight != null && state.fixedTabHeight != SWT.DEFAULT)
-        ? state.fixedTabHeight!.toDouble()
+    final double tabHeight = (state.tabHeight != null && state.tabHeight != SWT.DEFAULT)
+        ? state.tabHeight!.toDouble()
         : 28.0;
 
     return Column(
@@ -124,8 +124,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     final backgroundColor = isDark ? Color(0xFF1A1A1A) : Color(0xFFF2F2F2);
     final borderColor = isDark ? Color(0xFF333333) : Color(0xFFDDDDDD);
 
-    final showMinimizeButton = state.showMin ?? false;
-    final showMaximizeButton = state.showMax ?? false;
+    final showMinimizeButton = state.minimizeVisible ?? false;
+    final showMaximizeButton = state.maximizeVisible ?? false;
     final isMinimized = state.minimized ?? false;
     final isMaximized = state.maximized ?? false;
 
@@ -256,10 +256,10 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     final selectedTextColor = isDark ? Colors.white : Colors.grey.shade900;
     final highlightColor = isDark ? Color(0xFF6366F1) : theme.primaryColor;
 
-    final showUnselectedClose = state.showUnselectedClose ?? false;
+    final showUnselectedClose = state.unselectedCloseVisible ?? false;
     final shouldShowClose = (onClose != null) && (isSelected || showUnselectedClose);
 
-    final showUnselectedImage = state.showUnselectedImage ?? false;
+    final showUnselectedImage = state.unselectedImageVisible ?? false;
     final shouldShowImage = isSelected || showUnselectedImage;
 
     final showHighlight = state.highlightEnabled ?? true;
@@ -383,7 +383,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   void _handleTabSelection(int index) {
     setState(() {
       _selectedIndex = index;
-      state.selectedIndex = index;
+      state.selection = index;
     });
     var e = VEvent()..index = index;
     widget.sendSelectionSelection(state, e);

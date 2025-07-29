@@ -895,6 +895,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 	*/
         if (isDisposed())
             return false;
+        getBridge().setFocus(this);
         ((SwtDecorations) shell.getImpl()).setSavedFocus(this.getApi());
         return isFocusControl();
     }
@@ -1317,7 +1318,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
     }
 
-    Point getSizeInPixels() {
+    public Point getSizeInPixels() {
         forceResize();
         return new Point(bounds.width, bounds.height);
     }
@@ -1473,7 +1474,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     boolean hasFocus() {
-        return false;
+        return getBridge().hasFocus(this);
     }
 
     /**
@@ -1656,7 +1657,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return false;
         Control control = this.getApi();
         while (control != null) {
-            Point size = ((DartControl) control.getImpl()).getSizeInPixels();
+            Point size = control.getImpl().getSizeInPixels();
             if (size.x == 0 || size.y == 0) {
                 return false;
             }
@@ -2645,14 +2646,15 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         width = DPIUtil.scaleUp(width, zoom);
         height = DPIUtil.scaleUp(height, zoom);
         setBoundsInPixels(x, y, width, height);
-        getBridge().dirty(this);
     }
 
     void setBoundsInPixels(int x, int y, int width, int height) {
+        getBridge().dirty(this);
     }
 
     void setBoundsInPixels(int x, int y, int width, int height, int flags) {
         setBoundsInPixels(x, y, width, height, flags, true);
+        getBridge().dirty(this);
     }
 
     void setBoundsInPixels(int x, int y, int width, int height, int flags, boolean defer) {
@@ -2663,6 +2665,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (defer && parent != null) {
             forceResize();
         }
+        getBridge().dirty(this);
     }
 
     /**
@@ -2695,11 +2698,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBoundsInPixels(DPIUtil.scaleUp(rect, getZoom()));
-        getBridge().dirty(this);
     }
 
     void setBoundsInPixels(Rectangle rect) {
         setBoundsInPixels(rect.x, rect.y, rect.width, rect.height);
+        getBridge().dirty(this);
     }
 
     /**
@@ -2944,16 +2947,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setLocation(int x, int y) {
         checkWidget();
-        this.bounds = new Rectangle(x, y, bounds.width, bounds.height);
-        getBridge().setBounds(this, bounds);
         int zoom = getZoom();
         x = DPIUtil.scaleUp(x, zoom);
         y = DPIUtil.scaleUp(y, zoom);
         setLocationInPixels(x, y);
-        getBridge().dirty(this);
     }
 
     void setLocationInPixels(int x, int y) {
+        getBridge().dirty(this);
     }
 
     /**
@@ -2972,13 +2973,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setLocation(Point location) {
         checkWidget();
-        this.bounds = new Rectangle(location.x, location.y, bounds.width, bounds.height);
-        getBridge().setBounds(this, bounds);
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         location = DPIUtil.scaleUp(location, getZoom());
         setLocationInPixels(location.x, location.y);
-        getBridge().dirty(this);
     }
 
     /**
@@ -3161,16 +3159,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setSize(int width, int height) {
         checkWidget();
-        this.bounds = new Rectangle(bounds.x, bounds.y, width, height);
-        getBridge().setBounds(this, bounds);
         int zoom = getZoom();
         width = DPIUtil.scaleUp(width, zoom);
         height = DPIUtil.scaleUp(height, zoom);
         setSizeInPixels(width, height);
-        getBridge().dirty(this);
     }
 
     void setSizeInPixels(int width, int height) {
+        getBridge().dirty(this);
     }
 
     /**
@@ -3198,13 +3194,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setSize(Point size) {
         checkWidget();
-        this.bounds = new Rectangle(bounds.x, bounds.y, size.x, size.y);
-        getBridge().setBounds(this, bounds);
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         size = DPIUtil.scaleUp(size, getZoom());
         setSizeInPixels(size.x, size.y);
-        getBridge().dirty(this);
     }
 
     @Override
@@ -3762,6 +3755,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 }
             case SWT.TRAVERSE_MNEMONIC:
                 {
+                    return translateMnemonic(event, null) || shell.getImpl().translateMnemonic(event, this.getApi());
                 }
             default:
                 {
@@ -4030,23 +4024,23 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     Rectangle bounds = new Rectangle(0, 0, 0, 0);
 
+    boolean capture;
+
     boolean dragDetect;
 
-    boolean enabled;
+    boolean enabled = true;
 
     Color _foreground;
 
     int orientation;
 
+    boolean redraw;
+
     int textDirection;
 
     boolean touchEnabled;
 
-    boolean visible;
-
-    boolean capture;
-
-    boolean redraw;
+    boolean visible = true;
 
     public Composite _parent() {
         return parent;
@@ -4112,6 +4106,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return bounds;
     }
 
+    public boolean _capture() {
+        return capture;
+    }
+
     public boolean _dragDetect() {
         return dragDetect;
     }
@@ -4128,6 +4126,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return orientation;
     }
 
+    public boolean _redraw() {
+        return redraw;
+    }
+
     public int _textDirection() {
         return textDirection;
     }
@@ -4138,14 +4140,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public boolean _visible() {
         return visible;
-    }
-
-    public boolean _capture() {
-        return capture;
-    }
-
-    public boolean _redraw() {
-        return redraw;
     }
 
     public FlutterBridge getBridge() {

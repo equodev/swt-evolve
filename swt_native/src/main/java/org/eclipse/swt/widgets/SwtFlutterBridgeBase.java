@@ -1,14 +1,19 @@
 package org.eclipse.swt.widgets;
 
+import com.dslplatform.json.DslJson;
+import com.dslplatform.json.runtime.Settings;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterLibraryLoader;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.DartCTabFolder;
+import org.eclipse.swt.custom.*;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.Platform;
 
-import java.util.Arrays;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.*;
+import java.util.List;
 
 public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     private final DartWidget forWidget;
@@ -23,6 +28,9 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     }
 
     public static SwtFlutterBridge of(DartWidget widget) {
+        if (widget instanceof DartStyledText){
+            StyledTextBridge.hookevents(widget);
+        }
         if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof SwtComposite) {
 //            SwtComposite parentComposite = new SwtComposite(dartControl.parent, SWT.NONE, null);
             SwtFlutterBridge bridge = new SwtFlutterBridge(widget);

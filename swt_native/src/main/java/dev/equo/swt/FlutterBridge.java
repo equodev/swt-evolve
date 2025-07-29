@@ -1,5 +1,6 @@
 package dev.equo.swt;
 
+import org.eclipse.swt.custom.*;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.*;
 
@@ -42,6 +43,17 @@ public abstract class FlutterBridge {
             if (widget.isDisposed()) break;
             widget.getBridge().clientReady.thenRun(() -> {
                 try {
+                    if (widget instanceof DartStyledText){
+                        widget.getDisplay().asyncExec(() -> {
+                            StyledTextBridge.drawStyledText((DartStyledText) widget,
+                                    ((DartStyledText) widget).getLocation().x,
+                                    ((DartStyledText) widget).getLocation().y,
+                                    ((DartStyledText) widget).getCaret(),
+                                    id(widget),
+                                    client);
+                        });
+
+                    }
                     if (!isNew(widget)) { // send with the parent
                         String event = event(widget);
                         System.out.println("will send: " + event);
@@ -95,6 +107,14 @@ public abstract class FlutterBridge {
         });
     }
 
+    public static void onPayload(DartWidget widget, String event, Consumer<Object> cb) {
+        String eventName =  widgetName(widget)  + "/" + id(widget) + "/" + event;
+        client.getComm().on(eventName, p -> {
+            System.out.println(eventName + ", payload:"+p);
+            cb.accept(p);
+        });
+    }
+
     protected void onReady(DartControl control) {
         setNotNew(control);
         dirty(control);
@@ -133,16 +153,22 @@ public abstract class FlutterBridge {
     public void setBounds(DartControl dartControl, Rectangle bounds) {
     }
 
+    public void setFocus(DartControl dartControl) {
+    }
+
+    public boolean hasFocus(DartControl dartControl) {
+        return false;
+    }
+
     public Object container(DartComposite parent) {
         return null;
     }
 
-    protected static long id(DartWidget w) {
+    public static long id(DartWidget w) {
         return w.getApi().hashCode();
     }
 
     static long id(Widget w) {
         return w.hashCode();
     }
-
 }

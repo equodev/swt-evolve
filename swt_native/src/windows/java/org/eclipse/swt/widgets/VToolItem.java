@@ -16,6 +16,14 @@ public class VToolItem extends VItem {
         super(impl);
     }
 
+    public Color getBackground() {
+        return ((DartToolItem) impl).getBackground();
+    }
+
+    public void setBackground(Color value) {
+        ((DartToolItem) impl).setBackground(value);
+    }
+
     public Control getControl() {
         Control val = ((DartToolItem) impl).control;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -34,14 +42,6 @@ public class VToolItem extends VItem {
 
     public void setDisabledImage(Image value) {
         ((DartToolItem) impl).disabledImage = value;
-    }
-
-    public Color getBackground() {
-        return ((DartToolItem) impl).getBackground();
-    }
-
-    public void setBackground(Color value) {
-        ((DartToolItem) impl).setBackground(value);
     }
 
     public boolean getEnabled() {

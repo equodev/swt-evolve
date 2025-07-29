@@ -80,7 +80,7 @@ class MouseNavigator {
         if ((e.button != 2) || navigationActivated) {
             return;
         }
-        if (!parent.isVisible() || !parent.getEnabled() || ((SwtStyledText) parent.getImpl()).middleClickPressed) {
+        if (!parent.isVisible() || !parent.getEnabled() || parent.getImpl()._middleClickPressed()) {
             return;
         }
         // Widget has no bar or bars are not enabled

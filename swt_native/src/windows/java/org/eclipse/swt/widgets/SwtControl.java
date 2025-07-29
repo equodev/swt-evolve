@@ -1559,7 +1559,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
     }
 
-    Point getSizeInPixels() {
+    public Point getSizeInPixels() {
         forceResize();
         RECT rect = new RECT();
         OS.GetWindowRect(topHandle(), rect);
@@ -1948,7 +1948,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             return false;
         Control control = this.getApi();
         while (control != null) {
-            Point size = ((SwtControl) control.getImpl()).getSizeInPixels();
+            Point size = control.getImpl().getSizeInPixels();
             if (size.x == 0 || size.y == 0) {
                 return false;
             }

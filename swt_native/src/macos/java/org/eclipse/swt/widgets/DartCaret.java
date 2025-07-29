@@ -87,7 +87,7 @@ public class DartCaret extends DartWidget implements ICaret {
         createWidget();
     }
 
-    boolean blinkCaret() {
+    public boolean blinkCaret() {
         if (!isVisible)
             return true;
         if (!isShowing)
@@ -293,11 +293,17 @@ public class DartCaret extends DartWidget implements ICaret {
     @Override
     void releaseParent() {
         super.releaseParent();
-        if (parent != null && this.getApi() == ((DartCanvas) parent.getImpl()).caret) {
+        if (parent != null && this.getApi() == parent.getImpl()._caret()) {
             if (!parent.isDisposed())
                 parent.setCaret(null);
-            else
-                ((DartCanvas) parent.getImpl()).caret = null;
+            else {
+                if (parent.getImpl() instanceof DartCanvas) {
+                    ((DartCanvas) parent.getImpl()).caret = null;
+                }
+                if (parent.getImpl() instanceof SwtCanvas) {
+                    ((SwtCanvas) parent.getImpl()).caret = null;
+                }
+            }
         }
     }
 
@@ -359,6 +365,7 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public void setBounds(Rectangle rect) {
         checkWidget();
+        this.bounds = rect;
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(rect.x, rect.y, rect.width, rect.height);
@@ -538,6 +545,8 @@ public class DartCaret extends DartWidget implements ICaret {
         return drawCaret();
     }
 
+    Rectangle bounds = new Rectangle(0, 0, 0, 0);
+
     public Canvas _parent() {
         return parent;
     }
@@ -576,6 +585,10 @@ public class DartCaret extends DartWidget implements ICaret {
 
     public Font _font() {
         return font;
+    }
+
+    public Rectangle _bounds() {
+        return bounds;
     }
 
     public FlutterBridge getBridge() {
