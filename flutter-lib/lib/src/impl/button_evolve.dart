@@ -18,8 +18,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     String? image;
     var enabled = state.enabled?? true;
 
-    print('STYLE ${state.style}');
-
     if (state.style.has(SWT.TOGGLE)) {
       return SelectableButton(
         text: state.text,

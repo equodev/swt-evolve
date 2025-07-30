@@ -103,6 +103,7 @@ class MaterialDropdownButton extends StatelessWidget {
                     style: TextStyle(
                       color: textColor.withOpacity(enabled ? 1.0 : 0.5),
                       fontWeight: FontWeight.w500,
+                      fontSize: 10.0,
                     ),
                   ),
                   // Arrow right next to the text
@@ -139,20 +140,21 @@ class MaterialDropdownButton extends StatelessWidget {
           disabledElevation: 0,
           height: height,
           minWidth: minWidth,
-          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          padding: EdgeInsets.zero,
           color: enabled ? buttonColor : buttonColor.withOpacity(0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 text,
                 style: TextStyle(
                   color: textColor.withOpacity(enabled ? 1.0 : 0.5),
                   fontWeight: FontWeight.w500,
+                  fontSize: 10.0,
                 ),
               ),
               Icon(
@@ -288,7 +290,7 @@ class SelectableButton extends StatelessWidget {
           disabledElevation: 0,
           height: height,
           minWidth: minWidth,
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          padding: EdgeInsets.zero,
           color: isSelected
               ? (enabled ? selectedColor : selectedColor.withOpacity(0.5))
               : unselectedColor,
@@ -324,6 +326,7 @@ class SelectableButton extends StatelessWidget {
                 style: TextStyle(
                   color: isSelected ? selectedTextColor : unselectedTextColor,
                   fontWeight: FontWeight.w500,
+                  fontSize: 10.0,
                 ),
               ),
             ],
@@ -484,7 +487,7 @@ class _PushButtonState extends State<PushButton> {
           disabledElevation: 0,
           height: widget.height,
           minWidth: widget.minWidth,
-          padding: const EdgeInsets.symmetric(horizontal: 5.0),
+          padding: EdgeInsets.zero,
           color: _isPressed
               ? (widget.enabled ? selectedColor : selectedColor.withOpacity(0.5))
               : unselectedColor,
@@ -578,7 +581,8 @@ class MaterialRadioButton extends StatelessWidget {
           hoverElevation: 0,
           highlightElevation: 0,
           disabledElevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+          minWidth: 70.0,
+          padding: EdgeInsets.zero,
           color: Colors.transparent,
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -615,7 +619,7 @@ class MaterialRadioButton extends StatelessWidget {
                   text ?? '',
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 14,
+                    fontSize: 10.0,
                     fontWeight: FontWeight.w500,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -676,7 +680,8 @@ class MaterialCheckBox extends StatelessWidget {
           hoverElevation: 0,
           highlightElevation: 0,
           disabledElevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+          minWidth: 70.0,
+          padding: EdgeInsets.zero,
           color: Colors.transparent,
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -709,7 +714,7 @@ class MaterialCheckBox extends StatelessWidget {
                   text ?? '',
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 14,
+                    fontSize: 10.0,
                     fontWeight: FontWeight.w500,
                   ),
                   overflow: TextOverflow.ellipsis,
