@@ -10,7 +10,7 @@ public class Config {
     public enum Impl { eclipse, equo, force_equo }
 
     static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.equo.name()));
-    static Impl toolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.toolbar", Impl.equo.name()));
+    static Impl toolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.toolbar", Impl.eclipse.name()));
 
     static final Map<Class<?>, Impl> equoEnabled;
     private static boolean toolBarDrawn;

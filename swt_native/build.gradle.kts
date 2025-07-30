@@ -26,7 +26,7 @@ val currentOs = when {
 
 val currentPlatform = "$currentOs-${if (arch.contains("aarch64") || arch.contains("arm")) "aarch64" else "x86_64"}"
 
-val swtVersion = "3.128.0"
+val swtVersion = "3.128.0.v20241113-2009"
 
 dependencies {
     implementation("dev.equo:com.equo.comm.ws.provider:3.1.0.202405302201") {
@@ -90,10 +90,6 @@ tasks.test {
 //        jvmArgs = listOf("-XstartOnFirstThread")
 }
 
-tasks.compileJava {
-//    options.setIncremental(false) // dsl-json processor seems to get crazy
-}
-
 tasks.jar {
     from(layout.buildDirectory.dir("natives/$currentPlatform"))
 
@@ -124,7 +120,7 @@ platforms.forEach { platform ->
     }
 
     dependencies {
-        configurations["${platform}SwtImpl"]("org.eclipse.platform:org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}:$swtVersion")
+        configurations["${platform}SwtImpl"]("org.eclipse.platform:org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}:${swtVersion.substringBefore(".v")}")
     }
 
     tasks.register<Exec>("${platform}FlutterLib") {
@@ -189,7 +185,7 @@ platforms.forEach { platform ->
         includeEmptyDirs = false
     }
 
-    val swtVersionProvider = project.extensions.findByName("swtVersionProvider") as Provider<String>?
+    val swtVersionProvider = project.extensions.findByName("swtVersionProvider") as? Provider<String>
 
     tasks.register<Jar>("${platform}Jar") {
         group = "build"
@@ -202,7 +198,7 @@ platforms.forEach { platform ->
         from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
         exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "OSGI-OPT/")
 
-        val eclipseV = swtVersionProvider?.orNull ?: "3.128.0.v20241113-2009"
+        val eclipseV = swtVersionProvider?.orNull ?: "$swtVersion"
         manifest {
             attributes(
                 "Fragment-Host" to "org.eclipse.swt;bundle-version=\"[${eclipseV.substring(0..6)},4.0.0)\"",
