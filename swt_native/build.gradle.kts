@@ -185,12 +185,13 @@ platforms.forEach { platform ->
         includeEmptyDirs = false
     }
 
-    val swtVersionProvider = project.extensions.findByName("swtVersionProvider") as? Provider<String>
+    @Suppress("UNCHECKED_CAST")
+    val swtVersionProvider = project.extensions.findByName("swtVersionProvider") as Provider<String>?
 
     tasks.register<Jar>("${platform}Jar") {
         group = "build"
         description = "Assembles a jar archive for $platform"
-        archiveBaseName.set("${project.name}-$platform")
+        archiveBaseName.set("swt_evolve-$platform")
         from(sourceSets[osArch[0]].output)
         from(layout.buildDirectory.dir("natives/$platform"))
 
@@ -202,7 +203,7 @@ platforms.forEach { platform ->
         manifest {
             attributes(
                 "Fragment-Host" to "org.eclipse.swt;bundle-version=\"[${eclipseV.substring(0..6)},4.0.0)\"",
-                "Bundle-Name" to "Equo SWT for ${osArch[0]} on ${osArch[1]}",
+                "Bundle-Name" to "SWT Evolve for ${osArch[0]} on ${osArch[1]}",
                 "Bundle-Vendor" to "Equo Tech, Inc.",
                 "Bundle-SymbolicName" to "org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}; singleton:=true",
                 "Bundle-Version" to eclipseV,

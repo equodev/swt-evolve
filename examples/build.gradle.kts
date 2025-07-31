@@ -3,8 +3,25 @@ plugins {
     id("application")
 }
 
+repositories {
+    mavenCentral()
+    maven {
+        url = uri("https://gitlab.com/api/v4/projects/72079350/packages/maven")
+        name = "SWT Evolve DEV"
+    }
+}
+
+val currentOs = when {
+    org.gradle.internal.os.OperatingSystem.current().isWindows -> "windows"
+    org.gradle.internal.os.OperatingSystem.current().isMacOsX -> "macos"
+    else -> "linux"
+}
+val arch = System.getProperty("os.arch")
+val currentPlatform = "$currentOs-${if (arch.contains("aarch64") || arch.contains("arm")) "aarch64" else "x86_64"}"
+
 dependencies {
-    implementation(project(":swt_native"))
+//    implementation(project(":swt_native"))
+    implementation("dev.equo:swt-evolve:0.2.0:$currentPlatform")
 }
 
 tasks.register<JavaExec>("runExample") {
