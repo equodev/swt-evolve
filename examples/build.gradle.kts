@@ -20,8 +20,10 @@ val arch = System.getProperty("os.arch")
 val currentPlatform = "$currentOs-${if (arch.contains("aarch64") || arch.contains("arm")) "aarch64" else "x86_64"}"
 
 dependencies {
-//    implementation(project(":swt_native"))
-    implementation("dev.equo:swt-evolve:0.2.0:$currentPlatform")
+    if (gradle.parent != null)
+        implementation(project(":swt_native"))
+    else
+        implementation("dev.equo:swt-evolve:0.2.0:$currentPlatform")
 }
 
 tasks.register<JavaExec>("runExample") {
