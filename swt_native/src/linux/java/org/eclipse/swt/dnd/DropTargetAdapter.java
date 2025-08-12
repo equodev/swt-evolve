@@ -48,8 +48,8 @@ public class DropTargetAdapter implements DropTargetListener {
      *
      * @param event the information associated with the drag enter event
      */
-    @Override
     public void dragEnter(DropTargetEvent event) {
+        getImpl().dragEnter(event);
     }
 
     /**
@@ -58,8 +58,8 @@ public class DropTargetAdapter implements DropTargetListener {
      *
      * @param event the information associated with the drag leave event
      */
-    @Override
     public void dragLeave(DropTargetEvent event) {
+        getImpl().dragLeave(event);
     }
 
     /**
@@ -70,8 +70,8 @@ public class DropTargetAdapter implements DropTargetListener {
      *
      * @param event the information associated with the drag operation changed event
      */
-    @Override
     public void dragOperationChanged(DropTargetEvent event) {
+        getImpl().dragOperationChanged(event);
     }
 
     /**
@@ -82,8 +82,8 @@ public class DropTargetAdapter implements DropTargetListener {
      *
      * @param event the information associated with the drag over event
      */
-    @Override
     public void dragOver(DropTargetEvent event) {
+        getImpl().dragOver(event);
     }
 
     /**
@@ -92,8 +92,8 @@ public class DropTargetAdapter implements DropTargetListener {
      *
      * @param event the information associated with the drop event
      */
-    @Override
     public void drop(DropTargetEvent event) {
+        getImpl().drop(event);
     }
 
     /**
@@ -104,7 +104,32 @@ public class DropTargetAdapter implements DropTargetListener {
      *
      * @param event the information associated with the drop accept event
      */
-    @Override
     public void dropAccept(DropTargetEvent event) {
+        getImpl().dropAccept(event);
+    }
+
+    public DropTargetAdapter() {
+        this((IDropTargetAdapter) null);
+        setImpl(new SwtDropTargetAdapter(this));
+    }
+
+    protected IDropTargetAdapter impl;
+
+    protected DropTargetAdapter(IDropTargetAdapter impl) {
+        if (impl != null)
+            impl.setApi(this);
+    }
+
+    static DropTargetAdapter createApi(IDropTargetAdapter impl) {
+        return new DropTargetAdapter(impl);
+    }
+
+    public IDropTargetAdapter getImpl() {
+        return impl;
+    }
+
+    protected DropTargetAdapter setImpl(IDropTargetAdapter impl) {
+        this.impl = impl;
+        return this;
     }
 }

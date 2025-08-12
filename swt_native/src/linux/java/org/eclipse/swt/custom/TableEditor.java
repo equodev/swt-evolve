@@ -78,104 +78,22 @@ import org.eclipse.swt.widgets.*;
  */
 public class TableEditor extends ControlEditor {
 
-    Table table;
-
-    TableItem item;
-
-    int column = -1;
-
-    ControlListener columnListener;
-
-    Runnable timer;
-
-    static final int TIMEOUT = 1500;
-
     /**
      * Creates a TableEditor for the specified Table.
      *
      * @param table the Table Control above which this editor will be displayed
      */
     public TableEditor(Table table) {
-        super(table);
-        this.table = table;
-        columnListener = new ControlListener() {
-
-            @Override
-            public void controlMoved(ControlEvent e) {
-                layout();
-            }
-
-            @Override
-            public void controlResized(ControlEvent e) {
-                layout();
-            }
-        };
-        timer = this::layout;
-        // To be consistent with older versions of SWT, grabVertical defaults to true
-        grabVertical = true;
-    }
-
-    @Override
-    Rectangle computeBounds() {
-        if (item == null || column == -1 || item.isDisposed())
-            return new Rectangle(0, 0, 0, 0);
-        Rectangle cell = item.getBounds(column);
-        Rectangle rect = item.getImageBounds(column);
-        if (rect.width != 0) {
-            int imageGap = Math.max(rect.x - cell.x, 0);
-            cell.x = rect.x + rect.width;
-            cell.width -= (imageGap + rect.width);
-        }
-        Rectangle area = table.getClientArea();
-        if (cell.x < area.x + area.width) {
-            if (cell.x + cell.width > area.x + area.width) {
-                cell.width = area.x + area.width - cell.x;
-            }
-        }
-        Rectangle editorRect = new Rectangle(cell.x, cell.y, minimumWidth, minimumHeight);
-        if (grabHorizontal) {
-            editorRect.width = Math.max(cell.width, minimumWidth);
-        }
-        if (grabVertical) {
-            editorRect.height = Math.max(cell.height, minimumHeight);
-        }
-        if (horizontalAlignment == SWT.RIGHT) {
-            editorRect.x += cell.width - editorRect.width;
-        } else if (horizontalAlignment == SWT.LEFT) {
-            // do nothing - cell.x is the right answer
-        } else {
-            // default is CENTER
-            editorRect.x += (cell.width - editorRect.width) / 2;
-        }
-        if (verticalAlignment == SWT.BOTTOM) {
-            editorRect.y += cell.height - editorRect.height;
-        } else if (verticalAlignment == SWT.TOP) {
-            // do nothing - cell.y is the right answer
-        } else {
-            // default is CENTER
-            editorRect.y += (cell.height - editorRect.height) / 2;
-        }
-        return editorRect;
+        this((ITableEditor) null);
+        setImpl(new SwtTableEditor(table, this));
     }
 
     /**
      * Removes all associations between the TableEditor and the cell in the table.  The
      * Table and the editor Control are <b>not</b> disposed.
      */
-    @Override
     public void dispose() {
-        if (table != null && !table.isDisposed()) {
-            if (this.column > -1 && this.column < table.getColumnCount()) {
-                TableColumn tableColumn = table.getColumn(this.column);
-                tableColumn.removeControlListener(columnListener);
-            }
-        }
-        columnListener = null;
-        table = null;
-        item = null;
-        column = -1;
-        timer = null;
-        super.dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -184,7 +102,7 @@ public class TableEditor extends ControlEditor {
      * @return the zero based index of the column of the cell being tracked by this editor
      */
     public int getColumn() {
-        return column;
+        return getImpl().getColumn();
     }
 
     /**
@@ -193,22 +111,7 @@ public class TableEditor extends ControlEditor {
      * @return the TableItem for the row of the cell being tracked by this editor
      */
     public TableItem getItem() {
-        return item;
-    }
-
-    void resize() {
-        layout();
-        /*
-	 * On some platforms, the table scrolls when an item that
-	 * is partially visible at the bottom of the table is
-	 * selected.  Ensure that the correct row is edited by
-	 * laying out one more time in a timerExec().
-	 */
-        if (table != null) {
-            Display display = table.getDisplay();
-            display.timerExec(-1, timer);
-            display.timerExec(TIMEOUT, timer);
-        }
+        return getImpl().getItem();
     }
 
     /**
@@ -217,25 +120,7 @@ public class TableEditor extends ControlEditor {
      * @param column the zero based index of the column of the cell being tracked by this editor
      */
     public void setColumn(int column) {
-        int columnCount = table.getColumnCount();
-        // Separately handle the case where the table has no TableColumns.
-        // In this situation, there is a single default column.
-        if (columnCount == 0) {
-            this.column = (column == 0) ? 0 : -1;
-            resize();
-            return;
-        }
-        if (this.column > -1 && this.column < columnCount) {
-            TableColumn tableColumn = table.getColumn(this.column);
-            tableColumn.removeControlListener(columnListener);
-            this.column = -1;
-        }
-        if (column < 0 || column >= table.getColumnCount())
-            return;
-        this.column = column;
-        TableColumn tableColumn = table.getColumn(this.column);
-        tableColumn.addControlListener(columnListener);
-        resize();
+        getImpl().setColumn(column);
     }
 
     /**
@@ -244,14 +129,11 @@ public class TableEditor extends ControlEditor {
      * @param item the item to be edited
      */
     public void setItem(TableItem item) {
-        this.item = item;
-        resize();
+        getImpl().setItem(item);
     }
 
-    @Override
     public void setEditor(Control editor) {
-        super.setEditor(editor);
-        resize();
+        getImpl().setEditor(editor);
     }
 
     /**
@@ -265,22 +147,22 @@ public class TableEditor extends ControlEditor {
      * @param column the zero based index of the column of the cell being tracked by this editor
      */
     public void setEditor(Control editor, TableItem item, int column) {
-        setItem(item);
-        setColumn(column);
-        setEditor(editor);
+        getImpl().setEditor(editor, item, column);
     }
 
-    @Override
     public void layout() {
-        if (table == null || table.isDisposed())
-            return;
-        if (item == null || item.isDisposed())
-            return;
-        int columnCount = table.getColumnCount();
-        if (columnCount == 0 && column != 0)
-            return;
-        if (columnCount > 0 && (column < 0 || column >= columnCount))
-            return;
-        super.layout();
+        getImpl().layout();
+    }
+
+    protected TableEditor(ITableEditor impl) {
+        super(impl);
+    }
+
+    static TableEditor createApi(ITableEditor impl) {
+        return new TableEditor(impl);
+    }
+
+    public ITableEditor getImpl() {
+        return (ITableEditor) super.getImpl();
     }
 }

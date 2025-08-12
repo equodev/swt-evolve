@@ -22,7 +22,6 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import java.util.WeakHashMap;
 
 /**
  * The CCombo class represents a selectable user interface object
@@ -88,7 +87,8 @@ public class CCombo extends Composite {
      * @see Widget#getStyle()
      */
     public CCombo(Composite parent, int style) {
-        this(new SWTCCombo((SWTComposite) parent.delegate, style));
+        this((ICCombo) null);
+        setImpl(new SwtCCombo(parent, style, this));
     }
 
     /**
@@ -110,7 +110,7 @@ public class CCombo extends Composite {
      * @see #add(String,int)
      */
     public void add(String string) {
-        ((ICCombo) this.delegate).add(string);
+        getImpl().add(string);
     }
 
     /**
@@ -140,7 +140,7 @@ public class CCombo extends Composite {
      * @see #add(String)
      */
     public void add(String string, int index) {
-        ((ICCombo) this.delegate).add(string, index);
+        getImpl().add(string, index);
     }
 
     /**
@@ -163,7 +163,7 @@ public class CCombo extends Composite {
      * @see #removeModifyListener
      */
     public void addModifyListener(ModifyListener listener) {
-        ((ICCombo) this.delegate).addModifyListener(listener);
+        getImpl().addModifyListener(listener);
     }
 
     /**
@@ -191,7 +191,7 @@ public class CCombo extends Composite {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ICCombo) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -216,7 +216,11 @@ public class CCombo extends Composite {
      * @since 3.3
      */
     public void addVerifyListener(VerifyListener listener) {
-        ((ICCombo) this.delegate).addVerifyListener(listener);
+        getImpl().addVerifyListener(listener);
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -237,12 +241,11 @@ public class CCombo extends Composite {
      * @see #deselectAll
      */
     public void clearSelection() {
-        ((ICCombo) this.delegate).clearSelection();
+        getImpl().clearSelection();
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return ((ICCombo) this.delegate).computeSize(wHint, hHint, changed);
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -259,7 +262,7 @@ public class CCombo extends Composite {
      * @since 3.3
      */
     public void copy() {
-        ((ICCombo) this.delegate).copy();
+        getImpl().copy();
     }
 
     /**
@@ -277,7 +280,7 @@ public class CCombo extends Composite {
      * @since 3.3
      */
     public void cut() {
-        ((ICCombo) this.delegate).cut();
+        getImpl().cut();
     }
 
     /**
@@ -293,7 +296,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public void deselect(int index) {
-        ((ICCombo) this.delegate).deselect(index);
+        getImpl().deselect(index);
     }
 
     /**
@@ -311,7 +314,7 @@ public class CCombo extends Composite {
      * @see #clearSelection
      */
     public void deselectAll() {
-        ((ICCombo) this.delegate).deselectAll();
+        getImpl().deselectAll();
     }
 
     /**
@@ -322,12 +325,11 @@ public class CCombo extends Composite {
      * @since 3.113
      */
     public int getAlignment() {
-        return ((ICCombo) this.delegate).getAlignment();
+        return getImpl().getAlignment();
     }
 
-    @Override
     public Control[] getChildren() {
-        return Control.ofArray(((ICCombo) this.delegate).getChildren(), Control.class);
+        return getImpl().getChildren();
     }
 
     /**
@@ -343,7 +345,7 @@ public class CCombo extends Composite {
      * @since 3.0
      */
     public boolean getEditable() {
-        return ((ICCombo) this.delegate).getEditable();
+        return getImpl().getEditable();
     }
 
     /**
@@ -363,7 +365,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public String getItem(int index) {
-        return ((ICCombo) this.delegate).getItem(index);
+        return getImpl().getItem(index);
     }
 
     /**
@@ -377,7 +379,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public int getItemCount() {
-        return ((ICCombo) this.delegate).getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -392,7 +394,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public int getItemHeight() {
-        return ((ICCombo) this.delegate).getItemHeight();
+        return getImpl().getItemHeight();
     }
 
     /**
@@ -412,7 +414,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public String[] getItems() {
-        return ((ICCombo) this.delegate).getItems();
+        return getImpl().getItems();
     }
 
     /**
@@ -435,12 +437,11 @@ public class CCombo extends Composite {
      * @since 3.4
      */
     public boolean getListVisible() {
-        return ((ICCombo) this.delegate).getListVisible();
+        return getImpl().getListVisible();
     }
 
-    @Override
     public Menu getMenu() {
-        return Menu.getInstance(((ICCombo) this.delegate).getMenu());
+        return getImpl().getMenu();
     }
 
     /**
@@ -458,7 +459,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public Point getSelection() {
-        return ((ICCombo) this.delegate).getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -473,17 +474,15 @@ public class CCombo extends Composite {
      * </ul>
      */
     public int getSelectionIndex() {
-        return ((ICCombo) this.delegate).getSelectionIndex();
+        return getImpl().getSelectionIndex();
     }
 
-    @Override
     public Shell getShell() {
-        return Shell.getInstance(((ICCombo) this.delegate).getShell());
+        return getImpl().getShell();
     }
 
-    @Override
     public int getStyle() {
-        return ((ICCombo) this.delegate).getStyle();
+        return getImpl().getStyle();
     }
 
     /**
@@ -498,7 +497,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public String getText() {
-        return ((ICCombo) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -512,7 +511,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public int getTextHeight() {
-        return ((ICCombo) this.delegate).getTextHeight();
+        return getImpl().getTextHeight();
     }
 
     /**
@@ -529,7 +528,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public int getTextLimit() {
-        return ((ICCombo) this.delegate).getTextLimit();
+        return getImpl().getTextLimit();
     }
 
     /**
@@ -546,7 +545,7 @@ public class CCombo extends Composite {
      * @since 3.0
      */
     public int getVisibleItemCount() {
-        return ((ICCombo) this.delegate).getVisibleItemCount();
+        return getImpl().getVisibleItemCount();
     }
 
     /**
@@ -567,7 +566,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public int indexOf(String string) {
-        return ((ICCombo) this.delegate).indexOf(string);
+        return getImpl().indexOf(string);
     }
 
     /**
@@ -590,12 +589,11 @@ public class CCombo extends Composite {
      * </ul>
      */
     public int indexOf(String string, int start) {
-        return ((ICCombo) this.delegate).indexOf(string, start);
+        return getImpl().indexOf(string, start);
     }
 
-    @Override
     public boolean isFocusControl() {
-        return ((ICCombo) this.delegate).isFocusControl();
+        return getImpl().isFocusControl();
     }
 
     /**
@@ -613,17 +611,15 @@ public class CCombo extends Composite {
      * @since 3.3
      */
     public void paste() {
-        ((ICCombo) this.delegate).paste();
+        getImpl().paste();
     }
 
-    @Override
     public void redraw() {
-        ((ICCombo) this.delegate).redraw();
+        getImpl().redraw();
     }
 
-    @Override
     public void redraw(int x, int y, int width, int height, boolean all) {
-        ((ICCombo) this.delegate).redraw(x, y, width, height, all);
+        getImpl().redraw(x, y, width, height, all);
     }
 
     /**
@@ -641,7 +637,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public void remove(int index) {
-        ((ICCombo) this.delegate).remove(index);
+        getImpl().remove(index);
     }
 
     /**
@@ -661,7 +657,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public void remove(int start, int end) {
-        ((ICCombo) this.delegate).remove(start, end);
+        getImpl().remove(start, end);
     }
 
     /**
@@ -681,7 +677,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public void remove(String string) {
-        ((ICCombo) this.delegate).remove(string);
+        getImpl().remove(string);
     }
 
     /**
@@ -694,7 +690,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public void removeAll() {
-        ((ICCombo) this.delegate).removeAll();
+        getImpl().removeAll();
     }
 
     /**
@@ -715,7 +711,7 @@ public class CCombo extends Composite {
      * @see #addModifyListener
      */
     public void removeModifyListener(ModifyListener listener) {
-        ((ICCombo) this.delegate).removeModifyListener(listener);
+        getImpl().removeModifyListener(listener);
     }
 
     /**
@@ -736,7 +732,7 @@ public class CCombo extends Composite {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ICCombo) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -759,7 +755,7 @@ public class CCombo extends Composite {
      * @since 3.3
      */
     public void removeVerifyListener(VerifyListener listener) {
-        ((ICCombo) this.delegate).removeVerifyListener(listener);
+        getImpl().removeVerifyListener(listener);
     }
 
     /**
@@ -775,7 +771,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public void select(int index) {
-        ((ICCombo) this.delegate).select(index);
+        getImpl().select(index);
     }
 
     /**
@@ -792,12 +788,11 @@ public class CCombo extends Composite {
      * @since 3.113
      */
     public void setAlignment(int align) {
-        ((ICCombo) this.delegate).setAlignment(align);
+        getImpl().setAlignment(align);
     }
 
-    @Override
     public void setBackground(Color color) {
-        ((ICCombo) this.delegate).setBackground(color);
+        getImpl().setBackground(color);
     }
 
     /**
@@ -813,27 +808,23 @@ public class CCombo extends Composite {
      * @since 3.0
      */
     public void setEditable(boolean editable) {
-        ((ICCombo) this.delegate).setEditable(editable);
+        getImpl().setEditable(editable);
     }
 
-    @Override
     public void setEnabled(boolean enabled) {
-        ((ICCombo) this.delegate).setEnabled(enabled);
+        getImpl().setEnabled(enabled);
     }
 
-    @Override
     public boolean setFocus() {
-        return ((ICCombo) this.delegate).setFocus();
+        return getImpl().setFocus();
     }
 
-    @Override
     public void setFont(Font font) {
-        ((ICCombo) this.delegate).setFont(font);
+        getImpl().setFont(font);
     }
 
-    @Override
     public void setForeground(Color color) {
-        ((ICCombo) this.delegate).setForeground(color);
+        getImpl().setForeground(color);
     }
 
     /**
@@ -855,7 +846,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public void setItem(int index, String string) {
-        ((ICCombo) this.delegate).setItem(index, string);
+        getImpl().setItem(index, string);
     }
 
     /**
@@ -873,7 +864,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public void setItems(String[] items) {
-        ((ICCombo) this.delegate).setItems(items);
+        getImpl().setItems(items);
     }
 
     /**
@@ -891,9 +882,8 @@ public class CCombo extends Composite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setLayout(Layout layout) {
-        ((ICCombo) this.delegate).setLayout(layout);
+        getImpl().setLayout(layout);
     }
 
     /**
@@ -915,12 +905,11 @@ public class CCombo extends Composite {
      * @since 3.4
      */
     public void setListVisible(boolean visible) {
-        ((ICCombo) this.delegate).setListVisible(visible);
+        getImpl().setListVisible(visible);
     }
 
-    @Override
     public void setMenu(Menu menu) {
-        ((ICCombo) this.delegate).setMenu((IMenu) menu.delegate);
+        getImpl().setMenu(menu);
     }
 
     /**
@@ -940,7 +929,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public void setSelection(Point selection) {
-        ((ICCombo) this.delegate).setSelection(selection);
+        getImpl().setSelection(selection);
     }
 
     /**
@@ -968,7 +957,7 @@ public class CCombo extends Composite {
      * </ul>
      */
     public void setText(String string) {
-        ((ICCombo) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -986,17 +975,15 @@ public class CCombo extends Composite {
      * </ul>
      */
     public void setTextLimit(int limit) {
-        ((ICCombo) this.delegate).setTextLimit(limit);
+        getImpl().setTextLimit(limit);
     }
 
-    @Override
     public void setToolTipText(String string) {
-        ((ICCombo) this.delegate).setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
-    @Override
     public void setVisible(boolean visible) {
-        ((ICCombo) this.delegate).setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
     /**
@@ -1013,12 +1000,11 @@ public class CCombo extends Composite {
      * @since 3.0
      */
     public void setVisibleItemCount(int count) {
-        ((ICCombo) this.delegate).setVisibleItemCount(count);
+        getImpl().setVisibleItemCount(count);
     }
 
-    @Override
     public boolean traverse(int event) {
-        return ((ICCombo) this.delegate).traverse(event);
+        return getImpl().traverse(event);
     }
 
     /**
@@ -1031,23 +1017,18 @@ public class CCombo extends Composite {
      * @param childUpdater the callback which works with the child widgets
      */
     public static void updateAndRefreshChildren(CCombo combo, Consumer<Widget> childUpdater) {
-        SWTCCombo.updateAndRefreshChildren((SWTCCombo) combo.delegate, widget -> childUpdater.accept(Widget.getInstance(widget)));
+        SwtCCombo.updateAndRefreshChildren(combo, childUpdater);
     }
 
-    protected CCombo(ICCombo delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected CCombo(ICCombo impl) {
+        super(impl);
     }
 
-    public static CCombo getInstance(ICCombo delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        CCombo ref = (CCombo) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new CCombo(delegate);
-        }
-        return ref;
+    static CCombo createApi(ICCombo impl) {
+        return new CCombo(impl);
+    }
+
+    public ICCombo getImpl() {
+        return (ICCombo) super.getImpl();
     }
 }

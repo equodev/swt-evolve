@@ -22,7 +22,6 @@ import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -76,7 +75,8 @@ public class TableItem extends Item {
      * @see Widget#getStyle
      */
     public TableItem(Table parent, int style, int index) {
-        this(new SWTTableItem((SWTTable) parent.delegate, style, index));
+        this((ITableItem) null);
+        setImpl(new SwtTableItem(parent, style, index, this));
     }
 
     /**
@@ -110,16 +110,21 @@ public class TableItem extends Item {
      * @see Widget#getStyle
      */
     public TableItem(Table parent, int style) {
-        this(new SWTTableItem((SWTTable) parent.delegate, style));
+        this((ITableItem) null);
+        setImpl(new SwtTableItem(parent, style, this));
     }
 
     TableItem(Table parent, int style, int index, boolean create) {
-        this(new SWTTableItem((SWTTable) parent.delegate, style, index, create));
+        this((ITableItem) null);
+        setImpl(new SwtTableItem(parent, style, index, create, this));
     }
 
-    @Override
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
+    }
+
     public void dispose() {
-        ((ITableItem) this.delegate).dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -135,7 +140,7 @@ public class TableItem extends Item {
      * @since 2.0
      */
     public Color getBackground() {
-        return ((ITableItem) this.delegate).getBackground();
+        return getImpl().getBackground();
     }
 
     /**
@@ -152,7 +157,7 @@ public class TableItem extends Item {
      * @since 3.2
      */
     public Rectangle getBounds() {
-        return ((ITableItem) this.delegate).getBounds();
+        return getImpl().getBounds();
     }
 
     /**
@@ -169,7 +174,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Color getBackground(int index) {
-        return ((ITableItem) this.delegate).getBackground(index);
+        return getImpl().getBackground(index);
     }
 
     /**
@@ -185,7 +190,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public Rectangle getBounds(int index) {
-        return ((ITableItem) this.delegate).getBounds(index);
+        return getImpl().getBounds(index);
     }
 
     /**
@@ -201,7 +206,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public boolean getChecked() {
-        return ((ITableItem) this.delegate).getChecked();
+        return getImpl().getChecked();
     }
 
     /**
@@ -217,7 +222,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Font getFont() {
-        return ((ITableItem) this.delegate).getFont();
+        return getImpl().getFont();
     }
 
     /**
@@ -235,7 +240,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Font getFont(int index) {
-        return ((ITableItem) this.delegate).getFont(index);
+        return getImpl().getFont(index);
     }
 
     /**
@@ -251,7 +256,7 @@ public class TableItem extends Item {
      * @since 2.0
      */
     public Color getForeground() {
-        return ((ITableItem) this.delegate).getForeground();
+        return getImpl().getForeground();
     }
 
     /**
@@ -268,7 +273,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public Color getForeground(int index) {
-        return ((ITableItem) this.delegate).getForeground(index);
+        return getImpl().getForeground(index);
     }
 
     /**
@@ -284,12 +289,11 @@ public class TableItem extends Item {
      * </ul>
      */
     public boolean getGrayed() {
-        return ((ITableItem) this.delegate).getGrayed();
+        return getImpl().getGrayed();
     }
 
-    @Override
     public Image getImage() {
-        return ((ITableItem) this.delegate).getImage();
+        return getImpl().getImage();
     }
 
     /**
@@ -305,7 +309,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public Image getImage(int index) {
-        return ((ITableItem) this.delegate).getImage(index);
+        return getImpl().getImage(index);
     }
 
     /**
@@ -323,7 +327,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public Rectangle getImageBounds(int index) {
-        return ((ITableItem) this.delegate).getImageBounds(index);
+        return getImpl().getImageBounds(index);
     }
 
     /**
@@ -337,7 +341,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public int getImageIndent() {
-        return ((ITableItem) this.delegate).getImageIndent();
+        return getImpl().getImageIndent();
     }
 
     /**
@@ -351,12 +355,11 @@ public class TableItem extends Item {
      * </ul>
      */
     public Table getParent() {
-        return Table.getInstance(((ITableItem) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
-    @Override
     public String getText() {
-        return ((ITableItem) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -372,7 +375,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public String getText(int index) {
-        return ((ITableItem) this.delegate).getText(index);
+        return getImpl().getText(index);
     }
 
     /**
@@ -392,7 +395,7 @@ public class TableItem extends Item {
      * @since 3.3
      */
     public Rectangle getTextBounds(int index) {
-        return ((ITableItem) this.delegate).getTextBounds(index);
+        return getImpl().getTextBounds(index);
     }
 
     /**
@@ -413,7 +416,7 @@ public class TableItem extends Item {
      * @since 2.0
      */
     public void setBackground(Color color) {
-        ((ITableItem) this.delegate).setBackground(color);
+        getImpl().setBackground(color);
     }
 
     /**
@@ -435,7 +438,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public void setBackground(int index, Color color) {
-        ((ITableItem) this.delegate).setBackground(index, color);
+        getImpl().setBackground(index, color);
     }
 
     /**
@@ -450,7 +453,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public void setChecked(boolean checked) {
-        ((ITableItem) this.delegate).setChecked(checked);
+        getImpl().setChecked(checked);
     }
 
     /**
@@ -471,7 +474,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public void setFont(Font font) {
-        ((ITableItem) this.delegate).setFont(font);
+        getImpl().setFont(font);
     }
 
     /**
@@ -494,7 +497,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public void setFont(int index, Font font) {
-        ((ITableItem) this.delegate).setFont(index, font);
+        getImpl().setFont(index, font);
     }
 
     /**
@@ -515,7 +518,7 @@ public class TableItem extends Item {
      * @since 2.0
      */
     public void setForeground(Color color) {
-        ((ITableItem) this.delegate).setForeground(color);
+        getImpl().setForeground(color);
     }
 
     /**
@@ -537,7 +540,7 @@ public class TableItem extends Item {
      * @since 3.0
      */
     public void setForeground(int index, Color color) {
-        ((ITableItem) this.delegate).setForeground(index, color);
+        getImpl().setForeground(index, color);
     }
 
     /**
@@ -552,7 +555,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public void setGrayed(boolean grayed) {
-        ((ITableItem) this.delegate).setGrayed(grayed);
+        getImpl().setGrayed(grayed);
     }
 
     /**
@@ -570,12 +573,11 @@ public class TableItem extends Item {
      * </ul>
      */
     public void setImage(int index, Image image) {
-        ((ITableItem) this.delegate).setImage(index, image);
+        getImpl().setImage(index, image);
     }
 
-    @Override
     public void setImage(Image image) {
-        ((ITableItem) this.delegate).setImage(image);
+        getImpl().setImage(image);
     }
 
     /**
@@ -593,7 +595,7 @@ public class TableItem extends Item {
      * </ul>
      */
     public void setImage(Image[] images) {
-        ((ITableItem) this.delegate).setImage(images);
+        getImpl().setImage(images);
     }
 
     /**
@@ -610,7 +612,7 @@ public class TableItem extends Item {
      */
     @Deprecated
     public void setImageIndent(int indent) {
-        ((ITableItem) this.delegate).setImageIndent(indent);
+        getImpl().setImageIndent(indent);
     }
 
     /**
@@ -631,12 +633,11 @@ public class TableItem extends Item {
      * </ul>
      */
     public void setText(int index, String string) {
-        ((ITableItem) this.delegate).setText(index, string);
+        getImpl().setText(index, string);
     }
 
-    @Override
     public void setText(String string) {
-        ((ITableItem) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -656,23 +657,18 @@ public class TableItem extends Item {
      * </ul>
      */
     public void setText(String[] strings) {
-        ((ITableItem) this.delegate).setText(strings);
+        getImpl().setText(strings);
     }
 
-    protected TableItem(ITableItem delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected TableItem(ITableItem impl) {
+        super(impl);
     }
 
-    public static TableItem getInstance(ITableItem delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        TableItem ref = (TableItem) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new TableItem(delegate);
-        }
-        return ref;
+    static TableItem createApi(ITableItem impl) {
+        return new TableItem(impl);
+    }
+
+    public ITableItem getImpl() {
+        return (ITableItem) super.getImpl();
     }
 }

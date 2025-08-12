@@ -5,6 +5,8 @@ import org.eclipse.swt.widgets.*;
 
 public interface IBrowser extends IComposite {
 
+    void checkWidget();
+
     /**
      * Adds the listener to the collection of listeners who will be
      * notified when authentication is required.
@@ -196,6 +198,8 @@ public interface IBrowser extends IComposite {
      * @since 3.0
      */
     boolean back();
+
+    void checkSubclass();
 
     /**
      * Executes the specified script.
@@ -779,4 +783,6 @@ public interface IBrowser extends IComposite {
      * @since 3.0
      */
     void stop();
+
+    Browser getApi();
 }

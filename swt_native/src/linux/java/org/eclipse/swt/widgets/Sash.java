@@ -22,7 +22,6 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of the receiver represent a selectable user interface object
@@ -78,7 +77,8 @@ public class Sash extends Control {
      * @see Widget#getStyle
      */
     public Sash(Composite parent, int style) {
-        this(new SWTSash((SWTComposite) parent.delegate, style));
+        this((ISash) null);
+        setImpl(new SwtSash(parent, style, this));
     }
 
     /**
@@ -107,7 +107,7 @@ public class Sash extends Control {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ISash) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -128,23 +128,18 @@ public class Sash extends Control {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ISash) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
-    protected Sash(ISash delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Sash(ISash impl) {
+        super(impl);
     }
 
-    public static Sash getInstance(ISash delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Sash ref = (Sash) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Sash(delegate);
-        }
-        return ref;
+    static Sash createApi(ISash impl) {
+        return new Sash(impl);
+    }
+
+    public ISash getImpl() {
+        return (ISash) super.getImpl();
     }
 }

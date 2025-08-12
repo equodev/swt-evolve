@@ -42,7 +42,7 @@ public interface ISashForm extends IComposite {
      *
      * @return the control that currently is maximized or null
      */
-    IControl getMaximizedControl();
+    Control getMaximizedControl();
 
     int[] getWeights();
 
@@ -103,7 +103,7 @@ public interface ISashForm extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setMaximizedControl(IControl control);
+    void setMaximizedControl(Control control);
 
     /**
      * Specify the width of the sashes when the controls in the SashForm are
@@ -138,4 +138,6 @@ public interface ISashForm extends IComposite {
      * </ul>
      */
     void setWeights(int... weights);
+
+    SashForm getApi();
 }

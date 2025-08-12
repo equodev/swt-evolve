@@ -78,7 +78,8 @@ public class BrowserFunction {
      * @see org.eclipse.swt.browser.LocationListener#changed(LocationEvent)
      */
     public BrowserFunction(Browser browser, String name) {
-        this(new SWTBrowserFunction((SWTBrowser) browser.delegate, name));
+        this((IBrowserFunction) null);
+        setImpl(new SwtBrowserFunction(browser, name, this));
     }
 
     /**
@@ -119,11 +120,13 @@ public class BrowserFunction {
      * @since 3.8
      */
     public BrowserFunction(Browser browser, String name, boolean top, String[] frameNames) {
-        this(new SWTBrowserFunction((SWTBrowser) browser.delegate, name, top, frameNames));
+        this((IBrowserFunction) null);
+        setImpl(new SwtBrowserFunction(browser, name, top, frameNames, this));
     }
 
     BrowserFunction(Browser browser, String name, boolean top, String[] frameNames, boolean create) {
-        this(new SWTBrowserFunction((SWTBrowser) browser.delegate, name, top, frameNames, create));
+        this((IBrowserFunction) null);
+        setImpl(new SwtBrowserFunction(browser, name, top, frameNames, create, this));
     }
 
     /**
@@ -135,7 +138,7 @@ public class BrowserFunction {
      * </p>
      */
     public void dispose() {
-        ((IBrowserFunction) this.delegate).dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -169,7 +172,7 @@ public class BrowserFunction {
      * </ul>
      */
     public Object function(Object[] arguments) {
-        return ((IBrowserFunction) this.delegate).function(arguments);
+        return getImpl().function(arguments);
     }
 
     /**
@@ -183,7 +186,7 @@ public class BrowserFunction {
      * </ul>
      */
     public Browser getBrowser() {
-        return Browser.getInstance(((IBrowserFunction) this.delegate).getBrowser());
+        return getImpl().getBrowser();
     }
 
     /**
@@ -197,7 +200,7 @@ public class BrowserFunction {
      * </ul>
      */
     public String getName() {
-        return ((IBrowserFunction) this.delegate).getName();
+        return getImpl().getName();
     }
 
     /**
@@ -215,53 +218,26 @@ public class BrowserFunction {
      * and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return ((IBrowserFunction) this.delegate).isDisposed();
+        return getImpl().isDisposed();
     }
 
-    public IBrowserFunction delegate;
+    protected IBrowserFunction impl;
 
-    protected static <T extends BrowserFunction, I extends IBrowserFunction> T[] ofArray(I[] items, Class<T> clazz, java.util.function.Function<I, T> factory) {
-        @SuppressWarnings("unchecked")
-        T[] target = (T[]) java.lang.reflect.Array.newInstance(clazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = factory.apply(items[i]);
-        return target;
+    protected BrowserFunction(IBrowserFunction impl) {
+        if (impl != null)
+            impl.setApi(this);
     }
 
-    @SuppressWarnings("unchecked")
-    protected static <T extends BrowserFunction, I extends IBrowserFunction> I[] fromArray(T[] items) {
-        if (items.length == 0)
-            return (I[]) java.lang.reflect.Array.newInstance(IBrowserFunction.class, 0);
-        Class<I> targetClazz = null;
-        for (T item : items) outer: {
-            for (Class<?> i : item.getClass().getInterfaces()) {
-                if (IBrowserFunction.class.isAssignableFrom(i)) {
-                    targetClazz = (Class<I>) i;
-                    break outer;
-                }
-            }
-        }
-        if (targetClazz == null)
-            return (I[]) java.lang.reflect.Array.newInstance(IBrowserFunction.class, 0);
-        I[] target = (I[]) java.lang.reflect.Array.newInstance(targetClazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = (I) items[i].delegate;
-        return target;
+    static BrowserFunction createApi(IBrowserFunction impl) {
+        return new BrowserFunction(impl);
     }
 
-    protected static final WeakHashMap<IBrowserFunction, BrowserFunction> INSTANCES = new WeakHashMap<IBrowserFunction, BrowserFunction>();
-
-    protected BrowserFunction(IBrowserFunction delegate) {
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    public IBrowserFunction getImpl() {
+        return impl;
     }
 
-    public static BrowserFunction getInstance(IBrowserFunction delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        BrowserFunction ref = (BrowserFunction) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new BrowserFunction(delegate);
-        }
-        return ref;
+    protected BrowserFunction setImpl(IBrowserFunction impl) {
+        this.impl = impl;
+        return this;
     }
 }

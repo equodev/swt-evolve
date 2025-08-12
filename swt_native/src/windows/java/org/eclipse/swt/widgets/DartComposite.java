@@ -104,14 +104,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     public Control[] _getChildren() {
-        int count = 0;
-        Control[] children = new Control[count];
-        int index = 0;
-        if (count == index)
-            return children;
-        Control[] newChildren = new Control[index];
-        System.arraycopy(children, 0, newChildren, 0, index);
-        return newChildren;
+        return children;
     }
 
     public Control[] _getTabList() {
@@ -263,13 +256,6 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     @Override
     void createHandle() {
-        super.createHandle();
-        getApi().state |= CANVAS;
-        if ((getApi().style & (SWT.H_SCROLL | SWT.V_SCROLL)) == 0 || findThemeControl() == parent) {
-            getApi().state |= THEME_BACKGROUND;
-        }
-        if ((getApi().style & SWT.TRANSPARENT) != 0) {
-        }
     }
 
     @Override
@@ -958,12 +944,12 @@ public class DartComposite extends DartScrollable implements IComposite {
      * @since 3.2
      */
     public void setBackgroundMode(int mode) {
+        dirty();
         checkWidget();
         backgroundMode = mode;
         for (Control element : _getChildren()) {
             element.getImpl().updateBackgroundMode();
         }
-        getBridge().dirty(this);
     }
 
     @Override
@@ -1041,6 +1027,7 @@ public class DartComposite extends DartScrollable implements IComposite {
      * @since 3.1
      */
     public void setLayoutDeferred(boolean defer) {
+        dirty();
         checkWidget();
         this.layoutDeferred = defer;
         if (!defer) {
@@ -1052,7 +1039,6 @@ public class DartComposite extends DartScrollable implements IComposite {
         } else {
             layoutCount++;
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -1071,6 +1057,7 @@ public class DartComposite extends DartScrollable implements IComposite {
      * </ul>
      */
     public void setTabList(Control[] tabList) {
+        dirty();
         checkWidget();
         if (tabList != null) {
             for (Control control : tabList) {
@@ -1086,7 +1073,6 @@ public class DartComposite extends DartScrollable implements IComposite {
             tabList = newList;
         }
         this.tabList = tabList;
-        getBridge().dirty(this);
     }
 
     void setResizeChildren(boolean resize) {
@@ -1262,8 +1248,6 @@ public class DartComposite extends DartScrollable implements IComposite {
         if (!(widget instanceof Composite composite)) {
             return;
         }
-        for (Control child : composite.getChildren()) {
-        }
     }
 
     Control[] children = new Control[0];
@@ -1298,8 +1282,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         return getBridge().container(this);
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
     }
 
     public Composite getApi() {

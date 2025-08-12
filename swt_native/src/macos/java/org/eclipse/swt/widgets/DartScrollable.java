@@ -120,7 +120,6 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
         if (bar.getImpl() instanceof SwtWidget) {
             ((SwtWidget) bar.getImpl()).display = display;
         }
-        long actionSelector;
         if ((style & SWT.H_SCROLL) != 0) {
         } else {
         }
@@ -236,9 +235,9 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      * @since 3.126
      */
     public void setScrollbarsMode(int mode) {
+        dirty();
         checkWidget();
         this.scrollbarsMode = mode;
-        getBridge().dirty(this);
     }
 
     /**
@@ -368,8 +367,8 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
         return scrollbarsMode;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
     }
 
     public Scrollable getApi() {

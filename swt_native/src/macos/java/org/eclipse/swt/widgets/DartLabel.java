@@ -157,17 +157,6 @@ public class DartLabel extends DartControl implements ILabel {
 
     @Override
     void createHandle() {
-        getApi().state |= THEME_BACKGROUND;
-        if ((getApi().style & SWT.SEPARATOR) != 0) {
-            if ((getApi().style & SWT.HORIZONTAL) != 0) {
-            } else {
-            }
-            if ((getApi().style & SWT.HORIZONTAL) != 0) {
-            } else {
-            }
-        } else {
-            _setAlignment();
-        }
     }
 
     @Override
@@ -292,8 +281,8 @@ public class DartLabel extends DartControl implements ILabel {
      * </ul>
      */
     public void setAlignment(int alignment) {
+        dirty();
         checkWidget();
-        this.alignment = alignment;
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
         if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
@@ -301,7 +290,6 @@ public class DartLabel extends DartControl implements ILabel {
         getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         _setAlignment();
-        getBridge().dirty(this);
     }
 
     void _setAlignment() {
@@ -337,6 +325,7 @@ public class DartLabel extends DartControl implements ILabel {
      * </ul>
      */
     public void setImage(Image image) {
+        dirty();
         checkWidget();
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
@@ -352,7 +341,6 @@ public class DartLabel extends DartControl implements ILabel {
             this.image = image;
             _setText();
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -387,6 +375,7 @@ public class DartLabel extends DartControl implements ILabel {
      * </ul>
      */
     public void setText(String string) {
+        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -394,14 +383,11 @@ public class DartLabel extends DartControl implements ILabel {
             return;
         text = string;
         _setText();
-        getBridge().dirty(this);
     }
 
     private void _setText() {
         isImage = false;
     }
-
-    int alignment;
 
     public String _text() {
         return text;
@@ -415,12 +401,8 @@ public class DartLabel extends DartControl implements ILabel {
         return isImage;
     }
 
-    public int _alignment() {
-        return alignment;
-    }
-
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
     }
 
     public Label getApi() {

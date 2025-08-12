@@ -20,7 +20,6 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import java.util.WeakHashMap;
 
 /**
  * A TreeCursor provides a way for the user to navigate around a Tree with columns using the
@@ -67,7 +66,8 @@ public class TreeCursor extends Canvas {
      * @see Widget#getStyle()
      */
     public TreeCursor(Tree parent, int style) {
-        this(new SWTTreeCursor((SWTTree) parent.delegate, style));
+        this((ITreeCursor) null);
+        setImpl(new SwtTreeCursor(parent, style, this));
     }
 
     /**
@@ -96,7 +96,7 @@ public class TreeCursor extends Canvas {
      * @see #removeSelectionListener(SelectionListener)
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ITreeCursor) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -104,9 +104,8 @@ public class TreeCursor extends Canvas {
      *
      * @return the receiver's background color
      */
-    @Override
     public Color getBackground() {
-        return ((ITreeCursor) this.delegate).getBackground();
+        return getImpl().getBackground();
     }
 
     /**
@@ -120,7 +119,7 @@ public class TreeCursor extends Canvas {
      * </ul>
      */
     public int getColumn() {
-        return ((ITreeCursor) this.delegate).getColumn();
+        return getImpl().getColumn();
     }
 
     /**
@@ -128,9 +127,8 @@ public class TreeCursor extends Canvas {
      *
      * @return the receiver's foreground color
      */
-    @Override
     public Color getForeground() {
-        return ((ITreeCursor) this.delegate).getForeground();
+        return getImpl().getForeground();
     }
 
     /**
@@ -144,7 +142,7 @@ public class TreeCursor extends Canvas {
      * </ul>
      */
     public TreeItem getRow() {
-        return TreeItem.getInstance(((ITreeCursor) this.delegate).getRow());
+        return getImpl().getRow();
     }
 
     /**
@@ -165,7 +163,7 @@ public class TreeCursor extends Canvas {
      * @see #addSelectionListener(SelectionListener)
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ITreeCursor) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -186,9 +184,8 @@ public class TreeCursor extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setBackground(Color color) {
-        ((ITreeCursor) this.delegate).setBackground(color);
+        getImpl().setBackground(color);
     }
 
     /**
@@ -208,9 +205,8 @@ public class TreeCursor extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setForeground(Color color) {
-        ((ITreeCursor) this.delegate).setForeground(color);
+        getImpl().setForeground(color);
     }
 
     /**
@@ -225,7 +221,7 @@ public class TreeCursor extends Canvas {
      * </ul>
      */
     public void setSelection(int row, int column) {
-        ((ITreeCursor) this.delegate).setSelection(row, column);
+        getImpl().setSelection(row, column);
     }
 
     /**
@@ -240,28 +236,22 @@ public class TreeCursor extends Canvas {
      * </ul>
      */
     public void setSelection(TreeItem row, int column) {
-        ((ITreeCursor) this.delegate).setSelection((ITreeItem) row.delegate, column);
+        getImpl().setSelection(row, column);
     }
 
-    @Override
     public void setVisible(boolean visible) {
-        ((ITreeCursor) this.delegate).setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
-    protected TreeCursor(ITreeCursor delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected TreeCursor(ITreeCursor impl) {
+        super(impl);
     }
 
-    public static TreeCursor getInstance(ITreeCursor delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        TreeCursor ref = (TreeCursor) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new TreeCursor(delegate);
-        }
-        return ref;
+    static TreeCursor createApi(ITreeCursor impl) {
+        return new TreeCursor(impl);
+    }
+
+    public ITreeCursor getImpl() {
+        return (ITreeCursor) super.getImpl();
     }
 }

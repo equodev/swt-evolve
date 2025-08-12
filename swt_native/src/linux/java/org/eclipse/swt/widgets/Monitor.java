@@ -16,7 +16,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.graphics.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class are descriptions of monitors.
@@ -33,7 +32,8 @@ public final class Monitor {
      * Prevents uninitialized instances from being created outside the package.
      */
     Monitor() {
-        this(new SWTMonitor());
+        this((IMonitor) null);
+        setImpl(new SwtMonitor(this));
     }
 
     /**
@@ -46,9 +46,8 @@ public final class Monitor {
      *
      * @see #hashCode()
      */
-    @Override
     public boolean equals(Object object) {
-        return ((IMonitor) this.delegate).equals(object);
+        return getImpl().equals(object);
     }
 
     /**
@@ -59,7 +58,7 @@ public final class Monitor {
      * @return the receiver's bounding rectangle
      */
     public Rectangle getBounds() {
-        return ((IMonitor) this.delegate).getBounds();
+        return getImpl().getBounds();
     }
 
     /**
@@ -69,7 +68,7 @@ public final class Monitor {
      * @return the client area
      */
     public Rectangle getClientArea() {
-        return ((IMonitor) this.delegate).getClientArea();
+        return getImpl().getClientArea();
     }
 
     /**
@@ -80,7 +79,7 @@ public final class Monitor {
      * @since 3.107
      */
     public int getZoom() {
-        return ((IMonitor) this.delegate).getZoom();
+        return getImpl().getZoom();
     }
 
     /**
@@ -93,55 +92,27 @@ public final class Monitor {
      *
      * @see #equals(Object)
      */
-    @Override
     public int hashCode() {
-        return ((IMonitor) this.delegate).hashCode();
+        return getImpl().hashCode();
     }
 
-    public IMonitor delegate;
+    protected IMonitor impl;
 
-    protected static <T extends Monitor, I extends IMonitor> T[] ofArray(I[] items, Class<T> clazz, java.util.function.Function<I, T> factory) {
-        @SuppressWarnings("unchecked")
-        T[] target = (T[]) java.lang.reflect.Array.newInstance(clazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = factory.apply(items[i]);
-        return target;
+    protected Monitor(IMonitor impl) {
+        if (impl != null)
+            impl.setApi(this);
     }
 
-    @SuppressWarnings("unchecked")
-    protected static <T extends Monitor, I extends IMonitor> I[] fromArray(T[] items) {
-        if (items.length == 0)
-            return (I[]) java.lang.reflect.Array.newInstance(IMonitor.class, 0);
-        Class<I> targetClazz = null;
-        for (T item : items) outer: {
-            for (Class<?> i : item.getClass().getInterfaces()) {
-                if (IMonitor.class.isAssignableFrom(i)) {
-                    targetClazz = (Class<I>) i;
-                    break outer;
-                }
-            }
-        }
-        if (targetClazz == null)
-            return (I[]) java.lang.reflect.Array.newInstance(IMonitor.class, 0);
-        I[] target = (I[]) java.lang.reflect.Array.newInstance(targetClazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = (I) items[i].delegate;
-        return target;
+    static Monitor createApi(IMonitor impl) {
+        return new Monitor(impl);
     }
 
-    protected static final WeakHashMap<IMonitor, Monitor> INSTANCES = new WeakHashMap<IMonitor, Monitor>();
-
-    protected Monitor(IMonitor delegate) {
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    public IMonitor getImpl() {
+        return impl;
     }
 
-    public static Monitor getInstance(IMonitor delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Monitor ref = (Monitor) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Monitor(delegate);
-        }
-        return ref;
+    protected Monitor setImpl(IMonitor impl) {
+        this.impl = impl;
+        return this;
     }
 }

@@ -4,10 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
-import org.eclipse.swt.widgets.SWTMenu.*;
+import org.eclipse.swt.widgets.Menu.*;
 
 public interface IMenuItem extends IItem {
 
@@ -85,6 +82,8 @@ public interface IMenuItem extends IItem {
      */
     void addSelectionListener(SelectionListener listener);
 
+    void checkSubclass();
+
     /**
      * Returns the widget accelerator.  An accelerator is the bit-wise
      * OR of zero or more modifier masks and a key. Examples:
@@ -146,7 +145,7 @@ public interface IMenuItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IMenu getMenu();
+    Menu getMenu();
 
     /**
      * Returns the receiver's parent, which must be a <code>Menu</code>.
@@ -158,7 +157,7 @@ public interface IMenuItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IMenu getParent();
+    Menu getParent();
 
     /**
      * Returns <code>true</code> if the receiver is selected,
@@ -354,7 +353,7 @@ public interface IMenuItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setMenu(IMenu menu);
+    void setMenu(Menu menu);
 
     /**
      * Sets the selection state of the receiver.
@@ -441,4 +440,6 @@ public interface IMenuItem extends IItem {
      * @since 3.104
      */
     void setToolTipText(String toolTip);
+
+    MenuItem getApi();
 }

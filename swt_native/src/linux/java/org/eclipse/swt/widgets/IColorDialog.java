@@ -3,9 +3,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface IColorDialog extends IDialog {
 
@@ -68,4 +65,6 @@ public interface IColorDialog extends IDialog {
      * @since 3.8
      */
     void setRGBs(RGB[] rgbs);
+
+    ColorDialog getApi();
 }

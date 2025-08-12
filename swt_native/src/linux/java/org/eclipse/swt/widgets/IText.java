@@ -5,9 +5,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface IText extends IScrollable {
 
@@ -947,4 +944,6 @@ public interface IText extends IScrollable {
      * </ul>
      */
     void showSelection();
+
+    Text getApi();
 }

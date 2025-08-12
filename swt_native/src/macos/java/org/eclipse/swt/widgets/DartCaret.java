@@ -112,7 +112,7 @@ public class DartCaret extends DartWidget implements ICaret {
             return false;
         if (parent.isDisposed())
             return false;
-        int nWidth = width, nHeight = height;
+        int nWidth = width;
         if (nWidth <= 0)
             nWidth = DEFAULT_WIDTH;
         if (image != null) {
@@ -335,6 +335,7 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setBounds(int x, int y, int width, int height) {
+        dirty();
         checkWidget();
         if (this.x == x && this.y == y && this.width == width && this.height == height)
             return;
@@ -347,7 +348,6 @@ public class DartCaret extends DartWidget implements ICaret {
         this.height = height;
         if (isFocus && isVisible)
             showCaret();
-        getBridge().dirty(this);
     }
 
     /**
@@ -365,7 +365,6 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public void setBounds(Rectangle rect) {
         checkWidget();
-        this.bounds = rect;
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(rect.x, rect.y, rect.width, rect.height);
@@ -395,12 +394,12 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setFont(Font font) {
+        dirty();
         checkWidget();
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.font = font;
-        getBridge().dirty(this);
     }
 
     /**
@@ -419,6 +418,7 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setImage(Image image) {
+        dirty();
         checkWidget();
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -429,7 +429,6 @@ public class DartCaret extends DartWidget implements ICaret {
         this.image = image;
         if (isFocus && isVisible)
             showCaret();
-        getBridge().dirty(this);
     }
 
     /**
@@ -446,9 +445,9 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setLocation(int x, int y) {
+        dirty();
         checkWidget();
         setBounds(x, y, width, height);
-        getBridge().dirty(this);
     }
 
     /**
@@ -482,9 +481,9 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setSize(int width, int height) {
+        dirty();
         checkWidget();
         setBounds(x, y, width, height);
-        getBridge().dirty(this);
     }
 
     /**
@@ -524,6 +523,7 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setVisible(boolean visible) {
+        dirty();
         checkWidget();
         if (visible == isVisible)
             return;
@@ -535,7 +535,6 @@ public class DartCaret extends DartWidget implements ICaret {
         } else {
             hideCaret();
         }
-        getBridge().dirty(this);
     }
 
     boolean showCaret() {
@@ -544,8 +543,6 @@ public class DartCaret extends DartWidget implements ICaret {
         isShowing = true;
         return drawCaret();
     }
-
-    Rectangle bounds = new Rectangle(0, 0, 0, 0);
 
     public Canvas _parent() {
         return parent;
@@ -587,20 +584,16 @@ public class DartCaret extends DartWidget implements ICaret {
         return font;
     }
 
-    public Rectangle _bounds() {
-        return bounds;
-    }
-
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
         Composite p = parent;
-        while (!(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
-        return ((DartWidget) p.getImpl()).getBridge();
+        while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
     }
 
     public Caret getApi() {

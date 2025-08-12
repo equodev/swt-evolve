@@ -11,12 +11,12 @@ part 'control.g.dart';
 abstract class ControlSwt<V extends VControl> extends WidgetSwt<V> {
   const ControlSwt({super.key, required super.value});
 
-  void sendControlResize(V val, VEvent? payload) {
-    sendEvent(val, "Control/Resize", payload);
-  }
-
   void sendControlMove(V val, VEvent? payload) {
     sendEvent(val, "Control/Move", payload);
+  }
+
+  void sendControlResize(V val, VEvent? payload) {
+    sendEvent(val, "Control/Resize", payload);
   }
 
   void sendDragDetectDragDetect(V val, VEvent? payload) {
@@ -39,16 +39,20 @@ abstract class ControlSwt<V extends VControl> extends WidgetSwt<V> {
     sendEvent(val, "Help/Help", payload);
   }
 
-  void sendKeyKeyUp(V val, VEvent? payload) {
-    sendEvent(val, "Key/KeyUp", payload);
-  }
-
   void sendKeyKeyDown(V val, VEvent? payload) {
     sendEvent(val, "Key/KeyDown", payload);
   }
 
+  void sendKeyKeyUp(V val, VEvent? payload) {
+    sendEvent(val, "Key/KeyUp", payload);
+  }
+
   void sendMenuDetectMenuDetect(V val, VEvent? payload) {
     sendEvent(val, "MenuDetect/MenuDetect", payload);
+  }
+
+  void sendMouseMouseDoubleClick(V val, VEvent? payload) {
+    sendEvent(val, "Mouse/MouseDoubleClick", payload);
   }
 
   void sendMouseMouseDown(V val, VEvent? payload) {
@@ -59,8 +63,8 @@ abstract class ControlSwt<V extends VControl> extends WidgetSwt<V> {
     sendEvent(val, "Mouse/MouseUp", payload);
   }
 
-  void sendMouseMouseDoubleClick(V val, VEvent? payload) {
-    sendEvent(val, "Mouse/MouseDoubleClick", payload);
+  void sendMouseMoveMouseMove(V val, VEvent? payload) {
+    sendEvent(val, "MouseMove/MouseMove", payload);
   }
 
   void sendMouseTrackMouseEnter(V val, VEvent? payload) {
@@ -73,10 +77,6 @@ abstract class ControlSwt<V extends VControl> extends WidgetSwt<V> {
 
   void sendMouseTrackMouseHover(V val, VEvent? payload) {
     sendEvent(val, "MouseTrack/MouseHover", payload);
-  }
-
-  void sendMouseMoveMouseMove(V val, VEvent? payload) {
-    sendEvent(val, "MouseMove/MouseMove", payload);
   }
 
   void sendMouseWheelMouseWheel(V val, VEvent? payload) {

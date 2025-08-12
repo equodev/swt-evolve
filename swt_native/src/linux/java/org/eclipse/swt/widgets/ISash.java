@@ -4,9 +4,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface ISash extends IControl {
 
@@ -55,4 +52,6 @@ public interface ISash extends IControl {
      * @see #addSelectionListener
      */
     void removeSelectionListener(SelectionListener listener);
+
+    Sash getApi();
 }

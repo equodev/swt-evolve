@@ -59,7 +59,8 @@ public class FileDialog extends Dialog {
      * </ul>
      */
     public FileDialog(Shell parent) {
-        this(new SWTFileDialog((SWTShell) parent.delegate));
+        this((IFileDialog) null);
+        setImpl(new SwtFileDialog(parent, this));
     }
 
     /**
@@ -91,7 +92,8 @@ public class FileDialog extends Dialog {
      * @see SWT#MULTI
      */
     public FileDialog(Shell parent, int style) {
-        this(new SWTFileDialog((SWTShell) parent.delegate, style));
+        this((IFileDialog) null);
+        setImpl(new SwtFileDialog(parent, style, this));
     }
 
     /**
@@ -102,7 +104,7 @@ public class FileDialog extends Dialog {
      * @return the relative path of the file
      */
     public String getFileName() {
-        return ((IFileDialog) this.delegate).getFileName();
+        return getImpl().getFileName();
     }
 
     /**
@@ -112,7 +114,7 @@ public class FileDialog extends Dialog {
      * @return the relative paths of the files
      */
     public String[] getFileNames() {
-        return ((IFileDialog) this.delegate).getFileNames();
+        return getImpl().getFileNames();
     }
 
     /**
@@ -122,7 +124,7 @@ public class FileDialog extends Dialog {
      * @return the file extensions filter
      */
     public String[] getFilterExtensions() {
-        return ((IFileDialog) this.delegate).getFilterExtensions();
+        return getImpl().getFilterExtensions();
     }
 
     /**
@@ -142,7 +144,7 @@ public class FileDialog extends Dialog {
      * @since 3.4
      */
     public int getFilterIndex() {
-        return ((IFileDialog) this.delegate).getFilterIndex();
+        return getImpl().getFilterIndex();
     }
 
     /**
@@ -152,7 +154,7 @@ public class FileDialog extends Dialog {
      * @return the list of filter names
      */
     public String[] getFilterNames() {
-        return ((IFileDialog) this.delegate).getFilterNames();
+        return getImpl().getFilterNames();
     }
 
     /**
@@ -165,7 +167,7 @@ public class FileDialog extends Dialog {
      * @see #setFilterExtensions
      */
     public String getFilterPath() {
-        return ((IFileDialog) this.delegate).getFilterPath();
+        return getImpl().getFilterPath();
     }
 
     /**
@@ -178,7 +180,7 @@ public class FileDialog extends Dialog {
      * @since 3.4
      */
     public boolean getOverwrite() {
-        return ((IFileDialog) this.delegate).getOverwrite();
+        return getImpl().getOverwrite();
     }
 
     /**
@@ -194,7 +196,7 @@ public class FileDialog extends Dialog {
      * </ul>
      */
     public String open() {
-        return ((IFileDialog) this.delegate).open();
+        return getImpl().open();
     }
 
     /**
@@ -213,7 +215,7 @@ public class FileDialog extends Dialog {
      * @since 3.126
      */
     public Optional<String> openDialog() {
-        return ((IFileDialog) this.delegate).openDialog();
+        return getImpl().openDialog();
     }
 
     /**
@@ -225,7 +227,7 @@ public class FileDialog extends Dialog {
      * @param string the file name
      */
     public void setFileName(String string) {
-        ((IFileDialog) this.delegate).setFileName(string);
+        getImpl().setFileName(string);
     }
 
     /**
@@ -254,7 +256,7 @@ public class FileDialog extends Dialog {
      * names corresponding to the extensions
      */
     public void setFilterExtensions(String[] extensions) {
-        ((IFileDialog) this.delegate).setFilterExtensions(extensions);
+        getImpl().setFilterExtensions(extensions);
     }
 
     /**
@@ -274,7 +276,7 @@ public class FileDialog extends Dialog {
      * @since 3.4
      */
     public void setFilterIndex(int index) {
-        ((IFileDialog) this.delegate).setFilterIndex(index);
+        getImpl().setFilterIndex(index);
     }
 
     /**
@@ -292,7 +294,7 @@ public class FileDialog extends Dialog {
      * @see #setFilterExtensions
      */
     public void setFilterNames(String[] names) {
-        ((IFileDialog) this.delegate).setFilterNames(names);
+        getImpl().setFilterNames(names);
     }
 
     /**
@@ -313,7 +315,7 @@ public class FileDialog extends Dialog {
      * @see #setFilterExtensions
      */
     public void setFilterPath(String string) {
-        ((IFileDialog) this.delegate).setFilterPath(string);
+        getImpl().setFilterPath(string);
     }
 
     /**
@@ -331,7 +333,7 @@ public class FileDialog extends Dialog {
      * @since 3.4
      */
     public void setOverwrite(boolean overwrite) {
-        ((IFileDialog) this.delegate).setOverwrite(overwrite);
+        getImpl().setOverwrite(overwrite);
     }
 
     /* Sets URI Mode.
@@ -342,20 +344,15 @@ public class FileDialog extends Dialog {
  * The input argment for setFilterPath() should also
  * be a URI.
  */
-    protected FileDialog(IFileDialog delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected FileDialog(IFileDialog impl) {
+        super(impl);
     }
 
-    public static FileDialog getInstance(IFileDialog delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        FileDialog ref = (FileDialog) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new FileDialog(delegate);
-        }
-        return ref;
+    static FileDialog createApi(IFileDialog impl) {
+        return new FileDialog(impl);
+    }
+
+    public IFileDialog getImpl() {
+        return (IFileDialog) super.getImpl();
     }
 }

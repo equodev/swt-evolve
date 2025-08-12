@@ -20,7 +20,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
-import java.util.WeakHashMap;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class provide a surface for drawing
@@ -47,7 +47,8 @@ import java.util.WeakHashMap;
 public class Canvas extends Composite {
 
     Canvas() {
-        this(new SWTCanvas());
+        this((ICanvas) null);
+        setImpl(Config.isEquo(Canvas.class) ? new DartCanvas(this) : new SwtCanvas(this));
     }
 
     /**
@@ -78,13 +79,7 @@ public class Canvas extends Composite {
      */
     public Canvas(Composite parent, int style) {
         this((ICanvas) null);
-        if (parent.delegate instanceof SWTComposite) {
-            delegate = new SWTCanvas((SWTComposite) parent.delegate, style);
-        } else {
-            FlutterComposite comp = (FlutterComposite)parent.delegate;
-            delegate = new SWTCanvas(comp.childComposite, style);
-        }
-        INSTANCES.put(delegate, this);
+        setImpl(Config.isEquo(Canvas.class, parent) ? new DartCanvas(parent, style, this) : new SwtCanvas(parent, style, this));
     }
 
     /**
@@ -109,7 +104,7 @@ public class Canvas extends Composite {
      * @since 3.2
      */
     public void drawBackground(GC gc, int x, int y, int width, int height) {
-        ((ICanvas) this.delegate).drawBackground(gc, x, y, width, height);
+        getImpl().drawBackground(gc, x, y, width, height);
     }
 
     /**
@@ -131,7 +126,7 @@ public class Canvas extends Composite {
      * </ul>
      */
     public Caret getCaret() {
-        return Caret.getInstance(((ICanvas) this.delegate).getCaret());
+        return getImpl().getCaret();
     }
 
     /**
@@ -147,7 +142,7 @@ public class Canvas extends Composite {
      * @since 3.4
      */
     public IME getIME() {
-        return IME.getInstance(((ICanvas) this.delegate).getIME());
+        return getImpl().getIME();
     }
 
     /**
@@ -173,7 +168,7 @@ public class Canvas extends Composite {
      * </ul>
      */
     public void scroll(int destX, int destY, int x, int y, int width, int height, boolean all) {
-        ((ICanvas) this.delegate).scroll(destX, destY, x, y, width, height, all);
+        getImpl().scroll(destX, destY, x, y, width, height, all);
     }
 
     /**
@@ -197,12 +192,11 @@ public class Canvas extends Composite {
      * </ul>
      */
     public void setCaret(Caret caret) {
-        ((ICanvas) this.delegate).setCaret((ICaret) (caret != null ? caret.delegate : null));
+        getImpl().setCaret(caret);
     }
 
-    @Override
     public void setFont(Font font) {
-        ((ICanvas) this.delegate).setFont(font);
+        getImpl().setFont(font);
     }
 
     /**
@@ -221,23 +215,18 @@ public class Canvas extends Composite {
      * @since 3.4
      */
     public void setIME(IME ime) {
-        ((ICanvas) this.delegate).setIME((IIME) ime.delegate);
+        getImpl().setIME(ime);
     }
 
-    protected Canvas(ICanvas delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Canvas(ICanvas impl) {
+        super(impl);
     }
 
-    public static Canvas getInstance(ICanvas delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Canvas ref = (Canvas) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Canvas(delegate);
-        }
-        return ref;
+    static Canvas createApi(ICanvas impl) {
+        return new Canvas(impl);
+    }
+
+    public ICanvas getImpl() {
+        return (ICanvas) super.getImpl();
     }
 }

@@ -24,7 +24,6 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class represent a selectable
@@ -77,7 +76,8 @@ public class Link extends Control {
      * @see Widget#getStyle
      */
     public Link(Composite parent, int style) {
-        this(new SWTLink((SWTComposite) parent.delegate, style));
+        this((ILink) null);
+        setImpl(new SwtLink(parent, style, this));
     }
 
     /**
@@ -105,7 +105,7 @@ public class Link extends Control {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ILink) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -120,7 +120,7 @@ public class Link extends Control {
      * @since 3.105
      */
     public Color getLinkForeground() {
-        return ((ILink) this.delegate).getLinkForeground();
+        return getImpl().getLinkForeground();
     }
 
     /**
@@ -135,7 +135,7 @@ public class Link extends Control {
      * </ul>
      */
     public String getText() {
-        return ((ILink) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -156,7 +156,7 @@ public class Link extends Control {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ILink) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -178,7 +178,7 @@ public class Link extends Control {
      * @since 3.105
      */
     public void setLinkForeground(Color color) {
-        ((ILink) this.delegate).setLinkForeground(color);
+        getImpl().setLinkForeground(color);
     }
 
     /**
@@ -220,23 +220,18 @@ public class Link extends Control {
      * </ul>
      */
     public void setText(String string) {
-        ((ILink) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
-    protected Link(ILink delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Link(ILink impl) {
+        super(impl);
     }
 
-    public static Link getInstance(ILink delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Link ref = (Link) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Link(delegate);
-        }
-        return ref;
+    static Link createApi(ILink impl) {
+        return new Link(impl);
+    }
+
+    public ILink getImpl() {
+        return (ILink) super.getImpl();
     }
 }

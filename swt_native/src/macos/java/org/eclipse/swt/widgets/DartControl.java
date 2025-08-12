@@ -781,8 +781,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     boolean dragDetect(int x, int y, boolean filter, boolean[] consume) {
         boolean dragging = false;
-        double dragX = x;
-        double dragY = y;
         return dragging;
     }
 
@@ -1505,7 +1503,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     @Override
     public void internal_dispose_GC(long hDC, GCData data) {
         checkWidget();
-        long context = hDC;
         ((SwtDisplay) display.getImpl()).removeContext(data);
         if (data != null) {
             data.visibleRgn = 0;
@@ -1944,13 +1941,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     long regionToRects(long message, long rgn, long r, long path) {
-        short[] rect = new short[4];
         return 0;
     }
 
     @Override
     void register() {
-        hookEvents();
+        _hookEvents();
         bridge = FlutterBridge.of(this);
     }
 
@@ -2496,10 +2492,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (color != null) {
             this.updateBackgroundMode();
         }
-        getBridge().dirty(this);
     }
 
     private void _setBackground(Color color) {
+        dirty();
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -2536,6 +2532,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 3.2
      */
     public void setBackgroundImage(Image image) {
+        dirty();
         checkWidget();
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -2544,7 +2541,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         backgroundAlpha = 255;
         backgroundImage = image;
         updateBackgroundImage();
-        getBridge().dirty(this);
     }
 
     /**
@@ -2583,6 +2579,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
+        dirty();
         /*
 	* Bug in Cocoa. On Mac 10.8, a text control loses and gains focus
 	* when its bounds changes.  The fix is to ignore these events.
@@ -2595,7 +2592,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else if (resize) {
         }
         ((SwtDisplay) display.getImpl()).ignoreFocusControl = oldIgnoreFocusControl;
-        getBridge().dirty(this);
     }
 
     /**
@@ -2644,9 +2640,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setCapture(boolean capture) {
+        dirty();
         checkWidget();
         this.capture = capture;
-        getBridge().dirty(this);
     }
 
     /**
@@ -2669,6 +2665,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setCursor(Cursor cursor) {
+        dirty();
         checkWidget();
         if (cursor != null && cursor.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -2676,7 +2673,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (!isEnabled())
             return;
         ((SwtDisplay) display.getImpl()).setCursor(((SwtDisplay) display.getImpl()).currentControl);
-        getBridge().dirty(this);
     }
 
     void setDefaultFont() {
@@ -2700,6 +2696,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 3.3
      */
     public void setDragDetect(boolean dragDetect) {
+        dirty();
         checkWidget();
         this.dragDetect = dragDetect;
         if (dragDetect) {
@@ -2707,7 +2704,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else {
             getApi().state &= ~DRAG_DETECT;
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -2724,6 +2720,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setEnabled(boolean enabled) {
+        dirty();
         checkWidget();
         this.enabled = enabled;
         if (((getApi().state & DISABLED) == 0) == enabled)
@@ -2744,7 +2741,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         enableWidget(enabled);
         if (fixFocus)
             fixFocus(control);
-        getBridge().dirty(this);
     }
 
     /**
@@ -2784,13 +2780,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setFont(Font font) {
+        dirty();
         checkWidget();
         if (font != null) {
             if (font.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.font = font;
-        getBridge().dirty(this);
     }
 
     /**
@@ -2811,6 +2807,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setForeground(Color color) {
+        dirty();
         checkWidget();
         this._foreground = color;
         if (color != null) {
@@ -2822,11 +2819,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return;
         this.foreground = foreground;
         setForeground(foreground);
-        getBridge().dirty(this);
     }
 
     void setForeground(double[] color) {
-        getBridge().dirty(this);
+        dirty();
     }
 
     /**
@@ -2860,11 +2856,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setLocation(int x, int y) {
+        dirty();
         checkWidget();
         this.bounds = new Rectangle(x, y, bounds.width, bounds.height);
         getBridge().setBounds(this, bounds);
         setBounds(x, y, 0, 0, true, false);
-        getBridge().dirty(this);
     }
 
     /**
@@ -2882,13 +2878,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setLocation(Point location) {
+        dirty();
         checkWidget();
         this.bounds = new Rectangle(location.x, location.y, bounds.width, bounds.height);
         getBridge().setBounds(this, bounds);
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(location.x, location.y, 0, 0, true, false);
-        getBridge().dirty(this);
     }
 
     /**
@@ -2917,6 +2913,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setMenu(Menu menu) {
+        dirty();
         checkWidget();
         if (menu != null) {
             if (menu.isDisposed())
@@ -2929,7 +2926,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             }
         }
         this.menu = menu;
-        getBridge().dirty(this);
     }
 
     /**
@@ -2946,9 +2942,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 3.7
      */
     public void setOrientation(int orientation) {
+        dirty();
         checkWidget();
         this.orientation = orientation;
-        getBridge().dirty(this);
     }
 
     /**
@@ -3013,6 +3009,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @see #update()
      */
     public void setRedraw(boolean redraw) {
+        dirty();
         checkWidget();
         this.redraw = redraw;
         if (redraw) {
@@ -3025,7 +3022,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             }
             drawCount++;
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -3046,11 +3042,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 3.4
      */
     public void setRegion(Region region) {
+        dirty();
         checkWidget();
         if (region != null && region.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         this.region = region;
-        getBridge().dirty(this);
     }
 
     void setRelations() {
@@ -3096,11 +3092,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setSize(int width, int height) {
+        dirty();
         checkWidget();
         this.bounds = new Rectangle(bounds.x, bounds.y, width, height);
         getBridge().setBounds(this, bounds);
         setBounds(0, 0, Math.max(0, width), Math.max(0, height), false, true);
-        getBridge().dirty(this);
     }
 
     /**
@@ -3127,13 +3123,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setSize(Point size) {
+        dirty();
         checkWidget();
         this.bounds = new Rectangle(bounds.x, bounds.y, size.x, size.y);
         getBridge().setBounds(this, bounds);
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(0, 0, Math.max(0, size.x), Math.max(0, size.y), false, true);
-        getBridge().dirty(this);
     }
 
     void setSmallSize() {
@@ -3174,9 +3170,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 3.102
      */
     public void setTextDirection(int textDirection) {
+        dirty();
         checkWidget();
         this.textDirection = textDirection;
-        getBridge().dirty(this);
     }
 
     /**
@@ -3205,12 +3201,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setToolTipText(String string) {
+        dirty();
         checkWidget();
         if (!Objects.equals(string, toolTipText)) {
             toolTipText = string;
             checkToolTip(null);
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -3231,9 +3227,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 3.7
      */
     public void setTouchEnabled(boolean enabled) {
+        dirty();
         checkWidget();
         touchEnabled = enabled;
-        getBridge().dirty(this);
     }
 
     /**
@@ -3253,6 +3249,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setVisible(boolean visible) {
+        dirty();
         checkWidget();
         this.visible = visible;
         if (visible) {
@@ -3305,7 +3302,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         }
         if (fixFocus)
             fixFocus(control);
-        getBridge().dirty(this);
     }
 
     void setZOrder() {
@@ -3867,7 +3863,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         }
         if (isResizing())
             return false;
-        Shell shell = getShell();
         try {
         } finally {
         }
@@ -4051,20 +4046,20 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (bridge != null)
             return bridge;
         Composite p = parent;
-        while (!(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
-        return ((DartWidget) p.getImpl()).getBridge();
+        while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
-        FlutterBridge.on(this, "Control", "Resize", e -> {
-            getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Resize, e);
-            });
-        });
+    protected void _hookEvents() {
+        super._hookEvents();
         FlutterBridge.on(this, "Control", "Move", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.Move, e);
+            });
+        });
+        FlutterBridge.on(this, "Control", "Resize", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Resize, e);
             });
         });
         FlutterBridge.on(this, "DragDetect", "DragDetect", e -> {
@@ -4092,19 +4087,24 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 sendEvent(SWT.Help, e);
             });
         });
-        FlutterBridge.on(this, "Key", "KeyUp", e -> {
-            getDisplay().asyncExec(() -> {
-                sendEvent(SWT.KeyUp, e);
-            });
-        });
         FlutterBridge.on(this, "Key", "KeyDown", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.KeyDown, e);
             });
         });
+        FlutterBridge.on(this, "Key", "KeyUp", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.KeyUp, e);
+            });
+        });
         FlutterBridge.on(this, "MenuDetect", "MenuDetect", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.MenuDetect, e);
+            });
+        });
+        FlutterBridge.on(this, "Mouse", "MouseDoubleClick", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.MouseDoubleClick, e);
             });
         });
         FlutterBridge.on(this, "Mouse", "MouseDown", e -> {
@@ -4117,9 +4117,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 sendEvent(SWT.MouseUp, e);
             });
         });
-        FlutterBridge.on(this, "Mouse", "MouseDoubleClick", e -> {
+        FlutterBridge.on(this, "MouseMove", "MouseMove", e -> {
             getDisplay().asyncExec(() -> {
-                sendEvent(SWT.MouseDoubleClick, e);
+                sendEvent(SWT.MouseMove, e);
             });
         });
         FlutterBridge.on(this, "MouseTrack", "MouseEnter", e -> {
@@ -4135,11 +4135,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         FlutterBridge.on(this, "MouseTrack", "MouseHover", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.MouseHover, e);
-            });
-        });
-        FlutterBridge.on(this, "MouseMove", "MouseMove", e -> {
-            getDisplay().asyncExec(() -> {
-                sendEvent(SWT.MouseMove, e);
             });
         });
         FlutterBridge.on(this, "MouseWheel", "MouseWheel", e -> {

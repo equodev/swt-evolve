@@ -60,7 +60,7 @@ public class AuthenticationEvent extends TypedEvent {
      *
      * @since 3.5
      */
-    public AuthenticationEvent(SWTWidget widget) {
+    public AuthenticationEvent(Widget widget) {
         super(widget);
     }
 

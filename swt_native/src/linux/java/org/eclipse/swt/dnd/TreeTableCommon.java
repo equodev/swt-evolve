@@ -23,14 +23,14 @@ import org.eclipse.swt.widgets.*;
 
 class TreeTableCommon {
 
-    static Image getDragSourceImage(SWTControl control) {
+    static Image getDragSourceImage(Control control) {
         Image dragSourceImage;
         /*
 		 * Bug in GTK.  gtk_tree_selection_get_selected_rows() segmentation faults
 		 * in versions smaller than 2.2.4 if the model is NULL.  The fix is
 		 * to give a valid pointer instead.
 		 */
-        long handle = control.getHandle();
+        long handle = control.handle;
         long selection = GTK.gtk_tree_view_get_selection(handle);
         long[] model = null;
         long list = GTK.gtk_tree_selection_get_selected_rows(selection, model);
@@ -38,7 +38,7 @@ class TreeTableCommon {
             return null;
         int count = Math.min(10, OS.g_list_length(list));
         long originalList = list;
-        SWTDisplay display = (SWTDisplay) (control.getDisplay());
+        Display display = control.getDisplay();
         int width = 0, height = 0;
         int[] w = new int[1], h = new int[1];
         int[] yy = new int[count], hh = new int[count];
@@ -93,7 +93,7 @@ class TreeTableCommon {
             }
             Cairo.cairo_destroy(cairo);
         }
-        dragSourceImage = Image.gtk_new(display, SWT.ICON, surface, 0);
+        dragSourceImage = SwtImage.gtk_new(display, SWT.ICON, surface, 0);
         return dragSourceImage;
     }
 }

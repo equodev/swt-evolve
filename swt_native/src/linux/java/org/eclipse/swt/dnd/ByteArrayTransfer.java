@@ -125,27 +125,12 @@ import org.eclipse.swt.internal.gtk.*;
  */
 public abstract class ByteArrayTransfer extends Transfer {
 
-    @Override
     public TransferData[] getSupportedTypes() {
-        int[] types = getTypeIds();
-        TransferData[] data = new TransferData[types.length];
-        for (int i = 0; i < types.length; i++) {
-            data[i] = new TransferData();
-            data[i].type = types[i];
-        }
-        return data;
+        return getImpl().getSupportedTypes();
     }
 
-    @Override
     public boolean isSupportedType(TransferData transferData) {
-        if (transferData == null)
-            return false;
-        int[] types = getTypeIds();
-        for (int i = 0; i < types.length; i++) {
-            if (transferData.type == types[i])
-                return true;
-        }
-        return false;
+        return getImpl().isSupportedType(transferData);
     }
 
     /**
@@ -158,23 +143,8 @@ public abstract class ByteArrayTransfer extends Transfer {
      *
      * @see Transfer#nativeToJava
      */
-    @Override
     protected void javaToNative(Object object, TransferData transferData) {
-        transferData.result = 0;
-        if (!checkByteArray(object) || !isSupportedType(transferData)) {
-            DND.error(DND.ERROR_INVALID_DATA);
-        }
-        byte[] buffer = (byte[]) object;
-        if (buffer.length == 0)
-            return;
-        long pValue = OS.g_malloc(buffer.length);
-        if (pValue == 0)
-            return;
-        C.memmove(pValue, buffer, buffer.length);
-        transferData.length = buffer.length;
-        transferData.format = 8;
-        transferData.pValue = pValue;
-        transferData.result = 1;
+        getImpl().javaToNative(object, transferData);
     }
 
     /**
@@ -187,19 +157,29 @@ public abstract class ByteArrayTransfer extends Transfer {
      *
      * @see Transfer#javaToNative
      */
-    @Override
     protected Object nativeToJava(TransferData transferData) {
-        if (!isSupportedType(transferData) || transferData.pValue == 0)
-            return null;
-        int size = transferData.format * transferData.length / 8;
-        if (size == 0)
-            return null;
-        byte[] buffer = new byte[size];
-        C.memmove(buffer, transferData.pValue, size);
-        return buffer;
+        return getImpl().nativeToJava(transferData);
     }
 
-    boolean checkByteArray(Object object) {
-        return (object instanceof byte[] && ((byte[]) object).length > 0);
+    public ByteArrayTransfer() {
+    }
+
+    protected ByteArrayTransfer(IByteArrayTransfer impl) {
+        super(impl);
+    }
+
+    public IByteArrayTransfer getImpl() {
+        if (impl == null)
+            impl = new SwtByteArrayTransfer(this) {
+
+                public int[] getTypeIds() {
+                    return ByteArrayTransfer.this.getTypeIds();
+                }
+
+                public String[] getTypeNames() {
+                    return ByteArrayTransfer.this.getTypeNames();
+                }
+            };
+        return (IByteArrayTransfer) super.getImpl();
     }
 }

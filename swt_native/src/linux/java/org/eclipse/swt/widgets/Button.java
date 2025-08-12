@@ -15,11 +15,14 @@
  */
 package org.eclipse.swt.widgets;
 
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.SWTException;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.*;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.gtk.*;
+import org.eclipse.swt.internal.gtk3.*;
+import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a selectable user interface object that
@@ -89,7 +92,8 @@ public class Button extends Control {
      * @see Widget#getStyle
      */
     public Button(Composite parent, int style) {
-        this(new SWTButton((SWTComposite) parent.delegate, style));
+        this((IButton) null);
+        setImpl(Config.isEquo(Button.class, parent) ? new DartButton(parent, style, this) : new SwtButton(parent, style, this));
     }
 
     /**
@@ -123,7 +127,7 @@ public class Button extends Control {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((IButton) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -143,7 +147,7 @@ public class Button extends Control {
      * </ul>
      */
     public int getAlignment() {
-        return ((IButton) this.delegate).getAlignment();
+        return getImpl().getAlignment();
     }
 
     /**
@@ -161,7 +165,7 @@ public class Button extends Control {
      * @since 3.4
      */
     public boolean getGrayed() {
-        return ((IButton) this.delegate).getGrayed();
+        return getImpl().getGrayed();
     }
 
     /**
@@ -176,7 +180,7 @@ public class Button extends Control {
      * </ul>
      */
     public Image getImage() {
-        return ((IButton) this.delegate).getImage();
+        return getImpl().getImage();
     }
 
     /**
@@ -196,7 +200,7 @@ public class Button extends Control {
      * </ul>
      */
     public boolean getSelection() {
-        return ((IButton) this.delegate).getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -212,7 +216,7 @@ public class Button extends Control {
      * </ul>
      */
     public String getText() {
-        return ((IButton) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -233,7 +237,7 @@ public class Button extends Control {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((IButton) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -253,7 +257,7 @@ public class Button extends Control {
      * </ul>
      */
     public void setAlignment(int alignment) {
-        ((IButton) this.delegate).setAlignment(alignment);
+        getImpl().setAlignment(alignment);
     }
 
     /**
@@ -271,7 +275,7 @@ public class Button extends Control {
      * @since 3.4
      */
     public void setGrayed(boolean grayed) {
-        ((IButton) this.delegate).setGrayed(grayed);
+        getImpl().setGrayed(grayed);
     }
 
     /**
@@ -291,7 +295,7 @@ public class Button extends Control {
      * </ul>
      */
     public void setImage(Image image) {
-        ((IButton) this.delegate).setImage(image);
+        getImpl().setImage(image);
     }
 
     /**
@@ -311,7 +315,7 @@ public class Button extends Control {
      * </ul>
      */
     public void setSelection(boolean selected) {
-        ((IButton) this.delegate).setSelection(selected);
+        getImpl().setSelection(selected);
     }
 
     /**
@@ -349,7 +353,7 @@ public class Button extends Control {
      * </ul>
      */
     public void setText(String string) {
-        ((IButton) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -368,25 +372,19 @@ public class Button extends Control {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setEnabled(boolean enabled) {
-        ((IButton) this.delegate).setEnabled(enabled);
+        getImpl().setEnabled(enabled);
     }
 
-    protected Button(IButton delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Button(IButton impl) {
+        super(impl);
     }
 
-    public static Button getInstance(IButton delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Button ref = (Button) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Button(delegate);
-        }
-        return ref;
+    static Button createApi(IButton impl) {
+        return new Button(impl);
+    }
+
+    public IButton getImpl() {
+        return (IButton) super.getImpl();
     }
 }

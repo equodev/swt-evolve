@@ -4,11 +4,8 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
-public interface IScrollBar extends IWidget {
+public interface IScrollBar extends IWidget, ImplScrollBar {
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -123,7 +120,7 @@ public interface IScrollBar extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IScrollable getParent();
+    Scrollable getParent();
 
     /**
      * Returns the single 'selection' that is the receiver's value.
@@ -416,4 +413,6 @@ public interface IScrollBar extends IWidget {
      * </ul>
      */
     void setVisible(boolean visible);
+
+    ScrollBar getApi();
 }

@@ -356,34 +356,32 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
         }
         Control oldControl = this.control, newControl = control;
         long hwnd = parent.handle;
-        if (control == null || control.getImpl() instanceof SwtControl) {
-            long hwndChild = newControl != null ? ((SwtControl) control.getImpl()).topHandle() : 0;
-            REBARBANDINFO rbBand = new REBARBANDINFO();
-            rbBand.cbSize = REBARBANDINFO.sizeof;
-            rbBand.fMask = OS.RBBIM_CHILD;
-            rbBand.hwndChild = hwndChild;
-            this.control = newControl;
-            /*
+        long hwndChild = newControl != null ? control.getImpl().topHandle() : 0;
+        REBARBANDINFO rbBand = new REBARBANDINFO();
+        rbBand.cbSize = REBARBANDINFO.sizeof;
+        rbBand.fMask = OS.RBBIM_CHILD;
+        rbBand.hwndChild = hwndChild;
+        this.control = newControl;
+        /*
 	* Feature in Windows.  When Windows sets the rebar band child,
 	* it makes the new child visible and hides the old child and
 	* moves the new child to the top of the Z-order.  The fix is
 	* to save and restore the visibility and Z-order.
 	*/
-            long hwndAbove = 0;
-            if (newControl != null) {
-                hwndAbove = OS.GetWindow(hwndChild, OS.GW_HWNDPREV);
-            }
-            boolean hideNew = newControl != null && !newControl.getVisible();
-            boolean showOld = oldControl != null && oldControl.getVisible();
-            OS.SendMessage(hwnd, OS.RB_SETBANDINFO, index, rbBand);
-            if (hideNew)
-                newControl.setVisible(false);
-            if (showOld)
-                oldControl.setVisible(true);
-            if (hwndAbove != 0 && hwndAbove != hwndChild) {
-                int flags = OS.SWP_NOSIZE | OS.SWP_NOMOVE | OS.SWP_NOACTIVATE;
-                OS.SetWindowPos(hwndChild, hwndAbove, 0, 0, 0, 0, flags);
-            }
+        long hwndAbove = 0;
+        if (newControl != null) {
+            hwndAbove = OS.GetWindow(hwndChild, OS.GW_HWNDPREV);
+        }
+        boolean hideNew = newControl != null && !newControl.getVisible();
+        boolean showOld = oldControl != null && oldControl.getVisible();
+        OS.SendMessage(hwnd, OS.RB_SETBANDINFO, index, rbBand);
+        if (hideNew)
+            newControl.setVisible(false);
+        if (showOld)
+            oldControl.setVisible(true);
+        if (hwndAbove != 0 && hwndAbove != hwndChild) {
+            int flags = OS.SWP_NOSIZE | OS.SWP_NOMOVE | OS.SWP_NOACTIVATE;
+            OS.SetWindowPos(hwndChild, hwndAbove, 0, 0, 0, 0, flags);
         }
     }
 

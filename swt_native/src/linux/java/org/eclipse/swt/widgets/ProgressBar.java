@@ -19,7 +19,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of the receiver represent an unselectable
@@ -76,7 +75,8 @@ public class ProgressBar extends Control {
      * @see Widget#getStyle
      */
     public ProgressBar(Composite parent, int style) {
-        this(new SWTProgressBar((SWTComposite) parent.delegate, style));
+        this((IProgressBar) null);
+        setImpl(new SwtProgressBar(parent, style, this));
     }
 
     /**
@@ -90,7 +90,7 @@ public class ProgressBar extends Control {
      * </ul>
      */
     public int getMaximum() {
-        return ((IProgressBar) this.delegate).getMaximum();
+        return getImpl().getMaximum();
     }
 
     /**
@@ -104,7 +104,7 @@ public class ProgressBar extends Control {
      * </ul>
      */
     public int getMinimum() {
-        return ((IProgressBar) this.delegate).getMinimum();
+        return getImpl().getMinimum();
     }
 
     /**
@@ -118,7 +118,7 @@ public class ProgressBar extends Control {
      * </ul>
      */
     public int getSelection() {
-        return ((IProgressBar) this.delegate).getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -139,7 +139,7 @@ public class ProgressBar extends Control {
      * @since 3.4
      */
     public int getState() {
-        return ((IProgressBar) this.delegate).getState();
+        return getImpl().getState();
     }
 
     /**
@@ -156,7 +156,7 @@ public class ProgressBar extends Control {
      * </ul>
      */
     public void setMaximum(int value) {
-        ((IProgressBar) this.delegate).setMaximum(value);
+        getImpl().setMaximum(value);
     }
 
     /**
@@ -173,7 +173,7 @@ public class ProgressBar extends Control {
      * </ul>
      */
     public void setMinimum(int value) {
-        ((IProgressBar) this.delegate).setMinimum(value);
+        getImpl().setMinimum(value);
     }
 
     /**
@@ -189,7 +189,7 @@ public class ProgressBar extends Control {
      * </ul>
      */
     public void setSelection(int value) {
-        ((IProgressBar) this.delegate).setSelection(value);
+        getImpl().setSelection(value);
     }
 
     /**
@@ -214,23 +214,18 @@ public class ProgressBar extends Control {
      * @since 3.4
      */
     public void setState(int state) {
-        ((IProgressBar) this.delegate).setState(state);
+        getImpl().setState(state);
     }
 
-    protected ProgressBar(IProgressBar delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected ProgressBar(IProgressBar impl) {
+        super(impl);
     }
 
-    public static ProgressBar getInstance(IProgressBar delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        ProgressBar ref = (ProgressBar) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new ProgressBar(delegate);
-        }
-        return ref;
+    static ProgressBar createApi(IProgressBar impl) {
+        return new ProgressBar(impl);
+    }
+
+    public IProgressBar getImpl() {
+        return (IProgressBar) super.getImpl();
     }
 }

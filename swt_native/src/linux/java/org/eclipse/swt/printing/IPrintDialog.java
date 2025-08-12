@@ -2,9 +2,6 @@ package org.eclipse.swt.printing;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 import org.eclipse.swt.widgets.*;
 
 public interface IPrintDialog extends IDialog {
@@ -32,6 +29,8 @@ public interface IPrintDialog extends IDialog {
      * @since 3.4
      */
     PrinterData getPrinterData();
+
+    void checkSubclass();
 
     /**
      * Returns the print job scope that the user selected
@@ -144,4 +143,6 @@ public interface IPrintDialog extends IDialog {
      * </ul>
      */
     PrinterData open();
+
+    PrintDialog getApi();
 }

@@ -21,7 +21,6 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class allow the user to select a color
@@ -60,7 +59,8 @@ public class ColorDialog extends Dialog {
      * @see Widget#getStyle
      */
     public ColorDialog(Shell parent) {
-        this(new SWTColorDialog((SWTShell) parent.delegate));
+        this((IColorDialog) null);
+        setImpl(new SwtColorDialog(parent, this));
     }
 
     /**
@@ -92,7 +92,8 @@ public class ColorDialog extends Dialog {
      * @see Widget#getStyle
      */
     public ColorDialog(Shell parent, int style) {
-        this(new SWTColorDialog((SWTShell) parent.delegate, style));
+        this((IColorDialog) null);
+        setImpl(new SwtColorDialog(parent, style, this));
     }
 
     /**
@@ -103,7 +104,7 @@ public class ColorDialog extends Dialog {
      * @see PaletteData#getRGBs
      */
     public RGB getRGB() {
-        return ((IColorDialog) this.delegate).getRGB();
+        return getImpl().getRGB();
     }
 
     /**
@@ -116,7 +117,7 @@ public class ColorDialog extends Dialog {
      * @since 3.8
      */
     public RGB[] getRGBs() {
-        return ((IColorDialog) this.delegate).getRGBs();
+        return getImpl().getRGBs();
     }
 
     /**
@@ -133,7 +134,7 @@ public class ColorDialog extends Dialog {
      * </ul>
      */
     public RGB open() {
-        return ((IColorDialog) this.delegate).open();
+        return getImpl().open();
     }
 
     /**
@@ -145,7 +146,7 @@ public class ColorDialog extends Dialog {
      * @see PaletteData#getRGBs
      */
     public void setRGB(RGB rgb) {
-        ((IColorDialog) this.delegate).setRGB(rgb);
+        getImpl().setRGB(rgb);
     }
 
     /**
@@ -162,23 +163,18 @@ public class ColorDialog extends Dialog {
      * @since 3.8
      */
     public void setRGBs(RGB[] rgbs) {
-        ((IColorDialog) this.delegate).setRGBs(rgbs);
+        getImpl().setRGBs(rgbs);
     }
 
-    protected ColorDialog(IColorDialog delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected ColorDialog(IColorDialog impl) {
+        super(impl);
     }
 
-    public static ColorDialog getInstance(IColorDialog delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        ColorDialog ref = (ColorDialog) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new ColorDialog(delegate);
-        }
-        return ref;
+    static ColorDialog createApi(IColorDialog impl) {
+        return new ColorDialog(impl);
+    }
+
+    public IColorDialog getImpl() {
+        return (IColorDialog) super.getImpl();
     }
 }

@@ -17,7 +17,6 @@ package org.eclipse.swt.browser;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.widgets.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class implement the browser user interface
@@ -77,7 +76,12 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public Browser(Composite parent, int style) {
-        this(new SWTBrowser((SWTComposite) parent.delegate, style));
+        this((IBrowser) null);
+        setImpl(new SwtBrowser(parent, style, this));
+    }
+
+    protected void checkWidget() {
+        getImpl().checkWidget();
     }
 
     /**
@@ -86,7 +90,7 @@ public class Browser extends Composite {
      * @since 3.2
      */
     public static void clearSessions() {
-        SWTBrowser.clearSessions();
+        SwtBrowser.clearSessions();
     }
 
     /**
@@ -105,7 +109,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public static String getCookie(String name, String url) {
-        return SWTBrowser.getCookie(name, url);
+        return SwtBrowser.getCookie(name, url);
     }
 
     /**
@@ -133,7 +137,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public static boolean setCookie(String value, String url) {
-        return SWTBrowser.setCookie(value, url);
+        return SwtBrowser.setCookie(value, url);
     }
 
     /**
@@ -158,7 +162,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public void addAuthenticationListener(AuthenticationListener listener) {
-        ((IBrowser) this.delegate).addAuthenticationListener(listener);
+        getImpl().addAuthenticationListener(listener);
     }
 
     /**
@@ -183,7 +187,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addCloseWindowListener(CloseWindowListener listener) {
-        ((IBrowser) this.delegate).addCloseWindowListener(listener);
+        getImpl().addCloseWindowListener(listener);
     }
 
     /**
@@ -209,7 +213,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addLocationListener(LocationListener listener) {
-        ((IBrowser) this.delegate).addLocationListener(listener);
+        getImpl().addLocationListener(listener);
     }
 
     /**
@@ -234,7 +238,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addOpenWindowListener(OpenWindowListener listener) {
-        ((IBrowser) this.delegate).addOpenWindowListener(listener);
+        getImpl().addOpenWindowListener(listener);
     }
 
     /**
@@ -256,7 +260,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addProgressListener(ProgressListener listener) {
-        ((IBrowser) this.delegate).addProgressListener(listener);
+        getImpl().addProgressListener(listener);
     }
 
     /**
@@ -281,7 +285,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addStatusTextListener(StatusTextListener listener) {
-        ((IBrowser) this.delegate).addStatusTextListener(listener);
+        getImpl().addStatusTextListener(listener);
     }
 
     /**
@@ -303,7 +307,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addTitleListener(TitleListener listener) {
-        ((IBrowser) this.delegate).addTitleListener(listener);
+        getImpl().addTitleListener(listener);
     }
 
     /**
@@ -325,7 +329,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addVisibilityWindowListener(VisibilityWindowListener listener) {
-        ((IBrowser) this.delegate).addVisibilityWindowListener(listener);
+        getImpl().addVisibilityWindowListener(listener);
     }
 
     /**
@@ -343,7 +347,11 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public boolean back() {
-        return ((IBrowser) this.delegate).back();
+        return getImpl().back();
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -372,7 +380,7 @@ public class Browser extends Composite {
      * @since 3.1
      */
     public boolean execute(String script) {
-        return ((IBrowser) this.delegate).execute(script);
+        return getImpl().execute(script);
     }
 
     /**
@@ -392,7 +400,7 @@ public class Browser extends Composite {
      * @since 3.6
      */
     public boolean close() {
-        return ((IBrowser) this.delegate).close();
+        return getImpl().close();
     }
 
     /**
@@ -440,7 +448,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public Object evaluate(String script) throws SWTException {
-        return ((IBrowser) this.delegate).evaluate(script);
+        return getImpl().evaluate(script);
     }
 
     /**
@@ -489,7 +497,7 @@ public class Browser extends Composite {
      * @see ProgressListener#completed(ProgressEvent)
      */
     public Object evaluate(String script, boolean trusted) throws SWTException {
-        return ((IBrowser) this.delegate).evaluate(script, trusted);
+        return getImpl().evaluate(script, trusted);
     }
 
     /**
@@ -507,7 +515,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public boolean forward() {
-        return ((IBrowser) this.delegate).forward();
+        return getImpl().forward();
     }
 
     /**
@@ -519,7 +527,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public String getBrowserType() {
-        return ((IBrowser) this.delegate).getBrowserType();
+        return getImpl().getBrowserType();
     }
 
     /**
@@ -541,12 +549,11 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public boolean getJavascriptEnabled() {
-        return ((IBrowser) this.delegate).getJavascriptEnabled();
+        return getImpl().getJavascriptEnabled();
     }
 
-    @Override
     public int getStyle() {
-        return ((IBrowser) this.delegate).getStyle();
+        return getImpl().getStyle();
     }
 
     /**
@@ -568,7 +575,7 @@ public class Browser extends Composite {
      * @since 3.4
      */
     public String getText() {
-        return ((IBrowser) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -586,7 +593,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public String getUrl() {
-        return ((IBrowser) this.delegate).getUrl();
+        return getImpl().getUrl();
     }
 
     /**
@@ -605,7 +612,7 @@ public class Browser extends Composite {
      */
     @Deprecated
     public Object getWebBrowser() {
-        return ((IBrowser) this.delegate).getWebBrowser();
+        return getImpl().getWebBrowser();
     }
 
     /**
@@ -622,12 +629,11 @@ public class Browser extends Composite {
      * @see #back
      */
     public boolean isBackEnabled() {
-        return ((IBrowser) this.delegate).isBackEnabled();
+        return getImpl().isBackEnabled();
     }
 
-    @Override
     public boolean isFocusControl() {
-        return ((IBrowser) this.delegate).isFocusControl();
+        return getImpl().isFocusControl();
     }
 
     /**
@@ -644,7 +650,7 @@ public class Browser extends Composite {
      * @see #forward
      */
     public boolean isForwardEnabled() {
-        return ((IBrowser) this.delegate).isForwardEnabled();
+        return getImpl().isForwardEnabled();
     }
 
     /**
@@ -658,7 +664,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void refresh() {
-        ((IBrowser) this.delegate).refresh();
+        getImpl().refresh();
     }
 
     /**
@@ -679,7 +685,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public void removeAuthenticationListener(AuthenticationListener listener) {
-        ((IBrowser) this.delegate).removeAuthenticationListener(listener);
+        getImpl().removeAuthenticationListener(listener);
     }
 
     /**
@@ -700,7 +706,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeCloseWindowListener(CloseWindowListener listener) {
-        ((IBrowser) this.delegate).removeCloseWindowListener(listener);
+        getImpl().removeCloseWindowListener(listener);
     }
 
     /**
@@ -721,7 +727,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeLocationListener(LocationListener listener) {
-        ((IBrowser) this.delegate).removeLocationListener(listener);
+        getImpl().removeLocationListener(listener);
     }
 
     /**
@@ -742,7 +748,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeOpenWindowListener(OpenWindowListener listener) {
-        ((IBrowser) this.delegate).removeOpenWindowListener(listener);
+        getImpl().removeOpenWindowListener(listener);
     }
 
     /**
@@ -764,7 +770,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeProgressListener(ProgressListener listener) {
-        ((IBrowser) this.delegate).removeProgressListener(listener);
+        getImpl().removeProgressListener(listener);
     }
 
     /**
@@ -785,7 +791,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeStatusTextListener(StatusTextListener listener) {
-        ((IBrowser) this.delegate).removeStatusTextListener(listener);
+        getImpl().removeStatusTextListener(listener);
     }
 
     /**
@@ -807,7 +813,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeTitleListener(TitleListener listener) {
-        ((IBrowser) this.delegate).removeTitleListener(listener);
+        getImpl().removeTitleListener(listener);
     }
 
     /**
@@ -829,7 +835,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void removeVisibilityWindowListener(VisibilityWindowListener listener) {
-        ((IBrowser) this.delegate).removeVisibilityWindowListener(listener);
+        getImpl().removeVisibilityWindowListener(listener);
     }
 
     /**
@@ -847,7 +853,7 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public void setJavascriptEnabled(boolean enabled) {
-        ((IBrowser) this.delegate).setJavascriptEnabled(enabled);
+        getImpl().setJavascriptEnabled(enabled);
     }
 
     /**
@@ -878,7 +884,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public boolean setText(String html) {
-        return ((IBrowser) this.delegate).setText(html);
+        return getImpl().setText(html);
     }
 
     /**
@@ -918,7 +924,7 @@ public class Browser extends Composite {
      * @since 3.6
      */
     public boolean setText(String html, boolean trusted) {
-        return ((IBrowser) this.delegate).setText(html, trusted);
+        return getImpl().setText(html, trusted);
     }
 
     /**
@@ -943,7 +949,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public boolean setUrl(String url) {
-        return ((IBrowser) this.delegate).setUrl(url);
+        return getImpl().setUrl(url);
     }
 
     /**
@@ -973,7 +979,7 @@ public class Browser extends Composite {
      * @since 3.6
      */
     public boolean setUrl(String url, String postData, String[] headers) {
-        return ((IBrowser) this.delegate).setUrl(url, postData, headers);
+        return getImpl().setUrl(url, postData, headers);
     }
 
     /**
@@ -987,23 +993,18 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void stop() {
-        ((IBrowser) this.delegate).stop();
+        getImpl().stop();
     }
 
-    protected Browser(IBrowser delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Browser(IBrowser impl) {
+        super(impl);
     }
 
-    public static Browser getInstance(IBrowser delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Browser ref = (Browser) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Browser(delegate);
-        }
-        return ref;
+    static Browser createApi(IBrowser impl) {
+        return new Browser(impl);
+    }
+
+    public IBrowser getImpl() {
+        return (IBrowser) super.getImpl();
     }
 }

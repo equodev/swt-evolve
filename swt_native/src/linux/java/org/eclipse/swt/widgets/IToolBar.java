@@ -4,11 +4,10 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
-public interface IToolBar extends IComposite {
+public interface IToolBar extends IComposite, ImplToolBar {
+
+    void checkSubclass();
 
     /**
      * Returns the item at the given, zero-relative index in the
@@ -25,7 +24,7 @@ public interface IToolBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IToolItem getItem(int index);
+    ToolItem getItem(int index);
 
     /**
      * Returns the item at the given point in the receiver
@@ -43,7 +42,7 @@ public interface IToolBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IToolItem getItem(Point point);
+    ToolItem getItem(Point point);
 
     /**
      * Returns the number of items contained in the receiver.
@@ -73,7 +72,7 @@ public interface IToolBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IToolItem[] getItems();
+    ToolItem[] getItems();
 
     /**
      * Returns the number of rows in the receiver. When
@@ -108,7 +107,9 @@ public interface IToolBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int indexOf(IToolItem item);
+    int indexOf(ToolItem item);
 
     void setToolTipText(String string);
+
+    ToolBar getApi();
 }

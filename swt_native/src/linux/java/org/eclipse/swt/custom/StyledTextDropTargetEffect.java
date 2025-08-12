@@ -51,22 +51,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class StyledTextDropTargetEffect extends DropTargetEffect {
 
-    static final int CARET_WIDTH = 2;
-
-    // milli seconds
-    static final int SCROLL_HYSTERESIS = 100;
-
-    // pixels
-    static final int SCROLL_TOLERANCE = 20;
-
-    int currentOffset = -1;
-
-    long scrollBeginTime;
-
-    int scrollX = -1, scrollY = -1;
-
-    Listener paintListener;
-
     /**
      * Creates a new <code>StyledTextDropTargetEffect</code> to handle the drag under effect on the specified
      * <code>StyledText</code>.
@@ -74,16 +58,8 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
      * @param styledText the <code>StyledText</code> over which the user positions the cursor to drop the data
      */
     public StyledTextDropTargetEffect(StyledText styledText) {
-        super(styledText);
-        paintListener = event -> {
-            if (currentOffset != -1) {
-                SWTStyledText text = (SWTStyledText) ((SWTControl) (getControl()));
-                Point position = text.getLocationAtOffset(currentOffset);
-                int height = text.getLineHeight(currentOffset);
-                event.gc.setBackground(event.display.getSystemColor(SWT.COLOR_BLACK));
-                event.gc.fillRectangle(position.x, position.y, CARET_WIDTH, height);
-            }
-        };
+        this((IStyledTextDropTargetEffect) null);
+        setImpl(new SwtStyledTextDropTargetEffect(styledText, this));
     }
 
     /**
@@ -100,14 +76,8 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
      * @see DropTargetAdapter
      * @see DropTargetEvent
      */
-    @Override
     public void dragEnter(DropTargetEvent event) {
-        currentOffset = -1;
-        scrollBeginTime = 0;
-        scrollX = -1;
-        scrollY = -1;
-        ((SWTControl) (getControl())).removeListener(SWT.Paint, paintListener);
-        ((SWTControl) (getControl())).addListener(SWT.Paint, paintListener);
+        getImpl().dragEnter(event);
     }
 
     /**
@@ -124,16 +94,8 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
      * @see DropTargetAdapter
      * @see DropTargetEvent
      */
-    @Override
     public void dragLeave(DropTargetEvent event) {
-        SWTStyledText text = (SWTStyledText) ((SWTStyledText) getControl());
-        if (currentOffset != -1) {
-            refreshCaret(text, currentOffset, -1);
-        }
-        text.removeListener(SWT.Paint, paintListener);
-        scrollBeginTime = 0;
-        scrollX = -1;
-        scrollY = -1;
+        getImpl().dragLeave(event);
     }
 
     /**
@@ -152,78 +114,8 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
      * @see DND#FEEDBACK_SELECT
      * @see DND#FEEDBACK_SCROLL
      */
-    @Override
     public void dragOver(DropTargetEvent event) {
-        int effect = event.feedback;
-        SWTStyledText text = (SWTStyledText) ((SWTStyledText) getControl());
-        Point pt = ((SWTDisplay) (text.getDisplay())).map(null, text, event.x, event.y);
-        if ((effect & DND.FEEDBACK_SCROLL) == 0) {
-            scrollBeginTime = 0;
-            scrollX = scrollY = -1;
-        } else {
-            if (text.getCharCount() == 0) {
-                scrollBeginTime = 0;
-                scrollX = scrollY = -1;
-            } else {
-                if (scrollX != -1 && scrollY != -1 && scrollBeginTime != 0 && (pt.x >= scrollX && pt.x <= (scrollX + SCROLL_TOLERANCE) || pt.y >= scrollY && pt.y <= (scrollY + SCROLL_TOLERANCE))) {
-                    if (System.currentTimeMillis() >= scrollBeginTime) {
-                        Rectangle area = text.getClientArea();
-                        GC gc = new GC(text);
-                        FontMetrics fm = gc.getFontMetrics();
-                        gc.dispose();
-                        double charWidth = fm.getAverageCharacterWidth();
-                        int scrollAmount = (int) (10 * charWidth);
-                        if (pt.x < area.x + 3 * charWidth) {
-                            int leftPixel = text.getHorizontalPixel();
-                            text.setHorizontalPixel(leftPixel - scrollAmount);
-                        }
-                        if (pt.x > area.width - 3 * charWidth) {
-                            int leftPixel = text.getHorizontalPixel();
-                            text.setHorizontalPixel(leftPixel + scrollAmount);
-                        }
-                        int lineHeight = text.getLineHeight();
-                        if (pt.y < area.y + lineHeight) {
-                            int topPixel = text.getTopPixel();
-                            text.setTopPixel(topPixel - lineHeight);
-                        }
-                        if (pt.y > area.height - lineHeight) {
-                            int topPixel = text.getTopPixel();
-                            text.setTopPixel(topPixel + lineHeight);
-                        }
-                        scrollBeginTime = 0;
-                        scrollX = scrollY = -1;
-                    }
-                } else {
-                    scrollBeginTime = System.currentTimeMillis() + SCROLL_HYSTERESIS;
-                    scrollX = pt.x;
-                    scrollY = pt.y;
-                }
-            }
-        }
-        if ((effect & DND.FEEDBACK_SELECT) != 0) {
-            int[] trailing = new int[1];
-            int newOffset = text.getOffsetAtPoint(pt.x, pt.y, trailing, false);
-            newOffset += trailing[0];
-            if (newOffset != currentOffset) {
-                refreshCaret(text, currentOffset, newOffset);
-                currentOffset = newOffset;
-            }
-        }
-    }
-
-    void refreshCaret(SWTStyledText text, int oldOffset, int newOffset) {
-        if (oldOffset != newOffset) {
-            if (oldOffset != -1) {
-                Point oldPos = text.getLocationAtOffset(oldOffset);
-                int oldHeight = text.getLineHeight(oldOffset);
-                text.redraw(oldPos.x, oldPos.y, CARET_WIDTH, oldHeight, false);
-            }
-            if (newOffset != -1) {
-                Point newPos = text.getLocationAtOffset(newOffset);
-                int newHeight = text.getLineHeight(newOffset);
-                text.redraw(newPos.x, newPos.y, CARET_WIDTH, newHeight, false);
-            }
-        }
+        getImpl().dragOver(event);
     }
 
     /**
@@ -240,12 +132,19 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
      * @see DropTargetAdapter
      * @see DropTargetEvent
      */
-    @Override
     public void dropAccept(DropTargetEvent event) {
-        if (currentOffset != -1) {
-            SWTStyledText text = (SWTStyledText) ((SWTStyledText) getControl());
-            text.setSelection(currentOffset);
-            currentOffset = -1;
-        }
+        getImpl().dropAccept(event);
+    }
+
+    protected StyledTextDropTargetEffect(IStyledTextDropTargetEffect impl) {
+        super(impl);
+    }
+
+    static StyledTextDropTargetEffect createApi(IStyledTextDropTargetEffect impl) {
+        return new StyledTextDropTargetEffect(impl);
+    }
+
+    public IStyledTextDropTargetEffect getImpl() {
+        return (IStyledTextDropTargetEffect) super.getImpl();
     }
 }

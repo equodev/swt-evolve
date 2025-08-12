@@ -15,14 +15,6 @@ public class VCaret extends VWidget {
         super(impl);
     }
 
-    public Rectangle getBounds() {
-        return ((DartCaret) impl).bounds;
-    }
-
-    public void setBounds(Rectangle value) {
-        ((DartCaret) impl).bounds = value;
-    }
-
     @JsonAttribute(ignore = true)
     public Font getFont() {
         return ((DartCaret) impl).font;
@@ -30,14 +22,6 @@ public class VCaret extends VWidget {
 
     public void setFont(Font value) {
         ((DartCaret) impl).font = value;
-    }
-
-    public int getHeight() {
-        return ((DartCaret) impl).height;
-    }
-
-    public void setHeight(int value) {
-        ((DartCaret) impl).height = value;
     }
 
     @JsonAttribute(ignore = true)

@@ -23,7 +23,6 @@ import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  *  Instances of this class implement rubber banding rectangles that are
@@ -49,6 +48,8 @@ import java.util.WeakHashMap;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Tracker extends Widget {
+
+    boolean tracking, cancelled, grabbed, stippled;
 
     // Re-use/cache some items for performance reasons as draw-events must be efficient to prevent jitter.
     /**
@@ -84,7 +85,8 @@ public class Tracker extends Widget {
      * @see Widget#getStyle
      */
     public Tracker(Composite parent, int style) {
-        this(new SWTTracker((SWTComposite) parent.delegate, style));
+        this((ITracker) null);
+        setImpl(new SwtTracker(parent, style, this));
     }
 
     /**
@@ -123,7 +125,8 @@ public class Tracker extends Widget {
      * @see SWT#RESIZE
      */
     public Tracker(Display display, int style) {
-        this(new SWTTracker((SWTDisplay) display.delegate, style));
+        this((ITracker) null);
+        setImpl(new SwtTracker(display, style, this));
     }
 
     /**
@@ -146,7 +149,7 @@ public class Tracker extends Widget {
      * @see #removeControlListener
      */
     public void addControlListener(ControlListener listener) {
-        ((ITracker) this.delegate).addControlListener(listener);
+        getImpl().addControlListener(listener);
     }
 
     /**
@@ -169,7 +172,7 @@ public class Tracker extends Widget {
      * @see #removeKeyListener
      */
     public void addKeyListener(KeyListener listener) {
-        ((ITracker) this.delegate).addKeyListener(listener);
+        getImpl().addKeyListener(listener);
     }
 
     /**
@@ -182,7 +185,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public void close() {
-        ((ITracker) this.delegate).close();
+        getImpl().close();
     }
 
     /**
@@ -198,7 +201,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public Rectangle[] getRectangles() {
-        return ((ITracker) this.delegate).getRectangles();
+        return getImpl().getRectangles();
     }
 
     /**
@@ -212,7 +215,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public boolean getStippled() {
-        return ((ITracker) this.delegate).getStippled();
+        return getImpl().getStippled();
     }
 
     /**
@@ -228,7 +231,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public boolean open() {
-        return ((ITracker) this.delegate).open();
+        return getImpl().open();
     }
 
     /**
@@ -249,7 +252,7 @@ public class Tracker extends Widget {
      * @see #addControlListener
      */
     public void removeControlListener(ControlListener listener) {
-        ((ITracker) this.delegate).removeControlListener(listener);
+        getImpl().removeControlListener(listener);
     }
 
     /**
@@ -270,7 +273,7 @@ public class Tracker extends Widget {
      * @see #addKeyListener
      */
     public void removeKeyListener(KeyListener listener) {
-        ((ITracker) this.delegate).removeKeyListener(listener);
+        getImpl().removeKeyListener(listener);
     }
 
     /**
@@ -285,7 +288,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public void setCursor(Cursor newCursor) {
-        ((ITracker) this.delegate).setCursor(newCursor);
+        getImpl().setCursor(newCursor);
     }
 
     /**
@@ -303,7 +306,7 @@ public class Tracker extends Widget {
      * </ul>
      */
     public void setRectangles(Rectangle[] rectangles) {
-        ((ITracker) this.delegate).setRectangles(rectangles);
+        getImpl().setRectangles(rectangles);
     }
 
     /**
@@ -317,23 +320,18 @@ public class Tracker extends Widget {
      * </ul>
      */
     public void setStippled(boolean stippled) {
-        ((ITracker) this.delegate).setStippled(stippled);
+        getImpl().setStippled(stippled);
     }
 
-    protected Tracker(ITracker delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Tracker(ITracker impl) {
+        super(impl);
     }
 
-    public static Tracker getInstance(ITracker delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Tracker ref = (Tracker) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Tracker(delegate);
-        }
-        return ref;
+    static Tracker createApi(ITracker impl) {
+        return new Tracker(impl);
+    }
+
+    public ITracker getImpl() {
+        return (ITracker) super.getImpl();
     }
 }

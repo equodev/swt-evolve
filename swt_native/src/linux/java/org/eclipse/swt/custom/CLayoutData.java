@@ -25,7 +25,7 @@ class CLayoutData {
 
     int currentWhint, currentHhint, currentWidth = -1, currentHeight = -1;
 
-    Point computeSize(IControl control, int wHint, int hHint, boolean flushCache) {
+    Point computeSize(Control control, int wHint, int hHint, boolean flushCache) {
         if (flushCache)
             flushCache();
         if (wHint == SWT.DEFAULT && hHint == SWT.DEFAULT) {

@@ -4,10 +4,10 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
 
 public interface ITreeItem extends IItem {
+
+    void checkSubclass();
 
     /**
      * Clears the item at the given zero-relative index in the receiver.
@@ -278,7 +278,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.1
      */
-    ITreeItem getItem(int index);
+    TreeItem getItem(int index);
 
     /**
      * Returns a (possibly empty) array of <code>TreeItem</code>s which
@@ -296,7 +296,7 @@ public interface ITreeItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITreeItem[] getItems();
+    TreeItem[] getItems();
 
     /**
      * Returns the receiver's parent, which must be a <code>Tree</code>.
@@ -308,7 +308,7 @@ public interface ITreeItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITree getParent();
+    Tree getParent();
 
     /**
      * Returns the receiver's parent item, which must be a
@@ -322,7 +322,7 @@ public interface ITreeItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITreeItem getParentItem();
+    TreeItem getParentItem();
 
     String getText();
 
@@ -379,7 +379,7 @@ public interface ITreeItem extends IItem {
      *
      * @since 3.1
      */
-    int indexOf(ITreeItem item);
+    int indexOf(TreeItem item);
 
     void dispose();
 
@@ -650,4 +650,6 @@ public interface ITreeItem extends IItem {
      * @since 3.1
      */
     void setText(String[] strings);
+
+    TreeItem getApi();
 }

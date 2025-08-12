@@ -18,7 +18,6 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class implement a Composite that positions and sizes
@@ -43,6 +42,72 @@ import java.util.WeakHashMap;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class ViewForm extends Composite {
+
+    /**
+     * marginWidth specifies the number of points of horizontal margin
+     * that will be placed along the left and right edges of the form.
+     *
+     * The default value is 0.
+     */
+    public int marginWidth = 0;
+
+    /**
+     * marginHeight specifies the number of points of vertical margin
+     * that will be placed along the top and bottom edges of the form.
+     *
+     * The default value is 0.
+     */
+    public int marginHeight = 0;
+
+    /**
+     * horizontalSpacing specifies the number of points between the right
+     * edge of one cell and the left edge of its neighbouring cell to
+     * the right.
+     *
+     * The default value is 1.
+     */
+    public int horizontalSpacing = 1;
+
+    /**
+     * verticalSpacing specifies the number of points between the bottom
+     * edge of one cell and the top edge of its neighbouring cell underneath.
+     *
+     * The default value is 1.
+     */
+    public int verticalSpacing = 1;
+
+    /**
+     * Color of innermost line of drop shadow border.
+     *
+     * NOTE This field is badly named and can not be fixed for backwards compatibility.
+     * It should be capitalized.
+     *
+     * @deprecated
+     */
+    @Deprecated
+    public static RGB borderInsideRGB = new RGB(132, 130, 132);
+
+    /**
+     * Color of middle line of drop shadow border.
+     *
+     * NOTE This field is badly named and can not be fixed for backwards compatibility.
+     * It should be capitalized.
+     *
+     * @deprecated
+     */
+    @Deprecated
+    public static RGB borderMiddleRGB = new RGB(143, 141, 138);
+
+    /**
+     * Color of outermost line of drop shadow border.
+     *
+     * NOTE This field is badly named and can not be fixed for backwards compatibility.
+     * It should be capitalized.
+     *
+     * @deprecated
+     */
+    @Deprecated
+    public static RGB borderOutsideRGB = new RGB(171, 168, 165);
 
     /**
      * Constructs a new instance of this class given its parent
@@ -72,7 +137,8 @@ public class ViewForm extends Composite {
      * @see #getStyle()
      */
     public ViewForm(Composite parent, int style) {
-        this(new SWTViewForm((SWTComposite) parent.delegate, style));
+        this((IViewForm) null);
+        setImpl(new SwtViewForm(parent, style, this));
     }
 
     //protected void checkSubclass () {
@@ -82,14 +148,12 @@ public class ViewForm extends Composite {
     //		SWT.error (SWT.ERROR_INVALID_SUBCLASS);
     //	}
     //}
-    @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return ((IViewForm) this.delegate).computeTrim(x, y, width, height);
+        return getImpl().computeTrim(x, y, width, height);
     }
 
-    @Override
     public Rectangle getClientArea() {
-        return ((IViewForm) this.delegate).getClientArea();
+        return getImpl().getClientArea();
     }
 
     /**
@@ -98,7 +162,7 @@ public class ViewForm extends Composite {
      * @return the control in the content area of the pane or null
      */
     public Control getContent() {
-        return Control.getInstance(((IViewForm) this.delegate).getContent());
+        return getImpl().getContent();
     }
 
     /**
@@ -108,7 +172,7 @@ public class ViewForm extends Composite {
      * @return the control in the top center of the pane or null
      */
     public Control getTopCenter() {
-        return Control.getInstance(((IViewForm) this.delegate).getTopCenter());
+        return getImpl().getTopCenter();
     }
 
     /**
@@ -118,7 +182,7 @@ public class ViewForm extends Composite {
      * @return the control in the top left corner of the pane or null
      */
     public Control getTopLeft() {
-        return Control.getInstance(((IViewForm) this.delegate).getTopLeft());
+        return getImpl().getTopLeft();
     }
 
     /**
@@ -128,7 +192,7 @@ public class ViewForm extends Composite {
      * @return the control in the top right corner of the pane or null
      */
     public Control getTopRight() {
-        return Control.getInstance(((IViewForm) this.delegate).getTopRight());
+        return getImpl().getTopRight();
     }
 
     /**
@@ -145,7 +209,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setContent(Control content) {
-        ((IViewForm) this.delegate).setContent((IControl) content.delegate);
+        getImpl().setContent(content);
     }
 
     /**
@@ -163,9 +227,8 @@ public class ViewForm extends Composite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setLayout(Layout layout) {
-        ((IViewForm) this.delegate).setLayout(layout);
+        getImpl().setLayout(layout);
     }
 
     /**
@@ -183,7 +246,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopCenter(Control topCenter) {
-        ((IViewForm) this.delegate).setTopCenter((IControl) topCenter.delegate);
+        getImpl().setTopCenter(topCenter);
     }
 
     /**
@@ -201,7 +264,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopLeft(Control c) {
-        ((IViewForm) this.delegate).setTopLeft((IControl) c.delegate);
+        getImpl().setTopLeft(c);
     }
 
     /**
@@ -219,7 +282,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopRight(Control c) {
-        ((IViewForm) this.delegate).setTopRight((IControl) c.delegate);
+        getImpl().setTopRight(c);
     }
 
     /**
@@ -233,7 +296,7 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setBorderVisible(boolean show) {
-        ((IViewForm) this.delegate).setBorderVisible(show);
+        getImpl().setBorderVisible(show);
     }
 
     /**
@@ -249,23 +312,18 @@ public class ViewForm extends Composite {
      * </ul>
      */
     public void setTopCenterSeparate(boolean show) {
-        ((IViewForm) this.delegate).setTopCenterSeparate(show);
+        getImpl().setTopCenterSeparate(show);
     }
 
-    protected ViewForm(IViewForm delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected ViewForm(IViewForm impl) {
+        super(impl);
     }
 
-    public static ViewForm getInstance(IViewForm delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        ViewForm ref = (ViewForm) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new ViewForm(delegate);
-        }
-        return ref;
+    static ViewForm createApi(IViewForm impl) {
+        return new ViewForm(impl);
+    }
+
+    public IViewForm getImpl() {
+        return (IViewForm) super.getImpl();
     }
 }

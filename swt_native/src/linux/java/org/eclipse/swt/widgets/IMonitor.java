@@ -53,4 +53,8 @@ public interface IMonitor {
      * @see #equals(Object)
      */
     int hashCode();
+
+    Monitor getApi();
+
+    void setApi(Monitor api);
 }

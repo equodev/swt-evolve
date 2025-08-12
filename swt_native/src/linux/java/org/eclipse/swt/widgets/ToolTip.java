@@ -23,7 +23,6 @@ import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class represent popup windows that are used
@@ -82,7 +81,8 @@ public class ToolTip extends Widget {
      * @see Widget#getStyle
      */
     public ToolTip(Shell parent, int style) {
-        this(new SWTToolTip((SWTShell) parent.delegate, style));
+        this((IToolTip) null);
+        setImpl(new SwtToolTip(parent, style, this));
     }
 
     /**
@@ -110,7 +110,7 @@ public class ToolTip extends Widget {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((IToolTip) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -125,7 +125,7 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public boolean getAutoHide() {
-        return ((IToolTip) this.delegate).getAutoHide();
+        return getImpl().getAutoHide();
     }
 
     /**
@@ -140,7 +140,7 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public String getMessage() {
-        return ((IToolTip) this.delegate).getMessage();
+        return getImpl().getMessage();
     }
 
     /**
@@ -154,7 +154,7 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public Shell getParent() {
-        return Shell.getInstance(((IToolTip) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -169,7 +169,7 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public String getText() {
-        return ((IToolTip) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -190,7 +190,7 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public boolean getVisible() {
-        return ((IToolTip) this.delegate).getVisible();
+        return getImpl().getVisible();
     }
 
     /**
@@ -208,7 +208,7 @@ public class ToolTip extends Widget {
      * @see #getVisible
      */
     public boolean isVisible() {
-        return ((IToolTip) this.delegate).isVisible();
+        return getImpl().isVisible();
     }
 
     /**
@@ -229,7 +229,7 @@ public class ToolTip extends Widget {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((IToolTip) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -247,7 +247,7 @@ public class ToolTip extends Widget {
      * @see #setVisible
      */
     public void setAutoHide(boolean autoHide) {
-        ((IToolTip) this.delegate).setAutoHide(autoHide);
+        getImpl().setAutoHide(autoHide);
     }
 
     /**
@@ -268,7 +268,7 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public void setLocation(int x, int y) {
-        ((IToolTip) this.delegate).setLocation(x, y);
+        getImpl().setLocation(x, y);
     }
 
     /**
@@ -294,7 +294,7 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public void setLocation(Point location) {
-        ((IToolTip) this.delegate).setLocation(location);
+        getImpl().setLocation(location);
     }
 
     /**
@@ -311,7 +311,7 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public void setMessage(String string) {
-        ((IToolTip) this.delegate).setMessage(string);
+        getImpl().setMessage(string);
     }
 
     /**
@@ -328,7 +328,7 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public void setText(String string) {
-        ((IToolTip) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -348,23 +348,18 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        ((IToolTip) this.delegate).setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
-    protected ToolTip(IToolTip delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected ToolTip(IToolTip impl) {
+        super(impl);
     }
 
-    public static ToolTip getInstance(IToolTip delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        ToolTip ref = (ToolTip) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new ToolTip(delegate);
-        }
-        return ref;
+    static ToolTip createApi(IToolTip impl) {
+        return new ToolTip(impl);
+    }
+
+    public IToolTip getImpl() {
+        return (IToolTip) super.getImpl();
     }
 }

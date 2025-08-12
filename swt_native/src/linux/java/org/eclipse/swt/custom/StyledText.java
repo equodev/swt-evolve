@@ -30,6 +30,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.printing.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * A StyledText is an editable user interface object that displays lines
@@ -121,7 +122,8 @@ public class StyledText extends Canvas {
      * @see #getStyle
      */
     public StyledText(Composite parent, int style) {
-        this(new SWTStyledText((SWTComposite) parent.delegate, style));
+        this((IStyledText) null);
+        setImpl(Config.isEquo(StyledText.class, parent) ? new DartStyledText(parent, style, this) : new SwtStyledText(parent, style, this));
     }
 
     /**
@@ -138,7 +140,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void addExtendedModifyListener(ExtendedModifyListener extendedModifyListener) {
-        ((IStyledText) this.delegate).addExtendedModifyListener(extendedModifyListener);
+        getImpl().addExtendedModifyListener(extendedModifyListener);
     }
 
     /**
@@ -167,7 +169,7 @@ public class StyledText extends Canvas {
      * @since 2.0
      */
     public void addBidiSegmentListener(BidiSegmentListener listener) {
-        ((IStyledText) this.delegate).addBidiSegmentListener(listener);
+        getImpl().addBidiSegmentListener(listener);
     }
 
     /**
@@ -185,7 +187,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public void addCaretListener(CaretListener listener) {
-        ((IStyledText) this.delegate).addCaretListener(listener);
+        getImpl().addCaretListener(listener);
     }
 
     /**
@@ -202,7 +204,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void addLineBackgroundListener(LineBackgroundListener listener) {
-        ((IStyledText) this.delegate).addLineBackgroundListener(listener);
+        getImpl().addLineBackgroundListener(listener);
     }
 
     /**
@@ -219,7 +221,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void addLineStyleListener(LineStyleListener listener) {
-        ((IStyledText) this.delegate).addLineStyleListener(listener);
+        getImpl().addLineStyleListener(listener);
     }
 
     /**
@@ -236,7 +238,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void addModifyListener(ModifyListener modifyListener) {
-        ((IStyledText) this.delegate).addModifyListener(modifyListener);
+        getImpl().addModifyListener(modifyListener);
     }
 
     /**
@@ -258,7 +260,7 @@ public class StyledText extends Canvas {
      * @see PaintObjectEvent
      */
     public void addPaintObjectListener(PaintObjectListener listener) {
-        ((IStyledText) this.delegate).addPaintObjectListener(listener);
+        getImpl().addPaintObjectListener(listener);
     }
 
     /**
@@ -288,7 +290,7 @@ public class StyledText extends Canvas {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((IStyledText) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -306,7 +308,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void addVerifyKeyListener(VerifyKeyListener listener) {
-        ((IStyledText) this.delegate).addVerifyKeyListener(listener);
+        getImpl().addVerifyKeyListener(listener);
     }
 
     /**
@@ -325,7 +327,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void addVerifyListener(VerifyListener verifyListener) {
-        ((IStyledText) this.delegate).addVerifyListener(verifyListener);
+        getImpl().addVerifyListener(verifyListener);
     }
 
     /**
@@ -349,7 +351,7 @@ public class StyledText extends Canvas {
      * @since 3.3
      */
     public void addWordMovementListener(MovementListener movementListener) {
-        ((IStyledText) this.delegate).addWordMovementListener(movementListener);
+        getImpl().addWordMovementListener(movementListener);
     }
 
     /**
@@ -366,12 +368,11 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void append(String string) {
-        ((IStyledText) this.delegate).append(string);
+        getImpl().append(string);
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return ((IStyledText) this.delegate).computeSize(wHint, hHint, changed);
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -389,7 +390,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void copy() {
-        ((IStyledText) this.delegate).copy();
+        getImpl().copy();
     }
 
     /**
@@ -414,7 +415,7 @@ public class StyledText extends Canvas {
      * @since 3.1
      */
     public void copy(int clipboardType) {
-        ((IStyledText) this.delegate).copy(clipboardType);
+        getImpl().copy(clipboardType);
     }
 
     /**
@@ -432,7 +433,7 @@ public class StyledText extends Canvas {
      *  @since 3.2
      */
     public int getAlignment() {
-        return ((IStyledText) this.delegate).getAlignment();
+        return getImpl().getAlignment();
     }
 
     /**
@@ -452,7 +453,7 @@ public class StyledText extends Canvas {
      * @since 3.8
      */
     public boolean getAlwaysShowScrollBars() {
-        return ((IStyledText) this.delegate).getAlwaysShowScrollBars();
+        return getImpl().getAlwaysShowScrollBars();
     }
 
     /**
@@ -467,7 +468,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public Color getMarginColor() {
-        return ((IStyledText) this.delegate).getMarginColor();
+        return getImpl().getMarginColor();
     }
 
     /**
@@ -480,12 +481,11 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void cut() {
-        ((IStyledText) this.delegate).cut();
+        getImpl().cut();
     }
 
-    @Override
     public Color getBackground() {
-        return ((IStyledText) this.delegate).getBackground();
+        return getImpl().getBackground();
     }
 
     /**
@@ -504,7 +504,7 @@ public class StyledText extends Canvas {
      * @see #getBaseline(int)
      */
     public int getBaseline() {
-        return ((IStyledText) this.delegate).getBaseline();
+        return getImpl().getBaseline();
     }
 
     /**
@@ -525,7 +525,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public int getBaseline(int offset) {
-        return ((IStyledText) this.delegate).getBaseline(offset);
+        return getImpl().getBaseline(offset);
     }
 
     /**
@@ -543,7 +543,7 @@ public class StyledText extends Canvas {
      */
     @Deprecated
     public boolean getBidiColoring() {
-        return ((IStyledText) this.delegate).getBidiColoring();
+        return getImpl().getBidiColoring();
     }
 
     /**
@@ -559,7 +559,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public boolean getBlockSelection() {
-        return ((IStyledText) this.delegate).getBlockSelection();
+        return getImpl().getBlockSelection();
     }
 
     /**
@@ -576,7 +576,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public Rectangle getBlockSelectionBounds() {
-        return ((IStyledText) this.delegate).getBlockSelectionBounds();
+        return getImpl().getBlockSelectionBounds();
     }
 
     /**
@@ -591,7 +591,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public int getBottomMargin() {
-        return ((IStyledText) this.delegate).getBottomMargin();
+        return getImpl().getBottomMargin();
     }
 
     /**
@@ -604,7 +604,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public int getCaretOffset() {
-        return ((IStyledText) this.delegate).getCaretOffset();
+        return getImpl().getCaretOffset();
     }
 
     /**
@@ -619,12 +619,11 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public StyledTextContent getContent() {
-        return ((IStyledText) this.delegate).getContent();
+        return getImpl().getContent();
     }
 
-    @Override
     public boolean getDragDetect() {
-        return ((IStyledText) this.delegate).getDragDetect();
+        return getImpl().getDragDetect();
     }
 
     /**
@@ -638,7 +637,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public boolean getDoubleClickEnabled() {
-        return ((IStyledText) this.delegate).getDoubleClickEnabled();
+        return getImpl().getDoubleClickEnabled();
     }
 
     /**
@@ -651,12 +650,11 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public boolean getEditable() {
-        return ((IStyledText) this.delegate).getEditable();
+        return getImpl().getEditable();
     }
 
-    @Override
     public Color getForeground() {
-        return ((IStyledText) this.delegate).getForeground();
+        return getImpl().getForeground();
     }
 
     /**
@@ -670,7 +668,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public int getHorizontalIndex() {
-        return ((IStyledText) this.delegate).getHorizontalIndex();
+        return getImpl().getHorizontalIndex();
     }
 
     /**
@@ -684,7 +682,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public int getHorizontalPixel() {
-        return ((IStyledText) this.delegate).getHorizontalPixel();
+        return getImpl().getHorizontalPixel();
     }
 
     /**
@@ -702,7 +700,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public int getIndent() {
-        return ((IStyledText) this.delegate).getIndent();
+        return getImpl().getIndent();
     }
 
     /**
@@ -720,7 +718,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public boolean getJustify() {
-        return ((IStyledText) this.delegate).getJustify();
+        return getImpl().getJustify();
     }
 
     /**
@@ -740,7 +738,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public int getKeyBinding(int key) {
-        return ((IStyledText) this.delegate).getKeyBinding(key);
+        return getImpl().getKeyBinding(key);
     }
 
     /**
@@ -753,7 +751,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public int getCharCount() {
-        return ((IStyledText) this.delegate).getCharCount();
+        return getImpl().getCharCount();
     }
 
     /**
@@ -774,7 +772,7 @@ public class StyledText extends Canvas {
      * @since 3.4
      */
     public String getLine(int lineIndex) {
-        return ((IStyledText) this.delegate).getLine(lineIndex);
+        return getImpl().getLine(lineIndex);
     }
 
     /**
@@ -797,7 +795,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public int getLineAlignment(int index) {
-        return ((IStyledText) this.delegate).getLineAlignment(index);
+        return getImpl().getLineAlignment(index);
     }
 
     /**
@@ -817,7 +815,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public int getLineAtOffset(int offset) {
-        return ((IStyledText) this.delegate).getLineAtOffset(offset);
+        return getImpl().getLineAtOffset(offset);
     }
 
     /**
@@ -839,7 +837,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public Color getLineBackground(int index) {
-        return ((IStyledText) this.delegate).getLineBackground(index);
+        return getImpl().getLineBackground(index);
     }
 
     /**
@@ -860,7 +858,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public Bullet getLineBullet(int index) {
-        return ((IStyledText) this.delegate).getLineBullet(index);
+        return getImpl().getLineBullet(index);
     }
 
     /**
@@ -873,7 +871,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public int getLineCount() {
-        return ((IStyledText) this.delegate).getLineCount();
+        return getImpl().getLineCount();
     }
 
     /**
@@ -888,7 +886,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public String getLineDelimiter() {
-        return ((IStyledText) this.delegate).getLineDelimiter();
+        return getImpl().getLineDelimiter();
     }
 
     /**
@@ -906,7 +904,7 @@ public class StyledText extends Canvas {
      * @see #getLineHeight(int)
      */
     public int getLineHeight() {
-        return ((IStyledText) this.delegate).getLineHeight();
+        return getImpl().getLineHeight();
     }
 
     /**
@@ -927,7 +925,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public int getLineHeight(int offset) {
-        return ((IStyledText) this.delegate).getLineHeight(offset);
+        return getImpl().getLineHeight(offset);
     }
 
     /**
@@ -950,7 +948,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public int getLineIndent(int index) {
-        return ((IStyledText) this.delegate).getLineIndent(index);
+        return getImpl().getLineIndent(index);
     }
 
     /**
@@ -971,7 +969,7 @@ public class StyledText extends Canvas {
      * @since 3.109
      */
     public int getLineVerticalIndent(int index) {
-        return ((IStyledText) this.delegate).getLineVerticalIndent(index);
+        return getImpl().getLineVerticalIndent(index);
     }
 
     /**
@@ -994,7 +992,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public boolean getLineJustify(int index) {
-        return ((IStyledText) this.delegate).getLineJustify(index);
+        return getImpl().getLineJustify(index);
     }
 
     /**
@@ -1010,7 +1008,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public int getLineSpacing() {
-        return ((IStyledText) this.delegate).getLineSpacing();
+        return getImpl().getLineSpacing();
     }
 
     /**
@@ -1026,7 +1024,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public int getLinePixel(int lineIndex) {
-        return ((IStyledText) this.delegate).getLinePixel(lineIndex);
+        return getImpl().getLinePixel(lineIndex);
     }
 
     /**
@@ -1040,7 +1038,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public int getLineIndex(int y) {
-        return ((IStyledText) this.delegate).getLineIndex(y);
+        return getImpl().getLineIndex(y);
     }
 
     /**
@@ -1063,7 +1061,7 @@ public class StyledText extends Canvas {
      * @since 3.6
      */
     public int[] getLineTabStops(int index) {
-        return ((IStyledText) this.delegate).getLineTabStops(index);
+        return getImpl().getLineTabStops(index);
     }
 
     /**
@@ -1086,7 +1084,7 @@ public class StyledText extends Canvas {
      * @since 3.6
      */
     public int getLineWrapIndent(int index) {
-        return ((IStyledText) this.delegate).getLineWrapIndent(index);
+        return getImpl().getLineWrapIndent(index);
     }
 
     /**
@@ -1101,7 +1099,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public int getLeftMargin() {
-        return ((IStyledText) this.delegate).getLeftMargin();
+        return getImpl().getLeftMargin();
     }
 
     /**
@@ -1122,7 +1120,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public Point getLocationAtOffset(int offset) {
-        return ((IStyledText) this.delegate).getLocationAtOffset(offset);
+        return getImpl().getLocationAtOffset(offset);
     }
 
     /**
@@ -1140,7 +1138,7 @@ public class StyledText extends Canvas {
      * @since 3.110
      */
     public boolean getMouseNavigatorEnabled() {
-        return ((IStyledText) this.delegate).getMouseNavigatorEnabled();
+        return getImpl().getMouseNavigatorEnabled();
     }
 
     /**
@@ -1164,7 +1162,7 @@ public class StyledText extends Canvas {
      *  @since 2.0
      */
     public int getOffsetAtLine(int lineIndex) {
-        return ((IStyledText) this.delegate).getOffsetAtLine(lineIndex);
+        return getImpl().getOffsetAtLine(lineIndex);
     }
 
     /**
@@ -1194,7 +1192,7 @@ public class StyledText extends Canvas {
      */
     @Deprecated
     public int getOffsetAtLocation(Point point) {
-        return ((IStyledText) this.delegate).getOffsetAtLocation(point);
+        return getImpl().getOffsetAtLocation(point);
     }
 
     /**
@@ -1225,7 +1223,7 @@ public class StyledText extends Canvas {
      * @since 3.107
      */
     public int getOffsetAtPoint(Point point) {
-        return ((IStyledText) this.delegate).getOffsetAtPoint(point);
+        return getImpl().getOffsetAtPoint(point);
     }
 
     /**
@@ -1240,9 +1238,8 @@ public class StyledText extends Canvas {
      *
      * @since 2.1.2
      */
-    @Override
     public int getOrientation() {
-        return ((IStyledText) this.delegate).getOrientation();
+        return getImpl().getOrientation();
     }
 
     /**
@@ -1269,7 +1266,7 @@ public class StyledText extends Canvas {
      * @see #getStyleRanges(boolean)
      */
     public int[] getRanges() {
-        return ((IStyledText) this.delegate).getRanges();
+        return getImpl().getRanges();
     }
 
     /**
@@ -1302,7 +1299,7 @@ public class StyledText extends Canvas {
      * @see #getStyleRanges(int, int, boolean)
      */
     public int[] getRanges(int start, int length) {
-        return ((IStyledText) this.delegate).getRanges(start, length);
+        return getImpl().getRanges(start, length);
     }
 
     /**
@@ -1317,7 +1314,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public int getRightMargin() {
-        return ((IStyledText) this.delegate).getRightMargin();
+        return getImpl().getRightMargin();
     }
 
     /**
@@ -1345,7 +1342,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public Point getSelection() {
-        return ((IStyledText) this.delegate).getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -1369,7 +1366,7 @@ public class StyledText extends Canvas {
      * @see #getSelectionRanges
      */
     public Point getSelectionRange() {
-        return ((IStyledText) this.delegate).getSelectionRange();
+        return getImpl().getSelectionRange();
     }
 
     /**
@@ -1393,7 +1390,7 @@ public class StyledText extends Canvas {
      * @see #setSelectionRanges(int[])
      */
     public int[] getSelectionRanges() {
-        return ((IStyledText) this.delegate).getSelectionRanges();
+        return getImpl().getSelectionRanges();
     }
 
     /**
@@ -1408,7 +1405,7 @@ public class StyledText extends Canvas {
      * @since 2.1
      */
     public Color getSelectionBackground() {
-        return ((IStyledText) this.delegate).getSelectionBackground();
+        return getImpl().getSelectionBackground();
     }
 
     /**
@@ -1421,7 +1418,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public int getSelectionCount() {
-        return ((IStyledText) this.delegate).getSelectionCount();
+        return getImpl().getSelectionCount();
     }
 
     /**
@@ -1436,7 +1433,7 @@ public class StyledText extends Canvas {
      * @since 2.1
      */
     public Color getSelectionForeground() {
-        return ((IStyledText) this.delegate).getSelectionForeground();
+        return getImpl().getSelectionForeground();
     }
 
     /**
@@ -1449,7 +1446,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public String getSelectionText() {
-        return ((IStyledText) this.delegate).getSelectionText();
+        return getImpl().getSelectionText();
     }
 
     /**
@@ -1475,7 +1472,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public StyleRange getStyleRangeAtOffset(int offset) {
-        return ((IStyledText) this.delegate).getStyleRangeAtOffset(offset);
+        return getImpl().getStyleRangeAtOffset(offset);
     }
 
     /**
@@ -1502,7 +1499,7 @@ public class StyledText extends Canvas {
      * @see #getStyleRanges(boolean)
      */
     public StyleRange[] getStyleRanges() {
-        return ((IStyledText) this.delegate).getStyleRanges();
+        return getImpl().getStyleRanges();
     }
 
     /**
@@ -1534,7 +1531,7 @@ public class StyledText extends Canvas {
      * @see #setStyleRanges(int[], StyleRange[])
      */
     public StyleRange[] getStyleRanges(boolean includeRanges) {
-        return ((IStyledText) this.delegate).getStyleRanges(includeRanges);
+        return getImpl().getStyleRanges(includeRanges);
     }
 
     /**
@@ -1572,7 +1569,7 @@ public class StyledText extends Canvas {
      * @since 3.0
      */
     public StyleRange[] getStyleRanges(int start, int length) {
-        return ((IStyledText) this.delegate).getStyleRanges(start, length);
+        return getImpl().getStyleRanges(start, length);
     }
 
     /**
@@ -1613,7 +1610,7 @@ public class StyledText extends Canvas {
      * @see #setStyleRanges(int[], StyleRange[])
      */
     public StyleRange[] getStyleRanges(int start, int length, boolean includeRanges) {
-        return ((IStyledText) this.delegate).getStyleRanges(start, length, includeRanges);
+        return getImpl().getStyleRanges(start, length, includeRanges);
     }
 
     /**
@@ -1628,7 +1625,7 @@ public class StyledText extends Canvas {
      * @see #getTabStops()
      */
     public int getTabs() {
-        return ((IStyledText) this.delegate).getTabs();
+        return getImpl().getTabs();
     }
 
     /**
@@ -1643,7 +1640,7 @@ public class StyledText extends Canvas {
      * @since 3.6
      */
     public int[] getTabStops() {
-        return ((IStyledText) this.delegate).getTabStops();
+        return getImpl().getTabStops();
     }
 
     /**
@@ -1656,7 +1653,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public String getText() {
-        return ((IStyledText) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -1675,7 +1672,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public String getText(int start, int end) {
-        return ((IStyledText) this.delegate).getText(start, end);
+        return getImpl().getText(start, end);
     }
 
     /**
@@ -1694,7 +1691,7 @@ public class StyledText extends Canvas {
      * @since 3.1
      */
     public Rectangle getTextBounds(int start, int end) {
-        return ((IStyledText) this.delegate).getTextBounds(start, end);
+        return getImpl().getTextBounds(start, end);
     }
 
     /**
@@ -1712,7 +1709,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public String getTextRange(int start, int length) {
-        return ((IStyledText) this.delegate).getTextRange(start, length);
+        return getImpl().getTextRange(start, length);
     }
 
     /**
@@ -1726,7 +1723,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public int getTextLimit() {
-        return ((IStyledText) this.delegate).getTextLimit();
+        return getImpl().getTextLimit();
     }
 
     /**
@@ -1744,7 +1741,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public int getTopIndex() {
-        return ((IStyledText) this.delegate).getTopIndex();
+        return getImpl().getTopIndex();
     }
 
     /**
@@ -1759,7 +1756,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public int getTopMargin() {
-        return ((IStyledText) this.delegate).getTopMargin();
+        return getImpl().getTopMargin();
     }
 
     /**
@@ -1779,7 +1776,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public int getTopPixel() {
-        return ((IStyledText) this.delegate).getTopPixel();
+        return getImpl().getTopPixel();
     }
 
     /**
@@ -1789,7 +1786,7 @@ public class StyledText extends Canvas {
      * @since 2.0
      */
     public boolean getWordWrap() {
-        return ((IStyledText) this.delegate).getWordWrap();
+        return getImpl().getWordWrap();
     }
 
     /**
@@ -1807,7 +1804,7 @@ public class StyledText extends Canvas {
      * @since 3.6
      */
     public int getWrapIndent() {
-        return ((IStyledText) this.delegate).getWrapIndent();
+        return getImpl().getWrapIndent();
     }
 
     /**
@@ -1824,7 +1821,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void insert(String string) {
-        ((IStyledText) this.delegate).insert(string);
+        getImpl().insert(string);
     }
 
     /**
@@ -1833,7 +1830,7 @@ public class StyledText extends Canvas {
      * @param action one of the actions defined in ST.java
      */
     public void invokeAction(int action) {
-        ((IStyledText) this.delegate).invokeAction(action);
+        getImpl().invokeAction(action);
     }
 
     /**
@@ -1849,7 +1846,7 @@ public class StyledText extends Canvas {
      * @since 3.103
      */
     public boolean isTextSelected() {
-        return ((IStyledText) this.delegate).isTextSelected();
+        return getImpl().isTextSelected();
     }
 
     /**
@@ -1865,7 +1862,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void paste() {
-        ((IStyledText) this.delegate).paste();
+        getImpl().paste();
     }
 
     /**
@@ -1877,7 +1874,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void print() {
-        ((IStyledText) this.delegate).print();
+        getImpl().print();
     }
 
     /**
@@ -1900,7 +1897,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public Runnable print(Printer printer) {
-        return ((IStyledText) this.delegate).print(printer);
+        return getImpl().print(printer);
     }
 
     /**
@@ -1925,7 +1922,7 @@ public class StyledText extends Canvas {
      * @since 2.1
      */
     public Runnable print(Printer printer, StyledTextPrintOptions options) {
-        return ((IStyledText) this.delegate).print(printer, options);
+        return getImpl().print(printer, options);
     }
 
     /**
@@ -1946,9 +1943,8 @@ public class StyledText extends Canvas {
      *
      * @see Control#update()
      */
-    @Override
     public void redraw() {
-        ((IStyledText) this.delegate).redraw();
+        getImpl().redraw();
     }
 
     /**
@@ -1981,9 +1977,8 @@ public class StyledText extends Canvas {
      *
      * @see Control#update()
      */
-    @Override
     public void redraw(int x, int y, int width, int height, boolean all) {
-        ((IStyledText) this.delegate).redraw(x, y, width, height, all);
+        getImpl().redraw(x, y, width, height, all);
     }
 
     /**
@@ -2011,7 +2006,7 @@ public class StyledText extends Canvas {
      *  </ul>
      */
     public void redrawRange(int start, int length, boolean clearBackground) {
-        ((IStyledText) this.delegate).redrawRange(start, length, clearBackground);
+        getImpl().redrawRange(start, length, clearBackground);
     }
 
     /**
@@ -2030,7 +2025,7 @@ public class StyledText extends Canvas {
      * @since 2.0
      */
     public void removeBidiSegmentListener(BidiSegmentListener listener) {
-        ((IStyledText) this.delegate).removeBidiSegmentListener(listener);
+        getImpl().removeBidiSegmentListener(listener);
     }
 
     /**
@@ -2049,7 +2044,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public void removeCaretListener(CaretListener listener) {
-        ((IStyledText) this.delegate).removeCaretListener(listener);
+        getImpl().removeCaretListener(listener);
     }
 
     /**
@@ -2066,7 +2061,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void removeExtendedModifyListener(ExtendedModifyListener extendedModifyListener) {
-        ((IStyledText) this.delegate).removeExtendedModifyListener(extendedModifyListener);
+        getImpl().removeExtendedModifyListener(extendedModifyListener);
     }
 
     /**
@@ -2083,7 +2078,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void removeLineBackgroundListener(LineBackgroundListener listener) {
-        ((IStyledText) this.delegate).removeLineBackgroundListener(listener);
+        getImpl().removeLineBackgroundListener(listener);
     }
 
     /**
@@ -2100,7 +2095,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void removeLineStyleListener(LineStyleListener listener) {
-        ((IStyledText) this.delegate).removeLineStyleListener(listener);
+        getImpl().removeLineStyleListener(listener);
     }
 
     /**
@@ -2117,7 +2112,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void removeModifyListener(ModifyListener modifyListener) {
-        ((IStyledText) this.delegate).removeModifyListener(modifyListener);
+        getImpl().removeModifyListener(modifyListener);
     }
 
     /**
@@ -2135,7 +2130,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public void removePaintObjectListener(PaintObjectListener listener) {
-        ((IStyledText) this.delegate).removePaintObjectListener(listener);
+        getImpl().removePaintObjectListener(listener);
     }
 
     /**
@@ -2156,7 +2151,7 @@ public class StyledText extends Canvas {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((IStyledText) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -2173,7 +2168,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void removeVerifyListener(VerifyListener verifyListener) {
-        ((IStyledText) this.delegate).removeVerifyListener(verifyListener);
+        getImpl().removeVerifyListener(verifyListener);
     }
 
     /**
@@ -2190,7 +2185,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void removeVerifyKeyListener(VerifyKeyListener listener) {
-        ((IStyledText) this.delegate).removeVerifyKeyListener(listener);
+        getImpl().removeVerifyKeyListener(listener);
     }
 
     /**
@@ -2213,7 +2208,7 @@ public class StyledText extends Canvas {
      * @since 3.3
      */
     public void removeWordMovementListener(MovementListener listener) {
-        ((IStyledText) this.delegate).removeWordMovementListener(listener);
+        getImpl().removeWordMovementListener(listener);
     }
 
     /**
@@ -2251,7 +2246,7 @@ public class StyledText extends Canvas {
      * @see #setStyleRanges(int, int, int[], StyleRange[])
      */
     public void replaceStyleRanges(int start, int length, StyleRange[] ranges) {
-        ((IStyledText) this.delegate).replaceStyleRanges(start, length, ranges);
+        getImpl().replaceStyleRanges(start, length, ranges);
     }
 
     /**
@@ -2288,12 +2283,11 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void replaceTextRange(int start, int length, String text) {
-        ((IStyledText) this.delegate).replaceTextRange(start, length, text);
+        getImpl().replaceTextRange(start, length, text);
     }
 
-    @Override
     public void scroll(int destX, int destY, int x, int y, int width, int height, boolean all) {
-        ((IStyledText) this.delegate).scroll(destX, destY, x, y, width, height, all);
+        getImpl().scroll(destX, destY, x, y, width, height, all);
     }
 
     /**
@@ -2305,7 +2299,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void selectAll() {
-        ((IStyledText) this.delegate).selectAll();
+        getImpl().selectAll();
     }
 
     /**
@@ -2328,7 +2322,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public void setAlignment(int alignment) {
-        ((IStyledText) this.delegate).setAlignment(alignment);
+        getImpl().setAlignment(alignment);
     }
 
     /**
@@ -2348,15 +2342,14 @@ public class StyledText extends Canvas {
      * @since 3.8
      */
     public void setAlwaysShowScrollBars(boolean show) {
-        ((IStyledText) this.delegate).setAlwaysShowScrollBars(show);
+        getImpl().setAlwaysShowScrollBars(show);
     }
 
     /**
      * @see Control#setBackground(Color)
      */
-    @Override
     public void setBackground(Color color) {
-        ((IStyledText) this.delegate).setBackground(color);
+        getImpl().setBackground(color);
     }
 
     /**
@@ -2367,7 +2360,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public void setBlockSelection(boolean blockSelection) {
-        ((IStyledText) this.delegate).setBlockSelection(blockSelection);
+        getImpl().setBlockSelection(blockSelection);
     }
 
     /**
@@ -2388,7 +2381,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public void setBlockSelectionBounds(Rectangle rect) {
-        ((IStyledText) this.delegate).setBlockSelectionBounds(rect);
+        getImpl().setBlockSelectionBounds(rect);
     }
 
     /**
@@ -2408,7 +2401,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public void setBlockSelectionBounds(int x, int y, int width, int height) {
-        ((IStyledText) this.delegate).setBlockSelectionBounds(x, y, width, height);
+        getImpl().setBlockSelectionBounds(x, y, width, height);
     }
 
     /**
@@ -2421,9 +2414,8 @@ public class StyledText extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setCaret(Caret caret) {
-        ((IStyledText) this.delegate).setCaret((ICaret) (caret != null ? caret.delegate : null));
+        getImpl().setCaret(caret);
     }
 
     /**
@@ -2441,7 +2433,7 @@ public class StyledText extends Canvas {
      */
     @Deprecated
     public void setBidiColoring(boolean mode) {
-        ((IStyledText) this.delegate).setBidiColoring(mode);
+        getImpl().setBidiColoring(mode);
     }
 
     /**
@@ -2456,7 +2448,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public void setBottomMargin(int bottomMargin) {
-        ((IStyledText) this.delegate).setBottomMargin(bottomMargin);
+        getImpl().setBottomMargin(bottomMargin);
     }
 
     /**
@@ -2473,7 +2465,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setCaretOffset(int offset) {
-        ((IStyledText) this.delegate).setCaretOffset(offset);
+        getImpl().setCaretOffset(offset);
     }
 
     /**
@@ -2489,7 +2481,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setContent(StyledTextContent newContent) {
-        ((IStyledText) this.delegate).setContent(newContent);
+        getImpl().setContent(newContent);
     }
 
     /**
@@ -2499,9 +2491,8 @@ public class StyledText extends Canvas {
      *
      * @see Control#setCursor(Cursor)
      */
-    @Override
     public void setCursor(Cursor cursor) {
-        ((IStyledText) this.delegate).setCursor(cursor);
+        getImpl().setCursor(cursor);
     }
 
     /**
@@ -2515,12 +2506,11 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setDoubleClickEnabled(boolean enable) {
-        ((IStyledText) this.delegate).setDoubleClickEnabled(enable);
+        getImpl().setDoubleClickEnabled(enable);
     }
 
-    @Override
     public void setDragDetect(boolean dragDetect) {
-        ((IStyledText) this.delegate).setDragDetect(dragDetect);
+        getImpl().setDragDetect(dragDetect);
     }
 
     /**
@@ -2534,17 +2524,15 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setEditable(boolean editable) {
-        ((IStyledText) this.delegate).setEditable(editable);
+        getImpl().setEditable(editable);
     }
 
-    @Override
     public void setEnabled(boolean enabled) {
-        ((IStyledText) this.delegate).setEnabled(enabled);
+        getImpl().setEnabled(enabled);
     }
 
-    @Override
     public boolean setFocus() {
-        return ((IStyledText) this.delegate).setFocus();
+        return getImpl().setFocus();
     }
 
     /**
@@ -2553,7 +2541,7 @@ public class StyledText extends Canvas {
      * @since 3.125
      */
     public void setFixedLineMetrics(FontMetrics metrics) {
-        ((IStyledText) this.delegate).setFixedLineMetrics(metrics);
+        getImpl().setFixedLineMetrics(metrics);
     }
 
     /**
@@ -2569,14 +2557,12 @@ public class StyledText extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setFont(Font font) {
-        ((IStyledText) this.delegate).setFont(font);
+        getImpl().setFont(font);
     }
 
-    @Override
     public void setForeground(Color color) {
-        ((IStyledText) this.delegate).setForeground(color);
+        getImpl().setForeground(color);
     }
 
     /**
@@ -2596,7 +2582,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setHorizontalIndex(int offset) {
-        ((IStyledText) this.delegate).setHorizontalIndex(offset);
+        getImpl().setHorizontalIndex(offset);
     }
 
     /**
@@ -2616,7 +2602,7 @@ public class StyledText extends Canvas {
      * @since 2.0
      */
     public void setHorizontalPixel(int pixel) {
-        ((IStyledText) this.delegate).setHorizontalPixel(pixel);
+        getImpl().setHorizontalPixel(pixel);
     }
 
     /**
@@ -2638,7 +2624,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public void setIndent(int indent) {
-        ((IStyledText) this.delegate).setIndent(indent);
+        getImpl().setIndent(indent);
     }
 
     /**
@@ -2656,7 +2642,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public void setJustify(boolean justify) {
-        ((IStyledText) this.delegate).setJustify(justify);
+        getImpl().setJustify(justify);
     }
 
     /**
@@ -2679,7 +2665,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setKeyBinding(int key, int action) {
-        ((IStyledText) this.delegate).setKeyBinding(key, action);
+        getImpl().setKeyBinding(key, action);
     }
 
     /**
@@ -2694,7 +2680,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public void setLeftMargin(int leftMargin) {
-        ((IStyledText) this.delegate).setLeftMargin(leftMargin);
+        getImpl().setLeftMargin(leftMargin);
     }
 
     /**
@@ -2734,7 +2720,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public void setLineAlignment(int startLine, int lineCount, int alignment) {
-        ((IStyledText) this.delegate).setLineAlignment(startLine, lineCount, alignment);
+        getImpl().setLineAlignment(startLine, lineCount, alignment);
     }
 
     /**
@@ -2773,7 +2759,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setLineBackground(int startLine, int lineCount, Color background) {
-        ((IStyledText) this.delegate).setLineBackground(startLine, lineCount, background);
+        getImpl().setLineBackground(startLine, lineCount, background);
     }
 
     /**
@@ -2809,7 +2795,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public void setLineBullet(int startLine, int lineCount, Bullet bullet) {
-        ((IStyledText) this.delegate).setLineBullet(startLine, lineCount, bullet);
+        getImpl().setLineBullet(startLine, lineCount, bullet);
     }
 
     /**
@@ -2846,7 +2832,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public void setLineIndent(int startLine, int lineCount, int indent) {
-        ((IStyledText) this.delegate).setLineIndent(startLine, lineCount, indent);
+        getImpl().setLineIndent(startLine, lineCount, indent);
     }
 
     /**
@@ -2884,7 +2870,7 @@ public class StyledText extends Canvas {
      * @since 3.109
      */
     public void setLineVerticalIndent(int lineIndex, int verticalLineIndent) {
-        ((IStyledText) this.delegate).setLineVerticalIndent(lineIndex, verticalLineIndent);
+        getImpl().setLineVerticalIndent(lineIndex, verticalLineIndent);
     }
 
     /**
@@ -2921,7 +2907,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public void setLineJustify(int startLine, int lineCount, boolean justify) {
-        ((IStyledText) this.delegate).setLineJustify(startLine, lineCount, justify);
+        getImpl().setLineJustify(startLine, lineCount, justify);
     }
 
     /**
@@ -2938,7 +2924,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public void setLineSpacing(int lineSpacing) {
-        ((IStyledText) this.delegate).setLineSpacing(lineSpacing);
+        getImpl().setLineSpacing(lineSpacing);
     }
 
     /**
@@ -2954,7 +2940,7 @@ public class StyledText extends Canvas {
      * @since 3.107
      */
     public void setLineSpacingProvider(StyledTextLineSpacingProvider lineSpacingProvider) {
-        ((IStyledText) this.delegate).setLineSpacingProvider(lineSpacingProvider);
+        getImpl().setLineSpacingProvider(lineSpacingProvider);
     }
 
     /**
@@ -2991,7 +2977,7 @@ public class StyledText extends Canvas {
      * @since 3.6
      */
     public void setLineTabStops(int startLine, int lineCount, int[] tabStops) {
-        ((IStyledText) this.delegate).setLineTabStops(startLine, lineCount, tabStops);
+        getImpl().setLineTabStops(startLine, lineCount, tabStops);
     }
 
     /**
@@ -3028,7 +3014,7 @@ public class StyledText extends Canvas {
      * @since 3.6
      */
     public void setLineWrapIndent(int startLine, int lineCount, int wrapIndent) {
-        ((IStyledText) this.delegate).setLineWrapIndent(startLine, lineCount, wrapIndent);
+        getImpl().setLineWrapIndent(startLine, lineCount, wrapIndent);
     }
 
     /**
@@ -3046,7 +3032,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public void setMarginColor(Color color) {
-        ((IStyledText) this.delegate).setMarginColor(color);
+        getImpl().setMarginColor(color);
     }
 
     /**
@@ -3064,7 +3050,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public void setMargins(int leftMargin, int topMargin, int rightMargin, int bottomMargin) {
-        ((IStyledText) this.delegate).setMargins(leftMargin, topMargin, rightMargin, bottomMargin);
+        getImpl().setMargins(leftMargin, topMargin, rightMargin, bottomMargin);
     }
 
     /**
@@ -3079,7 +3065,7 @@ public class StyledText extends Canvas {
      * @since 3.110
      */
     public void setMouseNavigatorEnabled(boolean enabled) {
-        ((IStyledText) this.delegate).setMouseNavigatorEnabled(enabled);
+        getImpl().setMouseNavigatorEnabled(enabled);
     }
 
     /**
@@ -3095,9 +3081,8 @@ public class StyledText extends Canvas {
      *
      * @since 2.1.2
      */
-    @Override
     public void setOrientation(int orientation) {
-        ((IStyledText) this.delegate).setOrientation(orientation);
+        getImpl().setOrientation(orientation);
     }
 
     /**
@@ -3112,7 +3097,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public void setRightMargin(int rightMargin) {
-        ((IStyledText) this.delegate).setRightMargin(rightMargin);
+        getImpl().setRightMargin(rightMargin);
     }
 
     /**
@@ -3130,7 +3115,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setSelection(int start) {
-        ((IStyledText) this.delegate).setSelection(start);
+        getImpl().setSelection(start);
     }
 
     /**
@@ -3155,7 +3140,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setSelection(Point point) {
-        ((IStyledText) this.delegate).setSelection(point);
+        getImpl().setSelection(point);
     }
 
     /**
@@ -3175,7 +3160,7 @@ public class StyledText extends Canvas {
      * @since 2.1
      */
     public void setSelectionBackground(Color color) {
-        ((IStyledText) this.delegate).setSelectionBackground(color);
+        getImpl().setSelectionBackground(color);
     }
 
     /**
@@ -3198,7 +3183,7 @@ public class StyledText extends Canvas {
      * @since 2.1
      */
     public void setSelectionForeground(Color color) {
-        ((IStyledText) this.delegate).setSelectionForeground(color);
+        getImpl().setSelectionForeground(color);
     }
 
     /**
@@ -3223,7 +3208,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setSelection(int start, int end) {
-        ((IStyledText) this.delegate).setSelection(start, end);
+        getImpl().setSelection(start, end);
     }
 
     /**
@@ -3246,7 +3231,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setSelectionRange(int start, int length) {
-        ((IStyledText) this.delegate).setSelectionRange(start, length);
+        getImpl().setSelectionRange(start, length);
     }
 
     /**
@@ -3270,7 +3255,7 @@ public class StyledText extends Canvas {
      * @since 3.117
      */
     public void setSelectionRanges(int[] ranges) {
-        ((IStyledText) this.delegate).setSelectionRanges(ranges);
+        getImpl().setSelectionRanges(ranges);
     }
 
     /**
@@ -3297,7 +3282,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setStyleRange(StyleRange range) {
-        ((IStyledText) this.delegate).setStyleRange(range);
+        getImpl().setStyleRange(range);
     }
 
     /**
@@ -3336,7 +3321,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public void setStyleRanges(int start, int length, int[] ranges, StyleRange[] styles) {
-        ((IStyledText) this.delegate).setStyleRanges(start, length, ranges, styles);
+        getImpl().setStyleRanges(start, length, ranges, styles);
     }
 
     /**
@@ -3373,7 +3358,7 @@ public class StyledText extends Canvas {
      * @since 3.2
      */
     public void setStyleRanges(int[] ranges, StyleRange[] styles) {
-        ((IStyledText) this.delegate).setStyleRanges(ranges, styles);
+        getImpl().setStyleRanges(ranges, styles);
     }
 
     /**
@@ -3405,7 +3390,7 @@ public class StyledText extends Canvas {
      * @see #setStyleRanges(int[], StyleRange[])
      */
     public void setStyleRanges(StyleRange[] ranges) {
-        ((IStyledText) this.delegate).setStyleRanges(ranges);
+        getImpl().setStyleRanges(ranges);
     }
 
     /**
@@ -3420,7 +3405,7 @@ public class StyledText extends Canvas {
      * @see #setTabStops(int[])
      */
     public void setTabs(int tabs) {
-        ((IStyledText) this.delegate).setTabs(tabs);
+        getImpl().setTabs(tabs);
     }
 
     /**
@@ -3443,7 +3428,7 @@ public class StyledText extends Canvas {
      * @since 3.6
      */
     public void setTabStops(int[] tabs) {
-        ((IStyledText) this.delegate).setTabStops(tabs);
+        getImpl().setTabStops(tabs);
     }
 
     /**
@@ -3469,7 +3454,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setText(String text) {
-        ((IStyledText) this.delegate).setText(text);
+        getImpl().setText(text);
     }
 
     /**
@@ -3494,9 +3479,8 @@ public class StyledText extends Canvas {
      *
      * @see SWT#FLIP_TEXT_DIRECTION
      */
-    @Override
     public void setTextDirection(int textDirection) {
-        ((IStyledText) this.delegate).setTextDirection(textDirection);
+        getImpl().setTextDirection(textDirection);
     }
 
     /**
@@ -3516,7 +3500,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setTextLimit(int limit) {
-        ((IStyledText) this.delegate).setTextLimit(limit);
+        getImpl().setTextLimit(limit);
     }
 
     /**
@@ -3538,7 +3522,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setTopIndex(int topIndex) {
-        ((IStyledText) this.delegate).setTopIndex(topIndex);
+        getImpl().setTopIndex(topIndex);
     }
 
     /**
@@ -3553,7 +3537,7 @@ public class StyledText extends Canvas {
      * @since 3.5
      */
     public void setTopMargin(int topMargin) {
-        ((IStyledText) this.delegate).setTopMargin(topMargin);
+        getImpl().setTopMargin(topMargin);
     }
 
     /**
@@ -3575,7 +3559,7 @@ public class StyledText extends Canvas {
      * @since 2.0
      */
     public void setTopPixel(int pixel) {
-        ((IStyledText) this.delegate).setTopPixel(pixel);
+        getImpl().setTopPixel(pixel);
     }
 
     /**
@@ -3588,7 +3572,7 @@ public class StyledText extends Canvas {
      * @since 2.0
      */
     public void setWordWrap(boolean wrap) {
-        ((IStyledText) this.delegate).setWordWrap(wrap);
+        getImpl().setWordWrap(wrap);
     }
 
     /**
@@ -3611,7 +3595,7 @@ public class StyledText extends Canvas {
      * @since 3.6
      */
     public void setWrapIndent(int wrapIndent) {
-        ((IStyledText) this.delegate).setWrapIndent(wrapIndent);
+        getImpl().setWrapIndent(wrapIndent);
     }
 
     /**
@@ -3628,7 +3612,7 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void showSelection() {
-        ((IStyledText) this.delegate).showSelection();
+        getImpl().showSelection();
     }
 
     /**
@@ -3642,23 +3626,18 @@ public class StyledText extends Canvas {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static void updateAndRefreshCarets(StyledText styledText, Consumer<Caret> caretUpdater) {
-        SWTStyledText.updateAndRefreshCarets((SWTStyledText) styledText.delegate, caret -> caretUpdater.accept(Caret.getInstance(caret)));
+        SwtStyledText.updateAndRefreshCarets(styledText, caretUpdater);
     }
 
-    protected StyledText(IStyledText delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected StyledText(IStyledText impl) {
+        super(impl);
     }
 
-    public static StyledText getInstance(IStyledText delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        StyledText ref = (StyledText) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new StyledText(delegate);
-        }
-        return ref;
+    static StyledText createApi(IStyledText impl) {
+        return new StyledText(impl);
+    }
+
+    public IStyledText getImpl() {
+        return (IStyledText) super.getImpl();
     }
 }

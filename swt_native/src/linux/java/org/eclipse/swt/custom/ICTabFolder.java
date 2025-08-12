@@ -6,7 +6,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface ICTabFolder extends IComposite {
+public interface ICTabFolder extends IComposite, ImplCTabFolder {
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -112,7 +112,7 @@ public interface ICTabFolder extends IComposite {
      *    <li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
      * </ul>
      */
-    ICTabItem getItem(int index);
+    CTabItem getItem(int index);
 
     /**
      *  Gets the item at a point in the widget.
@@ -125,7 +125,7 @@ public interface ICTabFolder extends IComposite {
      * 		<li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
      * 	</ul>
      */
-    ICTabItem getItem(Point pt);
+    CTabItem getItem(Point pt);
 
     /**
      *  Return the number of tabs in the folder.
@@ -149,7 +149,7 @@ public interface ICTabFolder extends IComposite {
      * 		<li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
      * 	</ul>
      */
-    ICTabItem[] getItems();
+    CTabItem[] getItems();
 
     /**
      * Returns <code>true</code> if the receiver is minimized.
@@ -277,7 +277,7 @@ public interface ICTabFolder extends IComposite {
      * 		<li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
      * 	</ul>
      */
-    ICTabItem getSelection();
+    CTabItem getSelection();
 
     /**
      * Returns the receiver's selection background color.
@@ -379,7 +379,7 @@ public interface ICTabFolder extends IComposite {
      *
      *  @since 2.1
      */
-    IControl getTopRight();
+    Control getTopRight();
 
     /**
      *  Returns the alignment of the top right control.
@@ -443,7 +443,7 @@ public interface ICTabFolder extends IComposite {
      *    <li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
      * </ul>
      */
-    int indexOf(ICTabItem item);
+    int indexOf(CTabItem item);
 
     /**
      * Removes the listener.
@@ -600,7 +600,7 @@ public interface ICTabFolder extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setInsertMark(ICTabItem item, boolean after);
+    void setInsertMark(CTabItem item, boolean after);
 
     /**
      * Display an insert marker before or after the specified tab item.
@@ -773,7 +773,7 @@ public interface ICTabFolder extends IComposite {
      *    <li>ERROR_WIDGET_DISPOSED when the widget has been disposed</li>
      * </ul>
      */
-    void setSelection(ICTabItem item);
+    void setSelection(CTabItem item);
 
     /**
      * Set the selection to the tab at the specified index.
@@ -979,7 +979,7 @@ public interface ICTabFolder extends IComposite {
      *
      * @since 2.1
      */
-    void setTopRight(IControl control);
+    void setTopRight(Control control);
 
     /**
      * Set the control that appears in the top right corner of the tab folder.
@@ -1007,7 +1007,7 @@ public interface ICTabFolder extends IComposite {
      *
      * @since 3.0
      */
-    void setTopRight(IControl control, int alignment);
+    void setTopRight(Control control, int alignment);
 
     /**
      * Specify whether the close button appears
@@ -1072,7 +1072,7 @@ public interface ICTabFolder extends IComposite {
      *
      * @since 2.0
      */
-    void showItem(ICTabItem item);
+    void showItem(CTabItem item);
 
     /**
      * Shows the selection.  If the selection is already showing in the receiver,
@@ -1124,4 +1124,6 @@ public interface ICTabFolder extends IComposite {
      * @since 3.106
      */
     boolean getHighlightEnabled();
+
+    CTabFolder getApi();
 }

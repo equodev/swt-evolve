@@ -35,19 +35,9 @@ import org.eclipse.swt.internal.gtk.*;
  */
 public class URLTransfer extends ByteArrayTransfer {
 
-    static URLTransfer _instance = new URLTransfer();
-
-    //$NON-NLS-1$
-    private static final String TEXT_UNICODE = "text/unicode";
-
-    //$NON-NLS-1$
-    private static final String TEXT_XMOZURL = "text/x-moz-url";
-
-    private static final int TEXT_UNICODE_ID = registerType(TEXT_UNICODE);
-
-    private static final int TEXT_XMOZURL_ID = registerType(TEXT_XMOZURL);
-
-    private URLTransfer() {
+    URLTransfer() {
+        this((IURLTransfer) null);
+        setImpl(new SwtURLTransfer(this));
     }
 
     /**
@@ -56,7 +46,7 @@ public class URLTransfer extends ByteArrayTransfer {
      * @return the singleton instance of the URLTransfer class
      */
     public static URLTransfer getInstance() {
-        return _instance;
+        return SwtURLTransfer.getInstance();
     }
 
     /**
@@ -69,25 +59,8 @@ public class URLTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#nativeToJava
      */
-    @Override
     public void javaToNative(Object object, TransferData transferData) {
-        transferData.result = 0;
-        if (!checkURL(object) || !isSupportedType(transferData)) {
-            DND.error(DND.ERROR_INVALID_DATA);
-        }
-        String string = (String) object;
-        int charCount = string.length();
-        char[] chars = new char[charCount + 1];
-        string.getChars(0, charCount, chars, 0);
-        int byteCount = chars.length * 2;
-        long pValue = OS.g_malloc(byteCount);
-        if (pValue == 0)
-            return;
-        C.memmove(pValue, chars, byteCount);
-        transferData.length = byteCount;
-        transferData.format = 8;
-        transferData.pValue = pValue;
-        transferData.result = 1;
+        getImpl().javaToNative(object, transferData);
     }
 
     /**
@@ -100,37 +73,31 @@ public class URLTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#javaToNative
      */
-    @Override
     public Object nativeToJava(TransferData transferData) {
-        if (!isSupportedType(transferData) || transferData.pValue == 0)
-            return null;
-        /* Ensure byteCount is a multiple of 2 bytes */
-        int size = (transferData.format * transferData.length / 8) / 2 * 2;
-        if (size <= 0)
-            return null;
-        char[] chars = new char[size / 2];
-        C.memmove(chars, transferData.pValue, size);
-        String string = new String(chars);
-        int end = string.indexOf('\0');
-        return (end == -1) ? string : string.substring(0, end);
+        return getImpl().nativeToJava(transferData);
     }
 
-    @Override
     protected int[] getTypeIds() {
-        return new int[] { TEXT_XMOZURL_ID, TEXT_UNICODE_ID };
+        return getImpl().getTypeIds();
     }
 
-    @Override
     protected String[] getTypeNames() {
-        return new String[] { TEXT_XMOZURL, TEXT_UNICODE };
+        return getImpl().getTypeNames();
     }
 
-    boolean checkURL(Object object) {
-        return object != null && (object instanceof String) && ((String) object).length() > 0;
-    }
-
-    @Override
     protected boolean validate(Object object) {
-        return checkURL(object);
+        return getImpl().validate(object);
+    }
+
+    protected URLTransfer(IURLTransfer impl) {
+        super(impl);
+    }
+
+    static URLTransfer createApi(IURLTransfer impl) {
+        return new URLTransfer(impl);
+    }
+
+    public IURLTransfer getImpl() {
+        return (IURLTransfer) super.getImpl();
     }
 }

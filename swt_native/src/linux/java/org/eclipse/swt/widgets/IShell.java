@@ -5,9 +5,6 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface IShell extends IDecorations {
 
@@ -64,7 +61,7 @@ public interface IShell extends IDecorations {
      *
      * @since 3.7
      */
-    IToolBar getToolBar();
+    ToolBar getToolBar();
 
     boolean isEnabled();
 
@@ -199,7 +196,7 @@ public interface IShell extends IDecorations {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IShell[] getShells();
+    Shell[] getShells();
 
     /**
      * Moves the receiver to the top of the drawing order for
@@ -335,7 +332,7 @@ public interface IShell extends IDecorations {
 
     void setMaximized(boolean maximized);
 
-    void setMenuBar(IMenu menu);
+    void setMenuBar(Menu menu);
 
     void setMinimized(boolean minimized);
 
@@ -489,4 +486,6 @@ public interface IShell extends IDecorations {
      * @see Shell#setActive
      */
     void forceActive();
+
+    Shell getApi();
 }

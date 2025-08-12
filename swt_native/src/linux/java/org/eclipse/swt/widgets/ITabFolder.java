@@ -4,11 +4,10 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface ITabFolder extends IComposite {
+
+    void checkSubclass();
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -51,7 +50,7 @@ public interface ITabFolder extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITabItem getItem(int index);
+    TabItem getItem(int index);
 
     /**
      * Returns the tab item at the given point in the receiver
@@ -71,7 +70,7 @@ public interface ITabFolder extends IComposite {
      *
      * @since 3.4
      */
-    ITabItem getItem(Point point);
+    TabItem getItem(Point point);
 
     /**
      * Returns the number of items contained in the receiver.
@@ -101,7 +100,7 @@ public interface ITabFolder extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITabItem[] getItems();
+    TabItem[] getItems();
 
     /**
      * Returns an array of <code>TabItem</code>s that are currently
@@ -119,7 +118,7 @@ public interface ITabFolder extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITabItem[] getSelection();
+    TabItem[] getSelection();
 
     /**
      * Returns the zero-relative index of the item which is currently
@@ -151,7 +150,7 @@ public interface ITabFolder extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int indexOf(ITabItem item);
+    int indexOf(TabItem item);
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -204,7 +203,7 @@ public interface ITabFolder extends IComposite {
      *
      * @since 3.2
      */
-    void setSelection(ITabItem item);
+    void setSelection(TabItem item);
 
     /**
      * Sets the receiver's selection to be the given array of items.
@@ -221,5 +220,7 @@ public interface ITabFolder extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSelection(ITabItem[] items);
+    void setSelection(TabItem[] items);
+
+    TabFolder getApi();
 }

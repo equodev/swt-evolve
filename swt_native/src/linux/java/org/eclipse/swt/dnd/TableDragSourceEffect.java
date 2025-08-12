@@ -38,8 +38,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class TableDragSourceEffect extends DragSourceEffect {
 
-    Image dragSourceImage = null;
-
     /**
      * Creates a new <code>TableDragSourceEffect</code> to handle drag effect
      * from the specified <code>Table</code>.
@@ -47,7 +45,8 @@ public class TableDragSourceEffect extends DragSourceEffect {
      * @param table the <code>Table</code> that the user clicks on to initiate the drag
      */
     public TableDragSourceEffect(Table table) {
-        super(table);
+        this((ITableDragSourceEffect) null);
+        setImpl(new SwtTableDragSourceEffect(table, this));
     }
 
     /**
@@ -59,11 +58,8 @@ public class TableDragSourceEffect extends DragSourceEffect {
      *
      * @param event the information associated with the drag finished event
      */
-    @Override
     public void dragFinished(DragSourceEvent event) {
-        if (dragSourceImage != null)
-            dragSourceImage.dispose();
-        dragSourceImage = null;
+        getImpl().dragFinished(event);
     }
 
     /**
@@ -77,15 +73,19 @@ public class TableDragSourceEffect extends DragSourceEffect {
      *
      * @param event the information associated with the drag start event
      */
-    @Override
     public void dragStart(DragSourceEvent event) {
-        event.image = getDragSourceImage(event);
+        getImpl().dragStart(event);
     }
 
-    Image getDragSourceImage(DragSourceEvent event) {
-        if (dragSourceImage != null)
-            dragSourceImage.dispose();
-        dragSourceImage = TreeTableCommon.getDragSourceImage((SWTControl) control.delegate);
-        return dragSourceImage;
+    protected TableDragSourceEffect(ITableDragSourceEffect impl) {
+        super(impl);
+    }
+
+    static TableDragSourceEffect createApi(ITableDragSourceEffect impl) {
+        return new TableDragSourceEffect(impl);
+    }
+
+    public ITableDragSourceEffect getImpl() {
+        return (ITableDragSourceEffect) super.getImpl();
     }
 }

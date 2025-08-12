@@ -4,10 +4,6 @@ import java.lang.reflect.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.dnd.gtk.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 import org.eclipse.swt.widgets.*;
 
 public interface IDragSource extends IWidget {
@@ -44,13 +40,15 @@ public interface IDragSource extends IWidget {
      */
     void addDragListener(DragSourceListener listener);
 
+    void checkSubclass();
+
     /**
      * Returns the Control which is registered for this DragSource.  This is the control that the
      * user clicks in to initiate dragging.
      *
      * @return the Control which is registered for this DragSource
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Returns an array of listeners who will be notified when a drag and drop
@@ -130,4 +128,6 @@ public interface IDragSource extends IWidget {
      * dragged from this source
      */
     void setTransfer(Transfer... transferAgents);
+
+    DragSource getApi();
 }

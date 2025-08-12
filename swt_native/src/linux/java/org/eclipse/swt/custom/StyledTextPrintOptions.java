@@ -113,4 +113,29 @@ public class StyledTextPrintOptions {
      * @since 3.4
      */
     public String[] lineLabels = null;
+
+    public StyledTextPrintOptions() {
+        this((IStyledTextPrintOptions) null);
+        setImpl(new SwtStyledTextPrintOptions(this));
+    }
+
+    protected IStyledTextPrintOptions impl;
+
+    protected StyledTextPrintOptions(IStyledTextPrintOptions impl) {
+        if (impl != null)
+            impl.setApi(this);
+    }
+
+    static StyledTextPrintOptions createApi(IStyledTextPrintOptions impl) {
+        return new StyledTextPrintOptions(impl);
+    }
+
+    public IStyledTextPrintOptions getImpl() {
+        return impl;
+    }
+
+    protected StyledTextPrintOptions setImpl(IStyledTextPrintOptions impl) {
+        this.impl = impl;
+        return this;
+    }
 }

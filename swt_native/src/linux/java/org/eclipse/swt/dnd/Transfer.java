@@ -134,10 +134,7 @@ public abstract class Transfer {
      * @return the unique identifier associated with this data type
      */
     public static int registerType(String formatName) {
-        if (formatName == null)
-            return GDK.GDK_NONE;
-        byte[] buffer = Converter.wcsToMbcs(formatName, true);
-        return (int) GDK.gdk_atom_intern(buffer, false);
+        return SwtTransfer.registerType(formatName);
     }
 
     /**
@@ -150,6 +147,52 @@ public abstract class Transfer {
      * @since 3.1
      */
     protected boolean validate(Object object) {
-        return true;
+        return getImpl().validate(object);
+    }
+
+    public Transfer() {
+    }
+
+    protected ITransfer impl;
+
+    protected Transfer(ITransfer impl) {
+        if (impl != null)
+            impl.setApi(this);
+    }
+
+    public ITransfer getImpl() {
+        if (impl == null)
+            impl = new SwtTransfer(this) {
+
+                public TransferData[] getSupportedTypes() {
+                    return Transfer.this.getSupportedTypes();
+                }
+
+                public int[] getTypeIds() {
+                    return Transfer.this.getTypeIds();
+                }
+
+                public String[] getTypeNames() {
+                    return Transfer.this.getTypeNames();
+                }
+
+                public boolean isSupportedType(TransferData transferData) {
+                    return Transfer.this.isSupportedType(transferData);
+                }
+
+                public void javaToNative(Object object, TransferData transferData) {
+                    Transfer.this.javaToNative(object, transferData);
+                }
+
+                public Object nativeToJava(TransferData transferData) {
+                    return Transfer.this.nativeToJava(transferData);
+                }
+            };
+        return impl;
+    }
+
+    protected Transfer setImpl(ITransfer impl) {
+        this.impl = impl;
+        return this;
     }
 }

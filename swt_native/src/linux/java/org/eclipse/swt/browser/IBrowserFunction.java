@@ -57,7 +57,7 @@ public interface IBrowserFunction {
      *    <li>ERROR_FUNCTION_DISPOSED when the BrowserFunction has been disposed</li>
      * </ul>
      */
-    IBrowser getBrowser();
+    Browser getBrowser();
 
     /**
      * Returns the name that javascript can use to invoke this BrowserFunction.
@@ -86,4 +86,8 @@ public interface IBrowserFunction {
      * and <code>false</code> otherwise
      */
     boolean isDisposed();
+
+    BrowserFunction getApi();
+
+    void setApi(BrowserFunction api);
 }

@@ -38,6 +38,8 @@ public interface ICoolItem extends IItem {
      */
     void addSelectionListener(SelectionListener listener);
 
+    void checkSubclass();
+
     /**
      * Returns the preferred size of the receiver.
      * <p>
@@ -92,7 +94,7 @@ public interface ICoolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Returns the minimum size that the cool item can
@@ -119,7 +121,7 @@ public interface ICoolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ICoolBar getParent();
+    CoolBar getParent();
 
     /**
      * Returns a point describing the receiver's ideal size.
@@ -186,7 +188,7 @@ public interface ICoolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setControl(IControl control);
+    void setControl(Control control);
 
     /**
      * Sets the minimum size that the cool item can be resized to
@@ -287,4 +289,6 @@ public interface ICoolItem extends IItem {
      * </ul>
      */
     void setSize(Point size);
+
+    CoolItem getApi();
 }

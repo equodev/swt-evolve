@@ -20,7 +20,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import java.util.WeakHashMap;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class implement the notebook user interface
@@ -54,7 +54,7 @@ import java.util.WeakHashMap;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class CTabFolder extends Composite {
-    
+
     /**
      * marginWidth specifies the number of points of horizontal margin
      * that will be placed along the left and right edges of the form.
@@ -71,6 +71,50 @@ public class CTabFolder extends Composite {
      */
     public int marginHeight = 0;
 
+    /**
+     * A multiple of the tab height that specifies the minimum width to which a tab
+     * will be compressed before scrolling arrows are used to navigate the tabs.
+     *
+     * NOTE This field is badly named and can not be fixed for backwards compatibility.
+     * It should not be capitalized.
+     *
+     * @deprecated This field is no longer used.  See setMinimumCharacters(int)
+     */
+    @Deprecated
+    public int MIN_TAB_WIDTH = 4;
+
+    /**
+     * Color of innermost line of drop shadow border.
+     *
+     * NOTE This field is badly named and can not be fixed for backwards compatibility.
+     * It should be capitalized.
+     *
+     * @deprecated drop shadow border is no longer drawn in 3.0
+     */
+    @Deprecated
+    public static RGB borderInsideRGB = new RGB(132, 130, 132);
+
+    /**
+     * Color of middle line of drop shadow border.
+     *
+     * NOTE This field is badly named and can not be fixed for backwards compatibility.
+     * It should be capitalized.
+     *
+     * @deprecated drop shadow border is no longer drawn in 3.0
+     */
+    @Deprecated
+    public static RGB borderMiddleRGB = new RGB(143, 141, 138);
+
+    /**
+     * Color of outermost line of drop shadow border.
+     *
+     * NOTE This field is badly named and can not be fixed for backwards compatibility.
+     * It should be capitalized.
+     *
+     * @deprecated drop shadow border is no longer drawn in 3.0
+     */
+    @Deprecated
+    public static RGB borderOutsideRGB = new RGB(171, 168, 165);
 
     // when disposing CTabFolder, don't try to layout the items or
     // keep track of size changes in order to redraw only affected area
@@ -106,7 +150,8 @@ public class CTabFolder extends Composite {
      * @see #getStyle()
      */
     public CTabFolder(Composite parent, int style) {
-        this(new SWTCTabFolder((SWTComposite) parent.delegate, style));
+        this((ICTabFolder) null);
+        setImpl(Config.isEquo(CTabFolder.class, parent) ? new DartCTabFolder(parent, style, this) : new SwtCTabFolder(parent, style, this));
     }
 
     /**
@@ -132,7 +177,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void addCTabFolder2Listener(CTabFolder2Listener listener) {
-        ((ICTabFolder) this.delegate).addCTabFolder2Listener(listener);
+        getImpl().addCTabFolder2Listener(listener);
     }
 
     /**
@@ -156,7 +201,7 @@ public class CTabFolder extends Composite {
      */
     @Deprecated
     public void addCTabFolderListener(CTabFolderListener listener) {
-        ((ICTabFolder) this.delegate).addCTabFolderListener(listener);
+        getImpl().addCTabFolderListener(listener);
     }
 
     /**
@@ -184,7 +229,7 @@ public class CTabFolder extends Composite {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ICTabFolder) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /*
@@ -198,9 +243,8 @@ public class CTabFolder extends Composite {
     //		SWT.error (SWT.ERROR_INVALID_SUBCLASS);
     //	}
     //}
-    @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return ((ICTabFolder) this.delegate).computeTrim(x, y, width, height);
+        return getImpl().computeTrim(x, y, width, height);
     }
 
     /**
@@ -216,7 +260,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getBorderVisible() {
-        return ((ICTabFolder) this.delegate).getBorderVisible();
+        return getImpl().getBorderVisible();
     }
 
     /**
@@ -230,9 +274,8 @@ public class CTabFolder extends Composite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public Rectangle getClientArea() {
-        return ((ICTabFolder) this.delegate).getClientArea();
+        return getImpl().getClientArea();
     }
 
     /**
@@ -250,7 +293,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public CTabItem getItem(int index) {
-        return CTabItem.getInstance(((ICTabFolder) this.delegate).getItem(index));
+        return getImpl().getItem(index);
     }
 
     /**
@@ -265,7 +308,7 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public CTabItem getItem(Point pt) {
-        return CTabItem.getInstance(((ICTabFolder) this.delegate).getItem(pt));
+        return getImpl().getItem(pt);
     }
 
     /**
@@ -279,7 +322,7 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public int getItemCount() {
-        return ((ICTabFolder) this.delegate).getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -293,7 +336,7 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public CTabItem[] getItems() {
-        return CTabItem.ofArray(((ICTabFolder) this.delegate).getItems(), CTabItem.class);
+        return getImpl().getItems();
     }
 
     /**
@@ -309,7 +352,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getMinimized() {
-        return ((ICTabFolder) this.delegate).getMinimized();
+        return getImpl().getMinimized();
     }
 
     /**
@@ -326,7 +369,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getMinimizeVisible() {
-        return ((ICTabFolder) this.delegate).getMinimizeVisible();
+        return getImpl().getMinimizeVisible();
     }
 
     /**
@@ -338,7 +381,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public int getMinimumCharacters() {
-        return ((ICTabFolder) this.delegate).getMinimumCharacters();
+        return getImpl().getMinimumCharacters();
     }
 
     /**
@@ -354,7 +397,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getMaximized() {
-        return ((ICTabFolder) this.delegate).getMaximized();
+        return getImpl().getMaximized();
     }
 
     /**
@@ -371,7 +414,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getMaximizeVisible() {
-        return ((ICTabFolder) this.delegate).getMaximizeVisible();
+        return getImpl().getMaximizeVisible();
     }
 
     /**
@@ -404,7 +447,7 @@ public class CTabFolder extends Composite {
      * @since 3.1
      */
     public boolean getMRUVisible() {
-        return ((ICTabFolder) this.delegate).getMRUVisible();
+        return getImpl().getMRUVisible();
     }
 
     /**
@@ -423,7 +466,7 @@ public class CTabFolder extends Composite {
      *  @since 3.6
      */
     public CTabFolderRenderer getRenderer() {
-        return ((ICTabFolder) this.delegate).getRenderer();
+        return getImpl().getRenderer();
     }
 
     /**
@@ -437,7 +480,7 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public CTabItem getSelection() {
-        return CTabItem.getInstance(((ICTabFolder) this.delegate).getSelection());
+        return getImpl().getSelection();
     }
 
     /**
@@ -453,7 +496,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public Color getSelectionBackground() {
-        return ((ICTabFolder) this.delegate).getSelectionBackground();
+        return getImpl().getSelectionBackground();
     }
 
     /**
@@ -469,7 +512,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public Color getSelectionForeground() {
-        return ((ICTabFolder) this.delegate).getSelectionForeground();
+        return getImpl().getSelectionForeground();
     }
 
     /**
@@ -484,7 +527,7 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public int getSelectionIndex() {
-        return ((ICTabFolder) this.delegate).getSelectionIndex();
+        return getImpl().getSelectionIndex();
     }
 
     /**
@@ -496,7 +539,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getSimple() {
-        return ((ICTabFolder) this.delegate).getSimple();
+        return getImpl().getSimple();
     }
 
     /**
@@ -508,12 +551,11 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getSingle() {
-        return ((ICTabFolder) this.delegate).getSingle();
+        return getImpl().getSingle();
     }
 
-    @Override
     public int getStyle() {
-        return ((ICTabFolder) this.delegate).getStyle();
+        return getImpl().getStyle();
     }
 
     /**
@@ -527,7 +569,7 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public int getTabHeight() {
-        return ((ICTabFolder) this.delegate).getTabHeight();
+        return getImpl().getTabHeight();
     }
 
     /**
@@ -541,7 +583,7 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public int getTabPosition() {
-        return ((ICTabFolder) this.delegate).getTabPosition();
+        return getImpl().getTabPosition();
     }
 
     /**
@@ -558,7 +600,7 @@ public class CTabFolder extends Composite {
      *  @since 2.1
      */
     public Control getTopRight() {
-        return Control.getInstance(((ICTabFolder) this.delegate).getTopRight());
+        return getImpl().getTopRight();
     }
 
     /**
@@ -575,7 +617,7 @@ public class CTabFolder extends Composite {
      *  @since 3.6
      */
     public int getTopRightAlignment() {
-        return ((ICTabFolder) this.delegate).getTopRightAlignment();
+        return getImpl().getTopRightAlignment();
     }
 
     /**
@@ -587,7 +629,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getUnselectedCloseVisible() {
-        return ((ICTabFolder) this.delegate).getUnselectedCloseVisible();
+        return getImpl().getUnselectedCloseVisible();
     }
 
     /**
@@ -599,7 +641,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public boolean getUnselectedImageVisible() {
-        return ((ICTabFolder) this.delegate).getUnselectedImageVisible();
+        return getImpl().getUnselectedImageVisible();
     }
 
     /**
@@ -611,7 +653,7 @@ public class CTabFolder extends Composite {
      * @since 3.125
      */
     public boolean getSelectedImageVisible() {
-        return ((ICTabFolder) this.delegate).getSelectedImageVisible();
+        return getImpl().getSelectedImageVisible();
     }
 
     /**
@@ -632,7 +674,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public int indexOf(CTabItem item) {
-        return ((ICTabFolder) this.delegate).indexOf((ICTabItem) item.delegate);
+        return getImpl().indexOf(item);
     }
 
     /**
@@ -654,7 +696,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void removeCTabFolder2Listener(CTabFolder2Listener listener) {
-        ((ICTabFolder) this.delegate).removeCTabFolder2Listener(listener);
+        getImpl().removeCTabFolder2Listener(listener);
     }
 
     /**
@@ -675,7 +717,7 @@ public class CTabFolder extends Composite {
      */
     @Deprecated
     public void removeCTabFolderListener(CTabFolderListener listener) {
-        ((ICTabFolder) this.delegate).removeCTabFolderListener(listener);
+        getImpl().removeCTabFolderListener(listener);
     }
 
     /**
@@ -696,17 +738,15 @@ public class CTabFolder extends Composite {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ICTabFolder) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
-    @Override
     public void reskin(int flags) {
-        ((ICTabFolder) this.delegate).reskin(flags);
+        getImpl().reskin(flags);
     }
 
-    @Override
     public void setBackground(Color color) {
-        ((ICTabFolder) this.delegate).setBackground(color);
+        getImpl().setBackground(color);
     }
 
     /**
@@ -737,7 +777,7 @@ public class CTabFolder extends Composite {
      *  @since 3.6
      */
     public void setBackground(Color[] colors, int[] percents) {
-        ((ICTabFolder) this.delegate).setBackground(colors, percents);
+        getImpl().setBackground(colors, percents);
     }
 
     /**
@@ -770,12 +810,11 @@ public class CTabFolder extends Composite {
      *  @since 3.6
      */
     public void setBackground(Color[] colors, int[] percents, boolean vertical) {
-        ((ICTabFolder) this.delegate).setBackground(colors, percents, vertical);
+        getImpl().setBackground(colors, percents, vertical);
     }
 
-    @Override
     public void setBackgroundImage(Image image) {
-        ((ICTabFolder) this.delegate).setBackgroundImage(image);
+        getImpl().setBackgroundImage(image);
     }
 
     /**
@@ -789,22 +828,19 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setBorderVisible(boolean show) {
-        ((ICTabFolder) this.delegate).setBorderVisible(show);
+        getImpl().setBorderVisible(show);
     }
 
-    @Override
     public boolean setFocus() {
-        return ((ICTabFolder) this.delegate).setFocus();
+        return getImpl().setFocus();
     }
 
-    @Override
     public void setFont(Font font) {
-        ((ICTabFolder) this.delegate).setFont(font);
+        getImpl().setFont(font);
     }
 
-    @Override
     public void setForeground(Color color) {
-        ((ICTabFolder) this.delegate).setForeground(color);
+        getImpl().setForeground(color);
     }
 
     /**
@@ -822,7 +858,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setInsertMark(CTabItem item, boolean after) {
-        ((ICTabFolder) this.delegate).setInsertMark((ICTabItem) item.delegate, after);
+        getImpl().setInsertMark(item, after);
     }
 
     /**
@@ -844,7 +880,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setInsertMark(int index, boolean after) {
-        ((ICTabFolder) this.delegate).setInsertMark(index, after);
+        getImpl().setInsertMark(index, after);
     }
 
     /**
@@ -876,7 +912,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setMaximizeVisible(boolean visible) {
-        ((ICTabFolder) this.delegate).setMaximizeVisible(visible);
+        getImpl().setMaximizeVisible(visible);
     }
 
     /**
@@ -894,9 +930,8 @@ public class CTabFolder extends Composite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setLayout(Layout layout) {
-        ((ICTabFolder) this.delegate).setLayout(layout);
+        getImpl().setLayout(layout);
     }
 
     /**
@@ -912,7 +947,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setMaximized(boolean maximize) {
-        ((ICTabFolder) this.delegate).setMaximized(maximize);
+        getImpl().setMaximized(maximize);
     }
 
     /**
@@ -929,7 +964,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setMinimizeVisible(boolean visible) {
-        ((ICTabFolder) this.delegate).setMinimizeVisible(visible);
+        getImpl().setMinimizeVisible(visible);
     }
 
     /**
@@ -945,7 +980,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setMinimized(boolean minimize) {
-        ((ICTabFolder) this.delegate).setMinimized(minimize);
+        getImpl().setMinimized(minimize);
     }
 
     /**
@@ -963,7 +998,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setMinimumCharacters(int count) {
-        ((ICTabFolder) this.delegate).setMinimumCharacters(count);
+        getImpl().setMinimumCharacters(count);
     }
 
     /**
@@ -993,7 +1028,7 @@ public class CTabFolder extends Composite {
      * @since 3.1
      */
     public void setMRUVisible(boolean show) {
-        ((ICTabFolder) this.delegate).setMRUVisible(show);
+        getImpl().setMRUVisible(show);
     }
 
     /**
@@ -1013,7 +1048,7 @@ public class CTabFolder extends Composite {
      *  @since 3.6
      */
     public void setRenderer(CTabFolderRenderer renderer) {
-        ((ICTabFolder) this.delegate).setRenderer(renderer);
+        getImpl().setRenderer(renderer);
     }
 
     /**
@@ -1031,7 +1066,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setSelection(CTabItem item) {
-        ((ICTabFolder) this.delegate).setSelection((ICTabItem) item.delegate);
+        getImpl().setSelection(item);
     }
 
     /**
@@ -1045,7 +1080,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setSelection(int index) {
-        ((ICTabFolder) this.delegate).setSelection(index);
+        getImpl().setSelection(index);
     }
 
     /**
@@ -1066,7 +1101,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setSelectionBackground(Color color) {
-        ((ICTabFolder) this.delegate).setSelectionBackground(color);
+        getImpl().setSelectionBackground(color);
     }
 
     /**
@@ -1095,7 +1130,7 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public void setSelectionBackground(Color[] colors, int[] percents) {
-        ((ICTabFolder) this.delegate).setSelectionBackground(colors, percents);
+        getImpl().setSelectionBackground(colors, percents);
     }
 
     /**
@@ -1128,7 +1163,7 @@ public class CTabFolder extends Composite {
      *  @since 3.0
      */
     public void setSelectionBackground(Color[] colors, int[] percents, boolean vertical) {
-        ((ICTabFolder) this.delegate).setSelectionBackground(colors, percents, vertical);
+        getImpl().setSelectionBackground(colors, percents, vertical);
     }
 
     /**
@@ -1143,7 +1178,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setSelectionBackground(Image image) {
-        ((ICTabFolder) this.delegate).setSelectionBackground(image);
+        getImpl().setSelectionBackground(image);
     }
 
     /**
@@ -1157,7 +1192,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setSelectionForeground(Color color) {
-        ((ICTabFolder) this.delegate).setSelectionForeground(color);
+        getImpl().setSelectionForeground(color);
     }
 
     /**
@@ -1174,7 +1209,7 @@ public class CTabFolder extends Composite {
      * @since 3.121
      */
     public void setSelectionBarThickness(int thickness) {
-        ((ICTabFolder) this.delegate).setSelectionBarThickness(thickness);
+        getImpl().setSelectionBarThickness(thickness);
     }
 
     /**
@@ -1190,7 +1225,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setSimple(boolean simple) {
-        ((ICTabFolder) this.delegate).setSimple(simple);
+        getImpl().setSimple(simple);
     }
 
     /**
@@ -1206,7 +1241,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setSingle(boolean single) {
-        ((ICTabFolder) this.delegate).setSingle(single);
+        getImpl().setSingle(single);
     }
 
     /**
@@ -1223,7 +1258,7 @@ public class CTabFolder extends Composite {
      * </ul>
      */
     public void setTabHeight(int height) {
-        ((ICTabFolder) this.delegate).setTabHeight(height);
+        getImpl().setTabHeight(height);
     }
 
     /**
@@ -1241,7 +1276,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setTabPosition(int position) {
-        ((ICTabFolder) this.delegate).setTabPosition(position);
+        getImpl().setTabPosition(position);
     }
 
     /**
@@ -1261,7 +1296,7 @@ public class CTabFolder extends Composite {
      * @since 2.1
      */
     public void setTopRight(Control control) {
-        ((ICTabFolder) this.delegate).setTopRight((IControl) control.delegate);
+        getImpl().setTopRight(control);
     }
 
     /**
@@ -1291,7 +1326,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setTopRight(Control control, int alignment) {
-        ((ICTabFolder) this.delegate).setTopRight((IControl) control.delegate, alignment);
+        getImpl().setTopRight(control, alignment);
     }
 
     /**
@@ -1308,7 +1343,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setUnselectedCloseVisible(boolean visible) {
-        ((ICTabFolder) this.delegate).setUnselectedCloseVisible(visible);
+        getImpl().setUnselectedCloseVisible(visible);
     }
 
     /**
@@ -1324,7 +1359,7 @@ public class CTabFolder extends Composite {
      * @since 3.0
      */
     public void setUnselectedImageVisible(boolean visible) {
-        ((ICTabFolder) this.delegate).setUnselectedImageVisible(visible);
+        getImpl().setUnselectedImageVisible(visible);
     }
 
     /**
@@ -1340,7 +1375,7 @@ public class CTabFolder extends Composite {
      * @since 3.125
      */
     public void setSelectedImageVisible(boolean visible) {
-        ((ICTabFolder) this.delegate).setSelectedImageVisible(visible);
+        getImpl().setSelectedImageVisible(visible);
     }
 
     /**
@@ -1364,7 +1399,7 @@ public class CTabFolder extends Composite {
      * @since 2.0
      */
     public void showItem(CTabItem item) {
-        ((ICTabFolder) this.delegate).showItem((ICTabItem) item.delegate);
+        getImpl().showItem(item);
     }
 
     /**
@@ -1382,7 +1417,7 @@ public class CTabFolder extends Composite {
      * @since 2.0
      */
     public void showSelection() {
-        ((ICTabFolder) this.delegate).showSelection();
+        getImpl().showSelection();
     }
 
     /**
@@ -1449,7 +1484,7 @@ public class CTabFolder extends Composite {
      * @since 3.106
      */
     public void setHighlightEnabled(boolean enabled) {
-        ((ICTabFolder) this.delegate).setHighlightEnabled(enabled);
+        getImpl().setHighlightEnabled(enabled);
     }
 
     /**
@@ -1469,23 +1504,18 @@ public class CTabFolder extends Composite {
      * @since 3.106
      */
     public boolean getHighlightEnabled() {
-        return ((ICTabFolder) this.delegate).getHighlightEnabled();
+        return getImpl().getHighlightEnabled();
     }
 
-    protected CTabFolder(ICTabFolder delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected CTabFolder(ICTabFolder impl) {
+        super(impl);
     }
 
-    public static CTabFolder getInstance(ICTabFolder delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        CTabFolder ref = (CTabFolder) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new CTabFolder(delegate);
-        }
-        return ref;
+    static CTabFolder createApi(ICTabFolder impl) {
+        return new CTabFolder(impl);
+    }
+
+    public ICTabFolder getImpl() {
+        return (ICTabFolder) super.getImpl();
     }
 }

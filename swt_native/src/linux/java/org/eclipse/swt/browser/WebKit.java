@@ -112,7 +112,7 @@ class WebKit extends WebBrowser {
      *
      * See bug 579257.
      */
-    private static SWTBrowser parentBrowser;
+    private static Browser parentBrowser;
 
     /**
      * Timeout used for javascript execution / deadlock detection.
@@ -335,21 +335,13 @@ class WebKit extends WebBrowser {
     }
 
     @Override
-    public void createFunction(IBrowserFunction function____) {
-        SWTBrowserFunction function___ = (SWTBrowserFunction) function____;
-        SWTBrowserFunction function__ = (SWTBrowserFunction) function___;
-        SWTBrowserFunction function_ = (SWTBrowserFunction) function__;
-        SWTBrowserFunction function = (SWTBrowserFunction) function_;
+    public void createFunction(BrowserFunction function) {
         super.createFunction(function);
         updateUserScript();
     }
 
     @Override
-    public void destroyFunction(IBrowserFunction function____) {
-        SWTBrowserFunction function___ = (SWTBrowserFunction) function____;
-        SWTBrowserFunction function__ = (SWTBrowserFunction) function___;
-        SWTBrowserFunction function_ = (SWTBrowserFunction) function__;
-        SWTBrowserFunction function = (SWTBrowserFunction) function_;
+    public void destroyFunction(BrowserFunction function) {
         super.destroyFunction(function);
         updateUserScript();
     }
@@ -360,8 +352,8 @@ class WebKit extends WebBrowser {
         WebKitGTK.webkit_user_content_manager_remove_all_scripts(manager);
         if (!functions.isEmpty()) {
             StringBuilder sb = new StringBuilder();
-            for (SWTBrowserFunction function : functions.values()) {
-                sb.append(function.functionString);
+            for (BrowserFunction function : functions.values()) {
+                sb.append(((SwtBrowserFunction) function.getImpl()).functionString);
             }
             sb.append('\0');
             byte[] scriptData = sb.toString().getBytes(StandardCharsets.UTF_8);
@@ -413,11 +405,11 @@ class WebKit extends WebBrowser {
         return new String(Converter.mbcsToWcs(buffer));
     }
 
-    static SWTBrowser FindBrowser(long webView) {
+    static Browser FindBrowser(long webView) {
         if (webView == 0)
             return null;
         long parent = GTK.gtk_widget_get_parent(webView);
-        return (SWTBrowser) ((SWTWidget) (SWTDisplay.getCurrent().findWidget(parent)));
+        return (Browser) SwtDisplay.getCurrent().findWidget(parent);
     }
 
     static boolean IsInstalled() {
@@ -438,7 +430,7 @@ class WebKit extends WebBrowser {
 		* in one or more WebKit instances (indicates that this instance may not be
 		* receiving events from the DOM).  This check is done up-front for performance.
 		*/
-            final SWTBrowser browser = (SWTBrowser) (FindBrowser(arg0));
+            final Browser browser = FindBrowser(arg0);
             if (browser != null && user_data == WIDGET_EVENT) {
                 /* this instance does need to use the GDK event to create an SWT event to send */
                 switch(GDK.GDK_EVENT_TYPE(event)) {
@@ -459,10 +451,10 @@ class WebKit extends WebBrowser {
                                     case GDK.GDK_Tab:
                                         {
                                             if ((state[0] & (GDK.GDK_CONTROL_MASK | GDK.GDK_MOD1_MASK)) == 0) {
-                                                ((SWTDisplay) (browser.getDisplay())).asyncExec(() -> {
+                                                browser.getDisplay().asyncExec(() -> {
                                                     if (browser.isDisposed())
                                                         return;
-                                                    if (((SWTControl) (browser.getDisplay().getFocusControl())) == null) {
+                                                    if (browser.getDisplay().getFocusControl() == null) {
                                                         int traversal = (state[0] & GDK.GDK_SHIFT_MASK) != 0 ? SWT.TRAVERSE_TAB_PREVIOUS : SWT.TRAVERSE_TAB_NEXT;
                                                         browser.traverse(traversal);
                                                     }
@@ -473,7 +465,7 @@ class WebKit extends WebBrowser {
                                     case GDK.GDK_Escape:
                                         {
                                             Event keyEvent = new Event();
-                                            keyEvent.widget = Widget.getInstance(browser);
+                                            keyEvent.widget = browser;
                                             keyEvent.type = SWT.KeyDown;
                                             keyEvent.keyCode = keyEvent.character = SWT.ESC;
                                             if ((state[0] & GDK.GDK_MOD1_MASK) != 0)
@@ -486,7 +478,7 @@ class WebKit extends WebBrowser {
                                                 // to avoid deadlocks, evaluate() should not block during listener. See Bug 512001
                                                 // I.e, evaluate() can be called and script will be executed, but no return value will be provided.
                                                 nonBlockingEvaluate++;
-                                                browser.webBrowser.sendKeyEvent(keyEvent);
+                                                ((SwtBrowser) browser.getImpl()).webBrowser.sendKeyEvent(keyEvent);
                                             } catch (Exception e) {
                                                 throw e;
                                             } finally {
@@ -513,9 +505,9 @@ class WebKit extends WebBrowser {
         // Note that a response must be sent regardless of any errors, otherwise the caller will hang.
         String response = "null";
         long webView = WebKitGTK.webkit_uri_scheme_request_get_web_view(request);
-        SWTBrowser browser = (SWTBrowser) (FindBrowser(webView));
+        Browser browser = FindBrowser(webView);
         if (browser != null) {
-            SWTBrowserFunction function = (SWTBrowserFunction) (null);
+            BrowserFunction function = null;
             Object[] args = null;
             long uriPtr = WebKitGTK.webkit_uri_scheme_request_get_uri(request);
             String uriStr = Converter.cCharPtrToJavaString(uriPtr, false);
@@ -524,9 +516,9 @@ class WebKit extends WebBrowser {
                 String[] parts = uri.getPath().split("/");
                 int index = Integer.parseInt(parts[1]);
                 String token = parts[2];
-                WebKit webkit = (WebKit) browser.webBrowser;
+                WebKit webkit = (WebKit) ((SwtBrowser) browser.getImpl()).webBrowser;
                 function = webkit.functions.get(index);
-                if (function != null && !function.token.equals(token)) {
+                if (function != null && !((SwtBrowserFunction) function.getImpl()).token.equals(token)) {
                     function = null;
                 }
                 args = (Object[]) JSON.parse(uri.getQuery());
@@ -557,10 +549,10 @@ class WebKit extends WebBrowser {
             long webKitDownload = handle;
             return webkit_download_finished(webKitDownload);
         }
-        SWTBrowser browser = (SWTBrowser) (FindBrowser(webView));
+        Browser browser = FindBrowser(webView);
         if (browser == null)
             return 0;
-        WebKit webkit = (WebKit) browser.webBrowser;
+        WebKit webkit = (WebKit) ((SwtBrowser) browser.getImpl()).webBrowser;
         return webkit.webViewProc(handle, user_data);
     }
 
@@ -595,28 +587,28 @@ class WebKit extends WebBrowser {
             // Callbacks connected with a WebView.
             assert handle != 0 : "Webview shouldn't be null here";
             long webView = handle;
-            SWTBrowser browser = (SWTBrowser) (FindBrowser(webView));
+            Browser browser = FindBrowser(webView);
             if (browser == null)
                 return 0;
-            WebKit webkit = (WebKit) browser.webBrowser;
+            WebKit webkit = (WebKit) ((SwtBrowser) browser.getImpl()).webBrowser;
             return webkit.webViewProc(webView, arg0, user_data);
         }
     }
 
     static long Proc(long handle, long arg0, long arg1, long user_data) {
-        SWTBrowser browser = (SWTBrowser) (FindBrowser(handle));
+        Browser browser = FindBrowser(handle);
         if (browser == null)
             return 0;
-        WebKit webkit = (WebKit) browser.webBrowser;
+        WebKit webkit = (WebKit) ((SwtBrowser) browser.getImpl()).webBrowser;
         return webkit.webViewProc(handle, arg0, arg1, user_data);
     }
 
     static long Proc(long handle, long arg0, long arg1, long arg2, long user_data) {
         long webView = handle;
-        SWTBrowser browser = (SWTBrowser) (FindBrowser(webView));
+        Browser browser = FindBrowser(webView);
         if (browser == null)
             return 0;
-        WebKit webkit = (WebKit) browser.webBrowser;
+        WebKit webkit = (WebKit) ((SwtBrowser) browser.getImpl()).webBrowser;
         return webkit.webViewProc(handle, arg0, arg1, arg2, user_data);
     }
 
@@ -714,11 +706,7 @@ class WebKit extends WebBrowser {
     }
 
     @Override
-    public void create(IComposite parent____, int style) {
-        SWTComposite parent___ = (SWTComposite) parent____;
-        SWTComposite parent__ = (SWTComposite) parent___;
-        SWTComposite parent_ = (SWTComposite) parent__;
-        SWTComposite parent = (SWTComposite) parent_;
+    public void create(Composite parent, int style) {
         int[] vers = internalGetWebkitVersion();
         System.setProperty(SWT_WEBKITGTK_VERSION, // $NON-NLS-1$
         String.format("%s.%s.%s", vers[0], vers[1], vers[2]));
@@ -739,13 +727,13 @@ class WebKit extends WebBrowser {
             long security = WebKitGTK.webkit_web_context_get_security_manager(context);
             WebKitGTK.webkit_security_manager_register_uri_scheme_as_secure(security, SWT_PROTOCOL);
         }
-        SWTComposite parentShell = (SWTComposite) (parent.getParent());
-        SWTBrowser parentBrowser = WebKit.parentBrowser;
+        Composite parentShell = parent.getParent();
+        Browser parentBrowser = WebKit.parentBrowser;
         if (parentBrowser == null && parentShell != null) {
-            IControl[] children = parentShell.getChildren();
+            Control[] children = parentShell.getChildren();
             for (int i = 0; i < children.length; i++) {
-                if (children[i] instanceof SWTBrowser) {
-                    parentBrowser = (SWTBrowser) children[i];
+                if (children[i] instanceof Browser) {
+                    parentBrowser = (Browser) children[i];
                     break;
                 }
             }
@@ -753,7 +741,7 @@ class WebKit extends WebBrowser {
         if (parentBrowser == null) {
             webView = WebKitGTK.webkit_web_view_new();
         } else {
-            webView = WebKitGTK.webkit_web_view_new_with_related_view(((WebKit) parentBrowser.webBrowser).webView);
+            webView = WebKitGTK.webkit_web_view_new_with_related_view(((WebKit) ((SwtBrowser) parentBrowser.getImpl()).webBrowser).webView);
         }
         // Bug 522733 Webkit2 workaround for crash
         //   As of Webkitgtk 2.18, webkitgtk2 crashes if the first instance of webview is not referenced when JVM shuts down.
@@ -772,9 +760,9 @@ class WebKit extends WebBrowser {
         }
         // Webkit2 Signal Documentation: https://webkitgtk.org/reference/webkit2gtk/stable/WebKitWebView.html#WebKitWebView--title
         if (GTK.GTK4) {
-            OS.swt_fixed_add(browser.getHandle(), webView);
+            OS.swt_fixed_add(browser.handle, webView);
         } else {
-            GTK3.gtk_container_add(browser.getHandle(), webView);
+            GTK3.gtk_container_add(browser.handle, webView);
         }
         OS.g_signal_connect(webView, WebKitGTK.close, Proc2.getAddress(), CLOSE_WEB_VIEW);
         OS.g_signal_connect(webView, WebKitGTK.ready_to_show, Proc2.getAddress(), WEB_VIEW_READY);
@@ -794,7 +782,7 @@ class WebKit extends WebBrowser {
         // https://webkitgtk.org/reference/webkit2gtk/stable/WebKitWebContext.html#WebKitWebContext-download-started
         OS.g_signal_connect(WebKitGTK.webkit_web_context_get_default(), WebKitGTK.download_started, Proc3.getAddress(), DOWNLOAD_STARTED);
         GTK.gtk_widget_show(webView);
-        GTK.gtk_widget_show(browser.getHandle());
+        GTK.gtk_widget_show(browser.handle);
         // Webview 'title' property
         OS.g_signal_connect(webView, WebKitGTK.notify_title, Proc3.getAddress(), NOTIFY_TITLE);
         if (!GTK.GTK4) {
@@ -1008,7 +996,7 @@ class WebKit extends WebBrowser {
         /**
          * We need a way to associate a Browser instance with this class for cookie functionality
          */
-        private static SWTBrowser cookieBrowser;
+        private static Browser cookieBrowser;
 
         private static Callback runjavascript_callback;
 
@@ -1105,7 +1093,7 @@ class WebKit extends WebBrowser {
             }
         }
 
-        static Object evaluate(String script, SWTBrowser browser, long webView) {
+        static Object evaluate(String script, Browser browser, long webView) {
             //		/* Wrap script around a temporary function for backwards compatibility,
             //		 * user can specify 'return', which may not be at the beginning of the script.
             //		 *  Valid scripts:
@@ -1133,7 +1121,7 @@ class WebKit extends WebBrowser {
          *
          * If in doubt, you should use nonBlockingExecute() where possible :-).
          */
-        static Object runjavascript(String script, SWTBrowser browser, long webView) {
+        static Object runjavascript(String script, Browser browser, long webView) {
             if (nonBlockingEvaluate > 0) {
                 // Execute script, but do not wait for async call to complete. (assume it does). Bug 512001.
                 WebKitGTK.webkit_web_view_run_javascript(webView, Converter.wcsToMbcs(script, true), 0, 0, 0);
@@ -1183,10 +1171,10 @@ class WebKit extends WebBrowser {
                 }
                 retObj.callbackFinished = true;
             }
-            SWTDisplay.getCurrent().wake();
+            SwtDisplay.getCurrent().wake();
         }
 
-        static String getText(SWTBrowser browser, long webView) {
+        static String getText(Browser browser, long webView) {
             long WebKitWebResource = WebKitGTK.webkit_web_view_get_main_resource(webView);
             if (WebKitWebResource == 0) {
                 // No page yet loaded.
@@ -1224,7 +1212,7 @@ class WebKit extends WebBrowser {
                 retObj.returnValue = text;
             }
             retObj.callbackFinished = true;
-            SWTDisplay.getCurrent().wake();
+            SwtDisplay.getCurrent().wake();
         }
 
         /**
@@ -1232,7 +1220,7 @@ class WebKit extends WebBrowser {
          * and check for disposal.
          * @param toSet the Browser instance to set
          */
-        static void setCookieBrowser(SWTBrowser toSet) {
+        static void setCookieBrowser(Browser toSet) {
             if (toSet != null)
                 cookieBrowser = toSet;
         }
@@ -1276,7 +1264,7 @@ class WebKit extends WebBrowser {
                 OS.g_error_free(error[0]);
             }
             retObj.callbackFinished = true;
-            SWTDisplay.getCurrent().wake();
+            SwtDisplay.getCurrent().wake();
         }
 
         static String getCookie(String cookieUrl, String cookieName) {
@@ -1338,7 +1326,7 @@ class WebKit extends WebBrowser {
                 }
                 OS.g_slist_free(cookieList);
                 retObj.callbackFinished = true;
-                SWTDisplay.getCurrent().wake();
+                SwtDisplay.getCurrent().wake();
             } else {
                 System.err.println("SWT WebKit: something went wrong unpacking GVariant tuple for getCookie_callback");
             }
@@ -1347,7 +1335,7 @@ class WebKit extends WebBrowser {
         /**
          * You should check 'retObj.swtAsyncTimeout' after making a call to this.
          */
-        private static Webkit2AsyncReturnObj execAsyncAndWaitForReturn(SWTBrowser browser, Consumer<Integer> asyncFunc, String additionalErrorInfo) {
+        private static Webkit2AsyncReturnObj execAsyncAndWaitForReturn(Browser browser, Consumer<Integer> asyncFunc, String additionalErrorInfo) {
             Webkit2AsyncReturnObj retObj = new Webkit2AsyncReturnObj();
             int callbackId = CallBackMap.putObject(retObj);
             asyncFunc.accept(callbackId);
@@ -1626,7 +1614,7 @@ class WebKit extends WebBrowser {
                     {
                         /* keypress events will not be received for these keys, so send KeyDowns for them now */
                         Event keyEvent = new Event();
-                        keyEvent.widget = Widget.getInstance(browser);
+                        keyEvent.widget = browser;
                         keyEvent.type = type.equals(DOMEVENT_KEYDOWN) ? SWT.KeyDown : SWT.KeyUp;
                         keyEvent.keyCode = keyCode;
                         switch(keyCode) {
@@ -1652,10 +1640,10 @@ class WebKit extends WebBrowser {
                             return false;
                         if (browser.isFocusControl()) {
                             if (keyCode == SWT.TAB && (stateMask & (SWT.CTRL | SWT.ALT)) == 0) {
-                                ((SWTDisplay) (browser.getDisplay())).asyncExec(() -> {
+                                browser.getDisplay().asyncExec(() -> {
                                     if (browser.isDisposed())
                                         return;
-                                    if (((SWTControl) (browser.getDisplay().getFocusControl())) == null) {
+                                    if (browser.getDisplay().getFocusControl() == null) {
                                         int traversal = (stateMask & SWT.SHIFT) != 0 ? SWT.TRAVERSE_TAB_PREVIOUS : SWT.TRAVERSE_TAB_NEXT;
                                         browser.traverse(traversal);
                                     }
@@ -1682,7 +1670,7 @@ class WebKit extends WebBrowser {
                     lastCharCode -= 64;
             }
             Event keyEvent = new Event();
-            keyEvent.widget = Widget.getInstance(browser);
+            keyEvent.widget = browser;
             keyEvent.type = SWT.KeyDown;
             keyEvent.keyCode = lastKeyCode;
             keyEvent.character = (char) lastCharCode;
@@ -1701,7 +1689,7 @@ class WebKit extends WebBrowser {
             lastCharCode = 0;
         }
         Event keyEvent = new Event();
-        keyEvent.widget = Widget.getInstance(browser);
+        keyEvent.widget = browser;
         keyEvent.type = SWT.KeyUp;
         keyEvent.keyCode = lastKeyCode;
         keyEvent.character = (char) lastCharCode;
@@ -1741,9 +1729,9 @@ class WebKit extends WebBrowser {
 	 * level page.  Convert screen-relative coordinates to be browser-relative.
 	 */
         Point position = new Point(screenX, screenY);
-        position = ((SWTDisplay) (browser.getDisplay())).map(null, browser, position);
+        position = browser.getDisplay().map(null, browser, position);
         Event mouseEvent = new Event();
-        mouseEvent.widget = Widget.getInstance(browser);
+        mouseEvent.widget = browser;
         mouseEvent.x = position.x;
         mouseEvent.y = position.y;
         int mask = (altKey ? SWT.ALT : 0) | (ctrlKey ? SWT.CTRL : 0) | (shiftKey ? SWT.SHIFT : 0) | (metaKey ? SWT.COMMAND : 0);
@@ -1758,7 +1746,7 @@ class WebKit extends WebBrowser {
             if (detail == 2) {
                 mouseEvent = new Event();
                 mouseEvent.type = SWT.MouseDoubleClick;
-                mouseEvent.widget = Widget.getInstance(browser);
+                mouseEvent.widget = browser;
                 mouseEvent.x = position.x;
                 mouseEvent.y = position.y;
                 mouseEvent.stateMask = mask;
@@ -1828,8 +1816,8 @@ class WebKit extends WebBrowser {
             }
         }
         LocationEvent event = new LocationEvent(browser);
-        event.display = Display.getInstance(((SWTDisplay) (browser.getDisplay())));
-        event.widget = Widget.getInstance(browser);
+        event.display = browser.getDisplay();
+        event.widget = browser;
         event.location = url;
         event.top = top;
         Runnable fireLocationChanged = () -> {
@@ -1839,7 +1827,7 @@ class WebKit extends WebBrowser {
                 locationListeners[i].changed(event);
             }
         };
-        ((SWTDisplay) (browser.getDisplay())).asyncExec(fireLocationChanged);
+        browser.getDisplay().asyncExec(fireLocationChanged);
         return 0;
     }
 
@@ -1855,15 +1843,15 @@ class WebKit extends WebBrowser {
             if (browser.isDisposed() || progressListeners == null)
                 return;
             ProgressEvent progress = new ProgressEvent(browser);
-            progress.display = Display.getInstance(((SWTDisplay) (browser.getDisplay())));
-            progress.widget = Widget.getInstance(browser);
+            progress.display = browser.getDisplay();
+            progress.widget = browser;
             progress.current = MAX_PROGRESS;
             progress.total = MAX_PROGRESS;
             for (int i = 0; i < progressListeners.length; i++) {
                 progressListeners[i].completed(progress);
             }
         };
-        ((SWTDisplay) (browser.getDisplay())).asyncExec(fireProgressEvents);
+        browser.getDisplay().asyncExec(fireProgressEvents);
     }
 
     @Override
@@ -1883,12 +1871,12 @@ class WebKit extends WebBrowser {
         /* Browser could have been disposed by one of the Dispose listeners */
         if (!browser.isDisposed()) {
             /* invoke onbeforeunload handlers */
-            if (!browser.isClosing) {
+            if (!((SwtBrowser) browser.getImpl()).isClosing) {
                 close(false);
             }
         }
-        for (SWTBrowserFunction function : functions.values()) {
-            function.dispose(false);
+        for (BrowserFunction function : functions.values()) {
+            ((SwtBrowserFunction) function.getImpl()).dispose(false);
         }
         functions = null;
         if (WebKitGTK.webkit_get_minor_version() >= 18) {
@@ -1908,7 +1896,7 @@ class WebKit extends WebBrowser {
                 GTK3.gtk_container_remove(GTK.gtk_widget_get_parent(webView), webView);
             }
             long webViewTempRef = webView;
-            SWTDisplay.getDefault().asyncExec(() -> OS.g_object_unref(webViewTempRef));
+            SwtDisplay.getDefault().asyncExec(() -> OS.g_object_unref(webViewTempRef));
             webView = 0;
         }
     }
@@ -1921,7 +1909,7 @@ class WebKit extends WebBrowser {
     }
 
     void openDownloadWindow(final long webkitDownload, final String suggested_filename) {
-        final SWTShell shell = new SWTShell();
+        final Shell shell = new Shell();
         //$NON-NLS-1$
         String msg = Compatibility.getMessage("SWT_FileDownload");
         shell.setText(msg);
@@ -1939,22 +1927,22 @@ class WebKit extends WebBrowser {
         String urlString = new String(Converter.mbcsToWcs(bytes));
         //$NON-NLS-1$
         msg = Compatibility.getMessage("SWT_Download_Location", new Object[] { nameString, urlString });
-        SWTLabel nameLabel = new SWTLabel(shell, SWT.WRAP);
+        Label nameLabel = new Label(shell, SWT.WRAP);
         nameLabel.setText(msg);
         GridData data = new GridData();
-        SWTMonitor monitor = (SWTMonitor) (browser.getMonitor());
+        Monitor monitor = browser.getMonitor();
         int maxWidth = monitor.getBounds().width / 2;
         int width = nameLabel.computeSize(SWT.DEFAULT, SWT.DEFAULT).x;
         data.widthHint = Math.min(width, maxWidth);
         data.horizontalAlignment = GridData.FILL;
         data.grabExcessHorizontalSpace = true;
         nameLabel.setLayoutData(data);
-        final SWTLabel statusLabel = new SWTLabel(shell, SWT.NONE);
+        final Label statusLabel = new Label(shell, SWT.NONE);
         //$NON-NLS-1$
         statusLabel.setText(Compatibility.getMessage("SWT_Download_Started"));
         data = new GridData(GridData.FILL_BOTH);
         statusLabel.setLayoutData(data);
-        final SWTButton cancel = new SWTButton(shell, SWT.PUSH);
+        final Button cancel = new Button(shell, SWT.PUSH);
         //$NON-NLS-1$
         cancel.setText(Compatibility.getMessage("SWT_Cancel"));
         data = new GridData();
@@ -1966,7 +1954,7 @@ class WebKit extends WebBrowser {
         };
         cancel.addListener(SWT.Selection, cancelListener);
         OS.g_object_ref(webkitDownload);
-        final SWTDisplay display = (SWTDisplay) (browser.getDisplay());
+        final Display display = browser.getDisplay();
         final int INTERVAL = 500;
         display.timerExec(INTERVAL, new Runnable() {
 
@@ -2183,7 +2171,7 @@ class WebKit extends WebBrowser {
                         final String final_html = html;
                         final String final_mime_type = mime_type;
                         final String final_encoding_type = encoding_type;
-                        SWTDisplay.getDefault().syncExec(() -> {
+                        SwtDisplay.getDefault().syncExec(() -> {
                             byte[] html_bytes = Converter.wcsToMbcs(final_html, false);
                             byte[] mime_type_bytes = final_mime_type != null ? Converter.javaStringToCString(final_mime_type) : Converter.javaStringToCString("text/plain");
                             byte[] encoding_bytes = final_encoding_type != null ? Converter.wcsToMbcs(final_encoding_type, true) : new byte[] { 0 };
@@ -2218,8 +2206,8 @@ class WebKit extends WebBrowser {
      */
     long webkit_close_web_view(long web_view) {
         WindowEvent newEvent = new WindowEvent(browser);
-        newEvent.display = Display.getInstance(((SWTDisplay) (browser.getDisplay())));
-        newEvent.widget = Widget.getInstance(browser);
+        newEvent.display = browser.getDisplay();
+        newEvent.widget = browser;
         Runnable fireCloseWindowListeners = () -> {
             if (browser.isDisposed())
                 return;
@@ -2230,14 +2218,14 @@ class WebKit extends WebBrowser {
         };
         // On WebKit2 this signal doesn't expect a return value.
         // As such, we can safley execute the SWT listeners later to avoid deadlocks. See bug 512001
-        ((SWTDisplay) (browser.getDisplay())).asyncExec(fireCloseWindowListeners);
+        browser.getDisplay().asyncExec(fireCloseWindowListeners);
         return 0;
     }
 
     long webkit_create_web_view(long web_view, long frame) {
         WindowEvent newEvent = new WindowEvent(browser);
-        newEvent.display = Display.getInstance(((SWTDisplay) (browser.getDisplay())));
-        newEvent.widget = Widget.getInstance(browser);
+        newEvent.display = browser.getDisplay();
+        newEvent.widget = browser;
         newEvent.required = true;
         Runnable fireOpenWindowListeners = () -> {
             if (openWindowListeners != null) {
@@ -2259,12 +2247,12 @@ class WebKit extends WebBrowser {
             parentBrowser = null;
             nonBlockingEvaluate--;
         }
-        SWTBrowser browser = (SWTBrowser) (null);
-        if (newEvent.browser != null && ((SWTBrowser)newEvent.browser.delegate).webBrowser instanceof WebKit) {
-            browser = (SWTBrowser) newEvent.browser.delegate;
+        Browser browser = null;
+        if (newEvent.browser != null && ((SwtBrowser) newEvent.browser.getImpl()).webBrowser instanceof WebKit) {
+            browser = newEvent.browser;
         }
         if (browser != null && !browser.isDisposed()) {
-            return ((WebKit) browser.webBrowser).webView;
+            return ((WebKit) ((SwtBrowser) browser.getImpl()).webBrowser).webView;
         }
         return 0;
     }
@@ -2280,10 +2268,10 @@ class WebKit extends WebBrowser {
         final String fileName = getString(suggested_filename);
         long webView = WebKitGTK.webkit_download_get_web_view(webKitDownload);
         if (webView != 0) {
-            SWTBrowser browser = (SWTBrowser) (FindBrowser(webView));
-            if (browser == null || browser.isDisposed() || browser.isClosing)
+            Browser browser = FindBrowser(webView);
+            if (browser == null || browser.isDisposed() || ((SwtBrowser) browser.getImpl()).isClosing)
                 return 0;
-            SWTFileDialog dialog = new SWTFileDialog(((SWTShell) (browser.getShell())), SWT.SAVE);
+            FileDialog dialog = new FileDialog(browser.getShell(), SWT.SAVE);
             dialog.setFileName(fileName);
             //$NON-NLS-1$
             String title = Compatibility.getMessage("SWT_FileDownload");
@@ -2296,7 +2284,7 @@ class WebKit extends WebBrowser {
                     WebKitGTK.webkit_download_set_allow_overwrite(webKitDownload, true);
                 }
                 WebKitGTK.webkit_download_set_destination(webKitDownload, uriBytes);
-                ((WebKit) browser.webBrowser).openDownloadWindow(webKitDownload, fileName);
+                ((WebKit) ((SwtBrowser) browser.getImpl()).webBrowser).openDownloadWindow(webKitDownload, fileName);
             }
         }
         return 0;
@@ -2346,8 +2334,8 @@ class WebKit extends WebBrowser {
             C.memmove(bytes, uri, length);
             String text = new String(Converter.mbcsToWcs(bytes));
             StatusTextEvent event = new StatusTextEvent(browser);
-            event.display = Display.getInstance(((SWTDisplay) (browser.getDisplay())));
-            event.widget = Widget.getInstance(browser);
+            event.display = browser.getDisplay();
+            event.widget = browser;
             event.text = text;
             Runnable fireStatusTextListener = () -> {
                 if (browser.isDisposed() || statusTextListeners == null)
@@ -2356,7 +2344,7 @@ class WebKit extends WebBrowser {
                     statusTextListeners[i].changed(event);
                 }
             };
-            ((SWTDisplay) (browser.getDisplay())).asyncExec(fireStatusTextListener);
+            browser.getDisplay().asyncExec(fireStatusTextListener);
         }
         return 0;
     }
@@ -2383,8 +2371,8 @@ class WebKit extends WebBrowser {
                     }
                 }
                 LocationEvent newEvent = new LocationEvent(browser);
-                newEvent.display = Display.getInstance(((SWTDisplay) (browser.getDisplay())));
-                newEvent.widget = Widget.getInstance(browser);
+                newEvent.display = browser.getDisplay();
+                newEvent.widget = browser;
                 newEvent.location = url;
                 newEvent.doit = true;
                 try {
@@ -2438,11 +2426,11 @@ class WebKit extends WebBrowser {
                 {
                     if (firstLoad) {
                         GtkAllocation allocation = new GtkAllocation();
-                        GTK.gtk_widget_get_allocation(browser.getHandle(), allocation);
+                        GTK.gtk_widget_get_allocation(browser.handle, allocation);
                         if (GTK.GTK4) {
-                            GTK4.gtk_widget_size_allocate(browser.getHandle(), allocation, -1);
+                            GTK4.gtk_widget_size_allocate(browser.handle, allocation, -1);
                         } else {
-                            GTK3.gtk_widget_size_allocate(browser.getHandle(), allocation);
+                            GTK3.gtk_widget_size_allocate(browser.handle, allocation);
                         }
                         firstLoad = false;
                     }
@@ -2458,7 +2446,7 @@ class WebKit extends WebBrowser {
                     if (tlsError && !ignoreTls) {
                         tlsError = false;
                         String javaHost = tlsErrorUri.getHost();
-                        SWTMessageBox prompt = new SWTMessageBox(((SWTShell) (browser.getShell())), SWT.YES | SWT.NO);
+                        MessageBox prompt = new MessageBox(browser.getShell(), SWT.YES | SWT.NO);
                         prompt.setText(SWT.getMessage("SWT_InvalidCert_Title"));
                         String specific = tlsErrorType.isEmpty() ? "\n\n" : "\n\n" + tlsErrorType + "\n\n";
                         String message = SWT.getMessage("SWT_InvalidCert_Message", new Object[] { javaHost }) + specific + SWT.getMessage("SWT_InvalidCert_Connect");
@@ -2576,8 +2564,8 @@ class WebKit extends WebBrowser {
      */
     long webkit_notify_progress(long web_view, long pspec) {
         ProgressEvent event = new ProgressEvent(browser);
-        event.display = Display.getInstance(((SWTDisplay) (browser.getDisplay())));
-        event.widget = Widget.getInstance(browser);
+        event.display = browser.getDisplay();
+        event.widget = browser;
         double progress = 0;
         progress = WebKitGTK.webkit_web_view_get_estimated_load_progress(webView);
         event.current = (int) (progress * MAX_PROGRESS);
@@ -2589,7 +2577,7 @@ class WebKit extends WebBrowser {
                 progressListeners[i].changed(event);
             }
         };
-        ((SWTDisplay) (browser.getDisplay())).asyncExec(fireProgressChangedEvents);
+        browser.getDisplay().asyncExec(fireProgressChangedEvents);
         return 0;
     }
 
@@ -2613,21 +2601,21 @@ class WebKit extends WebBrowser {
             titleString = new String(Converter.mbcsToWcs(bytes));
         }
         TitleEvent event = new TitleEvent(browser);
-        event.display = Display.getInstance(((SWTDisplay) (browser.getDisplay())));
-        event.widget = Widget.getInstance(browser);
+        event.display = browser.getDisplay();
+        event.widget = browser;
         event.title = titleString;
         Runnable fireTitleListener = () -> {
             for (int i = 0; i < titleListeners.length; i++) {
                 titleListeners[i].changed(event);
             }
         };
-        ((SWTDisplay) (browser.getDisplay())).asyncExec(fireTitleListener);
+        browser.getDisplay().asyncExec(fireTitleListener);
         return 0;
     }
 
     long webkit_context_menu(long web_view, long context_menu, long eventXXX, long hit_test_result) {
         // might break on Wayland? Wouldn't hurt to verify.
-        Point pt = ((SWTDisplay) (browser.getDisplay())).getCursorLocation();
+        Point pt = browser.getDisplay().getCursorLocation();
         Event event = new Event();
         event.x = pt.x;
         event.y = pt.y;
@@ -2636,7 +2624,7 @@ class WebKit extends WebBrowser {
             // Do not display the menu
             return 1;
         }
-        SWTMenu menu = (SWTMenu) (browser.getMenu());
+        Menu menu = browser.getMenu();
         if (menu != null && !menu.isDisposed()) {
             if (pt.x != event.x || pt.y != event.y) {
                 menu.setLocation(event.x, event.y);
@@ -2674,8 +2662,8 @@ class WebKit extends WebBrowser {
      */
     long webkit_web_view_ready(long web_view) {
         WindowEvent newEvent = new WindowEvent(browser);
-        newEvent.display = Display.getInstance(((SWTDisplay) (browser.getDisplay())));
-        newEvent.widget = Widget.getInstance(browser);
+        newEvent.display = browser.getDisplay();
+        newEvent.widget = browser;
         long properties = WebKitGTK.webkit_web_view_get_window_properties(webView);
         newEvent.addressBar = webkit_settings_get(properties, WebKitGTK.locationbar_visible) != 0;
         newEvent.menuBar = webkit_settings_get(properties, WebKitGTK.menubar_visible) != 0;
@@ -2690,7 +2678,7 @@ class WebKit extends WebBrowser {
             // On Webkit2, if no height/width is specified, then minimum (which is 100) is allocated to popus.
             // This makes popups very small.
             // For better cross-platform consistency (Win/Cocoa/Gtk), we give more reasonable defaults (2/3 the size of a screen).
-            Rectangle primaryMonitorBounds = ((SWTMonitor) (browser.getDisplay().getPrimaryMonitor())).getBounds();
+            Rectangle primaryMonitorBounds = browser.getDisplay().getPrimaryMonitor().getBounds();
             height = (int) (primaryMonitorBounds.height * 0.66);
             width = (int) (primaryMonitorBounds.width * 0.66);
         }
@@ -2705,7 +2693,7 @@ class WebKit extends WebBrowser {
         // Postpone execution of listener, to avoid deadlocks in case evaluate() is
         // called in the listener while another signal is being handled. See bug 512001.
         // evaluate() can safely be called in this listener with no adverse effects.
-        ((SWTDisplay) (browser.getDisplay())).asyncExec(fireVisibilityListeners);
+        browser.getDisplay().asyncExec(fireVisibilityListeners);
         return 0;
     }
 

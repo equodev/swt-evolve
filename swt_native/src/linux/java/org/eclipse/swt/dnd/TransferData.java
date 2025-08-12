@@ -109,4 +109,29 @@ public class TransferData {
      * @noreference This field is not intended to be referenced by clients.
      */
     public int result;
+
+    public TransferData() {
+        this((ITransferData) null);
+        setImpl(new SwtTransferData(this));
+    }
+
+    protected ITransferData impl;
+
+    protected TransferData(ITransferData impl) {
+        if (impl != null)
+            impl.setApi(this);
+    }
+
+    static TransferData createApi(ITransferData impl) {
+        return new TransferData(impl);
+    }
+
+    public ITransferData getImpl() {
+        return impl;
+    }
+
+    protected TransferData setImpl(ITransferData impl) {
+        this.impl = impl;
+        return this;
+    }
 }

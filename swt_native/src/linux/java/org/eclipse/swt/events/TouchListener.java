@@ -1,19 +1,20 @@
-/*******************************************************************************
- * Copyright (c) 2010, 2016 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2010, 2016 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *     Lars Vogel <Lars.Vogel@vogella.com> - Bug 502576
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ *      Lars Vogel <Lars.Vogel@vogella.com> - Bug 502576
+ * *****************************************************************************
+ */
 package org.eclipse.swt.events;
-
 
 import org.eclipse.swt.internal.*;
 
@@ -41,10 +42,10 @@ import org.eclipse.swt.internal.*;
 @FunctionalInterface
 public interface TouchListener extends SWTEventListener {
 
-/**
- * Sent when a touch sequence begins, changes state, or ends.
- *
- * @param e an event containing information about the touch
- */
-void touch(TouchEvent e);
+    /**
+     * Sent when a touch sequence begins, changes state, or ends.
+     *
+     * @param e an event containing information about the touch
+     */
+    void touch(TouchEvent e);
 }

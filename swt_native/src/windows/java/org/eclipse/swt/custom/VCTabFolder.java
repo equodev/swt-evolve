@@ -227,7 +227,7 @@ public class VCTabFolder extends VComposite {
     }
 
     public void setTabHeight(int value) {
-        ((DartCTabFolder) impl).tabHeight = value;
+        ((DartCTabFolder) impl).fixedTabHeight = value;
     }
 
     public int getTabPosition() {

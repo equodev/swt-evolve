@@ -15,10 +15,12 @@
  */
 package org.eclipse.swt.widgets;
 
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.SWTException;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.*;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.gtk.*;
+import org.eclipse.swt.internal.gtk3.*;
+import org.eclipse.swt.internal.gtk4.*;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -70,8 +72,8 @@ public class TabItem extends Item {
      * @see Widget#getStyle
      */
     public TabItem(TabFolder parent, int style) {
-        this(parent.delegate instanceof SWTTabFolder ? new SWTTabItem((SWTTabFolder) parent.delegate, style)
-                : new FlutterTabItem((FlutterTabFolder) parent.delegate, style));
+        this((ITabItem) null);
+        setImpl(new SwtTabItem(parent, style, this));
     }
 
     /**
@@ -107,7 +109,12 @@ public class TabItem extends Item {
      * @see Widget#getStyle
      */
     public TabItem(TabFolder parent, int style, int index) {
-        this(new SWTTabItem((SWTTabFolder) parent.delegate, style, index));
+        this((ITabItem) null);
+        setImpl(new SwtTabItem(parent, style, index, this));
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -124,7 +131,7 @@ public class TabItem extends Item {
      * @since 3.4
      */
     public Rectangle getBounds() {
-        return ((ITabItem) this.delegate).getBounds();
+        return getImpl().getBounds();
     }
 
     /**
@@ -140,7 +147,7 @@ public class TabItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        return Control.getInstance(((ITabItem) this.delegate).getControl());
+        return getImpl().getControl();
     }
 
     /**
@@ -154,7 +161,7 @@ public class TabItem extends Item {
      * </ul>
      */
     public TabFolder getParent() {
-        return TabFolder.getInstance(((ITabItem) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -169,7 +176,7 @@ public class TabItem extends Item {
      * </ul>
      */
     public String getToolTipText() {
-        return ((ITabItem) this.delegate).getToolTipText();
+        return getImpl().getToolTipText();
     }
 
     /**
@@ -188,12 +195,11 @@ public class TabItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        ((ITabItem) this.delegate).setControl((IControl) control.delegate);
+        getImpl().setControl(control);
     }
 
-    @Override
     public void setImage(Image image) {
-        ((ITabItem) this.delegate).setImage(image);
+        getImpl().setImage(image);
     }
 
     /**
@@ -220,9 +226,8 @@ public class TabItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setText(String string) {
-        ((ITabItem) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -251,23 +256,18 @@ public class TabItem extends Item {
      * </ul>
      */
     public void setToolTipText(String string) {
-        ((ITabItem) this.delegate).setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
-    protected TabItem(ITabItem delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected TabItem(ITabItem impl) {
+        super(impl);
     }
 
-    public static TabItem getInstance(ITabItem delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        TabItem ref = (TabItem) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new TabItem(delegate);
-        }
-        return ref;
+    static TabItem createApi(ITabItem impl) {
+        return new TabItem(impl);
+    }
+
+    public ITabItem getImpl() {
+        return (ITabItem) super.getImpl();
     }
 }

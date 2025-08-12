@@ -21,7 +21,6 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -66,7 +65,8 @@ public class TreeItem extends Item {
      * @see Widget#getStyle
      */
     public TreeItem(Tree parent, int style) {
-        this(new SWTTreeItem((SWTTree) parent.delegate, style));
+        this((ITreeItem) null);
+        setImpl(new SwtTreeItem(parent, style, this));
     }
 
     /**
@@ -99,7 +99,8 @@ public class TreeItem extends Item {
      * @see Tree#setRedraw
      */
     public TreeItem(Tree parent, int style, int index) {
-        this(new SWTTreeItem((SWTTree) parent.delegate, style, index));
+        this((ITreeItem) null);
+        setImpl(new SwtTreeItem(parent, style, index, this));
     }
 
     /**
@@ -125,7 +126,8 @@ public class TreeItem extends Item {
      * @see Widget#getStyle
      */
     public TreeItem(TreeItem parentItem, int style) {
-        this(new SWTTreeItem((SWTTreeItem) parentItem.delegate, style));
+        this((ITreeItem) null);
+        setImpl(new SwtTreeItem(parentItem, style, this));
     }
 
     /**
@@ -154,11 +156,17 @@ public class TreeItem extends Item {
      * @see Tree#setRedraw
      */
     public TreeItem(TreeItem parentItem, int style, int index) {
-        this(new SWTTreeItem((SWTTreeItem) parentItem.delegate, style, index));
+        this((ITreeItem) null);
+        setImpl(new SwtTreeItem(parentItem, style, index, this));
     }
 
     TreeItem(Tree parent, long parentIter, int style, int index, long iter) {
-        this(new SWTTreeItem((SWTTree) parent.delegate, parentIter, style, index, iter));
+        this((ITreeItem) null);
+        setImpl(new SwtTreeItem(parent, parentIter, style, index, iter, this));
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -185,7 +193,7 @@ public class TreeItem extends Item {
      * @since 3.2
      */
     public void clear(int index, boolean all) {
-        ((ITreeItem) this.delegate).clear(index, all);
+        getImpl().clear(index, all);
     }
 
     /**
@@ -208,7 +216,7 @@ public class TreeItem extends Item {
      * @since 3.2
      */
     public void clearAll(boolean all) {
-        ((ITreeItem) this.delegate).clearAll(all);
+        getImpl().clearAll(all);
     }
 
     /**
@@ -224,7 +232,7 @@ public class TreeItem extends Item {
      * @since 2.0
      */
     public Color getBackground() {
-        return ((ITreeItem) this.delegate).getBackground();
+        return getImpl().getBackground();
     }
 
     /**
@@ -241,7 +249,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public Color getBackground(int index) {
-        return ((ITreeItem) this.delegate).getBackground(index);
+        return getImpl().getBackground(index);
     }
 
     /**
@@ -259,7 +267,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public Rectangle getBounds(int index) {
-        return ((ITreeItem) this.delegate).getBounds(index);
+        return getImpl().getBounds(index);
     }
 
     /**
@@ -274,7 +282,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        return ((ITreeItem) this.delegate).getBounds();
+        return getImpl().getBounds();
     }
 
     /**
@@ -290,7 +298,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public boolean getChecked() {
-        return ((ITreeItem) this.delegate).getChecked();
+        return getImpl().getChecked();
     }
 
     /**
@@ -305,7 +313,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public boolean getExpanded() {
-        return ((ITreeItem) this.delegate).getExpanded();
+        return getImpl().getExpanded();
     }
 
     /**
@@ -321,7 +329,7 @@ public class TreeItem extends Item {
      * @since 3.0
      */
     public Font getFont() {
-        return ((ITreeItem) this.delegate).getFont();
+        return getImpl().getFont();
     }
 
     /**
@@ -339,7 +347,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public Font getFont(int index) {
-        return ((ITreeItem) this.delegate).getFont(index);
+        return getImpl().getFont(index);
     }
 
     /**
@@ -355,7 +363,7 @@ public class TreeItem extends Item {
      * @since 2.0
      */
     public Color getForeground() {
-        return ((ITreeItem) this.delegate).getForeground();
+        return getImpl().getForeground();
     }
 
     /**
@@ -372,7 +380,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public Color getForeground(int index) {
-        return ((ITreeItem) this.delegate).getForeground(index);
+        return getImpl().getForeground(index);
     }
 
     /**
@@ -388,12 +396,11 @@ public class TreeItem extends Item {
      * </ul>
      */
     public boolean getGrayed() {
-        return ((ITreeItem) this.delegate).getGrayed();
+        return getImpl().getGrayed();
     }
 
-    @Override
     public Image getImage() {
-        return ((ITreeItem) this.delegate).getImage();
+        return getImpl().getImage();
     }
 
     /**
@@ -411,7 +418,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public Image getImage(int index) {
-        return ((ITreeItem) this.delegate).getImage(index);
+        return getImpl().getImage(index);
     }
 
     /**
@@ -430,7 +437,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public Rectangle getImageBounds(int index) {
-        return ((ITreeItem) this.delegate).getImageBounds(index);
+        return getImpl().getImageBounds(index);
     }
 
     /**
@@ -445,7 +452,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public int getItemCount() {
-        return ((ITreeItem) this.delegate).getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -466,7 +473,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public TreeItem getItem(int index) {
-        return TreeItem.getInstance(((ITreeItem) this.delegate).getItem(index));
+        return getImpl().getItem(index);
     }
 
     /**
@@ -486,7 +493,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public TreeItem[] getItems() {
-        return TreeItem.ofArray(((ITreeItem) this.delegate).getItems(), TreeItem.class);
+        return getImpl().getItems();
     }
 
     /**
@@ -500,7 +507,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public Tree getParent() {
-        return Tree.getInstance(((ITreeItem) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -516,12 +523,11 @@ public class TreeItem extends Item {
      * </ul>
      */
     public TreeItem getParentItem() {
-        return TreeItem.getInstance(((ITreeItem) this.delegate).getParentItem());
+        return getImpl().getParentItem();
     }
 
-    @Override
     public String getText() {
-        return ((ITreeItem) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -539,7 +545,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public String getText(int index) {
-        return ((ITreeItem) this.delegate).getText(index);
+        return getImpl().getText(index);
     }
 
     /**
@@ -558,7 +564,7 @@ public class TreeItem extends Item {
      * @since 3.3
      */
     public Rectangle getTextBounds(int index) {
-        return ((ITreeItem) this.delegate).getTextBounds(index);
+        return getImpl().getTextBounds(index);
     }
 
     /**
@@ -582,12 +588,11 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public int indexOf(TreeItem item) {
-        return ((ITreeItem) this.delegate).indexOf((ITreeItem) item.delegate);
+        return getImpl().indexOf(item);
     }
 
-    @Override
     public void dispose() {
-        ((ITreeItem) this.delegate).dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -601,7 +606,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void removeAll() {
-        ((ITreeItem) this.delegate).removeAll();
+        getImpl().removeAll();
     }
 
     /**
@@ -622,7 +627,7 @@ public class TreeItem extends Item {
      * @since 2.0
      */
     public void setBackground(Color color) {
-        ((ITreeItem) this.delegate).setBackground(color);
+        getImpl().setBackground(color);
     }
 
     /**
@@ -644,7 +649,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setBackground(int index, Color color) {
-        ((ITreeItem) this.delegate).setBackground(index, color);
+        getImpl().setBackground(index, color);
     }
 
     /**
@@ -658,7 +663,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public void setChecked(boolean checked) {
-        ((ITreeItem) this.delegate).setChecked(checked);
+        getImpl().setChecked(checked);
     }
 
     /**
@@ -672,7 +677,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public void setExpanded(boolean expanded) {
-        ((ITreeItem) this.delegate).setExpanded(expanded);
+        getImpl().setExpanded(expanded);
     }
 
     /**
@@ -693,7 +698,7 @@ public class TreeItem extends Item {
      * @since 3.0
      */
     public void setFont(Font font) {
-        ((ITreeItem) this.delegate).setFont(font);
+        getImpl().setFont(font);
     }
 
     /**
@@ -716,7 +721,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setFont(int index, Font font) {
-        ((ITreeItem) this.delegate).setFont(index, font);
+        getImpl().setFont(index, font);
     }
 
     /**
@@ -737,7 +742,7 @@ public class TreeItem extends Item {
      * @since 2.0
      */
     public void setForeground(Color color) {
-        ((ITreeItem) this.delegate).setForeground(color);
+        getImpl().setForeground(color);
     }
 
     /**
@@ -759,7 +764,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setForeground(int index, Color color) {
-        ((ITreeItem) this.delegate).setForeground(index, color);
+        getImpl().setForeground(index, color);
     }
 
     /**
@@ -774,7 +779,7 @@ public class TreeItem extends Item {
      * </ul>
      */
     public void setGrayed(boolean grayed) {
-        ((ITreeItem) this.delegate).setGrayed(grayed);
+        getImpl().setGrayed(grayed);
     }
 
     /**
@@ -794,12 +799,11 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setImage(int index, Image image) {
-        ((ITreeItem) this.delegate).setImage(index, image);
+        getImpl().setImage(index, image);
     }
 
-    @Override
     public void setImage(Image image) {
-        ((ITreeItem) this.delegate).setImage(image);
+        getImpl().setImage(image);
     }
 
     /**
@@ -819,7 +823,7 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setImage(Image[] images) {
-        ((ITreeItem) this.delegate).setImage(images);
+        getImpl().setImage(images);
     }
 
     /**
@@ -841,7 +845,7 @@ public class TreeItem extends Item {
      * @since 3.2
      */
     public void setItemCount(int count) {
-        ((ITreeItem) this.delegate).setItemCount(count);
+        getImpl().setItemCount(count);
     }
 
     /**
@@ -864,12 +868,11 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setText(int index, String string) {
-        ((ITreeItem) this.delegate).setText(index, string);
+        getImpl().setText(index, string);
     }
 
-    @Override
     public void setText(String string) {
-        ((ITreeItem) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -891,23 +894,18 @@ public class TreeItem extends Item {
      * @since 3.1
      */
     public void setText(String[] strings) {
-        ((ITreeItem) this.delegate).setText(strings);
+        getImpl().setText(strings);
     }
 
-    protected TreeItem(ITreeItem delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected TreeItem(ITreeItem impl) {
+        super(impl);
     }
 
-    public static TreeItem getInstance(ITreeItem delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        TreeItem ref = (TreeItem) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new TreeItem(delegate);
-        }
-        return ref;
+    static TreeItem createApi(ITreeItem impl) {
+        return new TreeItem(impl);
+    }
+
+    public ITreeItem getImpl() {
+        return (ITreeItem) super.getImpl();
     }
 }

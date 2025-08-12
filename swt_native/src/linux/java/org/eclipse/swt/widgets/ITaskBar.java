@@ -19,7 +19,7 @@ public interface ITaskBar extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITaskItem getItem(int index);
+    TaskItem getItem(int index);
 
     /**
      * Returns the number of items contained in the receiver.
@@ -46,7 +46,7 @@ public interface ITaskBar extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITaskItem getItem(IShell shell);
+    TaskItem getItem(Shell shell);
 
     /**
      * Returns an array of <code>TaskItem</code>s which are the items
@@ -64,5 +64,7 @@ public interface ITaskBar extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITaskItem[] getItems();
+    TaskItem[] getItems();
+
+    TaskBar getApi();
 }

@@ -3,11 +3,10 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface IGroup extends IComposite {
+
+    void checkSubclass();
 
     /**
      * Returns the receiver's text, which is the string that the
@@ -51,4 +50,6 @@ public interface IGroup extends IComposite {
      * </ul>
      */
     void setText(String string);
+
+    Group getApi();
 }

@@ -16,7 +16,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class represent the system tray that is part
@@ -42,7 +41,8 @@ import java.util.WeakHashMap;
 public class Tray extends Widget {
 
     Tray(Display display, int style) {
-        this(new SWTTray((SWTDisplay) display.delegate, style));
+        this((ITray) null);
+        setImpl(new SwtTray(display, style, this));
     }
 
     /**
@@ -61,7 +61,7 @@ public class Tray extends Widget {
      * </ul>
      */
     public TrayItem getItem(int index) {
-        return TrayItem.getInstance(((ITray) this.delegate).getItem(index));
+        return getImpl().getItem(index);
     }
 
     /**
@@ -75,7 +75,7 @@ public class Tray extends Widget {
      * </ul>
      */
     public int getItemCount() {
-        return ((ITray) this.delegate).getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -95,23 +95,18 @@ public class Tray extends Widget {
      * </ul>
      */
     public TrayItem[] getItems() {
-        return TrayItem.ofArray(((ITray) this.delegate).getItems(), TrayItem.class);
+        return getImpl().getItems();
     }
 
-    protected Tray(ITray delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Tray(ITray impl) {
+        super(impl);
     }
 
-    public static Tray getInstance(ITray delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Tray ref = (Tray) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Tray(delegate);
-        }
-        return ref;
+    static Tray createApi(ITray impl) {
+        return new Tray(impl);
+    }
+
+    public ITray getImpl() {
+        return (ITray) super.getImpl();
     }
 }

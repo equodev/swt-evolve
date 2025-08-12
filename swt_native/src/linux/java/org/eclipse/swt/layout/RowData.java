@@ -80,6 +80,8 @@ public final class RowData {
      * default values.
      */
     public RowData() {
+        this((IRowData) null);
+        setImpl(new SwtRowData(this));
     }
 
     /**
@@ -91,8 +93,8 @@ public final class RowData {
      * @param height a minimum height for the control
      */
     public RowData(int width, int height) {
-        this.width = width;
-        this.height = height;
+        this((IRowData) null);
+        setImpl(new SwtRowData(width, height, this));
     }
 
     /**
@@ -104,15 +106,8 @@ public final class RowData {
      * and y coordinate specifies a minimum height for the control
      */
     public RowData(Point point) {
-        this(point.x, point.y);
-    }
-
-    String getName() {
-        String string = getClass().getName();
-        int index = string.lastIndexOf('.');
-        if (index == -1)
-            return string;
-        return string.substring(index + 1, string.length());
+        this((IRowData) null);
+        setImpl(new SwtRowData(point, this));
     }
 
     /**
@@ -121,17 +116,27 @@ public final class RowData {
      *
      * @return a string representation of the RowData object
      */
-    @Override
     public String toString() {
-        String string = getName() + " {";
-        if (width != SWT.DEFAULT)
-            string += "width=" + width + " ";
-        if (height != SWT.DEFAULT)
-            string += "height=" + height + " ";
-        if (exclude)
-            string += "exclude=" + exclude + " ";
-        string = string.trim();
-        string += "}";
-        return string;
+        return getImpl().toString();
+    }
+
+    protected IRowData impl;
+
+    protected RowData(IRowData impl) {
+        if (impl != null)
+            impl.setApi(this);
+    }
+
+    static RowData createApi(IRowData impl) {
+        return new RowData(impl);
+    }
+
+    public IRowData getImpl() {
+        return impl;
+    }
+
+    protected RowData setImpl(IRowData impl) {
+        this.impl = impl;
+        return this;
     }
 }

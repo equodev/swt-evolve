@@ -22,7 +22,6 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class implement the notebook user interface
@@ -112,7 +111,12 @@ public class TabFolder extends Composite {
      * @see Widget#getStyle
      */
     public TabFolder(Composite parent, int style) {
-        this(new SWTTabFolder((SWTComposite) parent.delegate, style));
+        this((ITabFolder) null);
+        setImpl(new SwtTabFolder(parent, style, this));
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -140,7 +144,7 @@ public class TabFolder extends Composite {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ITabFolder) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -159,7 +163,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public TabItem getItem(int index) {
-        return TabItem.getInstance(((ITabFolder) this.delegate).getItem(index));
+        return getImpl().getItem(index);
     }
 
     /**
@@ -181,7 +185,7 @@ public class TabFolder extends Composite {
      * @since 3.4
      */
     public TabItem getItem(Point point) {
-        return TabItem.getInstance(((ITabFolder) this.delegate).getItem(point));
+        return getImpl().getItem(point);
     }
 
     /**
@@ -195,7 +199,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public int getItemCount() {
-        return ((ITabFolder) this.delegate).getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -215,7 +219,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public TabItem[] getItems() {
-        return TabItem.ofArray(((ITabFolder) this.delegate).getItems(), TabItem.class);
+        return getImpl().getItems();
     }
 
     /**
@@ -235,7 +239,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public TabItem[] getSelection() {
-        return TabItem.ofArray(((ITabFolder) this.delegate).getSelection(), TabItem.class);
+        return getImpl().getSelection();
     }
 
     /**
@@ -250,7 +254,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public int getSelectionIndex() {
-        return ((ITabFolder) this.delegate).getSelectionIndex();
+        return getImpl().getSelectionIndex();
     }
 
     /**
@@ -271,7 +275,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public int indexOf(TabItem item) {
-        return ((ITabFolder) this.delegate).indexOf((ITabItem) item.delegate);
+        return getImpl().indexOf(item);
     }
 
     /**
@@ -292,7 +296,7 @@ public class TabFolder extends Composite {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ITabFolder) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -309,7 +313,7 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public void setSelection(int index) {
-        ((ITabFolder) this.delegate).setSelection(index);
+        getImpl().setSelection(index);
     }
 
     /**
@@ -330,7 +334,7 @@ public class TabFolder extends Composite {
      * @since 3.2
      */
     public void setSelection(TabItem item) {
-        ((ITabFolder) this.delegate).setSelection((ITabItem) item.delegate);
+        getImpl().setSelection(item);
     }
 
     /**
@@ -349,23 +353,18 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public void setSelection(TabItem[] items) {
-        ((ITabFolder) this.delegate).setSelection(fromArray(items, ITabItem.class));
+        getImpl().setSelection(items);
     }
 
-    protected TabFolder(ITabFolder delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected TabFolder(ITabFolder impl) {
+        super(impl);
     }
 
-    public static TabFolder getInstance(ITabFolder delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        TabFolder ref = (TabFolder) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new TabFolder(delegate);
-        }
-        return ref;
+    static TabFolder createApi(ITabFolder impl) {
+        return new TabFolder(impl);
+    }
+
+    public ITabFolder getImpl() {
+        return (ITabFolder) super.getImpl();
     }
 }

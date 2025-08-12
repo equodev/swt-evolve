@@ -19,7 +19,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class represent input method editors.
@@ -48,7 +47,8 @@ public class IME extends Widget {
      * Prevents uninitialized instances from being created outside the package.
      */
     IME() {
-        this(new SWTIME());
+        this((IIME) null);
+        setImpl(new SwtIME(this));
     }
 
     /**
@@ -79,7 +79,8 @@ public class IME extends Widget {
      * @see Widget#getStyle
      */
     public IME(Canvas parent, int style) {
-        this(new SWTIME((SWTCanvas) parent.delegate, style));
+        this((IIME) null);
+        setImpl(new SwtIME(parent, style, this));
     }
 
     /**
@@ -95,7 +96,7 @@ public class IME extends Widget {
      * </ul>
      */
     public int getCaretOffset() {
-        return ((IIME) this.delegate).getCaretOffset();
+        return getImpl().getCaretOffset();
     }
 
     /**
@@ -114,7 +115,7 @@ public class IME extends Widget {
      * @see IME#getText
      */
     public int getCommitCount() {
-        return ((IIME) this.delegate).getCommitCount();
+        return getImpl().getCommitCount();
     }
 
     /**
@@ -131,7 +132,7 @@ public class IME extends Widget {
      * </ul>
      */
     public int getCompositionOffset() {
-        return ((IIME) this.delegate).getCompositionOffset();
+        return getImpl().getCompositionOffset();
     }
 
     /**
@@ -153,7 +154,7 @@ public class IME extends Widget {
      * @see IME#getStyles
      */
     public int[] getRanges() {
-        return ((IIME) this.delegate).getRanges();
+        return getImpl().getRanges();
     }
 
     /**
@@ -175,7 +176,7 @@ public class IME extends Widget {
      * @see IME#getRanges
      */
     public TextStyle[] getStyles() {
-        return ((IIME) this.delegate).getStyles();
+        return getImpl().getStyles();
     }
 
     /**
@@ -195,7 +196,7 @@ public class IME extends Widget {
      * </ul>
      */
     public String getText() {
-        return ((IIME) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -212,7 +213,7 @@ public class IME extends Widget {
      * </ul>
      */
     public boolean getWideCaret() {
-        return ((IIME) this.delegate).getWideCaret();
+        return getImpl().getWideCaret();
     }
 
     /**
@@ -232,23 +233,18 @@ public class IME extends Widget {
      * </ul>
      */
     public void setCompositionOffset(int offset) {
-        ((IIME) this.delegate).setCompositionOffset(offset);
+        getImpl().setCompositionOffset(offset);
     }
 
-    protected IME(IIME delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected IME(IIME impl) {
+        super(impl);
     }
 
-    public static IME getInstance(IIME delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        IME ref = (IME) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new IME(delegate);
-        }
-        return ref;
+    static IME createApi(IIME impl) {
+        return new IME(impl);
+    }
+
+    public IIME getImpl() {
+        return (IIME) super.getImpl();
     }
 }

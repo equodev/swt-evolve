@@ -99,7 +99,6 @@ public class DartCaret extends DartWidget implements ICaret {
     }
 
     long defaultFont() {
-        long hwnd = parent.handle;
         long hFont = 0;
         if (hFont == 0) {
         }
@@ -300,7 +299,6 @@ public class DartCaret extends DartWidget implements ICaret {
     }
 
     void resizeIME() {
-        long hwnd = parent.handle;
         IME ime = parent.getIME();
         if (ime != null && ((SwtIME) ime.getImpl()).isInlineEnabled()) {
         } else {
@@ -337,7 +335,6 @@ public class DartCaret extends DartWidget implements ICaret {
 
     void resize() {
         resized = false;
-        long hwnd = parent.handle;
         int widthInPixels = this.getWidthInPixels();
         if (image == null && widthInPixels == 0) {
         }
@@ -364,6 +361,7 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setBounds(int x, int y, int width, int height) {
+        dirty();
         checkWidget();
         boolean samePosition = this.x == x && this.y == y;
         boolean sameExtent = this.width == width && this.height == height;
@@ -382,7 +380,6 @@ public class DartCaret extends DartWidget implements ICaret {
             if (isVisible && hasFocus())
                 resize();
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -401,13 +398,10 @@ public class DartCaret extends DartWidget implements ICaret {
     public void setBounds(Rectangle rect) {
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        this.bounds = rect;
         setBounds(rect.x, rect.y, rect.width, rect.height);
     }
 
     void setFocus() {
-        long hwnd = parent.handle;
-        long hBitmap = 0;
         int widthInPixels = this.getWidthInPixels();
         if (image == null && widthInPixels == 0) {
         }
@@ -431,6 +425,7 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setFont(Font font) {
+        dirty();
         checkWidget();
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -439,7 +434,6 @@ public class DartCaret extends DartWidget implements ICaret {
         this.font = font == null ? null : SwtFont.win32_new(font, shell.nativeZoom);
         if (hasFocus())
             setIMEFont();
-        getBridge().dirty(this);
     }
 
     /**
@@ -458,6 +452,7 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setImage(Image image) {
+        dirty();
         checkWidget();
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -465,7 +460,6 @@ public class DartCaret extends DartWidget implements ICaret {
         this.image = image;
         if (isVisible && hasFocus())
             resize();
-        getBridge().dirty(this);
     }
 
     void setIMEFont() {
@@ -490,6 +484,7 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setLocation(int x, int y) {
+        dirty();
         checkWidget();
         if (this.x == x && this.y == y && isCurrentCaret())
             return;
@@ -498,7 +493,6 @@ public class DartCaret extends DartWidget implements ICaret {
         moved = true;
         if (isVisible && hasFocus())
             move();
-        getBridge().dirty(this);
     }
 
     private boolean isCurrentCaret() {
@@ -540,6 +534,7 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setSize(int width, int height) {
+        dirty();
         checkWidget();
         if (this.width == width && this.height == height && isCurrentCaret())
             return;
@@ -548,7 +543,6 @@ public class DartCaret extends DartWidget implements ICaret {
         resized = true;
         if (isVisible && hasFocus())
             resize();
-        getBridge().dirty(this);
     }
 
     /**
@@ -588,11 +582,11 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setVisible(boolean visible) {
+        dirty();
         checkWidget();
         if (visible == isVisible)
             return;
         isVisible = visible;
-        long hwnd = parent.handle;
         if (!isVisible) {
         } else {
             if (resized) {
@@ -602,7 +596,6 @@ public class DartCaret extends DartWidget implements ICaret {
                     move();
             }
         }
-        getBridge().dirty(this);
     }
 
     private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
@@ -617,8 +610,6 @@ public class DartCaret extends DartWidget implements ICaret {
             caret.setFont(((DartCaret) caret.getImpl()).font);
         }
     }
-
-    Rectangle bounds = new Rectangle(0, 0, 0, 0);
 
     public Canvas _parent() {
         return parent;
@@ -660,20 +651,16 @@ public class DartCaret extends DartWidget implements ICaret {
         return font;
     }
 
-    public Rectangle _bounds() {
-        return bounds;
-    }
-
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
         Composite p = parent;
-        while (!(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
-        return ((DartWidget) p.getImpl()).getBridge();
+        while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
     }
 
     public Caret getApi() {

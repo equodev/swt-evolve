@@ -6,11 +6,10 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface ITree extends IComposite {
+
+    void checkSubclass();
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -125,7 +124,7 @@ public interface ITree extends IComposite {
      *
      * @since 3.4
      */
-    void deselect(ITreeItem item);
+    void deselect(TreeItem item);
 
     /**
      * Deselects all selected items in the receiver.
@@ -166,7 +165,7 @@ public interface ITree extends IComposite {
      *
      * @since 3.1
      */
-    ITreeColumn getColumn(int index);
+    TreeColumn getColumn(int index);
 
     /**
      * Returns the number of columns contained in the receiver.
@@ -245,7 +244,7 @@ public interface ITree extends IComposite {
      *
      * @since 3.1
      */
-    ITreeColumn[] getColumns();
+    TreeColumn[] getColumns();
 
     /**
      * Returns the width in points of a grid line.
@@ -339,7 +338,7 @@ public interface ITree extends IComposite {
      *
      * @since 3.1
      */
-    ITreeItem getItem(int index);
+    TreeItem getItem(int index);
 
     /**
      * Returns the item at the given point in the receiver
@@ -364,7 +363,7 @@ public interface ITree extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITreeItem getItem(Point point);
+    TreeItem getItem(Point point);
 
     /**
      * Returns the number of items contained in the receiver
@@ -411,7 +410,7 @@ public interface ITree extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITreeItem[] getItems();
+    TreeItem[] getItems();
 
     /**
      * Returns <code>true</code> if the receiver's lines are visible,
@@ -447,7 +446,7 @@ public interface ITree extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITreeItem getParentItem();
+    TreeItem getParentItem();
 
     /**
      * Returns an array of <code>TreeItem</code>s that are currently
@@ -465,7 +464,7 @@ public interface ITree extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITreeItem[] getSelection();
+    TreeItem[] getSelection();
 
     /**
      * Returns the number of selected items contained in the receiver.
@@ -495,7 +494,7 @@ public interface ITree extends IComposite {
      *
      * @since 3.2
      */
-    ITreeColumn getSortColumn();
+    TreeColumn getSortColumn();
 
     /**
      * Returns the direction of the sort indicator for the receiver.
@@ -529,7 +528,7 @@ public interface ITree extends IComposite {
      *
      * @since 2.1
      */
-    ITreeItem getTopItem();
+    TreeItem getTopItem();
 
     /**
      * Searches the receiver's list starting at the first column
@@ -550,7 +549,7 @@ public interface ITree extends IComposite {
      *
      * @since 3.1
      */
-    int indexOf(ITreeColumn column);
+    int indexOf(TreeColumn column);
 
     /**
      * Searches the receiver's list starting at the first item
@@ -572,7 +571,7 @@ public interface ITree extends IComposite {
      *
      * @since 3.1
      */
-    int indexOf(ITreeItem item);
+    int indexOf(TreeItem item);
 
     /**
      * Removes all of the items from the receiver.
@@ -639,7 +638,7 @@ public interface ITree extends IComposite {
      *     <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      *  </ul>
      */
-    void setInsertMark(ITreeItem item, boolean before);
+    void setInsertMark(TreeItem item, boolean before);
 
     /**
      * Sets the number of root-level items contained in the receiver.
@@ -675,7 +674,7 @@ public interface ITree extends IComposite {
      *
      * @since 3.4
      */
-    void select(ITreeItem item);
+    void select(TreeItem item);
 
     /**
      * Selects all of the items in the receiver.
@@ -820,7 +819,7 @@ public interface ITree extends IComposite {
      *
      * @since 3.2
      */
-    void setSelection(ITreeItem item);
+    void setSelection(TreeItem item);
 
     /**
      * Sets the receiver's selection to be the given array of items.
@@ -845,7 +844,7 @@ public interface ITree extends IComposite {
      *
      * @see Tree#deselectAll()
      */
-    void setSelection(ITreeItem[] items);
+    void setSelection(TreeItem[] items);
 
     /**
      * Sets the column used by the sort indicator for the receiver. A null
@@ -864,7 +863,7 @@ public interface ITree extends IComposite {
      *
      * @since 3.2
      */
-    void setSortColumn(ITreeColumn column);
+    void setSortColumn(TreeColumn column);
 
     /**
      * Sets the direction of the sort indicator for the receiver. The value
@@ -901,7 +900,7 @@ public interface ITree extends IComposite {
      *
      * @since 2.1
      */
-    void setTopItem(ITreeItem item);
+    void setTopItem(TreeItem item);
 
     /**
      * Shows the column.  If the column is already showing in the receiver,
@@ -921,7 +920,7 @@ public interface ITree extends IComposite {
      *
      * @since 3.1
      */
-    void showColumn(ITreeColumn column);
+    void showColumn(TreeColumn column);
 
     /**
      * Shows the selection.  If the selection is already showing in the receiver,
@@ -955,7 +954,9 @@ public interface ITree extends IComposite {
      *
      * @see Tree#showSelection()
      */
-    void showItem(ITreeItem item);
+    void showItem(TreeItem item);
 
     void dispose();
+
+    Tree getApi();
 }

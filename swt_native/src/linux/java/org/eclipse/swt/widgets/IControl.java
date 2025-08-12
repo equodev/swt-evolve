@@ -8,11 +8,8 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
-public interface IControl extends IWidget {
+public interface IControl extends IWidget, ImplControl {
 
     /**
      * Returns the orientation of the receiver, which will be one of the
@@ -350,6 +347,8 @@ public interface IControl extends IWidget {
      */
     void setSize(int width, int height);
 
+    boolean isAutoScalable();
+
     /**
      * Moves the receiver above the specified control in the
      * drawing order. If the argument is null, then the receiver
@@ -370,7 +369,7 @@ public interface IControl extends IWidget {
      * @see Control#moveBelow
      * @see Composite#getChildren
      */
-    void moveAbove(IControl control);
+    void moveAbove(Control control);
 
     /**
      * Moves the receiver below the specified control in the
@@ -392,7 +391,7 @@ public interface IControl extends IWidget {
      * @see Control#moveAbove
      * @see Composite#getChildren
      */
-    void moveBelow(IControl control);
+    void moveBelow(Control control);
 
     /**
      * Causes the receiver to be resized to its preferred size.
@@ -1378,7 +1377,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IMenu getMenu();
+    Menu getMenu();
 
     /**
      * Returns the receiver's monitor.
@@ -1392,7 +1391,7 @@ public interface IControl extends IWidget {
      *
      * @since 3.0
      */
-    IMonitor getMonitor();
+    Monitor getMonitor();
 
     /**
      * Returns the receiver's parent, which must be a <code>Composite</code>
@@ -1406,7 +1405,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IComposite getParent();
+    Composite getParent();
 
     /**
      * Returns the region that defines the shape of the control,
@@ -1438,7 +1437,7 @@ public interface IControl extends IWidget {
      *
      * @see #getParent
      */
-    IShell getShell();
+    Shell getShell();
 
     /**
      * Returns the receiver's tool tip text, or null if it has
@@ -1493,6 +1492,40 @@ public interface IControl extends IWidget {
      * </ul>
      */
     boolean getVisible();
+
+    /**
+     * Invokes platform specific functionality to allocate a new GC handle.
+     * <p>
+     * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
+     * API for <code>Control</code>. It is marked public only so that it
+     * can be shared within the packages provided by SWT. It is not
+     * available on all platforms, and should never be called from
+     * application code.
+     * </p>
+     *
+     * @param data the platform specific GC data
+     * @return the platform specific GC handle
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     */
+    long internal_new_GC(GCData data);
+
+    /**
+     * Invokes platform specific functionality to dispose a GC handle.
+     * <p>
+     * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
+     * API for <code>Control</code>. It is marked public only so that it
+     * can be shared within the packages provided by SWT. It is not
+     * available on all platforms, and should never be called from
+     * application code.
+     * </p>
+     *
+     * @param hDC the platform specific GC handle
+     * @param data the platform specific GC data
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     */
+    void internal_dispose_GC(long hDC, GCData data);
 
     /**
      * Returns <code>true</code> if the underlying operating
@@ -1825,7 +1858,7 @@ public interface IControl extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setMenu(IMenu menu);
+    void setMenu(Menu menu);
 
     /**
      * Sets the orientation of the receiver, which must be one
@@ -1858,7 +1891,7 @@ public interface IControl extends IWidget {
      *     <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * 	</ul>
      */
-    boolean setParent(IComposite parent);
+    boolean setParent(Composite parent);
 
     /**
      * If the argument is <code>false</code>, causes subsequent drawing
@@ -2088,4 +2121,5 @@ public interface IControl extends IWidget {
      */
     void update();
 
+    Control getApi();
 }

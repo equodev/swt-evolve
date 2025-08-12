@@ -9,4 +9,8 @@ public interface ITouch {
      * @return a string representation of the event
      */
     String toString();
+
+    Touch getApi();
+
+    void setApi(Touch api);
 }

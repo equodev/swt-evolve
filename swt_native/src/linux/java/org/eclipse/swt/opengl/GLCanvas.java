@@ -22,7 +22,6 @@ import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.opengl.glx.*;
 import org.eclipse.swt.widgets.*;
-import java.util.WeakHashMap;
 
 /**
  * GLCanvas is a widget capable of displaying OpenGL content.
@@ -49,7 +48,8 @@ public class GLCanvas extends Canvas {
      * </ul>
      */
     public GLCanvas(Composite parent, int style, GLData data) {
-        this(new SWTGLCanvas((SWTComposite) parent.delegate, style, data));
+        this((IGLCanvas) null);
+        setImpl(new SwtGLCanvas(parent, style, data, this));
     }
 
     /**
@@ -62,7 +62,7 @@ public class GLCanvas extends Canvas {
      * </ul>
      */
     public GLData getGLData() {
-        return ((IGLCanvas) this.delegate).getGLData();
+        return getImpl().getGLData();
     }
 
     /**
@@ -77,7 +77,7 @@ public class GLCanvas extends Canvas {
      * </ul>
      */
     public boolean isCurrent() {
-        return ((IGLCanvas) this.delegate).isCurrent();
+        return getImpl().isCurrent();
     }
 
     /**
@@ -90,7 +90,7 @@ public class GLCanvas extends Canvas {
      * </ul>
      */
     public void setCurrent() {
-        ((IGLCanvas) this.delegate).setCurrent();
+        getImpl().setCurrent();
     }
 
     /**
@@ -102,27 +102,18 @@ public class GLCanvas extends Canvas {
      * </ul>
      */
     public void swapBuffers() {
-        ((IGLCanvas) this.delegate).swapBuffers();
+        getImpl().swapBuffers();
     }
 
-    public long getContext() {
-        return ((IGLCanvas) this.delegate).getContext();
+    protected GLCanvas(IGLCanvas impl) {
+        super(impl);
     }
 
-    protected GLCanvas(IGLCanvas delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    static GLCanvas createApi(IGLCanvas impl) {
+        return new GLCanvas(impl);
     }
 
-    public static GLCanvas getInstance(IGLCanvas delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        GLCanvas ref = (GLCanvas) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new GLCanvas(delegate);
-        }
-        return ref;
+    public IGLCanvas getImpl() {
+        return (IGLCanvas) super.getImpl();
     }
 }

@@ -34,24 +34,9 @@ import org.eclipse.swt.internal.gtk.*;
  */
 public class RTFTransfer extends ByteArrayTransfer {
 
-    private static RTFTransfer _instance = new RTFTransfer();
-
-    //$NON-NLS-1$
-    private static final String TEXT_RTF = "text/rtf";
-
-    private static final int TEXT_RTF_ID = GTK.GTK4 ? 0 : registerType(TEXT_RTF);
-
-    //$NON-NLS-1$
-    private static final String TEXT_RTF2 = "TEXT/RTF";
-
-    private static final int TEXT_RTF2_ID = GTK.GTK4 ? 0 : registerType(TEXT_RTF2);
-
-    //$NON-NLS-1$
-    private static final String APPLICATION_RTF = "application/rtf";
-
-    private static final int APPLICATION_RTF_ID = GTK.GTK4 ? 0 : registerType(APPLICATION_RTF);
-
-    private RTFTransfer() {
+    RTFTransfer() {
+        this((IRTFTransfer) null);
+        setImpl(new SwtRTFTransfer(this));
     }
 
     /**
@@ -60,7 +45,7 @@ public class RTFTransfer extends ByteArrayTransfer {
      * @return the singleton instance of the RTFTransfer class
      */
     public static RTFTransfer getInstance() {
-        return _instance;
+        return SwtRTFTransfer.getInstance();
     }
 
     /**
@@ -73,22 +58,8 @@ public class RTFTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#nativeToJava
      */
-    @Override
     public void javaToNative(Object object, TransferData transferData) {
-        transferData.result = 0;
-        if (!checkRTF(object) || !isSupportedType(transferData)) {
-            DND.error(DND.ERROR_INVALID_DATA);
-        }
-        String string = (String) object;
-        byte[] buffer = Converter.wcsToMbcs(string, true);
-        long pValue = OS.g_malloc(buffer.length);
-        if (pValue == 0)
-            return;
-        C.memmove(pValue, buffer, buffer.length);
-        transferData.length = buffer.length - 1;
-        transferData.format = 8;
-        transferData.pValue = pValue;
-        transferData.result = 1;
+        getImpl().javaToNative(object, transferData);
     }
 
     /**
@@ -101,43 +72,31 @@ public class RTFTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#javaToNative
      */
-    @Override
     public Object nativeToJava(TransferData transferData) {
-        if (!isSupportedType(transferData) || transferData.pValue == 0)
-            return null;
-        int size = transferData.format * transferData.length / 8;
-        if (size == 0)
-            return null;
-        byte[] buffer = new byte[size];
-        C.memmove(buffer, transferData.pValue, size);
-        char[] chars = Converter.mbcsToWcs(buffer);
-        String string = new String(chars);
-        int end = string.indexOf('\0');
-        return (end == -1) ? string : string.substring(0, end);
+        return getImpl().nativeToJava(transferData);
     }
 
-    @Override
     protected int[] getTypeIds() {
-        if (GTK.GTK4) {
-            return new int[] { (int) OS.G_TYPE_STRING() };
-        }
-        return new int[] { TEXT_RTF_ID, TEXT_RTF2_ID, APPLICATION_RTF_ID };
+        return getImpl().getTypeIds();
     }
 
-    @Override
     protected String[] getTypeNames() {
-        if (GTK.GTK4) {
-            return new String[] { TEXT_RTF };
-        }
-        return new String[] { TEXT_RTF, TEXT_RTF2, APPLICATION_RTF };
+        return getImpl().getTypeNames();
     }
 
-    boolean checkRTF(Object object) {
-        return (object instanceof String && !((String) object).isEmpty());
-    }
-
-    @Override
     protected boolean validate(Object object) {
-        return checkRTF(object);
+        return getImpl().validate(object);
+    }
+
+    protected RTFTransfer(IRTFTransfer impl) {
+        super(impl);
+    }
+
+    static RTFTransfer createApi(IRTFTransfer impl) {
+        return new RTFTransfer(impl);
+    }
+
+    public IRTFTransfer getImpl() {
+        return (IRTFTransfer) super.getImpl();
     }
 }

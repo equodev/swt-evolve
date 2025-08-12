@@ -17,7 +17,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class represent a task item.
@@ -68,7 +67,12 @@ public class TaskItem extends Item {
      * @see Widget#getStyle
      */
     TaskItem(TaskBar parent, int style) {
-        this(new SWTTaskItem((SWTTaskBar) parent.delegate, style));
+        this((ITaskItem) null);
+        setImpl(new SwtTaskItem(parent, style, this));
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -83,7 +87,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public Menu getMenu() {
-        return Menu.getInstance(((ITaskItem) this.delegate).getMenu());
+        return getImpl().getMenu();
     }
 
     /**
@@ -98,7 +102,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public Image getOverlayImage() {
-        return ((ITaskItem) this.delegate).getOverlayImage();
+        return getImpl().getOverlayImage();
     }
 
     /**
@@ -113,7 +117,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public String getOverlayText() {
-        return ((ITaskItem) this.delegate).getOverlayText();
+        return getImpl().getOverlayText();
     }
 
     /**
@@ -127,7 +131,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public TaskBar getParent() {
-        return TaskBar.getInstance(((ITaskItem) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -141,7 +145,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public int getProgress() {
-        return ((ITaskItem) this.delegate).getProgress();
+        return getImpl().getProgress();
     }
 
     /**
@@ -155,7 +159,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public int getProgressState() {
-        return ((ITaskItem) this.delegate).getProgressState();
+        return getImpl().getProgressState();
     }
 
     /**
@@ -190,7 +194,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public void setMenu(Menu menu) {
-        ((ITaskItem) this.delegate).setMenu((IMenu) menu.delegate);
+        getImpl().setMenu(menu);
     }
 
     /**
@@ -221,7 +225,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public void setOverlayImage(Image overlayImage) {
-        ((ITaskItem) this.delegate).setOverlayImage(overlayImage);
+        getImpl().setOverlayImage(overlayImage);
     }
 
     /**
@@ -251,7 +255,7 @@ public class TaskItem extends Item {
      * </ul>
      */
     public void setOverlayText(String overlayText) {
-        ((ITaskItem) this.delegate).setOverlayText(overlayText);
+        getImpl().setOverlayText(overlayText);
     }
 
     /**
@@ -290,7 +294,7 @@ public class TaskItem extends Item {
      * #see {@link #setProgress(int)}
      */
     public void setProgressState(int progressState) {
-        ((ITaskItem) this.delegate).setProgressState(progressState);
+        getImpl().setProgressState(progressState);
     }
 
     /**
@@ -319,23 +323,18 @@ public class TaskItem extends Item {
      * #see {@link #setProgressState(int)}
      */
     public void setProgress(int progress) {
-        ((ITaskItem) this.delegate).setProgress(progress);
+        getImpl().setProgress(progress);
     }
 
-    protected TaskItem(ITaskItem delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected TaskItem(ITaskItem impl) {
+        super(impl);
     }
 
-    public static TaskItem getInstance(ITaskItem delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        TaskItem ref = (TaskItem) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new TaskItem(delegate);
-        }
-        return ref;
+    static TaskItem createApi(ITaskItem impl) {
+        return new TaskItem(impl);
+    }
+
+    public ITaskItem getImpl() {
+        return (ITaskItem) super.getImpl();
     }
 }

@@ -9,9 +9,6 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface IDateTime extends IComposite {
 
@@ -40,6 +37,8 @@ public interface IDateTime extends IComposite {
      * @see SelectionEvent
      */
     void addSelectionListener(SelectionListener listener);
+
+    void checkSubclass();
 
     /**
      * Returns the receiver's date, or day of the month.
@@ -211,7 +210,7 @@ public interface IDateTime extends IComposite {
      */
     void setHours(int hours);
 
-    void setMenu(IMenu menu);
+    void setMenu(Menu menu);
 
     /**
      * Sets the receiver's minutes.
@@ -294,4 +293,6 @@ public interface IDateTime extends IComposite {
      * @see #setDate
      */
     void setYear(int year);
+
+    DateTime getApi();
 }

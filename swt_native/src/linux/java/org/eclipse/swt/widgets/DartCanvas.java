@@ -1,0 +1,448 @@
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
+ *
+ *  SPDX-License-Identifier: EPL-2.0
+ *
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
+package org.eclipse.swt.widgets;
+
+import org.eclipse.swt.*;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.cairo.*;
+import dev.equo.swt.*;
+
+/**
+ * Instances of this class provide a surface for drawing
+ * arbitrary graphics.
+ * <dl>
+ * <dt><b>Styles:</b></dt>
+ * <dd>(none)</dd>
+ * <dt><b>Events:</b></dt>
+ * <dd>(none)</dd>
+ * </dl>
+ * <p>
+ * This class may be subclassed by custom control implementors
+ * who are building controls that are <em>not</em> constructed
+ * from aggregates of other controls. That is, they are either
+ * painted using SWT graphics calls or are handled by native
+ * methods.
+ * </p>
+ *
+ * @see Composite
+ * @see <a href="http://www.eclipse.org/swt/snippets/#canvas">Canvas snippets</a>
+ * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
+ * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ */
+public class DartCanvas extends DartComposite implements ICanvas {
+
+    Caret caret;
+
+    IME ime;
+
+    boolean blink, drawFlag;
+
+    DartCanvas(Canvas api) {
+        super(api);
+    }
+
+    /**
+     * Constructs a new instance of this class given its parent
+     * and a style value describing its behavior and appearance.
+     * <p>
+     * The style value is either one of the style constants defined in
+     * class <code>SWT</code> which is applicable to instances of this
+     * class, or must be built by <em>bitwise OR</em>'ing together
+     * (that is, using the <code>int</code> "|" operator) two or more
+     * of those <code>SWT</code> style constants. The class description
+     * lists the style constants that are applicable to the class.
+     * Style bits are also inherited from superclasses.
+     * </p>
+     *
+     * @param parent a composite control which will be the parent of the new instance (cannot be null)
+     * @param style the style of control to construct
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the parent</li>
+     * </ul>
+     *
+     * @see SWT
+     * @see Widget#getStyle
+     */
+    public DartCanvas(Composite parent, int style, Canvas api) {
+        super(parent, checkStyle(style), api);
+    }
+
+    /**
+     * Fills the interior of the rectangle specified by the arguments,
+     * with the receiver's background.
+     *
+     * @param gc the gc where the rectangle is to be filled
+     * @param x the x coordinate of the rectangle to be filled
+     * @param y the y coordinate of the rectangle to be filled
+     * @param width the width of the rectangle to be filled
+     * @param height the height of the rectangle to be filled
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the gc is null</li>
+     *    <li>ERROR_INVALID_ARGUMENT - if the gc has been disposed</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @since 3.2
+     */
+    public void drawBackground(GC gc, int x, int y, int width, int height) {
+        drawBackground(gc, x, y, width, height, 0, 0);
+    }
+
+    /**
+     * Returns the caret.
+     * <p>
+     * The caret for the control is automatically hidden
+     * and shown when the control is painted or resized,
+     * when focus is gained or lost and when an the control
+     * is scrolled.  To avoid drawing on top of the caret,
+     * the programmer must hide and show the caret when
+     * drawing in the window any other time.
+     * </p>
+     *
+     * @return the caret for the receiver, may be null
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     */
+    public Caret getCaret() {
+        checkWidget();
+        return caret;
+    }
+
+    @Override
+    Point getIMCaretPos() {
+        if (caret == null)
+            return super.getIMCaretPos();
+        return new Point(caret.getImpl()._x(), caret.getImpl()._y());
+    }
+
+    /**
+     * Returns the IME.
+     *
+     * @return the IME
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @since 3.4
+     */
+    public IME getIME() {
+        checkWidget();
+        return ime;
+    }
+
+    void drawCaretInFocus(long widget, long cairo) {
+        /*
+	 *  blink is needed to be checked as gtk_draw() signals sent from other parts of the canvas
+	 *  can interfere with the blinking state. This will ensure that we are only draw/redrawing the
+	 *  caret when it is intended to. See Bug 517487.
+	 *
+	 *  Additionally, only draw the caret if it has focus. See bug 528819.
+	 */
+        if (caret != null && blink == true && ((DartCaret) caret.getImpl()).isFocusCaret()) {
+            drawCaret(widget, cairo);
+            blink = false;
+        }
+    }
+
+    private void drawCaret(long widget, long cairo) {
+        if (this.isDisposed())
+            return;
+        if (cairo == 0)
+            error(SWT.ERROR_NO_HANDLES);
+        if (drawFlag) {
+            if (caret.getImpl()._image() != null && !caret.getImpl()._image().isDisposed() && caret.getImpl()._image().mask == 0) {
+                int nWidth = 0;
+                int nX = caret.getImpl()._x();
+                if ((getApi().style & SWT.MIRRORED) != 0)
+                    nX = getClientWidth() - nWidth - nX;
+            } else {
+                int nWidth = caret.getImpl()._width();
+                if (nWidth <= 0)
+                    nWidth = DartCaret.DEFAULT_WIDTH;
+                int nX = caret.getImpl()._x();
+                if ((getApi().style & SWT.MIRRORED) != 0)
+                    nX = getClientWidth() - nWidth - nX;
+            }
+            if (caret.getImpl()._embeddedInto() == null) {
+                drawFlag = false;
+            }
+        } else {
+            drawFlag = true;
+        }
+    }
+
+    @Override
+    void redrawWidget(int x, int y, int width, int height, boolean redrawAll, boolean all, boolean trim) {
+        boolean isFocus = caret != null && ((DartCaret) caret.getImpl()).isFocusCaret();
+        if (isFocus)
+            ((DartCaret) caret.getImpl()).killFocus();
+        super.redrawWidget(x, y, width, height, redrawAll, all, trim);
+        if (isFocus)
+            ((DartCaret) caret.getImpl()).setFocus();
+    }
+
+    @Override
+    void releaseChildren(boolean destroy) {
+        if (caret != null) {
+            caret.getImpl().release(false);
+            caret = null;
+        }
+        if (ime != null) {
+            ime.getImpl().release(false);
+            ime = null;
+        }
+        super.releaseChildren(destroy);
+    }
+
+    @Override
+    void reskinChildren(int flags) {
+        if (caret != null)
+            caret.reskin(flags);
+        if (ime != null)
+            ime.reskin(flags);
+        super.reskinChildren(flags);
+    }
+
+    /**
+     * Scrolls a rectangular area of the receiver by first copying
+     * the source area to the destination and then causing the area
+     * of the source which is not covered by the destination to
+     * be repainted. Children that intersect the rectangle are
+     * optionally moved during the operation. In addition, all outstanding
+     * paint events are flushed before the source area is copied to
+     * ensure that the contents of the canvas are drawn correctly.
+     *
+     * @param destX the x coordinate of the destination
+     * @param destY the y coordinate of the destination
+     * @param x the x coordinate of the source
+     * @param y the y coordinate of the source
+     * @param width the width of the area
+     * @param height the height of the area
+     * @param all <code>true</code>if children should be scrolled, and <code>false</code> otherwise
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     */
+    public void scroll(int destX, int destY, int x, int y, int width, int height, boolean all) {
+        checkWidget();
+        if (width <= 0 || height <= 0)
+            return;
+        Point destination = DPIUtil.autoScaleUp(new Point(destX, destY));
+        Rectangle srcRect = DPIUtil.autoScaleUp(new Rectangle(x, y, width, height));
+        scrollInPixels(destination.x, destination.y, srcRect.x, srcRect.y, srcRect.width, srcRect.height, all);
+    }
+
+    void scrollInPixels(int destX, int destY, int x, int y, int width, int height, boolean all) {
+        if ((getApi().style & SWT.MIRRORED) != 0) {
+            int clientWidth = getClientWidth();
+            x = clientWidth - width - x;
+            destX = clientWidth - width - destX;
+        }
+        int deltaX = destX - x, deltaY = destY - y;
+        if (deltaX == 0 && deltaY == 0)
+            return;
+        if (!isVisible())
+            return;
+        boolean isFocus = caret != null && ((DartCaret) caret.getImpl()).isFocusCaret();
+        if (isFocus)
+            ((DartCaret) caret.getImpl()).killFocus();
+        /*
+	 * Feature in GTK: for 3.16+ the "visible" region in Canvas includes
+	 * the scrollbar dimensions in its calculations. This means the "previous"
+	 * location the scrollbars are re-painted when scrolling, causing the
+	 * hopping effect. See bug 480458.
+	 */
+        long hBarHandle = 0;
+        long vBarHandle = 0;
+        if (hBarHandle != 0) {
+        }
+        if (vBarHandle != 0) {
+        }
+        Control control = findBackgroundControl();
+        if (control == null)
+            control = this.getApi();
+        if (control.getImpl()._backgroundImage() != null) {
+            redrawWidget(x, y, width, height, false, false, false);
+            redrawWidget(destX, destY, width, height, false, false, false);
+        } else {
+            boolean disjoint = (destX + width < x) || (x + width < destX) || (destY + height < y) || (y + height < destY);
+            if (disjoint) {
+            } else {
+                if (deltaX != 0) {
+                    int newX = destX - deltaX;
+                    if (deltaX < 0)
+                        newX = destX + width;
+                }
+                if (deltaY != 0) {
+                    int newY = destY - deltaY;
+                    if (deltaY < 0)
+                        newY = destY + height;
+                }
+            }
+        }
+        if (all) {
+            Control[] children = _getChildren();
+            for (int i = 0; i < children.length; i++) {
+                Control child = children[i];
+                Rectangle rect = ((DartControl) child.getImpl()).getBoundsInPixels();
+                if (Math.min(x + width, rect.x + rect.width) >= Math.max(x, rect.x) && Math.min(y + height, rect.y + rect.height) >= Math.max(y, rect.y)) {
+                    ((DartControl) child.getImpl()).setLocationInPixels(rect.x + deltaX, rect.y + deltaY);
+                }
+            }
+        }
+        if (isFocus)
+            ((DartCaret) caret.getImpl()).setFocus();
+        /*
+	 * Due to overlay drawing of scrollbars current method of scrolling leaves scrollbar and notifiers for them inside the canvas
+	 * after scroll. Fix is to redraw once done.
+	 */
+        redraw(false);
+    }
+
+    @Override
+    int setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
+        boolean isFocus = caret != null && ((DartCaret) caret.getImpl()).isFocusCaret();
+        if (isFocus)
+            ((DartCaret) caret.getImpl()).killFocus();
+        int result = super.setBounds(x, y, width, height, move, resize);
+        if (isFocus)
+            ((DartCaret) caret.getImpl()).setFocus();
+        return result;
+    }
+
+    /**
+     * Sets the receiver's caret.
+     * <p>
+     * The caret for the control is automatically hidden
+     * and shown when the control is painted or resized,
+     * when focus is gained or lost and when an the control
+     * is scrolled.  To avoid drawing on top of the caret,
+     * the programmer must hide and show the caret when
+     * drawing in the window any other time.
+     * </p>
+     * @param caret the new caret for the receiver, may be null
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_INVALID_ARGUMENT - if the caret has been disposed</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     */
+    public void setCaret(Caret caret) {
+        dirty();
+        checkWidget();
+        Caret newCaret = caret;
+        Caret oldCaret = this.caret;
+        this.caret = newCaret;
+        if (hasFocus()) {
+            if (oldCaret != null)
+                ((DartCaret) oldCaret.getImpl()).killFocus();
+            if (newCaret != null) {
+                if (newCaret.isDisposed())
+                    error(SWT.ERROR_INVALID_ARGUMENT);
+                ((DartCaret) newCaret.getImpl()).setFocus();
+            }
+        }
+    }
+
+    @Override
+    public void setFont(Font font) {
+        dirty();
+        checkWidget();
+        if (caret != null)
+            caret.setFont(font);
+        super.setFont(font);
+    }
+
+    /**
+     * Sets the receiver's IME.
+     *
+     * @param ime the new IME for the receiver, may be null
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_INVALID_ARGUMENT - if the IME has been disposed</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @since 3.4
+     */
+    public void setIME(IME ime) {
+        dirty();
+        checkWidget();
+        if (ime != null && ime.isDisposed())
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        this.ime = ime;
+    }
+
+    void updateCaret() {
+        long imHandle = imHandle();
+        if (imHandle == 0)
+            return;
+    }
+
+    public Caret _caret() {
+        return caret;
+    }
+
+    public IME _ime() {
+        return ime;
+    }
+
+    public boolean _blink() {
+        return blink;
+    }
+
+    public boolean _drawFlag() {
+        return drawFlag;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+    }
+
+    public Canvas getApi() {
+        if (api == null)
+            api = Canvas.createApi(this);
+        return (Canvas) api;
+    }
+
+    public VCanvas getValue() {
+        if (value == null)
+            value = new VCanvas(this);
+        return (VCanvas) value;
+    }
+}

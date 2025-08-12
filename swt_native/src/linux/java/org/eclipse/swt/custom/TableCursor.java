@@ -20,7 +20,6 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import java.util.WeakHashMap;
 
 /**
  * A TableCursor provides a way for the user to navigate around a Table
@@ -73,7 +72,8 @@ public class TableCursor extends Canvas {
      * @see Widget#getStyle()
      */
     public TableCursor(Table parent, int style) {
-        this(new SWTTableCursor((SWTTable) parent.delegate, style));
+        this((ITableCursor) null);
+        setImpl(new SwtTableCursor(parent, style, this));
     }
 
     /**
@@ -103,12 +103,11 @@ public class TableCursor extends Canvas {
      * @see #removeSelectionListener(SelectionListener)
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ITableCursor) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
-    @Override
     public void setVisible(boolean visible) {
-        ((ITableCursor) this.delegate).setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
     /**
@@ -131,7 +130,7 @@ public class TableCursor extends Canvas {
      * @since 3.0
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ITableCursor) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -145,7 +144,7 @@ public class TableCursor extends Canvas {
      * </ul>
      */
     public int getColumn() {
-        return ((ITableCursor) this.delegate).getColumn();
+        return getImpl().getColumn();
     }
 
     /**
@@ -153,9 +152,8 @@ public class TableCursor extends Canvas {
      *
      * @return the receiver's background color
      */
-    @Override
     public Color getBackground() {
-        return ((ITableCursor) this.delegate).getBackground();
+        return getImpl().getBackground();
     }
 
     /**
@@ -163,9 +161,8 @@ public class TableCursor extends Canvas {
      *
      * @return the receiver's foreground color
      */
-    @Override
     public Color getForeground() {
-        return ((ITableCursor) this.delegate).getForeground();
+        return getImpl().getForeground();
     }
 
     /**
@@ -179,7 +176,7 @@ public class TableCursor extends Canvas {
      * </ul>
      */
     public TableItem getRow() {
-        return TableItem.getInstance(((ITableCursor) this.delegate).getRow());
+        return getImpl().getRow();
     }
 
     /**
@@ -200,9 +197,8 @@ public class TableCursor extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setBackground(Color color) {
-        ((ITableCursor) this.delegate).setBackground(color);
+        getImpl().setBackground(color);
     }
 
     /**
@@ -222,9 +218,8 @@ public class TableCursor extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setForeground(Color color) {
-        ((ITableCursor) this.delegate).setForeground(color);
+        getImpl().setForeground(color);
     }
 
     /**
@@ -239,7 +234,7 @@ public class TableCursor extends Canvas {
      * </ul>
      */
     public void setSelection(int row, int column) {
-        ((ITableCursor) this.delegate).setSelection(row, column);
+        getImpl().setSelection(row, column);
     }
 
     /**
@@ -254,23 +249,18 @@ public class TableCursor extends Canvas {
      * </ul>
      */
     public void setSelection(TableItem row, int column) {
-        ((ITableCursor) this.delegate).setSelection((ITableItem) row.delegate, column);
+        getImpl().setSelection(row, column);
     }
 
-    protected TableCursor(ITableCursor delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected TableCursor(ITableCursor impl) {
+        super(impl);
     }
 
-    public static TableCursor getInstance(ITableCursor delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        TableCursor ref = (TableCursor) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new TableCursor(delegate);
-        }
-        return ref;
+    static TableCursor createApi(ITableCursor impl) {
+        return new TableCursor(impl);
+    }
+
+    public ITableCursor getImpl() {
+        return (ITableCursor) super.getImpl();
     }
 }

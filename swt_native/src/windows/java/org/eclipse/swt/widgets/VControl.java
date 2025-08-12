@@ -22,7 +22,7 @@ public class VControl extends VWidget {
     }
 
     public void setBackground(Color value) {
-        ((DartControl) impl).setBackground(value);
+        ((DartControl) impl)._background = value;
     }
 
     @JsonAttribute(ignore = true)
@@ -106,7 +106,7 @@ public class VControl extends VWidget {
     }
 
     public void setOrientation(int value) {
-        ((DartControl) impl).orientation = value;
+        ((DartControl) impl).setOrientation(value);
     }
 
     public boolean getRedraw() {

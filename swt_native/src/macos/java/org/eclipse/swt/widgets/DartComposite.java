@@ -104,9 +104,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     public Control[] _getChildren() {
-        int j = 0;
-        Control[] newChildren = new Control[j];
-        return newChildren;
+        return children;
     }
 
     public Control[] _getTabList() {
@@ -208,12 +206,6 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     @Override
     void createHandle() {
-        getApi().state |= CANVAS;
-        boolean scrolled = (getApi().style & (SWT.V_SCROLL | SWT.H_SCROLL)) != 0;
-        if (!scrolled)
-            getApi().state |= THEME_BACKGROUND;
-        if (scrolled || hasBorder()) {
-        }
     }
 
     /**
@@ -886,13 +878,13 @@ public class DartComposite extends DartScrollable implements IComposite {
      * @since 3.2
      */
     public void setBackgroundMode(int mode) {
+        dirty();
         checkWidget();
         backgroundMode = mode;
         Control[] children = _getChildren();
         for (int i = 0; i < children.length; i++) {
             children[i].getImpl().updateBackgroundMode();
         }
-        getBridge().dirty(this);
     }
 
     @Override
@@ -950,6 +942,7 @@ public class DartComposite extends DartScrollable implements IComposite {
      * @since 3.1
      */
     public void setLayoutDeferred(boolean defer) {
+        dirty();
         checkWidget();
         this.layoutDeferred = defer;
         if (!defer) {
@@ -961,7 +954,6 @@ public class DartComposite extends DartScrollable implements IComposite {
         } else {
             layoutCount++;
         }
-        getBridge().dirty(this);
     }
 
     @Override
@@ -1012,6 +1004,7 @@ public class DartComposite extends DartScrollable implements IComposite {
      * </ul>
      */
     public void setTabList(Control[] tabList) {
+        dirty();
         checkWidget();
         if (tabList != null) {
             for (int i = 0; i < tabList.length; i++) {
@@ -1028,7 +1021,6 @@ public class DartComposite extends DartScrollable implements IComposite {
             tabList = newList;
         }
         this.tabList = tabList;
-        getBridge().dirty(this);
     }
 
     @Override
@@ -1142,8 +1134,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         return getBridge().container(this);
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
     }
 
     public Composite getApi() {

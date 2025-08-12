@@ -44,7 +44,7 @@ public class StatusTextEvent extends TypedEvent {
      *
      * @since 3.5
      */
-    public StatusTextEvent(SWTWidget widget) {
+    public StatusTextEvent(Widget widget) {
         super(widget);
     }
 

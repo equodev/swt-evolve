@@ -5,9 +5,6 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface IToolTip extends IWidget {
 
@@ -73,7 +70,7 @@ public interface IToolTip extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IShell getParent();
+    Shell getParent();
 
     /**
      * Returns the receiver's text, which will be an empty
@@ -248,4 +245,6 @@ public interface IToolTip extends IWidget {
      * </ul>
      */
     void setVisible(boolean visible);
+
+    ToolTip getApi();
 }

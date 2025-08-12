@@ -19,7 +19,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import java.util.WeakHashMap;
 
 /**
  * A control for showing progress feedback for a long running operation.
@@ -64,7 +63,8 @@ public class AnimatedProgress extends Canvas {
      * @see #getStyle()
      */
     public AnimatedProgress(Composite parent, int style) {
-        this(new SWTAnimatedProgress((SWTComposite) parent.delegate, style));
+        this((IAnimatedProgress) null);
+        setImpl(new SwtAnimatedProgress(parent, style, this));
     }
 
     /**
@@ -77,12 +77,11 @@ public class AnimatedProgress extends Canvas {
      * </ul>
      */
     public synchronized void clear() {
-        ((IAnimatedProgress) this.delegate).clear();
+        getImpl().clear();
     }
 
-    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return ((IAnimatedProgress) this.delegate).computeSize(wHint, hHint, changed);
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -94,30 +93,25 @@ public class AnimatedProgress extends Canvas {
      * </ul>
      */
     public synchronized void start() {
-        ((IAnimatedProgress) this.delegate).start();
+        getImpl().start();
     }
 
     /**
      * Stop the animation.   Freeze the presentation at its current appearance.
      */
     public synchronized void stop() {
-        ((IAnimatedProgress) this.delegate).stop();
+        getImpl().stop();
     }
 
-    protected AnimatedProgress(IAnimatedProgress delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected AnimatedProgress(IAnimatedProgress impl) {
+        super(impl);
     }
 
-    public static AnimatedProgress getInstance(IAnimatedProgress delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        AnimatedProgress ref = (AnimatedProgress) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new AnimatedProgress(delegate);
-        }
-        return ref;
+    static AnimatedProgress createApi(IAnimatedProgress impl) {
+        return new AnimatedProgress(impl);
+    }
+
+    public IAnimatedProgress getImpl() {
+        return (IAnimatedProgress) super.getImpl();
     }
 }

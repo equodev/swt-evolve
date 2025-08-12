@@ -180,14 +180,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     void createHandle() {
-        if ((getApi().style & SWT.SMOOTH) != 0) {
-            int i = 0;
-            getApi().style &= ~SWT.SMOOTH;
-        } else {
-            getApi().state |= THEME_BACKGROUND;
-            if (hasBorder()) {
-            }
-        }
     }
 
     void createItem(ToolItem item, int index) {
@@ -576,17 +568,17 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     public void setRedraw(boolean redraw) {
+        dirty();
         checkWidget();
         super.setRedraw(redraw);
         if (redraw && drawCount == 0)
             relayout();
-        getBridge().dirty(this);
     }
 
     @Override
     public void setVisible(boolean visible) {
+        dirty();
         super.setVisible(visible);
-        getBridge().dirty(this);
     }
 
     public int _itemCount() {
@@ -601,8 +593,8 @@ public class DartToolBar extends DartComposite implements IToolBar {
         return lastFocus;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
     }
 
     public ToolBar getApi() {

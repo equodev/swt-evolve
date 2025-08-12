@@ -2087,21 +2087,19 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 error(SWT.ERROR_INVALID_ARGUMENT);
             if (parent != control.getImpl()._parent())
                 return;
-            if (control.getImpl() instanceof SwtControl) {
-                long hwnd = ((SwtControl) control.getImpl()).topHandle();
-                if (hwnd == 0 || hwnd == topHandle)
-                    return;
-                hwndAbove = OS.GetWindow(hwnd, OS.GW_HWNDPREV);
-                /*
+            long hwnd = control.getImpl().topHandle();
+            if (hwnd == 0 || hwnd == topHandle)
+                return;
+            hwndAbove = OS.GetWindow(hwnd, OS.GW_HWNDPREV);
+            /*
 		* Bug in Windows.  For some reason, when GetWindow ()
 		* with GW_HWNDPREV is used to query the previous window
 		* in the z-order with the first child, Windows returns
 		* the first child instead of NULL.  The fix is to detect
 		* this case and move the control to the top.
 		*/
-                if (hwndAbove == 0 || hwndAbove == hwnd) {
-                    hwndAbove = OS.HWND_TOP;
-                }
+            if (hwndAbove == 0 || hwndAbove == hwnd) {
+                hwndAbove = OS.HWND_TOP;
             }
         }
         int flags = OS.SWP_NOSIZE | OS.SWP_NOMOVE | OS.SWP_NOACTIVATE;
@@ -2136,9 +2134,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 error(SWT.ERROR_INVALID_ARGUMENT);
             if (parent != control.getImpl()._parent())
                 return;
-            if (control.getImpl() instanceof SwtControl) {
-                hwndAbove = ((SwtControl) control.getImpl()).topHandle();
-            }
+            hwndAbove = control.getImpl().topHandle();
         } else {
             /*
 		* Bug in Windows.  When SetWindowPos() is called
@@ -4228,7 +4224,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return toDisplay(point.x, point.y);
     }
 
-    long topHandle() {
+    public long topHandle() {
         return getApi().handle;
     }
 

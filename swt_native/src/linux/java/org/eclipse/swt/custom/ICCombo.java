@@ -127,6 +127,8 @@ public interface ICCombo extends IComposite {
      */
     void addVerifyListener(VerifyListener listener);
 
+    void checkSubclass();
+
     /**
      * Sets the selection in the receiver's text field to an empty
      * selection starting just before the first character. If the
@@ -218,7 +220,7 @@ public interface ICCombo extends IComposite {
      */
     int getAlignment();
 
-    IControl[] getChildren();
+    Control[] getChildren();
 
     /**
      * Gets the editable state.
@@ -316,7 +318,7 @@ public interface ICCombo extends IComposite {
      */
     boolean getListVisible();
 
-    IMenu getMenu();
+    Menu getMenu();
 
     /**
      * Returns a <code>Point</code> whose x coordinate is the start
@@ -347,7 +349,7 @@ public interface ICCombo extends IComposite {
      */
     int getSelectionIndex();
 
-    IShell getShell();
+    Shell getShell();
 
     int getStyle();
 
@@ -716,7 +718,7 @@ public interface ICCombo extends IComposite {
      */
     void setListVisible(boolean visible);
 
-    void setMenu(IMenu menu);
+    void setMenu(Menu menu);
 
     /**
      * Sets the selection in the receiver's text field to the
@@ -798,4 +800,6 @@ public interface ICCombo extends IComposite {
     void setVisibleItemCount(int count);
 
     boolean traverse(int event);
+
+    CCombo getApi();
 }

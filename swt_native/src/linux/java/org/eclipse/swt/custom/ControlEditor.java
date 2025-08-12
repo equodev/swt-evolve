@@ -107,68 +107,14 @@ public class ControlEditor {
      */
     public int minimumHeight = 0;
 
-    Composite parent;
-
-    Control editor;
-
-    private boolean hadFocus;
-
-    private Listener controlListener;
-
-    private Listener scrollbarListener;
-
-    private final static int[] EVENTS = { SWT.KeyDown, SWT.KeyUp, SWT.MouseDown, SWT.MouseUp, SWT.Resize };
-
     /**
      * Creates a ControlEditor for the specified Composite.
      *
      * @param parent the Composite above which this editor will be displayed
      */
     public ControlEditor(Composite parent) {
-        this.parent = parent;
-        controlListener = e -> layout();
-        for (int event : EVENTS) {
-            parent.addListener(event, controlListener);
-        }
-        scrollbarListener = this::scroll;
-        ScrollBar hBar = parent.getHorizontalBar();
-        if (hBar != null)
-            hBar.addListener(SWT.Selection, scrollbarListener);
-        ScrollBar vBar = parent.getVerticalBar();
-        if (vBar != null)
-            vBar.addListener(SWT.Selection, scrollbarListener);
-    }
-
-    Rectangle computeBounds() {
-        Rectangle clientArea = parent.getClientArea();
-        Rectangle editorRect = new Rectangle(clientArea.x, clientArea.y, minimumWidth, minimumHeight);
-        if (grabHorizontal)
-            editorRect.width = Math.max(clientArea.width, minimumWidth);
-        if (grabVertical)
-            editorRect.height = Math.max(clientArea.height, minimumHeight);
-        switch(horizontalAlignment) {
-            case SWT.RIGHT:
-                editorRect.x += clientArea.width - editorRect.width;
-                break;
-            case SWT.LEFT:
-                // do nothing - clientArea.x is the right answer
-                break;
-            default:
-                // default is CENTER
-                editorRect.x += (clientArea.width - editorRect.width) / 2;
-        }
-        switch(verticalAlignment) {
-            case SWT.BOTTOM:
-                editorRect.y += clientArea.height - editorRect.height;
-                break;
-            case SWT.TOP:
-                // do nothing - clientArea.y is the right answer
-                break;
-            default:
-                // default is CENTER
-                editorRect.y += (clientArea.height - editorRect.height) / 2;
-        }
-        return editorRect;
+        this((IControlEditor) null);
+        setImpl(new SwtControlEditor(parent, this));
     }
 
     /**
@@ -176,22 +122,7 @@ public class ControlEditor {
      * composite and the editor Control are <b>not</b> disposed.
      */
     public void dispose() {
-        if (parent != null && !parent.isDisposed()) {
-            for (int event : EVENTS) {
-                parent.removeListener(event, controlListener);
-            }
-            ScrollBar hBar = parent.getHorizontalBar();
-            if (hBar != null)
-                hBar.removeListener(SWT.Selection, scrollbarListener);
-            ScrollBar vBar = parent.getVerticalBar();
-            if (vBar != null)
-                vBar.removeListener(SWT.Selection, scrollbarListener);
-        }
-        parent = null;
-        editor = null;
-        hadFocus = false;
-        controlListener = null;
-        scrollbarListener = null;
+        getImpl().dispose();
     }
 
     /**
@@ -200,7 +131,7 @@ public class ControlEditor {
      * @return the Control that is displayed above the composite being edited
      */
     public Control getEditor() {
-        return editor;
+        return getImpl().getEditor();
     }
 
     /**
@@ -211,26 +142,7 @@ public class ControlEditor {
      * @since 2.1
      */
     public void layout() {
-        if (editor == null || editor.isDisposed())
-            return;
-        if (editor.getVisible()) {
-            hadFocus = editor.isFocusControl();
-        }
-        // this doesn't work because
-        // resizing the column takes the focus away
-        // before we get here
-        editor.setBounds(computeBounds());
-        if (hadFocus) {
-            if (editor == null || editor.isDisposed())
-                return;
-            editor.setFocus();
-        }
-    }
-
-    void scroll(Event e) {
-        if (editor == null || editor.isDisposed())
-            return;
-        layout();
+        getImpl().layout();
     }
 
     /**
@@ -242,16 +154,26 @@ public class ControlEditor {
      * @param editor the Control that is displayed above the composite being edited
      */
     public void setEditor(Control editor) {
-        if (editor == null) {
-            // this is the case where the caller is setting the editor to be blank
-            // set all the values accordingly
-            this.editor = null;
-            return;
-        }
-        this.editor = editor;
-        layout();
-        if (this.editor == null || this.editor.isDisposed())
-            return;
-        editor.setVisible(true);
+        getImpl().setEditor(editor);
+    }
+
+    protected IControlEditor impl;
+
+    protected ControlEditor(IControlEditor impl) {
+        if (impl != null)
+            impl.setApi(this);
+    }
+
+    static ControlEditor createApi(IControlEditor impl) {
+        return new ControlEditor(impl);
+    }
+
+    public IControlEditor getImpl() {
+        return impl;
+    }
+
+    protected ControlEditor setImpl(IControlEditor impl) {
+        this.impl = impl;
+        return this;
     }
 }

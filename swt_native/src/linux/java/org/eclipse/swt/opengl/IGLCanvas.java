@@ -3,8 +3,6 @@ package org.eclipse.swt.opengl;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.opengl.glx.*;
 import org.eclipse.swt.widgets.*;
 
@@ -55,5 +53,5 @@ public interface IGLCanvas extends ICanvas {
      */
     void swapBuffers();
 
-    long getContext();
+    GLCanvas getApi();
 }

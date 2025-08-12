@@ -1232,7 +1232,6 @@ public abstract class DartWidget implements IWidget {
             /* Wheel speed can be configured in Windows mouse settings */
             if (isVertical) {
             } else {
-                int[] wheelSpeed = new int[1];
                 /* For legacy compatibility reasons, detail is set to 0 here */
                 detail = 0;
             }
@@ -1559,7 +1558,13 @@ public abstract class DartWidget implements IWidget {
         return bridge;
     }
 
-    protected void hookEvents() {
+    protected void dirty() {
+        FlutterBridge bridge = getBridge();
+        if (bridge != null)
+            bridge.dirty(this);
+    }
+
+    protected void _hookEvents() {
         FlutterBridge.on(this, "Dispose", "Dispose", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.Dispose, e);

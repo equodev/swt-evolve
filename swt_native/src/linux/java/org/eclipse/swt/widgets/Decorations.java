@@ -21,7 +21,6 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class provide the appearance and
@@ -105,7 +104,8 @@ import java.util.WeakHashMap;
 public class Decorations extends Canvas {
 
     Decorations() {
-        this(new SWTDecorations());
+        this((IDecorations) null);
+        setImpl(new SwtDecorations(this));
     }
 
     /**
@@ -148,7 +148,12 @@ public class Decorations extends Canvas {
      * @see Widget#getStyle
      */
     public Decorations(Composite parent, int style) {
-        this(new SWTDecorations((SWTComposite) parent.delegate, style));
+        this((IDecorations) null);
+        setImpl(new SwtDecorations(parent, style, this));
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -165,7 +170,7 @@ public class Decorations extends Canvas {
      * @see #setDefaultButton(Button)
      */
     public Button getDefaultButton() {
-        return Button.getInstance(((IDecorations) this.delegate).getDefaultButton());
+        return getImpl().getDefaultButton();
     }
 
     /**
@@ -190,7 +195,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public Image getImage() {
-        return ((IDecorations) this.delegate).getImage();
+        return getImpl().getImage();
     }
 
     /**
@@ -221,7 +226,7 @@ public class Decorations extends Canvas {
      * @since 3.0
      */
     public Image[] getImages() {
-        return ((IDecorations) this.delegate).getImages();
+        return getImpl().getImages();
     }
 
     /**
@@ -238,7 +243,7 @@ public class Decorations extends Canvas {
      * @see #setMaximized
      */
     public boolean getMaximized() {
-        return ((IDecorations) this.delegate).getMaximized();
+        return getImpl().getMaximized();
     }
 
     /**
@@ -253,7 +258,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public Menu getMenuBar() {
-        return Menu.getInstance(((IDecorations) this.delegate).getMenuBar());
+        return getImpl().getMenuBar();
     }
 
     /**
@@ -270,7 +275,7 @@ public class Decorations extends Canvas {
      * @see #setMinimized
      */
     public boolean getMinimized() {
-        return ((IDecorations) this.delegate).getMinimized();
+        return getImpl().getMinimized();
     }
 
     /**
@@ -287,12 +292,11 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public String getText() {
-        return ((IDecorations) this.delegate).getText();
+        return getImpl().getText();
     }
 
-    @Override
     public boolean isReparentable() {
-        return ((IDecorations) this.delegate).isReparentable();
+        return getImpl().isReparentable();
     }
 
     /**
@@ -321,7 +325,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public void setDefaultButton(Button button) {
-        ((IDecorations) this.delegate).setDefaultButton((IButton) button.delegate);
+        getImpl().setDefaultButton(button);
     }
 
     /**
@@ -342,7 +346,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public void setImage(Image image) {
-        ((IDecorations) this.delegate).setImage(image);
+        getImpl().setImage(image);
     }
 
     /**
@@ -370,7 +374,7 @@ public class Decorations extends Canvas {
      * @since 3.0
      */
     public void setImages(Image[] images) {
-        ((IDecorations) this.delegate).setImages(images);
+        getImpl().setImages(images);
     }
 
     /**
@@ -397,7 +401,7 @@ public class Decorations extends Canvas {
      * @see #setMinimized
      */
     public void setMaximized(boolean maximized) {
-        ((IDecorations) this.delegate).setMaximized(maximized);
+        getImpl().setMaximized(maximized);
     }
 
     /**
@@ -416,7 +420,7 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public void setMenuBar(Menu menu) {
-        ((IDecorations) this.delegate).setMenuBar((IMenu) menu.delegate);
+        getImpl().setMenuBar(menu);
     }
 
     /**
@@ -443,7 +447,7 @@ public class Decorations extends Canvas {
      * @see #setMaximized
      */
     public void setMinimized(boolean minimized) {
-        ((IDecorations) this.delegate).setMinimized(minimized);
+        getImpl().setMinimized(minimized);
     }
 
     /**
@@ -466,23 +470,18 @@ public class Decorations extends Canvas {
      * </ul>
      */
     public void setText(String string) {
-        ((IDecorations) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
-    protected Decorations(IDecorations delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Decorations(IDecorations impl) {
+        super(impl);
     }
 
-    public static Decorations getInstance(IDecorations delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Decorations ref = (Decorations) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Decorations(delegate);
-        }
-        return ref;
+    static Decorations createApi(IDecorations impl) {
+        return new Decorations(impl);
+    }
+
+    public IDecorations getImpl() {
+        return (IDecorations) super.getImpl();
     }
 }

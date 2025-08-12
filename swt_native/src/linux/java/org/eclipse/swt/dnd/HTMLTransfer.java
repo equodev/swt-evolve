@@ -34,19 +34,9 @@ import org.eclipse.swt.internal.gtk.*;
  */
 public class HTMLTransfer extends ByteArrayTransfer {
 
-    private static HTMLTransfer _instance = new HTMLTransfer();
-
-    //$NON-NLS-1$
-    private static final String TEXT_HTML = "text/html";
-
-    private static final int TEXT_HTML_ID = registerType(TEXT_HTML);
-
-    //$NON-NLS-1$
-    private static final String TEXT_HTML2 = "TEXT/HTML";
-
-    private static final int TEXT_HTML2_ID = registerType(TEXT_HTML2);
-
-    private HTMLTransfer() {
+    HTMLTransfer() {
+        this((IHTMLTransfer) null);
+        setImpl(new SwtHTMLTransfer(this));
     }
 
     /**
@@ -55,7 +45,7 @@ public class HTMLTransfer extends ByteArrayTransfer {
      * @return the singleton instance of the HTMLTransfer class
      */
     public static HTMLTransfer getInstance() {
-        return _instance;
+        return SwtHTMLTransfer.getInstance();
     }
 
     /**
@@ -68,23 +58,8 @@ public class HTMLTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#nativeToJava
      */
-    @Override
     public void javaToNative(Object object, TransferData transferData) {
-        transferData.result = 0;
-        if (!checkHTML(object) || !isSupportedType(transferData)) {
-            DND.error(DND.ERROR_INVALID_DATA);
-        }
-        String string = (String) object;
-        byte[] utf8 = Converter.wcsToMbcs(string, true);
-        int byteCount = utf8.length;
-        long pValue = OS.g_malloc(byteCount);
-        if (pValue == 0)
-            return;
-        C.memmove(pValue, utf8, byteCount);
-        transferData.length = byteCount;
-        transferData.format = 8;
-        transferData.pValue = pValue;
-        transferData.result = 1;
+        getImpl().javaToNative(object, transferData);
     }
 
     /**
@@ -97,51 +72,31 @@ public class HTMLTransfer extends ByteArrayTransfer {
      *
      * @see Transfer#javaToNative
      */
-    @Override
     public Object nativeToJava(TransferData transferData) {
-        if (!isSupportedType(transferData) || transferData.pValue == 0)
-            return null;
-        /* Ensure byteCount is a multiple of 2 bytes */
-        int size = (transferData.format * transferData.length / 8) / 2 * 2;
-        if (size <= 0)
-            return null;
-        // look for a Byte Order Mark
-        char[] bom = new char[1];
-        if (size > 1)
-            C.memmove(bom, transferData.pValue, 2);
-        String string;
-        if (bom[0] == '\ufeff' || bom[0] == '\ufffe') {
-            // utf16
-            char[] chars = new char[size / 2];
-            C.memmove(chars, transferData.pValue, size);
-            string = new String(chars);
-        } else {
-            byte[] utf8 = new byte[size];
-            C.memmove(utf8, transferData.pValue, size);
-            // convert utf8 byte array to a unicode string
-            char[] unicode = org.eclipse.swt.internal.Converter.mbcsToWcs(utf8);
-            string = new String(unicode);
-        }
-        int end = string.indexOf('\0');
-        return (end == -1) ? string : string.substring(0, end);
+        return getImpl().nativeToJava(transferData);
     }
 
-    @Override
     protected int[] getTypeIds() {
-        return new int[] { TEXT_HTML_ID, TEXT_HTML2_ID };
+        return getImpl().getTypeIds();
     }
 
-    @Override
     protected String[] getTypeNames() {
-        return new String[] { TEXT_HTML, TEXT_HTML2 };
+        return getImpl().getTypeNames();
     }
 
-    boolean checkHTML(Object object) {
-        return (object instanceof String && !((String) object).isEmpty());
-    }
-
-    @Override
     protected boolean validate(Object object) {
-        return checkHTML(object);
+        return getImpl().validate(object);
+    }
+
+    protected HTMLTransfer(IHTMLTransfer impl) {
+        super(impl);
+    }
+
+    static HTMLTransfer createApi(IHTMLTransfer impl) {
+        return new HTMLTransfer(impl);
+    }
+
+    public IHTMLTransfer getImpl() {
+        return (IHTMLTransfer) super.getImpl();
     }
 }

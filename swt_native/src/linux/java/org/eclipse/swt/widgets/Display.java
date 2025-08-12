@@ -146,7 +146,8 @@ public class Display extends Device implements Executor {
      * @see Shell
      */
     public Display() {
-        this(new SWTDisplay());
+        this((IDisplay) null);
+        setImpl(new SwtDisplay(this));
     }
 
     /**
@@ -155,7 +156,8 @@ public class Display extends Device implements Executor {
      * @param data the device data
      */
     public Display(DeviceData data) {
-        this(new SWTDisplay(data));
+        this((IDisplay) null);
+        setImpl(new SwtDisplay(data, this));
     }
 
     /**
@@ -195,7 +197,7 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public void addFilter(int eventType, Listener listener) {
-        ((IDisplay) this.delegate).addFilter(eventType, listener);
+        getImpl().addFilter(eventType, listener);
     }
 
     /**
@@ -223,7 +225,7 @@ public class Display extends Device implements Executor {
      * @since 2.0
      */
     public void addListener(int eventType, Listener listener) {
-        ((IDisplay) this.delegate).addListener(eventType, listener);
+        getImpl().addListener(eventType, listener);
     }
 
     /**
@@ -249,7 +251,7 @@ public class Display extends Device implements Executor {
      * @see #syncExec
      */
     public void asyncExec(Runnable runnable) {
-        ((IDisplay) this.delegate).asyncExec(runnable);
+        getImpl().asyncExec(runnable);
     }
 
     /**
@@ -282,9 +284,8 @@ public class Display extends Device implements Executor {
      *                                    execution
      * @throws NullPointerException       if runnable is null
      */
-    @Override
     public void execute(Runnable runnable) {
-        ((IDisplay) this.delegate).execute(runnable);
+        getImpl().execute(runnable);
     }
 
     /**
@@ -297,7 +298,27 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public void beep() {
-        ((IDisplay) this.delegate).beep();
+        getImpl().beep();
+    }
+
+    protected void checkDevice() {
+        getImpl().checkDevice();
+    }
+
+    /**
+     * Checks that this class can be subclassed.
+     * <p>
+     * IMPORTANT: See the comment in <code>Widget.checkSubclass()</code>.
+     * </p>
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
+     * </ul>
+     *
+     * @see Widget#checkSubclass
+     */
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -314,7 +335,37 @@ public class Display extends Device implements Executor {
      * @since 2.0
      */
     public void close() {
-        ((IDisplay) this.delegate).close();
+        getImpl().close();
+    }
+
+    /**
+     * Creates the device in the operating system.  If the device
+     * does not have a handle, this method may do nothing depending
+     * on the device.
+     * <p>
+     * This method is called before <code>init</code>.
+     * </p>
+     *
+     * @param data the DeviceData which describes the receiver
+     *
+     * @see #init
+     */
+    protected void create(DeviceData data) {
+        getImpl().create(data);
+    }
+
+    /**
+     * Destroys the device in the operating system and releases
+     * the device's handle.  If the device does not have a handle,
+     * this method may do nothing depending on the device.
+     * <p>
+     * This method is called after <code>release</code>.
+     * </p>
+     * @see Device#dispose
+     * @see #release
+     */
+    protected void destroy() {
+        getImpl().destroy();
     }
 
     /**
@@ -328,7 +379,7 @@ public class Display extends Device implements Executor {
      * @return the display for the given thread
      */
     public static Display findDisplay(Thread thread) {
-        return Display.getInstance(SWTDisplay.findDisplay(thread));
+        return SwtDisplay.findDisplay(thread);
     }
 
     /**
@@ -345,7 +396,7 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public void disposeExec(Runnable runnable) {
-        ((IDisplay) this.delegate).disposeExec(runnable);
+        getImpl().disposeExec(runnable);
     }
 
     /**
@@ -369,7 +420,7 @@ public class Display extends Device implements Executor {
      * @noreference This method is not intended to be referenced by clients.
      */
     public Widget findWidget(long handle) {
-        return Widget.getInstance(((IDisplay) this.delegate).findWidget(handle));
+        return getImpl().findWidget(handle);
     }
 
     /**
@@ -397,7 +448,7 @@ public class Display extends Device implements Executor {
      * @since 3.1
      */
     public Widget findWidget(long handle, long id) {
-        return Widget.getInstance(((IDisplay) this.delegate).findWidget(handle, id));
+        return getImpl().findWidget(handle, id);
     }
 
     /**
@@ -420,7 +471,7 @@ public class Display extends Device implements Executor {
      * @since 3.3
      */
     public Widget findWidget(Widget widget, long id) {
-        return Widget.getInstance(((IDisplay) this.delegate).findWidget((IWidget) widget.delegate, id));
+        return getImpl().findWidget(widget, id);
     }
 
     /**
@@ -436,7 +487,7 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public Shell getActiveShell() {
-        return Shell.getInstance(((IDisplay) this.delegate).getActiveShell());
+        return getImpl().getActiveShell();
     }
 
     /**
@@ -450,9 +501,8 @@ public class Display extends Device implements Executor {
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
      * </ul>
      */
-    @Override
     public Rectangle getBounds() {
-        return ((IDisplay) this.delegate).getBounds();
+        return getImpl().getBounds();
     }
 
     /**
@@ -468,9 +518,8 @@ public class Display extends Device implements Executor {
      *
      * @see #getBounds
      */
-    @Override
     public Rectangle getClientArea() {
-        return ((IDisplay) this.delegate).getClientArea();
+        return getImpl().getClientArea();
     }
 
     /**
@@ -481,7 +530,7 @@ public class Display extends Device implements Executor {
      * @return the current display
      */
     public static Display getCurrent() {
-        return Display.getInstance(SWTDisplay.getCurrent());
+        return SwtDisplay.getCurrent();
     }
 
     /**
@@ -497,7 +546,7 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public Control getCursorControl() {
-        return Control.getInstance(((IDisplay) this.delegate).getCursorControl());
+        return getImpl().getCursorControl();
     }
 
     /**
@@ -512,7 +561,7 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public Point getCursorLocation() {
-        return ((IDisplay) this.delegate).getCursorLocation();
+        return getImpl().getCursorLocation();
     }
 
     /**
@@ -528,7 +577,7 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Point[] getCursorSizes() {
-        return ((IDisplay) this.delegate).getCursorSizes();
+        return getImpl().getCursorSizes();
     }
 
     /**
@@ -557,7 +606,7 @@ public class Display extends Device implements Executor {
      * @see #disposeExec(Runnable)
      */
     public Object getData(String key) {
-        return ((IDisplay) this.delegate).getData(key);
+        return getImpl().getData(key);
     }
 
     /**
@@ -584,7 +633,7 @@ public class Display extends Device implements Executor {
      * @see #disposeExec(Runnable)
      */
     public Object getData() {
-        return ((IDisplay) this.delegate).getData();
+        return getImpl().getData();
     }
 
     /**
@@ -595,7 +644,7 @@ public class Display extends Device implements Executor {
      * @return the default display
      */
     public static Display getDefault() {
-        return Display.getInstance(SWTDisplay.getDefault());
+        return SwtDisplay.getDefault();
     }
 
     /**
@@ -611,7 +660,7 @@ public class Display extends Device implements Executor {
      * @since 3.7
      */
     public Menu getMenuBar() {
-        return Menu.getInstance(((IDisplay) this.delegate).getMenuBar());
+        return getImpl().getMenuBar();
     }
 
     /**
@@ -632,7 +681,7 @@ public class Display extends Device implements Executor {
      * @since 2.1
      */
     public int getDismissalAlignment() {
-        return ((IDisplay) this.delegate).getDismissalAlignment();
+        return getImpl().getDismissalAlignment();
     }
 
     /**
@@ -648,7 +697,7 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public int getDoubleClickTime() {
-        return ((IDisplay) this.delegate).getDoubleClickTime();
+        return getImpl().getDoubleClickTime();
     }
 
     /**
@@ -665,7 +714,7 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public Control getFocusControl() {
-        return Control.getInstance(((IDisplay) this.delegate).getFocusControl());
+        return getImpl().getFocusControl();
     }
 
     /**
@@ -686,12 +735,11 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public boolean getHighContrast() {
-        return ((IDisplay) this.delegate).getHighContrast();
+        return getImpl().getHighContrast();
     }
 
-    @Override
     public int getDepth() {
-        return ((IDisplay) this.delegate).getDepth();
+        return getImpl().getDepth();
     }
 
     /**
@@ -708,7 +756,7 @@ public class Display extends Device implements Executor {
      * @see Device#getDepth
      */
     public int getIconDepth() {
-        return ((IDisplay) this.delegate).getIconDepth();
+        return getImpl().getIconDepth();
     }
 
     /**
@@ -726,7 +774,7 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Point[] getIconSizes() {
-        return ((IDisplay) this.delegate).getIconSizes();
+        return getImpl().getIconSizes();
     }
 
     /**
@@ -749,7 +797,7 @@ public class Display extends Device implements Executor {
      * @since 3.112
      */
     public static boolean isSystemDarkTheme() {
-        return SWTDisplay.isSystemDarkTheme();
+        return SwtDisplay.isSystemDarkTheme();
     }
 
     /**
@@ -760,7 +808,7 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Monitor[] getMonitors() {
-        return Monitor.ofArray(((IDisplay) this.delegate).getMonitors(), Monitor.class, Monitor::new);
+        return getImpl().getMonitors();
     }
 
     /**
@@ -771,7 +819,7 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Monitor getPrimaryMonitor() {
-        return Monitor.getInstance(((IDisplay) this.delegate).getPrimaryMonitor());
+        return getImpl().getPrimaryMonitor();
     }
 
     /**
@@ -786,7 +834,7 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public Shell[] getShells() {
-        return Shell.ofArray(((IDisplay) this.delegate).getShells(), Shell.class);
+        return getImpl().getShells();
     }
 
     /**
@@ -802,7 +850,7 @@ public class Display extends Device implements Executor {
      * @since 3.4
      */
     public Synchronizer getSynchronizer() {
-        return Synchronizer.getInstance(((IDisplay) this.delegate).getSynchronizer());
+        return getImpl().getSynchronizer();
     }
 
     /**
@@ -821,7 +869,7 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public Thread getSyncThread() {
-        return ((IDisplay) this.delegate).getSyncThread();
+        return getImpl().getSyncThread();
     }
 
     /**
@@ -843,9 +891,8 @@ public class Display extends Device implements Executor {
      *
      * @see SWT
      */
-    @Override
     public Color getSystemColor(int id) {
-        return ((IDisplay) this.delegate).getSystemColor(id);
+        return getImpl().getSystemColor(id);
     }
 
     /**
@@ -891,7 +938,7 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Cursor getSystemCursor(int id) {
-        return ((IDisplay) this.delegate).getSystemCursor(id);
+        return getImpl().getSystemCursor(id);
     }
 
     /**
@@ -921,7 +968,7 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Image getSystemImage(int id) {
-        return ((IDisplay) this.delegate).getSystemImage(id);
+        return getImpl().getSystemImage(id);
     }
 
     /**
@@ -938,7 +985,7 @@ public class Display extends Device implements Executor {
      * @since 3.7
      */
     public Menu getSystemMenu() {
-        return Menu.getInstance(((IDisplay) this.delegate).getSystemMenu());
+        return getImpl().getSystemMenu();
     }
 
     /**
@@ -954,7 +1001,7 @@ public class Display extends Device implements Executor {
      * @since 3.6
      */
     public TaskBar getSystemTaskBar() {
-        return TaskBar.getInstance(((IDisplay) this.delegate).getSystemTaskBar());
+        return getImpl().getSystemTaskBar();
     }
 
     /**
@@ -970,7 +1017,7 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public Tray getSystemTray() {
-        return Tray.getInstance(((IDisplay) this.delegate).getSystemTray());
+        return getImpl().getSystemTray();
     }
 
     /**
@@ -983,7 +1030,7 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public Thread getThread() {
-        return ((IDisplay) this.delegate).getThread();
+        return getImpl().getThread();
     }
 
     /**
@@ -1000,7 +1047,20 @@ public class Display extends Device implements Executor {
      * @since 3.7
      */
     public boolean getTouchEnabled() {
-        return ((IDisplay) this.delegate).getTouchEnabled();
+        return getImpl().getTouchEnabled();
+    }
+
+    /**
+     * Initializes any internal resources needed by the
+     * device.
+     * <p>
+     * This method is called after <code>create</code>.
+     * </p>
+     *
+     * @see #create
+     */
+    protected void init() {
+        getImpl().init();
     }
 
     /**
@@ -1012,7 +1072,7 @@ public class Display extends Device implements Executor {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static String extractFreeGError(long errorPtr) {
-        return SWTDisplay.extractFreeGError(errorPtr);
+        return SwtDisplay.extractFreeGError(errorPtr);
     }
 
     /**
@@ -1030,9 +1090,8 @@ public class Display extends Device implements Executor {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public void internal_dispose_GC(long hDC, GCData data) {
-        ((IDisplay) this.delegate).internal_dispose_GC(hDC, data);
+        getImpl().internal_dispose_GC(hDC, data);
     }
 
     /**
@@ -1057,9 +1116,8 @@ public class Display extends Device implements Executor {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public long internal_new_GC(GCData data) {
-        return ((IDisplay) this.delegate).internal_new_GC(data);
+        return getImpl().internal_new_GC(data);
     }
 
     /**
@@ -1099,7 +1157,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Point map(Control from, Control to, Point point) {
-        return ((IDisplay) this.delegate).map((IControl) (from != null ? from.delegate : null), (IControl) (to != null ? to.delegate : null), point);
+        return getImpl().map(from, to, point);
     }
 
     /**
@@ -1139,7 +1197,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Point map(Control from, Control to, int x, int y) {
-        return ((IDisplay) this.delegate).map((IControl) (from != null ? from.delegate : null), (IControl) (to != null ? to.delegate : null), x, y);
+        return getImpl().map(from, to, x, y);
     }
 
     /**
@@ -1179,7 +1237,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Rectangle map(Control from, Control to, Rectangle rectangle) {
-        return ((IDisplay) this.delegate).map((IControl) (from != null ? from.delegate : null), (IControl) (to != null ? to.delegate : null), rectangle);
+        return getImpl().map(from, to, rectangle);
     }
 
     /**
@@ -1221,7 +1279,7 @@ public class Display extends Device implements Executor {
      * @since 2.1.2
      */
     public Rectangle map(Control from, Control to, int x, int y, int width, int height) {
-        return ((IDisplay) this.delegate).map((IControl) (from != null ? from.delegate : null), (IControl) (to != null ? to.delegate : null), x, y, width, height);
+        return getImpl().map(from, to, x, y, width, height);
     }
 
     /**
@@ -1287,7 +1345,7 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public boolean post(Event event) {
-        return ((IDisplay) this.delegate).post(event);
+        return getImpl().post(event);
     }
 
     /**
@@ -1315,7 +1373,35 @@ public class Display extends Device implements Executor {
      * @see #wake
      */
     public boolean readAndDispatch() {
-        return ((IDisplay) this.delegate).readAndDispatch();
+        return getImpl().readAndDispatch();
+    }
+
+    /**
+     * Releases any internal resources back to the operating
+     * system and clears all fields except the device handle.
+     * <p>
+     * Disposes all shells which are currently open on the display.
+     * After this method has been invoked, all related related shells
+     * will answer <code>true</code> when sent the message
+     * <code>isDisposed()</code>.
+     * </p><p>
+     * When a device is destroyed, resources that were acquired
+     * on behalf of the programmer need to be returned to the
+     * operating system.  For example, if the device allocated a
+     * font to be used as the system font, this font would be
+     * freed in <code>release</code>.  Also,to assist the garbage
+     * collector and minimize the amount of memory that is not
+     * reclaimed when the programmer keeps a reference to a
+     * disposed device, all fields except the handle are zero'd.
+     * The handle is needed by <code>destroy</code>.
+     * </p>
+     * This method is called before <code>destroy</code>.
+     *
+     * @see Device#dispose
+     * @see #destroy
+     */
+    protected void release() {
+        getImpl().release();
     }
 
     /**
@@ -1342,7 +1428,7 @@ public class Display extends Device implements Executor {
      * @since 3.0
      */
     public void removeFilter(int eventType, Listener listener) {
-        ((IDisplay) this.delegate).removeFilter(eventType, listener);
+        getImpl().removeFilter(eventType, listener);
     }
 
     /**
@@ -1368,7 +1454,7 @@ public class Display extends Device implements Executor {
      * @since 2.0
      */
     public void removeListener(int eventType, Listener listener) {
-        ((IDisplay) this.delegate).removeListener(eventType, listener);
+        getImpl().removeListener(eventType, listener);
     }
 
     /**
@@ -1381,7 +1467,7 @@ public class Display extends Device implements Executor {
      * @since 3.6
      */
     public static String getAppName() {
-        return SWTDisplay.getAppName();
+        return SwtDisplay.getAppName();
     }
 
     /**
@@ -1394,7 +1480,7 @@ public class Display extends Device implements Executor {
      * @since 3.6
      */
     public static String getAppVersion() {
-        return SWTDisplay.getAppVersion();
+        return SwtDisplay.getAppVersion();
     }
 
     /**
@@ -1417,7 +1503,7 @@ public class Display extends Device implements Executor {
      * @param name the new app name or <code>null</code>
      */
     public static void setAppName(String name) {
-        SWTDisplay.setAppName(name);
+        SwtDisplay.setAppName(name);
     }
 
     /**
@@ -1428,7 +1514,7 @@ public class Display extends Device implements Executor {
      * @since 3.6
      */
     public static void setAppVersion(String version) {
-        SWTDisplay.setAppVersion(version);
+        SwtDisplay.setAppVersion(version);
     }
 
     /**
@@ -1447,7 +1533,7 @@ public class Display extends Device implements Executor {
      * @since 2.1
      */
     public void setCursorLocation(int x, int y) {
-        ((IDisplay) this.delegate).setCursorLocation(x, y);
+        getImpl().setCursorLocation(x, y);
     }
 
     /**
@@ -1466,7 +1552,7 @@ public class Display extends Device implements Executor {
      * @since 2.0
      */
     public void setCursorLocation(Point point) {
-        ((IDisplay) this.delegate).setCursorLocation(point);
+        getImpl().setCursorLocation(point);
     }
 
     /**
@@ -1495,7 +1581,7 @@ public class Display extends Device implements Executor {
      * @see #disposeExec(Runnable)
      */
     public void setData(String key, Object value) {
-        ((IDisplay) this.delegate).setData(key, value);
+        getImpl().setData(key, value);
     }
 
     /**
@@ -1522,7 +1608,7 @@ public class Display extends Device implements Executor {
      * @see #disposeExec(Runnable)
      */
     public void setData(Object data) {
-        ((IDisplay) this.delegate).setData(data);
+        getImpl().setData(data);
     }
 
     /**
@@ -1541,7 +1627,7 @@ public class Display extends Device implements Executor {
      * </ul>
      */
     public void setSynchronizer(Synchronizer synchronizer) {
-        ((IDisplay) this.delegate).setSynchronizer((ISynchronizer) synchronizer.delegate);
+        getImpl().setSynchronizer(synchronizer);
     }
 
     /**
@@ -1556,7 +1642,7 @@ public class Display extends Device implements Executor {
      * @since 3.106
      */
     public final void setRuntimeExceptionHandler(Consumer<RuntimeException> runtimeExceptionHandler) {
-        ((IDisplay) this.delegate).setRuntimeExceptionHandler(runtimeExceptionHandler);
+        getImpl().setRuntimeExceptionHandler(runtimeExceptionHandler);
     }
 
     /**
@@ -1569,7 +1655,7 @@ public class Display extends Device implements Executor {
      * @since 3.106
      */
     public final Consumer<RuntimeException> getRuntimeExceptionHandler() {
-        return ((IDisplay) this.delegate).getRuntimeExceptionHandler();
+        return getImpl().getRuntimeExceptionHandler();
     }
 
     /**
@@ -1584,7 +1670,7 @@ public class Display extends Device implements Executor {
      * @since 3.106
      */
     public final void setErrorHandler(Consumer<Error> errorHandler) {
-        ((IDisplay) this.delegate).setErrorHandler(errorHandler);
+        getImpl().setErrorHandler(errorHandler);
     }
 
     /**
@@ -1597,7 +1683,7 @@ public class Display extends Device implements Executor {
      * @since 3.106
      */
     public final Consumer<Error> getErrorHandler() {
-        return ((IDisplay) this.delegate).getErrorHandler();
+        return getImpl().getErrorHandler();
     }
 
     /**
@@ -1615,7 +1701,7 @@ public class Display extends Device implements Executor {
      * @see #wake
      */
     public boolean sleep() {
-        return ((IDisplay) this.delegate).sleep();
+        return getImpl().sleep();
     }
 
     /**
@@ -1644,7 +1730,7 @@ public class Display extends Device implements Executor {
      * @see #asyncExec
      */
     public void timerExec(int milliseconds, Runnable runnable) {
-        ((IDisplay) this.delegate).timerExec(milliseconds, runnable);
+        getImpl().timerExec(milliseconds, runnable);
     }
 
     /**
@@ -1653,7 +1739,7 @@ public class Display extends Device implements Executor {
      * @noreference This method is not intended to be referenced by clients.
      */
     public void sendPreExternalEventDispatchEvent() {
-        ((IDisplay) this.delegate).sendPreExternalEventDispatchEvent();
+        getImpl().sendPreExternalEventDispatchEvent();
     }
 
     /**
@@ -1662,7 +1748,7 @@ public class Display extends Device implements Executor {
      * @noreference This method is not intended to be referenced by clients.
      */
     public void sendPostExternalEventDispatchEvent() {
-        ((IDisplay) this.delegate).sendPostExternalEventDispatchEvent();
+        getImpl().sendPostExternalEventDispatchEvent();
     }
 
     /**
@@ -1688,7 +1774,7 @@ public class Display extends Device implements Executor {
      * @see #asyncExec
      */
     public void syncExec(Runnable runnable) {
-        ((IDisplay) this.delegate).syncExec(runnable);
+        getImpl().syncExec(runnable);
     }
 
     /**
@@ -1720,7 +1806,7 @@ public class Display extends Device implements Executor {
      * @since 3.118
      */
     public <T, E extends Exception> T syncCall(SwtCallable<T, E> callable) throws E {
-        return ((IDisplay) this.delegate).syncCall(callable);
+        return getImpl().syncCall(callable);
     }
 
     /**
@@ -1735,7 +1821,7 @@ public class Display extends Device implements Executor {
      * @see Control#update()
      */
     public void update() {
-        ((IDisplay) this.delegate).update();
+        getImpl().update();
     }
 
     /**
@@ -1750,7 +1836,7 @@ public class Display extends Device implements Executor {
      * @see #sleep
      */
     public void wake() {
-        ((IDisplay) this.delegate).wake();
+        getImpl().wake();
     }
 
     /**
@@ -1763,7 +1849,7 @@ public class Display extends Device implements Executor {
      * @since 3.127
      */
     public boolean isRescalingAtRuntime() {
-        return ((IDisplay) this.delegate).isRescalingAtRuntime();
+        return getImpl().isRescalingAtRuntime();
     }
 
     /**
@@ -1780,53 +1866,18 @@ public class Display extends Device implements Executor {
      * @since 3.127
      */
     public boolean setRescalingAtRuntime(boolean activate) {
-        return ((IDisplay) this.delegate).setRescalingAtRuntime(activate);
+        return getImpl().setRescalingAtRuntime(activate);
     }
 
-    public IDisplay delegate;
-
-    protected static <T extends Display, I extends IDisplay> T[] ofArray(I[] items, Class<T> clazz, java.util.function.Function<I, T> factory) {
-        @SuppressWarnings("unchecked")
-        T[] target = (T[]) java.lang.reflect.Array.newInstance(clazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = factory.apply(items[i]);
-        return target;
+    protected Display(IDisplay impl) {
+        super(impl);
     }
 
-    @SuppressWarnings("unchecked")
-    protected static <T extends Display, I extends IDisplay> I[] fromArray(T[] items) {
-        if (items.length == 0)
-            return (I[]) java.lang.reflect.Array.newInstance(IDisplay.class, 0);
-        Class<I> targetClazz = null;
-        for (T item : items) outer: {
-            for (Class<?> i : item.getClass().getInterfaces()) {
-                if (IDisplay.class.isAssignableFrom(i)) {
-                    targetClazz = (Class<I>) i;
-                    break outer;
-                }
-            }
-        }
-        if (targetClazz == null)
-            return (I[]) java.lang.reflect.Array.newInstance(IDisplay.class, 0);
-        I[] target = (I[]) java.lang.reflect.Array.newInstance(targetClazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = (I) items[i].delegate;
-        return target;
+    static Display createApi(IDisplay impl) {
+        return new Display(impl);
     }
 
-    protected static final WeakHashMap<IDisplay, Display> INSTANCES = new WeakHashMap<IDisplay, Display>();
-
-    protected Display(IDisplay delegate) {
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
-    }
-
-    public static Display getInstance(IDisplay delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Display ref = (Display) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Display(delegate);
-        }
-        return ref;
+    public IDisplay getImpl() {
+        return (IDisplay) super.getImpl();
     }
 }

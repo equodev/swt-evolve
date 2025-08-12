@@ -17,7 +17,7 @@ import java.util.List;
 
 public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     private final DartWidget forWidget;
-    private long context;
+    protected long context;
 
     static {
         FlutterLibraryLoader.initialize();
@@ -72,9 +72,10 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     @Override
     public void destroy(DartWidget control) {
         if (control instanceof DartControl dartControl && control == forWidget) {
-            destroyHandle(dartControl);
+            // Dispose Flutter context FIRST to handle view disconnection
             Dispose(context);
             context = 0;
+            destroyHandle(dartControl);
         }
     }
 

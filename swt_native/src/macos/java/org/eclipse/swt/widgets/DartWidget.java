@@ -819,7 +819,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     void register() {
-        hookEvents();
+        _hookEvents();
         bridge = FlutterBridge.of(this);
     }
 
@@ -1262,7 +1262,13 @@ public abstract class DartWidget implements IWidget {
         return bridge;
     }
 
-    protected void hookEvents() {
+    protected void dirty() {
+        FlutterBridge bridge = getBridge();
+        if (bridge != null)
+            bridge.dirty(this);
+    }
+
+    protected void _hookEvents() {
         FlutterBridge.on(this, "Dispose", "Dispose", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.Dispose, e);

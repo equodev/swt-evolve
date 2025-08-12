@@ -181,23 +181,6 @@ public class DartButton extends DartControl implements IButton {
 
     @Override
     void createHandle() {
-        if ((getApi().style & SWT.PUSH) == 0)
-            getApi().state |= THEME_BACKGROUND;
-        if ((getApi().style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (getApi().style & SWT.FLAT) == 0) {
-        }
-        if ((getApi().style & SWT.PUSH) != 0) {
-            if ((getApi().style & SWT.FLAT) != 0) {
-            } else {
-            }
-        } else if ((getApi().style & SWT.CHECK) != 0) {
-        } else if ((getApi().style & SWT.RADIO) != 0) {
-        } else if ((getApi().style & SWT.TOGGLE) != 0) {
-            if ((getApi().style & SWT.FLAT) != 0) {
-            } else {
-            }
-        } else if ((getApi().style & SWT.ARROW) != 0) {
-        }
-        _setAlignment(getApi().style);
     }
 
     @Override
@@ -448,13 +431,12 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setAlignment(int alignment) {
         checkWidget();
-        this.alignment = alignment;
         _setAlignment(alignment);
         redraw();
-        getBridge().dirty(this);
     }
 
     void _setAlignment(int alignment) {
+        dirty();
         if ((getApi().style & SWT.ARROW) != 0) {
             if ((getApi().style & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT)) == 0)
                 return;
@@ -501,6 +483,7 @@ public class DartButton extends DartControl implements IButton {
      * @since 3.4
      */
     public void setGrayed(boolean grayed) {
+        dirty();
         checkWidget();
         if ((getApi().style & SWT.CHECK) == 0)
             return;
@@ -511,7 +494,6 @@ public class DartButton extends DartControl implements IButton {
             } else {
             }
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -531,6 +513,7 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setImage(Image image) {
+        dirty();
         checkWidget();
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -546,7 +529,6 @@ public class DartButton extends DartControl implements IButton {
             }
         }
         updateAlignment();
-        getBridge().dirty(this);
     }
 
     @Override
@@ -577,6 +559,7 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setSelection(boolean selected) {
+        dirty();
         checkWidget();
         this.selection = selected;
         if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
@@ -584,7 +567,6 @@ public class DartButton extends DartControl implements IButton {
         if (grayed) {
         } else {
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -622,6 +604,7 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setText(String string) {
+        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -629,7 +612,6 @@ public class DartButton extends DartControl implements IButton {
             return;
         text = string;
         updateAlignment();
-        getBridge().dirty(this);
     }
 
     @Override
@@ -655,8 +637,6 @@ public class DartButton extends DartControl implements IButton {
         super.setZOrder();
     }
 
-    int alignment;
-
     boolean selection;
 
     public String _text() {
@@ -671,24 +651,20 @@ public class DartButton extends DartControl implements IButton {
         return grayed;
     }
 
-    public int _alignment() {
-        return alignment;
-    }
-
     public boolean _selection() {
         return selection;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Selection, e);
-            });
-        });
+    protected void _hookEvents() {
+        super._hookEvents();
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
             });
         });
     }

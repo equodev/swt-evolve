@@ -4,7 +4,9 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 
-public interface IItem extends IWidget {
+public interface IItem extends IWidget, ImplItem {
+
+    void checkSubclass();
 
     /**
      * Returns the receiver's image if it has one, or null
@@ -65,4 +67,6 @@ public interface IItem extends IWidget {
      * </ul>
      */
     void setText(String string);
+
+    Item getApi();
 }

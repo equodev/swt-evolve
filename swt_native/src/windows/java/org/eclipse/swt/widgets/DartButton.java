@@ -125,7 +125,6 @@ public class DartButton extends DartControl implements IButton {
         if ((getApi().style & SWT.COMMAND) != 0)
             return;
         if (image != null) {
-             ;
             if (text.length() == 0) {
             } else {
             }
@@ -134,7 +133,6 @@ public class DartButton extends DartControl implements IButton {
     }
 
     void _setText(String text) {
-         ;
         /*
 	* Bug in Windows.  When a Button control is right-to-left and
 	* is disabled, the first pixel of the text is clipped.  The fix
@@ -215,8 +213,6 @@ public class DartButton extends DartControl implements IButton {
         if (image != null && text.length() != 0) {
             Rectangle bounds = DPIUtil.scaleBounds(image.getBounds(), this.getZoom(), 100);
             margin += bounds.width + MARGIN * 2;
-            long oldFont = 0;
-            char[] buffer = text.toCharArray();
             if ((getApi().style & SWT.LEFT) != 0) {
                 margin = MARGIN;
             } else if ((getApi().style & SWT.RIGHT) != 0) {
@@ -233,18 +229,6 @@ public class DartButton extends DartControl implements IButton {
 
     @Override
     void createHandle() {
-        /*
-	* Feature in Windows.  When a button is created,
-	* it clears the UI state for all controls in the
-	* shell by sending WM_CHANGEUISTATE with UIS_SET,
-	* UISF_HIDEACCEL and UISF_HIDEFOCUS to the parent.
-	* This is undocumented and unexpected.  The fix
-	* is to ignore the WM_CHANGEUISTATE, when sent
-	* from CreateWindowEx().
-	*/
-        parent.state |= IGNORE_WM_CHANGEUISTATE;
-        super.createHandle();
-        parent.state &= ~IGNORE_WM_CHANGEUISTATE;
     }
 
     private boolean customBackgroundDrawing() {
@@ -545,8 +529,8 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setAlignment(int alignment) {
+        dirty();
         checkWidget();
-        this.alignment = alignment;
         if ((getApi().style & SWT.ARROW) != 0) {
             if ((getApi().style & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT)) == 0)
                 return;
@@ -558,7 +542,6 @@ public class DartButton extends DartControl implements IButton {
             return;
         getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
-        getBridge().dirty(this);
     }
 
     /**
@@ -590,7 +573,6 @@ public class DartButton extends DartControl implements IButton {
     public void setDefault(boolean value) {
         if ((getApi().style & SWT.PUSH) == 0)
             return;
-        long hwndShell = menuShell().handle;
         if (value) {
         } else {
         }
@@ -626,6 +608,7 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setImage(Image image) {
+        dirty();
         checkWidget();
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -633,7 +616,6 @@ public class DartButton extends DartControl implements IButton {
             return;
         this.image = image;
         _setImage(image);
-        getBridge().dirty(this);
     }
 
     /**
@@ -651,6 +633,7 @@ public class DartButton extends DartControl implements IButton {
      * @since 3.4
      */
     public void setGrayed(boolean grayed) {
+        dirty();
         checkWidget();
         if ((getApi().style & SWT.CHECK) == 0)
             return;
@@ -658,7 +641,6 @@ public class DartButton extends DartControl implements IButton {
         if (grayed) {
         } else {
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -726,13 +708,13 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setSelection(boolean selected) {
+        dirty();
         checkWidget();
         this.selection = selected;
         if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
             return;
         if ((getApi().style & SWT.CHECK) != 0) {
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -770,6 +752,7 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setText(String string) {
+        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -777,7 +760,6 @@ public class DartButton extends DartControl implements IButton {
             return;
         text = string;
         _setText(string);
-        getBridge().dirty(this);
     }
 
     @Override
@@ -882,8 +864,6 @@ public class DartButton extends DartControl implements IButton {
         }
     }
 
-    int alignment;
-
     boolean selection;
 
     public String _text() {
@@ -914,24 +894,20 @@ public class DartButton extends DartControl implements IButton {
         return useDarkModeExplorerTheme;
     }
 
-    public int _alignment() {
-        return alignment;
-    }
-
     public boolean _selection() {
         return selection;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Selection, e);
-            });
-        });
+    protected void _hookEvents() {
+        super._hookEvents();
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
             });
         });
     }

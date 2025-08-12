@@ -3,11 +3,8 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
-public interface IScrollable extends IControl {
+public interface IScrollable extends IControl, ImplScrollable {
 
     /**
      * Given a desired <em>client area</em> for the receiver
@@ -65,7 +62,7 @@ public interface IScrollable extends IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IScrollBar getHorizontalBar();
+    ScrollBar getHorizontalBar();
 
     /**
      * Returns the mode of the receiver's scrollbars. This will be
@@ -126,5 +123,7 @@ public interface IScrollable extends IControl {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IScrollBar getVerticalBar();
+    ScrollBar getVerticalBar();
+
+    Scrollable getApi();
 }

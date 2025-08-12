@@ -52,8 +52,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class DropTargetEffect extends DropTargetAdapter {
 
-    Control control;
-
     /**
      * Creates a new <code>DropTargetEffect</code> to handle the drag under effect on the specified
      * <code>Control</code>.
@@ -65,9 +63,8 @@ public class DropTargetEffect extends DropTargetAdapter {
      * </ul>
      */
     public DropTargetEffect(Control control) {
-        if (control == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.control = control;
+        this((IDropTargetEffect) null);
+        setImpl(new SwtDropTargetEffect(control, this));
     }
 
     /**
@@ -76,8 +73,8 @@ public class DropTargetEffect extends DropTargetAdapter {
      *
      * @return the Control which is registered for this DropTargetEffect
      */
-    public IControl getControl() {
-        return (IControl)control.delegate;
+    public Control getControl() {
+        return getImpl().getControl();
     }
 
     /**
@@ -89,97 +86,19 @@ public class DropTargetEffect extends DropTargetAdapter {
      * @param y the y coordinate used to locate the item
      * @return the item at the given x-y coordinate, or null if the coordinate is not in a selectable item
      */
-    public IWidget getItem(int x, int y) {
-        if (control.delegate instanceof SWTTable) {
-            return ((SWTWidget) (getItem((SWTTable) control.delegate, x, y)));
-        }
-        if (control.delegate instanceof SWTTree) {
-            return ((SWTWidget) (getItem((SWTTree) control.delegate, x, y)));
-        }
-        return null;
+    public Widget getItem(int x, int y) {
+        return getImpl().getItem(x, y);
     }
 
-    SWTWidget getItem(SWTTable table, int x, int y) {
-        Point coordinates = new Point(x, y);
-        coordinates = table.toControl(coordinates);
-        SWTTableItem item = (SWTTableItem) (table.getItem(coordinates));
-        if (item != null)
-            return item;
-        Rectangle area = table.getClientArea();
-        int tableBottom = area.y + area.height;
-        int itemCount = table.getItemCount();
-        for (int i = table.getTopIndex(); i < itemCount; i++) {
-            item = ((SWTTableItem) (table.getItem(i)));
-            Rectangle rect = item.getBounds();
-            rect.x = area.x;
-            rect.width = area.width;
-            if (rect.contains(coordinates))
-                return item;
-            if (rect.y > tableBottom)
-                break;
-        }
-        return null;
+    protected DropTargetEffect(IDropTargetEffect impl) {
+        super(impl);
     }
 
-    SWTWidget getItem(SWTTree tree, int x, int y) {
-        Point point = new Point(x, y);
-        point = tree.toControl(point);
-        SWTTreeItem item = (SWTTreeItem) (tree.getItem(point));
-        if (item == null) {
-            Rectangle area = tree.getClientArea();
-            if (area.contains(point)) {
-                int treeBottom = area.y + area.height;
-                item = ((SWTTreeItem) (tree.getTopItem()));
-                while (item != null) {
-                    Rectangle rect = item.getBounds();
-                    int itemBottom = rect.y + rect.height;
-                    if (rect.y <= point.y && point.y < itemBottom)
-                        return item;
-                    if (itemBottom > treeBottom)
-                        break;
-                    item = nextItem(tree, item);
-                }
-                return null;
-            }
-        }
-        return item;
+    static DropTargetEffect createApi(IDropTargetEffect impl) {
+        return new DropTargetEffect(impl);
     }
 
-    SWTTreeItem nextItem(SWTTree tree, SWTTreeItem item) {
-        if (item == null)
-            return null;
-        if (item.getExpanded() && item.getItemCount() > 0)
-            return ((SWTTreeItem) (item.getItem(0)));
-        SWTTreeItem childItem = (SWTTreeItem) (item);
-        SWTTreeItem parentItem = (SWTTreeItem) (childItem.getParentItem());
-        int index = parentItem == null ? tree.indexOf(childItem) : parentItem.indexOf(childItem);
-        int count = parentItem == null ? tree.getItemCount() : parentItem.getItemCount();
-        while (true) {
-            if (index + 1 < count)
-                return parentItem == null ? ((SWTTreeItem) (tree.getItem(index + 1))) : ((SWTTreeItem) (parentItem.getItem(index + 1)));
-            if (parentItem == null)
-                return null;
-            childItem = parentItem;
-            parentItem = ((SWTTreeItem) (childItem.getParentItem()));
-            index = parentItem == null ? tree.indexOf(childItem) : parentItem.indexOf(childItem);
-            count = parentItem == null ? tree.getItemCount() : parentItem.getItemCount();
-        }
-    }
-
-    SWTTreeItem previousItem(SWTTree tree, SWTTreeItem item) {
-        if (item == null)
-            return null;
-        SWTTreeItem childItem = (SWTTreeItem) (item);
-        SWTTreeItem parentItem = (SWTTreeItem) (childItem.getParentItem());
-        int index = parentItem == null ? tree.indexOf(childItem) : parentItem.indexOf(childItem);
-        if (index == 0)
-            return parentItem;
-        SWTTreeItem nextItem = (SWTTreeItem) (parentItem == null ? tree.getItem(index - 1) : parentItem.getItem(index - 1));
-        int count = nextItem.getItemCount();
-        while (count > 0 && nextItem.getExpanded()) {
-            nextItem = ((SWTTreeItem) (nextItem.getItem(count - 1)));
-            count = nextItem.getItemCount();
-        }
-        return nextItem;
+    public IDropTargetEffect getImpl() {
+        return (IDropTargetEffect) super.getImpl();
     }
 }
