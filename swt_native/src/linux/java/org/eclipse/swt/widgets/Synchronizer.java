@@ -46,53 +46,60 @@ public class Synchronizer {
      * @param display the display to create the synchronizer on
      */
     public Synchronizer(Display display) {
-        this(new SWTSynchronizer((SWTDisplay) display.delegate));
+        this((ISynchronizer) null);
+        setImpl(new SwtSynchronizer(display, this));
     }
 
-    public ISynchronizer delegate;
-
-    protected static <T extends Synchronizer, I extends ISynchronizer> T[] ofArray(I[] items, Class<T> clazz, java.util.function.Function<I, T> factory) {
-        @SuppressWarnings("unchecked")
-        T[] target = (T[]) java.lang.reflect.Array.newInstance(clazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = factory.apply(items[i]);
-        return target;
+    /**
+     * Causes the <code>run()</code> method of the runnable to
+     * be invoked by the user-interface thread at the next
+     * reasonable opportunity. The caller of this method continues
+     * to run in parallel, and is not notified when the
+     * runnable has completed.
+     *
+     * @param runnable code to run on the user-interface thread.
+     *
+     * @see #syncExec
+     */
+    protected void asyncExec(Runnable runnable) {
+        getImpl().asyncExec(runnable);
     }
 
-    @SuppressWarnings("unchecked")
-    protected static <T extends Synchronizer, I extends ISynchronizer> I[] fromArray(T[] items) {
-        if (items.length == 0)
-            return (I[]) java.lang.reflect.Array.newInstance(ISynchronizer.class, 0);
-        Class<I> targetClazz = null;
-        for (T item : items) outer: {
-            for (Class<?> i : item.getClass().getInterfaces()) {
-                if (ISynchronizer.class.isAssignableFrom(i)) {
-                    targetClazz = (Class<I>) i;
-                    break outer;
-                }
-            }
-        }
-        if (targetClazz == null)
-            return (I[]) java.lang.reflect.Array.newInstance(ISynchronizer.class, 0);
-        I[] target = (I[]) java.lang.reflect.Array.newInstance(targetClazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = (I) items[i].delegate;
-        return target;
+    /**
+     * Causes the <code>run()</code> method of the runnable to
+     * be invoked by the user-interface thread at the next
+     * reasonable opportunity. The thread which calls this method
+     * is suspended until the runnable completes.
+     *
+     * @param runnable code to run on the user-interface thread.
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_FAILED_EXEC - if an exception occurred when executing the runnable</li>
+     * </ul>
+     *
+     * @see #asyncExec
+     */
+    protected void syncExec(Runnable runnable) {
+        getImpl().syncExec(runnable);
     }
 
-    protected static final WeakHashMap<ISynchronizer, Synchronizer> INSTANCES = new WeakHashMap<ISynchronizer, Synchronizer>();
+    protected ISynchronizer impl;
 
-    protected Synchronizer(ISynchronizer delegate) {
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Synchronizer(ISynchronizer impl) {
+        if (impl != null)
+            impl.setApi(this);
     }
 
-    public static Synchronizer getInstance(ISynchronizer delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Synchronizer ref = (Synchronizer) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Synchronizer(delegate);
-        }
-        return ref;
+    static Synchronizer createApi(ISynchronizer impl) {
+        return new Synchronizer(impl);
+    }
+
+    public ISynchronizer getImpl() {
+        return impl;
+    }
+
+    protected Synchronizer setImpl(ISynchronizer impl) {
+        this.impl = impl;
+        return this;
     }
 }

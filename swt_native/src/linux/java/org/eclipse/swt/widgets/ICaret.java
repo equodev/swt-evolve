@@ -4,9 +4,8 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
-import org.eclipse.swt.internal.gtk.*;
 
-public interface ICaret extends IWidget {
+public interface ICaret extends IWidget, ImplCaret {
 
     /**
      * Returns a rectangle describing the receiver's size and location
@@ -68,7 +67,7 @@ public interface ICaret extends IWidget {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ICanvas getParent();
+    Canvas getParent();
 
     /**
      * Returns a point describing the receiver's size.
@@ -258,4 +257,6 @@ public interface ICaret extends IWidget {
      * </ul>
      */
     void setVisible(boolean visible);
+
+    Caret getApi();
 }

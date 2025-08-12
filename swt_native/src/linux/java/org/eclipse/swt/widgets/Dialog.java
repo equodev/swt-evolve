@@ -16,7 +16,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
-import java.util.WeakHashMap;
 
 /**
  *  This class is the abstract superclass of the classes
@@ -80,7 +79,7 @@ import java.util.WeakHashMap;
  *  @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
  *  @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Dialog {
+public abstract class Dialog {
 
     /**
      * Constructs a new instance of this class given only its
@@ -128,6 +127,22 @@ public class Dialog {
     }
 
     /**
+     * Checks that this class can be subclassed.
+     * <p>
+     * IMPORTANT: See the comment in <code>Widget.checkSubclass()</code>.
+     * </p>
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
+     * </ul>
+     *
+     * @see Widget#checkSubclass
+     */
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
+    }
+
+    /**
      * Returns the receiver's parent, which must be a <code>Shell</code>
      * or null.
      *
@@ -139,7 +154,7 @@ public class Dialog {
      * </ul>
      */
     public Shell getParent() {
-        return Shell.getInstance(((IDialog) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -158,7 +173,7 @@ public class Dialog {
      * </ul>
      */
     public int getStyle() {
-        return ((IDialog) this.delegate).getStyle();
+        return getImpl().getStyle();
     }
 
     /**
@@ -175,7 +190,7 @@ public class Dialog {
      * </ul>
      */
     public String getText() {
-        return ((IDialog) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -194,53 +209,22 @@ public class Dialog {
      * </ul>
      */
     public void setText(String string) {
-        ((IDialog) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
-    public IDialog delegate;
+    protected IDialog impl;
 
-    protected static <T extends Dialog, I extends IDialog> T[] ofArray(I[] items, Class<T> clazz, java.util.function.Function<I, T> factory) {
-        @SuppressWarnings("unchecked")
-        T[] target = (T[]) java.lang.reflect.Array.newInstance(clazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = factory.apply(items[i]);
-        return target;
+    protected Dialog(IDialog impl) {
+        if (impl != null)
+            impl.setApi(this);
     }
 
-    @SuppressWarnings("unchecked")
-    protected static <T extends Dialog, I extends IDialog> I[] fromArray(T[] items) {
-        if (items.length == 0)
-            return (I[]) java.lang.reflect.Array.newInstance(IDialog.class, 0);
-        Class<I> targetClazz = null;
-        for (T item : items) outer: {
-            for (Class<?> i : item.getClass().getInterfaces()) {
-                if (IDialog.class.isAssignableFrom(i)) {
-                    targetClazz = (Class<I>) i;
-                    break outer;
-                }
-            }
-        }
-        if (targetClazz == null)
-            return (I[]) java.lang.reflect.Array.newInstance(IDialog.class, 0);
-        I[] target = (I[]) java.lang.reflect.Array.newInstance(targetClazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = (I) items[i].delegate;
-        return target;
+    public IDialog getImpl() {
+        return impl;
     }
 
-    protected static final WeakHashMap<IDialog, Dialog> INSTANCES = new WeakHashMap<IDialog, Dialog>();
-
-    protected Dialog(IDialog delegate) {
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
-    }
-
-    public static Dialog getInstance(IDialog delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Dialog ref = (Dialog) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Dialog(delegate);
-        }
-        return ref;
+    protected Dialog setImpl(IDialog impl) {
+        this.impl = impl;
+        return this;
     }
 }

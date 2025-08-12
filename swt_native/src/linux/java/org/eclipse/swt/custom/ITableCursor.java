@@ -95,7 +95,7 @@ public interface ITableCursor extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITableItem getRow();
+    TableItem getRow();
 
     /**
      * Sets the receiver's background color to the color specified
@@ -160,5 +160,7 @@ public interface ITableCursor extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSelection(ITableItem row, int column);
+    void setSelection(TableItem row, int column);
+
+    TableCursor getApi();
 }

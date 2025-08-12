@@ -15,7 +15,6 @@
  */
 package org.eclipse.swt.widgets;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
@@ -54,14 +53,22 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 public abstract class Widget {
-    
-    protected void addTypedListener(EventListener listener, int... eventTypes) {
-        delegate.addTypedListener(listener, eventTypes);
-    }
 
-    protected void checkWidget() {
-        delegate.checkWidget();
-    }
+    /**
+     * the handle to the OS resource
+     * (Warning: This field is platform dependent)
+     * <p>
+     * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
+     * public API. It is marked public only so that it can be shared
+     * within the packages provided by SWT. It is not available on all
+     * platforms and should never be accessed from application code.
+     * </p>
+     *
+     * @noreference This field is not intended to be referenced by clients.
+     */
+    public long handle;
+
+    int style, state;
 
     /**
      * Prevents uninitialized instances from being created outside the package.
@@ -124,7 +131,37 @@ public abstract class Widget {
      * @see #notifyListeners
      */
     public void addListener(int eventType, Listener listener) {
-        ((IWidget) this.delegate).addListener(eventType, listener);
+        getImpl().addListener(eventType, listener);
+    }
+
+    /**
+     * Adds the {@link EventListener typed listener} to the collection of listeners
+     * who will be notified when an event of the given types occurs.
+     * When the event does occur in the widget, the listener is notified
+     * by calling the type's handling methods.
+     * The event type is one of the event constants defined in class {@link SWT}
+     * and must correspond to the listeners type.
+     * If for example a {@link SelectionListener} is passed the {@code eventTypes}
+     * can be {@link SWT#Selection} or {@link SWT#DefaultSelection}.
+     *
+     * @param listener the listener which should be notified when the event occurs
+     * @param eventTypes the types of event to listen for
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see #getTypedListeners(int, Class)
+     * @see #removeTypedListener(int, EventListener)
+     * @see #notifyListeners
+     * @since 3.126
+     */
+    protected void addTypedListener(EventListener listener, int... eventTypes) {
+        getImpl().addTypedListener(listener, eventTypes);
     }
 
     /**
@@ -147,7 +184,66 @@ public abstract class Widget {
      * @see #removeDisposeListener
      */
     public void addDisposeListener(DisposeListener listener) {
-        ((IWidget) this.delegate).addDisposeListener(listener);
+        getImpl().addDisposeListener(listener);
+    }
+
+    /**
+     * Checks that this class can be subclassed.
+     * <p>
+     * The SWT class library is intended to be subclassed
+     * only at specific, controlled points (most notably,
+     * <code>Composite</code> and <code>Canvas</code> when
+     * implementing new widgets). This method enforces this
+     * rule unless it is overridden.
+     * </p><p>
+     * <em>IMPORTANT:</em> By providing an implementation of this
+     * method that allows a subclass of a class which does not
+     * normally allow subclassing to be created, the implementer
+     * agrees to be fully responsible for the fact that any such
+     * subclass will likely fail between SWT releases and will be
+     * strongly platform specific. No support is provided for
+     * user-written classes which are implemented in this fashion.
+     * </p><p>
+     * The ability to subclass outside of the allowed SWT classes
+     * is intended purely to enable those not on the SWT development
+     * team to implement patches in order to get around specific
+     * limitations in advance of when those limitations can be
+     * addressed by the team. Subclassing should not be attempted
+     * without an intimate and detailed understanding of the hierarchy.
+     * </p>
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
+     * </ul>
+     */
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
+    }
+
+    /**
+     * Throws an <code>SWTException</code> if the receiver can not
+     * be accessed by the caller. This may include both checks on
+     * the state of the receiver and more generally on the entire
+     * execution context. This method <em>should</em> be called by
+     * widget implementors to enforce the standard SWT invariants.
+     * <p>
+     * Currently, it is an error to invoke any method (other than
+     * <code>isDisposed()</code>) on a widget that has had its
+     * <code>dispose()</code> method called. It is also an error
+     * to call widget methods from any thread that is different
+     * from the thread that created the widget.
+     * </p><p>
+     * In future releases of SWT, there may be more or fewer error
+     * checks and exceptions may be thrown for different reasons.
+     * </p>
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     */
+    protected void checkWidget() {
+        getImpl().checkWidget();
     }
 
     /**
@@ -175,7 +271,7 @@ public abstract class Widget {
      * @see #checkWidget
      */
     public void dispose() {
-        ((IWidget) this.delegate).dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -201,7 +297,7 @@ public abstract class Widget {
      * @see #setData(Object)
      */
     public Object getData() {
-        return ((IWidget) this.delegate).getData();
+        return getImpl().getData();
     }
 
     /**
@@ -229,7 +325,7 @@ public abstract class Widget {
      * @see #setData(String, Object)
      */
     public Object getData(String key) {
-        return ((IWidget) this.delegate).getData(key);
+        return getImpl().getData(key);
     }
 
     /**
@@ -248,7 +344,7 @@ public abstract class Widget {
      * </ul>
      */
     public Display getDisplay() {
-        return Display.getInstance(((IWidget) this.delegate).getDisplay());
+        return getImpl().getDisplay();
     }
 
     /**
@@ -271,7 +367,7 @@ public abstract class Widget {
      * @since 3.4
      */
     public Listener[] getListeners(int eventType) {
-        return ((IWidget) this.delegate).getListeners(eventType);
+        return getImpl().getListeners(eventType);
     }
 
     /**
@@ -296,7 +392,7 @@ public abstract class Widget {
      * @since 3.126
      */
     public <L extends EventListener> Stream<L> getTypedListeners(int eventType, Class<L> listenerType) {
-        return ((IWidget) this.delegate).getTypedListeners(eventType, listenerType);
+        return getImpl().getTypedListeners(eventType, listenerType);
     }
 
     /**
@@ -320,7 +416,7 @@ public abstract class Widget {
      * </ul>
      */
     public int getStyle() {
-        return ((IWidget) this.delegate).getStyle();
+        return getImpl().getStyle();
     }
 
     /**
@@ -334,7 +430,7 @@ public abstract class Widget {
      * @since 3.105
      */
     public boolean isAutoDirection() {
-        return ((IWidget) this.delegate).isAutoDirection();
+        return getImpl().isAutoDirection();
     }
 
     /**
@@ -349,7 +445,7 @@ public abstract class Widget {
      * @return <code>true</code> when the widget is disposed and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return ((IWidget) this.delegate).isDisposed();
+        return getImpl().isDisposed();
     }
 
     /**
@@ -369,7 +465,7 @@ public abstract class Widget {
      * @see SWT
      */
     public boolean isListening(int eventType) {
-        return ((IWidget) this.delegate).isListening(eventType);
+        return getImpl().isListening(eventType);
     }
 
     /**
@@ -393,7 +489,7 @@ public abstract class Widget {
      * @see #removeListener(int, Listener)
      */
     public void notifyListeners(int eventType, Event event) {
-        ((IWidget) this.delegate).notifyListeners(eventType, event);
+        getImpl().notifyListeners(eventType, event);
     }
 
     /**
@@ -419,7 +515,69 @@ public abstract class Widget {
      * @see #notifyListeners
      */
     public void removeListener(int eventType, Listener listener) {
-        ((IWidget) this.delegate).removeListener(eventType, listener);
+        getImpl().removeListener(eventType, listener);
+    }
+
+    /**
+     * Removes the listener from the collection of listeners who will
+     * be notified when an event of the given type occurs.
+     * <p>
+     * <b>IMPORTANT:</b> This method is <em>not</em> part of the SWT
+     * public API. It is marked public only so that it can be shared
+     * within the packages provided by SWT. It should never be
+     * referenced from application code.
+     * </p>
+     *
+     * @param eventType the type of event to listen for
+     * @param listener the listener which should no longer be notified
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see Listener
+     * @see #addListener
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     * @nooverride This method is not intended to be re-implemented or extended by clients.
+     */
+    protected void removeListener(int eventType, SWTEventListener listener) {
+        getImpl().removeListener(eventType, listener);
+    }
+
+    /**
+     * Removes the listener from the collection of listeners who will
+     * be notified when an event of the given type occurs.
+     * <p>
+     * <b>IMPORTANT:</b> This method is <em>not</em> part of the SWT
+     * public API. It is marked public only so that it can be shared
+     * within the packages provided by SWT. It should never be
+     * referenced from application code.
+     * </p>
+     *
+     * @param eventType the type of event to listen for
+     * @param listener the listener which should no longer be notified
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see Listener
+     * @see #addListener
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     * @nooverride This method is not intended to be re-implemented or extended by clients.
+     */
+    protected void removeTypedListener(int eventType, EventListener listener) {
+        getImpl().removeTypedListener(eventType, listener);
     }
 
     /**
@@ -451,7 +609,7 @@ public abstract class Widget {
      * @since 3.6
      */
     public void reskin(int flags) {
-        ((IWidget) this.delegate).reskin(flags);
+        getImpl().reskin(flags);
     }
 
     /**
@@ -472,7 +630,7 @@ public abstract class Widget {
      * @see #addDisposeListener
      */
     public void removeDisposeListener(DisposeListener listener) {
-        ((IWidget) this.delegate).removeDisposeListener(listener);
+        getImpl().removeDisposeListener(listener);
     }
 
     /**
@@ -498,7 +656,7 @@ public abstract class Widget {
      * @see #getData()
      */
     public void setData(Object data) {
-        ((IWidget) this.delegate).setData(data);
+        getImpl().setData(data);
     }
 
     /**
@@ -526,7 +684,7 @@ public abstract class Widget {
      * @see #getData(String)
      */
     public void setData(String key, Object value) {
-        ((IWidget) this.delegate).setData(key, value);
+        getImpl().setData(key, value);
     }
 
     /**
@@ -535,56 +693,23 @@ public abstract class Widget {
      *
      * @return a string representation of the receiver
      */
-    @Override
     public String toString() {
-        return ((IWidget) this.delegate).toString();
+        return getImpl().toString();
     }
 
-    public long getHandle() {
-        return ((IWidget) this.delegate).getHandle();
+    protected IWidget impl;
+
+    protected Widget(IWidget impl) {
+        if (impl != null)
+            impl.setApi(this);
     }
 
-    public IWidget delegate;
-
-    @SuppressWarnings("unchecked")
-    protected static <T extends Widget, I extends IWidget> T[] ofArray(I[] items, Class<T> clazz) {
-        if (items == null)
-            return (T[]) java.lang.reflect.Array.newInstance(clazz, 0);
-        T[] target = (T[]) java.lang.reflect.Array.newInstance(clazz, items.length);
-        for (int i = 0; i < target.length; ++i) {
-            Object obj = INSTANCES.get(items[i]);
-            if (clazz.isInstance(obj)) {
-                target[i] = (T)obj;
-            } else {
-                // Handle the case where the object isn't of the expected type
-                // Maybe log an error, throw a specific exception, or use a default value
-                System.err.println("Type mismatch: Expected " + clazz.getName() + 
-                                  " but found " + (obj != null ? obj.getClass().getName() : "null"));
-            }
-        }
-        return target;
+    public IWidget getImpl() {
+        return impl;
     }
 
-    @SuppressWarnings("unchecked")
-    protected static <T extends Widget, I extends IWidget> I[] fromArray(T[] items, Class<I> clazz) {
-        if (items.length == 0)
-            return (I[]) java.lang.reflect.Array.newInstance(clazz, 0);
-        I[] target = (I[]) java.lang.reflect.Array.newInstance(clazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = (I) items[i].delegate;
-        return target;
-    }
-
-    protected static final WeakHashMap<IWidget, Widget> INSTANCES = new WeakHashMap<IWidget, Widget>();
-
-    protected Widget(IWidget delegate) {
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
-    }
-
-    public static Widget getInstance(IWidget delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        return (Widget) INSTANCES.get(delegate);
+    protected Widget setImpl(IWidget impl) {
+        this.impl = impl;
+        return this;
     }
 }

@@ -84,10 +84,10 @@ public class Text extends Scrollable {
     public final static String DELIMITER;
 
     /*
-     * These values can be different on different platforms.
-     * Therefore they are not initialized in the declaration
-     * to stop the compiler from inlining.
-     */
+	* These values can be different on different platforms.
+	* Therefore they are not initialized in the declaration
+	* to stop the compiler from inlining.
+	*/
     static {
         LIMIT = 0x7FFFFFFF;
         DELIMITER = "\n";
@@ -132,8 +132,8 @@ public class Text extends Scrollable {
      * @see Widget#getStyle
      */
     public Text(Composite parent, int style) {
-        this(parent.delegate instanceof SWTComposite ? new SWTText((SWTComposite) parent.delegate, style)
-                : new SWTText(((FlutterComposite) parent.delegate).childComposite, style));
+        this((IText) null);
+        setImpl(new SwtText(parent, style, this));
     }
 
     /**
@@ -156,7 +156,7 @@ public class Text extends Scrollable {
      * @see #removeModifyListener
      */
     public void addModifyListener(ModifyListener listener) {
-        ((IText) this.delegate).addModifyListener(listener);
+        getImpl().addModifyListener(listener);
     }
 
     /**
@@ -194,7 +194,7 @@ public class Text extends Scrollable {
      * @since 3.8
      */
     public void addSegmentListener(SegmentListener listener) {
-        ((IText) this.delegate).addSegmentListener(listener);
+        getImpl().addSegmentListener(listener);
     }
 
     /**
@@ -226,7 +226,7 @@ public class Text extends Scrollable {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((IText) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -249,7 +249,7 @@ public class Text extends Scrollable {
      * @see #removeVerifyListener
      */
     public void addVerifyListener(VerifyListener listener) {
-        ((IText) this.delegate).addVerifyListener(listener);
+        getImpl().addVerifyListener(listener);
     }
 
     /**
@@ -270,7 +270,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void append(String string) {
-        ((IText) this.delegate).append(string);
+        getImpl().append(string);
     }
 
     /**
@@ -282,7 +282,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void clearSelection() {
-        ((IText) this.delegate).clearSelection();
+        getImpl().clearSelection();
     }
 
     /**
@@ -297,7 +297,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void copy() {
-        ((IText) this.delegate).copy();
+        getImpl().copy();
     }
 
     /**
@@ -313,7 +313,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void cut() {
-        ((IText) this.delegate).cut();
+        getImpl().cut();
     }
 
     /**
@@ -330,7 +330,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getCaretLineNumber() {
-        return ((IText) this.delegate).getCaretLineNumber();
+        return getImpl().getCaretLineNumber();
     }
 
     /**
@@ -345,7 +345,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public Point getCaretLocation() {
-        return ((IText) this.delegate).getCaretLocation();
+        return getImpl().getCaretLocation();
     }
 
     /**
@@ -362,7 +362,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getCaretPosition() {
-        return ((IText) this.delegate).getCaretPosition();
+        return getImpl().getCaretPosition();
     }
 
     /**
@@ -376,7 +376,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getCharCount() {
-        return ((IText) this.delegate).getCharCount();
+        return getImpl().getCharCount();
     }
 
     /**
@@ -395,7 +395,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public boolean getDoubleClickEnabled() {
-        return ((IText) this.delegate).getDoubleClickEnabled();
+        return getImpl().getDoubleClickEnabled();
     }
 
     /**
@@ -416,7 +416,7 @@ public class Text extends Scrollable {
      * @see #setEchoChar
      */
     public char getEchoChar() {
-        return ((IText) this.delegate).getEchoChar();
+        return getImpl().getEchoChar();
     }
 
     /**
@@ -430,7 +430,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public boolean getEditable() {
-        return ((IText) this.delegate).getEditable();
+        return getImpl().getEditable();
     }
 
     /**
@@ -444,7 +444,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getLineCount() {
-        return ((IText) this.delegate).getLineCount();
+        return getImpl().getLineCount();
     }
 
     /**
@@ -460,7 +460,7 @@ public class Text extends Scrollable {
      * @see #DELIMITER
      */
     public String getLineDelimiter() {
-        return ((IText) this.delegate).getLineDelimiter();
+        return getImpl().getLineDelimiter();
     }
 
     /**
@@ -474,7 +474,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getLineHeight() {
-        return ((IText) this.delegate).getLineHeight();
+        return getImpl().getLineHeight();
     }
 
     /**
@@ -494,7 +494,7 @@ public class Text extends Scrollable {
      * @since 3.3
      */
     public String getMessage() {
-        return ((IText) this.delegate).getMessage();
+        return getImpl().getMessage();
     }
 
     /**
@@ -510,9 +510,8 @@ public class Text extends Scrollable {
      *
      * @since 2.1.2
      */
-    @Override
     public int getOrientation() {
-        return ((IText) this.delegate).getOrientation();
+        return getImpl().getOrientation();
     }
 
     /**
@@ -534,7 +533,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public Point getSelection() {
-        return ((IText) this.delegate).getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -548,7 +547,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getSelectionCount() {
-        return ((IText) this.delegate).getSelectionCount();
+        return getImpl().getSelectionCount();
     }
 
     /**
@@ -562,7 +561,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public String getSelectionText() {
-        return ((IText) this.delegate).getSelectionText();
+        return getImpl().getSelectionText();
     }
 
     /**
@@ -581,7 +580,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getTabs() {
-        return ((IText) this.delegate).getTabs();
+        return getImpl().getTabs();
     }
 
     /**
@@ -599,7 +598,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public String getText() {
-        return ((IText) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -621,7 +620,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public String getText(int start, int end) {
-        return ((IText) this.delegate).getText(start, end);
+        return getImpl().getText(start, end);
     }
 
     /**
@@ -650,7 +649,7 @@ public class Text extends Scrollable {
      * @since 3.7
      */
     public char[] getTextChars() {
-        return ((IText) this.delegate).getTextChars();
+        return getImpl().getTextChars();
     }
 
     /**
@@ -670,7 +669,7 @@ public class Text extends Scrollable {
      * @see #LIMIT
      */
     public int getTextLimit() {
-        return ((IText) this.delegate).getTextLimit();
+        return getImpl().getTextLimit();
     }
 
     /**
@@ -688,7 +687,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getTopIndex() {
-        return ((IText) this.delegate).getTopIndex();
+        return getImpl().getTopIndex();
     }
 
     /**
@@ -712,7 +711,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getTopPixel() {
-        return ((IText) this.delegate).getTopPixel();
+        return getImpl().getTopPixel();
     }
 
     /**
@@ -732,7 +731,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void insert(String string) {
-        ((IText) this.delegate).insert(string);
+        getImpl().insert(string);
     }
 
     /**
@@ -748,7 +747,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void paste() {
-        ((IText) this.delegate).paste();
+        getImpl().paste();
     }
 
     /**
@@ -769,7 +768,7 @@ public class Text extends Scrollable {
      * @see #addModifyListener
      */
     public void removeModifyListener(ModifyListener listener) {
-        ((IText) this.delegate).removeModifyListener(listener);
+        getImpl().removeModifyListener(listener);
     }
 
     /**
@@ -793,7 +792,7 @@ public class Text extends Scrollable {
      * @since 3.8
      */
     public void removeSegmentListener(SegmentListener listener) {
-        ((IText) this.delegate).removeSegmentListener(listener);
+        getImpl().removeSegmentListener(listener);
     }
 
     /**
@@ -814,7 +813,7 @@ public class Text extends Scrollable {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((IText) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -835,7 +834,7 @@ public class Text extends Scrollable {
      * @see #addVerifyListener
      */
     public void removeVerifyListener(VerifyListener listener) {
-        ((IText) this.delegate).removeVerifyListener(listener);
+        getImpl().removeVerifyListener(listener);
     }
 
     /**
@@ -847,7 +846,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void selectAll() {
-        ((IText) this.delegate).selectAll();
+        getImpl().selectAll();
     }
 
     /**
@@ -869,7 +868,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setDoubleClickEnabled(boolean doubleClick) {
-        ((IText) this.delegate).setDoubleClickEnabled(doubleClick);
+        getImpl().setDoubleClickEnabled(doubleClick);
     }
 
     /**
@@ -894,7 +893,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setEchoChar(char echo) {
-        ((IText) this.delegate).setEchoChar(echo);
+        getImpl().setEchoChar(echo);
     }
 
     /**
@@ -908,7 +907,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setEditable(boolean editable) {
-        ((IText) this.delegate).setEditable(editable);
+        getImpl().setEditable(editable);
     }
 
     /**
@@ -931,7 +930,7 @@ public class Text extends Scrollable {
      * @since 3.3
      */
     public void setMessage(String message) {
-        ((IText) this.delegate).setMessage(message);
+        getImpl().setMessage(message);
     }
 
     /**
@@ -951,9 +950,8 @@ public class Text extends Scrollable {
      *
      * @since 2.1.2
      */
-    @Override
     public void setOrientation(int orientation) {
-        ((IText) this.delegate).setOrientation(orientation);
+        getImpl().setOrientation(orientation);
     }
 
     /**
@@ -980,7 +978,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setSelection(int start) {
-        ((IText) this.delegate).setSelection(start);
+        getImpl().setSelection(start);
     }
 
     /**
@@ -1009,7 +1007,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setSelection(int start, int end) {
-        ((IText) this.delegate).setSelection(start, end);
+        getImpl().setSelection(start, end);
     }
 
     /**
@@ -1042,7 +1040,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setSelection(Point selection) {
-        ((IText) this.delegate).setSelection(selection);
+        getImpl().setSelection(selection);
     }
 
     /**
@@ -1061,7 +1059,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setTabs(int tabs) {
-        ((IText) this.delegate).setTabs(tabs);
+        getImpl().setTabs(tabs);
     }
 
     /**
@@ -1083,7 +1081,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setText(String string) {
-        ((IText) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -1113,7 +1111,7 @@ public class Text extends Scrollable {
      * @since 3.7
      */
     public void setTextChars(char[] text) {
-        ((IText) this.delegate).setTextChars(text);
+        getImpl().setTextChars(text);
     }
 
     /**
@@ -1141,7 +1139,7 @@ public class Text extends Scrollable {
      * @see #LIMIT
      */
     public void setTextLimit(int limit) {
-        ((IText) this.delegate).setTextLimit(limit);
+        getImpl().setTextLimit(limit);
     }
 
     /**
@@ -1157,7 +1155,7 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setTopIndex(int index) {
-        ((IText) this.delegate).setTopIndex(index);
+        getImpl().setTopIndex(index);
     }
 
     /**
@@ -1174,23 +1172,18 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void showSelection() {
-        ((IText) this.delegate).showSelection();
+        getImpl().showSelection();
     }
 
-    protected Text(IText delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Text(IText impl) {
+        super(impl);
     }
 
-    public static Text getInstance(IText delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Text ref = (Text) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Text(delegate);
-        }
-        return ref;
+    static Text createApi(IText impl) {
+        return new Text(impl);
+    }
+
+    public IText getImpl() {
+        return (IText) super.getImpl();
     }
 }

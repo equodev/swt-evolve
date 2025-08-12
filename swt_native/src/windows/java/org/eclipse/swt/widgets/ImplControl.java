@@ -74,6 +74,8 @@ public interface ImplControl extends ImplWidget {
 
     boolean setTabItemFocus();
 
+    long topHandle();
+
     boolean translateMnemonic(Event event, Control control);
 
     boolean traverse(Event event);

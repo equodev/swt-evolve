@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
-import '../gen/rectangle.dart';
 import '../gen/widget.dart';
 import '../impl/caret_evolve.dart';
 import 'widgets.dart';
@@ -21,8 +20,6 @@ class VCaret extends VWidget {
     swt = "Caret";
   }
 
-  VRectangle? bounds;
-  int? height;
   bool? visible;
 
   factory VCaret.fromJson(Map<String, dynamic> json) => _$VCaretFromJson(json);

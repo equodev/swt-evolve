@@ -16,7 +16,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.graphics.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class represent sources of touch input that generate <code>Touch</code> objects.
@@ -52,7 +51,8 @@ public final class TouchSource {
      * @param width width of the source in points.
      */
     TouchSource(long handle, boolean direct, Rectangle bounds) {
-        this(new SWTTouchSource(handle, direct, bounds));
+        this((ITouchSource) null);
+        setImpl(new SwtTouchSource(handle, direct, bounds, this));
     }
 
     /**
@@ -61,7 +61,7 @@ public final class TouchSource {
      * @return <code>true</code> if the input source is direct, or <code>false</code> otherwise
      */
     public boolean isDirect() {
-        return ((ITouchSource) this.delegate).isDirect();
+        return getImpl().isDirect();
     }
 
     /**
@@ -73,7 +73,7 @@ public final class TouchSource {
      * @return the bounding rectangle of the input source
      */
     public Rectangle getBounds() {
-        return ((ITouchSource) this.delegate).getBounds();
+        return getImpl().getBounds();
     }
 
     /**
@@ -82,55 +82,27 @@ public final class TouchSource {
      *
      * @return a string representation of the event
      */
-    @Override
     public String toString() {
-        return ((ITouchSource) this.delegate).toString();
+        return getImpl().toString();
     }
 
-    public ITouchSource delegate;
+    protected ITouchSource impl;
 
-    protected static <T extends TouchSource, I extends ITouchSource> T[] ofArray(I[] items, Class<T> clazz, java.util.function.Function<I, T> factory) {
-        @SuppressWarnings("unchecked")
-        T[] target = (T[]) java.lang.reflect.Array.newInstance(clazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = factory.apply(items[i]);
-        return target;
+    protected TouchSource(ITouchSource impl) {
+        if (impl != null)
+            impl.setApi(this);
     }
 
-    @SuppressWarnings("unchecked")
-    protected static <T extends TouchSource, I extends ITouchSource> I[] fromArray(T[] items) {
-        if (items.length == 0)
-            return (I[]) java.lang.reflect.Array.newInstance(ITouchSource.class, 0);
-        Class<I> targetClazz = null;
-        for (T item : items) outer: {
-            for (Class<?> i : item.getClass().getInterfaces()) {
-                if (ITouchSource.class.isAssignableFrom(i)) {
-                    targetClazz = (Class<I>) i;
-                    break outer;
-                }
-            }
-        }
-        if (targetClazz == null)
-            return (I[]) java.lang.reflect.Array.newInstance(ITouchSource.class, 0);
-        I[] target = (I[]) java.lang.reflect.Array.newInstance(targetClazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = (I) items[i].delegate;
-        return target;
+    static TouchSource createApi(ITouchSource impl) {
+        return new TouchSource(impl);
     }
 
-    protected static final WeakHashMap<ITouchSource, TouchSource> INSTANCES = new WeakHashMap<ITouchSource, TouchSource>();
-
-    protected TouchSource(ITouchSource delegate) {
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    public ITouchSource getImpl() {
+        return impl;
     }
 
-    public static TouchSource getInstance(ITouchSource delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        TouchSource ref = (TouchSource) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new TouchSource(delegate);
-        }
-        return ref;
+    protected TouchSource setImpl(ITouchSource impl) {
+        this.impl = impl;
+        return this;
     }
 }

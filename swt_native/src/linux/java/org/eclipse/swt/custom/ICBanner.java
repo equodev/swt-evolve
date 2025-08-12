@@ -18,7 +18,7 @@ public interface ICBanner extends IComposite {
      *
      * @since 3.0
      */
-    IControl getBottom();
+    Control getBottom();
 
     Rectangle getClientArea();
 
@@ -34,7 +34,7 @@ public interface ICBanner extends IComposite {
      *
      * @since 3.0
      */
-    IControl getLeft();
+    Control getLeft();
 
     /**
      * Returns the Control that appears on the right side of the banner.
@@ -48,7 +48,7 @@ public interface ICBanner extends IComposite {
      *
      * @since 3.0
      */
-    IControl getRight();
+    Control getRight();
 
     /**
      * Returns the minimum size of the control that appears on the right of the banner.
@@ -93,7 +93,7 @@ public interface ICBanner extends IComposite {
      *
      * @since 3.0
      */
-    void setBottom(IControl control);
+    void setBottom(Control control);
 
     /**
      * Sets the layout which is associated with the receiver to be
@@ -127,7 +127,7 @@ public interface ICBanner extends IComposite {
      *
      * @since 3.0
      */
-    void setLeft(IControl control);
+    void setLeft(Control control);
 
     /**
      * Set the control that appears on the right side of the banner.
@@ -144,7 +144,7 @@ public interface ICBanner extends IComposite {
      *
      * @since 3.0
      */
-    void setRight(IControl control);
+    void setRight(Control control);
 
     /**
      * Set the minimum height of the control that appears on the right side of the banner.
@@ -189,4 +189,6 @@ public interface ICBanner extends IComposite {
      * @since 3.0
      */
     void setSimple(boolean simple);
+
+    CBanner getApi();
 }

@@ -73,7 +73,7 @@ public abstract class Layout {
      * @since 3.1
      */
     protected boolean flushCache(Control control) {
-        return false;
+        return getImpl().flushCache(control);
     }
 
     /**
@@ -105,4 +105,34 @@ public abstract class Layout {
      * @param flushCache <code>true</code> means flush cached layout values
      */
     protected abstract void layout(Composite composite, boolean flushCache);
+
+    public Layout() {
+    }
+
+    protected ILayout impl;
+
+    protected Layout(ILayout impl) {
+        if (impl != null)
+            impl.setApi(this);
+    }
+
+    public ILayout getImpl() {
+        if (impl == null)
+            impl = new SwtLayout(this) {
+
+                public Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+                    return Layout.this.computeSize(composite, wHint, hHint, flushCache);
+                }
+
+                public void layout(Composite composite, boolean flushCache) {
+                    Layout.this.layout(composite, flushCache);
+                }
+            };
+        return impl;
+    }
+
+    protected Layout setImpl(ILayout impl) {
+        this.impl = impl;
+        return this;
+    }
 }

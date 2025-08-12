@@ -23,7 +23,6 @@ import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class represent the "windows"
@@ -137,7 +136,8 @@ public class Shell extends Decorations {
      * </ul>
      */
     public Shell() {
-        this(new SWTShell());
+        this((IShell) null);
+        setImpl(new SwtShell(this));
     }
 
     /**
@@ -180,7 +180,8 @@ public class Shell extends Decorations {
      * @see SWT#SHEET
      */
     public Shell(int style) {
-        this(new SWTShell(style));
+        this((IShell) null);
+        setImpl(new SwtShell(style, this));
     }
 
     /**
@@ -203,7 +204,8 @@ public class Shell extends Decorations {
      * </ul>
      */
     public Shell(Display display) {
-        this(new SWTShell((SWTDisplay) display.delegate));
+        this((IShell) null);
+        setImpl(new SwtShell(display, this));
     }
 
     /**
@@ -254,11 +256,13 @@ public class Shell extends Decorations {
      * @see SWT#SHEET
      */
     public Shell(Display display, int style) {
-        this(new SWTShell((SWTDisplay) display.delegate, style));
+        this((IShell) null);
+        setImpl(new SwtShell(display, style, this));
     }
 
     Shell(Display display, Shell parent, int style, long handle, boolean embedded) {
-        this(new SWTShell((SWTDisplay) display.delegate, (SWTShell) parent.delegate, style, handle, embedded));
+        this((IShell) null);
+        setImpl(new SwtShell(display, parent, style, handle, embedded, this));
     }
 
     /**
@@ -284,7 +288,8 @@ public class Shell extends Decorations {
      * </ul>
      */
     public Shell(Shell parent) {
-        this(new SWTShell((SWTShell) parent.delegate));
+        this((IShell) null);
+        setImpl(new SwtShell(parent, this));
     }
 
     /**
@@ -337,28 +342,8 @@ public class Shell extends Decorations {
      * @see SWT#SHEET
      */
     public Shell(Shell parent, int style) {
-        this(new SWTShell((SWTShell) (parent != null ? parent.delegate : null), style));
-    }
-
-    /**
-     * Invokes platform specific functionality to allocate a new shell
-     * that is embedded.
-     * <p>
-     * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
-     * API for <code>Shell</code>. It is marked public only so that it
-     * can be shared within the packages provided by SWT. It is not
-     * available on all platforms, and should never be called from
-     * application code.
-     * </p>
-     *
-     * @param display the display for the shell
-     * @param handle the handle for the shell
-     * @return a new shell object containing the specified display and handle
-     *
-     * @noreference This method is not intended to be referenced by clients.
-     */
-    public static Shell gtk_new(Display display, long handle) {
-        return Shell.getInstance(SWTShell.gtk_new((SWTDisplay) display.delegate, handle));
+        this((IShell) null);
+        setImpl(new SwtShell(parent, style, this));
     }
 
     /**
@@ -381,7 +366,7 @@ public class Shell extends Decorations {
      * @since 3.3
      */
     public static Shell internal_new(Display display, long handle) {
-        return Shell.getInstance(SWTShell.internal_new((SWTDisplay) display.delegate, handle));
+        return SwtShell.internal_new(display, handle);
     }
 
     /**
@@ -404,7 +389,7 @@ public class Shell extends Decorations {
      * @see #removeShellListener
      */
     public void addShellListener(ShellListener listener) {
-        ((IShell) this.delegate).addShellListener(listener);
+        getImpl().addShellListener(listener);
     }
 
     /**
@@ -423,7 +408,7 @@ public class Shell extends Decorations {
      * @see #dispose
      */
     public void close() {
-        ((IShell) this.delegate).close();
+        getImpl().close();
     }
 
     /**
@@ -442,22 +427,19 @@ public class Shell extends Decorations {
      * @since 3.7
      */
     public ToolBar getToolBar() {
-        return ToolBar.getInstance(((IShell) this.delegate).getToolBar());
+        return getImpl().getToolBar();
     }
 
-    @Override
     public boolean isEnabled() {
-        return ((IShell) this.delegate).isEnabled();
+        return getImpl().isEnabled();
     }
 
-    @Override
     public boolean isVisible() {
-        return ((IShell) this.delegate).isVisible();
+        return getImpl().isVisible();
     }
 
-    @Override
     public void requestLayout() {
-        ((IShell) this.delegate).requestLayout();
+        getImpl().requestLayout();
     }
 
     /**
@@ -474,7 +456,7 @@ public class Shell extends Decorations {
      * @since 3.4
      */
     public int getAlpha() {
-        return ((IShell) this.delegate).getAlpha();
+        return getImpl().getAlpha();
     }
 
     /**
@@ -491,12 +473,11 @@ public class Shell extends Decorations {
      * @since 3.4
      */
     public boolean getFullScreen() {
-        return ((IShell) this.delegate).getFullScreen();
+        return getImpl().getFullScreen();
     }
 
-    @Override
     public boolean getMaximized() {
-        return ((IShell) this.delegate).getMaximized();
+        return getImpl().getMaximized();
     }
 
     /**
@@ -515,7 +496,7 @@ public class Shell extends Decorations {
      * @since 3.1
      */
     public Point getMinimumSize() {
-        return ((IShell) this.delegate).getMinimumSize();
+        return getImpl().getMinimumSize();
     }
 
     /**
@@ -534,7 +515,7 @@ public class Shell extends Decorations {
      * @since 3.116
      */
     public Point getMaximumSize() {
-        return ((IShell) this.delegate).getMaximumSize();
+        return getImpl().getMaximumSize();
     }
 
     /**
@@ -550,12 +531,11 @@ public class Shell extends Decorations {
      * @since 3.5
      */
     public boolean getModified() {
-        return ((IShell) this.delegate).getModified();
+        return getImpl().getModified();
     }
 
-    @Override
     public boolean getVisible() {
-        return ((IShell) this.delegate).getVisible();
+        return getImpl().getVisible();
     }
 
     /**
@@ -571,9 +551,8 @@ public class Shell extends Decorations {
      *
      * @since 3.0
      */
-    @Override
     public Region getRegion() {
-        return ((IShell) this.delegate).getRegion();
+        return getImpl().getRegion();
     }
 
     /**
@@ -594,7 +573,7 @@ public class Shell extends Decorations {
      * @see SWT
      */
     public int getImeInputMode() {
-        return ((IShell) this.delegate).getImeInputMode();
+        return getImpl().getImeInputMode();
     }
 
     /**
@@ -609,7 +588,7 @@ public class Shell extends Decorations {
      * </ul>
      */
     public Shell[] getShells() {
-        return Shell.ofArray(((IShell) this.delegate).getShells(), Shell.class);
+        return getImpl().getShells();
     }
 
     /**
@@ -634,12 +613,11 @@ public class Shell extends Decorations {
      * @see Shell#forceActive
      */
     public void open() {
-        ((IShell) this.delegate).open();
+        getImpl().open();
     }
 
-    @Override
     public boolean print(GC gc) {
-        return ((IShell) this.delegate).print(gc);
+        return getImpl().print(gc);
     }
 
     /**
@@ -660,7 +638,7 @@ public class Shell extends Decorations {
      * @see #addShellListener
      */
     public void removeShellListener(ShellListener listener) {
-        ((IShell) this.delegate).removeShellListener(listener);
+        getImpl().removeShellListener(listener);
     }
 
     /**
@@ -685,7 +663,7 @@ public class Shell extends Decorations {
      * @see Shell#setActive
      */
     public void setActive() {
-        ((IShell) this.delegate).setActive();
+        getImpl().setActive();
     }
 
     /**
@@ -706,12 +684,11 @@ public class Shell extends Decorations {
      * @since 3.4
      */
     public void setAlpha(int alpha) {
-        ((IShell) this.delegate).setAlpha(alpha);
+        getImpl().setAlpha(alpha);
     }
 
-    @Override
     public void setEnabled(boolean enabled) {
-        ((IShell) this.delegate).setEnabled(enabled);
+        getImpl().setEnabled(enabled);
     }
 
     /**
@@ -739,7 +716,7 @@ public class Shell extends Decorations {
      * @since 3.4
      */
     public void setFullScreen(boolean fullScreen) {
-        ((IShell) this.delegate).setFullScreen(fullScreen);
+        getImpl().setFullScreen(fullScreen);
     }
 
     /**
@@ -759,22 +736,19 @@ public class Shell extends Decorations {
      * @see SWT
      */
     public void setImeInputMode(int mode) {
-        ((IShell) this.delegate).setImeInputMode(mode);
+        getImpl().setImeInputMode(mode);
     }
 
-    @Override
     public void setMaximized(boolean maximized) {
-        ((IShell) this.delegate).setMaximized(maximized);
+        getImpl().setMaximized(maximized);
     }
 
-    @Override
     public void setMenuBar(Menu menu) {
-        ((IShell) this.delegate).setMenuBar((IMenu) (menu != null ? menu.delegate : null));
+        getImpl().setMenuBar(menu);
     }
 
-    @Override
     public void setMinimized(boolean minimized) {
-        ((IShell) this.delegate).setMinimized(minimized);
+        getImpl().setMinimized(minimized);
     }
 
     /**
@@ -793,7 +767,7 @@ public class Shell extends Decorations {
      * @since 3.1
      */
     public void setMinimumSize(int width, int height) {
-        ((IShell) this.delegate).setMinimumSize(width, height);
+        getImpl().setMinimumSize(width, height);
     }
 
     /**
@@ -814,7 +788,7 @@ public class Shell extends Decorations {
      * @since 3.1
      */
     public void setMinimumSize(Point size) {
-        ((IShell) this.delegate).setMinimumSize(size);
+        getImpl().setMinimumSize(size);
     }
 
     /**
@@ -838,7 +812,7 @@ public class Shell extends Decorations {
      * @since 3.116
      */
     public void setMaximumSize(int width, int height) {
-        ((IShell) this.delegate).setMaximumSize(width, height);
+        getImpl().setMaximumSize(width, height);
     }
 
     /**
@@ -864,7 +838,7 @@ public class Shell extends Decorations {
      * @since 3.116
      */
     public void setMaximumSize(Point size) {
-        ((IShell) this.delegate).setMaximumSize(size);
+        getImpl().setMaximumSize(size);
     }
 
     /**
@@ -880,7 +854,7 @@ public class Shell extends Decorations {
      * @since 3.5
      */
     public void setModified(boolean modified) {
-        ((IShell) this.delegate).setModified(modified);
+        getImpl().setModified(modified);
     }
 
     /**
@@ -907,24 +881,20 @@ public class Shell extends Decorations {
      *
      * @since 3.0
      */
-    @Override
     public void setRegion(Region region) {
-        ((IShell) this.delegate).setRegion(region);
+        getImpl().setRegion(region);
     }
 
-    @Override
     public void setText(String string) {
-        ((IShell) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
-    @Override
     public void setVisible(boolean visible) {
-        ((IShell) this.delegate).setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
-    @Override
     public void dispose() {
-        ((IShell) this.delegate).dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -949,23 +919,18 @@ public class Shell extends Decorations {
      * @see Shell#setActive
      */
     public void forceActive() {
-        ((IShell) this.delegate).forceActive();
+        getImpl().forceActive();
     }
 
-    protected Shell(IShell delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Shell(IShell impl) {
+        super(impl);
     }
 
-    public static Shell getInstance(IShell delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Shell ref = (Shell) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Shell(delegate);
-        }
-        return ref;
+    static Shell createApi(IShell impl) {
+        return new Shell(impl);
+    }
+
+    public IShell getImpl() {
+        return (IShell) super.getImpl();
     }
 }

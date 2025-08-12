@@ -1,7 +1,6 @@
 #ifndef FLUTTER_BRIDGE_H_
 #define FLUTTER_BRIDGE_H_
 
-#include <cstdint>
 #include <jni.h>
 
 #ifdef FLUTTER_LIBRARY_EXPORTS
@@ -14,36 +13,33 @@
 extern "C" {
 #endif
 
-enum ExpandPolicy {
-  FOLLOW_H_PARENT,
-  FOLLOW_W_PARENT,
-  FOLLOW_PARENT,
-  EXPAND_POLICY_SIZE
-};
+JNIEXPORT jlong JNICALL
+Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_InitializeFlutterWindow(
+    JNIEnv *env, jclass cls, jint port, jlong parent, jlong widget_id,
+    jstring widget_name);
 
 JNIEXPORT jlong JNICALL
-Java_org_eclipse_swt_widgets_FlutterSwt_InitializeFlutterWindow(
-    JNIEnv *env, jclass cls, void *parent, jint port, jlong widget_id,
-    jstring widget_name, jint width, jint height, jint policy);
+Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_GetView(JNIEnv *env,
+                                                          jclass cls,
+                                                          jlong context);
 
-// Optional: Other functions following the same pattern
 JNIEXPORT void JNICALL
-Java_org_eclipse_swt_widgets_FlutterSwt_CloseFlutterWindow(
-    JNIEnv *env, jclass cls, void *void_context);
-JNIEXPORT jboolean JNICALL
-Java_org_eclipse_swt_widgets_FlutterSwt_IsFlutterWindowVisible(JNIEnv *env,
-                                                               jclass cls);
-JNIEXPORT void JNICALL
-Java_org_eclipse_swt_widgets_FlutterSwt_ResizeFlutterWindow(
-    JNIEnv *env, jclass cls, void *void_context, jint width, jint height);
+Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_Dispose(JNIEnv *env,
+                                                          jclass cls,
+                                                          jlong context);
 
-FLUTTER_LIBRARY_API uintptr_t InitializeFlutterWindow(
-    void *parentWnd, jint port, jlong widget_id, const char *widget_name,
-    int width, int height, ExpandPolicy policy);
-FLUTTER_LIBRARY_API void CloseFlutterWindow(void *widget_context);
-FLUTTER_LIBRARY_API bool IsFlutterWindowVisible();
-FLUTTER_LIBRARY_API void ResizeFlutterWindow(void *widget_context,
-                                             int32_t width, int32_t height);
+/*
+ * x, y, width, height are the bounds for the entire container.
+ * vx, vy, vwidth, vheight are the bounds for the flutter view.
+ *
+ * On all simple cases these bounds will match. It's there to handle
+ * cases such as the CTabFolder where the actual widget only occupies
+ * a portion of the container.
+ */
+JNIEXPORT void JNICALL
+Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_SetBounds(
+    JNIEnv *env, jclass cls, jlong context, jint x, jint y, jint width,
+    jint height, jint vx, jint vy, jint vwidth, jint vheight);
 
 #ifdef __cplusplus
 }

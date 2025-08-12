@@ -61,7 +61,8 @@ public class MessageBox extends Dialog {
      * </ul>
      */
     public MessageBox(Shell parent) {
-        this(new SWTMessageBox((SWTShell) parent.delegate));
+        this((IMessageBox) null);
+        setImpl(new SwtMessageBox(parent, this));
     }
 
     /**
@@ -101,7 +102,8 @@ public class MessageBox extends Dialog {
      * @see SWT#IGNORE
      */
     public MessageBox(Shell parent, int style) {
-        this(new SWTMessageBox((SWTShell) parent.delegate, style));
+        this((IMessageBox) null);
+        setImpl(new SwtMessageBox(parent, style, this));
     }
 
     /**
@@ -112,7 +114,7 @@ public class MessageBox extends Dialog {
      * @return the message
      */
     public String getMessage() {
-        return ((IMessageBox) this.delegate).getMessage();
+        return getImpl().getMessage();
     }
 
     /**
@@ -127,7 +129,7 @@ public class MessageBox extends Dialog {
      * </ul>
      */
     public void setMessage(String string) {
-        ((IMessageBox) this.delegate).setMessage(string);
+        getImpl().setMessage(string);
     }
 
     /**
@@ -143,7 +145,7 @@ public class MessageBox extends Dialog {
      * </ul>
      */
     public int open() {
-        return ((IMessageBox) this.delegate).open();
+        return getImpl().open();
     }
 
     /**
@@ -165,23 +167,18 @@ public class MessageBox extends Dialog {
      * @since 3.121
      */
     public void setButtonLabels(Map<Integer, String> labels) {
-        ((IMessageBox) this.delegate).setButtonLabels(labels);
+        getImpl().setButtonLabels(labels);
     }
 
-    protected MessageBox(IMessageBox delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected MessageBox(IMessageBox impl) {
+        super(impl);
     }
 
-    public static MessageBox getInstance(IMessageBox delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        MessageBox ref = (MessageBox) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new MessageBox(delegate);
-        }
-        return ref;
+    static MessageBox createApi(IMessageBox impl) {
+        return new MessageBox(impl);
+    }
+
+    public IMessageBox getImpl() {
+        return (IMessageBox) super.getImpl();
     }
 }

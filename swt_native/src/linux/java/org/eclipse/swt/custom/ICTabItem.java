@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface ICTabItem extends IItem {
+public interface ICTabItem extends IItem, ImplCTabItem {
 
     void dispose();
 
@@ -31,7 +31,7 @@ public interface ICTabItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Get the image displayed in the tab if the tab is disabled.
@@ -97,7 +97,7 @@ public interface ICTabItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ICTabFolder getParent();
+    CTabFolder getParent();
 
     /**
      * Returns <code>true</code> to indicate that the receiver's close button should be shown.
@@ -157,7 +157,7 @@ public interface ICTabItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setControl(IControl control);
+    void setControl(Control control);
 
     /**
      * Sets the image that is displayed if the tab item is disabled.
@@ -282,5 +282,5 @@ public interface ICTabItem extends IItem {
      */
     void setToolTipText(String string);
 
-    Point computeSize();
+    CTabItem getApi();
 }

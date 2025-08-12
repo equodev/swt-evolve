@@ -4,11 +4,8 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
-public interface ICombo extends IComposite {
+public interface ICombo extends IComposite, ImplCombo {
 
     /**
      * Adds the argument to the end of the receiver's list.
@@ -163,6 +160,8 @@ public interface ICombo extends IComposite {
      * @since 3.1
      */
     void addVerifyListener(VerifyListener listener);
+
+    void checkSubclass();
 
     /**
      * Sets the selection in the receiver's text field to an empty
@@ -838,4 +837,6 @@ public interface ICombo extends IComposite {
      * @since 3.0
      */
     void setVisibleItemCount(int count);
+
+    Combo getApi();
 }

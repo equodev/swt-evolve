@@ -101,7 +101,8 @@ public class DateTime extends Composite {
      * @see Widget#getStyle
      */
     public DateTime(Composite parent, int style) {
-        this(new SWTDateTime((SWTComposite) parent.delegate, style));
+        this((IDateTime) null);
+        setImpl(new SwtDateTime(parent, style, this));
     }
 
     /**
@@ -129,7 +130,11 @@ public class DateTime extends Composite {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((IDateTime) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -146,7 +151,7 @@ public class DateTime extends Composite {
      * </ul>
      */
     public int getDay() {
-        return ((IDateTime) this.delegate).getDay();
+        return getImpl().getDay();
     }
 
     /**
@@ -163,7 +168,7 @@ public class DateTime extends Composite {
      * </ul>
      */
     public int getHours() {
-        return ((IDateTime) this.delegate).getHours();
+        return getImpl().getHours();
     }
 
     /**
@@ -180,7 +185,7 @@ public class DateTime extends Composite {
      * </ul>
      */
     public int getMinutes() {
-        return ((IDateTime) this.delegate).getMinutes();
+        return getImpl().getMinutes();
     }
 
     /**
@@ -197,7 +202,7 @@ public class DateTime extends Composite {
      * </ul>
      */
     public int getMonth() {
-        return ((IDateTime) this.delegate).getMonth();
+        return getImpl().getMonth();
     }
 
     /**
@@ -214,7 +219,7 @@ public class DateTime extends Composite {
      * </ul>
      */
     public int getSeconds() {
-        return ((IDateTime) this.delegate).getSeconds();
+        return getImpl().getSeconds();
     }
 
     /**
@@ -231,7 +236,7 @@ public class DateTime extends Composite {
      * </ul>
      */
     public int getYear() {
-        return ((IDateTime) this.delegate).getYear();
+        return getImpl().getYear();
     }
 
     /**
@@ -252,27 +257,23 @@ public class DateTime extends Composite {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((IDateTime) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
-    @Override
     public void setBackground(Color color) {
-        ((IDateTime) this.delegate).setBackground(color);
+        getImpl().setBackground(color);
     }
 
-    @Override
     public void setEnabled(boolean enabled) {
-        ((IDateTime) this.delegate).setEnabled(enabled);
+        getImpl().setEnabled(enabled);
     }
 
-    @Override
     public void setFont(Font font) {
-        ((IDateTime) this.delegate).setFont(font);
+        getImpl().setFont(font);
     }
 
-    @Override
     public void setForeground(Color color) {
-        ((IDateTime) this.delegate).setForeground(color);
+        getImpl().setForeground(color);
     }
 
     /**
@@ -294,7 +295,7 @@ public class DateTime extends Composite {
      * @since 3.4
      */
     public void setDate(int year, int month, int day) {
-        ((IDateTime) this.delegate).setDate(year, month, day);
+        getImpl().setDate(year, month, day);
     }
 
     /**
@@ -314,7 +315,7 @@ public class DateTime extends Composite {
      * @see #setDate
      */
     public void setDay(int day) {
-        ((IDateTime) this.delegate).setDay(day);
+        getImpl().setDay(day);
     }
 
     /**
@@ -331,12 +332,11 @@ public class DateTime extends Composite {
      * </ul>
      */
     public void setHours(int hours) {
-        ((IDateTime) this.delegate).setHours(hours);
+        getImpl().setHours(hours);
     }
 
-    @Override
     public void setMenu(Menu menu) {
-        ((IDateTime) this.delegate).setMenu((IMenu) menu.delegate);
+        getImpl().setMenu(menu);
     }
 
     /**
@@ -353,7 +353,7 @@ public class DateTime extends Composite {
      * </ul>
      */
     public void setMinutes(int minutes) {
-        ((IDateTime) this.delegate).setMinutes(minutes);
+        getImpl().setMinutes(minutes);
     }
 
     /**
@@ -373,7 +373,7 @@ public class DateTime extends Composite {
      * @see #setDate
      */
     public void setMonth(int month) {
-        ((IDateTime) this.delegate).setMonth(month);
+        getImpl().setMonth(month);
     }
 
     /**
@@ -390,7 +390,7 @@ public class DateTime extends Composite {
      * </ul>
      */
     public void setSeconds(int seconds) {
-        ((IDateTime) this.delegate).setSeconds(seconds);
+        getImpl().setSeconds(seconds);
     }
 
     /**
@@ -408,7 +408,7 @@ public class DateTime extends Composite {
      * @since 3.4
      */
     public void setTime(int hours, int minutes, int seconds) {
-        ((IDateTime) this.delegate).setTime(hours, minutes, seconds);
+        getImpl().setTime(hours, minutes, seconds);
     }
 
     /**
@@ -428,23 +428,18 @@ public class DateTime extends Composite {
      * @see #setDate
      */
     public void setYear(int year) {
-        ((IDateTime) this.delegate).setYear(year);
+        getImpl().setYear(year);
     }
 
-    protected DateTime(IDateTime delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected DateTime(IDateTime impl) {
+        super(impl);
     }
 
-    public static DateTime getInstance(IDateTime delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        DateTime ref = (DateTime) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new DateTime(delegate);
-        }
-        return ref;
+    static DateTime createApi(IDateTime impl) {
+        return new DateTime(impl);
+    }
+
+    public IDateTime getImpl() {
+        return (IDateTime) super.getImpl();
     }
 }

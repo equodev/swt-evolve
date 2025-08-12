@@ -15,8 +15,6 @@
  */
 package org.eclipse.swt.widgets;
 
-import java.util.WeakHashMap;
-
 /**
  * Instances of this class are created in response to a
  * touch-based input device being touched. They are found
@@ -30,6 +28,46 @@ import java.util.WeakHashMap;
 public final class Touch {
 
     /**
+     * The unique identity of the touch. Use this value to track changes to a touch
+     * during the touch's life. Two touches may have the same identity even if they
+     * come from different sources.
+     */
+    public long id;
+
+    /**
+     * The object representing the input source that generated the touch.
+     */
+    public TouchSource source;
+
+    /**
+     * The state of this touch at the time it was generated. If this field is 0
+     * then the finger is still touching the device but has not moved
+     * since the last <code>TouchEvent</code> was generated.
+     *
+     * @see org.eclipse.swt.SWT#TOUCHSTATE_DOWN
+     * @see org.eclipse.swt.SWT#TOUCHSTATE_MOVE
+     * @see org.eclipse.swt.SWT#TOUCHSTATE_UP
+     */
+    public int state;
+
+    /**
+     * A flag indicating that the touch is the first touch from a previous
+     * state of no touch points. Once designated as such, the touch remains
+     * the primary touch until all fingers are removed from the device.
+     */
+    public boolean primary;
+
+    /**
+     * The x location of the touch in TouchSource coordinates.
+     */
+    public int x;
+
+    /**
+     * The y location of the touch in TouchSource coordinates.
+     */
+    public int y;
+
+    /**
      * Constructs a new touch state from the given inputs.
      *
      * @param identity Identity of the touch
@@ -40,7 +78,8 @@ public final class Touch {
      * @param y Y location of the touch in screen coordinates
      */
     Touch(long identity, TouchSource source, int state, boolean primary, int x, int y) {
-        this(new SWTTouch(identity, (SWTTouchSource) source.delegate, state, primary, x, y));
+        this((ITouch) null);
+        setImpl(new SwtTouch(identity, source, state, primary, x, y, this));
     }
 
     /**
@@ -49,55 +88,27 @@ public final class Touch {
      *
      * @return a string representation of the event
      */
-    @Override
     public String toString() {
-        return ((ITouch) this.delegate).toString();
+        return getImpl().toString();
     }
 
-    public ITouch delegate;
+    protected ITouch impl;
 
-    protected static <T extends Touch, I extends ITouch> T[] ofArray(I[] items, Class<T> clazz, java.util.function.Function<I, T> factory) {
-        @SuppressWarnings("unchecked")
-        T[] target = (T[]) java.lang.reflect.Array.newInstance(clazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = factory.apply(items[i]);
-        return target;
+    protected Touch(ITouch impl) {
+        if (impl != null)
+            impl.setApi(this);
     }
 
-    @SuppressWarnings("unchecked")
-    protected static <T extends Touch, I extends ITouch> I[] fromArray(T[] items) {
-        if (items.length == 0)
-            return (I[]) java.lang.reflect.Array.newInstance(ITouch.class, 0);
-        Class<I> targetClazz = null;
-        for (T item : items) outer: {
-            for (Class<?> i : item.getClass().getInterfaces()) {
-                if (ITouch.class.isAssignableFrom(i)) {
-                    targetClazz = (Class<I>) i;
-                    break outer;
-                }
-            }
-        }
-        if (targetClazz == null)
-            return (I[]) java.lang.reflect.Array.newInstance(ITouch.class, 0);
-        I[] target = (I[]) java.lang.reflect.Array.newInstance(targetClazz, items.length);
-        for (int i = 0; i < target.length; ++i) target[i] = (I) items[i].delegate;
-        return target;
+    static Touch createApi(ITouch impl) {
+        return new Touch(impl);
     }
 
-    protected static final WeakHashMap<ITouch, Touch> INSTANCES = new WeakHashMap<ITouch, Touch>();
-
-    protected Touch(ITouch delegate) {
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    public ITouch getImpl() {
+        return impl;
     }
 
-    public static Touch getInstance(ITouch delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Touch ref = (Touch) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Touch(delegate);
-        }
-        return ref;
+    protected Touch setImpl(ITouch impl) {
+        this.impl = impl;
+        return this;
     }
 }

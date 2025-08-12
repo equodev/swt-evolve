@@ -15,51 +15,65 @@
  */
 package org.eclipse.swt.widgets;
 
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.SWTException;
-import org.eclipse.swt.graphics.GC;
-
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.*;
+import org.eclipse.swt.*;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.cairo.*;
+import org.eclipse.swt.internal.gtk.*;
+import org.eclipse.swt.internal.gtk3.*;
+import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.Config;
 
 /**
- * Instances of this class are controls which are capable of containing other
- * controls.
+ * Instances of this class are controls which are capable
+ * of containing other controls.
  * <dl>
  * <dt><b>Styles:</b></dt>
- * <dd>NO_BACKGROUND, NO_FOCUS, NO_MERGE_PAINTS, NO_REDRAW_RESIZE,
- * NO_RADIO_GROUP, EMBEDDED, DOUBLE_BUFFERED</dd>
+ * <dd>NO_BACKGROUND, NO_FOCUS, NO_MERGE_PAINTS, NO_REDRAW_RESIZE, NO_RADIO_GROUP, EMBEDDED, DOUBLE_BUFFERED</dd>
  * <dt><b>Events:</b></dt>
  * <dd>(none)</dd>
  * </dl>
  * <p>
- * Note: The <code>NO_BACKGROUND</code>, <code>NO_FOCUS</code>,
- * <code>NO_MERGE_PAINTS</code>, and <code>NO_REDRAW_RESIZE</code> styles are
- * intended for use with <code>Canvas</code>. They can be used with
- * <code>Composite</code> if you are drawing your own, but their behavior is
- * undefined if they are used with subclasses of <code>Composite</code> other
+ * Note: The <code>NO_BACKGROUND</code>, <code>NO_FOCUS</code>, <code>NO_MERGE_PAINTS</code>,
+ * and <code>NO_REDRAW_RESIZE</code> styles are intended for use with <code>Canvas</code>.
+ * They can be used with <code>Composite</code> if you are drawing your own, but their
+ * behavior is undefined if they are used with subclasses of <code>Composite</code> other
  * than <code>Canvas</code>.
- * </p>
- * <p>
- * Note: The <code>CENTER</code> style, although undefined for composites, has
- * the same value as <code>EMBEDDED</code> which is used to embed widgets from
- * other widget toolkits into SWT. On some operating systems (GTK), this may
- * cause the children of this composite to be obscured.
- * </p>
- * <p>
- * This class may be subclassed by custom control implementors who are building
- * controls that are constructed from aggregates of other controls.
+ * </p><p>
+ * Note: The <code>CENTER</code> style, although undefined for composites, has the
+ * same value as <code>EMBEDDED</code> which is used to embed widgets from other
+ * widget toolkits into SWT.  On some operating systems (GTK), this may cause
+ * the children of this composite to be obscured.
+ * </p><p>
+ * This class may be subclassed by custom control implementors
+ * who are building controls that are constructed from aggregates
+ * of other controls.
  * </p>
  *
  * @see Canvas
- * @see <a href="http://www.eclipse.org/swt/snippets/#composite">Composite
- *      snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further
- *      information</a>
+ * @see <a href="http://www.eclipse.org/swt/snippets/#composite">Composite snippets</a>
+ * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 public class Composite extends Scrollable {
 
+    /**
+     * the handle to the OS resource
+     * (Warning: This field is platform dependent)
+     * <p>
+     * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
+     * public API. It is marked public only so that it can be shared
+     * within the packages provided by SWT. It is not available on all
+     * platforms and should never be accessed from application code.
+     * </p>
+     *
+     * @noreference This field is not intended to be referenced by clients.
+     */
+    public long embeddedHandle;
+
     Composite() {
-        this(new SWTComposite());
+        this((IComposite) null);
+        setImpl(Config.isEquo(Composite.class) ? new DartComposite(this) : new SwtComposite(this));
     }
 
     /**
@@ -96,63 +110,35 @@ public class Composite extends Scrollable {
      */
     public Composite(Composite parent, int style) {
         this((IComposite) null);
-        StackWalker walker = StackWalker.getInstance();
-        AtomicBoolean shouldBeFlutter = new AtomicBoolean();
-        walker.walk(stream -> {
-            stream.skip(2).findFirst().ifPresent(frame -> {
-                String className = frame.getClassName();
-                int lineNumber = frame.getLineNumber();
-
-                if (className.contains("TrimBarRenderer") && lineNumber == 71) {
-                    shouldBeFlutter.set(true);
-                }
-            });
-            return null;
-        });
-//        shouldBeFlutter.set(true);
-        if (shouldBeFlutter.get()) {
-            delegate = new FlutterComposite((IComposite) parent.delegate, style);
-        } else if (parent.delegate instanceof SWTComposite) {
-            delegate = new SWTComposite((SWTComposite) parent.delegate, style);
-        } else {
-            delegate = new SWTComposite(((FlutterComposite) parent.delegate).childComposite, style);
-        }
-
-        INSTANCES.put(delegate, this);
+        setImpl(Config.getCompositeImpl(parent, style, this));
     }
 
     /**
-     * Clears any data that has been cached by a Layout for all widgets that are in
-     * the parent hierarchy of the changed control up to and including the receiver.
-     * If an ancestor does not have a layout, it is skipped.
+     * Clears any data that has been cached by a Layout for all widgets that
+     * are in the parent hierarchy of the changed control up to and including the
+     * receiver.  If an ancestor does not have a layout, it is skipped.
      *
-     * @param changed an array of controls that changed state and require a
-     *                recalculation of size
+     * @param changed an array of controls that changed state and require a recalculation of size
      *
-     * @exception IllegalArgumentException
-     *                                     <ul>
-     *                                     <li>ERROR_INVALID_ARGUMENT - if the
-     *                                     changed array is null any of its controls
-     *                                     are null or have been disposed</li>
-     *                                     <li>ERROR_INVALID_PARENT - if any control
-     *                                     in changed is not in the widget tree of
-     *                                     the receiver</li>
-     *                                     </ul>
-     * @exception SWTException
-     *                                     <ul>
-     *                                     <li>ERROR_WIDGET_DISPOSED - if the
-     *                                     receiver has been disposed</li>
-     *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-     *                                     called from the thread that created the
-     *                                     receiver</li>
-     *                                     </ul>
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_INVALID_ARGUMENT - if the changed array is null any of its controls are null or have been disposed</li>
+     *    <li>ERROR_INVALID_PARENT - if any control in changed is not in the widget tree of the receiver</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      *
      * @deprecated use {@link Composite#layout(Control[], int)} instead
      * @since 3.1
      */
     @Deprecated
     public void changed(Control[] changed) {
-        ((IComposite) this.delegate).changed(fromArray(changed, IControl.class));
+        getImpl().changed(changed);
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -183,7 +169,7 @@ public class Composite extends Scrollable {
      * @since 3.6
      */
     public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
-        ((IComposite) this.delegate).drawBackground(gc, x, y, width, height, offsetX, offsetY);
+        getImpl().drawBackground(gc, x, y, width, height, offsetX, offsetY);
     }
 
     /**
@@ -205,7 +191,7 @@ public class Composite extends Scrollable {
      * @since 3.2
      */
     public int getBackgroundMode() {
-        return ((IComposite) this.delegate).getBackgroundMode();
+        return getImpl().getBackgroundMode();
     }
 
     /**
@@ -230,7 +216,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public Control[] getChildren() {
-        return Control.ofArray(((IComposite) this.delegate).getChildren(), Control.class);
+        return getImpl().getChildren();
     }
 
     /**
@@ -245,7 +231,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public Layout getLayout() {
-        return ((IComposite) this.delegate).getLayout();
+        return getImpl().getLayout();
     }
 
     /**
@@ -265,7 +251,7 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public boolean getLayoutDeferred() {
-        return ((IComposite) this.delegate).getLayoutDeferred();
+        return getImpl().getLayoutDeferred();
     }
 
     /**
@@ -281,7 +267,7 @@ public class Composite extends Scrollable {
      * @see #setTabList
      */
     public Control[] getTabList() {
-        return Control.ofArray(((IComposite) this.delegate).getTabList(), Control.class);
+        return getImpl().getTabList();
     }
 
     /**
@@ -303,7 +289,7 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public boolean isLayoutDeferred() {
-        return ((IComposite) this.delegate).isLayoutDeferred();
+        return getImpl().isLayoutDeferred();
     }
 
     /**
@@ -334,7 +320,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void layout() {
-        ((IComposite) this.delegate).layout();
+        getImpl().layout();
     }
 
     /**
@@ -376,7 +362,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void layout(boolean changed) {
-        ((IComposite) this.delegate).layout(changed);
+        getImpl().layout(changed);
     }
 
     /**
@@ -421,7 +407,7 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public void layout(boolean changed, boolean all) {
-        ((IComposite) this.delegate).layout(changed, all);
+        getImpl().layout(changed, all);
     }
 
     /**
@@ -460,7 +446,7 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public void layout(Control[] changed) {
-        ((IComposite) this.delegate).layout(fromArray(changed, IControl.class));
+        getImpl().layout(changed);
     }
 
     /**
@@ -522,7 +508,7 @@ public class Composite extends Scrollable {
      * @since 3.6
      */
     public void layout(Control[] changed, int flags) {
-        ((IComposite) this.delegate).layout(fromArray(changed, IControl.class), flags);
+        getImpl().layout(changed, flags);
     }
 
     /**
@@ -543,12 +529,11 @@ public class Composite extends Scrollable {
      * @since 3.2
      */
     public void setBackgroundMode(int mode) {
-        ((IComposite) this.delegate).setBackgroundMode(mode);
+        getImpl().setBackgroundMode(mode);
     }
 
-    @Override
     public boolean setFocus() {
-        return ((IComposite) this.delegate).setFocus();
+        return getImpl().setFocus();
     }
 
     /**
@@ -563,7 +548,7 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void setLayout(Layout layout) {
-        ((IComposite) this.delegate).setLayout(layout);
+        getImpl().setLayout(layout);
     }
 
     /**
@@ -589,7 +574,7 @@ public class Composite extends Scrollable {
      * @since 3.1
      */
     public void setLayoutDeferred(boolean defer) {
-        ((IComposite) this.delegate).setLayoutDeferred(defer);
+        getImpl().setLayoutDeferred(defer);
     }
 
     /**
@@ -608,32 +593,22 @@ public class Composite extends Scrollable {
      * </ul>
      */
     public void setTabList(Control[] tabList) {
-        ((IComposite) this.delegate).setTabList(fromArray(tabList, IControl.class));
+        getImpl().setTabList(tabList);
     }
 
-    @Override
     public String toString() {
-        return ((IComposite) this.delegate).toString();
+        return getImpl().toString();
     }
 
-    public long getEmbeddedHandle() {
-        return ((IComposite) this.delegate).getEmbeddedHandle();
+    protected Composite(IComposite impl) {
+        super(impl);
     }
 
-    protected Composite(IComposite delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    static Composite createApi(IComposite impl) {
+        return new Composite(impl);
     }
 
-    public static Composite getInstance(IComposite delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Composite ref = (Composite) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Composite(delegate);
-        }
-        return ref;
+    public IComposite getImpl() {
+        return (IComposite) super.getImpl();
     }
 }

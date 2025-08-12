@@ -4,11 +4,8 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
-public interface ILabel extends IControl {
+public interface ILabel extends IControl, ImplLabel {
 
     /**
      * Returns a value which describes the position of the
@@ -116,4 +113,6 @@ public interface ILabel extends IControl {
      * </ul>
      */
     void setText(String string);
+
+    Label getApi();
 }

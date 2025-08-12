@@ -4,9 +4,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface ITreeColumn extends IItem {
 
@@ -57,6 +54,8 @@ public interface ITreeColumn extends IItem {
      */
     void addSelectionListener(SelectionListener listener);
 
+    void checkSubclass();
+
     /**
      * Returns a value which describes the position of the
      * text or image in the receiver. The value will be one of
@@ -103,7 +102,7 @@ public interface ITreeColumn extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITree getParent();
+    Tree getParent();
 
     /**
      * Gets the resizable attribute. A column that is
@@ -296,4 +295,6 @@ public interface ITreeColumn extends IItem {
     void setWidth(int width);
 
     void dispose();
+
+    TreeColumn getApi();
 }

@@ -3,11 +3,10 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface ITabItem extends IItem {
+
+    void checkSubclass();
 
     /**
      * Returns a rectangle describing the receiver's size and location
@@ -36,7 +35,7 @@ public interface ITabItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Returns the receiver's parent, which must be a <code>TabFolder</code>.
@@ -48,7 +47,7 @@ public interface ITabItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITabFolder getParent();
+    TabFolder getParent();
 
     /**
      * Returns the receiver's tool tip text, or null if it has
@@ -78,7 +77,7 @@ public interface ITabItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setControl(IControl control);
+    void setControl(Control control);
 
     void setImage(Image image);
 
@@ -135,5 +134,5 @@ public interface ITabItem extends IItem {
      */
     void setToolTipText(String string);
 
-    Point computeSize();
+    TabItem getApi();
 }

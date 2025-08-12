@@ -3,9 +3,6 @@ package org.eclipse.swt.widgets;
 import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface IMessageBox extends IDialog {
 
@@ -64,4 +61,6 @@ public interface IMessageBox extends IDialog {
      * @since 3.121
      */
     void setButtonLabels(Map<Integer, String> labels);
+
+    MessageBox getApi();
 }

@@ -2,7 +2,7 @@
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-EPL--2.0-blue)
-![macOS](https://img.shields.io/badge/macOS-Supported-blue) ![Windows](https://img.shields.io/badge/Windows-Supported-green) ![Linux](https://img.shields.io/badge/Linux-Coming%20Soon-orange)
+![macOS](https://img.shields.io/badge/macOS-Supported-green) ![Windows](https://img.shields.io/badge/Windows-Supported-green) ![Linux](https://img.shields.io/badge/Linux-Supported-green)
 
 [//]: # ([![GitHub stars]&#40;https://img.shields.io/github/stars/your-username/swt-evolve?style=social&#41;]&#40;https://github.com/equodev/swt-evolve/stargazers&#41;)
 
@@ -24,7 +24,7 @@ Words don't do it justice. Here is a standard Eclipse RCP application running wi
 
 You can try our examples or modernize your existing application in just a few minutes. Requirements: JDK 17+.
 
-### Run the Examples (Linux is coming soon!)
+### Run the Examples
 
 The easiest way to see SWT Evolve in action is to run the examples included in this repository.
 

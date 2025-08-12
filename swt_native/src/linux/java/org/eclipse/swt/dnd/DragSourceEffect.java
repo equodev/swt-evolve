@@ -43,8 +43,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class DragSourceEffect extends DragSourceAdapter {
 
-    Control control = null;
-
     /**
      * Creates a new <code>DragSourceEffect</code> to handle drag effect from the specified <code>Control</code>.
      *
@@ -55,9 +53,8 @@ public class DragSourceEffect extends DragSourceAdapter {
      * </ul>
      */
     public DragSourceEffect(Control control) {
-        if (control == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.control = control;
+        this((IDragSourceEffect) null);
+        setImpl(new SwtDragSourceEffect(control, this));
     }
 
     /**
@@ -67,6 +64,18 @@ public class DragSourceEffect extends DragSourceAdapter {
      * @return the Control which is registered for this DragSourceEffect
      */
     public Control getControl() {
-        return control;
+        return getImpl().getControl();
+    }
+
+    protected DragSourceEffect(IDragSourceEffect impl) {
+        super(impl);
+    }
+
+    static DragSourceEffect createApi(IDragSourceEffect impl) {
+        return new DragSourceEffect(impl);
+    }
+
+    public IDragSourceEffect getImpl() {
+        return (IDragSourceEffect) super.getImpl();
     }
 }

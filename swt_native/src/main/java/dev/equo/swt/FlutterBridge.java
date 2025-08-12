@@ -1,6 +1,7 @@
 package dev.equo.swt;
 
 import org.eclipse.swt.custom.*;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.*;
 
@@ -164,6 +165,13 @@ public abstract class FlutterBridge {
         return null;
     }
 
+    public Point getWindowOrigin(DartControl control) {
+        return new Point(0, 0);
+    }
+
+    public void setCursor(DartControl control, long cursor) {
+    }
+
     public static long id(DartWidget w) {
         return w.getApi().hashCode();
     }
@@ -171,4 +179,5 @@ public abstract class FlutterBridge {
     static long id(Widget w) {
         return w.hashCode();
     }
+
 }

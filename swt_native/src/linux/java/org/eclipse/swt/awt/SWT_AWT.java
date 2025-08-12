@@ -162,7 +162,7 @@ public class SWT_AWT {
         if ((parent.getStyle() & SWT.EMBEDDED) == 0) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        long handle = parent.getEmbeddedHandle();
+        long handle = parent.embeddedHandle;
         /*
 	 * Some JREs have implemented the embedded frame constructor to take an integer
 	 * and other JREs take a long.  To handle this binary incompatibility, use
@@ -205,9 +205,9 @@ public class SWT_AWT {
                             return;
                         long xWindow;
                         if (GTK.GTK4) {
-                            xWindow = GDK.gdk_x11_surface_get_xid(GTK4.gtk_native_get_surface(GTK4.gtk_widget_get_native(shell.getHandle())));
+                            xWindow = GDK.gdk_x11_surface_get_xid(GTK4.gtk_native_get_surface(GTK4.gtk_widget_get_native(shell.handle)));
                         } else {
-                            xWindow = GDK.gdk_x11_window_get_xid(GTK3.gtk_widget_get_window(GTK3.gtk_widget_get_toplevel(shell.getHandle())));
+                            xWindow = GDK.gdk_x11_window_get_xid(GTK3.gtk_widget_get_window(GTK3.gtk_widget_get_toplevel(shell.handle)));
                         }
                         OS.XSetTransientForHint(GDK.gdk_x11_display_get_xdisplay(GDK.gdk_display_get_default()), awtHandle, xWindow);
                     });
@@ -290,7 +290,7 @@ public class SWT_AWT {
         }
         if (handle == 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, " [peer not created]");
-        final Shell shell = Shell.gtk_new(display, handle);
+        final Shell shell = SwtShell.gtk_new(display, handle);
         final ComponentListener listener = new ComponentAdapter() {
 
             @Override

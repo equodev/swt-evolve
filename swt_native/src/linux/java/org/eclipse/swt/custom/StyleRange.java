@@ -57,6 +57,8 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @since 3.2
      */
     public StyleRange() {
+        this((IStyleRange) null);
+        setImpl(new SwtStyleRange(this));
     }
 
     /**
@@ -67,7 +69,8 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @since 3.4
      */
     public StyleRange(TextStyle style) {
-        super(style);
+        this((IStyleRange) null);
+        setImpl(new SwtStyleRange(style, this));
     }
 
     /**
@@ -79,9 +82,8 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @param background background color of the style, null if none
      */
     public StyleRange(int start, int length, Color foreground, Color background) {
-        super(null, foreground, background);
-        this.start = start;
-        this.length = length;
+        this((IStyleRange) null);
+        setImpl(new SwtStyleRange(start, length, foreground, background, this));
     }
 
     /**
@@ -94,8 +96,8 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @param fontStyle font style of the style, may be SWT.NORMAL, SWT.ITALIC or SWT.BOLD
      */
     public StyleRange(int start, int length, Color foreground, Color background, int fontStyle) {
-        this(start, length, foreground, background);
-        this.fontStyle = fontStyle;
+        this((IStyleRange) null);
+        setImpl(new SwtStyleRange(start, length, foreground, background, fontStyle, this));
     }
 
     /**
@@ -108,18 +110,8 @@ public class StyleRange extends TextStyle implements Cloneable {
      *
      * @see #hashCode()
      */
-    @Override
     public boolean equals(Object object) {
-        if (object == this)
-            return true;
-        if (object instanceof StyleRange style) {
-            if (start != style.start)
-                return false;
-            if (length != style.length)
-                return false;
-            return similarTo(style);
-        }
-        return false;
+        return getImpl().equals(object);
     }
 
     /**
@@ -132,13 +124,8 @@ public class StyleRange extends TextStyle implements Cloneable {
      *
      * @see #equals(Object)
      */
-    @Override
     public int hashCode() {
-        return super.hashCode() ^ fontStyle;
-    }
-
-    boolean isVariableHeight() {
-        return font != null || (metrics != null && (metrics.ascent != 0 || metrics.descent != 0)) || rise != 0;
+        return getImpl().hashCode();
     }
 
     /**
@@ -148,25 +135,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @return true if the receiver is unstyled, false otherwise.
      */
     public boolean isUnstyled() {
-        if (font != null)
-            return false;
-        if (rise != 0)
-            return false;
-        if (metrics != null)
-            return false;
-        if (foreground != null)
-            return false;
-        if (background != null)
-            return false;
-        if (fontStyle != SWT.NORMAL)
-            return false;
-        if (underline)
-            return false;
-        if (strikeout)
-            return false;
-        if (borderStyle != SWT.NONE)
-            return false;
-        return true;
+        return getImpl().isUnstyled();
     }
 
     /**
@@ -178,11 +147,7 @@ public class StyleRange extends TextStyle implements Cloneable {
      * @return true if the objects are similar, false otherwise
      */
     public boolean similarTo(StyleRange style) {
-        if (!super.equals(style))
-            return false;
-        if (fontStyle != style.fontStyle)
-            return false;
-        return true;
+        return getImpl().similarTo(style);
     }
 
     /**
@@ -205,33 +170,19 @@ public class StyleRange extends TextStyle implements Cloneable {
      *
      * @return a string representation of the StyleRange
      */
-    @Override
     public String toString() {
-        StringBuilder buffer = new StringBuilder();
-        buffer.append("StyleRange {");
-        buffer.append(start);
-        buffer.append(", ");
-        buffer.append(length);
-        buffer.append(", fontStyle=");
-        switch(fontStyle) {
-            case SWT.BOLD:
-                buffer.append("bold");
-                break;
-            case SWT.ITALIC:
-                buffer.append("italic");
-                break;
-            case SWT.BOLD | SWT.ITALIC:
-                buffer.append("bold-italic");
-                break;
-            default:
-                buffer.append("normal");
-        }
-        String str = super.toString();
-        int index = str.indexOf('{');
-        str = str.substring(index + 1);
-        if (str.length() > 1)
-            buffer.append(", ");
-        buffer.append(str);
-        return buffer.toString();
+        return getImpl().toString();
+    }
+
+    protected StyleRange(IStyleRange impl) {
+        super(impl);
+    }
+
+    static StyleRange createApi(IStyleRange impl) {
+        return new StyleRange(impl);
+    }
+
+    public IStyleRange getImpl() {
+        return (IStyleRange) super.getImpl();
     }
 }

@@ -1420,7 +1420,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             Control control = controls[i];
             RECT rect = rects[i] = new RECT();
             ((SwtControl) control.getImpl()).forceResize();
-            OS.GetWindowRect(((SwtControl) control.getImpl()).topHandle(), rect);
+            OS.GetWindowRect(control.getImpl().topHandle(), rect);
             OS.MapWindowPoints(0, getApi().handle, rect, 2);
         }
         int orientation = getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
@@ -1430,7 +1430,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             RECT rect = rects[i];
             control.setOrientation(orientation);
             int flags = OS.SWP_NOSIZE | OS.SWP_NOZORDER | OS.SWP_NOACTIVATE;
-            OS.SetWindowPos(((SwtControl) control.getImpl()).topHandle(), 0, rect.left, rect.top, 0, 0, flags);
+            OS.SetWindowPos(control.getImpl().topHandle(), 0, rect.left, rect.top, 0, 0, flags);
         }
     }
 

@@ -22,7 +22,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class are selectable user interface
@@ -94,14 +94,16 @@ import java.util.WeakHashMap;
 public class ScrollBar extends Widget {
 
     ScrollBar() {
-        this(new SWTScrollBar());
+        this((IScrollBar) null);
+        setImpl(Config.isEquo(ScrollBar.class) ? new DartScrollBar(this) : new SwtScrollBar(this));
     }
 
     /**
      * Creates a new instance of the widget.
      */
     ScrollBar(Scrollable parent, int style) {
-        this(new SWTScrollBar((SWTScrollable) parent.delegate, style));
+        this((IScrollBar) null);
+        setImpl(Config.isEquo(ScrollBar.class, parent) ? new DartScrollBar(parent, style, this) : new SwtScrollBar(parent, style, this));
     }
 
     /**
@@ -137,7 +139,7 @@ public class ScrollBar extends Widget {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((IScrollBar) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -156,7 +158,7 @@ public class ScrollBar extends Widget {
      * @see #isEnabled
      */
     public boolean getEnabled() {
-        return ((IScrollBar) this.delegate).getEnabled();
+        return getImpl().getEnabled();
     }
 
     /**
@@ -172,7 +174,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public int getIncrement() {
-        return ((IScrollBar) this.delegate).getIncrement();
+        return getImpl().getIncrement();
     }
 
     /**
@@ -186,7 +188,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public int getMaximum() {
-        return ((IScrollBar) this.delegate).getMaximum();
+        return getImpl().getMaximum();
     }
 
     /**
@@ -200,7 +202,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public int getMinimum() {
-        return ((IScrollBar) this.delegate).getMinimum();
+        return getImpl().getMinimum();
     }
 
     /**
@@ -216,7 +218,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public int getPageIncrement() {
-        return ((IScrollBar) this.delegate).getPageIncrement();
+        return getImpl().getPageIncrement();
     }
 
     /**
@@ -230,7 +232,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public Scrollable getParent() {
-        return Scrollable.getInstance(((IScrollBar) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -244,7 +246,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public int getSelection() {
-        return ((IScrollBar) this.delegate).getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -261,7 +263,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public Point getSize() {
-        return ((IScrollBar) this.delegate).getSize();
+        return getImpl().getSize();
     }
 
     /**
@@ -277,7 +279,7 @@ public class ScrollBar extends Widget {
      * @see ScrollBar
      */
     public int getThumb() {
-        return ((IScrollBar) this.delegate).getThumb();
+        return getImpl().getThumb();
     }
 
     /**
@@ -294,7 +296,7 @@ public class ScrollBar extends Widget {
      * @since 3.6
      */
     public Rectangle getThumbBounds() {
-        return ((IScrollBar) this.delegate).getThumbBounds();
+        return getImpl().getThumbBounds();
     }
 
     /**
@@ -312,7 +314,7 @@ public class ScrollBar extends Widget {
      * @since 3.6
      */
     public Rectangle getThumbTrackBounds() {
-        return ((IScrollBar) this.delegate).getThumbTrackBounds();
+        return getImpl().getThumbTrackBounds();
     }
 
     /**
@@ -333,7 +335,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public boolean getVisible() {
-        return ((IScrollBar) this.delegate).getVisible();
+        return getImpl().getVisible();
     }
 
     /**
@@ -352,7 +354,7 @@ public class ScrollBar extends Widget {
      * @see #getEnabled
      */
     public boolean isEnabled() {
-        return ((IScrollBar) this.delegate).isEnabled();
+        return getImpl().isEnabled();
     }
 
     /**
@@ -370,7 +372,7 @@ public class ScrollBar extends Widget {
      * @see #getVisible
      */
     public boolean isVisible() {
-        return ((IScrollBar) this.delegate).isVisible();
+        return getImpl().isVisible();
     }
 
     /**
@@ -391,7 +393,7 @@ public class ScrollBar extends Widget {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((IScrollBar) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -408,7 +410,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        ((IScrollBar) this.delegate).setEnabled(enabled);
+        getImpl().setEnabled(enabled);
     }
 
     /**
@@ -425,7 +427,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setIncrement(int value) {
-        ((IScrollBar) this.delegate).setIncrement(value);
+        getImpl().setIncrement(value);
     }
 
     /**
@@ -442,7 +444,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setMaximum(int value) {
-        ((IScrollBar) this.delegate).setMaximum(value);
+        getImpl().setMaximum(value);
     }
 
     /**
@@ -459,7 +461,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setMinimum(int value) {
-        ((IScrollBar) this.delegate).setMinimum(value);
+        getImpl().setMinimum(value);
     }
 
     /**
@@ -476,7 +478,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setPageIncrement(int value) {
-        ((IScrollBar) this.delegate).setPageIncrement(value);
+        getImpl().setPageIncrement(value);
     }
 
     /**
@@ -492,7 +494,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setSelection(int selection) {
-        ((IScrollBar) this.delegate).setSelection(selection);
+        getImpl().setSelection(selection);
     }
 
     /**
@@ -513,7 +515,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setThumb(int value) {
-        ((IScrollBar) this.delegate).setThumb(value);
+        getImpl().setThumb(value);
     }
 
     /**
@@ -538,7 +540,7 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
-        ((IScrollBar) this.delegate).setValues(selection, minimum, maximum, thumb, increment, pageIncrement);
+        getImpl().setValues(selection, minimum, maximum, thumb, increment, pageIncrement);
     }
 
     /**
@@ -558,23 +560,18 @@ public class ScrollBar extends Widget {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        ((IScrollBar) this.delegate).setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
-    protected ScrollBar(IScrollBar delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected ScrollBar(IScrollBar impl) {
+        super(impl);
     }
 
-    public static ScrollBar getInstance(IScrollBar delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        ScrollBar ref = (ScrollBar) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new ScrollBar(delegate);
-        }
-        return ref;
+    static ScrollBar createApi(IScrollBar impl) {
+        return new ScrollBar(impl);
+    }
+
+    public IScrollBar getImpl() {
+        return (IScrollBar) super.getImpl();
     }
 }

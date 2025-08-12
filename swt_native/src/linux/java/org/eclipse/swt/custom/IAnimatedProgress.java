@@ -34,4 +34,6 @@ public interface IAnimatedProgress extends ICanvas {
      * Stop the animation.   Freeze the presentation at its current appearance.
      */
     void stop();
+
+    AnimatedProgress getApi();
 }

@@ -462,12 +462,10 @@ public final class DartColor extends DartResource implements IColor {
         if ((red > 255) || (red < 0) || (green > 255) || (green < 0) || (blue > 255) || (blue < 0) || (alpha > 255) || (alpha < 0)) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        double[] rgbColor = new double[4];
-        rgbColor[0] = red / 255f;
-        rgbColor[1] = green / 255f;
-        rgbColor[2] = blue / 255f;
-        rgbColor[3] = alpha / 255f;
-        getApi().handle = rgbColor;
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
+        this.alpha = alpha;
     }
 
     @Override
@@ -504,6 +502,30 @@ public final class DartColor extends DartResource implements IColor {
         if (isDisposed())
             return "Color {*DISPOSED*}";
         return "Color {" + getRed() + ", " + getGreen() + ", " + getBlue() + ", " + getAlpha() + "}";
+    }
+
+    int alpha;
+
+    int blue;
+
+    int green;
+
+    int red;
+
+    public int _alpha() {
+        return alpha;
+    }
+
+    public int _blue() {
+        return blue;
+    }
+
+    public int _green() {
+        return green;
+    }
+
+    public int _red() {
+        return red;
     }
 
     public Color getApi() {

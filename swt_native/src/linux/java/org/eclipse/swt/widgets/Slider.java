@@ -21,7 +21,6 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class are selectable user interface
@@ -109,7 +108,8 @@ public class Slider extends Control {
      * @see Widget#getStyle
      */
     public Slider(Composite parent, int style) {
-        this(new SWTSlider((SWTComposite) parent.delegate, style));
+        this((ISlider) null);
+        setImpl(new SwtSlider(parent, style, this));
     }
 
     /**
@@ -145,7 +145,7 @@ public class Slider extends Control {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ISlider) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -161,7 +161,7 @@ public class Slider extends Control {
      * </ul>
      */
     public int getIncrement() {
-        return ((ISlider) this.delegate).getIncrement();
+        return getImpl().getIncrement();
     }
 
     /**
@@ -175,7 +175,7 @@ public class Slider extends Control {
      * </ul>
      */
     public int getMaximum() {
-        return ((ISlider) this.delegate).getMaximum();
+        return getImpl().getMaximum();
     }
 
     /**
@@ -189,7 +189,7 @@ public class Slider extends Control {
      * </ul>
      */
     public int getMinimum() {
-        return ((ISlider) this.delegate).getMinimum();
+        return getImpl().getMinimum();
     }
 
     /**
@@ -205,7 +205,7 @@ public class Slider extends Control {
      * </ul>
      */
     public int getPageIncrement() {
-        return ((ISlider) this.delegate).getPageIncrement();
+        return getImpl().getPageIncrement();
     }
 
     /**
@@ -219,7 +219,7 @@ public class Slider extends Control {
      * </ul>
      */
     public int getSelection() {
-        return ((ISlider) this.delegate).getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -233,7 +233,7 @@ public class Slider extends Control {
      * </ul>
      */
     public int getThumb() {
-        return ((ISlider) this.delegate).getThumb();
+        return getImpl().getThumb();
     }
 
     /**
@@ -254,7 +254,7 @@ public class Slider extends Control {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ISlider) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -271,7 +271,7 @@ public class Slider extends Control {
      * </ul>
      */
     public void setIncrement(int value) {
-        ((ISlider) this.delegate).setIncrement(value);
+        getImpl().setIncrement(value);
     }
 
     /**
@@ -288,7 +288,7 @@ public class Slider extends Control {
      * </ul>
      */
     public void setMaximum(int value) {
-        ((ISlider) this.delegate).setMaximum(value);
+        getImpl().setMaximum(value);
     }
 
     /**
@@ -305,7 +305,7 @@ public class Slider extends Control {
      * </ul>
      */
     public void setMinimum(int value) {
-        ((ISlider) this.delegate).setMinimum(value);
+        getImpl().setMinimum(value);
     }
 
     /**
@@ -322,7 +322,7 @@ public class Slider extends Control {
      * </ul>
      */
     public void setPageIncrement(int value) {
-        ((ISlider) this.delegate).setPageIncrement(value);
+        getImpl().setPageIncrement(value);
     }
 
     /**
@@ -338,7 +338,7 @@ public class Slider extends Control {
      * </ul>
      */
     public void setSelection(int value) {
-        ((ISlider) this.delegate).setSelection(value);
+        getImpl().setSelection(value);
     }
 
     /**
@@ -359,7 +359,7 @@ public class Slider extends Control {
      * </ul>
      */
     public void setThumb(int value) {
-        ((ISlider) this.delegate).setThumb(value);
+        getImpl().setThumb(value);
     }
 
     /**
@@ -384,23 +384,18 @@ public class Slider extends Control {
      * </ul>
      */
     public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
-        ((ISlider) this.delegate).setValues(selection, minimum, maximum, thumb, increment, pageIncrement);
+        getImpl().setValues(selection, minimum, maximum, thumb, increment, pageIncrement);
     }
 
-    protected Slider(ISlider delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Slider(ISlider impl) {
+        super(impl);
     }
 
-    public static Slider getInstance(ISlider delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Slider ref = (Slider) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Slider(delegate);
-        }
-        return ref;
+    static Slider createApi(ISlider impl) {
+        return new Slider(impl);
+    }
+
+    public ISlider getImpl() {
+        return (ISlider) super.getImpl();
     }
 }

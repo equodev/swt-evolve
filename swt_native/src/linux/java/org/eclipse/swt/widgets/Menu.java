@@ -16,8 +16,6 @@
 package org.eclipse.swt.widgets;
 
 import java.util.*;
-import java.util.stream.Stream;
-
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
@@ -76,220 +74,7 @@ public class Menu extends Widget {
      */
     public Menu(Control parent) {
         this((IMenu) null);
-        if (parent.delegate instanceof SWTControl) {
-            delegate = new SWTMenu((SWTControl) parent.delegate);
-        } else {
-            delegate = new IMenu() {
-                @Override
-                public void addTypedListener(EventListener listener, int... eventTypes) {
-                }
-
-                @Override
-                public void checkWidget() {
-                }
-
-                @Override
-                public long getHandle() {
-                    return 0;
-                }
-
-                @Override
-                public long topHandle() {
-                    return 0;
-                }
-
-                @Override
-                public void addListener(int eventType, Listener listener) {
-                }
-
-                @Override
-                public void addDisposeListener(DisposeListener listener) {
-                }
-
-                @Override
-                public void dispose() {
-                }
-
-                @Override
-                public Object getData() {
-                    return null;
-                }
-
-                @Override
-                public Object getData(String key) {
-                    return null;
-                }
-
-                @Override
-                public IDisplay getDisplay() {
-                    return null;
-                }
-
-                @Override
-                public Listener[] getListeners(int eventType) {
-                    return null;
-                }
-
-                @Override
-                public <L extends EventListener> Stream<L> getTypedListeners(int eventType, Class<L> listenerType) {
-                    return null;
-                }
-
-                @Override
-                public int getStyle() {
-                    return 0;
-                }
-
-                @Override
-                public boolean isAutoDirection() {
-                    return false;
-                }
-
-                @Override
-                public boolean isDisposed() {
-                    return false;
-                }
-
-                @Override
-                public boolean isListening(int eventType) {
-                    return false;
-                }
-
-                @Override
-                public void notifyListeners(int eventType, Event event) {
-                }
-
-                @Override
-                public void removeListener(int eventType, Listener listener) {
-                }
-
-                @Override
-                public void reskin(int flags) {
-                }
-
-                @Override
-                public void removeDisposeListener(DisposeListener listener) {
-                }
-
-                @Override
-                public void setData(Object data) {
-                }
-
-                @Override
-                public void setData(String key, Object value) {
-                }
-
-                @Override
-                public void addMenuListener(MenuListener listener) {
-                }
-
-                @Override
-                public void addHelpListener(HelpListener listener) {
-                }
-
-                @Override
-                public IMenuItem getDefaultItem() {
-                    return null;
-                }
-
-                @Override
-                public boolean getEnabled() {
-                    return false;
-                }
-
-                @Override
-                public IMenuItem getItem(int index) {
-                    return null;
-                }
-
-                @Override
-                public int getItemCount() {
-                    return 0;
-                }
-
-                @Override
-                public IMenuItem[] getItems() {
-                    return null;
-                }
-
-                @Override
-                public int getOrientation() {
-                    return 0;
-                }
-
-                @Override
-                public IDecorations getParent() {
-                    return null;
-                }
-
-                @Override
-                public IMenuItem getParentItem() {
-                    return null;
-                }
-
-                @Override
-                public IMenu getParentMenu() {
-                    return null;
-                }
-
-                @Override
-                public IShell getShell() {
-                    return null;
-                }
-
-                @Override
-                public boolean getVisible() {
-                    return false;
-                }
-
-                @Override
-                public int indexOf(IMenuItem item) {
-                    return 0;
-                }
-
-                @Override
-                public boolean isEnabled() {
-                    return false;
-                }
-
-                @Override
-                public boolean isVisible() {
-                    return false;
-                }
-
-                @Override
-                public void removeMenuListener(MenuListener listener) {
-                }
-
-                @Override
-                public void removeHelpListener(HelpListener listener) {
-                }
-
-                @Override
-                public void setDefaultItem(IMenuItem item) {
-                }
-
-                @Override
-                public void setEnabled(boolean enabled) {
-                }
-
-                @Override
-                public void setLocation(int x, int y) {
-                }
-
-                @Override
-                public void setLocation(Point location) {
-                }
-
-                @Override
-                public void setOrientation(int orientation) {
-                }
-
-                @Override
-                public void setVisible(boolean visible) {
-                }
-            };
-        }
+        setImpl(new SwtMenu(parent, this));
     }
 
     /**
@@ -330,7 +115,8 @@ public class Menu extends Widget {
      * @see Widget#getStyle
      */
     public Menu(Decorations parent, int style) {
-        this(new SWTMenu((SWTDecorations) parent.delegate, style));
+        this((IMenu) null);
+        setImpl(new SwtMenu(parent, style, this));
     }
 
     /**
@@ -359,221 +145,7 @@ public class Menu extends Widget {
      */
     public Menu(Menu parentMenu) {
         this((IMenu) null);
-        if (parentMenu.delegate instanceof SWTMenu) {
-            delegate = new SWTMenu((SWTMenu) parentMenu.delegate);
-        } else {
-            delegate = new IMenu() {
-
-                @Override
-                public void addTypedListener(EventListener listener, int... eventTypes) {
-                }
-
-                @Override
-                public void checkWidget() {
-                }
-
-                @Override
-                public long getHandle() {
-                    return 0;
-                }
-
-                @Override
-                public long topHandle() {
-                    return 0;
-                }
-
-                @Override
-                public void addListener(int eventType, Listener listener) {
-                }
-
-                @Override
-                public void addDisposeListener(DisposeListener listener) {
-                }
-
-                @Override
-                public void dispose() {
-                }
-
-                @Override
-                public Object getData() {
-                    return null;
-                }
-
-                @Override
-                public Object getData(String key) {
-                    return null;
-                }
-
-                @Override
-                public IDisplay getDisplay() {
-                    return null;
-                }
-
-                @Override
-                public Listener[] getListeners(int eventType) {
-                    return null;
-                }
-
-                @Override
-                public <L extends EventListener> Stream<L> getTypedListeners(int eventType, Class<L> listenerType) {
-                    return null;
-                }
-
-                @Override
-                public int getStyle() {
-                    return 0;
-                }
-
-                @Override
-                public boolean isAutoDirection() {
-                    return false;
-                }
-
-                @Override
-                public boolean isDisposed() {
-                    return false;
-                }
-
-                @Override
-                public boolean isListening(int eventType) {
-                    return false;
-                }
-
-                @Override
-                public void notifyListeners(int eventType, Event event) {
-                }
-
-                @Override
-                public void removeListener(int eventType, Listener listener) {
-                }
-
-                @Override
-                public void reskin(int flags) {
-                }
-
-                @Override
-                public void removeDisposeListener(DisposeListener listener) {
-                }
-
-                @Override
-                public void setData(Object data) {
-                }
-
-                @Override
-                public void setData(String key, Object value) {
-                }
-
-                @Override
-                public void addMenuListener(MenuListener listener) {
-                }
-
-                @Override
-                public void addHelpListener(HelpListener listener) {
-                }
-
-                @Override
-                public IMenuItem getDefaultItem() {
-                    return null;
-                }
-
-                @Override
-                public boolean getEnabled() {
-                    return false;
-                }
-
-                @Override
-                public IMenuItem getItem(int index) {
-                    return null;
-                }
-
-                @Override
-                public int getItemCount() {
-                    return 0;
-                }
-
-                @Override
-                public IMenuItem[] getItems() {
-                    return null;
-                }
-
-                @Override
-                public int getOrientation() {
-                    return 0;
-                }
-
-                @Override
-                public IDecorations getParent() {
-                    return null;
-                }
-
-                @Override
-                public IMenuItem getParentItem() {
-                    return null;
-                }
-
-                @Override
-                public IMenu getParentMenu() {
-                    return null;
-                }
-
-                @Override
-                public IShell getShell() {
-                    return null;
-                }
-
-                @Override
-                public boolean getVisible() {
-                    return false;
-                }
-
-                @Override
-                public int indexOf(IMenuItem item) {
-                    return 0;
-                }
-
-                @Override
-                public boolean isEnabled() {
-                    return false;
-                }
-
-                @Override
-                public boolean isVisible() {
-                    return false;
-                }
-
-                @Override
-                public void removeMenuListener(MenuListener listener) {
-                }
-
-                @Override
-                public void removeHelpListener(HelpListener listener) {
-                }
-
-                @Override
-                public void setDefaultItem(IMenuItem item) {
-                }
-
-                @Override
-                public void setEnabled(boolean enabled) {
-                }
-
-                @Override
-                public void setLocation(int x, int y) {
-                }
-
-                @Override
-                public void setLocation(Point location) {
-                }
-
-                @Override
-                public void setOrientation(int orientation) {
-                }
-
-                @Override
-                public void setVisible(boolean visible) {
-                }
-            };
-        }
+        setImpl(new SwtMenu(parentMenu, this));
     }
 
     /**
@@ -601,7 +173,8 @@ public class Menu extends Widget {
      * @see Widget#getStyle
      */
     public Menu(MenuItem parentItem) {
-        this(new SWTMenu((SWTMenuItem) parentItem.delegate));
+        this((IMenu) null);
+        setImpl(new SwtMenu(parentItem, this));
     }
 
     /**
@@ -624,7 +197,7 @@ public class Menu extends Widget {
      * @see #removeMenuListener
      */
     public void addMenuListener(MenuListener listener) {
-        ((IMenu) this.delegate).addMenuListener(listener);
+        getImpl().addMenuListener(listener);
     }
 
     /**
@@ -647,7 +220,7 @@ public class Menu extends Widget {
      * @see #removeHelpListener
      */
     public void addHelpListener(HelpListener listener) {
-        ((IMenu) this.delegate).addHelpListener(listener);
+        getImpl().addHelpListener(listener);
     }
 
     /**
@@ -662,7 +235,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public MenuItem getDefaultItem() {
-        return MenuItem.getInstance(((IMenu) this.delegate).getDefaultItem());
+        return getImpl().getDefaultItem();
     }
 
     /**
@@ -681,7 +254,7 @@ public class Menu extends Widget {
      * @see #isEnabled
      */
     public boolean getEnabled() {
-        return ((IMenu) this.delegate).getEnabled();
+        return getImpl().getEnabled();
     }
 
     /**
@@ -700,7 +273,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public MenuItem getItem(int index) {
-        return MenuItem.getInstance(((IMenu) this.delegate).getItem(index));
+        return getImpl().getItem(index);
     }
 
     /**
@@ -714,7 +287,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public int getItemCount() {
-        return ((IMenu) this.delegate).getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -734,7 +307,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public MenuItem[] getItems() {
-        return MenuItem.ofArray(((IMenu) this.delegate).getItems(), MenuItem.class);
+        return getImpl().getItems();
     }
 
     /**
@@ -751,7 +324,7 @@ public class Menu extends Widget {
      * @since 3.7
      */
     public int getOrientation() {
-        return ((IMenu) this.delegate).getOrientation();
+        return getImpl().getOrientation();
     }
 
     /**
@@ -765,7 +338,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public Decorations getParent() {
-        return Decorations.getInstance(((IMenu) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -781,7 +354,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public MenuItem getParentItem() {
-        return MenuItem.getInstance(((IMenu) this.delegate).getParentItem());
+        return getImpl().getParentItem();
     }
 
     /**
@@ -797,7 +370,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public Menu getParentMenu() {
-        return Menu.getInstance(((IMenu) this.delegate).getParentMenu());
+        return getImpl().getParentMenu();
     }
 
     /**
@@ -817,7 +390,7 @@ public class Menu extends Widget {
      * @see #getParent
      */
     public Shell getShell() {
-        return Shell.getInstance(((IMenu) this.delegate).getShell());
+        return getImpl().getShell();
     }
 
     /**
@@ -838,7 +411,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public boolean getVisible() {
-        return ((IMenu) this.delegate).getVisible();
+        return getImpl().getVisible();
     }
 
     /**
@@ -859,7 +432,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public int indexOf(MenuItem item) {
-        return ((IMenu) this.delegate).indexOf((IMenuItem) item.delegate);
+        return getImpl().indexOf(item);
     }
 
     /**
@@ -878,7 +451,7 @@ public class Menu extends Widget {
      * @see #getEnabled
      */
     public boolean isEnabled() {
-        return ((IMenu) this.delegate).isEnabled();
+        return getImpl().isEnabled();
     }
 
     /**
@@ -896,7 +469,7 @@ public class Menu extends Widget {
      * @see #getVisible
      */
     public boolean isVisible() {
-        return ((IMenu) this.delegate).isVisible();
+        return getImpl().isVisible();
     }
 
     /**
@@ -917,7 +490,7 @@ public class Menu extends Widget {
      * @see #addMenuListener
      */
     public void removeMenuListener(MenuListener listener) {
-        ((IMenu) this.delegate).removeMenuListener(listener);
+        getImpl().removeMenuListener(listener);
     }
 
     /**
@@ -938,7 +511,7 @@ public class Menu extends Widget {
      * @see #addHelpListener
      */
     public void removeHelpListener(HelpListener listener) {
-        ((IMenu) this.delegate).removeHelpListener(listener);
+        getImpl().removeHelpListener(listener);
     }
 
     /**
@@ -956,7 +529,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public void setDefaultItem(MenuItem item) {
-        ((IMenu) this.delegate).setDefaultItem((IMenuItem) item.delegate);
+        getImpl().setDefaultItem(item);
     }
 
     /**
@@ -973,7 +546,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        ((IMenu) this.delegate).setEnabled(enabled);
+        getImpl().setEnabled(enabled);
     }
 
     /**
@@ -999,7 +572,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public void setLocation(int x, int y) {
-        ((IMenu) this.delegate).setLocation(x, y);
+        getImpl().setLocation(x, y);
     }
 
     /**
@@ -1027,7 +600,7 @@ public class Menu extends Widget {
      * @since 2.1
      */
     public void setLocation(Point location) {
-        ((IMenu) this.delegate).setLocation(location);
+        getImpl().setLocation(location);
     }
 
     /**
@@ -1044,7 +617,7 @@ public class Menu extends Widget {
      * @since 3.7
      */
     public void setOrientation(int orientation) {
-        ((IMenu) this.delegate).setOrientation(orientation);
+        getImpl().setOrientation(orientation);
     }
 
     /**
@@ -1064,23 +637,18 @@ public class Menu extends Widget {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        ((IMenu) this.delegate).setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
-    protected Menu(IMenu delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Menu(IMenu impl) {
+        super(impl);
     }
 
-    public static Menu getInstance(IMenu delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Menu ref = (Menu) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Menu(delegate);
-        }
-        return ref;
+    static Menu createApi(IMenu impl) {
+        return new Menu(impl);
+    }
+
+    public IMenu getImpl() {
+        return (IMenu) super.getImpl();
     }
 }

@@ -50,13 +50,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class TableDropTargetEffect extends DropTargetEffect {
 
-    // milli seconds
-    static final int SCROLL_HYSTERESIS = 150;
-
-    int scrollIndex;
-
-    long scrollBeginTime;
-
     /**
      * Creates a new <code>TableDropTargetEffect</code> to handle the drag under effect on the specified
      * <code>Table</code>.
@@ -64,16 +57,8 @@ public class TableDropTargetEffect extends DropTargetEffect {
      * @param table the <code>Table</code> over which the user positions the cursor to drop the data
      */
     public TableDropTargetEffect(Table table) {
-        super(table);
-    }
-
-    int checkEffect(int effect) {
-        // Some effects are mutually exclusive.  Make sure that only one of the mutually exclusive effects has been specified.
-        if ((effect & DND.FEEDBACK_SELECT) != 0)
-            effect = effect & ~DND.FEEDBACK_INSERT_AFTER & ~DND.FEEDBACK_INSERT_BEFORE;
-        if ((effect & DND.FEEDBACK_INSERT_BEFORE) != 0)
-            effect = effect & ~DND.FEEDBACK_INSERT_AFTER;
-        return effect;
+        this((ITableDropTargetEffect) null);
+        setImpl(new SwtTableDropTargetEffect(table, this));
     }
 
     /**
@@ -90,10 +75,8 @@ public class TableDropTargetEffect extends DropTargetEffect {
      * @see DropTargetAdapter
      * @see DropTargetEvent
      */
-    @Override
     public void dragEnter(DropTargetEvent event) {
-        scrollBeginTime = 0;
-        scrollIndex = -1;
+        getImpl().dragEnter(event);
     }
 
     /**
@@ -110,13 +93,8 @@ public class TableDropTargetEffect extends DropTargetEffect {
      * @see DropTargetAdapter
      * @see DropTargetEvent
      */
-    @Override
     public void dragLeave(DropTargetEvent event) {
-        SWTTable table = (SWTTable) (control.delegate);
-        long handle = table.getHandle();
-        GTK.gtk_tree_view_set_drag_dest_row(handle, 0, GTK.GTK_TREE_VIEW_DROP_BEFORE);
-        scrollBeginTime = 0;
-        scrollIndex = -1;
+        getImpl().dragLeave(event);
     }
 
     /**
@@ -136,66 +114,19 @@ public class TableDropTargetEffect extends DropTargetEffect {
      * @see DND#FEEDBACK_SELECT
      * @see DND#FEEDBACK_SCROLL
      */
-    @Override
     public void dragOver(DropTargetEvent event) {
-        SWTTable table = (SWTTable) control.delegate;
-        long handle = table.getHandle();
-        int effect = checkEffect(event.feedback);
-        Point coordinates = new Point(event.x, event.y);
-        coordinates = DPIUtil.autoScaleUp(table.toControl(coordinates));
-        long[] path = new long[1];
-        GTK.gtk_tree_view_get_path_at_pos(handle, coordinates.x, coordinates.y, path, null, null, null);
-        int index = -1;
-        if (path[0] != 0) {
-            long indices = GTK.gtk_tree_path_get_indices(path[0]);
-            if (indices != 0) {
-                int[] temp = new int[1];
-                C.memmove(temp, indices, 4);
-                index = temp[0];
-            }
-        }
-        if ((effect & DND.FEEDBACK_SCROLL) == 0) {
-            scrollBeginTime = 0;
-            scrollIndex = -1;
-        } else {
-            if (index != -1 && scrollIndex == index && scrollBeginTime != 0) {
-                if (System.currentTimeMillis() >= scrollBeginTime) {
-                    if (coordinates.y < DPIUtil.autoScaleUp(table.getItemHeight())) {
-                        GTK.gtk_tree_path_prev(path[0]);
-                    } else {
-                        GTK.gtk_tree_path_next(path[0]);
-                    }
-                    if (path[0] != 0) {
-                        GTK.gtk_tree_view_scroll_to_cell(handle, path[0], 0, false, 0, 0);
-                        GTK.gtk_tree_path_free(path[0]);
-                        path[0] = 0;
-                        GTK.gtk_tree_view_get_path_at_pos(handle, coordinates.x, coordinates.y, path, null, null, null);
-                    }
-                    scrollBeginTime = 0;
-                    scrollIndex = -1;
-                }
-            } else {
-                scrollBeginTime = System.currentTimeMillis() + SCROLL_HYSTERESIS;
-                scrollIndex = index;
-            }
-        }
-        if (path[0] != 0) {
-            int position = -1;
-            if ((effect & DND.FEEDBACK_SELECT) != 0)
-                position = GTK.GTK_TREE_VIEW_DROP_INTO_OR_BEFORE;
-            if ((effect & DND.FEEDBACK_INSERT_BEFORE) != 0)
-                position = GTK.GTK_TREE_VIEW_DROP_BEFORE;
-            if ((effect & DND.FEEDBACK_INSERT_AFTER) != 0)
-                position = GTK.GTK_TREE_VIEW_DROP_AFTER;
-            if (position != -1) {
-                GTK.gtk_tree_view_set_drag_dest_row(handle, path[0], position);
-            } else {
-                GTK.gtk_tree_view_set_drag_dest_row(handle, 0, GTK.GTK_TREE_VIEW_DROP_BEFORE);
-            }
-        } else {
-            GTK.gtk_tree_view_set_drag_dest_row(handle, 0, GTK.GTK_TREE_VIEW_DROP_BEFORE);
-        }
-        if (path[0] != 0)
-            GTK.gtk_tree_path_free(path[0]);
+        getImpl().dragOver(event);
+    }
+
+    protected TableDropTargetEffect(ITableDropTargetEffect impl) {
+        super(impl);
+    }
+
+    static TableDropTargetEffect createApi(ITableDropTargetEffect impl) {
+        return new TableDropTargetEffect(impl);
+    }
+
+    public ITableDropTargetEffect getImpl() {
+        return (ITableDropTargetEffect) super.getImpl();
     }
 }

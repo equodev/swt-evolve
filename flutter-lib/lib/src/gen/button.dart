@@ -16,12 +16,12 @@ class ButtonSwt<V extends VButton> extends ControlSwt<V> {
   @override
   State createState() => ButtonImpl<ButtonSwt<VButton>, VButton>();
 
-  void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
-  }
-
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/DefaultSelection", payload);
+  }
+
+  void sendSelectionSelection(V val, VEvent? payload) {
+    sendEvent(val, "Selection/Selection", payload);
   }
 }
 

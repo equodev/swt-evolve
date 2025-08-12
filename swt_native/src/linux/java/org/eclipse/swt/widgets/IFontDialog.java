@@ -3,9 +3,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface IFontDialog extends IDialog {
 
@@ -118,4 +115,6 @@ public interface IFontDialog extends IDialog {
      * @since 2.1
      */
     void setRGB(RGB rgb);
+
+    FontDialog getApi();
 }

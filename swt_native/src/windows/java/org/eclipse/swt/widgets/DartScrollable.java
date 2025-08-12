@@ -130,8 +130,6 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
 
     @Override
     void createHandle() {
-        super.createHandle();
-        maybeEnableDarkSystemTheme();
     }
 
     ScrollBar createScrollBar(int type) {
@@ -177,7 +175,6 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     }
 
     void destroyScrollBar(int type) {
-        long hwnd = scrolledHandle();
         if ((type & SWT.HORIZONTAL) != 0) {
             getApi().style &= ~SWT.H_SCROLL;
         }
@@ -207,7 +204,6 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     Rectangle getClientAreaInPixels() {
         forceResize();
         long scrolledHandle = scrolledHandle();
-         ;
         if (scrolledHandle != getApi().handle) {
         }
         return null;
@@ -279,9 +275,9 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      * @since 3.126
      */
     public void setScrollbarsMode(int mode) {
+        dirty();
         checkWidget();
         this.scrollbarsMode = mode;
-        getBridge().dirty(this);
     }
 
     /**
@@ -345,8 +341,8 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
         return scrollbarsMode;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
     }
 
     public Scrollable getApi() {

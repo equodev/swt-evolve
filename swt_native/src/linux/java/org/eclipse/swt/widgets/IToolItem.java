@@ -5,11 +5,8 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
-public interface IToolItem extends IItem {
+public interface IToolItem extends IItem, ImplToolItem {
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -43,6 +40,8 @@ public interface IToolItem extends IItem {
      * @see SelectionEvent
      */
     void addSelectionListener(SelectionListener listener);
+
+    void checkSubclass();
 
     void dispose();
 
@@ -88,7 +87,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Returns the receiver's disabled image if it has one, or null
@@ -176,7 +175,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IToolBar getParent();
+    ToolBar getParent();
 
     /**
      * Returns <code>true</code> if the receiver is selected,
@@ -293,7 +292,7 @@ public interface IToolItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setControl(IControl control);
+    void setControl(Control control);
 
     /**
      * Sets the receiver's disabled image to the argument, which may be
@@ -465,5 +464,5 @@ public interface IToolItem extends IItem {
      */
     void setWidth(int width);
 
-    Point computeSize();
+    ToolItem getApi();
 }

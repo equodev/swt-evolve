@@ -33,19 +33,14 @@ import org.eclipse.swt.widgets.*;
  */
 public class PopupList {
 
-    SWTShell shell;
-
-    SWTList list;
-
-    int minimumWidth;
-
     /**
      * Creates a PopupList above the specified shell.
      *
      * @param parent a Shell control which will be the parent of the new instance (cannot be null)
      */
-    public PopupList(SWTShell parent) {
-        this(parent, 0);
+    public PopupList(Shell parent) {
+        this((IPopupList) null);
+        setImpl(new SwtPopupList(parent, this));
     }
 
     /**
@@ -56,53 +51,9 @@ public class PopupList {
      *
      * @since 3.0
      */
-    public PopupList(SWTShell parent, int style) {
-        int listStyle = SWT.SINGLE | SWT.V_SCROLL;
-        if ((style & SWT.H_SCROLL) != 0)
-            listStyle |= SWT.H_SCROLL;
-        shell = new SWTShell(parent, checkStyle(style));
-        list = new SWTList(shell, listStyle);
-        // close dialog if user selects outside of the shell
-        shell.addListener(SWT.Deactivate, e -> shell.setVisible(false));
-        // resize shell when list resizes
-        shell.addControlListener(ControlListener.controlResizedAdapter(e -> {
-            Rectangle shellSize = shell.getClientArea();
-            list.setSize(shellSize.width, shellSize.height);
-        }));
-        // return list selection on Mouse Up or Carriage Return
-        list.addMouseListener(new MouseListener() {
-
-            @Override
-            public void mouseDoubleClick(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseDown(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseUp(MouseEvent e) {
-                shell.setVisible(false);
-            }
-        });
-        list.addKeyListener(new KeyListener() {
-
-            @Override
-            public void keyReleased(KeyEvent e) {
-            }
-
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.character == '\r') {
-                    shell.setVisible(false);
-                }
-            }
-        });
-    }
-
-    private static int checkStyle(int style) {
-        int mask = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
-        return style & mask;
+    public PopupList(Shell parent, int style) {
+        this((IPopupList) null);
+        setImpl(new SwtPopupList(parent, style, this));
     }
 
     /**
@@ -116,7 +67,7 @@ public class PopupList {
      * 	</ul>
      */
     public Font getFont() {
-        return list.getFont();
+        return getImpl().getFont();
     }
 
     /**
@@ -133,7 +84,7 @@ public class PopupList {
      * 	</ul>
      */
     public String[] getItems() {
-        return list.getItems();
+        return getImpl().getItems();
     }
 
     /**
@@ -142,7 +93,7 @@ public class PopupList {
      * @return the minimum width of the list
      */
     public int getMinimumWidth() {
-        return minimumWidth;
+        return getImpl().getMinimumWidth();
     }
 
     /**
@@ -154,52 +105,7 @@ public class PopupList {
      * @return the text of the selected item or null if no item is selected
      */
     public String open(Rectangle rect) {
-        Point listSize = list.computeSize(rect.width, SWT.DEFAULT, false);
-        Rectangle screenSize = ((SWTDisplay) (shell.getDisplay())).getBounds();
-        // Position the dialog so that it does not run off the screen and the largest number of items are visible
-        int spaceBelow = screenSize.height - (rect.y + rect.height) - 30;
-        int spaceAbove = rect.y - 30;
-        int y = 0;
-        if (spaceAbove > spaceBelow && listSize.y > spaceBelow) {
-            // place popup list above table cell
-            if (listSize.y > spaceAbove) {
-                listSize.y = spaceAbove;
-            } else {
-                listSize.y += 2;
-            }
-            y = rect.y - listSize.y;
-        } else {
-            // place popup list below table cell
-            if (listSize.y > spaceBelow) {
-                listSize.y = spaceBelow;
-            } else {
-                listSize.y += 2;
-            }
-            y = rect.y + rect.height;
-        }
-        // Make dialog as wide as the cell
-        listSize.x = rect.width;
-        // dialog width should not be less than minimumWidth
-        if (listSize.x < minimumWidth)
-            listSize.x = minimumWidth;
-        // Align right side of dialog with right side of cell
-        int x = rect.x + rect.width - listSize.x;
-        shell.setBounds(x, y, listSize.x, listSize.y);
-        shell.open();
-        list.setFocus();
-        SWTDisplay display = (SWTDisplay) (shell.getDisplay());
-        while (!shell.isDisposed() && shell.isVisible()) {
-            if (!display.readAndDispatch())
-                display.sleep();
-        }
-        String result = null;
-        if (!shell.isDisposed()) {
-            String[] strings = list.getSelection();
-            shell.dispose();
-            if (strings.length != 0)
-                result = strings[0];
-        }
-        return result;
+        return getImpl().open(rect);
     }
 
     /**
@@ -217,18 +123,7 @@ public class PopupList {
      * 	</ul>
      */
     public void select(String string) {
-        String[] items = list.getItems();
-        // find the first entry in the list that starts with the
-        // specified string
-        if (string != null) {
-            for (String item : items) {
-                if (item.startsWith(string)) {
-                    int index = list.indexOf(item);
-                    list.select(index);
-                    break;
-                }
-            }
-        }
+        getImpl().select(string);
     }
 
     /**
@@ -245,7 +140,7 @@ public class PopupList {
      * 	</ul>
      */
     public void setFont(Font font) {
-        list.setFont(font);
+        getImpl().setFont(font);
     }
 
     /**
@@ -271,7 +166,7 @@ public class PopupList {
      * 	</ul>
      */
     public void setItems(String[] strings) {
-        list.setItems(strings);
+        getImpl().setItems(strings);
     }
 
     /**
@@ -280,8 +175,26 @@ public class PopupList {
      * @param width the minimum width of the list
      */
     public void setMinimumWidth(int width) {
-        if (width < 0)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        minimumWidth = width;
+        getImpl().setMinimumWidth(width);
+    }
+
+    protected IPopupList impl;
+
+    protected PopupList(IPopupList impl) {
+        if (impl != null)
+            impl.setApi(this);
+    }
+
+    static PopupList createApi(IPopupList impl) {
+        return new PopupList(impl);
+    }
+
+    public IPopupList getImpl() {
+        return impl;
+    }
+
+    protected PopupList setImpl(IPopupList impl) {
+        this.impl = impl;
+        return this;
     }
 }

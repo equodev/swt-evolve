@@ -4,9 +4,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface IExpandBar extends IComposite {
 
@@ -31,6 +28,8 @@ public interface IExpandBar extends IComposite {
      */
     void addExpandListener(ExpandListener listener);
 
+    void checkSubclass();
+
     /**
      * Returns the item at the given, zero-relative index in the
      * receiver. Throws an exception if the index is out of range.
@@ -46,7 +45,7 @@ public interface IExpandBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IExpandItem getItem(int index);
+    ExpandItem getItem(int index);
 
     /**
      * Returns the number of items contained in the receiver.
@@ -76,7 +75,7 @@ public interface IExpandBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IExpandItem[] getItems();
+    ExpandItem[] getItems();
 
     /**
      * Returns the receiver's spacing.
@@ -108,7 +107,7 @@ public interface IExpandBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int indexOf(IExpandItem item);
+    int indexOf(ExpandItem item);
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -141,4 +140,6 @@ public interface IExpandBar extends IComposite {
      * </ul>
      */
     void setSpacing(int spacing);
+
+    ExpandBar getApi();
 }

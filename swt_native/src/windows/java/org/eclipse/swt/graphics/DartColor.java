@@ -466,10 +466,12 @@ public final class DartColor extends DartResource implements IColor {
      * @see #dispose
      */
     void init(int red, int green, int blue, int alpha) {
-        if (red > 255 || red < 0 || green > 255 || green < 0 || blue > 255 || blue < 0 || alpha > 255 || alpha < 0) {
+        if ((red > 255) || (red < 0) || (green > 255) || (green < 0) || (blue > 255) || (blue < 0) || (alpha > 255) || (alpha < 0)) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        getApi().handle = (red & 0xFF) | ((green & 0xFF) << 8) | ((blue & 0xFF) << 16);
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
         this.alpha = alpha;
     }
 
@@ -511,8 +513,26 @@ public final class DartColor extends DartResource implements IColor {
         return "Color {" + getRed() + ", " + getGreen() + ", " + getBlue() + ", " + getAlpha() + "}";
     }
 
+    int blue;
+
+    int green;
+
+    int red;
+
     public int _alpha() {
         return alpha;
+    }
+
+    public int _blue() {
+        return blue;
+    }
+
+    public int _green() {
+        return green;
+    }
+
+    public int _red() {
+        return red;
     }
 
     public Color getApi() {

@@ -22,7 +22,6 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class support the layout of selectable
@@ -83,7 +82,8 @@ public class ExpandBar extends Composite {
      * @see Widget#getStyle
      */
     public ExpandBar(Composite parent, int style) {
-        this(new SWTExpandBar((SWTComposite) parent.delegate, style));
+        this((IExpandBar) null);
+        setImpl(new SwtExpandBar(parent, style, this));
     }
 
     /**
@@ -106,7 +106,11 @@ public class ExpandBar extends Composite {
      * @see #removeExpandListener
      */
     public void addExpandListener(ExpandListener listener) {
-        ((IExpandBar) this.delegate).addExpandListener(listener);
+        getImpl().addExpandListener(listener);
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -125,7 +129,7 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public ExpandItem getItem(int index) {
-        return ExpandItem.getInstance(((IExpandBar) this.delegate).getItem(index));
+        return getImpl().getItem(index);
     }
 
     /**
@@ -139,7 +143,7 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public int getItemCount() {
-        return ((IExpandBar) this.delegate).getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -159,7 +163,7 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public ExpandItem[] getItems() {
-        return ExpandItem.ofArray(((IExpandBar) this.delegate).getItems(), ExpandItem.class);
+        return getImpl().getItems();
     }
 
     /**
@@ -173,7 +177,7 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public int getSpacing() {
-        return ((IExpandBar) this.delegate).getSpacing();
+        return getImpl().getSpacing();
     }
 
     /**
@@ -195,7 +199,7 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public int indexOf(ExpandItem item) {
-        return ((IExpandBar) this.delegate).indexOf((IExpandItem) item.delegate);
+        return getImpl().indexOf(item);
     }
 
     /**
@@ -216,7 +220,7 @@ public class ExpandBar extends Composite {
      * @see #addExpandListener
      */
     public void removeExpandListener(ExpandListener listener) {
-        ((IExpandBar) this.delegate).removeExpandListener(listener);
+        getImpl().removeExpandListener(listener);
     }
 
     /**
@@ -231,23 +235,18 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public void setSpacing(int spacing) {
-        ((IExpandBar) this.delegate).setSpacing(spacing);
+        getImpl().setSpacing(spacing);
     }
 
-    protected ExpandBar(IExpandBar delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected ExpandBar(IExpandBar impl) {
+        super(impl);
     }
 
-    public static ExpandBar getInstance(IExpandBar delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        ExpandBar ref = (ExpandBar) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new ExpandBar(delegate);
-        }
-        return ref;
+    static ExpandBar createApi(IExpandBar impl) {
+        return new ExpandBar(impl);
+    }
+
+    public IExpandBar getImpl() {
+        return (IExpandBar) super.getImpl();
     }
 }

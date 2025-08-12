@@ -22,18 +22,18 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class support the layout of selectable
  * tool bar items.
  * <p>
- * The item children that may be added to instances of this class must be of
- * type <code>ToolItem</code>.
- * </p>
- * <p>
- * Note that although this class is a subclass of <code>Composite</code>, it
- * does not make sense to add <code>Control</code> children to it, or set a
- * layout on it.
+ * The item children that may be added to instances of this class
+ * must be of type <code>ToolItem</code>.
+ * </p><p>
+ * Note that although this class is a subclass of <code>Composite</code>,
+ * it does not make sense to add <code>Control</code> children to it,
+ * or set a layout on it.
  * </p>
  * <dl>
  * <dt><b>Styles:</b></dt>
@@ -43,17 +43,13 @@ import org.eclipse.swt.internal.gtk4.*;
  * </dl>
  * <p>
  * Note: Only one of the styles HORIZONTAL and VERTICAL may be specified.
- * </p>
- * <p>
+ * </p><p>
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#toolbar">ToolBar, ToolItem
- *      snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example:
- *      ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further
- *      information</a>
+ * @see <a href="http://www.eclipse.org/swt/snippets/#toolbar">ToolBar, ToolItem snippets</a>
+ * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
+ * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class ToolBar extends Composite {
@@ -93,63 +89,50 @@ public class ToolBar extends Composite {
      */
     public ToolBar(Composite parent, int style) {
         this((IToolBar) null);
-        if (parent.delegate instanceof SWTComposite swtParent) {
-            delegate = new SWTToolBar(swtParent, style);
-        } else {
-            delegate = new FlutterToolBar((FlutterComposite) parent.delegate, style);
-        }
-        INSTANCES.put(delegate, this);
+        setImpl(Config.isEquo(ToolBar.class, parent) ? new DartToolBar(parent, style, this) : new SwtToolBar(parent, style, this));
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
-     * Returns the item at the given, zero-relative index in the receiver. Throws an
-     * exception if the index is out of range.
+     * Returns the item at the given, zero-relative index in the
+     * receiver. Throws an exception if the index is out of range.
      *
      * @param index the index of the item to return
      * @return the item at the given index
      *
-     * @exception IllegalArgumentException
-     *                                     <ul>
-     *                                     <li>ERROR_INVALID_RANGE - if the index is
-     *                                     not between 0 and the number of elements
-     *                                     in the list minus 1 (inclusive)</li>
-     *                                     </ul>
-     * @exception SWTException
-     *                                     <ul>
-     *                                     <li>ERROR_WIDGET_DISPOSED - if the
-     *                                     receiver has been disposed</li>
-     *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-     *                                     called from the thread that created the
-     *                                     receiver</li>
-     *                                     </ul>
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_INVALID_RANGE - if the index is not between 0 and the number of elements in the list minus 1 (inclusive)</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      */
     public ToolItem getItem(int index) {
-        return ToolItem.getInstance(((IToolBar) this.delegate).getItem(index));
+        return getImpl().getItem(index);
     }
 
     /**
-     * Returns the item at the given point in the receiver or null if no such item
-     * exists. The point is in the coordinate system of the receiver.
+     * Returns the item at the given point in the receiver
+     * or null if no such item exists. The point is in the
+     * coordinate system of the receiver.
      *
      * @param point the point used to locate the item
      * @return the item at the given point
      *
-     * @exception IllegalArgumentException
-     *                                     <ul>
-     *                                     <li>ERROR_NULL_ARGUMENT - if the point is
-     *                                     null</li>
-     *                                     </ul>
-     * @exception SWTException
-     *                                     <ul>
-     *                                     <li>ERROR_WIDGET_DISPOSED - if the
-     *                                     receiver has been disposed</li>
-     *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-     *                                     called from the thread that created the
-     *                                     receiver</li>
-     *                                     </ul>
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the point is null</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      */
     public ToolItem getItem(Point point) {
-        return ToolItem.getInstance(((IToolBar) this.delegate).getItem(point));
+        return getImpl().getItem(point);
     }
 
     /**
@@ -157,106 +140,87 @@ public class ToolBar extends Composite {
      *
      * @return the number of items
      *
-     * @exception SWTException
-     *                         <ul>
-     *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-     *                         disposed</li>
-     *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-     *                         the thread that created the receiver</li>
-     *                         </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      */
     public int getItemCount() {
-        return ((IToolBar) this.delegate).getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
-     * Returns an array of <code>ToolItem</code>s which are the items in the
-     * receiver.
+     * Returns an array of <code>ToolItem</code>s which are the items
+     * in the receiver.
      * <p>
-     * Note: This is not the actual structure used by the receiver to maintain its
-     * list of items, so modifying the array will not affect the receiver.
+     * Note: This is not the actual structure used by the receiver
+     * to maintain its list of items, so modifying the array will
+     * not affect the receiver.
      * </p>
      *
      * @return the items in the receiver
      *
-     * @exception SWTException
-     *                         <ul>
-     *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-     *                         disposed</li>
-     *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-     *                         the thread that created the receiver</li>
-     *                         </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      */
     public ToolItem[] getItems() {
-        return ToolItem.ofArray(((IToolBar) this.delegate).getItems(), ToolItem.class);
+        return getImpl().getItems();
     }
 
     /**
-     * Returns the number of rows in the receiver. When the receiver has the
-     * <code>WRAP</code> style, the number of rows can be greater than one.
-     * Otherwise, the number of rows is always one.
+     * Returns the number of rows in the receiver. When
+     * the receiver has the <code>WRAP</code> style, the
+     * number of rows can be greater than one.  Otherwise,
+     * the number of rows is always one.
      *
      * @return the number of items
      *
-     * @exception SWTException
-     *                         <ul>
-     *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-     *                         disposed</li>
-     *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-     *                         the thread that created the receiver</li>
-     *                         </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      */
     public int getRowCount() {
-        return ((IToolBar) this.delegate).getRowCount();
+        return getImpl().getRowCount();
     }
 
     /**
-     * Searches the receiver's list starting at the first item (index 0) until an
-     * item is found that is equal to the argument, and returns the index of that
-     * item. If no item is found, returns -1.
+     * Searches the receiver's list starting at the first item
+     * (index 0) until an item is found that is equal to the
+     * argument, and returns the index of that item. If no item
+     * is found, returns -1.
      *
      * @param item the search item
      * @return the index of the item
      *
-     * @exception IllegalArgumentException
-     *                                     <ul>
-     *                                     <li>ERROR_NULL_ARGUMENT - if the tool
-     *                                     item is null</li>
-     *                                     <li>ERROR_INVALID_ARGUMENT - if the tool
-     *                                     item has been disposed</li>
-     *                                     </ul>
-     * @exception SWTException
-     *                                     <ul>
-     *                                     <li>ERROR_WIDGET_DISPOSED - if the
-     *                                     receiver has been disposed</li>
-     *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-     *                                     called from the thread that created the
-     *                                     receiver</li>
-     *                                     </ul>
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the tool item is null</li>
+     *    <li>ERROR_INVALID_ARGUMENT - if the tool item has been disposed</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      */
     public int indexOf(ToolItem item) {
-        return ((IToolBar) this.delegate).indexOf((IToolItem) item.delegate);
+        return getImpl().indexOf(item);
     }
 
-    @Override
     public void setToolTipText(String string) {
-        ((IToolBar) this.delegate).setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
-    protected ToolBar(IToolBar delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected ToolBar(IToolBar impl) {
+        super(impl);
     }
 
-    public static ToolBar getInstance(IToolBar delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        ToolBar ref = (ToolBar) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new ToolBar(delegate);
-        }
-        return ref;
+    static ToolBar createApi(IToolBar impl) {
+        return new ToolBar(impl);
+    }
+
+    public IToolBar getImpl() {
+        return (IToolBar) super.getImpl();
     }
 }

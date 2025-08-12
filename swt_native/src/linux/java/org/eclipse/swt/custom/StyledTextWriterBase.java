@@ -34,7 +34,7 @@ import org.eclipse.swt.graphics.*;
  */
 abstract class StyledTextWriterBase extends TextWriter {
 
-    final SWTStyledText styledText;
+    final StyledText styledText;
 
     /**
      * Creates a writer that processed content starting at offset "start"
@@ -47,7 +47,7 @@ abstract class StyledTextWriterBase extends TextWriter {
      */
     public StyledTextWriterBase(StyledText styledText, int start, int length) {
         super(start, length);
-        this.styledText = (SWTStyledText) styledText.delegate;
+        this.styledText = styledText;
     }
 
     /**
@@ -82,14 +82,14 @@ abstract class StyledTextWriterBase extends TextWriter {
         if (isClosed()) {
             SWT.error(SWT.ERROR_IO);
         }
-        int lineIndex = styledText.content.getLineAtOffset(lineOffset);
+        int lineIndex = styledText.getImpl()._content().getLineAtOffset(lineOffset);
         int lineAlignment;
         int lineIndent;
         boolean lineJustify;
         int verticalIndent;
         int[] ranges;
         StyleRange[] styles;
-        StyledTextEvent event = styledText.getLineStyleData(lineOffset, line);
+        StyledTextEvent event = ((SwtStyledText) styledText.getImpl()).getLineStyleData(lineOffset, line);
         if (event != null) {
             verticalIndent = event.verticalIndent;
             lineAlignment = event.alignment;
@@ -98,18 +98,18 @@ abstract class StyledTextWriterBase extends TextWriter {
             ranges = event.ranges;
             styles = event.styles;
         } else {
-            verticalIndent = styledText.renderer.getLineVerticalIndent(lineIndex);
-            lineAlignment = styledText.renderer.getLineAlignment(lineIndex, styledText.alignment);
-            lineIndent = styledText.renderer.getLineIndent(lineIndex, styledText.indent);
-            lineJustify = styledText.renderer.getLineJustify(lineIndex, styledText.justify);
-            ranges = styledText.renderer.getRanges(lineOffset, line.length());
-            styles = styledText.renderer.getStyleRanges(lineOffset, line.length(), false);
+            verticalIndent = ((SwtStyledTextRenderer) styledText.getImpl()._renderer().getImpl()).getLineVerticalIndent(lineIndex);
+            lineAlignment = ((SwtStyledTextRenderer) styledText.getImpl()._renderer().getImpl()).getLineAlignment(lineIndex, styledText.getImpl()._alignment());
+            lineIndent = ((SwtStyledTextRenderer) styledText.getImpl()._renderer().getImpl()).getLineIndent(lineIndex, styledText.getImpl()._indent());
+            lineJustify = ((SwtStyledTextRenderer) styledText.getImpl()._renderer().getImpl()).getLineJustify(lineIndex, styledText.getImpl()._justify());
+            ranges = ((SwtStyledTextRenderer) styledText.getImpl()._renderer().getImpl()).getRanges(lineOffset, line.length());
+            styles = ((SwtStyledTextRenderer) styledText.getImpl()._renderer().getImpl()).getStyleRanges(lineOffset, line.length(), false);
         }
         if (styles == null) {
             styles = new StyleRange[0];
         }
-        event = styledText.getLineBackgroundData(lineOffset, line);
-        Color lineBackground = (event != null && event.lineBackground != null) ? event.lineBackground : styledText.renderer.getLineBackground(lineIndex, null);
+        event = ((SwtStyledText) styledText.getImpl()).getLineBackgroundData(lineOffset, line);
+        Color lineBackground = (event != null && event.lineBackground != null) ? event.lineBackground : ((SwtStyledTextRenderer) styledText.getImpl()._renderer().getImpl()).getLineBackground(lineIndex, null);
         writeStyledLine(line, lineOffset, ranges, styles, lineBackground, lineIndent, verticalIndent, lineAlignment, lineJustify);
     }
 

@@ -31,14 +31,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class BusyIndicator {
 
-    private static final AtomicInteger nextBusyId = new AtomicInteger();
-
-    //$NON-NLS-1$
-    static final String BUSYID_NAME = "SWT BusyIndicator";
-
-    //$NON-NLS-1$
-    static final String BUSY_CURSOR = "SWT BusyIndicator Cursor";
-
     /**
      * Runs the given <code>Runnable</code> while providing
      * busy feedback using this busy indicator.
@@ -55,21 +47,7 @@ public class BusyIndicator {
      * </ul>
      */
     public static void showWhile(Display display, Runnable runnable) {
-        if (runnable == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (display == null) {
-            display = Display.getCurrent();
-            if (display == null) {
-                runnable.run();
-                return;
-            }
-        }
-        Integer busyId = setBusyCursor(display);
-        try {
-            runnable.run();
-        } finally {
-            clearBusyCursor(display, busyId);
-        }
+        SwtBusyIndicator.showWhile(display, runnable);
     }
 
     /**
@@ -90,62 +68,7 @@ public class BusyIndicator {
      *           external event.
      */
     public static void showWhile(Future<?> future) {
-        if (future == null) {
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        }
-        if (!future.isDone()) {
-            Display display = Display.getCurrent();
-            if (display == null || display.isDisposed()) {
-                try {
-                    future.get();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } catch (ExecutionException e) {
-                    // ignore caller might want to handle this...
-                } catch (CancellationException e) {
-                    // ignore but caller might want to check afterwards
-                }
-            } else {
-                Integer busyId = setBusyCursor(display);
-                try {
-                    if (future instanceof CompletionStage<?> stage) {
-                        // let us wake up from sleep once the future is done
-                        stage.handle((nil1, nil2) -> {
-                            if (!display.isDisposed()) {
-                                try {
-                                    display.wake();
-                                } catch (SWTException e) {
-                                    // ignore then, this can happen due to the async nature between our check for
-                                    // disposed and the actual call to wake the display can be disposed
-                                }
-                            }
-                            return null;
-                        });
-                    } else {
-                        // for plain features we need to use a workaround, we install a timer every
-                        // few ms, that should be short enough to not be noticeable by the user and long
-                        // enough to not burn more CPU time than necessary
-                        int wakeTime = 10;
-                        display.timerExec(wakeTime, new Runnable() {
-
-                            @Override
-                            public void run() {
-                                if (!future.isDone() && !display.isDisposed()) {
-                                    display.timerExec(wakeTime, this);
-                                }
-                            }
-                        });
-                    }
-                    while (!future.isDone() && !display.isDisposed()) {
-                        if (!display.readAndDispatch()) {
-                            display.sleep();
-                        }
-                    }
-                } finally {
-                    clearBusyCursor(display, busyId);
-                }
-            }
-        }
+        SwtBusyIndicator.showWhile(future);
     }
 
     /**
@@ -164,7 +87,7 @@ public class BusyIndicator {
      * @since 3.123
      */
     public static <E extends Exception> CompletableFuture<?> execute(SwtRunnable<E> action) {
-        return execute(action, ForkJoinPool.commonPool());
+        return SwtBusyIndicator.execute(action);
     }
 
     /**
@@ -185,10 +108,7 @@ public class BusyIndicator {
      * @since 3.123
      */
     public static <E extends Exception> CompletableFuture<?> execute(SwtRunnable<E> action, Executor executor) {
-        return compute(() -> {
-            action.run();
-            return null;
-        }, executor);
+        return SwtBusyIndicator.execute(action, executor);
     }
 
     /**
@@ -207,7 +127,7 @@ public class BusyIndicator {
      * @since 3.123
      */
     public static <V, E extends Exception> CompletableFuture<V> compute(SwtCallable<V, E> action) {
-        return compute(action, ForkJoinPool.commonPool());
+        return SwtBusyIndicator.compute(action);
     }
 
     /**
@@ -229,74 +149,31 @@ public class BusyIndicator {
      * @since 3.123
      */
     public static <V, E extends Exception> CompletableFuture<V> compute(SwtCallable<V, E> action, Executor executor) {
-        Objects.requireNonNull(action);
-        Objects.requireNonNull(executor);
-        if (executor instanceof SWTDisplay) {
-            throw new IllegalArgumentException("passing a Display as an executor is not allowed!");
-        }
-        Display display = Display.findDisplay(Thread.currentThread());
-        if (display == null) {
-            try {
-                V inplaceResult = action.call();
-                return CompletableFuture.completedFuture(inplaceResult);
-            } catch (Exception e) {
-                return CompletableFuture.failedFuture(e);
-            }
-        }
-        Integer busyId = setBusyCursor(display);
-        CompletableFuture<V> future = new CompletableFuture<>();
-        executor.execute(() -> {
-            try {
-                if (future.isCancelled()) {
-                    return;
-                }
-                V asyncResult = action.call();
-                future.complete(asyncResult);
-            } catch (Exception e) {
-                future.completeExceptionally(e);
-            } finally {
-                display.asyncExec(() -> clearBusyCursor(display, busyId));
-            }
-        });
-        return future;
+        return SwtBusyIndicator.compute(action, executor);
     }
 
-    private static void clearBusyCursor(Display display, Integer busyId) {
-        if (display.isDisposed()) {
-            return;
-        }
-        Shell[] shells = display.getShells();
-        for (Shell shell : shells) {
-            Integer id = (Integer) shell.getData(BUSYID_NAME);
-            if (Objects.equals(id, busyId)) {
-                setCursorAndId(shell, null, null);
-            }
-        }
+    public BusyIndicator() {
+        this((IBusyIndicator) null);
+        setImpl(new SwtBusyIndicator(this));
     }
 
-    private static Integer setBusyCursor(Display display) {
-        Integer busyId = nextBusyId.getAndIncrement();
-        Cursor cursor = display.getSystemCursor(SWT.CURSOR_WAIT);
-        Shell[] shells = display.getShells();
-        for (Shell shell : shells) {
-            Integer id = (Integer) shell.getData(BUSYID_NAME);
-            if (id == null) {
-                setCursorAndId(shell, cursor, busyId);
-            }
-        }
-        return busyId;
+    protected IBusyIndicator impl;
+
+    protected BusyIndicator(IBusyIndicator impl) {
+        if (impl != null)
+            impl.setApi(this);
     }
 
-    /**
-     * Paranoia code to make sure we don't break UI because of one shell disposed,
-     * see bug 532632 comment 20
-     */
-    private static void setCursorAndId(Shell shell, Cursor cursor, Integer busyId) {
-        if (!shell.isDisposed()) {
-            shell.setCursor(cursor);
-        }
-        if (!shell.isDisposed()) {
-            shell.setData(BUSYID_NAME, busyId);
-        }
+    static BusyIndicator createApi(IBusyIndicator impl) {
+        return new BusyIndicator(impl);
+    }
+
+    public IBusyIndicator getImpl() {
+        return impl;
+    }
+
+    protected BusyIndicator setImpl(IBusyIndicator impl) {
+        this.impl = impl;
+        return this;
     }
 }

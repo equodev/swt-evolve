@@ -2460,12 +2460,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     @Override
     public void setBackground(Color color) {
+        dirty();
         super.setBackground(color);
         //TODO: need better caching strategy
         ((DartCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
         updateBkImages(true);
         redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -2529,6 +2529,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      *  @since 3.6
      */
     public void setBackground(Color[] colors, int[] percents, boolean vertical) {
+        dirty();
         checkWidget();
         if (colors != null) {
             if (percents == null || percents.length != colors.length - 1) {
@@ -2590,16 +2591,15 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         }
         // Refresh with the new settings
         redraw();
-        getBridge().dirty(this);
     }
 
     @Override
     public void setBackgroundImage(Image image) {
+        dirty();
         super.setBackgroundImage(image);
         //TODO: need better caching strategy
         ((DartCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
         redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -2613,12 +2613,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setBorderVisible(boolean show) {
+        dirty();
         checkWidget();
         if (borderVisible == show)
             return;
         this.borderVisible = show;
         updateFolder(REDRAW);
-        getBridge().dirty(this);
     }
 
     /**
@@ -2824,6 +2824,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     @Override
     public void setFont(Font font) {
+        dirty();
         checkWidget();
         if (font != null && font.equals(getFont()))
             return;
@@ -2836,11 +2837,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         ((DartCTabFolderRenderer) renderer.getImpl()).resetChevronFont();
         updateChevronImage(true);
         updateFolder(REDRAW);
-        getBridge().dirty(this);
     }
 
     @Override
     public void setForeground(Color color) {
+        dirty();
         super.setForeground(color);
         // Chevron painting is cached as image and only recreated if number of hidden tabs changed.
         // To apply the new foreground color the image must be recreated with new foreground color.
@@ -2849,7 +2850,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         updateMaxImage();
         updateMinImage();
         redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -3149,13 +3149,13 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMaximizeVisible(boolean visible) {
+        dirty();
         checkWidget();
         if (showMax == visible)
             return;
         // display maximize button
         showMax = visible;
         updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
-        getBridge().dirty(this);
     }
 
     /**
@@ -3192,6 +3192,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMaximized(boolean maximize) {
+        dirty();
         checkWidget();
         if (this.maximized == maximize)
             return;
@@ -3206,7 +3207,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             //$NON-NLS-1$ //$NON-NLS-2$
             maxItem.setToolTipText(maximized ? SWT.getMessage("SWT_Restore") : SWT.getMessage("SWT_Maximize"));
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -3223,13 +3223,13 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMinimizeVisible(boolean visible) {
+        dirty();
         checkWidget();
         if (showMin == visible)
             return;
         // display minimize button
         showMin = visible;
         updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
-        getBridge().dirty(this);
     }
 
     /**
@@ -3245,6 +3245,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMinimized(boolean minimize) {
+        dirty();
         checkWidget();
         if (this.minimized == minimize)
             return;
@@ -3259,7 +3260,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             //$NON-NLS-1$ //$NON-NLS-2$
             minItem.setToolTipText(minimized ? SWT.getMessage("SWT_Restore") : SWT.getMessage("SWT_Minimize"));
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -3277,6 +3277,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMinimumCharacters(int count) {
+        dirty();
         checkWidget();
         if (count < 0)
             SWT.error(SWT.ERROR_INVALID_RANGE);
@@ -3284,7 +3285,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             return;
         minChars = count;
         updateFolder(REDRAW_TABS);
-        getBridge().dirty(this);
     }
 
     /**
@@ -3314,6 +3314,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.1
      */
     public void setMRUVisible(boolean show) {
+        dirty();
         checkWidget();
         if (mru == show)
             return;
@@ -3331,7 +3332,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             }
             updateFolder(REDRAW_TABS);
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -3396,6 +3396,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setSelection(int index) {
+        dirty();
         checkWidget();
         if (index < 0 || index >= items.length)
             return;
@@ -3429,7 +3430,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         }
         showItem(selection);
         redraw();
-        getBridge().dirty(this);
     }
 
     void setSelection(int index, boolean notify) {
@@ -3460,6 +3460,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setSelectionBackground(Color color) {
+        dirty();
         if (inDispose)
             return;
         checkWidget();
@@ -3473,7 +3474,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         ((DartCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
         if (selectedIndex > -1)
             redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -3535,6 +3535,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      *  @since 3.0
      */
     public void setSelectionBackground(Color[] colors, int[] percents, boolean vertical) {
+        dirty();
         checkWidget();
         int colorsLength;
         //null == no highlight
@@ -3619,7 +3620,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         // Refresh with the new settings
         if (selectedIndex > -1)
             redraw();
-        getBridge().dirty(this);
     }
 
     /*
@@ -3645,6 +3645,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setSelectionBackground(Image image) {
+        dirty();
         checkWidget();
         setSelectionHighlightGradientColor(null);
         if (image == selectionBgImage)
@@ -3660,7 +3661,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         ((DartCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
         if (selectedIndex > -1)
             redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -3674,6 +3674,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setSelectionForeground(Color color) {
+        dirty();
         checkWidget();
         if (selectionForeground == color)
             return;
@@ -3682,7 +3683,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         selectionForeground = color;
         if (selectedIndex > -1)
             redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -3699,12 +3699,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.121
      */
     public void setSelectionBarThickness(int thickness) {
+        dirty();
         checkWidget();
         if (thickness < 0) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.selectionHighlightBarThickness = thickness;
-        getBridge().dirty(this);
     }
 
     /**
@@ -3720,12 +3720,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setSimple(boolean simple) {
+        dirty();
         checkWidget();
         if (this.simple != simple) {
             this.simple = simple;
             updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -3741,6 +3741,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setSingle(boolean single) {
+        dirty();
         checkWidget();
         if (this.single != single) {
             this.single = single;
@@ -3753,7 +3754,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             }
             updateFolder(REDRAW);
         }
-        getBridge().dirty(this);
     }
 
     int getControlY(Point size, Rectangle[] rects, int borderBottom, int borderTop, int i) {
@@ -3775,13 +3775,13 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setTabHeight(int height) {
+        dirty();
         checkWidget();
         if (height < -1) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         fixedTabHeight = height;
         updateFolder(UPDATE_TAB_HEIGHT);
-        getBridge().dirty(this);
     }
 
     /**
@@ -3799,6 +3799,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setTabPosition(int position) {
+        dirty();
         checkWidget();
         this.tabPosition = position;
         if (position != SWT.TOP && position != SWT.BOTTOM) {
@@ -3808,7 +3809,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             onBottom = position == SWT.BOTTOM;
             updateFolder(REDRAW);
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -3858,6 +3858,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setTopRight(Control control, int alignment) {
+        dirty();
         checkWidget();
         if (alignment != SWT.RIGHT && alignment != SWT.FILL && alignment != (SWT.RIGHT | SWT.WRAP)) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -3875,7 +3876,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         if (control != null)
             addTabControl(control, SWT.TRAIL | alignment, -1, false);
         updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
-        getBridge().dirty(this);
     }
 
     /**
@@ -3892,13 +3892,13 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setUnselectedCloseVisible(boolean visible) {
+        dirty();
         checkWidget();
         if (showUnselectedClose == visible)
             return;
         // display close button when mouse hovers
         showUnselectedClose = visible;
         updateFolder(REDRAW);
-        getBridge().dirty(this);
     }
 
     /**
@@ -3914,13 +3914,13 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setUnselectedImageVisible(boolean visible) {
+        dirty();
         checkWidget();
         if (showUnselectedImage == visible)
             return;
         // display image on unselected items
         showUnselectedImage = visible;
         updateFolder(REDRAW);
-        getBridge().dirty(this);
     }
 
     /**
@@ -3936,13 +3936,13 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.125
      */
     public void setSelectedImageVisible(boolean visible) {
+        dirty();
         checkWidget();
         if (showSelectedImage == visible)
             return;
         // display image on selected items
         showSelectedImage = visible;
         updateFolder(REDRAW);
-        getBridge().dirty(this);
     }
 
     /**
@@ -4004,8 +4004,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                 item.dispose();
             }
         }
-        //$NON-NLS-1$
-        final String id = "CTabFolder_showList_Index";
         for (CTabItem tab : items) {
             if (((DartCTabItem) tab.getImpl()).showing)
                 continue;
@@ -4379,13 +4377,13 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.106
      */
     public void setHighlightEnabled(boolean enabled) {
+        dirty();
         checkWidget();
         if (highlightEnabled == enabled) {
             return;
         }
         highlightEnabled = enabled;
         updateFolder(REDRAW);
-        getBridge().dirty(this);
     }
 
     /**
@@ -4707,16 +4705,16 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         return tabPosition;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                setSelection(e.index, true);
-            });
-        });
+    protected void _hookEvents() {
+        super._hookEvents();
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                setSelection(e.index, true);
             });
         });
     }

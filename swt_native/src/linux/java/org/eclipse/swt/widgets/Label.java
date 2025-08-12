@@ -22,7 +22,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a non-selectable
@@ -96,7 +96,8 @@ public class Label extends Control {
      * @see Widget#getStyle
      */
     public Label(Composite parent, int style) {
-        this(new SWTLabel((SWTComposite) parent.delegate, style));
+        this((ILabel) null);
+        setImpl(Config.isEquo(Label.class, parent) ? new DartLabel(parent, style, this) : new SwtLabel(parent, style, this));
     }
 
     /**
@@ -114,7 +115,7 @@ public class Label extends Control {
      * </ul>
      */
     public int getAlignment() {
-        return ((ILabel) this.delegate).getAlignment();
+        return getImpl().getAlignment();
     }
 
     /**
@@ -129,7 +130,7 @@ public class Label extends Control {
      * </ul>
      */
     public Image getImage() {
-        return ((ILabel) this.delegate).getImage();
+        return getImpl().getImage();
     }
 
     /**
@@ -145,7 +146,7 @@ public class Label extends Control {
      * </ul>
      */
     public String getText() {
-        return ((ILabel) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -162,7 +163,7 @@ public class Label extends Control {
      * </ul>
      */
     public void setAlignment(int alignment) {
-        ((ILabel) this.delegate).setAlignment(alignment);
+        getImpl().setAlignment(alignment);
     }
 
     /**
@@ -180,7 +181,7 @@ public class Label extends Control {
      * </ul>
      */
     public void setImage(Image image) {
-        ((ILabel) this.delegate).setImage(image);
+        getImpl().setImage(image);
     }
 
     /**
@@ -215,23 +216,18 @@ public class Label extends Control {
      * </ul>
      */
     public void setText(String string) {
-        ((ILabel) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
-    protected Label(ILabel delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Label(ILabel impl) {
+        super(impl);
     }
 
-    public static Label getInstance(ILabel delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Label ref = (Label) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Label(delegate);
-        }
-        return ref;
+    static Label createApi(ILabel impl) {
+        return new Label(impl);
+    }
+
+    public ILabel getImpl() {
+        return (ILabel) super.getImpl();
     }
 }

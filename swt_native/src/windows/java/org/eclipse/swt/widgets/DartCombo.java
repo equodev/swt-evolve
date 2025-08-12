@@ -322,7 +322,6 @@ public class DartCombo extends DartComposite implements ICombo {
         if (nSegments == 0)
             return;
         int charCount = 0, segmentCount = 0;
-        char defaultSeparator = getOrientation() == SWT.RIGHT_TO_LEFT ? RTL_MARK : LTR_MARK;
         while (segmentCount < nSegments) {
             segments[segmentCount] = charCount - segmentCount;
             segmentCount++;
@@ -340,8 +339,6 @@ public class DartCombo extends DartComposite implements ICombo {
 
     void applyListSegments() {
         int index = items.length;
-        int cp = getCodePage();
-        String string;
         if (!noSelection) {
         }
         while (index-- > 0) {
@@ -396,7 +393,6 @@ public class DartCombo extends DartComposite implements ICombo {
         }
         boolean oldIgnoreCharacter = ignoreCharacter, oldIgnoreModify = ignoreModify;
         ignoreCharacter = ignoreModify = true;
-        int cp = getCodePage();
         /* Get the current selection */
         int[] start = new int[1], end = new int[1];
         start[0] = untranslateOffset(start[0]);
@@ -451,34 +447,6 @@ public class DartCombo extends DartComposite implements ICombo {
 
     @Override
     void createHandle() {
-        /*
-	* Feature in Windows.  When the selection changes in a combo box,
-	* Windows draws the selection, even when the combo box does not
-	* have focus.  Strictly speaking, this is the correct Windows
-	* behavior because the combo box sets ES_NOHIDESEL on the text
-	* control that it creates.  Despite this, it looks strange because
-	* Windows also clears the selection and selects all the text when
-	* the combo box gets focus.  The fix is use the CBT hook to clear
-	* the ES_NOHIDESEL style bit when the text control is created.
-	*/
-        if ((getApi().style & (SWT.READ_ONLY | SWT.SIMPLE)) != 0) {
-            super.createHandle();
-        } else {
-            super.createHandle();
-            cbtHook = 0;
-        }
-        getApi().state &= ~(CANVAS | THEME_BACKGROUND);
-        if (((SwtDisplay) display.getImpl()).comboUseDarkTheme) {
-        }
-        stateFlagsUsable = stateFlagsTest();
-        /*
-	* Bug in Windows.  If the combo box has the CBS_SIMPLE style,
-	* the list portion of the combo box is not drawn correctly the
-	* first time, causing pixel corruption.  The fix is to ensure
-	* that the combo box has been resized more than once.
-	*/
-        if ((getApi().style & SWT.SIMPLE) != 0) {
-        }
     }
 
     @Override
@@ -749,9 +717,9 @@ public class DartCombo extends DartComposite implements ICombo {
      * @since 3.4
      */
     public void setListVisible(boolean visible) {
+        dirty();
         checkWidget();
         this.listVisible = visible;
-        getBridge().dirty(this);
     }
 
     /**
@@ -1029,7 +997,7 @@ public class DartCombo extends DartComposite implements ICombo {
             }
             return -1;
         }
-        int index = start - 1, last = 0;
+        int index = start - 1;
         do {
         } while (!string.equals(getItem(index)));
         return index;
@@ -1128,12 +1096,10 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         if (start > end)
             return;
-        long hDC = 0, oldFont = 0, newFont = 0;
         int newWidth = 0;
         if ((getApi().style & SWT.H_SCROLL) != 0) {
         }
         for (int i = start; i <= end; i++) {
-            char[] buffer = null;
             if ((getApi().style & SWT.H_SCROLL) != 0) {
             }
             if ((getApi().style & SWT.H_SCROLL) != 0) {
@@ -1355,6 +1321,7 @@ public class DartCombo extends DartComposite implements ICombo {
 
     @Override
     public void setFont(Font font) {
+        dirty();
         checkWidget();
         /*
 	* Feature in Windows.  For some reason, in a editable combo box,
@@ -1373,7 +1340,6 @@ public class DartCombo extends DartComposite implements ICombo {
             lockText = oldLockText;
         if ((getApi().style & SWT.H_SCROLL) != 0)
             setScrollWidth();
-        getBridge().dirty(this);
     }
 
     @Override
@@ -1425,6 +1391,7 @@ public class DartCombo extends DartComposite implements ICombo {
      * </ul>
      */
     public void setItems(String... items) {
+        dirty();
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1432,12 +1399,10 @@ public class DartCombo extends DartComposite implements ICombo {
             if (item == null)
                 error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        long hDC = 0, oldFont = 0, newFont = 0;
         int newWidth = 0;
         if ((getApi().style & SWT.H_SCROLL) != 0) {
             setScrollWidth(0);
         }
-        int codePage = getCodePage();
         for (String item : items) {
             if ((getApi().style & SWT.H_SCROLL) != 0) {
             }
@@ -1446,7 +1411,6 @@ public class DartCombo extends DartComposite implements ICombo {
             setScrollWidth(newWidth + 3);
         }
         sendEvent(SWT.Modify);
-        getBridge().dirty(this);
         // widget could be disposed at this point
     }
 
@@ -1465,13 +1429,12 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     @Override
     public void setOrientation(int orientation) {
+        dirty();
         super.setOrientation(orientation);
-        getBridge().dirty(this);
     }
 
     void setScrollWidth() {
         int newWidth = 0;
-        long newFont, oldFont = 0;
         setScrollWidth(newWidth + 3);
     }
 
@@ -1532,11 +1495,11 @@ public class DartCombo extends DartComposite implements ICombo {
      * </ul>
      */
     public void setSelection(Point selection) {
+        dirty();
         checkWidget();
         this.selection = selection;
         if (selection == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        getBridge().dirty(this);
     }
 
     /**
@@ -1568,6 +1531,7 @@ public class DartCombo extends DartComposite implements ICombo {
      * </ul>
      */
     public void setText(String string) {
+        dirty();
         checkWidget();
         this.text = string;
         if (string == null)
@@ -1582,7 +1546,6 @@ public class DartCombo extends DartComposite implements ICombo {
         int limit = Combo.LIMIT;
         if (string.length() > limit)
             string = string.substring(0, limit);
-        getBridge().dirty(this);
     }
 
     /**
@@ -1606,6 +1569,7 @@ public class DartCombo extends DartComposite implements ICombo {
      * @see #LIMIT
      */
     public void setTextLimit(int limit) {
+        dirty();
         checkWidget();
         this.textLimit = limit;
         if (limit == 0)
@@ -1613,7 +1577,6 @@ public class DartCombo extends DartComposite implements ICombo {
         if (segments != null && limit > 0) {
         } else {
         }
-        getBridge().dirty(this);
     }
 
     @Override
@@ -1638,12 +1601,12 @@ public class DartCombo extends DartComposite implements ICombo {
      * @since 3.0
      */
     public void setVisibleItemCount(int count) {
+        dirty();
         checkWidget();
         if (count < 0)
             return;
         visibleCount = count;
         updateDropDownHeight();
-        getBridge().dirty(this);
     }
 
     @Override
@@ -1862,8 +1825,8 @@ public class DartCombo extends DartComposite implements ICombo {
         return textLimit;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
                 setText(e.text);
@@ -1874,14 +1837,14 @@ public class DartCombo extends DartComposite implements ICombo {
                 sendEvent(SWT.Segments, e);
             });
         });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Selection, e);
-            });
-        });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
             });
         });
         FlutterBridge.on(this, "Verify", "Verify", e -> {

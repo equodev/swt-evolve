@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class are selectable user interface
@@ -70,7 +69,8 @@ public class CoolItem extends Item {
      * @see Widget#getStyle
      */
     public CoolItem(CoolBar parent, int style) {
-        this(new SWTCoolItem((SWTCoolBar) parent.delegate, style));
+        this((ICoolItem) null);
+        setImpl(new SwtCoolItem(parent, style, this));
     }
 
     /**
@@ -106,7 +106,8 @@ public class CoolItem extends Item {
      * @see Widget#getStyle
      */
     public CoolItem(CoolBar parent, int style, int index) {
-        this(new SWTCoolItem((SWTCoolBar) parent.delegate, style, index));
+        this((ICoolItem) null);
+        setImpl(new SwtCoolItem(parent, style, index, this));
     }
 
     /**
@@ -140,7 +141,11 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ICoolItem) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -171,12 +176,11 @@ public class CoolItem extends Item {
      * @see Scrollable#getClientArea
      */
     public Point computeSize(int wHint, int hHint) {
-        return ((ICoolItem) this.delegate).computeSize(wHint, hHint);
+        return getImpl().computeSize(wHint, hHint);
     }
 
-    @Override
     public void dispose() {
-        ((ICoolItem) this.delegate).dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -191,7 +195,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        return ((ICoolItem) this.delegate).getBounds();
+        return getImpl().getBounds();
     }
 
     /**
@@ -205,7 +209,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        return Control.getInstance(((ICoolItem) this.delegate).getControl());
+        return getImpl().getControl();
     }
 
     /**
@@ -222,7 +226,7 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public Point getMinimumSize() {
-        return ((ICoolItem) this.delegate).getMinimumSize();
+        return getImpl().getMinimumSize();
     }
 
     /**
@@ -236,7 +240,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public CoolBar getParent() {
-        return CoolBar.getInstance(((ICoolItem) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -252,7 +256,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Point getPreferredSize() {
-        return ((ICoolItem) this.delegate).getPreferredSize();
+        return getImpl().getPreferredSize();
     }
 
     /**
@@ -269,7 +273,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Point getSize() {
-        return ((ICoolItem) this.delegate).getSize();
+        return getImpl().getSize();
     }
 
     /**
@@ -292,7 +296,7 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ICoolItem) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -311,7 +315,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        ((ICoolItem) this.delegate).setControl((IControl) control.delegate);
+        getImpl().setControl(control);
     }
 
     /**
@@ -329,7 +333,7 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void setMinimumSize(int width, int height) {
-        ((ICoolItem) this.delegate).setMinimumSize(width, height);
+        getImpl().setMinimumSize(width, height);
     }
 
     /**
@@ -349,7 +353,7 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void setMinimumSize(Point size) {
-        ((ICoolItem) this.delegate).setMinimumSize(size);
+        getImpl().setMinimumSize(size);
     }
 
     /**
@@ -364,7 +368,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setPreferredSize(int width, int height) {
-        ((ICoolItem) this.delegate).setPreferredSize(width, height);
+        getImpl().setPreferredSize(width, height);
     }
 
     /**
@@ -381,7 +385,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setPreferredSize(Point size) {
-        ((ICoolItem) this.delegate).setPreferredSize(size);
+        getImpl().setPreferredSize(size);
     }
 
     /**
@@ -401,7 +405,7 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setSize(int width, int height) {
-        ((ICoolItem) this.delegate).setSize(width, height);
+        getImpl().setSize(width, height);
     }
 
     /**
@@ -423,23 +427,18 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setSize(Point size) {
-        ((ICoolItem) this.delegate).setSize(size);
+        getImpl().setSize(size);
     }
 
-    protected CoolItem(ICoolItem delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected CoolItem(ICoolItem impl) {
+        super(impl);
     }
 
-    public static CoolItem getInstance(ICoolItem delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        CoolItem ref = (CoolItem) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new CoolItem(delegate);
-        }
-        return ref;
+    static CoolItem createApi(ICoolItem impl) {
+        return new CoolItem(impl);
+    }
+
+    public ICoolItem getImpl() {
+        return (ICoolItem) super.getImpl();
     }
 }

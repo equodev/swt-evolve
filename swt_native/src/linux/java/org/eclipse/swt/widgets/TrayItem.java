@@ -21,7 +21,6 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class represent icons that can be placed on the
@@ -75,7 +74,8 @@ public class TrayItem extends Item {
      * @see Widget#getStyle
      */
     public TrayItem(Tray parent, int style) {
-        this(new SWTTrayItem((SWTTray) parent.delegate, style));
+        this((ITrayItem) null);
+        setImpl(new SwtTrayItem(parent, style, this));
     }
 
     /**
@@ -100,7 +100,7 @@ public class TrayItem extends Item {
      * @since 3.3
      */
     public void addMenuDetectListener(MenuDetectListener listener) {
-        ((ITrayItem) this.delegate).addMenuDetectListener(listener);
+        getImpl().addMenuDetectListener(listener);
     }
 
     /**
@@ -128,7 +128,11 @@ public class TrayItem extends Item {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ITrayItem) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -144,7 +148,7 @@ public class TrayItem extends Item {
      * @since 3.2
      */
     public Tray getParent() {
-        return Tray.getInstance(((ITrayItem) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -161,7 +165,7 @@ public class TrayItem extends Item {
      * @since 3.8
      */
     public Image getHighlightImage() {
-        return ((ITrayItem) this.delegate).getHighlightImage();
+        return getImpl().getHighlightImage();
     }
 
     /**
@@ -178,7 +182,7 @@ public class TrayItem extends Item {
      * @since 3.2
      */
     public ToolTip getToolTip() {
-        return ToolTip.getInstance(((ITrayItem) this.delegate).getToolTip());
+        return getImpl().getToolTip();
     }
 
     /**
@@ -193,7 +197,7 @@ public class TrayItem extends Item {
      * </ul>
      */
     public String getToolTipText() {
-        return ((ITrayItem) this.delegate).getToolTipText();
+        return getImpl().getToolTipText();
     }
 
     /**
@@ -208,7 +212,7 @@ public class TrayItem extends Item {
      * </ul>
      */
     public boolean getVisible() {
-        return ((ITrayItem) this.delegate).getVisible();
+        return getImpl().getVisible();
     }
 
     /**
@@ -232,7 +236,7 @@ public class TrayItem extends Item {
      * @since 3.3
      */
     public void removeMenuDetectListener(MenuDetectListener listener) {
-        ((ITrayItem) this.delegate).removeMenuDetectListener(listener);
+        getImpl().removeMenuDetectListener(listener);
     }
 
     /**
@@ -253,7 +257,7 @@ public class TrayItem extends Item {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ITrayItem) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -272,7 +276,7 @@ public class TrayItem extends Item {
      * @since 3.8
      */
     public void setHighlightImage(Image image) {
-        ((ITrayItem) this.delegate).setHighlightImage(image);
+        getImpl().setHighlightImage(image);
     }
 
     /**
@@ -288,9 +292,8 @@ public class TrayItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setImage(Image image) {
-        ((ITrayItem) this.delegate).setImage(image);
+        getImpl().setImage(image);
     }
 
     /**
@@ -307,7 +310,7 @@ public class TrayItem extends Item {
      * @since 3.2
      */
     public void setToolTip(ToolTip toolTip) {
-        ((ITrayItem) this.delegate).setToolTip((IToolTip) toolTip.delegate);
+        getImpl().setToolTip(toolTip);
     }
 
     /**
@@ -336,7 +339,7 @@ public class TrayItem extends Item {
      * </ul>
      */
     public void setToolTipText(String string) {
-        ((ITrayItem) this.delegate).setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
     /**
@@ -351,23 +354,18 @@ public class TrayItem extends Item {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        ((ITrayItem) this.delegate).setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
-    protected TrayItem(ITrayItem delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected TrayItem(ITrayItem impl) {
+        super(impl);
     }
 
-    public static TrayItem getInstance(ITrayItem delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        TrayItem ref = (TrayItem) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new TrayItem(delegate);
-        }
-        return ref;
+    static TrayItem createApi(ITrayItem impl) {
+        return new TrayItem(impl);
+    }
+
+    public ITrayItem getImpl() {
+        return (ITrayItem) super.getImpl();
     }
 }

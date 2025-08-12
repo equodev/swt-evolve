@@ -5,6 +5,8 @@ import org.eclipse.swt.graphics.*;
 
 public interface ICoolBar extends IComposite {
 
+    void checkSubclass();
+
     Point computeSize(int wHint, int hHint, boolean changed);
 
     /**
@@ -23,7 +25,7 @@ public interface ICoolBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ICoolItem getItem(int index);
+    CoolItem getItem(int index);
 
     /**
      * Returns the number of items contained in the receiver.
@@ -53,7 +55,7 @@ public interface ICoolBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ICoolItem[] getItems();
+    CoolItem[] getItems();
 
     /**
      * Searches the receiver's items in the order they are currently
@@ -73,7 +75,7 @@ public interface ICoolBar extends IComposite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int indexOf(ICoolItem item);
+    int indexOf(CoolItem item);
 
     /**
      * Returns an array of zero-relative ints that map
@@ -214,4 +216,6 @@ public interface ICoolBar extends IComposite {
     void setItemLayout(int[] itemOrder, int[] wrapIndices, Point[] sizes);
 
     void setOrientation(int orientation);
+
+    CoolBar getApi();
 }

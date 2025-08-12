@@ -22,7 +22,6 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class represent a column in a table widget.
@@ -77,7 +76,8 @@ public class TableColumn extends Item {
      * @see Widget#getStyle
      */
     public TableColumn(Table parent, int style) {
-        this(new SWTTableColumn((SWTTable) parent.delegate, style));
+        this((ITableColumn) null);
+        setImpl(new SwtTableColumn(parent, style, this));
     }
 
     /**
@@ -118,7 +118,8 @@ public class TableColumn extends Item {
      * @see Widget#getStyle
      */
     public TableColumn(Table parent, int style, int index) {
-        this(new SWTTableColumn((SWTTable) parent.delegate, style, index));
+        this((ITableColumn) null);
+        setImpl(new SwtTableColumn(parent, style, index, this));
     }
 
     /**
@@ -141,7 +142,7 @@ public class TableColumn extends Item {
      * @see #removeControlListener
      */
     public void addControlListener(ControlListener listener) {
-        ((ITableColumn) this.delegate).addControlListener(listener);
+        getImpl().addControlListener(listener);
     }
 
     /**
@@ -169,7 +170,11 @@ public class TableColumn extends Item {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ITableColumn) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -185,7 +190,7 @@ public class TableColumn extends Item {
      * </ul>
      */
     public int getAlignment() {
-        return ((ITableColumn) this.delegate).getAlignment();
+        return getImpl().getAlignment();
     }
 
     /**
@@ -209,7 +214,7 @@ public class TableColumn extends Item {
      * @since 3.1
      */
     public boolean getMoveable() {
-        return ((ITableColumn) this.delegate).getMoveable();
+        return getImpl().getMoveable();
     }
 
     /**
@@ -223,7 +228,7 @@ public class TableColumn extends Item {
      * </ul>
      */
     public Table getParent() {
-        return Table.getInstance(((ITableColumn) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -239,7 +244,7 @@ public class TableColumn extends Item {
      * </ul>
      */
     public boolean getResizable() {
-        return ((ITableColumn) this.delegate).getResizable();
+        return getImpl().getResizable();
     }
 
     /**
@@ -256,7 +261,7 @@ public class TableColumn extends Item {
      * @since 3.2
      */
     public String getToolTipText() {
-        return ((ITableColumn) this.delegate).getToolTipText();
+        return getImpl().getToolTipText();
     }
 
     /**
@@ -270,7 +275,7 @@ public class TableColumn extends Item {
      * </ul>
      */
     public int getWidth() {
-        return ((ITableColumn) this.delegate).getWidth();
+        return getImpl().getWidth();
     }
 
     /**
@@ -284,7 +289,7 @@ public class TableColumn extends Item {
      * </ul>
      */
     public void pack() {
-        ((ITableColumn) this.delegate).pack();
+        getImpl().pack();
     }
 
     /**
@@ -305,7 +310,7 @@ public class TableColumn extends Item {
      * @see #addControlListener
      */
     public void removeControlListener(ControlListener listener) {
-        ((ITableColumn) this.delegate).removeControlListener(listener);
+        getImpl().removeControlListener(listener);
     }
 
     /**
@@ -326,7 +331,7 @@ public class TableColumn extends Item {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ITableColumn) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -345,12 +350,11 @@ public class TableColumn extends Item {
      * </ul>
      */
     public void setAlignment(int alignment) {
-        ((ITableColumn) this.delegate).setAlignment(alignment);
+        getImpl().setAlignment(alignment);
     }
 
-    @Override
     public void setImage(Image image) {
-        ((ITableColumn) this.delegate).setImage(image);
+        getImpl().setImage(image);
     }
 
     /**
@@ -368,7 +372,7 @@ public class TableColumn extends Item {
      * </ul>
      */
     public void setResizable(boolean resizable) {
-        ((ITableColumn) this.delegate).setResizable(resizable);
+        getImpl().setResizable(resizable);
     }
 
     /**
@@ -393,12 +397,11 @@ public class TableColumn extends Item {
      * @since 3.1
      */
     public void setMoveable(boolean moveable) {
-        ((ITableColumn) this.delegate).setMoveable(moveable);
+        getImpl().setMoveable(moveable);
     }
 
-    @Override
     public void setText(String string) {
-        ((ITableColumn) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -429,7 +432,7 @@ public class TableColumn extends Item {
      * @since 3.2
      */
     public void setToolTipText(String string) {
-        ((ITableColumn) this.delegate).setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
     /**
@@ -443,28 +446,22 @@ public class TableColumn extends Item {
      * </ul>
      */
     public void setWidth(int width) {
-        ((ITableColumn) this.delegate).setWidth(width);
+        getImpl().setWidth(width);
     }
 
-    @Override
     public void dispose() {
-        ((ITableColumn) this.delegate).dispose();
+        getImpl().dispose();
     }
 
-    protected TableColumn(ITableColumn delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected TableColumn(ITableColumn impl) {
+        super(impl);
     }
 
-    public static TableColumn getInstance(ITableColumn delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        TableColumn ref = (TableColumn) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new TableColumn(delegate);
-        }
-        return ref;
+    static TableColumn createApi(ITableColumn impl) {
+        return new TableColumn(impl);
+    }
+
+    public ITableColumn getImpl() {
+        return (ITableColumn) super.getImpl();
     }
 }

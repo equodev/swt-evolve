@@ -296,6 +296,7 @@ public class DartCanvas extends DartComposite implements ICanvas {
      * </ul>
      */
     public void setCaret(Caret caret) {
+        dirty();
         checkWidget();
         Caret newCaret = caret;
         Caret oldCaret = this.caret;
@@ -309,16 +310,15 @@ public class DartCanvas extends DartComposite implements ICanvas {
                 ((DartCaret) newCaret.getImpl()).setFocus();
             }
         }
-        getBridge().dirty(this);
     }
 
     @Override
     public void setFont(Font font) {
+        dirty();
         checkWidget();
         if (caret != null)
             caret.setFont(font);
         super.setFont(font);
-        getBridge().dirty(this);
     }
 
     @Override
@@ -343,11 +343,11 @@ public class DartCanvas extends DartComposite implements ICanvas {
      * @since 3.4
      */
     public void setIME(IME ime) {
+        dirty();
         checkWidget();
         if (ime != null && ime.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         this.ime = ime;
-        getBridge().dirty(this);
     }
 
     public Caret _caret() {
@@ -358,8 +358,8 @@ public class DartCanvas extends DartComposite implements ICanvas {
         return ime;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
     }
 
     public Canvas getApi() {

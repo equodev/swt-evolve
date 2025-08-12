@@ -118,7 +118,12 @@ public class Tree extends Composite {
      * @see Widget#getStyle
      */
     public Tree(Composite parent, int style) {
-        this(new SWTTree((SWTComposite) parent.delegate, style));
+        this((ITree) null);
+        setImpl(new SwtTree(parent, style, this));
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -149,7 +154,7 @@ public class Tree extends Composite {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ITree) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -172,7 +177,7 @@ public class Tree extends Composite {
      * @see #removeTreeListener
      */
     public void addTreeListener(TreeListener listener) {
-        ((ITree) this.delegate).addTreeListener(listener);
+        getImpl().addTreeListener(listener);
     }
 
     /**
@@ -199,7 +204,7 @@ public class Tree extends Composite {
      * @since 3.2
      */
     public void clear(int index, boolean all) {
-        ((ITree) this.delegate).clear(index, all);
+        getImpl().clear(index, all);
     }
 
     /**
@@ -222,7 +227,7 @@ public class Tree extends Composite {
      * @since 3.2
      */
     public void clearAll(boolean all) {
-        ((ITree) this.delegate).clearAll(all);
+        getImpl().clearAll(all);
     }
 
     /**
@@ -243,7 +248,7 @@ public class Tree extends Composite {
      * @since 3.4
      */
     public void deselect(TreeItem item) {
-        ((ITree) this.delegate).deselect((ITreeItem) item.delegate);
+        getImpl().deselect(item);
     }
 
     /**
@@ -255,7 +260,7 @@ public class Tree extends Composite {
      * </ul>
      */
     public void deselectAll() {
-        ((ITree) this.delegate).deselectAll();
+        getImpl().deselectAll();
     }
 
     /**
@@ -288,7 +293,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public TreeColumn getColumn(int index) {
-        return TreeColumn.getInstance(((ITree) this.delegate).getColumn(index));
+        return getImpl().getColumn(index);
     }
 
     /**
@@ -308,7 +313,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public int getColumnCount() {
-        return ((ITree) this.delegate).getColumnCount();
+        return getImpl().getColumnCount();
     }
 
     /**
@@ -340,7 +345,7 @@ public class Tree extends Composite {
      * @since 3.2
      */
     public int[] getColumnOrder() {
-        return ((ITree) this.delegate).getColumnOrder();
+        return getImpl().getColumnOrder();
     }
 
     /**
@@ -373,7 +378,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public TreeColumn[] getColumns() {
-        return TreeColumn.ofArray(((ITree) this.delegate).getColumns(), TreeColumn.class);
+        return getImpl().getColumns();
     }
 
     /**
@@ -389,7 +394,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public int getGridLineWidth() {
-        return ((ITree) this.delegate).getGridLineWidth();
+        return getImpl().getGridLineWidth();
     }
 
     /**
@@ -404,7 +409,7 @@ public class Tree extends Composite {
      * @since 3.106
      */
     public Color getHeaderBackground() {
-        return ((ITree) this.delegate).getHeaderBackground();
+        return getImpl().getHeaderBackground();
     }
 
     /**
@@ -419,7 +424,7 @@ public class Tree extends Composite {
      * @since 3.106
      */
     public Color getHeaderForeground() {
-        return ((ITree) this.delegate).getHeaderForeground();
+        return getImpl().getHeaderForeground();
     }
 
     /**
@@ -435,7 +440,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public int getHeaderHeight() {
-        return ((ITree) this.delegate).getHeaderHeight();
+        return getImpl().getHeaderHeight();
     }
 
     /**
@@ -458,7 +463,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public boolean getHeaderVisible() {
-        return ((ITree) this.delegate).getHeaderVisible();
+        return getImpl().getHeaderVisible();
     }
 
     /**
@@ -479,7 +484,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public TreeItem getItem(int index) {
-        return TreeItem.getInstance(((ITree) this.delegate).getItem(index));
+        return getImpl().getItem(index);
     }
 
     /**
@@ -506,7 +511,7 @@ public class Tree extends Composite {
      * </ul>
      */
     public TreeItem getItem(Point point) {
-        return TreeItem.getInstance(((ITree) this.delegate).getItem(point));
+        return getImpl().getItem(point);
     }
 
     /**
@@ -523,7 +528,7 @@ public class Tree extends Composite {
      * </ul>
      */
     public int getItemCount() {
-        return ((ITree) this.delegate).getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -538,7 +543,7 @@ public class Tree extends Composite {
      * </ul>
      */
     public int getItemHeight() {
-        return ((ITree) this.delegate).getItemHeight();
+        return getImpl().getItemHeight();
     }
 
     /**
@@ -559,7 +564,7 @@ public class Tree extends Composite {
      * </ul>
      */
     public TreeItem[] getItems() {
-        return TreeItem.ofArray(((ITree) this.delegate).getItems(), TreeItem.class);
+        return getImpl().getItems();
     }
 
     /**
@@ -583,7 +588,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public boolean getLinesVisible() {
-        return ((ITree) this.delegate).getLinesVisible();
+        return getImpl().getLinesVisible();
     }
 
     /**
@@ -599,7 +604,7 @@ public class Tree extends Composite {
      * </ul>
      */
     public TreeItem getParentItem() {
-        return TreeItem.getInstance(((ITree) this.delegate).getParentItem());
+        return getImpl().getParentItem();
     }
 
     /**
@@ -619,7 +624,7 @@ public class Tree extends Composite {
      * </ul>
      */
     public TreeItem[] getSelection() {
-        return TreeItem.ofArray(((ITree) this.delegate).getSelection(), TreeItem.class);
+        return getImpl().getSelection();
     }
 
     /**
@@ -633,7 +638,7 @@ public class Tree extends Composite {
      * </ul>
      */
     public int getSelectionCount() {
-        return ((ITree) this.delegate).getSelectionCount();
+        return getImpl().getSelectionCount();
     }
 
     /**
@@ -653,7 +658,7 @@ public class Tree extends Composite {
      * @since 3.2
      */
     public TreeColumn getSortColumn() {
-        return TreeColumn.getInstance(((ITree) this.delegate).getSortColumn());
+        return getImpl().getSortColumn();
     }
 
     /**
@@ -673,7 +678,7 @@ public class Tree extends Composite {
      * @since 3.2
      */
     public int getSortDirection() {
-        return ((ITree) this.delegate).getSortDirection();
+        return getImpl().getSortDirection();
     }
 
     /**
@@ -691,7 +696,7 @@ public class Tree extends Composite {
      * @since 2.1
      */
     public TreeItem getTopItem() {
-        return TreeItem.getInstance(((ITree) this.delegate).getTopItem());
+        return getImpl().getTopItem();
     }
 
     /**
@@ -714,7 +719,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public int indexOf(TreeColumn column) {
-        return ((ITree) this.delegate).indexOf((ITreeColumn) column.delegate);
+        return getImpl().indexOf(column);
     }
 
     /**
@@ -738,7 +743,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public int indexOf(TreeItem item) {
-        return ((ITree) this.delegate).indexOf((ITreeItem) item.delegate);
+        return getImpl().indexOf(item);
     }
 
     /**
@@ -750,7 +755,7 @@ public class Tree extends Composite {
      * </ul>
      */
     public void removeAll() {
-        ((ITree) this.delegate).removeAll();
+        getImpl().removeAll();
     }
 
     /**
@@ -771,7 +776,7 @@ public class Tree extends Composite {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ITree) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -792,7 +797,7 @@ public class Tree extends Composite {
      * @see #addTreeListener
      */
     public void removeTreeListener(TreeListener listener) {
-        ((ITree) this.delegate).removeTreeListener(listener);
+        getImpl().removeTreeListener(listener);
     }
 
     /**
@@ -813,7 +818,7 @@ public class Tree extends Composite {
      *  </ul>
      */
     public void setInsertMark(TreeItem item, boolean before) {
-        ((ITree) this.delegate).setInsertMark((ITreeItem) item.delegate, before);
+        getImpl().setInsertMark(item, before);
     }
 
     /**
@@ -832,7 +837,7 @@ public class Tree extends Composite {
      * @since 3.2
      */
     public void setItemCount(int count) {
-        ((ITree) this.delegate).setItemCount(count);
+        getImpl().setItemCount(count);
     }
 
     /**
@@ -853,7 +858,7 @@ public class Tree extends Composite {
      * @since 3.4
      */
     public void select(TreeItem item) {
-        ((ITree) this.delegate).select((ITreeItem) item.delegate);
+        getImpl().select(item);
     }
 
     /**
@@ -868,7 +873,7 @@ public class Tree extends Composite {
      * </ul>
      */
     public void selectAll() {
-        ((ITree) this.delegate).selectAll();
+        getImpl().selectAll();
     }
 
     /**
@@ -896,7 +901,7 @@ public class Tree extends Composite {
      * @since 3.2
      */
     public void setColumnOrder(int[] order) {
-        ((ITree) this.delegate).setColumnOrder(order);
+        getImpl().setColumnOrder(order);
     }
 
     /**
@@ -919,7 +924,7 @@ public class Tree extends Composite {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
-        ((ITree) this.delegate).setHeaderBackground(color);
+        getImpl().setHeaderBackground(color);
     }
 
     /**
@@ -942,7 +947,7 @@ public class Tree extends Composite {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
-        ((ITree) this.delegate).setHeaderForeground(color);
+        getImpl().setHeaderForeground(color);
     }
 
     /**
@@ -964,7 +969,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public void setHeaderVisible(boolean show) {
-        ((ITree) this.delegate).setHeaderVisible(show);
+        getImpl().setHeaderVisible(show);
     }
 
     /**
@@ -987,7 +992,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public void setLinesVisible(boolean show) {
-        ((ITree) this.delegate).setLinesVisible(show);
+        getImpl().setLinesVisible(show);
     }
 
     /**
@@ -1012,7 +1017,7 @@ public class Tree extends Composite {
      * @since 3.2
      */
     public void setSelection(TreeItem item) {
-        ((ITree) this.delegate).setSelection((ITreeItem) item.delegate);
+        getImpl().setSelection(item);
     }
 
     /**
@@ -1039,7 +1044,7 @@ public class Tree extends Composite {
      * @see Tree#deselectAll()
      */
     public void setSelection(TreeItem[] items) {
-        ((ITree) this.delegate).setSelection(fromArray(items, ITreeItem.class));
+        getImpl().setSelection(items);
     }
 
     /**
@@ -1060,7 +1065,7 @@ public class Tree extends Composite {
      * @since 3.2
      */
     public void setSortColumn(TreeColumn column) {
-        ((ITree) this.delegate).setSortColumn((ITreeColumn) column.delegate);
+        getImpl().setSortColumn(column);
     }
 
     /**
@@ -1077,7 +1082,7 @@ public class Tree extends Composite {
      * @since 3.2
      */
     public void setSortDirection(int direction) {
-        ((ITree) this.delegate).setSortDirection(direction);
+        getImpl().setSortDirection(direction);
     }
 
     /**
@@ -1101,7 +1106,7 @@ public class Tree extends Composite {
      * @since 2.1
      */
     public void setTopItem(TreeItem item) {
-        ((ITree) this.delegate).setTopItem((ITreeItem) item.delegate);
+        getImpl().setTopItem(item);
     }
 
     /**
@@ -1123,7 +1128,7 @@ public class Tree extends Composite {
      * @since 3.1
      */
     public void showColumn(TreeColumn column) {
-        ((ITree) this.delegate).showColumn((ITreeColumn) column.delegate);
+        getImpl().showColumn(column);
     }
 
     /**
@@ -1139,7 +1144,7 @@ public class Tree extends Composite {
      * @see Tree#showItem(TreeItem)
      */
     public void showSelection() {
-        ((ITree) this.delegate).showSelection();
+        getImpl().showSelection();
     }
 
     /**
@@ -1161,28 +1166,22 @@ public class Tree extends Composite {
      * @see Tree#showSelection()
      */
     public void showItem(TreeItem item) {
-        ((ITree) this.delegate).showItem((ITreeItem) item.delegate);
+        getImpl().showItem(item);
     }
 
-    @Override
     public void dispose() {
-        ((ITree) this.delegate).dispose();
+        getImpl().dispose();
     }
 
-    protected Tree(ITree delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Tree(ITree impl) {
+        super(impl);
     }
 
-    public static Tree getInstance(ITree delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Tree ref = (Tree) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Tree(delegate);
-        }
-        return ref;
+    static Tree createApi(ITree impl) {
+        return new Tree(impl);
+    }
+
+    public ITree getImpl() {
+        return (ITree) super.getImpl();
     }
 }

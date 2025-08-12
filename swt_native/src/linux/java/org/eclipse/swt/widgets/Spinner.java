@@ -22,7 +22,6 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class are selectable user interface
@@ -50,6 +49,23 @@ import java.util.WeakHashMap;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Spinner extends Composite {
+
+    /**
+     * the operating system limit for the number of characters
+     * that the text field in an instance of this class can hold
+     *
+     * @since 3.4
+     */
+    public final static int LIMIT;
+
+    /*
+	* These values can be different on different platforms.
+	* Therefore they are not initialized in the declaration
+	* to stop the compiler from inlining.
+	*/
+    static {
+        LIMIT = 0xFFFF;
+    }
 
     /**
      * Constructs a new instance of this class given its parent
@@ -81,7 +97,8 @@ public class Spinner extends Composite {
      * @see Widget#getStyle
      */
     public Spinner(Composite parent, int style) {
-        this(new SWTSpinner((SWTComposite) parent.delegate, style));
+        this((ISpinner) null);
+        setImpl(new SwtSpinner(parent, style, this));
     }
 
     /**
@@ -104,7 +121,7 @@ public class Spinner extends Composite {
      * @see #removeModifyListener
      */
     public void addModifyListener(ModifyListener listener) {
-        ((ISpinner) this.delegate).addModifyListener(listener);
+        getImpl().addModifyListener(listener);
     }
 
     /**
@@ -132,7 +149,11 @@ public class Spinner extends Composite {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ISpinner) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -147,7 +168,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void copy() {
-        ((ISpinner) this.delegate).copy();
+        getImpl().copy();
     }
 
     /**
@@ -163,7 +184,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void cut() {
-        ((ISpinner) this.delegate).cut();
+        getImpl().cut();
     }
 
     /**
@@ -178,7 +199,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public int getIncrement() {
-        return ((ISpinner) this.delegate).getIncrement();
+        return getImpl().getIncrement();
     }
 
     /**
@@ -192,7 +213,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public int getMaximum() {
-        return ((ISpinner) this.delegate).getMaximum();
+        return getImpl().getMaximum();
     }
 
     /**
@@ -206,7 +227,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public int getMinimum() {
-        return ((ISpinner) this.delegate).getMinimum();
+        return getImpl().getMinimum();
     }
 
     /**
@@ -221,7 +242,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public int getPageIncrement() {
-        return ((ISpinner) this.delegate).getPageIncrement();
+        return getImpl().getPageIncrement();
     }
 
     /**
@@ -235,7 +256,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public int getSelection() {
-        return ((ISpinner) this.delegate).getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -253,7 +274,7 @@ public class Spinner extends Composite {
      * @since 3.4
      */
     public String getText() {
-        return ((ISpinner) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -274,7 +295,7 @@ public class Spinner extends Composite {
      * @since 3.4
      */
     public int getTextLimit() {
-        return ((ISpinner) this.delegate).getTextLimit();
+        return getImpl().getTextLimit();
     }
 
     /**
@@ -288,7 +309,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public int getDigits() {
-        return ((ISpinner) this.delegate).getDigits();
+        return getImpl().getDigits();
     }
 
     /**
@@ -304,7 +325,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void paste() {
-        ((ISpinner) this.delegate).paste();
+        getImpl().paste();
     }
 
     /**
@@ -325,7 +346,7 @@ public class Spinner extends Composite {
      * @see #addModifyListener
      */
     public void removeModifyListener(ModifyListener listener) {
-        ((ISpinner) this.delegate).removeModifyListener(listener);
+        getImpl().removeModifyListener(listener);
     }
 
     /**
@@ -346,7 +367,7 @@ public class Spinner extends Composite {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ISpinner) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -362,7 +383,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void setIncrement(int value) {
-        ((ISpinner) this.delegate).setIncrement(value);
+        getImpl().setIncrement(value);
     }
 
     /**
@@ -379,7 +400,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void setMaximum(int value) {
-        ((ISpinner) this.delegate).setMaximum(value);
+        getImpl().setMaximum(value);
     }
 
     /**
@@ -396,7 +417,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void setMinimum(int value) {
-        ((ISpinner) this.delegate).setMinimum(value);
+        getImpl().setMinimum(value);
     }
 
     /**
@@ -412,7 +433,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void setPageIncrement(int value) {
-        ((ISpinner) this.delegate).setPageIncrement(value);
+        getImpl().setPageIncrement(value);
     }
 
     /**
@@ -429,7 +450,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void setSelection(int value) {
-        ((ISpinner) this.delegate).setSelection(value);
+        getImpl().setSelection(value);
     }
 
     /**
@@ -455,7 +476,7 @@ public class Spinner extends Composite {
      * @since 3.4
      */
     public void setTextLimit(int limit) {
-        ((ISpinner) this.delegate).setTextLimit(limit);
+        getImpl().setTextLimit(limit);
     }
 
     /**
@@ -479,7 +500,7 @@ public class Spinner extends Composite {
      * </ul>
      */
     public void setDigits(int value) {
-        ((ISpinner) this.delegate).setDigits(value);
+        getImpl().setDigits(value);
     }
 
     /**
@@ -506,23 +527,18 @@ public class Spinner extends Composite {
      * @since 3.2
      */
     public void setValues(int selection, int minimum, int maximum, int digits, int increment, int pageIncrement) {
-        ((ISpinner) this.delegate).setValues(selection, minimum, maximum, digits, increment, pageIncrement);
+        getImpl().setValues(selection, minimum, maximum, digits, increment, pageIncrement);
     }
 
-    protected Spinner(ISpinner delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Spinner(ISpinner impl) {
+        super(impl);
     }
 
-    public static Spinner getInstance(ISpinner delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Spinner ref = (Spinner) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Spinner(delegate);
-        }
-        return ref;
+    static Spinner createApi(ISpinner impl) {
+        return new Spinner(impl);
+    }
+
+    public ISpinner getImpl() {
+        return (ISpinner) super.getImpl();
     }
 }

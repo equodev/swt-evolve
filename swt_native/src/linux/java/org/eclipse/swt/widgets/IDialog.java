@@ -5,6 +5,20 @@ import org.eclipse.swt.*;
 public interface IDialog {
 
     /**
+     * Checks that this class can be subclassed.
+     * <p>
+     * IMPORTANT: See the comment in <code>Widget.checkSubclass()</code>.
+     * </p>
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
+     * </ul>
+     *
+     * @see Widget#checkSubclass
+     */
+    void checkSubclass();
+
+    /**
      * Returns the receiver's parent, which must be a <code>Shell</code>
      * or null.
      *
@@ -15,7 +29,7 @@ public interface IDialog {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IShell getParent();
+    Shell getParent();
 
     /**
      * Returns the receiver's style information.
@@ -65,4 +79,8 @@ public interface IDialog {
      * </ul>
      */
     void setText(String string);
+
+    Dialog getApi();
+
+    void setApi(Dialog api);
 }

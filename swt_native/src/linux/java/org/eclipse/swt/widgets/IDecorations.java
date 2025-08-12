@@ -3,11 +3,10 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface IDecorations extends ICanvas {
+
+    void checkSubclass();
 
     /**
      * Returns the receiver's default button if one had
@@ -22,7 +21,7 @@ public interface IDecorations extends ICanvas {
      *
      * @see #setDefaultButton(Button)
      */
-    IButton getDefaultButton();
+    Button getDefaultButton();
 
     /**
      * Returns the receiver's image if it had previously been
@@ -102,7 +101,7 @@ public interface IDecorations extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IMenu getMenuBar();
+    Menu getMenuBar();
 
     /**
      * Returns <code>true</code> if the receiver is currently
@@ -161,7 +160,7 @@ public interface IDecorations extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setDefaultButton(IButton button);
+    void setDefaultButton(Button button);
 
     /**
      * Sets the receiver's image to the argument, which may
@@ -248,7 +247,7 @@ public interface IDecorations extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setMenuBar(IMenu menu);
+    void setMenuBar(Menu menu);
 
     /**
      * Sets the minimized stated of the receiver.
@@ -295,4 +294,6 @@ public interface IDecorations extends ICanvas {
      * </ul>
      */
     void setText(String string);
+
+    Decorations getApi();
 }

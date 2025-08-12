@@ -12,7 +12,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.printing.*;
 import org.eclipse.swt.widgets.*;
 
-public interface IStyledText extends ICanvas {
+public interface IStyledText extends ICanvas, ImplStyledText {
 
     /**
      * Adds an extended modify listener. An ExtendedModify event is sent by the
@@ -2041,7 +2041,7 @@ public interface IStyledText extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setCaret(ICaret caret);
+    void setCaret(Caret caret);
 
     /**
      * Sets the BIDI coloring mode.  When true the BIDI text display
@@ -3126,4 +3126,6 @@ public interface IStyledText extends ICanvas {
      * </ul>
      */
     void showSelection();
+
+    StyledText getApi();
 }

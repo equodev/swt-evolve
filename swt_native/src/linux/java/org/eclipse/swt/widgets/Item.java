@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import java.util.WeakHashMap;
 
 /**
  * This class is the abstract superclass of all non-windowed
@@ -33,7 +32,7 @@ import java.util.WeakHashMap;
  *
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class Item extends Widget {
+public abstract class Item extends Widget {
 
     /**
      * Constructs a new instance of this class given its parent
@@ -63,6 +62,7 @@ public class Item extends Widget {
      * @see Widget#getStyle
      */
     public Item(Widget parent, int style) {
+        super(parent, style);
     }
 
     /**
@@ -96,6 +96,11 @@ public class Item extends Widget {
      * @see Widget#getStyle
      */
     public Item(Widget parent, int style, int index) {
+        this(parent, style);
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -110,7 +115,7 @@ public class Item extends Widget {
      * </ul>
      */
     public Image getImage() {
-        return ((IItem) this.delegate).getImage();
+        return getImpl().getImage();
     }
 
     /**
@@ -125,7 +130,7 @@ public class Item extends Widget {
      * </ul>
      */
     public String getText() {
-        return ((IItem) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -143,7 +148,7 @@ public class Item extends Widget {
      * </ul>
      */
     public void setImage(Image image) {
-        ((IItem) this.delegate).setImage(image);
+        getImpl().setImage(image);
     }
 
     /**
@@ -163,23 +168,14 @@ public class Item extends Widget {
      * </ul>
      */
     public void setText(String string) {
-        ((IItem) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
-    protected Item(IItem delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Item(IItem impl) {
+        super(impl);
     }
 
-    public static Item getInstance(IItem delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Item ref = (Item) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Item(delegate);
-        }
-        return ref;
+    public IItem getImpl() {
+        return (IItem) super.getImpl();
     }
 }

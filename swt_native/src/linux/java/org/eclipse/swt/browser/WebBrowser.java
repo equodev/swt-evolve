@@ -22,9 +22,9 @@ import org.eclipse.swt.widgets.*;
 
 abstract class WebBrowser {
 
-    SWTBrowser browser;
+    Browser browser;
 
-    Map<Integer, SWTBrowserFunction> functions = new HashMap<>();
+    Map<Integer, BrowserFunction> functions = new HashMap<>();
 
     AuthenticationListener[] authenticationListeners = new AuthenticationListener[0];
 
@@ -77,9 +77,9 @@ abstract class WebBrowser {
     { 20, SWT.CAPS_LOCK }, { 144, SWT.NUM_LOCK }, { 145, SWT.SCROLL_LOCK }, { 44, SWT.PRINT_SCREEN }, { 6, SWT.HELP }, { 19, SWT.PAUSE }, { 3, SWT.BREAK }, /* WebKit-specific */
     { 186, ';' }, { 187, '=' }, { 189, '-' } };
 
-    public class EvaluateFunction extends SWTBrowserFunction {
+    public class EvaluateFunction extends BrowserFunction {
 
-        public EvaluateFunction(SWTBrowser browser, String name) {
+        public EvaluateFunction(Browser browser, String name) {
             super(browser, name, true, new String[0], false);
         }
 
@@ -196,7 +196,7 @@ abstract class WebBrowser {
         }
     }
 
-    public abstract void create(IComposite parent, int style);
+    public abstract void create(Composite parent, int style);
 
     static String CreateErrorString(String error) {
         return ERROR_ID + error;
@@ -210,32 +210,30 @@ abstract class WebBrowser {
         return true;
     }
 
-    public void createFunction(IBrowserFunction function__) {
-        SWTBrowserFunction function_ = (SWTBrowserFunction) function__;
-        SWTBrowserFunction function = (SWTBrowserFunction) function_;
+    public void createFunction(BrowserFunction function) {
         /*
 	 * If an existing function with the same name is found then
 	 * remove it so that it is not recreated on subsequent pages
 	 * (the new function overwrites the old one).
 	 */
-        for (SWTBrowserFunction current : functions.values()) {
-            if (current.name.equals(function.name)) {
+        for (BrowserFunction current : functions.values()) {
+            if (((SwtBrowserFunction) current.getImpl()).name.equals(((SwtBrowserFunction) function.getImpl()).name)) {
                 deregisterFunction(current);
                 break;
             }
         }
-        function.index = getNextFunctionIndex();
+        ((SwtBrowserFunction) function.getImpl()).index = getNextFunctionIndex();
         registerFunction(function);
-        StringBuilder functionBuffer = new StringBuilder(function.name);
+        StringBuilder functionBuffer = new StringBuilder(((SwtBrowserFunction) function.getImpl()).name);
         //$NON-NLS-1$
         functionBuffer.append(" = function ");
-        functionBuffer.append(function.name);
+        functionBuffer.append(((SwtBrowserFunction) function.getImpl()).name);
         //$NON-NLS-1$
         functionBuffer.append("() {var result = callJava(");
-        functionBuffer.append(function.index);
+        functionBuffer.append(((SwtBrowserFunction) function.getImpl()).index);
         //$NON-NLS-1$
         functionBuffer.append(",'");
-        functionBuffer.append(function.token);
+        functionBuffer.append(((SwtBrowserFunction) function.getImpl()).token);
         //$NON-NLS-1$
         functionBuffer.append("',Array.prototype.slice.call(arguments)); if (typeof result == 'string' && result.indexOf('");
         functionBuffer.append(ERROR_ID);
@@ -247,21 +245,21 @@ abstract class WebBrowser {
         String javaCallDeclaration = getJavaCallDeclaration();
         StringBuilder buffer = new StringBuilder();
         buffer.append(javaCallDeclaration);
-        if (function.top) {
+        if (((SwtBrowserFunction) function.getImpl()).top) {
             buffer.append(functionBuffer.toString());
         }
         //$NON-NLS-1$
         buffer.append("var frameIds = null;");
-        if (function.frameNames != null) {
+        if (((SwtBrowserFunction) function.getImpl()).frameNames != null) {
             //$NON-NLS-1$
             buffer.append("frameIds = {");
-            for (String frameName : function.frameNames) {
+            for (String frameName : ((SwtBrowserFunction) function.getImpl()).frameNames) {
                 buffer.append('\'');
                 buffer.append(frameName);
                 //$NON-NLS-1$
                 buffer.append("':1,");
             }
-            if (function.frameNames.length > 0) {
+            if (((SwtBrowserFunction) function.getImpl()).frameNames.length > 0) {
                 buffer.deleteCharAt(buffer.length() - 1);
             }
             //$NON-NLS-1$
@@ -274,8 +272,8 @@ abstract class WebBrowser {
         buffer.append(functionBuffer.toString());
         //$NON-NLS-1$
         buffer.append("}} catch(e) {}};");
-        function.functionString = buffer.toString();
-        nonBlockingExecute(function.functionString);
+        ((SwtBrowserFunction) function.getImpl()).functionString = buffer.toString();
+        nonBlockingExecute(((SwtBrowserFunction) function.getImpl()).functionString);
     }
 
     /**
@@ -286,14 +284,12 @@ abstract class WebBrowser {
         return "if (!window.callJava) {\n" + "		window.callJava = function callJava(index, token, args) {\n" + "			return external.callJava(index,token,args);\n" + "		}\n" + "};\n";
     }
 
-    void deregisterFunction(SWTBrowserFunction function) {
-        functions.remove(function.index);
+    void deregisterFunction(BrowserFunction function) {
+        functions.remove(((SwtBrowserFunction) function.getImpl()).index);
     }
 
-    public void destroyFunction(IBrowserFunction function__) {
-        SWTBrowserFunction function_ = (SWTBrowserFunction) function__;
-        SWTBrowserFunction function = (SWTBrowserFunction) function_;
-        String deleteString = getDeleteFunctionString(function.name);
+    public void destroyFunction(BrowserFunction function) {
+        String deleteString = getDeleteFunctionString(((SwtBrowserFunction) function.getImpl()).name);
         //$NON-NLS-1$
         StringBuilder buffer = new StringBuilder("for (var i = 0; i < frames.length; i++) {try {frames[i].eval(\"");
         buffer.append(deleteString);
@@ -321,11 +317,11 @@ abstract class WebBrowser {
         // Webkit1 uses this mechanism.
         // Webkit2 uses a different mechanism. See WebKit:evaluate();
         // $NON-NLS-1$
-        SWTBrowserFunction function = new EvaluateFunction(browser, "");
+        BrowserFunction function = new EvaluateFunction(browser, "");
         int index = getNextFunctionIndex();
-        function.index = index;
+        ((SwtBrowserFunction) function.getImpl()).index = index;
         // Note, Webkit2 doesn't use 'isEvaluate' machinery because it doesn't use a function for evaluation.
-        function.isEvaluate = true;
+        ((SwtBrowserFunction) function.getImpl()).isEvaluate = true;
         registerFunction(function);
         String functionName = EXECUTE_ID + index;
         // $NON-NLS-1$
@@ -348,7 +344,7 @@ abstract class WebBrowser {
         buffer.append(index);
         //$NON-NLS-1$
         buffer.append(",'");
-        buffer.append(function.token);
+        buffer.append(((SwtBrowserFunction) function.getImpl()).token);
         // $NON-NLS-1$
         buffer.append("', ['");
         buffer.append(ERROR_ID);
@@ -360,13 +356,13 @@ abstract class WebBrowser {
         buffer.append(index);
         //$NON-NLS-1$
         buffer.append(",'");
-        buffer.append(function.token);
+        buffer.append(((SwtBrowserFunction) function.getImpl()).token);
         // $NON-NLS-1$
         buffer.append("', [result]);} catch (e) {window.external.callJava(");
         buffer.append(index);
         //$NON-NLS-1$
         buffer.append(",'");
-        buffer.append(function.token);
+        buffer.append(((SwtBrowserFunction) function.getImpl()).token);
         // $NON-NLS-1$
         buffer.append("', ['");
         buffer.append(ERROR_ID);
@@ -413,8 +409,8 @@ abstract class WebBrowser {
 
     public abstract void refresh();
 
-    void registerFunction(SWTBrowserFunction function) {
-        functions.put(function.index, function);
+    void registerFunction(BrowserFunction function) {
+        functions.put(((SwtBrowserFunction) function.getImpl()).index, function);
     }
 
     public void removeAuthenticationListener(AuthenticationListener listener) {
@@ -670,9 +666,7 @@ abstract class WebBrowser {
         return doit;
     }
 
-    public void setBrowser(IBrowser browser__) {
-        SWTBrowser browser_ = (SWTBrowser) browser__;
-        SWTBrowser browser = (SWTBrowser) browser_;
+    public void setBrowser(Browser browser) {
         this.browser = browser;
     }
 

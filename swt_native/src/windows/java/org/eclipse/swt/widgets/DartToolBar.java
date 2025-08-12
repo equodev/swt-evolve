@@ -225,20 +225,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     void createHandle() {
-        super.createHandle();
-        getApi().state &= ~CANVAS;
-        /*
-	* Feature in Windows.  When TBSTYLE_FLAT is used to create
-	* a flat toolbar, for some reason TBSTYLE_TRANSPARENT is
-	* also set.  This causes the toolbar to flicker when it is
-	* moved or resized.  The fix is to clear TBSTYLE_TRANSPARENT.
-	*
-	* NOTE:  This work around is unnecessary on XP.  There is no
-	* flickering and clearing the TBSTYLE_TRANSPARENT interferes
-	* with the XP theme.
-	*/
-        if ((getApi().style & SWT.FLAT) != 0) {
-        }
         /*
 	* Feature in Windows.  Despite the fact that the
 	* tool tip text contains \r\n, the tooltip will
@@ -263,7 +249,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
             System.arraycopy(items, 0, newItems, 0, items.length);
             items = newItems;
         }
-        int bits = ((DartToolItem) item.getImpl()).widgetStyle();
         items[((DartToolItem) item.getImpl()).id = id] = item;
         layoutItems();
     }
@@ -604,6 +589,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     public void setFont(Font font) {
+        dirty();
         checkWidget();
         setDropDownItems(false);
         super.setFont(font);
@@ -625,7 +611,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
         if (index == items.length) {
         }
         layoutItems();
-        getBridge().dirty(this);
     }
 
     @Override
@@ -633,25 +618,16 @@ public class DartToolBar extends DartComposite implements IToolBar {
         checkWidget();
         if (!super.setParent(parent))
             return false;
-        long hwndParent = parent.handle;
-        /*
-	* Bug in Windows.  When a tool bar is reparented, the tooltip
-	* control that is automatically created for the item is not
-	* reparented to the new shell.  The fix is to move the tooltip
-	* over using SetWindowLongPtr().  Note that for some reason,
-	* SetParent() does not work.
-	*/
-        long hwndShell = parent.getShell().handle;
         return true;
     }
 
     @Override
     public void setRedraw(boolean redraw) {
+        dirty();
         checkWidget();
         setDropDownItems(false);
         super.setRedraw(redraw);
         setDropDownItems(true);
-        getBridge().dirty(this);
     }
 
     void setRowCount(int count) {
@@ -830,8 +806,8 @@ public class DartToolBar extends DartComposite implements IToolBar {
         return ignoreMouse;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
     }
 
     public ToolBar getApi() {

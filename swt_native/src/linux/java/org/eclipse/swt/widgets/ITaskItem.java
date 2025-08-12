@@ -5,6 +5,8 @@ import org.eclipse.swt.graphics.*;
 
 public interface ITaskItem extends IItem {
 
+    void checkSubclass();
+
     /**
      * Returns the receiver's pop up menu if it has one, or null
      * if it does not.
@@ -16,7 +18,7 @@ public interface ITaskItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IMenu getMenu();
+    Menu getMenu();
 
     /**
      * Returns the receiver's overlay image if it has one, or null
@@ -54,7 +56,7 @@ public interface ITaskItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITaskBar getParent();
+    TaskBar getParent();
 
     /**
      * Returns the receiver's progress.
@@ -111,7 +113,7 @@ public interface ITaskItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setMenu(IMenu menu);
+    void setMenu(Menu menu);
 
     /**
      * Sets the receiver's overlay image, which may be null
@@ -233,4 +235,6 @@ public interface ITaskItem extends IItem {
      * #see {@link #setProgressState(int)}
      */
     void setProgress(int progress);
+
+    TaskItem getApi();
 }

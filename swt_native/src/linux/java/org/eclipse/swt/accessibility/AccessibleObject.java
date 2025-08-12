@@ -126,7 +126,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleActionListener> listeners = accessible.accessibleActionListeners;
+            List<AccessibleActionListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleActionListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleActionEvent event = new AccessibleActionEvent(accessible);
@@ -164,7 +164,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleActionListener> listeners = accessible.accessibleActionListeners;
+            List<AccessibleActionListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleActionListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleActionEvent event = new AccessibleActionEvent(accessible);
@@ -200,7 +200,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleActionListener> listeners = accessible.accessibleActionListeners;
+            List<AccessibleActionListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleActionListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleActionEvent event = new AccessibleActionEvent(accessible);
@@ -247,7 +247,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleActionListener> listeners = accessible.accessibleActionListeners;
+            List<AccessibleActionListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleActionListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleActionEvent event = new AccessibleActionEvent(accessible);
@@ -262,7 +262,7 @@ class AccessibleObject {
                     return keybindingPtr = getStringPtr(event.result);
                 }
             }
-            List<AccessibleListener> listeners2 = accessible.accessibleListeners;
+            List<AccessibleListener> listeners2 = ((SwtAccessible) accessible.getImpl()).accessibleListeners;
             length = size(listeners2);
             if (length > 0) {
                 AccessibleEvent event = new AccessibleEvent(accessible);
@@ -305,7 +305,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleActionListener> listeners = accessible.accessibleActionListeners;
+            List<AccessibleActionListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleActionListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleActionEvent event = new AccessibleActionEvent(accessible);
@@ -321,7 +321,7 @@ class AccessibleObject {
                 }
             }
             if (index == 0) {
-                List<AccessibleControlListener> listeners2 = accessible.accessibleControlListeners;
+                List<AccessibleControlListener> listeners2 = ((SwtAccessible) accessible.getImpl()).accessibleControlListeners;
                 length = size(listeners2);
                 if (length > 0) {
                     AccessibleControlEvent event = new AccessibleControlEvent(accessible);
@@ -393,7 +393,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleControlListener> listeners = accessible.accessibleControlListeners;
+            List<AccessibleControlListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleControlListeners;
             int length = size(listeners);
             if (length > 0) {
                 int[] parentX = new int[1], parentY = new int[1];
@@ -452,7 +452,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleControlListener> listeners = accessible.accessibleControlListeners;
+            List<AccessibleControlListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleControlListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleControlEvent event = new AccessibleControlEvent(accessible);
@@ -472,7 +472,7 @@ class AccessibleObject {
                 if (event.childID == object.id)
                     event.childID = ACC.CHILDID_SELF;
                 Accessible result = event.accessible;
-                AccessibleObject accObj = result != null ? result.getAccessibleObject() : object.getChildByID(event.childID);
+                AccessibleObject accObj = result != null ? ((SwtAccessible) result.getImpl()).getAccessibleObject() : object.getChildByID(event.childID);
                 if (accObj != null) {
                     return OS.g_object_ref(accObj.atkHandle);
                 }
@@ -525,10 +525,10 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleEditableTextListener> listeners = accessible.accessibleEditableTextListeners;
+            List<AccessibleEditableTextListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleEditableTextListeners;
             int length = size(listeners);
             if (length > 0) {
-                SWTDisplay display = (SWTDisplay) (accessible.control.getDisplay());
+                Display display = ((SwtAccessible) accessible.getImpl()).control.getDisplay();
                 long fontDesc = OS.pango_font_description_new();
                 boolean createFont = false;
                 TextStyle style = new TextStyle();
@@ -650,7 +650,7 @@ class AccessibleObject {
                     current = OS.g_slist_next(current);
                 }
                 if (createFont) {
-                    style.font = Font.gtk_new(display, fontDesc);
+                    style.font = SwtFont.gtk_new(display, fontDesc);
                 }
                 AccessibleTextAttributeEvent event = new AccessibleTextAttributeEvent(accessible);
                 event.start = (int) start_offset;
@@ -680,7 +680,7 @@ class AccessibleObject {
 	 * @param display must be the display for the accessible's control
 	 * @param rgbString must not be null
 	 */
-    static Color colorFromString(SWTDisplay display, String rgbString) {
+    static Color colorFromString(Display display, String rgbString) {
         try {
             int comma1 = rgbString.indexOf(',');
             int comma2 = rgbString.indexOf(',', comma1 + 1);
@@ -710,7 +710,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleEditableTextListener> listeners = accessible.accessibleEditableTextListeners;
+            List<AccessibleEditableTextListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleEditableTextListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleEditableTextEvent event = new AccessibleEditableTextEvent(accessible);
@@ -754,7 +754,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleEditableTextListener> listeners = accessible.accessibleEditableTextListeners;
+            List<AccessibleEditableTextListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleEditableTextListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleEditableTextEvent event = new AccessibleEditableTextEvent(accessible);
@@ -796,7 +796,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleEditableTextListener> listeners = accessible.accessibleEditableTextListeners;
+            List<AccessibleEditableTextListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleEditableTextListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleEditableTextEvent event = new AccessibleEditableTextEvent(accessible);
@@ -836,7 +836,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleEditableTextListener> listeners = accessible.accessibleEditableTextListeners;
+            List<AccessibleEditableTextListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleEditableTextListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleEditableTextEvent event = new AccessibleEditableTextEvent(accessible);
@@ -875,7 +875,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleEditableTextListener> listeners = accessible.accessibleEditableTextListeners;
+            List<AccessibleEditableTextListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleEditableTextListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleEditableTextEvent event = new AccessibleEditableTextEvent(accessible);
@@ -914,7 +914,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleEditableTextListener> listeners = accessible.accessibleEditableTextListeners;
+            List<AccessibleEditableTextListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleEditableTextListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleEditableTextEvent event = new AccessibleEditableTextEvent(accessible);
@@ -971,7 +971,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -981,7 +981,7 @@ class AccessibleObject {
                     listener.getHyperlink(event);
                 }
                 Accessible result = event.accessible;
-                return result != null ? result.getAccessibleObject().atkHandle : 0;
+                return result != null ? ((SwtAccessible) result.getImpl()).getAccessibleObject().atkHandle : 0;
             }
         }
         long parentResult = 0;
@@ -1009,7 +1009,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -1047,7 +1047,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -1111,7 +1111,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleListener> listeners = accessible.accessibleListeners;
+            List<AccessibleListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleEvent event = new AccessibleEvent(accessible);
@@ -1155,7 +1155,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleAttributeListener> listeners = accessible.accessibleAttributeListeners;
+            List<AccessibleAttributeListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleAttributeListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleAttributeEvent event = new AccessibleAttributeEvent(accessible);
@@ -1239,14 +1239,14 @@ class AccessibleObject {
                 int posinset = (event.groupIndex != -1) ? event.groupIndex : 0;
                 if (setsize == 0 && posinset == 0) {
                     /* Determine position and count for radio buttons. */
-                    SWTControl control = accessible.control;
-                    if (control instanceof SWTButton && ((control.getStyle() & SWT.RADIO) != 0)) {
-                        IControl[] children = control.getParent().getChildren();
+                    Control control = ((SwtAccessible) accessible.getImpl()).control;
+                    if (control instanceof Button && ((control.getStyle() & SWT.RADIO) != 0)) {
+                        Control[] children = control.getParent().getChildren();
                         posinset = 1;
                         setsize = 1;
                         for (int i = 0; i < children.length; i++) {
-                            SWTControl child = (SWTControl) (children[i]);
-                            if (child instanceof SWTButton && ((child.getStyle() & SWT.RADIO) != 0)) {
+                            Control child = children[i];
+                            if (child instanceof Button && ((child.getStyle() & SWT.RADIO) != 0)) {
                                 if (child == control)
                                     posinset = setsize;
                                 else
@@ -1316,7 +1316,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleListener> listeners = accessible.accessibleListeners;
+            List<AccessibleListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleEvent event = new AccessibleEvent(accessible);
@@ -1360,7 +1360,7 @@ class AccessibleObject {
         }
         if (object != null && object.id == ACC.CHILDID_SELF) {
             Accessible accessible = object.accessible;
-            List<AccessibleControlListener> listeners = accessible.accessibleControlListeners;
+            List<AccessibleControlListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleControlListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleControlEvent event = new AccessibleControlEvent(accessible);
@@ -1394,7 +1394,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleControlListener> listeners = accessible.accessibleControlListeners;
+            List<AccessibleControlListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleControlListeners;
             AccessibleControlEvent event = new AccessibleControlEvent(accessible);
             event.childID = ACC.CHILDID_CHILD_INDEX;
             event.detail = -1;
@@ -1460,7 +1460,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleControlListener> listeners = accessible.accessibleControlListeners;
+            List<AccessibleControlListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleControlListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleControlEvent event = new AccessibleControlEvent(accessible);
@@ -1605,7 +1605,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null && object.id == ACC.CHILDID_SELF) {
             Accessible accessible = object.accessible;
-            List<AccessibleControlListener> listeners = accessible.accessibleControlListeners;
+            List<AccessibleControlListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleControlListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleControlEvent event = new AccessibleControlEvent(accessible);
@@ -1616,7 +1616,7 @@ class AccessibleObject {
                     listener.getChild(event);
                 }
                 if (event.accessible != null) {
-                    AccessibleObject accObject = event.accessible.getAccessibleObject();
+                    AccessibleObject accObject = ((SwtAccessible) event.accessible.getImpl()).getAccessibleObject();
                     if (accObject != null) {
                         return OS.g_object_ref(accObject.atkHandle);
                     }
@@ -1656,7 +1656,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleControlListener> listeners = accessible.accessibleControlListeners;
+            List<AccessibleControlListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleControlListeners;
             int length = size(listeners);
             if (length > 0) {
                 long set = parentResult;
@@ -1762,7 +1762,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleControlListener> listeners = accessible.accessibleControlListeners;
+            List<AccessibleControlListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleControlListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleControlEvent event = new AccessibleControlEvent(accessible);
@@ -1772,7 +1772,7 @@ class AccessibleObject {
                     listener.getSelection(event);
                 }
                 Accessible result = event.accessible;
-                AccessibleObject accessibleObject = result != null ? result.getAccessibleObject() : object.getChildByID(event.childID);
+                AccessibleObject accessibleObject = result != null ? ((SwtAccessible) result.getImpl()).getAccessibleObject() : object.getChildByID(event.childID);
                 if (accessibleObject != null) {
                     return accessibleObject.index == index ? 1 : 0;
                 }
@@ -1805,7 +1805,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleControlListener> listeners = accessible.accessibleControlListeners;
+            List<AccessibleControlListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleControlListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleControlEvent event = new AccessibleControlEvent(accessible);
@@ -1864,7 +1864,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -1876,7 +1876,7 @@ class AccessibleObject {
                 }
                 Accessible result = event.accessible;
                 if (result != null) {
-                    AccessibleObject accessibleObject = result.getAccessibleObject();
+                    AccessibleObject accessibleObject = ((SwtAccessible) result.getImpl()).getAccessibleObject();
                     OS.g_object_ref(accessibleObject.atkHandle);
                     return accessibleObject.atkHandle;
                 }
@@ -1908,7 +1908,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -1955,7 +1955,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -1993,7 +1993,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2035,7 +2035,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2072,7 +2072,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2112,7 +2112,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2124,7 +2124,7 @@ class AccessibleObject {
                 }
                 Accessible result = event.accessible;
                 if (result != null) {
-                    List<AccessibleTableCellListener> listeners2 = result.accessibleTableCellListeners;
+                    List<AccessibleTableCellListener> listeners2 = ((SwtAccessible) result.getImpl()).accessibleTableCellListeners;
                     length = size(listeners2);
                     if (length > 0) {
                         AccessibleTableCellEvent cellEvent = new AccessibleTableCellEvent(result);
@@ -2166,7 +2166,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2178,7 +2178,7 @@ class AccessibleObject {
                 }
                 Accessible result = event.accessible;
                 if (result != null) {
-                    List<AccessibleTableCellListener> listeners2 = result.accessibleTableCellListeners;
+                    List<AccessibleTableCellListener> listeners2 = ((SwtAccessible) result.getImpl()).accessibleTableCellListeners;
                     length = size(listeners2);
                     if (length > 0) {
                         AccessibleTableCellEvent cellEvent = new AccessibleTableCellEvent(result);
@@ -2211,7 +2211,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2221,7 +2221,7 @@ class AccessibleObject {
                 }
                 Accessible result = event.accessible;
                 if (result != null)
-                    return result.getAccessibleObject().atkHandle;
+                    return ((SwtAccessible) result.getImpl()).getAccessibleObject().atkHandle;
             }
         }
         long parentResult = 0;
@@ -2248,7 +2248,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2258,7 +2258,7 @@ class AccessibleObject {
                 }
                 Accessible result = event.accessible;
                 if (result != null)
-                    return result.getAccessibleObject().atkHandle;
+                    return ((SwtAccessible) result.getImpl()).getAccessibleObject().atkHandle;
             }
         }
         long parentResult = 0;
@@ -2292,7 +2292,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2331,7 +2331,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2342,7 +2342,7 @@ class AccessibleObject {
                 Accessible[] accessibles = event.accessibles;
                 if (accessibles != null) {
                     if (0 <= column && column < accessibles.length) {
-                        return accessibles[(int) column].getAccessibleObject().atkHandle;
+                        return ((SwtAccessible) accessibles[(int) column].getImpl()).getAccessibleObject().atkHandle;
                     }
                 }
             }
@@ -2378,7 +2378,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2417,7 +2417,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2428,7 +2428,7 @@ class AccessibleObject {
                 Accessible[] accessibles = event.accessibles;
                 if (accessibles != null) {
                     if (0 <= row && row < accessibles.length) {
-                        return accessibles[(int) row].getAccessibleObject().atkHandle;
+                        return ((SwtAccessible) accessibles[(int) row].getImpl()).getAccessibleObject().atkHandle;
                     }
                 }
             }
@@ -2460,7 +2460,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2504,7 +2504,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2551,7 +2551,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2589,7 +2589,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2629,7 +2629,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2641,7 +2641,7 @@ class AccessibleObject {
                 }
                 Accessible result = event.accessible;
                 if (result != null) {
-                    List<AccessibleTableCellListener> listeners2 = result.accessibleTableCellListeners;
+                    List<AccessibleTableCellListener> listeners2 = ((SwtAccessible) result.getImpl()).accessibleTableCellListeners;
                     length = size(listeners2);
                     if (length > 0) {
                         AccessibleTableCellEvent cellEvent = new AccessibleTableCellEvent(result);
@@ -2676,7 +2676,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2714,7 +2714,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2752,7 +2752,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2790,7 +2790,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTableListener> listeners = accessible.accessibleTableListeners;
+            List<AccessibleTableListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTableListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTableEvent event = new AccessibleTableEvent(accessible);
@@ -2869,7 +2869,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -2922,7 +2922,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -2974,7 +2974,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleAttributeListener> listeners = accessible.accessibleAttributeListeners;
+            List<AccessibleAttributeListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleAttributeListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextAttributeEvent event = new AccessibleTextAttributeEvent(accessible);
@@ -3125,7 +3125,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -3170,7 +3170,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -3208,7 +3208,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -3245,7 +3245,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -3283,7 +3283,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -3326,7 +3326,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -3336,7 +3336,7 @@ class AccessibleObject {
                 }
                 return event.offset;
             }
-            List<AccessibleTextListener> listeners2 = accessible.accessibleTextListeners;
+            List<AccessibleTextListener> listeners2 = ((SwtAccessible) accessible.getImpl()).accessibleTextListeners;
             length = size(listeners2);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(object.accessible);
@@ -3374,7 +3374,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -3447,7 +3447,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -3488,7 +3488,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -3525,7 +3525,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -3535,7 +3535,7 @@ class AccessibleObject {
                 }
                 return event.count;
             }
-            List<AccessibleTextListener> listeners2 = accessible.accessibleTextListeners;
+            List<AccessibleTextListener> listeners2 = ((SwtAccessible) accessible.getImpl()).accessibleTextListeners;
             length = size(listeners2);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(object.accessible);
@@ -3586,7 +3586,7 @@ class AccessibleObject {
             C.memmove(parentStart, start_offset, 4);
             C.memmove(parentEnd, end_offset, 4);
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -3612,7 +3612,7 @@ class AccessibleObject {
                 return getStringPtr(event.result);
             }
             if (selection_num == 0) {
-                List<AccessibleTextListener> listeners2 = accessible.accessibleTextListeners;
+                List<AccessibleTextListener> listeners2 = ((SwtAccessible) accessible.getImpl()).accessibleTextListeners;
                 length = size(listeners2);
                 if (length > 0) {
                     AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -3660,7 +3660,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleTextEvent event = new AccessibleTextEvent(accessible);
@@ -3713,7 +3713,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 long charCount = atkText_get_character_count(atkObject);
@@ -3999,7 +3999,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 long charCount = atkText_get_character_count(atkObject);
@@ -4229,7 +4229,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+            List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
             int length = size(listeners);
             if (length > 0) {
                 long charCount = atkText_get_character_count(atkObject);
@@ -4517,7 +4517,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleValueListener> listeners = accessible.accessibleValueListeners;
+            List<AccessibleValueListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleValueListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleValueEvent event = new AccessibleValueEvent(accessible);
@@ -4554,7 +4554,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleValueListener> listeners = accessible.accessibleValueListeners;
+            List<AccessibleValueListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleValueListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleValueEvent event = new AccessibleValueEvent(accessible);
@@ -4591,7 +4591,7 @@ class AccessibleObject {
         }
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleValueListener> listeners = accessible.accessibleValueListeners;
+            List<AccessibleValueListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleValueListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleValueEvent event = new AccessibleValueEvent(accessible);
@@ -4623,7 +4623,7 @@ class AccessibleObject {
         AccessibleObject object = getAccessibleObject(atkObject);
         if (object != null) {
             Accessible accessible = object.accessible;
-            List<AccessibleValueListener> listeners = accessible.accessibleValueListeners;
+            List<AccessibleValueListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleValueListeners;
             int length = size(listeners);
             if (length > 0) {
                 AccessibleValueEvent event = new AccessibleValueEvent(accessible);
@@ -4657,7 +4657,7 @@ class AccessibleObject {
             return null;
         if (object.accessible == null)
             return null;
-        SWTControl control = object.accessible.control;
+        Control control = ((SwtAccessible) object.accessible.getImpl()).control;
         if (control == null || control.isDisposed())
             return null;
         return object;
@@ -4685,7 +4685,7 @@ class AccessibleObject {
     }
 
     String getText() {
-        List<AccessibleControlListener> listeners = accessible.accessibleControlListeners;
+        List<AccessibleControlListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleControlListeners;
         int length = size(listeners);
         if (length > 0) {
             //$NON-NLS-1$
@@ -4858,7 +4858,7 @@ class AccessibleObject {
     }
 
     void addRelation(int type, Accessible target) {
-        AccessibleObject targetAccessibleObject = target.getAccessibleObject();
+        AccessibleObject targetAccessibleObject = ((SwtAccessible) target.getImpl()).getAccessibleObject();
         if (targetAccessibleObject != null) {
             /*
 			 * FIXME: Workaround for https://bugs.eclipse.org/312451
@@ -4892,7 +4892,7 @@ class AccessibleObject {
     }
 
     void removeRelation(int type, Accessible target) {
-        AccessibleObject targetAccessibleObject = target.getAccessibleObject();
+        AccessibleObject targetAccessibleObject = ((SwtAccessible) target.getImpl()).getAccessibleObject();
         if (targetAccessibleObject != null) {
             /*
 			 * FIXME: Workaround for https://bugs.eclipse.org/312451
@@ -5003,7 +5003,7 @@ class AccessibleObject {
                 }
             case ACC.EVENT_LOCATION_CHANGED:
                 {
-                    List<AccessibleControlListener> listeners = accessible.accessibleControlListeners;
+                    List<AccessibleControlListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleControlListeners;
                     int length = size(listeners);
                     GdkRectangle rect = new GdkRectangle();
                     if (length > 0) {
@@ -5126,7 +5126,7 @@ class AccessibleObject {
             case ACC.EVENT_TEXT_COLUMN_CHANGED:
                 {
                     int offset = 0;
-                    List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
+                    List<AccessibleTextExtendedListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleTextExtendedListeners;
                     int length = size(listeners);
                     AccessibleTextEvent e = new AccessibleTextEvent(accessible);
                     if (length > 0) {
@@ -5135,7 +5135,7 @@ class AccessibleObject {
                             listener.getCaretOffset(e);
                         }
                     } else {
-                        List<AccessibleTextListener> listeners2 = accessible.accessibleTextListeners;
+                        List<AccessibleTextListener> listeners2 = ((SwtAccessible) accessible.getImpl()).accessibleTextListeners;
                         length = size(listeners2);
                         if (length > 0) {
                             e.childID = id;
@@ -5204,7 +5204,7 @@ class AccessibleObject {
     }
 
     void updateChildren() {
-        List<AccessibleControlListener> listeners = accessible.accessibleControlListeners;
+        List<AccessibleControlListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleControlListeners;
         int length = size(listeners);
         AccessibleControlEvent event = new AccessibleControlEvent(accessible);
         event.childID = id;
@@ -5231,12 +5231,12 @@ class AccessibleObject {
                         listener.getChild(event);
                     }
                     if (event.accessible != null) {
-                        object = event.accessible.getAccessibleObject();
+                        object = ((SwtAccessible) event.accessible.getImpl()).getAccessibleObject();
                         if (object != null)
                             OS.g_object_ref(object.atkHandle);
                     } else {
-                        long type = OS.G_OBJECT_TYPE(accessible.getControlHandle());
-                        long widget = accessible.getControlHandle();
+                        long type = OS.G_OBJECT_TYPE(((SwtAccessible) accessible.getImpl()).getControlHandle());
+                        long widget = ((SwtAccessible) accessible.getImpl()).getControlHandle();
                         object = new AccessibleObject(type, widget, accessible, true);
                     }
                     object.id = id;
@@ -5244,7 +5244,7 @@ class AccessibleObject {
                     OS.g_object_ref(object.atkHandle);
                 }
             } else if (child instanceof Accessible) {
-                object = ((Accessible) child).getAccessibleObject();
+                object = ((SwtAccessible) ((Accessible) child).getImpl()).getAccessibleObject();
                 if (object != null)
                     OS.g_object_ref(object.atkHandle);
             }

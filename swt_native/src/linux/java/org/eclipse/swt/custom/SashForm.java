@@ -18,7 +18,6 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import java.util.WeakHashMap;
 
 /**
  * The SashForm is a composite control that lays out its children in a
@@ -36,6 +35,11 @@ import java.util.WeakHashMap;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 public class SashForm extends Composite {
+
+    /**
+     * The width of all sashes in the form.
+     */
+    public int SASH_WIDTH = 3;
 
     // Remember background and foreground
     // colors to determine whether to set
@@ -68,7 +72,8 @@ public class SashForm extends Composite {
      * @see #getStyle()
      */
     public SashForm(Composite parent, int style) {
-        this(new SWTSashForm((SWTComposite) parent.delegate, style));
+        this((ISashForm) null);
+        setImpl(new SwtSashForm(parent, style, this));
     }
 
     /**
@@ -82,9 +87,8 @@ public class SashForm extends Composite {
      *
      * @return SWT.HORIZONTAL or SWT.VERTICAL
      */
-    @Override
     public int getOrientation() {
-        return ((ISashForm) this.delegate).getOrientation();
+        return getImpl().getOrientation();
     }
 
     /**
@@ -101,12 +105,11 @@ public class SashForm extends Composite {
      * @since 3.4
      */
     public int getSashWidth() {
-        return ((ISashForm) this.delegate).getSashWidth();
+        return getImpl().getSashWidth();
     }
 
-    @Override
     public int getStyle() {
-        return ((ISashForm) this.delegate).getStyle();
+        return getImpl().getStyle();
     }
 
     /**
@@ -116,7 +119,7 @@ public class SashForm extends Composite {
      * @return the control that currently is maximized or null
      */
     public Control getMaximizedControl() {
-        return Control.getInstance(((ISashForm) this.delegate).getMaximizedControl());
+        return getImpl().getMaximizedControl();
     }
 
     /**
@@ -134,7 +137,7 @@ public class SashForm extends Composite {
      * </ul>
      */
     public int[] getWeights() {
-        return ((ISashForm) this.delegate).getWeights();
+        return getImpl().getWeights();
     }
 
     /**
@@ -157,19 +160,16 @@ public class SashForm extends Composite {
      *    <li>ERROR_INVALID_ARGUMENT - if the value of orientation is not SWT.HORIZONTAL or SWT.VERTICAL, SWT.RIGHT_TO_LEFT or SWT.LEFT_TO_RIGHT
      * </ul>
      */
-    @Override
     public void setOrientation(int orientation) {
-        ((ISashForm) this.delegate).setOrientation(orientation);
+        getImpl().setOrientation(orientation);
     }
 
-    @Override
     public void setBackground(Color color) {
-        ((ISashForm) this.delegate).setBackground(color);
+        getImpl().setBackground(color);
     }
 
-    @Override
     public void setForeground(Color color) {
-        ((ISashForm) this.delegate).setForeground(color);
+        getImpl().setForeground(color);
     }
 
     /**
@@ -187,9 +187,8 @@ public class SashForm extends Composite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setLayout(Layout layout) {
-        ((ISashForm) this.delegate).setLayout(layout);
+        getImpl().setLayout(layout);
     }
 
     /**
@@ -207,7 +206,7 @@ public class SashForm extends Composite {
      * </ul>
      */
     public void setMaximizedControl(Control control) {
-        ((ISashForm) this.delegate).setMaximizedControl((IControl) control.delegate);
+        getImpl().setMaximizedControl(control);
     }
 
     /**
@@ -224,12 +223,11 @@ public class SashForm extends Composite {
      * @since 3.4
      */
     public void setSashWidth(int width) {
-        ((ISashForm) this.delegate).setSashWidth(width);
+        getImpl().setSashWidth(width);
     }
 
-    @Override
     public void setToolTipText(String string) {
-        ((ISashForm) this.delegate).setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
     /**
@@ -248,23 +246,18 @@ public class SashForm extends Composite {
      * </ul>
      */
     public void setWeights(int... weights) {
-        ((ISashForm) this.delegate).setWeights(weights);
+        getImpl().setWeights(weights);
     }
 
-    protected SashForm(ISashForm delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected SashForm(ISashForm impl) {
+        super(impl);
     }
 
-    public static SashForm getInstance(ISashForm delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        SashForm ref = (SashForm) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new SashForm(delegate);
-        }
-        return ref;
+    static SashForm createApi(ISashForm impl) {
+        return new SashForm(impl);
+    }
+
+    public ISashForm getImpl() {
+        return (ISashForm) super.getImpl();
     }
 }

@@ -4,9 +4,6 @@ import java.io.*;
 import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface IDirectoryDialog extends IDialog {
 
@@ -92,4 +89,6 @@ public interface IDirectoryDialog extends IDialog {
      * </ul>
      */
     void setMessage(String string);
+
+    DirectoryDialog getApi();
 }

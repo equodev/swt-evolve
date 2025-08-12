@@ -20,7 +20,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
-import java.util.WeakHashMap;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class provide an i-beam that is typically used
@@ -71,7 +71,8 @@ public class Caret extends Widget {
      * @see Widget#getStyle
      */
     public Caret(Canvas parent, int style) {
-        this(new SWTCaret((SWTCanvas) parent.delegate, style));
+        this((ICaret) null);
+        setImpl(Config.isEquo(Caret.class, parent) ? new DartCaret(parent, style, this) : new SwtCaret(parent, style, this));
     }
 
     /**
@@ -86,7 +87,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public Rectangle getBounds() {
-        return ((ICaret) this.delegate).getBounds();
+        return getImpl().getBounds();
     }
 
     /**
@@ -100,7 +101,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public Font getFont() {
-        return ((ICaret) this.delegate).getFont();
+        return getImpl().getFont();
     }
 
     /**
@@ -114,7 +115,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public Image getImage() {
-        return ((ICaret) this.delegate).getImage();
+        return getImpl().getImage();
     }
 
     /**
@@ -129,7 +130,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public Point getLocation() {
-        return ((ICaret) this.delegate).getLocation();
+        return getImpl().getLocation();
     }
 
     /**
@@ -143,7 +144,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public Canvas getParent() {
-        return Canvas.getInstance(((ICaret) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -157,7 +158,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public Point getSize() {
-        return ((ICaret) this.delegate).getSize();
+        return getImpl().getSize();
     }
 
     /**
@@ -178,7 +179,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public boolean getVisible() {
-        return ((ICaret) this.delegate).getVisible();
+        return getImpl().getVisible();
     }
 
     /**
@@ -196,7 +197,7 @@ public class Caret extends Widget {
      * @see #getVisible
      */
     public boolean isVisible() {
-        return ((ICaret) this.delegate).isVisible();
+        return getImpl().isVisible();
     }
 
     /**
@@ -216,7 +217,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setBounds(int x, int y, int width, int height) {
-        ((ICaret) this.delegate).setBounds(x, y, width, height);
+        getImpl().setBounds(x, y, width, height);
     }
 
     /**
@@ -233,7 +234,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setBounds(Rectangle rect) {
-        ((ICaret) this.delegate).setBounds(rect);
+        getImpl().setBounds(rect);
     }
 
     /**
@@ -252,7 +253,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setFont(Font font) {
-        ((ICaret) this.delegate).setFont(font);
+        getImpl().setFont(font);
     }
 
     /**
@@ -271,7 +272,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setImage(Image image) {
-        ((ICaret) this.delegate).setImage(image);
+        getImpl().setImage(image);
     }
 
     /**
@@ -288,7 +289,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setLocation(int x, int y) {
-        ((ICaret) this.delegate).setLocation(x, y);
+        getImpl().setLocation(x, y);
     }
 
     /**
@@ -304,7 +305,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setLocation(Point location) {
-        ((ICaret) this.delegate).setLocation(location);
+        getImpl().setLocation(location);
     }
 
     /**
@@ -319,7 +320,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setSize(int width, int height) {
-        ((ICaret) this.delegate).setSize(width, height);
+        getImpl().setSize(width, height);
     }
 
     /**
@@ -336,7 +337,7 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setSize(Point size) {
-        ((ICaret) this.delegate).setSize(size);
+        getImpl().setSize(size);
     }
 
     /**
@@ -356,23 +357,18 @@ public class Caret extends Widget {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        ((ICaret) this.delegate).setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
-    protected Caret(ICaret delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Caret(ICaret impl) {
+        super(impl);
     }
 
-    public static Caret getInstance(ICaret delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Caret ref = (Caret) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Caret(delegate);
-        }
-        return ref;
+    static Caret createApi(ICaret impl) {
+        return new Caret(impl);
+    }
+
+    public ICaret getImpl() {
+        return (ICaret) super.getImpl();
     }
 }

@@ -23,34 +23,48 @@ package org.eclipse.swt.internal.cairo;
 import org.eclipse.swt.internal.gtk.*;
 
 public class cairo_rectangle_int_t {
-	/** @field cast=(int) */
-	public int x;
-	/** @field cast=(int) */
-	public int y;
-	/** @field cast=(int) */
-	public int width;
-	/** @field cast=(int) */
-	public int height;
-	public static final int sizeof = Cairo.cairo_rectangle_int_t_sizeof();
 
-	public void convertFromGdkRectangle(GdkRectangle rect) {
-		if (rect != null) {
-			x = rect.x;
-			y = rect.y;
-			width = rect.width;
-			height = rect.height;
-		}
-		return;
-	}
+    /**
+     * @field cast=(int)
+     */
+    public int x;
 
-	/**
-	 * Returns a string containing a concise, human-readable
-	 * description of the receiver.
-	 *
-	 * @return a string representation of the <code>cairo_rectangle_int_t</code>
-	 */
-	@Override
-	public String toString() {
-		return "cairo_rectangle_int_t {" + x + ", " + y + ", " + width + ", " + height + "}"; //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
-	}
+    /**
+     * @field cast=(int)
+     */
+    public int y;
+
+    /**
+     * @field cast=(int)
+     */
+    public int width;
+
+    /**
+     * @field cast=(int)
+     */
+    public int height;
+
+    public static final int sizeof = Cairo.cairo_rectangle_int_t_sizeof();
+
+    public void convertFromGdkRectangle(GdkRectangle rect) {
+        if (rect != null) {
+            x = rect.x;
+            y = rect.y;
+            width = rect.width;
+            height = rect.height;
+        }
+        return;
+    }
+
+    /**
+     * Returns a string containing a concise, human-readable
+     * description of the receiver.
+     *
+     * @return a string representation of the <code>cairo_rectangle_int_t</code>
+     */
+    @Override
+    public String toString() {
+        //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+        return "cairo_rectangle_int_t {" + x + ", " + y + ", " + width + ", " + height + "}";
+    }
 }

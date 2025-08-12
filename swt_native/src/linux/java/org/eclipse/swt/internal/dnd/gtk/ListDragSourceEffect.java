@@ -94,7 +94,7 @@ public class ListDragSourceEffect extends DragSourceEffect {
         //TEMPORARY CODE
         if (dragList.isListening(SWT.EraseItem) || dragList.isListening(SWT.PaintItem))
             return null;
-        long handle = dragList.getHandle();
+        long handle = dragList.handle;
         long selection = GTK.gtk_tree_view_get_selection(handle);
         long[] model = null;
         long list = GTK.gtk_tree_selection_get_selected_rows(selection, model);
@@ -106,7 +106,7 @@ public class ListDragSourceEffect extends DragSourceEffect {
         if (count == 1) {
             long path = OS.g_list_nth_data(list, 0);
             long icon = GTK.gtk_tree_view_create_row_drag_icon(handle, path);
-            dragSourceImage = Image.gtk_new(display, SWT.ICON, icon, 0);
+            dragSourceImage = SwtImage.gtk_new(display, SWT.ICON, icon, 0);
             GTK.gtk_tree_path_free(path);
         } else {
             int width = 0, height = 0;
@@ -149,7 +149,7 @@ public class ListDragSourceEffect extends DragSourceEffect {
                 Cairo.cairo_surface_destroy(icons[i]);
             }
             Cairo.cairo_destroy(cairo);
-            dragSourceImage = Image.gtk_new(display, SWT.ICON, surface, 0);
+            dragSourceImage = SwtImage.gtk_new(display, SWT.ICON, surface, 0);
         }
         OS.g_list_free(originalList);
         return dragSourceImage;

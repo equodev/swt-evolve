@@ -59,7 +59,7 @@ public class LocationEvent extends TypedEvent {
      *
      * @since 3.5
      */
-    public LocationEvent(SWTWidget widget) {
+    public LocationEvent(Widget widget) {
         super(widget);
     }
 

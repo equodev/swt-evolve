@@ -14,12 +14,12 @@ class ScrollBarSwt<V extends VScrollBar> extends WidgetSwt<V> {
   @override
   State createState() => ScrollBarImpl<ScrollBarSwt<VScrollBar>, VScrollBar>();
 
-  void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
-  }
-
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/DefaultSelection", payload);
+  }
+
+  void sendSelectionSelection(V val, VEvent? payload) {
+    sendEvent(val, "Selection/Selection", payload);
   }
 }
 

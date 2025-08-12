@@ -98,6 +98,8 @@ public final class FillLayout extends Layout {
      * Constructs a new instance of this class.
      */
     public FillLayout() {
+        this((IFillLayout) null);
+        setImpl(new SwtFillLayout(this));
     }
 
     /**
@@ -108,141 +110,20 @@ public final class FillLayout extends Layout {
      * @since 2.0
      */
     public FillLayout(int type) {
-        this.type = type;
+        this((IFillLayout) null);
+        setImpl(new SwtFillLayout(type, this));
     }
 
-    @Override
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-        Control[] children = composite.getChildren();
-        int count = children.length;
-        int maxWidth = 0, maxHeight = 0;
-        for (int i = 0; i < count; i++) {
-            Control child = children[i];
-            int w = wHint, h = hHint;
-            if (count > 0) {
-                if (type == SWT.HORIZONTAL && wHint != SWT.DEFAULT) {
-                    w = Math.max(0, (wHint - (count - 1) * spacing) / count);
-                }
-                if (type == SWT.VERTICAL && hHint != SWT.DEFAULT) {
-                    h = Math.max(0, (hHint - (count - 1) * spacing) / count);
-                }
-            }
-            Point size = computeChildSize(child, w, h, flushCache);
-            maxWidth = Math.max(maxWidth, size.x);
-            maxHeight = Math.max(maxHeight, size.y);
-        }
-        int width = 0, height = 0;
-        if (type == SWT.HORIZONTAL) {
-            width = count * maxWidth;
-            if (count != 0)
-                width += (count - 1) * spacing;
-            height = maxHeight;
-        } else {
-            width = maxWidth;
-            height = count * maxHeight;
-            if (count != 0)
-                height += (count - 1) * spacing;
-        }
-        width += marginWidth * 2;
-        height += marginHeight * 2;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
-        return new Point(width, height);
+        return getImpl().computeSize(composite, wHint, hHint, flushCache);
     }
 
-    Point computeChildSize(Control control, int wHint, int hHint, boolean flushCache) {
-        Object data = control.getLayoutData();
-        FillData fillData;
-        if (data instanceof FillData) {
-            fillData = (FillData) data;
-        } else {
-            fillData = new FillData();
-            if (data == null) {
-                control.setLayoutData(fillData);
-            }
-        }
-        Point size = null;
-        if (wHint == SWT.DEFAULT && hHint == SWT.DEFAULT) {
-            size = fillData.computeSize(control, wHint, hHint, flushCache);
-        } else {
-            // TEMPORARY CODE
-            int trimX, trimY;
-            if (control instanceof IScrollable) {
-                Rectangle rect = ((IScrollable) control).computeTrim(0, 0, 0, 0);
-                trimX = rect.width;
-                trimY = rect.height;
-            } else {
-                trimX = trimY = control.getBorderWidth() * 2;
-            }
-            int w = wHint == SWT.DEFAULT ? wHint : Math.max(0, wHint - trimX);
-            int h = hHint == SWT.DEFAULT ? hHint : Math.max(0, hHint - trimY);
-            size = fillData.computeSize(control, w, h, flushCache);
-        }
-        return size;
-    }
-
-    @Override
     protected boolean flushCache(Control control) {
-        Object data = control.getLayoutData();
-        if (data instanceof FillData) {
-            ((FillData) data).flushCache();
-            return true;
-        }
-        return false;
+        return getImpl().flushCache(control);
     }
 
-    String getName() {
-        String string = getClass().getName();
-        int index = string.lastIndexOf('.');
-        if (index == -1)
-            return string;
-        return string.substring(index + 1, string.length());
-    }
-
-    @Override
     protected void layout(Composite composite, boolean flushCache) {
-        Rectangle rect = composite.getClientArea();
-        Control[] children = composite.getChildren();
-        int count = children.length;
-        if (count == 0)
-            return;
-        int width = rect.width - marginWidth * 2;
-        int height = rect.height - marginHeight * 2;
-        if (type == SWT.HORIZONTAL) {
-            width -= (count - 1) * spacing;
-            int x = rect.x + marginWidth, extra = width % count;
-            int y = rect.y + marginHeight, cellWidth = width / count;
-            for (int i = 0; i < count; i++) {
-                Control child = children[i];
-                int childWidth = cellWidth;
-                if (i == 0) {
-                    childWidth += extra / 2;
-                } else {
-                    if (i == count - 1)
-                        childWidth += (extra + 1) / 2;
-                }
-                child.setBounds(x, y, childWidth, height);
-                x += childWidth + spacing;
-            }
-        } else {
-            height -= (count - 1) * spacing;
-            int x = rect.x + marginWidth, cellHeight = height / count;
-            int y = rect.y + marginHeight, extra = height % count;
-            for (int i = 0; i < count; i++) {
-                Control child = children[i];
-                int childHeight = cellHeight;
-                if (i == 0) {
-                    childHeight += extra / 2;
-                } else {
-                    if (i == count - 1)
-                        childHeight += (extra + 1) / 2;
-                }
-                child.setBounds(x, y, width, childHeight);
-                y += childHeight + spacing;
-            }
-        }
+        getImpl().layout(composite, flushCache);
     }
 
     /**
@@ -251,18 +132,19 @@ public final class FillLayout extends Layout {
      *
      * @return a string representation of the layout
      */
-    @Override
     public String toString() {
-        String string = getName() + " {";
-        string += "type=" + ((type == SWT.VERTICAL) ? "SWT.VERTICAL" : "SWT.HORIZONTAL") + " ";
-        if (marginWidth != 0)
-            string += "marginWidth=" + marginWidth + " ";
-        if (marginHeight != 0)
-            string += "marginHeight=" + marginHeight + " ";
-        if (spacing != 0)
-            string += "spacing=" + spacing + " ";
-        string = string.trim();
-        string += "}";
-        return string;
+        return getImpl().toString();
+    }
+
+    protected FillLayout(IFillLayout impl) {
+        super(impl);
+    }
+
+    static FillLayout createApi(IFillLayout impl) {
+        return new FillLayout(impl);
+    }
+
+    public IFillLayout getImpl() {
+        return (IFillLayout) super.getImpl();
     }
 }

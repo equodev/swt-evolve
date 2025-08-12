@@ -87,6 +87,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see Widget#getStyle
      */
     public Control(Composite parent, int style) {
+        super(parent, style);
     }
 
     /**
@@ -103,7 +104,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.7
      */
     public int getOrientation() {
-        return ((IControl) this.delegate).getOrientation();
+        return getImpl().getOrientation();
     }
 
     /**
@@ -120,7 +121,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.102
      */
     public int getTextDirection() {
-        return ((IControl) this.delegate).getTextDirection();
+        return getImpl().getTextDirection();
     }
 
     /**
@@ -141,7 +142,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.4
      */
     public boolean print(GC gc) {
-        return ((IControl) this.delegate).print(gc);
+        return getImpl().print(gc);
     }
 
     /**
@@ -172,7 +173,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint) {
-        return ((IControl) this.delegate).computeSize(wHint, hHint);
+        return getImpl().computeSize(wHint, hHint);
     }
 
     /**
@@ -210,7 +211,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return ((IControl) this.delegate).computeSize(wHint, hHint, changed);
+        return getImpl().computeSize(wHint, hHint, changed);
     }
 
     /**
@@ -234,7 +235,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 2.0
      */
     public Accessible getAccessible() {
-        return ((IControl) this.delegate).getAccessible();
+        return getImpl().getAccessible();
     }
 
     /**
@@ -251,7 +252,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Rectangle getBounds() {
-        return ((IControl) this.delegate).getBounds();
+        return getImpl().getBounds();
     }
 
     /**
@@ -278,7 +279,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setBounds(Rectangle rect) {
-        ((IControl) this.delegate).setBounds(rect);
+        getImpl().setBounds(rect);
     }
 
     /**
@@ -310,7 +311,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setBounds(int x, int y, int width, int height) {
-        ((IControl) this.delegate).setBounds(x, y, width, height);
+        getImpl().setBounds(x, y, width, height);
     }
 
     /**
@@ -327,7 +328,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Point getLocation() {
-        return ((IControl) this.delegate).getLocation();
+        return getImpl().getLocation();
     }
 
     /**
@@ -345,7 +346,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setLocation(Point location) {
-        ((IControl) this.delegate).setLocation(location);
+        getImpl().setLocation(location);
     }
 
     /**
@@ -364,7 +365,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setLocation(int x, int y) {
-        ((IControl) this.delegate).setLocation(x, y);
+        getImpl().setLocation(x, y);
     }
 
     /**
@@ -381,7 +382,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Point getSize() {
-        return ((IControl) this.delegate).getSize();
+        return getImpl().getSize();
     }
 
     /**
@@ -408,7 +409,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setSize(Point size) {
-        ((IControl) this.delegate).setSize(size);
+        getImpl().setSize(size);
     }
 
     /**
@@ -429,7 +430,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.4
      */
     public void setRegion(Region region) {
-        ((IControl) this.delegate).setRegion(region);
+        getImpl().setRegion(region);
     }
 
     /**
@@ -454,12 +455,11 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setSize(int width, int height) {
-        ((IControl) this.delegate).setSize(width, height);
+        getImpl().setSize(width, height);
     }
 
-    @Override
     public boolean isAutoScalable() {
-        return ((Drawable) this.delegate).isAutoScalable();
+        return getImpl().isAutoScalable();
     }
 
     /**
@@ -483,7 +483,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see Composite#getChildren
      */
     public void moveAbove(Control control) {
-        ((IControl) this.delegate).moveAbove((IControl) (control != null ? control.delegate : null));
+        getImpl().moveAbove(control);
     }
 
     /**
@@ -507,7 +507,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see Composite#getChildren
      */
     public void moveBelow(Control control) {
-        ((IControl) this.delegate).moveBelow((IControl) (control != null ? control.delegate : null));
+        getImpl().moveBelow(control);
     }
 
     /**
@@ -523,7 +523,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #computeSize(int, int, boolean)
      */
     public void pack() {
-        ((IControl) this.delegate).pack();
+        getImpl().pack();
     }
 
     /**
@@ -548,7 +548,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #computeSize(int, int, boolean)
      */
     public void pack(boolean changed) {
-        ((IControl) this.delegate).pack(changed);
+        getImpl().pack(changed);
     }
 
     /**
@@ -562,7 +562,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setLayoutData(Object layoutData) {
-        ((IControl) this.delegate).setLayoutData(layoutData);
+        getImpl().setLayoutData(layoutData);
     }
 
     /**
@@ -586,7 +586,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 2.1
      */
     public Point toControl(int x, int y) {
-        return ((IControl) this.delegate).toControl(x, y);
+        return getImpl().toControl(x, y);
     }
 
     /**
@@ -610,7 +610,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Point toControl(Point point) {
-        return ((IControl) this.delegate).toControl(point);
+        return getImpl().toControl(point);
     }
 
     /**
@@ -634,7 +634,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 2.1
      */
     public Point toDisplay(int x, int y) {
-        return ((IControl) this.delegate).toDisplay(x, y);
+        return getImpl().toDisplay(x, y);
     }
 
     /**
@@ -658,7 +658,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Point toDisplay(Point point) {
-        return ((IControl) this.delegate).toDisplay(point);
+        return getImpl().toDisplay(point);
     }
 
     /**
@@ -681,7 +681,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #removeControlListener
      */
     public void addControlListener(ControlListener listener) {
-        ((IControl) this.delegate).addControlListener(listener);
+        getImpl().addControlListener(listener);
     }
 
     /**
@@ -706,7 +706,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.3
      */
     public void addDragDetectListener(DragDetectListener listener) {
-        ((IControl) this.delegate).addDragDetectListener(listener);
+        getImpl().addDragDetectListener(listener);
     }
 
     /**
@@ -729,7 +729,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #removeFocusListener
      */
     public void addFocusListener(FocusListener listener) {
-        ((IControl) this.delegate).addFocusListener(listener);
+        getImpl().addFocusListener(listener);
     }
 
     /**
@@ -765,7 +765,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.7
      */
     public void addGestureListener(GestureListener listener) {
-        ((IControl) this.delegate).addGestureListener(listener);
+        getImpl().addGestureListener(listener);
     }
 
     /**
@@ -788,7 +788,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #removeHelpListener
      */
     public void addHelpListener(HelpListener listener) {
-        ((IControl) this.delegate).addHelpListener(listener);
+        getImpl().addHelpListener(listener);
     }
 
     /**
@@ -822,7 +822,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #removeKeyListener
      */
     public void addKeyListener(KeyListener listener) {
-        ((IControl) this.delegate).addKeyListener(listener);
+        getImpl().addKeyListener(listener);
     }
 
     /**
@@ -847,7 +847,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.3
      */
     public void addMenuDetectListener(MenuDetectListener listener) {
-        ((IControl) this.delegate).addMenuDetectListener(listener);
+        getImpl().addMenuDetectListener(listener);
     }
 
     /**
@@ -870,7 +870,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #removeMouseListener
      */
     public void addMouseListener(MouseListener listener) {
-        ((IControl) this.delegate).addMouseListener(listener);
+        getImpl().addMouseListener(listener);
     }
 
     /**
@@ -893,7 +893,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #removeMouseMoveListener
      */
     public void addMouseMoveListener(MouseMoveListener listener) {
-        ((IControl) this.delegate).addMouseMoveListener(listener);
+        getImpl().addMouseMoveListener(listener);
     }
 
     /**
@@ -916,7 +916,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #removeMouseTrackListener
      */
     public void addMouseTrackListener(MouseTrackListener listener) {
-        ((IControl) this.delegate).addMouseTrackListener(listener);
+        getImpl().addMouseTrackListener(listener);
     }
 
     /**
@@ -941,7 +941,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.3
      */
     public void addMouseWheelListener(MouseWheelListener listener) {
-        ((IControl) this.delegate).addMouseWheelListener(listener);
+        getImpl().addMouseWheelListener(listener);
     }
 
     /**
@@ -964,7 +964,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #removePaintListener
      */
     public void addPaintListener(PaintListener listener) {
-        ((IControl) this.delegate).addPaintListener(listener);
+        getImpl().addPaintListener(listener);
     }
 
     /**
@@ -999,7 +999,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.7
      */
     public void addTouchListener(TouchListener listener) {
-        ((IControl) this.delegate).addTouchListener(listener);
+        getImpl().addTouchListener(listener);
     }
 
     /**
@@ -1022,7 +1022,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #removeTraverseListener
      */
     public void addTraverseListener(TraverseListener listener) {
-        ((IControl) this.delegate).addTraverseListener(listener);
+        getImpl().addTraverseListener(listener);
     }
 
     /**
@@ -1043,7 +1043,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #addControlListener
      */
     public void removeControlListener(ControlListener listener) {
-        ((IControl) this.delegate).removeControlListener(listener);
+        getImpl().removeControlListener(listener);
     }
 
     /**
@@ -1066,7 +1066,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.3
      */
     public void removeDragDetectListener(DragDetectListener listener) {
-        ((IControl) this.delegate).removeDragDetectListener(listener);
+        getImpl().removeDragDetectListener(listener);
     }
 
     /**
@@ -1087,7 +1087,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #addFocusListener
      */
     public void removeFocusListener(FocusListener listener) {
-        ((IControl) this.delegate).removeFocusListener(listener);
+        getImpl().removeFocusListener(listener);
     }
 
     /**
@@ -1110,7 +1110,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.7
      */
     public void removeGestureListener(GestureListener listener) {
-        ((IControl) this.delegate).removeGestureListener(listener);
+        getImpl().removeGestureListener(listener);
     }
 
     /**
@@ -1131,7 +1131,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #addHelpListener
      */
     public void removeHelpListener(HelpListener listener) {
-        ((IControl) this.delegate).removeHelpListener(listener);
+        getImpl().removeHelpListener(listener);
     }
 
     /**
@@ -1152,7 +1152,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #addKeyListener
      */
     public void removeKeyListener(KeyListener listener) {
-        ((IControl) this.delegate).removeKeyListener(listener);
+        getImpl().removeKeyListener(listener);
     }
 
     /**
@@ -1176,7 +1176,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.3
      */
     public void removeMenuDetectListener(MenuDetectListener listener) {
-        ((IControl) this.delegate).removeMenuDetectListener(listener);
+        getImpl().removeMenuDetectListener(listener);
     }
 
     /**
@@ -1197,7 +1197,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #addMouseListener
      */
     public void removeMouseListener(MouseListener listener) {
-        ((IControl) this.delegate).removeMouseListener(listener);
+        getImpl().removeMouseListener(listener);
     }
 
     /**
@@ -1218,7 +1218,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #addMouseMoveListener
      */
     public void removeMouseMoveListener(MouseMoveListener listener) {
-        ((IControl) this.delegate).removeMouseMoveListener(listener);
+        getImpl().removeMouseMoveListener(listener);
     }
 
     /**
@@ -1239,7 +1239,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #addMouseTrackListener
      */
     public void removeMouseTrackListener(MouseTrackListener listener) {
-        ((IControl) this.delegate).removeMouseTrackListener(listener);
+        getImpl().removeMouseTrackListener(listener);
     }
 
     /**
@@ -1262,7 +1262,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.3
      */
     public void removeMouseWheelListener(MouseWheelListener listener) {
-        ((IControl) this.delegate).removeMouseWheelListener(listener);
+        getImpl().removeMouseWheelListener(listener);
     }
 
     /**
@@ -1283,7 +1283,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #addPaintListener
      */
     public void removePaintListener(PaintListener listener) {
-        ((IControl) this.delegate).removePaintListener(listener);
+        getImpl().removePaintListener(listener);
     }
 
     /**
@@ -1306,7 +1306,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.7
      */
     public void removeTouchListener(TouchListener listener) {
-        ((IControl) this.delegate).removeTouchListener(listener);
+        getImpl().removeTouchListener(listener);
     }
 
     /**
@@ -1327,7 +1327,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #addTraverseListener
      */
     public void removeTraverseListener(TraverseListener listener) {
-        ((IControl) this.delegate).removeTraverseListener(listener);
+        getImpl().removeTraverseListener(listener);
     }
 
     /**
@@ -1367,7 +1367,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.3
      */
     public boolean dragDetect(Event event) {
-        return ((IControl) this.delegate).dragDetect(event);
+        return getImpl().dragDetect(event);
     }
 
     /**
@@ -1407,7 +1407,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.3
      */
     public boolean dragDetect(MouseEvent event) {
-        return ((IControl) this.delegate).dragDetect(event);
+        return getImpl().dragDetect(event);
     }
 
     /**
@@ -1424,7 +1424,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #setFocus
      */
     public boolean forceFocus() {
-        return ((IControl) this.delegate).forceFocus();
+        return getImpl().forceFocus();
     }
 
     /**
@@ -1442,7 +1442,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Color getBackground() {
-        return ((IControl) this.delegate).getBackground();
+        return getImpl().getBackground();
     }
 
     /**
@@ -1458,7 +1458,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.2
      */
     public Image getBackgroundImage() {
-        return ((IControl) this.delegate).getBackgroundImage();
+        return getImpl().getBackgroundImage();
     }
 
     /**
@@ -1472,7 +1472,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public int getBorderWidth() {
-        return ((IControl) this.delegate).getBorderWidth();
+        return getImpl().getBorderWidth();
     }
 
     /**
@@ -1492,7 +1492,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.3
      */
     public Cursor getCursor() {
-        return ((IControl) this.delegate).getCursor();
+        return getImpl().getCursor();
     }
 
     /**
@@ -1509,7 +1509,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.3
      */
     public boolean getDragDetect() {
-        return ((IControl) this.delegate).getDragDetect();
+        return getImpl().getDragDetect();
     }
 
     /**
@@ -1528,7 +1528,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #isEnabled
      */
     public boolean getEnabled() {
-        return ((IControl) this.delegate).getEnabled();
+        return getImpl().getEnabled();
     }
 
     /**
@@ -1542,7 +1542,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Font getFont() {
-        return ((IControl) this.delegate).getFont();
+        return getImpl().getFont();
     }
 
     /**
@@ -1556,7 +1556,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Color getForeground() {
-        return ((IControl) this.delegate).getForeground();
+        return getImpl().getForeground();
     }
 
     /**
@@ -1570,7 +1570,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Object getLayoutData() {
-        return ((IControl) this.delegate).getLayoutData();
+        return getImpl().getLayoutData();
     }
 
     /**
@@ -1589,7 +1589,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Menu getMenu() {
-        return Menu.getInstance(((IControl) this.delegate).getMenu());
+        return getImpl().getMenu();
     }
 
     /**
@@ -1605,7 +1605,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.0
      */
     public Monitor getMonitor() {
-        return Monitor.getInstance(((IControl) this.delegate).getMonitor());
+        return getImpl().getMonitor();
     }
 
     /**
@@ -1621,7 +1621,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public Composite getParent() {
-        return Composite.getInstance(((IControl) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -1638,7 +1638,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.4
      */
     public Region getRegion() {
-        return ((IControl) this.delegate).getRegion();
+        return getImpl().getRegion();
     }
 
     /**
@@ -1657,7 +1657,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #getParent
      */
     public Shell getShell() {
-        return Shell.getInstance(((IControl) this.delegate).getShell());
+        return getImpl().getShell();
     }
 
     /**
@@ -1672,7 +1672,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public String getToolTipText() {
-        return ((IControl) this.delegate).getToolTipText();
+        return getImpl().getToolTipText();
     }
 
     /**
@@ -1696,7 +1696,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.7
      */
     public boolean getTouchEnabled() {
-        return ((IControl) this.delegate).getTouchEnabled();
+        return getImpl().getTouchEnabled();
     }
 
     /**
@@ -1717,7 +1717,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public boolean getVisible() {
-        return ((IControl) this.delegate).getVisible();
+        return getImpl().getVisible();
     }
 
     /**
@@ -1735,9 +1735,8 @@ public abstract class Control extends Widget implements Drawable {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public long internal_new_GC(GCData data) {
-        return ((Drawable) this.delegate).internal_new_GC(data);
+        return getImpl().internal_new_GC(data);
     }
 
     /**
@@ -1755,9 +1754,8 @@ public abstract class Control extends Widget implements Drawable {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    @Override
     public void internal_dispose_GC(long hDC, GCData data) {
-        ((Drawable) this.delegate).internal_dispose_GC(hDC, data);
+        getImpl().internal_dispose_GC(hDC, data);
     }
 
     /**
@@ -1772,7 +1770,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public boolean isReparentable() {
-        return ((IControl) this.delegate).isReparentable();
+        return getImpl().isReparentable();
     }
 
     /**
@@ -1792,7 +1790,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #getEnabled
      */
     public boolean isEnabled() {
-        return ((IControl) this.delegate).isEnabled();
+        return getImpl().isEnabled();
     }
 
     /**
@@ -1807,7 +1805,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public boolean isFocusControl() {
-        return ((IControl) this.delegate).isFocusControl();
+        return getImpl().isFocusControl();
     }
 
     /**
@@ -1825,7 +1823,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #getVisible
      */
     public boolean isVisible() {
-        return ((IControl) this.delegate).isVisible();
+        return getImpl().isVisible();
     }
 
     /**
@@ -1844,7 +1842,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.105
      */
     public void requestLayout() {
-        ((IControl) this.delegate).requestLayout();
+        getImpl().requestLayout();
     }
 
     /**
@@ -1874,7 +1872,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see SWT#DOUBLE_BUFFERED
      */
     public void redraw() {
-        ((IControl) this.delegate).redraw();
+        getImpl().redraw();
     }
 
     /**
@@ -1915,7 +1913,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see SWT#DOUBLE_BUFFERED
      */
     public void redraw(int x, int y, int width, int height, boolean all) {
-        ((IControl) this.delegate).redraw(x, y, width, height, all);
+        getImpl().redraw(x, y, width, height, all);
     }
 
     /**
@@ -1936,7 +1934,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setBackground(Color color) {
-        ((IControl) this.delegate).setBackground(color);
+        getImpl().setBackground(color);
     }
 
     /**
@@ -1962,7 +1960,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.2
      */
     public void setBackgroundImage(Image image) {
-        ((IControl) this.delegate).setBackgroundImage(image);
+        getImpl().setBackgroundImage(image);
     }
 
     /**
@@ -1979,7 +1977,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setCapture(boolean capture) {
-        ((IControl) this.delegate).setCapture(capture);
+        getImpl().setCapture(capture);
     }
 
     /**
@@ -2002,7 +2000,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setCursor(Cursor cursor) {
-        ((IControl) this.delegate).setCursor(cursor);
+        getImpl().setCursor(cursor);
     }
 
     /**
@@ -2020,7 +2018,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.3
      */
     public void setDragDetect(boolean dragDetect) {
-        ((IControl) this.delegate).setDragDetect(dragDetect);
+        getImpl().setDragDetect(dragDetect);
     }
 
     /**
@@ -2037,7 +2035,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        ((IControl) this.delegate).setEnabled(enabled);
+        getImpl().setEnabled(enabled);
     }
 
     /**
@@ -2055,7 +2053,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #forceFocus
      */
     public boolean setFocus() {
-        return ((IControl) this.delegate).setFocus();
+        return getImpl().setFocus();
     }
 
     /**
@@ -2074,7 +2072,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setFont(Font font) {
-        ((IControl) this.delegate).setFont(font);
+        getImpl().setFont(font);
     }
 
     /**
@@ -2095,7 +2093,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setForeground(Color color) {
-        ((IControl) this.delegate).setForeground(color);
+        getImpl().setForeground(color);
     }
 
     //private void setPanGesture () {
@@ -2127,7 +2125,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setMenu(Menu menu) {
-        ((IControl) this.delegate).setMenu((IMenu) (menu != null ? menu.delegate : null));
+        getImpl().setMenu(menu);
     }
 
     /**
@@ -2144,7 +2142,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.7
      */
     public void setOrientation(int orientation) {
-        ((IControl) this.delegate).setOrientation(orientation);
+        getImpl().setOrientation(orientation);
     }
 
     /**
@@ -2164,7 +2162,7 @@ public abstract class Control extends Widget implements Drawable {
      * 	</ul>
      */
     public boolean setParent(Composite parent) {
-        return ((IControl) this.delegate).setParent((IComposite) parent.delegate);
+        return getImpl().setParent(parent);
     }
 
     /**
@@ -2191,7 +2189,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see #update()
      */
     public void setRedraw(boolean redraw) {
-        ((IControl) this.delegate).setRedraw(redraw);
+        getImpl().setRedraw(redraw);
     }
 
     /**
@@ -2222,7 +2220,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.102
      */
     public void setTextDirection(int textDirection) {
-        ((IControl) this.delegate).setTextDirection(textDirection);
+        getImpl().setTextDirection(textDirection);
     }
 
     /**
@@ -2251,7 +2249,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setToolTipText(String string) {
-        ((IControl) this.delegate).setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
     /**
@@ -2272,7 +2270,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.7
      */
     public void setTouchEnabled(boolean enabled) {
-        ((IControl) this.delegate).setTouchEnabled(enabled);
+        getImpl().setTouchEnabled(enabled);
     }
 
     /**
@@ -2292,7 +2290,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        ((IControl) this.delegate).setVisible(visible);
+        getImpl().setVisible(visible);
     }
 
     /**
@@ -2312,7 +2310,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public boolean traverse(int traversal) {
-        return ((IControl) this.delegate).traverse(traversal);
+        return getImpl().traverse(traversal);
     }
 
     /**
@@ -2348,7 +2346,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.6
      */
     public boolean traverse(int traversal, Event event) {
-        return ((IControl) this.delegate).traverse(traversal, event);
+        return getImpl().traverse(traversal, event);
     }
 
     /**
@@ -2384,7 +2382,7 @@ public abstract class Control extends Widget implements Drawable {
      * @since 3.6
      */
     public boolean traverse(int traversal, KeyEvent event) {
-        return ((IControl) this.delegate).traverse(traversal, event);
+        return getImpl().traverse(traversal, event);
     }
 
     /**
@@ -2410,19 +2408,14 @@ public abstract class Control extends Widget implements Drawable {
      * @see SWT#Paint
      */
     public void update() {
-        ((IControl) this.delegate).update();
+        getImpl().update();
     }
 
-    public Control(IControl delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Control(IControl impl) {
+        super(impl);
     }
 
-    public static Control getInstance(IControl delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        return (Control) INSTANCES.get(delegate);
+    public IControl getImpl() {
+        return (IControl) super.getImpl();
     }
 }

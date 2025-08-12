@@ -5,11 +5,8 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
-public interface IComposite extends IScrollable {
+public interface IComposite extends IScrollable, ImplComposite {
 
     /**
      * Clears any data that has been cached by a Layout for all widgets that
@@ -30,7 +27,9 @@ public interface IComposite extends IScrollable {
      * @deprecated use {@link Composite#layout(Control[], int)} instead
      * @since 3.1
      */
-    void changed(IControl[] changed);
+    void changed(Control[] changed);
+
+    void checkSubclass();
 
     /**
      * Fills the interior of the rectangle specified by the arguments,
@@ -102,7 +101,7 @@ public interface IComposite extends IScrollable {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IControl[] getChildren();
+    Control[] getChildren();
 
     /**
      * Returns layout which is associated with the receiver, or
@@ -147,7 +146,7 @@ public interface IComposite extends IScrollable {
      *
      * @see #setTabList
      */
-    IControl[] getTabList();
+    Control[] getTabList();
 
     /**
      * Returns <code>true</code> if the receiver or any ancestor
@@ -316,7 +315,7 @@ public interface IComposite extends IScrollable {
      *
      * @since 3.1
      */
-    void layout(IControl[] changed);
+    void layout(Control[] changed);
 
     /**
      * Forces a lay out (that is, sets the size and location) of all widgets that
@@ -376,7 +375,7 @@ public interface IComposite extends IScrollable {
      *
      * @since 3.6
      */
-    void layout(IControl[] changed, int flags);
+    void layout(Control[] changed, int flags);
 
     /**
      * Sets the background drawing mode to the argument which should
@@ -451,9 +450,9 @@ public interface IComposite extends IScrollable {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setTabList(IControl[] tabList);
+    void setTabList(Control[] tabList);
 
     String toString();
 
-    long getEmbeddedHandle();
+    Composite getApi();
 }

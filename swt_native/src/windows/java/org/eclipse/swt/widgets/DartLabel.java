@@ -121,8 +121,6 @@ public class DartLabel extends DartControl implements ILabel {
 
     @Override
     void createHandle() {
-        super.createHandle();
-        getApi().state |= THEME_BACKGROUND;
     }
 
     /**
@@ -252,8 +250,8 @@ public class DartLabel extends DartControl implements ILabel {
      * </ul>
      */
     public void setAlignment(int alignment) {
+        dirty();
         checkWidget();
-        this.alignment = alignment;
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
         if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
@@ -261,11 +259,11 @@ public class DartLabel extends DartControl implements ILabel {
         getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         updateStyleBits(getEnabled());
-        getBridge().dirty(this);
     }
 
     @Override
     public void setEnabled(boolean enabled) {
+        dirty();
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
         /*
@@ -277,7 +275,6 @@ public class DartLabel extends DartControl implements ILabel {
 	 */
         updateStyleBits(enabled);
         super.setEnabled(enabled);
-        getBridge().dirty(this);
     }
 
     /**
@@ -295,6 +292,7 @@ public class DartLabel extends DartControl implements ILabel {
      * </ul>
      */
     public void setImage(Image image) {
+        dirty();
         checkWidget();
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
@@ -303,7 +301,6 @@ public class DartLabel extends DartControl implements ILabel {
         this.image = image;
         isImageMode = (image != null);
         updateStyleBits(getEnabled());
-        getBridge().dirty(this);
     }
 
     /**
@@ -338,6 +335,7 @@ public class DartLabel extends DartControl implements ILabel {
      * </ul>
      */
     public void setText(String string) {
+        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -358,7 +356,6 @@ public class DartLabel extends DartControl implements ILabel {
         if ((getApi().state & HAS_AUTO_DIRECTION) != 0) {
             updateTextDirection(AUTO_TEXT_DIRECTION);
         }
-        getBridge().dirty(this);
     }
 
     void updateStyleBits(boolean isEnabled) {
@@ -395,8 +392,6 @@ public class DartLabel extends DartControl implements ILabel {
         }
     }
 
-    int alignment;
-
     public String _text() {
         return text;
     }
@@ -409,12 +404,8 @@ public class DartLabel extends DartControl implements ILabel {
         return isImageMode;
     }
 
-    public int _alignment() {
-        return alignment;
-    }
-
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
     }
 
     public Label getApi() {

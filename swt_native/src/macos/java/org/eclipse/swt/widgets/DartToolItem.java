@@ -244,9 +244,6 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     @Override
     void createHandle() {
-        if ((getApi().style & SWT.SEPARATOR) != 0) {
-        } else {
-        }
     }
 
     @Override
@@ -607,6 +604,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setBackground(Color color) {
+        dirty();
         checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -615,7 +613,6 @@ public class DartToolItem extends DartItem implements IToolItem {
         background = color;
         if (Objects.equals(oldColor, background))
             return;
-        getBridge().dirty(this);
     }
 
     /**
@@ -634,6 +631,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setControl(Control control) {
+        dirty();
         checkWidget();
         if (control != null) {
             if (control.isDisposed())
@@ -650,7 +648,6 @@ public class DartToolItem extends DartItem implements IToolItem {
             control.moveAbove(null);
         }
         ((DartToolBar) parent.getImpl()).relayout();
-        getBridge().dirty(this);
     }
 
     /**
@@ -670,6 +667,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
+        dirty();
         checkWidget();
         this.enabled = enabled;
         if ((getApi().state & DISABLED) == 0 && enabled)
@@ -680,7 +678,6 @@ public class DartToolItem extends DartItem implements IToolItem {
             getApi().state |= DISABLED;
         }
         enableWidget(enabled);
-        getBridge().dirty(this);
     }
 
     /**
@@ -701,6 +698,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setDisabledImage(Image image) {
+        dirty();
         checkWidget();
         if (this.disabledImage == image)
             return;
@@ -710,7 +708,6 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         disabledImage = image;
         updateImage(true);
-        getBridge().dirty(this);
     }
 
     boolean setFocus() {
@@ -739,6 +736,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setForeground(Color color) {
+        dirty();
         checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -748,7 +746,6 @@ public class DartToolItem extends DartItem implements IToolItem {
         if (Objects.equals(oldColor, foreground))
             return;
         updateStyle();
-        getBridge().dirty(this);
     }
 
     /**
@@ -769,6 +766,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setHotImage(Image image) {
+        dirty();
         checkWidget();
         if (this.hotImage == image)
             return;
@@ -778,11 +776,11 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         hotImage = image;
         updateImage(true);
-        getBridge().dirty(this);
     }
 
     @Override
     public void setImage(Image image) {
+        dirty();
         checkWidget();
         if (this.image == image)
             return;
@@ -792,7 +790,6 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         super.setImage(image);
         updateImage(true);
-        getBridge().dirty(this);
     }
 
     boolean setRadioSelection(boolean value) {
@@ -821,11 +818,11 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setSelection(boolean selected) {
+        dirty();
         checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
         this.selection = selected;
-        getBridge().dirty(this);
     }
 
     /**
@@ -857,6 +854,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     @Override
     public void setText(String string) {
+        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -872,7 +870,6 @@ public class DartToolItem extends DartItem implements IToolItem {
         } else {
         }
         ((DartToolBar) parent.getImpl()).relayout();
-        getBridge().dirty(this);
     }
 
     /**
@@ -901,13 +898,13 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setToolTipText(String string) {
+        dirty();
         checkWidget();
         if (string == null && toolTipText == null)
             return;
         if (string != null && string.equals(toolTipText))
             return;
         toolTipText = string;
-        getBridge().dirty(this);
     }
 
     void setVisible(boolean visible) {
@@ -939,6 +936,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setWidth(int width) {
+        dirty();
         checkWidget();
         if ((getApi().style & SWT.SEPARATOR) == 0)
             return;
@@ -946,7 +944,6 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         this.width = width;
         ((DartToolBar) parent.getImpl()).relayout();
-        getBridge().dirty(this);
     }
 
     @Override
@@ -1025,20 +1022,20 @@ public class DartToolItem extends DartItem implements IToolItem {
         if (bridge != null)
             return bridge;
         Composite p = parent;
-        while (!(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
-        return ((DartWidget) p.getImpl()).getBridge();
+        while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Selection, e);
-            });
-        });
+    protected void _hookEvents() {
+        super._hookEvents();
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
             });
         });
     }

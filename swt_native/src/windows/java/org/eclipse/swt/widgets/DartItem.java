@@ -177,13 +177,13 @@ public abstract class DartItem extends DartWidget implements IItem {
      * </ul>
      */
     public void setImage(Image image) {
+        dirty();
         checkWidget();
         if (this.image == image)
             return;
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         this.image = image;
-        getBridge().dirty(this);
     }
 
     /**
@@ -203,6 +203,7 @@ public abstract class DartItem extends DartWidget implements IItem {
      * </ul>
      */
     public void setText(String string) {
+        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -210,7 +211,6 @@ public abstract class DartItem extends DartWidget implements IItem {
         if ((getApi().state & HAS_AUTO_DIRECTION) != 0) {
             updateTextDirection(AUTO_TEXT_DIRECTION);
         }
-        getBridge().dirty(this);
     }
 
     boolean updateTextDirection(int textDirection) {
@@ -238,8 +238,8 @@ public abstract class DartItem extends DartWidget implements IItem {
         return image;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
     }
 
     public Item getApi() {

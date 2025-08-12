@@ -16,7 +16,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class represent the system task bar.
@@ -38,7 +37,8 @@ import java.util.WeakHashMap;
 public class TaskBar extends Widget {
 
     TaskBar(Display display, int style) {
-        this(new SWTTaskBar((SWTDisplay) display.delegate, style));
+        this((ITaskBar) null);
+        setImpl(new SwtTaskBar(display, style, this));
     }
 
     /**
@@ -57,7 +57,7 @@ public class TaskBar extends Widget {
      * </ul>
      */
     public TaskItem getItem(int index) {
-        return TaskItem.getInstance(((ITaskBar) this.delegate).getItem(index));
+        return getImpl().getItem(index);
     }
 
     /**
@@ -71,7 +71,7 @@ public class TaskBar extends Widget {
      * </ul>
      */
     public int getItemCount() {
-        return ((ITaskBar) this.delegate).getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -88,7 +88,7 @@ public class TaskBar extends Widget {
      * </ul>
      */
     public TaskItem getItem(Shell shell) {
-        return TaskItem.getInstance(((ITaskBar) this.delegate).getItem((IShell) shell.delegate));
+        return getImpl().getItem(shell);
     }
 
     /**
@@ -108,23 +108,18 @@ public class TaskBar extends Widget {
      * </ul>
      */
     public TaskItem[] getItems() {
-        return TaskItem.ofArray(((ITaskBar) this.delegate).getItems(), TaskItem.class);
+        return getImpl().getItems();
     }
 
-    protected TaskBar(ITaskBar delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected TaskBar(ITaskBar impl) {
+        super(impl);
     }
 
-    public static TaskBar getInstance(ITaskBar delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        TaskBar ref = (TaskBar) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new TaskBar(delegate);
-        }
-        return ref;
+    static TaskBar createApi(ITaskBar impl) {
+        return new TaskBar(impl);
+    }
+
+    public ITaskBar getImpl() {
+        return (ITaskBar) super.getImpl();
     }
 }

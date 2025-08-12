@@ -18,13 +18,13 @@ package org.eclipse.swt.widgets;
 
 import java.util.*;
 import org.eclipse.swt.*;
-import org.eclipse.swt.custom.SWTCTabFolder;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -83,7 +83,8 @@ public class ToolItem extends Item {
      * @see Widget#getStyle
      */
     public ToolItem(ToolBar parent, int style) {
-        this(parent.delegate instanceof SWTToolBar ? new SWTToolItem((SWTToolBar) parent.delegate, style) : new FlutterToolItem((FlutterToolBar)parent.delegate, style));
+        this((IToolItem) null);
+        setImpl(Config.isEquo(ToolItem.class, parent) ? new DartToolItem(parent, style, this) : new SwtToolItem(parent, style, this));
     }
 
     /**
@@ -123,7 +124,8 @@ public class ToolItem extends Item {
      * @see Widget#getStyle
      */
     public ToolItem(ToolBar parent, int style, int index) {
-        this(parent.delegate instanceof SWTToolBar ? new SWTToolItem((SWTToolBar) parent.delegate, style, index) : new FlutterToolItem((FlutterToolBar)parent.delegate, style, index));
+        this((IToolItem) null);
+        setImpl(Config.isEquo(ToolItem.class, parent) ? new DartToolItem(parent, style, index, this) : new SwtToolItem(parent, style, index, this));
     }
 
     /**
@@ -158,12 +160,15 @@ public class ToolItem extends Item {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((IToolItem) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
-    @Override
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
+    }
+
     public void dispose() {
-        ((IToolItem) this.delegate).dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -183,7 +188,7 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public Color getBackground() {
-        return ((IToolItem) this.delegate).getBackground();
+        return getImpl().getBackground();
     }
 
     /**
@@ -198,7 +203,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        return ((IToolItem) this.delegate).getBounds();
+        return getImpl().getBounds();
     }
 
     /**
@@ -213,7 +218,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        return Control.getInstance(((IToolItem) this.delegate).getControl());
+        return getImpl().getControl();
     }
 
     /**
@@ -231,7 +236,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Image getDisabledImage() {
-        return ((IToolItem) this.delegate).getDisabledImage();
+        return getImpl().getDisabledImage();
     }
 
     /**
@@ -250,7 +255,7 @@ public class ToolItem extends Item {
      * @see #isEnabled
      */
     public boolean getEnabled() {
-        return ((IToolItem) this.delegate).getEnabled();
+        return getImpl().getEnabled();
     }
 
     /**
@@ -266,7 +271,7 @@ public class ToolItem extends Item {
      * @since 3.120
      */
     public Color getForeground() {
-        return ((IToolItem) this.delegate).getForeground();
+        return getImpl().getForeground();
     }
 
     /**
@@ -284,7 +289,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public Image getHotImage() {
-        return ((IToolItem) this.delegate).getHotImage();
+        return getImpl().getHotImage();
     }
 
     /**
@@ -298,9 +303,8 @@ public class ToolItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public Image getImage() {
-        return ((IToolItem) this.delegate).getImage();
+        return getImpl().getImage();
     }
 
     /**
@@ -314,7 +318,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public ToolBar getParent() {
-        return ToolBar.getInstance(((IToolItem) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -335,7 +339,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public boolean getSelection() {
-        return ((IToolItem) this.delegate).getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -349,7 +353,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public String getToolTipText() {
-        return ((IToolItem) this.delegate).getToolTipText();
+        return getImpl().getToolTipText();
     }
 
     /**
@@ -363,7 +367,7 @@ public class ToolItem extends Item {
      * </ul>
      */
     public int getWidth() {
-        return ((IToolItem) this.delegate).getWidth();
+        return getImpl().getWidth();
     }
 
     /**
@@ -374,341 +378,277 @@ public class ToolItem extends Item {
      *
      * @return the receiver's enabled state
      *
-     * @exception SWTException
-     *                         <ul>
-     *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-     *                         disposed</li>
-     *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-     *                         the thread that created the receiver</li>
-     *                         </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      *
      * @see #getEnabled
      */
     public boolean isEnabled() {
-        return ((IToolItem) this.delegate).isEnabled();
+        return getImpl().isEnabled();
     }
 
     /**
-     * Removes the listener from the collection of listeners who will be notified
-     * when the control is selected by the user.
+     * Removes the listener from the collection of listeners who will
+     * be notified when the control is selected by the user.
      *
      * @param listener the listener which should no longer be notified
      *
-     * @exception IllegalArgumentException
-     *                                     <ul>
-     *                                     <li>ERROR_NULL_ARGUMENT - if the listener
-     *                                     is null</li>
-     *                                     </ul>
-     * @exception SWTException
-     *                                     <ul>
-     *                                     <li>ERROR_WIDGET_DISPOSED - if the
-     *                                     receiver has been disposed</li>
-     *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-     *                                     called from the thread that created the
-     *                                     receiver</li>
-     *                                     </ul>
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      *
      * @see SelectionListener
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((IToolItem) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
-     * Sets the receiver's background color to the color specified by the argument,
-     * or to the default system color for the control if the argument is null.
+     * Sets the receiver's background color to the color specified
+     * by the argument, or to the default system color for the control
+     * if the argument is null.
      * <p>
      * Note: This operation is a hint and may be overridden by the platform.
      * </p>
-     * 
      * @param color the new color (or null)
      *
-     * @exception IllegalArgumentException
-     *                                     <ul>
-     *                                     <li>ERROR_INVALID_ARGUMENT - if the
-     *                                     argument has been disposed</li>
-     *                                     </ul>
-     * @exception SWTException
-     *                                     <ul>
-     *                                     <li>ERROR_WIDGET_DISPOSED - if the
-     *                                     receiver has been disposed</li>
-     *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-     *                                     called from the thread that created the
-     *                                     receiver</li>
-     *                                     </ul>
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_INVALID_ARGUMENT - if the argument has been disposed</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      *
      * @since 3.120
      */
     public void setBackground(Color color) {
-        ((IToolItem) this.delegate).setBackground(color);
+        getImpl().setBackground(color);
     }
 
     /**
-     * Sets the control that is used to fill the bounds of the item when the item is
-     * a <code>SEPARATOR</code>.
+     * Sets the control that is used to fill the bounds of
+     * the item when the item is a <code>SEPARATOR</code>.
      *
      * @param control the new control
      *
-     * @exception IllegalArgumentException
-     *                                     <ul>
-     *                                     <li>ERROR_INVALID_ARGUMENT - if the
-     *                                     control has been disposed</li>
-     *                                     <li>ERROR_INVALID_PARENT - if the control
-     *                                     is not in the same widget tree</li>
-     *                                     </ul>
-     * @exception SWTException
-     *                                     <ul>
-     *                                     <li>ERROR_WIDGET_DISPOSED - if the
-     *                                     receiver has been disposed</li>
-     *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-     *                                     called from the thread that created the
-     *                                     receiver</li>
-     *                                     </ul>
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_INVALID_ARGUMENT - if the control has been disposed</li>
+     *    <li>ERROR_INVALID_PARENT - if the control is not in the same widget tree</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      */
     public void setControl(Control control) {
-        ((IToolItem) this.delegate).setControl((IControl) (control == null ? null : control.delegate));
+        getImpl().setControl(control);
     }
 
     /**
-     * Sets the receiver's disabled image to the argument, which may be null
-     * indicating that no disabled image should be displayed.
+     * Sets the receiver's disabled image to the argument, which may be
+     * null indicating that no disabled image should be displayed.
      * <p>
      * The disabled image is displayed when the receiver is disabled.
      * </p>
      *
      * @param image the disabled image to display on the receiver (may be null)
      *
-     * @exception IllegalArgumentException
-     *                                     <ul>
-     *                                     <li>ERROR_INVALID_ARGUMENT - if the image
-     *                                     has been disposed</li>
-     *                                     </ul>
-     * @exception SWTException
-     *                                     <ul>
-     *                                     <li>ERROR_WIDGET_DISPOSED - if the
-     *                                     receiver has been disposed</li>
-     *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-     *                                     called from the thread that created the
-     *                                     receiver</li>
-     *                                     </ul>
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_INVALID_ARGUMENT - if the image has been disposed</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      */
     public void setDisabledImage(Image image) {
-        ((IToolItem) this.delegate).setDisabledImage(image);
+        getImpl().setDisabledImage(image);
     }
 
     /**
-     * Enables the receiver if the argument is <code>true</code>, and disables it
-     * otherwise.
+     * Enables the receiver if the argument is <code>true</code>,
+     * and disables it otherwise.
      * <p>
-     * A disabled control is typically not selectable from the user interface and
-     * draws with an inactive or "grayed" look.
+     * A disabled control is typically
+     * not selectable from the user interface and draws with an
+     * inactive or "grayed" look.
      * </p>
      *
      * @param enabled the new enabled state
      *
-     * @exception SWTException
-     *                         <ul>
-     *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-     *                         disposed</li>
-     *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-     *                         the thread that created the receiver</li>
-     *                         </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      */
     public void setEnabled(boolean enabled) {
-        ((IToolItem) this.delegate).setEnabled(enabled);
+        getImpl().setEnabled(enabled);
     }
 
     /**
-     * Sets the receiver's foreground color to the color specified by the argument,
-     * or to the default system color for the control if the argument is null.
+     * Sets the receiver's foreground color to the color specified
+     * by the argument, or to the default system color for the control
+     * if the argument is null.
      * <p>
      * Note: This operation is a hint and may be overridden by the platform.
      * </p>
-     * 
      * @param color the new color (or null)
      *
-     * @exception IllegalArgumentException
-     *                                     <ul>
-     *                                     <li>ERROR_INVALID_ARGUMENT - if the
-     *                                     argument has been disposed</li>
-     *                                     </ul>
-     * @exception SWTException
-     *                                     <ul>
-     *                                     <li>ERROR_WIDGET_DISPOSED - if the
-     *                                     receiver has been disposed</li>
-     *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-     *                                     called from the thread that created the
-     *                                     receiver</li>
-     *                                     </ul>
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_INVALID_ARGUMENT - if the argument has been disposed</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      *
      * @since 3.120
      */
     public void setForeground(Color color) {
-        ((IToolItem) this.delegate).setForeground(color);
+        getImpl().setForeground(color);
     }
 
     /**
-     * Sets the receiver's hot image to the argument, which may be null indicating
-     * that no hot image should be displayed.
+     * Sets the receiver's hot image to the argument, which may be
+     * null indicating that no hot image should be displayed.
      * <p>
      * The hot image is displayed when the mouse enters the receiver.
      * </p>
      *
      * @param image the hot image to display on the receiver (may be null)
      *
-     * @exception IllegalArgumentException
-     *                                     <ul>
-     *                                     <li>ERROR_INVALID_ARGUMENT - if the image
-     *                                     has been disposed</li>
-     *                                     </ul>
-     * @exception SWTException
-     *                                     <ul>
-     *                                     <li>ERROR_WIDGET_DISPOSED - if the
-     *                                     receiver has been disposed</li>
-     *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-     *                                     called from the thread that created the
-     *                                     receiver</li>
-     *                                     </ul>
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_INVALID_ARGUMENT - if the image has been disposed</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      */
     public void setHotImage(Image image) {
-        ((IToolItem) this.delegate).setHotImage(image);
+        getImpl().setHotImage(image);
     }
 
-    @Override
     public void setImage(Image image) {
-        ((IToolItem) this.delegate).setImage(image);
+        getImpl().setImage(image);
     }
 
     /**
      * Sets the selection state of the receiver.
      * <p>
-     * When the receiver is of type <code>CHECK</code> or <code>RADIO</code>, it is
-     * selected when it is checked (which some platforms draw as a pushed in
-     * button).
+     * When the receiver is of type <code>CHECK</code> or <code>RADIO</code>,
+     * it is selected when it is checked (which some platforms draw as a
+     * pushed in button).
      * </p>
      *
      * @param selected the new selection state
      *
-     * @exception SWTException
-     *                         <ul>
-     *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-     *                         disposed</li>
-     *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-     *                         the thread that created the receiver</li>
-     *                         </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      */
     public void setSelection(boolean selected) {
-        ((IToolItem) this.delegate).setSelection(selected);
+        getImpl().setSelection(selected);
     }
 
     /**
-     * Sets the receiver's text. The string may include the mnemonic character.
+     * Sets the receiver's text. The string may include
+     * the mnemonic character.
      * <p>
-     * Mnemonics are indicated by an '&amp;' that causes the next character to be
-     * the mnemonic. When the user presses a key sequence that matches the mnemonic,
-     * a selection event occurs. On most platforms, the mnemonic appears underlined
-     * but may be emphasised in a platform specific manner. The mnemonic indicator
-     * character '&amp;' can be escaped by doubling it in the string, causing a
-     * single '&amp;' to be displayed.
-     * </p>
-     * <p>
-     * Note: If control characters like '\n', '\t' etc. are used in the string, then
-     * the behavior is platform dependent.
+     * Mnemonics are indicated by an '&amp;' that causes the next
+     * character to be the mnemonic.  When the user presses a
+     * key sequence that matches the mnemonic, a selection
+     * event occurs. On most platforms, the mnemonic appears
+     * underlined but may be emphasised in a platform specific
+     * manner.  The mnemonic indicator character '&amp;' can be
+     * escaped by doubling it in the string, causing a single
+     * '&amp;' to be displayed.
+     * </p><p>
+     * Note: If control characters like '\n', '\t' etc. are used
+     * in the string, then the behavior is platform dependent.
      * </p>
      *
      * @param string the new text
      *
-     * @exception IllegalArgumentException
-     *                                     <ul>
-     *                                     <li>ERROR_NULL_ARGUMENT - if the text is
-     *                                     null</li>
-     *                                     </ul>
-     * @exception SWTException
-     *                                     <ul>
-     *                                     <li>ERROR_WIDGET_DISPOSED - if the
-     *                                     receiver has been disposed</li>
-     *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
-     *                                     called from the thread that created the
-     *                                     receiver</li>
-     *                                     </ul>
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the text is null</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      */
-    @Override
     public void setText(String string) {
-        ((IToolItem) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
     /**
-     * Sets the receiver's tool tip text to the argument, which may be null
-     * indicating that the default tool tip for the control will be shown. For a
-     * control that has a default tool tip, such as the Tree control on Windows,
-     * setting the tool tip text to an empty string replaces the default, causing no
-     * tool tip text to be shown.
+     * Sets the receiver's tool tip text to the argument, which
+     * may be null indicating that the default tool tip for the
+     * control will be shown. For a control that has a default
+     * tool tip, such as the Tree control on Windows, setting
+     * the tool tip text to an empty string replaces the default,
+     * causing no tool tip text to be shown.
      * <p>
-     * The mnemonic indicator (character '&amp;') is not displayed in a tool tip. To
-     * display a single '&amp;' in the tool tip, the character '&amp;' can be
+     * The mnemonic indicator (character '&amp;') is not displayed in a tool tip.
+     * To display a single '&amp;' in the tool tip, the character '&amp;' can be
      * escaped by doubling it in the string.
      * </p>
      * <p>
      * NOTE: This operation is a hint and behavior is platform specific, on Windows
-     * for CJK-style mnemonics of the form " (&amp;C)" at the end of the tooltip
-     * text are not shown in tooltip.
+     * for CJK-style mnemonics of the form " (&amp;C)" at the end of the tooltip text
+     * are not shown in tooltip.
      * </p>
      *
      * @param string the new tool tip text (or null)
      *
-     * @exception SWTException
-     *                         <ul>
-     *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-     *                         disposed</li>
-     *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-     *                         the thread that created the receiver</li>
-     *                         </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      */
     public void setToolTipText(String string) {
-        ((IToolItem) this.delegate).setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
     /**
      * Sets the width of the receiver, for <code>SEPARATOR</code> ToolItems.
      *
-     * @param width the new width. If the new value is <code>SWT.DEFAULT</code>, the
-     *              width is a fixed-width area whose amount is determined by the
-     *              platform. If the new value is 0 a vertical or horizontal line
-     *              will be drawn, depending on the setting of the corresponding
-     *              style bit (<code>SWT.VERTICAL</code> or
-     *              <code>SWT.HORIZONTAL</code>). If the new value is
-     *              <code>SWT.SEPARATOR_FILL</code> a variable-width space is
-     *              inserted that acts as a spring between the two adjoining items
-     *              which will push them out to the extent of the containing
-     *              ToolBar.
+     * @param width the new width. If the new value is <code>SWT.DEFAULT</code>,
+     * the width is a fixed-width area whose amount is determined by the platform.
+     * If the new value is 0 a vertical or horizontal line will be drawn, depending
+     * on the setting of the corresponding style bit (<code>SWT.VERTICAL</code> or
+     * <code>SWT.HORIZONTAL</code>). If the new value is <code>SWT.SEPARATOR_FILL</code>
+     * a variable-width space is inserted that acts as a spring between the two adjoining
+     * items which will push them out to the extent of the containing ToolBar.
      *
-     * @exception SWTException
-     *                         <ul>
-     *                         <li>ERROR_WIDGET_DISPOSED - if the receiver has been
-     *                         disposed</li>
-     *                         <li>ERROR_THREAD_INVALID_ACCESS - if not called from
-     *                         the thread that created the receiver</li>
-     *                         </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
      */
     public void setWidth(int width) {
-        ((IToolItem) this.delegate).setWidth(width);
+        getImpl().setWidth(width);
     }
 
-    protected ToolItem(IToolItem delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected ToolItem(IToolItem impl) {
+        super(impl);
     }
 
-    public static ToolItem getInstance(IToolItem delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        ToolItem ref = (ToolItem) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new ToolItem(delegate);
-        }
-        return ref;
+    static ToolItem createApi(IToolItem impl) {
+        return new ToolItem(impl);
+    }
+
+    public IToolItem getImpl() {
+        return (IToolItem) super.getImpl();
     }
 }

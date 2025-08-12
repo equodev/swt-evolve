@@ -57,7 +57,8 @@ public class DirectoryDialog extends Dialog {
      * </ul>
      */
     public DirectoryDialog(Shell parent) {
-        this(new SWTDirectoryDialog((SWTShell) parent.delegate));
+        this((IDirectoryDialog) null);
+        setImpl(new SwtDirectoryDialog(parent, this));
     }
 
     /**
@@ -85,7 +86,8 @@ public class DirectoryDialog extends Dialog {
      * </ul>
      */
     public DirectoryDialog(Shell parent, int style) {
-        this(new SWTDirectoryDialog((SWTShell) parent.delegate, style));
+        this((IDirectoryDialog) null);
+        setImpl(new SwtDirectoryDialog(parent, style, this));
     }
 
     /**
@@ -97,7 +99,7 @@ public class DirectoryDialog extends Dialog {
      * @see #setFilterPath
      */
     public String getFilterPath() {
-        return ((IDirectoryDialog) this.delegate).getFilterPath();
+        return getImpl().getFilterPath();
     }
 
     /**
@@ -108,7 +110,7 @@ public class DirectoryDialog extends Dialog {
      * @return the message
      */
     public String getMessage() {
-        return ((IDirectoryDialog) this.delegate).getMessage();
+        return getImpl().getMessage();
     }
 
     /**
@@ -124,7 +126,7 @@ public class DirectoryDialog extends Dialog {
      * </ul>
      */
     public String open() {
-        return ((IDirectoryDialog) this.delegate).open();
+        return getImpl().open();
     }
 
     /**
@@ -143,7 +145,7 @@ public class DirectoryDialog extends Dialog {
      * @since 3.126
      */
     public Optional<String> openDialog() {
-        return ((IDirectoryDialog) this.delegate).openDialog();
+        return getImpl().openDialog();
     }
 
     /**
@@ -160,7 +162,7 @@ public class DirectoryDialog extends Dialog {
      * @param string the filter path
      */
     public void setFilterPath(String string) {
-        ((IDirectoryDialog) this.delegate).setFilterPath(string);
+        getImpl().setFilterPath(string);
     }
 
     /**
@@ -180,23 +182,18 @@ public class DirectoryDialog extends Dialog {
      * </ul>
      */
     public void setMessage(String string) {
-        ((IDirectoryDialog) this.delegate).setMessage(string);
+        getImpl().setMessage(string);
     }
 
-    protected DirectoryDialog(IDirectoryDialog delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected DirectoryDialog(IDirectoryDialog impl) {
+        super(impl);
     }
 
-    public static DirectoryDialog getInstance(IDirectoryDialog delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        DirectoryDialog ref = (DirectoryDialog) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new DirectoryDialog(delegate);
-        }
-        return ref;
+    static DirectoryDialog createApi(IDirectoryDialog impl) {
+        return new DirectoryDialog(impl);
+    }
+
+    public IDirectoryDialog getImpl() {
+        return (IDirectoryDialog) super.getImpl();
     }
 }

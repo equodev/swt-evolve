@@ -3,8 +3,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
 
 public interface IScale extends IControl {
 
@@ -188,4 +186,6 @@ public interface IScale extends IControl {
      * </ul>
      */
     void setSelection(int value);
+
+    Scale getApi();
 }

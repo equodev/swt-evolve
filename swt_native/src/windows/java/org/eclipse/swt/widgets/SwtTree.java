@@ -5918,7 +5918,7 @@ public class SwtTree extends SwtComposite implements ITree {
     }
 
     @Override
-    long topHandle() {
+    public long topHandle() {
         return hwndParent != 0 ? hwndParent : getApi().handle;
     }
 

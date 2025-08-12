@@ -38,7 +38,7 @@ class ClipboardProxy {
 
     long clipboardOwner = GTK.GTK4 ? GTK4.gtk_window_new() : GTK3.gtk_window_new(GTK.GTK_WINDOW_TOPLEVEL);
 
-    SWTDisplay display;
+    Display display;
 
     Clipboard activeClipboard = null;
 
@@ -51,7 +51,7 @@ class ClipboardProxy {
     //$NON-NLS-1$
     static String ID = "CLIPBOARD PROXY OBJECT";
 
-    static ClipboardProxy _getInstance(final SWTDisplay display) {
+    static ClipboardProxy _getInstance(final Display display) {
         ClipboardProxy proxy = (ClipboardProxy) display.getData(ID);
         if (proxy != null)
             return proxy;
@@ -67,7 +67,7 @@ class ClipboardProxy {
         return proxy;
     }
 
-    ClipboardProxy(SWTDisplay display) {
+    ClipboardProxy(Display display) {
         this.display = display;
         //$NON-NLS-1$
         getFunc = new Callback(this, "getFunc", 4);
@@ -77,10 +77,10 @@ class ClipboardProxy {
 
     void clear(Clipboard owner, int clipboards) {
         if ((clipboards & DND.CLIPBOARD) != 0 && activeClipboard == owner) {
-            gtk_gdk_clipboard_clear(Clipboard.GTKCLIPBOARD);
+            gtk_gdk_clipboard_clear(SwtClipboard.GTKCLIPBOARD);
         }
         if ((clipboards & DND.SELECTION_CLIPBOARD) != 0 && activePrimaryClipboard == owner) {
-            gtk_gdk_clipboard_clear(Clipboard.GTKPRIMARYCLIPBOARD);
+            gtk_gdk_clipboard_clear(SwtClipboard.GTKPRIMARYCLIPBOARD);
         }
     }
 
@@ -93,12 +93,12 @@ class ClipboardProxy {
     }
 
     long clearFunc(long clipboard, long user_data_or_owner) {
-        if (clipboard == Clipboard.GTKCLIPBOARD) {
+        if (clipboard == SwtClipboard.GTKCLIPBOARD) {
             activeClipboard = null;
             clipboardData = null;
             clipboardDataTypes = null;
         }
-        if (clipboard == Clipboard.GTKPRIMARYCLIPBOARD) {
+        if (clipboard == SwtClipboard.GTKPRIMARYCLIPBOARD) {
             activePrimaryClipboard = null;
             primaryClipboardData = null;
             primaryClipboardDataTypes = null;
@@ -111,11 +111,11 @@ class ClipboardProxy {
             return;
         if (activeClipboard != null) {
             if (!GTK.GTK4)
-                GTK3.gtk_clipboard_store(Clipboard.GTKCLIPBOARD);
+                GTK3.gtk_clipboard_store(SwtClipboard.GTKCLIPBOARD);
         }
         if (activePrimaryClipboard != null) {
             if (!GTK.GTK4)
-                GTK3.gtk_clipboard_store(Clipboard.GTKPRIMARYCLIPBOARD);
+                GTK3.gtk_clipboard_store(SwtClipboard.GTKPRIMARYCLIPBOARD);
         }
         display = null;
         if (getFunc != null)
@@ -148,7 +148,7 @@ class ClipboardProxy {
         long target = GTK3.gtk_selection_data_get_target(selection_data);
         TransferData tdata = new TransferData();
         tdata.type = target;
-        Transfer[] types = (clipboard == Clipboard.GTKCLIPBOARD) ? clipboardDataTypes : primaryClipboardDataTypes;
+        Transfer[] types = (clipboard == SwtClipboard.GTKCLIPBOARD) ? clipboardDataTypes : primaryClipboardDataTypes;
         int index = -1;
         for (int i = 0; i < types.length; i++) {
             if (types[i].isSupportedType(tdata)) {
@@ -158,7 +158,7 @@ class ClipboardProxy {
         }
         if (index == -1)
             return 0;
-        Object[] data = (clipboard == Clipboard.GTKCLIPBOARD) ? clipboardData : primaryClipboardData;
+        Object[] data = (clipboard == SwtClipboard.GTKCLIPBOARD) ? clipboardData : primaryClipboardData;
         types[index].javaToNative(data[index], tdata);
         if (tdata.format < 8 || tdata.format % 8 != 0) {
             return 0;
@@ -212,10 +212,10 @@ class ClipboardProxy {
 			* though we set the data again. So, this API has to be used whenever we
 			* are setting the contents.
 			*/
-                if (!GTK3.gtk_clipboard_set_with_owner(Clipboard.GTKCLIPBOARD, pTargetsList, entries.length, getFuncProc, clearFuncProc, clipboardOwner)) {
+                if (!GTK3.gtk_clipboard_set_with_owner(SwtClipboard.GTKCLIPBOARD, pTargetsList, entries.length, getFuncProc, clearFuncProc, clipboardOwner)) {
                     return false;
                 }
-                GTK3.gtk_clipboard_set_can_store(Clipboard.GTKCLIPBOARD, 0, 0);
+                GTK3.gtk_clipboard_set_can_store(SwtClipboard.GTKCLIPBOARD, 0, 0);
                 activeClipboard = owner;
             }
             if ((clipboards & DND.SELECTION_CLIPBOARD) != 0) {
@@ -223,10 +223,10 @@ class ClipboardProxy {
                 primaryClipboardDataTypes = dataTypes;
                 long getFuncProc = getFunc.getAddress();
                 long clearFuncProc = clearFunc.getAddress();
-                if (!GTK3.gtk_clipboard_set_with_owner(Clipboard.GTKPRIMARYCLIPBOARD, pTargetsList, entries.length, getFuncProc, clearFuncProc, clipboardOwner)) {
+                if (!GTK3.gtk_clipboard_set_with_owner(SwtClipboard.GTKPRIMARYCLIPBOARD, pTargetsList, entries.length, getFuncProc, clearFuncProc, clipboardOwner)) {
                     return false;
                 }
-                GTK3.gtk_clipboard_set_can_store(Clipboard.GTKPRIMARYCLIPBOARD, 0, 0);
+                GTK3.gtk_clipboard_set_can_store(SwtClipboard.GTKPRIMARYCLIPBOARD, 0, 0);
                 activePrimaryClipboard = owner;
             }
             return true;
@@ -263,7 +263,7 @@ class ClipboardProxy {
         if ((clipboards & DND.CLIPBOARD) != 0) {
             clipboardData = data;
             clipboardDataTypes = dataTypes;
-            result = GTK4.gdk_clipboard_set_content(Clipboard.GTKCLIPBOARD, union);
+            result = GTK4.gdk_clipboard_set_content(SwtClipboard.GTKCLIPBOARD, union);
             activeClipboard = owner;
         }
         return result;
@@ -285,7 +285,7 @@ class ClipboardProxy {
                 if (!(data instanceof ImageData))
                     DND.error(DND.ERROR_INVALID_DATA);
                 ImageData imgData = (ImageData) data;
-                Image image = new Image(SWTDisplay.getCurrent(), imgData);
+                Image image = new Image(SwtDisplay.getCurrent(), imgData);
                 long pixbuf = ImageList.createPixbuf(image);
                 if (pixbuf != 0) {
                     provider = GTK4.gdk_content_provider_new_typed(GDK.GDK_TYPE_PIXBUF(), pixbuf);

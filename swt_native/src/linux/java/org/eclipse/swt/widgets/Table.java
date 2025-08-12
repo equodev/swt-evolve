@@ -24,7 +24,6 @@ import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class implement a selectable user interface
@@ -113,7 +112,12 @@ public class Table extends Composite {
      * @see Widget#getStyle
      */
     public Table(Composite parent, int style) {
-        this(new SWTTable((SWTComposite) parent.delegate, style));
+        this((ITable) null);
+        setImpl(new SwtTable(parent, style, this));
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -144,7 +148,7 @@ public class Table extends Composite {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((ITable) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -169,7 +173,7 @@ public class Table extends Composite {
      * @since 3.0
      */
     public void clear(int index) {
-        ((ITable) this.delegate).clear(index);
+        getImpl().clear(index);
     }
 
     /**
@@ -196,7 +200,7 @@ public class Table extends Composite {
      * @since 3.0
      */
     public void clear(int start, int end) {
-        ((ITable) this.delegate).clear(start, end);
+        getImpl().clear(start, end);
     }
 
     /**
@@ -222,7 +226,7 @@ public class Table extends Composite {
      * @since 3.0
      */
     public void clear(int[] indices) {
-        ((ITable) this.delegate).clear(indices);
+        getImpl().clear(indices);
     }
 
     /**
@@ -242,7 +246,7 @@ public class Table extends Composite {
      * @since 3.0
      */
     public void clearAll() {
-        ((ITable) this.delegate).clearAll();
+        getImpl().clearAll();
     }
 
     /**
@@ -258,7 +262,7 @@ public class Table extends Composite {
      * </ul>
      */
     public void deselect(int index) {
-        ((ITable) this.delegate).deselect(index);
+        getImpl().deselect(index);
     }
 
     /**
@@ -277,7 +281,7 @@ public class Table extends Composite {
      * </ul>
      */
     public void deselect(int start, int end) {
-        ((ITable) this.delegate).deselect(start, end);
+        getImpl().deselect(start, end);
     }
 
     /**
@@ -298,7 +302,7 @@ public class Table extends Composite {
      * </ul>
      */
     public void deselect(int[] indices) {
-        ((ITable) this.delegate).deselect(indices);
+        getImpl().deselect(indices);
     }
 
     /**
@@ -310,7 +314,7 @@ public class Table extends Composite {
      * </ul>
      */
     public void deselectAll() {
-        ((ITable) this.delegate).deselectAll();
+        getImpl().deselectAll();
     }
 
     /**
@@ -341,7 +345,7 @@ public class Table extends Composite {
      * @see SWT#Move
      */
     public TableColumn getColumn(int index) {
-        return TableColumn.getInstance(((ITable) this.delegate).getColumn(index));
+        return getImpl().getColumn(index);
     }
 
     /**
@@ -359,7 +363,7 @@ public class Table extends Composite {
      * </ul>
      */
     public int getColumnCount() {
-        return ((ITable) this.delegate).getColumnCount();
+        return getImpl().getColumnCount();
     }
 
     /**
@@ -391,7 +395,7 @@ public class Table extends Composite {
      * @since 3.1
      */
     public int[] getColumnOrder() {
-        return ((ITable) this.delegate).getColumnOrder();
+        return getImpl().getColumnOrder();
     }
 
     /**
@@ -422,7 +426,7 @@ public class Table extends Composite {
      * @see SWT#Move
      */
     public TableColumn[] getColumns() {
-        return TableColumn.ofArray(((ITable) this.delegate).getColumns(), TableColumn.class);
+        return getImpl().getColumns();
     }
 
     /**
@@ -436,7 +440,7 @@ public class Table extends Composite {
      * </ul>
      */
     public int getGridLineWidth() {
-        return ((ITable) this.delegate).getGridLineWidth();
+        return getImpl().getGridLineWidth();
     }
 
     /**
@@ -451,7 +455,7 @@ public class Table extends Composite {
      * @since 3.106
      */
     public Color getHeaderBackground() {
-        return ((ITable) this.delegate).getHeaderBackground();
+        return getImpl().getHeaderBackground();
     }
 
     /**
@@ -466,7 +470,7 @@ public class Table extends Composite {
      * @since 3.106
      */
     public Color getHeaderForeground() {
-        return ((ITable) this.delegate).getHeaderForeground();
+        return getImpl().getHeaderForeground();
     }
 
     /**
@@ -482,7 +486,7 @@ public class Table extends Composite {
      * @since 2.0
      */
     public int getHeaderHeight() {
-        return ((ITable) this.delegate).getHeaderHeight();
+        return getImpl().getHeaderHeight();
     }
 
     /**
@@ -503,7 +507,7 @@ public class Table extends Composite {
      * </ul>
      */
     public boolean getHeaderVisible() {
-        return ((ITable) this.delegate).getHeaderVisible();
+        return getImpl().getHeaderVisible();
     }
 
     /**
@@ -522,7 +526,7 @@ public class Table extends Composite {
      * </ul>
      */
     public TableItem getItem(int index) {
-        return TableItem.getInstance(((ITable) this.delegate).getItem(index));
+        return getImpl().getItem(index);
     }
 
     /**
@@ -549,7 +553,7 @@ public class Table extends Composite {
      * </ul>
      */
     public TableItem getItem(Point point) {
-        return TableItem.getInstance(((ITable) this.delegate).getItem(point));
+        return getImpl().getItem(point);
     }
 
     /**
@@ -563,7 +567,7 @@ public class Table extends Composite {
      * </ul>
      */
     public int getItemCount() {
-        return ((ITable) this.delegate).getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -578,7 +582,7 @@ public class Table extends Composite {
      * </ul>
      */
     public int getItemHeight() {
-        return ((ITable) this.delegate).getItemHeight();
+        return getImpl().getItemHeight();
     }
 
     /**
@@ -598,7 +602,7 @@ public class Table extends Composite {
      * </ul>
      */
     public TableItem[] getItems() {
-        return TableItem.ofArray(((ITable) this.delegate).getItems(), TableItem.class);
+        return getImpl().getItems();
     }
 
     /**
@@ -620,7 +624,7 @@ public class Table extends Composite {
      * </ul>
      */
     public boolean getLinesVisible() {
-        return ((ITable) this.delegate).getLinesVisible();
+        return getImpl().getLinesVisible();
     }
 
     /**
@@ -640,7 +644,7 @@ public class Table extends Composite {
      * </ul>
      */
     public TableItem[] getSelection() {
-        return TableItem.ofArray(((ITable) this.delegate).getSelection(), TableItem.class);
+        return getImpl().getSelection();
     }
 
     /**
@@ -654,7 +658,7 @@ public class Table extends Composite {
      * </ul>
      */
     public int getSelectionCount() {
-        return ((ITable) this.delegate).getSelectionCount();
+        return getImpl().getSelectionCount();
     }
 
     /**
@@ -669,7 +673,7 @@ public class Table extends Composite {
      * </ul>
      */
     public int getSelectionIndex() {
-        return ((ITable) this.delegate).getSelectionIndex();
+        return getImpl().getSelectionIndex();
     }
 
     /**
@@ -689,7 +693,7 @@ public class Table extends Composite {
      * </ul>
      */
     public int[] getSelectionIndices() {
-        return ((ITable) this.delegate).getSelectionIndices();
+        return getImpl().getSelectionIndices();
     }
 
     /**
@@ -709,7 +713,7 @@ public class Table extends Composite {
      * @since 3.2
      */
     public TableColumn getSortColumn() {
-        return TableColumn.getInstance(((ITable) this.delegate).getSortColumn());
+        return getImpl().getSortColumn();
     }
 
     /**
@@ -729,7 +733,7 @@ public class Table extends Composite {
      * @since 3.2
      */
     public int getSortDirection() {
-        return ((ITable) this.delegate).getSortDirection();
+        return getImpl().getSortDirection();
     }
 
     /**
@@ -745,7 +749,7 @@ public class Table extends Composite {
      * </ul>
      */
     public int getTopIndex() {
-        return ((ITable) this.delegate).getTopIndex();
+        return getImpl().getTopIndex();
     }
 
     /**
@@ -766,7 +770,7 @@ public class Table extends Composite {
      * </ul>
      */
     public int indexOf(TableColumn column) {
-        return ((ITable) this.delegate).indexOf((ITableColumn) column.delegate);
+        return getImpl().indexOf(column);
     }
 
     /**
@@ -787,7 +791,7 @@ public class Table extends Composite {
      * </ul>
      */
     public int indexOf(TableItem item) {
-        return ((ITable) this.delegate).indexOf((ITableItem) item.delegate);
+        return getImpl().indexOf(item);
     }
 
     /**
@@ -804,7 +808,7 @@ public class Table extends Composite {
      * </ul>
      */
     public boolean isSelected(int index) {
-        return ((ITable) this.delegate).isSelected(index);
+        return getImpl().isSelected(index);
     }
 
     /**
@@ -822,7 +826,7 @@ public class Table extends Composite {
      * </ul>
      */
     public void remove(int index) {
-        ((ITable) this.delegate).remove(index);
+        getImpl().remove(index);
     }
 
     /**
@@ -842,7 +846,7 @@ public class Table extends Composite {
      * </ul>
      */
     public void remove(int start, int end) {
-        ((ITable) this.delegate).remove(start, end);
+        getImpl().remove(start, end);
     }
 
     /**
@@ -861,7 +865,7 @@ public class Table extends Composite {
      * </ul>
      */
     public void remove(int[] indices) {
-        ((ITable) this.delegate).remove(indices);
+        getImpl().remove(indices);
     }
 
     /**
@@ -873,7 +877,7 @@ public class Table extends Composite {
      * </ul>
      */
     public void removeAll() {
-        ((ITable) this.delegate).removeAll();
+        getImpl().removeAll();
     }
 
     /**
@@ -894,7 +898,7 @@ public class Table extends Composite {
      * @see #addSelectionListener(SelectionListener)
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((ITable) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -910,7 +914,7 @@ public class Table extends Composite {
      * </ul>
      */
     public void select(int index) {
-        ((ITable) this.delegate).select(index);
+        getImpl().select(index);
     }
 
     /**
@@ -937,7 +941,7 @@ public class Table extends Composite {
      * @see Table#setSelection(int,int)
      */
     public void select(int start, int end) {
-        ((ITable) this.delegate).select(start, end);
+        getImpl().select(start, end);
     }
 
     /**
@@ -964,7 +968,7 @@ public class Table extends Composite {
      * @see Table#setSelection(int[])
      */
     public void select(int[] indices) {
-        ((ITable) this.delegate).select(indices);
+        getImpl().select(indices);
     }
 
     /**
@@ -979,7 +983,7 @@ public class Table extends Composite {
      * </ul>
      */
     public void selectAll() {
-        ((ITable) this.delegate).selectAll();
+        getImpl().selectAll();
     }
 
     /**
@@ -1007,7 +1011,7 @@ public class Table extends Composite {
      * @since 3.1
      */
     public void setColumnOrder(int[] order) {
-        ((ITable) this.delegate).setColumnOrder(order);
+        getImpl().setColumnOrder(order);
     }
 
     /**
@@ -1030,7 +1034,7 @@ public class Table extends Composite {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
-        ((ITable) this.delegate).setHeaderBackground(color);
+        getImpl().setHeaderBackground(color);
     }
 
     /**
@@ -1053,7 +1057,7 @@ public class Table extends Composite {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
-        ((ITable) this.delegate).setHeaderForeground(color);
+        getImpl().setHeaderForeground(color);
     }
 
     /**
@@ -1073,7 +1077,7 @@ public class Table extends Composite {
      * </ul>
      */
     public void setHeaderVisible(boolean show) {
-        ((ITable) this.delegate).setHeaderVisible(show);
+        getImpl().setHeaderVisible(show);
     }
 
     /**
@@ -1089,7 +1093,7 @@ public class Table extends Composite {
      * @since 3.0
      */
     public void setItemCount(int count) {
-        ((ITable) this.delegate).setItemCount(count);
+        getImpl().setItemCount(count);
     }
 
     /**
@@ -1110,12 +1114,11 @@ public class Table extends Composite {
      * </ul>
      */
     public void setLinesVisible(boolean show) {
-        ((ITable) this.delegate).setLinesVisible(show);
+        getImpl().setLinesVisible(show);
     }
 
-    @Override
     public void setRedraw(boolean redraw) {
-        ((ITable) this.delegate).setRedraw(redraw);
+        getImpl().setRedraw(redraw);
     }
 
     /**
@@ -1136,7 +1139,7 @@ public class Table extends Composite {
      * @since 3.2
      */
     public void setSortColumn(TableColumn column) {
-        ((ITable) this.delegate).setSortColumn((ITableColumn) column.delegate);
+        getImpl().setSortColumn(column);
     }
 
     /**
@@ -1153,7 +1156,7 @@ public class Table extends Composite {
      * @since 3.2
      */
     public void setSortDirection(int direction) {
-        ((ITable) this.delegate).setSortDirection(direction);
+        getImpl().setSortDirection(direction);
     }
 
     /**
@@ -1172,7 +1175,7 @@ public class Table extends Composite {
      * @see Table#select(int)
      */
     public void setSelection(int index) {
-        ((ITable) this.delegate).setSelection(index);
+        getImpl().setSelection(index);
     }
 
     /**
@@ -1199,7 +1202,7 @@ public class Table extends Composite {
      * @see Table#select(int,int)
      */
     public void setSelection(int start, int end) {
-        ((ITable) this.delegate).setSelection(start, end);
+        getImpl().setSelection(start, end);
     }
 
     /**
@@ -1226,7 +1229,7 @@ public class Table extends Composite {
      * @see Table#select(int[])
      */
     public void setSelection(int[] indices) {
-        ((ITable) this.delegate).setSelection(indices);
+        getImpl().setSelection(indices);
     }
 
     /**
@@ -1251,7 +1254,7 @@ public class Table extends Composite {
      * @since 3.2
      */
     public void setSelection(TableItem item) {
-        ((ITable) this.delegate).setSelection((ITableItem) item.delegate);
+        getImpl().setSelection(item);
     }
 
     /**
@@ -1280,7 +1283,7 @@ public class Table extends Composite {
      * @see Table#setSelection(int[])
      */
     public void setSelection(TableItem[] items) {
-        ((ITable) this.delegate).setSelection(fromArray(items, ITableItem.class));
+        getImpl().setSelection(items);
     }
 
     /**
@@ -1296,7 +1299,7 @@ public class Table extends Composite {
      * </ul>
      */
     public void setTopIndex(int index) {
-        ((ITable) this.delegate).setTopIndex(index);
+        getImpl().setTopIndex(index);
     }
 
     /**
@@ -1318,7 +1321,7 @@ public class Table extends Composite {
      * @since 3.0
      */
     public void showColumn(TableColumn column) {
-        ((ITable) this.delegate).showColumn((ITableColumn) column.delegate);
+        getImpl().showColumn(column);
     }
 
     /**
@@ -1340,7 +1343,7 @@ public class Table extends Composite {
      * @see Table#showSelection()
      */
     public void showItem(TableItem item) {
-        ((ITable) this.delegate).showItem((ITableItem) item.delegate);
+        getImpl().showItem(item);
     }
 
     /**
@@ -1356,28 +1359,22 @@ public class Table extends Composite {
      * @see Table#showItem(TableItem)
      */
     public void showSelection() {
-        ((ITable) this.delegate).showSelection();
+        getImpl().showSelection();
     }
 
-    @Override
     public void dispose() {
-        ((ITable) this.delegate).dispose();
+        getImpl().dispose();
     }
 
-    protected Table(ITable delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Table(ITable impl) {
+        super(impl);
     }
 
-    public static Table getInstance(ITable delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Table ref = (Table) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Table(delegate);
-        }
-        return ref;
+    static Table createApi(ITable impl) {
+        return new Table(impl);
+    }
+
+    public ITable getImpl() {
+        return (ITable) super.getImpl();
     }
 }

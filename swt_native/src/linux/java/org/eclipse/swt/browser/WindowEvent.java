@@ -198,7 +198,7 @@ public class WindowEvent extends TypedEvent {
      *
      * @since 3.5
      */
-    public WindowEvent(SWTWidget widget) {
+    public WindowEvent(Widget widget) {
         super(widget);
     }
 

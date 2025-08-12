@@ -28,7 +28,7 @@ import org.eclipse.swt.widgets.*;
  */
 class MouseNavigator {
 
-    private final SWTStyledText parent;
+    private final StyledText parent;
 
     boolean navigationActivated = false;
 
@@ -46,7 +46,7 @@ class MouseNavigator {
 
     private Cursor previousCursor;
 
-    MouseNavigator(final SWTStyledText styledText) {
+    MouseNavigator(final StyledText styledText) {
         if (styledText == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
@@ -80,7 +80,7 @@ class MouseNavigator {
         if ((e.button != 2) || navigationActivated) {
             return;
         }
-        if (!parent.isVisible() || !parent.getEnabled() || parent.middleClickPressed) {
+        if (!parent.isVisible() || !parent.getEnabled() || parent.getImpl()._middleClickPressed()) {
             return;
         }
         // Widget has no bar or bars are not enabled
@@ -90,7 +90,7 @@ class MouseNavigator {
         }
         navigationActivated = true;
         previousCursor = parent.getCursor();
-        parent.setCursor(((SWTDisplay) (parent.getDisplay())).getSystemCursor(SWT.CURSOR_ARROW));
+        parent.setCursor(parent.getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
         originalMouseLocation = getMouseLocation();
         parent.redraw();
     }
@@ -101,14 +101,14 @@ class MouseNavigator {
     }
 
     private boolean computeHasHorizontalBar() {
-        final SWTScrollBar horizontalBar = (SWTScrollBar) (parent.getHorizontalBar());
+        final ScrollBar horizontalBar = parent.getHorizontalBar();
         final boolean hasHorizontalBar = horizontalBar != null && horizontalBar.isVisible();
         final boolean exceedHorizontalSpace = parent.computeSize(SWT.DEFAULT, SWT.DEFAULT).x > parent.getSize().x;
         return hasHorizontalBar && exceedHorizontalSpace;
     }
 
     private boolean computeHasVerticalBar() {
-        final SWTScrollBar verticalBar = (SWTScrollBar) (parent.getVerticalBar());
+        final ScrollBar verticalBar = parent.getVerticalBar();
         final boolean hasVerticalBar = verticalBar != null && verticalBar.isEnabled();
         final boolean exceedVerticalSpace = parent.computeSize(SWT.DEFAULT, SWT.DEFAULT).y > parent.getSize().y;
         return hasVerticalBar && exceedVerticalSpace;
@@ -156,12 +156,12 @@ class MouseNavigator {
         }
         parent.setRedraw(false);
         if (hasHBar) {
-            final SWTScrollBar bar = (SWTScrollBar) (parent.getHorizontalBar());
+            final ScrollBar bar = parent.getHorizontalBar();
             bar.setSelection((int) (bar.getSelection() - deltaX * .1));
             fireSelectionEvent(e, bar);
         }
         if (hasVBar) {
-            final SWTScrollBar bar = (SWTScrollBar) (parent.getVerticalBar());
+            final ScrollBar bar = parent.getVerticalBar();
             bar.setSelection((int) (bar.getSelection() - deltaY * .1));
             fireSelectionEvent(e, bar);
         }
@@ -169,10 +169,10 @@ class MouseNavigator {
         parent.redraw();
     }
 
-    private void fireSelectionEvent(final Event e, final SWTScrollBar bar) {
+    private void fireSelectionEvent(final Event e, final ScrollBar bar) {
         final Event event = new Event();
-        event.widget = Widget.getInstance(bar);
-        event.display = Display.getInstance(((SWTDisplay) (parent.getDisplay())));
+        event.widget = bar;
+        event.display = parent.getDisplay();
         event.type = SWT.Selection;
         event.time = e.time;
         for (final Listener selectionListener : bar.getListeners(SWT.Selection)) {
@@ -181,7 +181,7 @@ class MouseNavigator {
     }
 
     private Point getMouseLocation() {
-        final Point cursorLocation = SWTDisplay.getCurrent().getCursorLocation();
+        final Point cursorLocation = SwtDisplay.getCurrent().getCursorLocation();
         final Point relativeCursorLocation = parent.toControl(cursorLocation);
         return relativeCursorLocation;
     }

@@ -395,9 +395,6 @@ public class DartCombo extends DartComposite implements ICombo {
 
     @Override
     void createHandle() {
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-        } else {
-        }
     }
 
     @Override
@@ -1284,6 +1281,7 @@ public class DartCombo extends DartComposite implements ICombo {
      * </ul>
      */
     public void setItems(String... items) {
+        dirty();
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1301,7 +1299,6 @@ public class DartCombo extends DartComposite implements ICombo {
             }
         }
         ignoreSelection = false;
-        getBridge().dirty(this);
     }
 
     /**
@@ -1323,11 +1320,11 @@ public class DartCombo extends DartComposite implements ICombo {
      * @since 3.4
      */
     public void setListVisible(boolean visible) {
+        dirty();
         checkWidget();
         if ((getApi().style & SWT.READ_ONLY) != 0) {
         } else {
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -1345,8 +1342,8 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     @Override
     public void setOrientation(int orientation) {
+        dirty();
         checkWidget();
-        getBridge().dirty(this);
     }
 
     @Override
@@ -1370,13 +1367,13 @@ public class DartCombo extends DartComposite implements ICombo {
      * </ul>
      */
     public void setSelection(Point selection) {
+        dirty();
         checkWidget();
         this.selection = selection;
         if (selection == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if ((getApi().style & SWT.READ_ONLY) == 0) {
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -1415,6 +1412,7 @@ public class DartCombo extends DartComposite implements ICombo {
     }
 
     void setText(String string, boolean notify) {
+        dirty();
         if (notify) {
             if (hooks(SWT.Verify) || filters(SWT.Verify)) {
                 if (string == null)
@@ -1433,7 +1431,6 @@ public class DartCombo extends DartComposite implements ICombo {
             if (notify)
                 sendEvent(SWT.Modify);
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -1457,11 +1454,11 @@ public class DartCombo extends DartComposite implements ICombo {
      * @see #LIMIT
      */
     public void setTextLimit(int limit) {
+        dirty();
         checkWidget();
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
         textLimit = limit;
-        getBridge().dirty(this);
     }
 
     /**
@@ -1482,6 +1479,7 @@ public class DartCombo extends DartComposite implements ICombo {
      * @since 3.0
      */
     public void setVisibleItemCount(int count) {
+        dirty();
         checkWidget();
         this.visibleItemCount = count;
         if (count < 0)
@@ -1490,7 +1488,6 @@ public class DartCombo extends DartComposite implements ICombo {
             //TODO
         } else {
         }
-        getBridge().dirty(this);
     }
 
     void updateItems() {
@@ -1541,8 +1538,8 @@ public class DartCombo extends DartComposite implements ICombo {
         return visibleItemCount;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
                 setText(e.text);
@@ -1553,14 +1550,14 @@ public class DartCombo extends DartComposite implements ICombo {
                 sendEvent(SWT.Segments, e);
             });
         });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Selection, e);
-            });
-        });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
             });
         });
         FlutterBridge.on(this, "Verify", "Verify", e -> {

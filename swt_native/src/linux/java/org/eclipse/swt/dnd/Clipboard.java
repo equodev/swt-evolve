@@ -36,23 +36,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class Clipboard {
 
-    private SWTDisplay display;
-
-    static long GTKCLIPBOARD;
-
-    static long GTKPRIMARYCLIPBOARD;
-
-    private static long TARGET;
-
-    static {
-        GTKCLIPBOARD = GTK.GTK4 ? GDK.gdk_display_get_clipboard(GDK.gdk_display_get_default()) : GTK3.gtk_clipboard_get(GDK.GDK_NONE);
-        byte[] buffer = Converter.wcsToMbcs("PRIMARY", true);
-        long primary = GTK.GTK4 ? 0 : GDK.gdk_atom_intern(buffer, false);
-        GTKPRIMARYCLIPBOARD = GTK.GTK4 ? GDK.gdk_display_get_primary_clipboard(GDK.gdk_display_get_default()) : GTK3.gtk_clipboard_get(primary);
-        buffer = Converter.wcsToMbcs("TARGETS", true);
-        TARGET = GTK.GTK4 ? 0 : GDK.gdk_atom_intern(buffer, false);
-    }
-
     /**
      * Constructs a new instance of this class.  Creating an instance of a Clipboard
      * may cause system resources to be allocated depending on the platform.  It is therefore
@@ -69,17 +52,8 @@ public class Clipboard {
      * @see Clipboard#checkSubclass
      */
     public Clipboard(Display display) {
-        checkSubclass();
-        if (display == null) {
-            display = Display.getCurrent();
-            if (display == null) {
-                display = Display.getDefault();
-            }
-        }
-        if (display.getThread() != Thread.currentThread()) {
-            DND.error(SWT.ERROR_THREAD_INVALID_ACCESS);
-        }
-        this.display = (SWTDisplay) display.delegate;
+        this((IClipboard) null);
+        setImpl(new SwtClipboard(display, this));
     }
 
     /**
@@ -110,11 +84,7 @@ public class Clipboard {
      * </ul>
      */
     protected void checkSubclass() {
-        String name = getClass().getName();
-        String validName = Clipboard.class.getName();
-        if (!validName.equals(name)) {
-            DND.error(SWT.ERROR_INVALID_SUBCLASS);
-        }
+        getImpl().checkSubclass();
     }
 
     /**
@@ -140,13 +110,7 @@ public class Clipboard {
      * </ul>
      */
     protected void checkWidget() {
-        SWTDisplay display = this.display;
-        if (display == null)
-            DND.error(SWT.ERROR_WIDGET_DISPOSED);
-        if (display.getThread() != Thread.currentThread())
-            DND.error(SWT.ERROR_THREAD_INVALID_ACCESS);
-        if (display.isDisposed())
-            DND.error(SWT.ERROR_WIDGET_DISPOSED);
+        getImpl().checkWidget();
     }
 
     /**
@@ -164,7 +128,7 @@ public class Clipboard {
      * @since 3.1
      */
     public void clearContents() {
-        clearContents(DND.CLIPBOARD);
+        getImpl().clearContents();
     }
 
     /**
@@ -194,9 +158,7 @@ public class Clipboard {
      * @since 3.1
      */
     public void clearContents(int clipboards) {
-        checkWidget();
-        ClipboardProxy proxy = ClipboardProxy._getInstance(display);
-        proxy.clear(this, clipboards);
+        getImpl().clearContents(clipboards);
     }
 
     /**
@@ -212,11 +174,7 @@ public class Clipboard {
      * </ul>
      */
     public void dispose() {
-        if (isDisposed())
-            return;
-        if (display.getThread() != Thread.currentThread())
-            DND.error(SWT.ERROR_THREAD_INVALID_ACCESS);
-        display = null;
+        getImpl().dispose();
     }
 
     /**
@@ -252,7 +210,7 @@ public class Clipboard {
      * @see Transfer
      */
     public Object getContents(Transfer transfer) {
-        return getContents(transfer, DND.CLIPBOARD);
+        return getImpl().getContents(transfer);
     }
 
     /**
@@ -299,101 +257,7 @@ public class Clipboard {
      * @since 3.1
      */
     public Object getContents(Transfer transfer, int clipboards) {
-        checkWidget();
-        if (transfer == null)
-            DND.error(SWT.ERROR_NULL_ARGUMENT);
-        if (GTK.GTK4) {
-            Object result = getContents_gtk4(transfer, clipboards);
-            return result;
-        }
-        long selection_data = 0;
-        int[] typeIds = transfer.getTypeIds();
-        for (int i = 0; i < typeIds.length; i++) {
-            if ((clipboards & DND.CLIPBOARD) != 0) {
-                selection_data = gtk_clipboard_wait_for_contents(GTKCLIPBOARD, typeIds[i]);
-            }
-            if (selection_data != 0)
-                break;
-            if ((clipboards & DND.SELECTION_CLIPBOARD) != 0) {
-                selection_data = gtk_clipboard_wait_for_contents(GTKPRIMARYCLIPBOARD, typeIds[i]);
-            }
-        }
-        if (selection_data == 0)
-            return null;
-        TransferData tdata = new TransferData();
-        tdata.type = GTK3.gtk_selection_data_get_data_type(selection_data);
-        tdata.pValue = GTK3.gtk_selection_data_get_data(selection_data);
-        tdata.length = GTK3.gtk_selection_data_get_length(selection_data);
-        tdata.format = GTK3.gtk_selection_data_get_format(selection_data);
-        Object result = transfer.nativeToJava(tdata);
-        GTK3.gtk_selection_data_free(selection_data);
-        return result;
-    }
-
-    private Object getContents_gtk4(Transfer transfer, int clipboards) {
-        long contents = GTK4.gdk_clipboard_get_content(Clipboard.GTKCLIPBOARD);
-        if (contents == 0)
-            return null;
-        long value = OS.g_malloc(OS.GValue_sizeof());
-        C.memset(value, 0, OS.GValue_sizeof());
-        //Pasting of text (TextTransfer/RTFTransfer)
-        if (transfer.getTypeNames()[0].equals("text/plain") || transfer.getTypeNames()[0].equals("text/rtf")) {
-            OS.g_value_init(value, OS.G_TYPE_STRING());
-            if (!GTK4.gdk_content_provider_get_value(contents, value, null))
-                return null;
-            long cStr = OS.g_value_get_string(value);
-            long[] items_written = new long[1];
-            long utf16Ptr = OS.g_utf8_to_utf16(cStr, -1, null, items_written, null);
-            OS.g_free(cStr);
-            if (utf16Ptr == 0)
-                return null;
-            int length = (int) items_written[0];
-            char[] buffer = new char[length];
-            C.memmove(buffer, utf16Ptr, length * 2);
-            OS.g_free(utf16Ptr);
-            String str = new String(buffer);
-            if (transfer.getTypeNames()[0].equals("text/rtf") && !str.contains("{\\rtf1")) {
-                return null;
-            }
-            if (transfer.getTypeNames()[0].equals("text/plain") && str.contains("{\\rtf1")) {
-                return null;
-            }
-            return str;
-        }
-        //Pasting of Image
-        if (transfer.getTypeIds()[0] == (int) GDK.GDK_TYPE_PIXBUF()) {
-            ImageData imgData = null;
-            OS.g_value_init(value, GDK.GDK_TYPE_PIXBUF());
-            if (!GTK4.gdk_content_provider_get_value(contents, value, null))
-                return null;
-            long pixbufObj = OS.g_value_get_object(value);
-            if (pixbufObj != 0) {
-                Image img = Image.gtk_new_from_pixbuf(SWTDisplay.getCurrent(), SWT.BITMAP, pixbufObj);
-                imgData = img.getImageData();
-                img.dispose();
-            }
-            return imgData;
-        }
-        //Pasting of HTML
-        if (transfer.getTypeNames()[0].equals("text/html")) {
-            OS.g_value_init(value, OS.G_TYPE_STRING());
-            if (!GTK4.gdk_content_provider_get_value(contents, value, null))
-                return null;
-            long cStr = OS.g_value_get_string(value);
-            long[] items_written = new long[1];
-            long utf16Ptr = OS.g_utf8_to_utf16(cStr, -1, null, items_written, null);
-            OS.g_free(cStr);
-            if (utf16Ptr == 0)
-                return null;
-            int length = (int) items_written[0];
-            char[] buffer = new char[length];
-            C.memmove(buffer, utf16Ptr, length * 2);
-            OS.g_free(utf16Ptr);
-            String str = new String(buffer);
-            return str;
-        }
-        //TODO: [GTK4] Other cases
-        return null;
+        return getImpl().getContents(transfer, clipboards);
     }
 
     /**
@@ -410,7 +274,7 @@ public class Clipboard {
      * @since 3.0
      */
     public boolean isDisposed() {
-        return (display == null);
+        return getImpl().isDisposed();
     }
 
     /**
@@ -461,7 +325,7 @@ public class Clipboard {
      *  recoverable error, but can not be changed due to backward compatibility.</p>
      */
     public void setContents(Object[] data, Transfer[] dataTypes) {
-        setContents(data, dataTypes, DND.CLIPBOARD);
+        getImpl().setContents(data, dataTypes);
     }
 
     /**
@@ -524,19 +388,7 @@ public class Clipboard {
      *  @since 3.1
      */
     public void setContents(Object[] data, Transfer[] dataTypes, int clipboards) {
-        checkWidget();
-        if (data == null || dataTypes == null || data.length != dataTypes.length || data.length == 0) {
-            DND.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        for (int i = 0; i < data.length; i++) {
-            if (data[i] == null || dataTypes[i] == null || !dataTypes[i].validate(data[i])) {
-                DND.error(SWT.ERROR_INVALID_ARGUMENT);
-            }
-        }
-        ClipboardProxy proxy = ClipboardProxy._getInstance(display);
-        if (!proxy.setData(this, data, dataTypes, clipboards)) {
-            DND.error(DND.ERROR_CANNOT_SET_CLIPBOARD);
-        }
+        getImpl().setContents(data, dataTypes, clipboards);
     }
 
     /**
@@ -555,7 +407,7 @@ public class Clipboard {
      * @since 3.0
      */
     public TransferData[] getAvailableTypes() {
-        return getAvailableTypes(DND.CLIPBOARD);
+        return getImpl().getAvailableTypes();
     }
 
     /**
@@ -582,34 +434,7 @@ public class Clipboard {
      * @since 3.1
      */
     public TransferData[] getAvailableTypes(int clipboards) {
-        checkWidget();
-        //TODO: [GTK4] This currently will not work in GTK4
-        TransferData[] result = null;
-        if ((clipboards & DND.CLIPBOARD) != 0) {
-            int[] types = getAvailableClipboardTypes();
-            result = new TransferData[types.length];
-            for (int i = 0; i < types.length; i++) {
-                result[i] = new TransferData();
-                result[i].type = types[i];
-            }
-        }
-        if ((clipboards & DND.SELECTION_CLIPBOARD) != 0) {
-            int[] types = getAvailablePrimaryTypes();
-            int offset = 0;
-            if (result != null) {
-                TransferData[] newResult = new TransferData[result.length + types.length];
-                System.arraycopy(result, 0, newResult, 0, result.length);
-                offset = result.length;
-                result = newResult;
-            } else {
-                result = new TransferData[types.length];
-            }
-            for (int i = 0; i < types.length; i++) {
-                result[offset + i] = new TransferData();
-                result[offset + i].type = types[i];
-            }
-        }
-        return result == null ? new TransferData[0] : result;
+        return getImpl().getAvailableTypes(clipboards);
     }
 
     /**
@@ -629,95 +454,26 @@ public class Clipboard {
      * </ul>
      */
     public String[] getAvailableTypeNames() {
-        checkWidget();
-        if (GTK.GTK4) {
-            long formatsCStr = GTK4.gdk_content_formats_to_string(GTK4.gdk_clipboard_get_formats(Clipboard.GTKCLIPBOARD));
-            String formatsStr = Converter.cCharPtrToJavaString(formatsCStr, true);
-            String[] types = formatsStr.split(" ");
-            return types;
-        }
-        int[] types1 = getAvailableClipboardTypes();
-        int[] types2 = getAvailablePrimaryTypes();
-        String[] result = new String[types1.length + types2.length];
-        int count = 0;
-        for (int i = 0; i < types1.length; i++) {
-            long pName = GDK.gdk_atom_name(types1[i]);
-            if (pName == 0) {
-                continue;
-            }
-            byte[] buffer = new byte[C.strlen(pName)];
-            C.memmove(buffer, pName, buffer.length);
-            OS.g_free(pName);
-            result[count++] = "GTKCLIPBOARD " + new String(Converter.mbcsToWcs(buffer));
-        }
-        for (int i = 0; i < types2.length; i++) {
-            long pName = GDK.gdk_atom_name(types2[i]);
-            if (pName == 0) {
-                continue;
-            }
-            byte[] buffer = new byte[C.strlen(pName)];
-            C.memmove(buffer, pName, buffer.length);
-            OS.g_free(pName);
-            result[count++] = "GTKPRIMARYCLIPBOARD " + new String(Converter.mbcsToWcs(buffer));
-        }
-        if (count < result.length) {
-            String[] temp = new String[count];
-            System.arraycopy(result, 0, temp, 0, count);
-            result = temp;
-        }
-        return result;
+        return getImpl().getAvailableTypeNames();
     }
 
-    private int[] getAvailablePrimaryTypes() {
-        int[] types = new int[0];
-        long selection_data = gtk_clipboard_wait_for_contents(GTKPRIMARYCLIPBOARD, TARGET);
-        if (selection_data != 0) {
-            try {
-                int length = GTK3.gtk_selection_data_get_length(selection_data);
-                int format = GTK3.gtk_selection_data_get_format(selection_data);
-                long data = GTK3.gtk_selection_data_get_data(selection_data);
-                if (length != 0) {
-                    types = new int[length * 8 / format];
-                    C.memmove(types, data, length);
-                }
-            } finally {
-                GTK3.gtk_selection_data_free(selection_data);
-            }
-        }
-        return types;
+    protected IClipboard impl;
+
+    protected Clipboard(IClipboard impl) {
+        if (impl != null)
+            impl.setApi(this);
     }
 
-    private int[] getAvailableClipboardTypes() {
-        int[] types = new int[0];
-        long selection_data = gtk_clipboard_wait_for_contents(GTKCLIPBOARD, TARGET);
-        if (selection_data != 0) {
-            try {
-                int length = GTK3.gtk_selection_data_get_length(selection_data);
-                int format = GTK3.gtk_selection_data_get_format(selection_data);
-                long data = GTK3.gtk_selection_data_get_data(selection_data);
-                if (length != 0) {
-                    types = new int[length * 8 / format];
-                    C.memmove(types, data, length);
-                }
-            } finally {
-                GTK3.gtk_selection_data_free(selection_data);
-            }
-        }
-        return types;
+    static Clipboard createApi(IClipboard impl) {
+        return new Clipboard(impl);
     }
 
-    long gtk_clipboard_wait_for_contents(long clipboard, long target) {
-        long startTime = System.currentTimeMillis();
-        String key = "org.eclipse.swt.internal.gtk.dispatchEvent";
-        SWTDisplay display = this.display;
-        display.setData(key, new int[] { GDK.GDK_PROPERTY_NOTIFY, GDK.GDK_SELECTION_CLEAR, GDK.GDK_SELECTION_REQUEST, GDK.GDK_SELECTION_NOTIFY });
-        long selection_data = GTK3.gtk_clipboard_wait_for_contents(clipboard, target);
-        display.setData(key, null);
-        long duration = System.currentTimeMillis() - startTime;
-        if (selection_data == 0 && duration > 5000) {
-            // Bug 241957: In case of timeout take clipboard ownership to unblock future calls
-            ClipboardProxy._getInstance(display).setData(this, new String[] { " " }, new Transfer[] { TextTransfer.getInstance() }, clipboard == GTKCLIPBOARD ? DND.CLIPBOARD : DND.SELECTION_CLIPBOARD);
-        }
-        return selection_data;
+    public IClipboard getImpl() {
+        return impl;
+    }
+
+    protected Clipboard setImpl(IClipboard impl) {
+        this.impl = impl;
+        return this;
     }
 }

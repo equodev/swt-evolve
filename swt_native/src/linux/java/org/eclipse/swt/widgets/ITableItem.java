@@ -4,11 +4,10 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface ITableItem extends IItem {
+
+    void checkSubclass();
 
     void dispose();
 
@@ -211,7 +210,7 @@ public interface ITableItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITable getParent();
+    Table getParent();
 
     String getText();
 
@@ -477,4 +476,6 @@ public interface ITableItem extends IItem {
      * </ul>
      */
     void setText(String[] strings);
+
+    TableItem getApi();
 }

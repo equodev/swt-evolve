@@ -1,16 +1,18 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2016 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
@@ -38,188 +40,170 @@ import org.eclipse.swt.internal.cairo.*;
  */
 public class Pattern extends Resource {
 
-	/**
-	 * the OS resource for the Pattern
-	 * (Warning: This field is platform dependent)
-	 * <p>
-	 * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
-	 * public API. It is marked public only so that it can be shared
-	 * within the packages provided by SWT. It is not available on all
-	 * platforms and should never be accessed from application code.
-	 * </p>
-	 *
-	 * @noreference This field is not intended to be referenced by clients.
-	 */
-	public long handle;
+    /**
+     * the OS resource for the Pattern
+     * (Warning: This field is platform dependent)
+     * <p>
+     * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
+     * public API. It is marked public only so that it can be shared
+     * within the packages provided by SWT. It is not available on all
+     * platforms and should never be accessed from application code.
+     * </p>
+     *
+     * @noreference This field is not intended to be referenced by clients.
+     */
+    public long handle;
 
-	long surface;
+    /**
+     * Constructs a new Pattern given an image. Drawing with the resulting
+     * pattern will cause the image to be tiled over the resulting area.
+     * <p>
+     * This operation requires the operating system's advanced
+     * graphics subsystem which may not be available on some
+     * platforms.
+     * </p>
+     * <p>
+     * You must dispose the pattern when it is no longer required.
+     * </p>
+     *
+     * @param device the device on which to allocate the pattern
+     * @param image the image that the pattern will draw
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the device is null and there is no current device, or the image is null</li>
+     *    <li>ERROR_INVALID_ARGUMENT - if the image has been disposed</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_NO_GRAPHICS_LIBRARY - if advanced graphics are not available</li>
+     * </ul>
+     * @exception SWTError <ul>
+     *    <li>ERROR_NO_HANDLES if a handle for the pattern could not be obtained</li>
+     * </ul>
+     *
+     * @see #dispose()
+     */
+    public Pattern(Device device, Image image) {
+        this((IPattern) null);
+        setImpl(new SwtPattern(device, image, this));
+    }
 
-/**
- * Constructs a new Pattern given an image. Drawing with the resulting
- * pattern will cause the image to be tiled over the resulting area.
- * <p>
- * This operation requires the operating system's advanced
- * graphics subsystem which may not be available on some
- * platforms.
- * </p>
- * <p>
- * You must dispose the pattern when it is no longer required.
- * </p>
- *
- * @param device the device on which to allocate the pattern
- * @param image the image that the pattern will draw
- *
- * @exception IllegalArgumentException <ul>
- *    <li>ERROR_NULL_ARGUMENT - if the device is null and there is no current device, or the image is null</li>
- *    <li>ERROR_INVALID_ARGUMENT - if the image has been disposed</li>
- * </ul>
- * @exception SWTException <ul>
- *    <li>ERROR_NO_GRAPHICS_LIBRARY - if advanced graphics are not available</li>
- * </ul>
- * @exception SWTError <ul>
- *    <li>ERROR_NO_HANDLES if a handle for the pattern could not be obtained</li>
- * </ul>
- *
- * @see #dispose()
- */
-public Pattern(Device device, Image image) {
-	super(device);
-	if (image == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	if (image.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	image.createSurface();
-	handle = Cairo.cairo_pattern_create_for_surface(image.surface);
-	if (handle == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-	Cairo.cairo_pattern_set_extend(handle, Cairo.CAIRO_EXTEND_REPEAT);
-	surface = image.surface;
-	init();
-}
+    /**
+     * Constructs a new Pattern that represents a linear, two color
+     * gradient. Drawing with the pattern will cause the resulting area to be
+     * tiled with the gradient specified by the arguments.
+     * <p>
+     * This operation requires the operating system's advanced
+     * graphics subsystem which may not be available on some
+     * platforms.
+     * </p>
+     * <p>
+     * You must dispose the pattern when it is no longer required.
+     * </p>
+     *
+     * @param device the device on which to allocate the pattern
+     * @param x1 the x coordinate of the starting corner of the gradient
+     * @param y1 the y coordinate of the starting corner of the gradient
+     * @param x2 the x coordinate of the ending corner of the gradient
+     * @param y2 the y coordinate of the ending corner of the gradient
+     * @param color1 the starting color of the gradient
+     * @param color2 the ending color of the gradient
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the device is null and there is no current device,
+     *                              or if either color1 or color2 is null</li>
+     *    <li>ERROR_INVALID_ARGUMENT - if either color1 or color2 has been disposed</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_NO_GRAPHICS_LIBRARY - if advanced graphics are not available</li>
+     * </ul>
+     * @exception SWTError <ul>
+     *    <li>ERROR_NO_HANDLES if a handle for the pattern could not be obtained</li>
+     * </ul>
+     *
+     * @see #dispose()
+     */
+    public Pattern(Device device, float x1, float y1, float x2, float y2, Color color1, Color color2) {
+        this((IPattern) null);
+        setImpl(new SwtPattern(device, x1, y1, x2, y2, color1, color2, this));
+    }
 
-/**
- * Constructs a new Pattern that represents a linear, two color
- * gradient. Drawing with the pattern will cause the resulting area to be
- * tiled with the gradient specified by the arguments.
- * <p>
- * This operation requires the operating system's advanced
- * graphics subsystem which may not be available on some
- * platforms.
- * </p>
- * <p>
- * You must dispose the pattern when it is no longer required.
- * </p>
- *
- * @param device the device on which to allocate the pattern
- * @param x1 the x coordinate of the starting corner of the gradient
- * @param y1 the y coordinate of the starting corner of the gradient
- * @param x2 the x coordinate of the ending corner of the gradient
- * @param y2 the y coordinate of the ending corner of the gradient
- * @param color1 the starting color of the gradient
- * @param color2 the ending color of the gradient
- *
- * @exception IllegalArgumentException <ul>
- *    <li>ERROR_NULL_ARGUMENT - if the device is null and there is no current device,
- *                              or if either color1 or color2 is null</li>
- *    <li>ERROR_INVALID_ARGUMENT - if either color1 or color2 has been disposed</li>
- * </ul>
- * @exception SWTException <ul>
- *    <li>ERROR_NO_GRAPHICS_LIBRARY - if advanced graphics are not available</li>
- * </ul>
- * @exception SWTError <ul>
- *    <li>ERROR_NO_HANDLES if a handle for the pattern could not be obtained</li>
- * </ul>
- *
- * @see #dispose()
- */
-public Pattern(Device device, float x1, float y1, float x2, float y2, Color color1, Color color2) {
-	this(device, x1, y1, x2, y2, color1, 0xFF, color2, 0xFF);
-}
-/**
- * Constructs a new Pattern that represents a linear, two color
- * gradient. Drawing with the pattern will cause the resulting area to be
- * tiled with the gradient specified by the arguments.
- * <p>
- * This operation requires the operating system's advanced
- * graphics subsystem which may not be available on some
- * platforms.
- * </p>
- * <p>
- * You must dispose the pattern when it is no longer required.
- * </p>
- *
- * @param device the device on which to allocate the pattern
- * @param x1 the x coordinate of the starting corner of the gradient
- * @param y1 the y coordinate of the starting corner of the gradient
- * @param x2 the x coordinate of the ending corner of the gradient
- * @param y2 the y coordinate of the ending corner of the gradient
- * @param color1 the starting color of the gradient
- * @param alpha1 the starting alpha value of the gradient
- * @param color2 the ending color of the gradient
- * @param alpha2 the ending alpha value of the gradient
- *
- * @exception IllegalArgumentException <ul>
- *    <li>ERROR_NULL_ARGUMENT - if the device is null and there is no current device,
- *                              or if either color1 or color2 is null</li>
- *    <li>ERROR_INVALID_ARGUMENT - if either color1 or color2 has been disposed</li>
- * </ul>
- * @exception SWTException <ul>
- *    <li>ERROR_NO_GRAPHICS_LIBRARY - if advanced graphics are not available</li>
- * </ul>
- * @exception SWTError <ul>
- *    <li>ERROR_NO_HANDLES if a handle for the pattern could not be obtained</li>
- * </ul>
- *
- * @see #dispose()
- *
- * @since 3.2
- */
-public Pattern(Device device, float x1, float y1, float x2, float y2, Color color1, int alpha1, Color color2, int alpha2) {
-	super(device);
-	x1 = DPIUtil.autoScaleUp(x1);
-	y1 = DPIUtil.autoScaleUp(y1);
-	x2 = DPIUtil.autoScaleUp(x2);
-	y2 = DPIUtil.autoScaleUp(y2);
-	if (color1 == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	if (color1.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	if (color2 == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	if (color2.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-	handle = Cairo.cairo_pattern_create_linear(x1, y1, x2, y2);
-	if (handle == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-	GC.setCairoPatternColor(handle, 0, color1, alpha1);
-	GC.setCairoPatternColor(handle, 1, color2, alpha2);
-	Cairo.cairo_pattern_set_extend(handle, Cairo.CAIRO_EXTEND_REPEAT);
-	init();
-}
+    /**
+     * Constructs a new Pattern that represents a linear, two color
+     * gradient. Drawing with the pattern will cause the resulting area to be
+     * tiled with the gradient specified by the arguments.
+     * <p>
+     * This operation requires the operating system's advanced
+     * graphics subsystem which may not be available on some
+     * platforms.
+     * </p>
+     * <p>
+     * You must dispose the pattern when it is no longer required.
+     * </p>
+     *
+     * @param device the device on which to allocate the pattern
+     * @param x1 the x coordinate of the starting corner of the gradient
+     * @param y1 the y coordinate of the starting corner of the gradient
+     * @param x2 the x coordinate of the ending corner of the gradient
+     * @param y2 the y coordinate of the ending corner of the gradient
+     * @param color1 the starting color of the gradient
+     * @param alpha1 the starting alpha value of the gradient
+     * @param color2 the ending color of the gradient
+     * @param alpha2 the ending alpha value of the gradient
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the device is null and there is no current device,
+     *                              or if either color1 or color2 is null</li>
+     *    <li>ERROR_INVALID_ARGUMENT - if either color1 or color2 has been disposed</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_NO_GRAPHICS_LIBRARY - if advanced graphics are not available</li>
+     * </ul>
+     * @exception SWTError <ul>
+     *    <li>ERROR_NO_HANDLES if a handle for the pattern could not be obtained</li>
+     * </ul>
+     *
+     * @see #dispose()
+     *
+     * @since 3.2
+     */
+    public Pattern(Device device, float x1, float y1, float x2, float y2, Color color1, int alpha1, Color color2, int alpha2) {
+        this((IPattern) null);
+        setImpl(new SwtPattern(device, x1, y1, x2, y2, color1, alpha1, color2, alpha2, this));
+    }
 
-@Override
-void destroy() {
-	Cairo.cairo_pattern_destroy(handle);
-	handle = surface = 0;
-}
+    /**
+     * Returns <code>true</code> if the Pattern has been disposed,
+     * and <code>false</code> otherwise.
+     * <p>
+     * This method gets the dispose state for the Pattern.
+     * When a Pattern has been disposed, it is an error to
+     * invoke any other method (except {@link #dispose()}) using the Pattern.
+     *
+     * @return <code>true</code> when the Pattern is disposed, and <code>false</code> otherwise
+     */
+    public boolean isDisposed() {
+        return getImpl().isDisposed();
+    }
 
-/**
- * Returns <code>true</code> if the Pattern has been disposed,
- * and <code>false</code> otherwise.
- * <p>
- * This method gets the dispose state for the Pattern.
- * When a Pattern has been disposed, it is an error to
- * invoke any other method (except {@link #dispose()}) using the Pattern.
- *
- * @return <code>true</code> when the Pattern is disposed, and <code>false</code> otherwise
- */
-@Override
-public boolean isDisposed() {
-	return handle == 0;
-}
+    /**
+     * Returns a string containing a concise, human-readable
+     * description of the receiver.
+     *
+     * @return a string representation of the receiver
+     */
+    public String toString() {
+        return getImpl().toString();
+    }
 
-/**
- * Returns a string containing a concise, human-readable
- * description of the receiver.
- *
- * @return a string representation of the receiver
- */
-@Override
-public String toString() {
-	if (isDisposed()) return "Pattern {*DISPOSED*}";
-	return "Pattern {" + handle + "}";
-}
+    protected Pattern(IPattern impl) {
+        super(impl);
+    }
 
+    static Pattern createApi(IPattern impl) {
+        return new Pattern(impl);
+    }
+
+    public IPattern getImpl() {
+        return (IPattern) super.getImpl();
+    }
 }

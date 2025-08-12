@@ -251,7 +251,7 @@ public class VStyledText extends VCanvas {
 
     @JsonAttribute(ignore = true)
     public StyleRange[] getStyleRanges() {
-        StyleRange[] values = ((DartStyledText) impl).styleRanges;
+        StyleRange[] values = ((DartStyledText) impl).getStyleRanges();
         if (values == null)
             return null;
         ArrayList<StyleRange> result = new ArrayList<>(values.length);
@@ -261,15 +261,15 @@ public class VStyledText extends VCanvas {
     }
 
     public void setStyleRanges(StyleRange[] value) {
-        ((DartStyledText) impl).styleRanges = value;
+        ((DartStyledText) impl).setStyleRanges(value);
     }
 
     public int[] getTabStops() {
-        return ((DartStyledText) impl).tabStops;
+        return ((DartStyledText) impl).tabs;
     }
 
     public void setTabStops(int[] value) {
-        ((DartStyledText) impl).tabStops = value;
+        ((DartStyledText) impl).tabs = value;
     }
 
     public int getTabs() {

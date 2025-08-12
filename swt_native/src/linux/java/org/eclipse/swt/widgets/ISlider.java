@@ -3,9 +3,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface ISlider extends IControl {
 
@@ -253,4 +250,6 @@ public interface ISlider extends IControl {
      * </ul>
      */
     void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement);
+
+    Slider getApi();
 }

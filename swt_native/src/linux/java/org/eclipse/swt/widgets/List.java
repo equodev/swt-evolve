@@ -22,7 +22,6 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class represent a selectable user interface
@@ -77,7 +76,8 @@ public class List extends Scrollable {
      * @see Widget#getStyle
      */
     public List(Composite parent, int style) {
-        this(new SWTList((SWTComposite) parent.delegate, style));
+        this((IList) null);
+        setImpl(new SwtList(parent, style, this));
     }
 
     /**
@@ -99,7 +99,7 @@ public class List extends Scrollable {
      * @see #add(String,int)
      */
     public void add(String string) {
-        ((IList) this.delegate).add(string);
+        getImpl().add(string);
     }
 
     /**
@@ -129,7 +129,7 @@ public class List extends Scrollable {
      * @see #add(String)
      */
     public void add(String string, int index) {
-        ((IList) this.delegate).add(string, index);
+        getImpl().add(string, index);
     }
 
     /**
@@ -157,7 +157,7 @@ public class List extends Scrollable {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((IList) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -173,7 +173,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void deselect(int index) {
-        ((IList) this.delegate).deselect(index);
+        getImpl().deselect(index);
     }
 
     /**
@@ -192,7 +192,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void deselect(int start, int end) {
-        ((IList) this.delegate).deselect(start, end);
+        getImpl().deselect(start, end);
     }
 
     /**
@@ -213,7 +213,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void deselect(int[] indices) {
-        ((IList) this.delegate).deselect(indices);
+        getImpl().deselect(indices);
     }
 
     /**
@@ -225,7 +225,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void deselectAll() {
-        ((IList) this.delegate).deselectAll();
+        getImpl().deselectAll();
     }
 
     /**
@@ -240,7 +240,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getFocusIndex() {
-        return ((IList) this.delegate).getFocusIndex();
+        return getImpl().getFocusIndex();
     }
 
     /**
@@ -259,7 +259,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public String getItem(int index) {
-        return ((IList) this.delegate).getItem(index);
+        return getImpl().getItem(index);
     }
 
     /**
@@ -273,7 +273,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getItemCount() {
-        return ((IList) this.delegate).getItemCount();
+        return getImpl().getItemCount();
     }
 
     /**
@@ -288,7 +288,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getItemHeight() {
-        return ((IList) this.delegate).getItemHeight();
+        return getImpl().getItemHeight();
     }
 
     /**
@@ -308,7 +308,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public String[] getItems() {
-        return ((IList) this.delegate).getItems();
+        return getImpl().getItems();
     }
 
     /**
@@ -328,7 +328,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public String[] getSelection() {
-        return ((IList) this.delegate).getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -342,7 +342,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getSelectionCount() {
-        return ((IList) this.delegate).getSelectionCount();
+        return getImpl().getSelectionCount();
     }
 
     /**
@@ -357,7 +357,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getSelectionIndex() {
-        return ((IList) this.delegate).getSelectionIndex();
+        return getImpl().getSelectionIndex();
     }
 
     /**
@@ -377,7 +377,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int[] getSelectionIndices() {
-        return ((IList) this.delegate).getSelectionIndices();
+        return getImpl().getSelectionIndices();
     }
 
     /**
@@ -393,7 +393,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getTopIndex() {
-        return ((IList) this.delegate).getTopIndex();
+        return getImpl().getTopIndex();
     }
 
     /**
@@ -416,7 +416,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int indexOf(String string) {
-        return ((IList) this.delegate).indexOf(string);
+        return getImpl().indexOf(string);
     }
 
     /**
@@ -439,7 +439,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int indexOf(String string, int start) {
-        return ((IList) this.delegate).indexOf(string, start);
+        return getImpl().indexOf(string, start);
     }
 
     /**
@@ -456,7 +456,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public boolean isSelected(int index) {
-        return ((IList) this.delegate).isSelected(index);
+        return getImpl().isSelected(index);
     }
 
     /**
@@ -474,7 +474,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void remove(int index) {
-        ((IList) this.delegate).remove(index);
+        getImpl().remove(index);
     }
 
     /**
@@ -494,7 +494,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void remove(int start, int end) {
-        ((IList) this.delegate).remove(start, end);
+        getImpl().remove(start, end);
     }
 
     /**
@@ -514,7 +514,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void remove(String string) {
-        ((IList) this.delegate).remove(string);
+        getImpl().remove(string);
     }
 
     /**
@@ -533,7 +533,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void remove(int[] indices) {
-        ((IList) this.delegate).remove(indices);
+        getImpl().remove(indices);
     }
 
     /**
@@ -545,7 +545,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void removeAll() {
-        ((IList) this.delegate).removeAll();
+        getImpl().removeAll();
     }
 
     /**
@@ -566,7 +566,7 @@ public class List extends Scrollable {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((IList) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -582,7 +582,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void select(int index) {
-        ((IList) this.delegate).select(index);
+        getImpl().select(index);
     }
 
     /**
@@ -608,7 +608,7 @@ public class List extends Scrollable {
      * @see List#setSelection(int,int)
      */
     public void select(int start, int end) {
-        ((IList) this.delegate).select(start, end);
+        getImpl().select(start, end);
     }
 
     /**
@@ -634,7 +634,7 @@ public class List extends Scrollable {
      * @see List#setSelection(int[])
      */
     public void select(int[] indices) {
-        ((IList) this.delegate).select(indices);
+        getImpl().select(indices);
     }
 
     /**
@@ -648,7 +648,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void selectAll() {
-        ((IList) this.delegate).selectAll();
+        getImpl().selectAll();
     }
 
     /**
@@ -668,7 +668,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void setItem(int index, String string) {
-        ((IList) this.delegate).setItem(index, string);
+        getImpl().setItem(index, string);
     }
 
     /**
@@ -686,7 +686,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void setItems(String... items) {
-        ((IList) this.delegate).setItems(items);
+        getImpl().setItems(items);
     }
 
     /**
@@ -706,7 +706,7 @@ public class List extends Scrollable {
      * @see List#select(int)
      */
     public void setSelection(int index) {
-        ((IList) this.delegate).setSelection(index);
+        getImpl().setSelection(index);
     }
 
     /**
@@ -732,7 +732,7 @@ public class List extends Scrollable {
      * @see List#select(int,int)
      */
     public void setSelection(int start, int end) {
-        ((IList) this.delegate).setSelection(start, end);
+        getImpl().setSelection(start, end);
     }
 
     /**
@@ -758,7 +758,7 @@ public class List extends Scrollable {
      * @see List#select(int[])
      */
     public void setSelection(int[] indices) {
-        ((IList) this.delegate).setSelection(indices);
+        getImpl().setSelection(indices);
     }
 
     /**
@@ -785,7 +785,7 @@ public class List extends Scrollable {
      * @see List#setSelection(int[])
      */
     public void setSelection(String[] items) {
-        ((IList) this.delegate).setSelection(items);
+        getImpl().setSelection(items);
     }
 
     /**
@@ -801,7 +801,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public void setTopIndex(int index) {
-        ((IList) this.delegate).setTopIndex(index);
+        getImpl().setTopIndex(index);
     }
 
     /**
@@ -815,23 +815,18 @@ public class List extends Scrollable {
      * </ul>
      */
     public void showSelection() {
-        ((IList) this.delegate).showSelection();
+        getImpl().showSelection();
     }
 
-    protected List(IList delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected List(IList impl) {
+        super(impl);
     }
 
-    public static List getInstance(IList delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        List ref = (List) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new List(delegate);
-        }
-        return ref;
+    static List createApi(IList impl) {
+        return new List(impl);
+    }
+
+    public IList getImpl() {
+        return (IList) super.getImpl();
     }
 }

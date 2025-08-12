@@ -21,7 +21,6 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -72,7 +71,8 @@ public class ExpandItem extends Item {
      * @see Widget#getStyle
      */
     public ExpandItem(ExpandBar parent, int style) {
-        this(new SWTExpandItem((SWTExpandBar) parent.delegate, style));
+        this((IExpandItem) null);
+        setImpl(new SwtExpandItem(parent, style, this));
     }
 
     /**
@@ -106,7 +106,12 @@ public class ExpandItem extends Item {
      * @see Widget#getStyle
      */
     public ExpandItem(ExpandBar parent, int style, int index) {
-        this(new SWTExpandItem((SWTExpandBar) parent.delegate, style, index));
+        this((IExpandItem) null);
+        setImpl(new SwtExpandItem(parent, style, index, this));
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -121,7 +126,7 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        return Control.getInstance(((IExpandItem) this.delegate).getControl());
+        return getImpl().getControl();
     }
 
     /**
@@ -136,7 +141,7 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public boolean getExpanded() {
-        return ((IExpandItem) this.delegate).getExpanded();
+        return getImpl().getExpanded();
     }
 
     /**
@@ -150,7 +155,7 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public int getHeaderHeight() {
-        return ((IExpandItem) this.delegate).getHeaderHeight();
+        return getImpl().getHeaderHeight();
     }
 
     /**
@@ -164,7 +169,7 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public int getHeight() {
-        return ((IExpandItem) this.delegate).getHeight();
+        return getImpl().getHeight();
     }
 
     /**
@@ -178,7 +183,7 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public ExpandBar getParent() {
-        return ExpandBar.getInstance(((IExpandItem) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -196,7 +201,7 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        ((IExpandItem) this.delegate).setControl((IControl) control.delegate);
+        getImpl().setControl(control);
     }
 
     /**
@@ -210,7 +215,7 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public void setExpanded(boolean expanded) {
-        ((IExpandItem) this.delegate).setExpanded(expanded);
+        getImpl().setExpanded(expanded);
     }
 
     /**
@@ -225,33 +230,26 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public void setHeight(int height) {
-        ((IExpandItem) this.delegate).setHeight(height);
+        getImpl().setHeight(height);
     }
 
-    @Override
     public void setImage(Image image) {
-        ((IExpandItem) this.delegate).setImage(image);
+        getImpl().setImage(image);
     }
 
-    @Override
     public void setText(String string) {
-        ((IExpandItem) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
-    protected ExpandItem(IExpandItem delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected ExpandItem(IExpandItem impl) {
+        super(impl);
     }
 
-    public static ExpandItem getInstance(IExpandItem delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        ExpandItem ref = (ExpandItem) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new ExpandItem(delegate);
-        }
-        return ref;
+    static ExpandItem createApi(IExpandItem impl) {
+        return new ExpandItem(impl);
+    }
+
+    public IExpandItem getImpl() {
+        return (IExpandItem) super.getImpl();
     }
 }

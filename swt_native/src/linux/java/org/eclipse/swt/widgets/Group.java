@@ -21,7 +21,6 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of this class provide an etched border
@@ -82,7 +81,12 @@ public class Group extends Composite {
      * @see Widget#getStyle
      */
     public Group(Composite parent, int style) {
-        this(new SWTGroup((SWTComposite) parent.delegate, style));
+        this((IGroup) null);
+        setImpl(new SwtGroup(parent, style, this));
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -98,7 +102,7 @@ public class Group extends Composite {
      * </ul>
      */
     public String getText() {
-        return ((IGroup) this.delegate).getText();
+        return getImpl().getText();
     }
 
     /**
@@ -129,23 +133,18 @@ public class Group extends Composite {
      * </ul>
      */
     public void setText(String string) {
-        ((IGroup) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
-    protected Group(IGroup delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Group(IGroup impl) {
+        super(impl);
     }
 
-    public static Group getInstance(IGroup delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Group ref = (Group) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Group(delegate);
-        }
-        return ref;
+    static Group createApi(IGroup impl) {
+        return new Group(impl);
+    }
+
+    public IGroup getImpl() {
+        return (IGroup) super.getImpl();
     }
 }

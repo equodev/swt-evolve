@@ -360,7 +360,7 @@ public class SwtGroup extends SwtComposite implements IGroup {
                 } else {
                     OS.SetWindowOrgEx(hdc, -location.x, -location.y, null);
                 }
-                long topHandle = ((SwtControl) children[i].getImpl()).topHandle();
+                long topHandle = children[i].getImpl().topHandle();
                 int bits = OS.GetWindowLong(topHandle, OS.GWL_STYLE);
                 if ((bits & OS.WS_VISIBLE) != 0) {
                     ((SwtControl) children[i].getImpl()).printWidget(topHandle, hdc, gc);

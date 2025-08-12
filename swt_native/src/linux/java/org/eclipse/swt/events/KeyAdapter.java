@@ -1,18 +1,19 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2016 IBM Corporation and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ *  SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.events;
-
 
 /**
  * This adapter class provides default implementations for the
@@ -29,23 +30,23 @@ package org.eclipse.swt.events;
  */
 public abstract class KeyAdapter implements KeyListener {
 
-/**
- * Sent when a key is pressed on the system keyboard.
- * The default behavior is to do nothing.
- *
- * @param e an event containing information about the key press
- */
-@Override
-public void keyPressed(KeyEvent e) {
-}
+    /**
+     * Sent when a key is pressed on the system keyboard.
+     * The default behavior is to do nothing.
+     *
+     * @param e an event containing information about the key press
+     */
+    @Override
+    public void keyPressed(KeyEvent e) {
+    }
 
-/**
- * Sent when a key is released on the system keyboard.
- * The default behavior is to do nothing.
- *
- * @param e an event containing information about the key release
- */
-@Override
-public void keyReleased(KeyEvent e) {
-}
+    /**
+     * Sent when a key is released on the system keyboard.
+     * The default behavior is to do nothing.
+     *
+     * @param e an event containing information about the key release
+     */
+    @Override
+    public void keyReleased(KeyEvent e) {
+    }
 }

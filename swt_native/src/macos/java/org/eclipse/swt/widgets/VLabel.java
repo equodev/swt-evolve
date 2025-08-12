@@ -20,7 +20,7 @@ public class VLabel extends VControl {
     }
 
     public void setAlignment(int value) {
-        ((DartLabel) impl).alignment = value;
+        ((DartLabel) impl).setAlignment(value);
     }
 
     @JsonAttribute(ignore = true)

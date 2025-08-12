@@ -43,7 +43,7 @@ public class TitleEvent extends TypedEvent {
      *
      * @since 3.5
      */
-    public TitleEvent(SWTWidget widget) {
+    public TitleEvent(Widget widget) {
         super(widget);
     }
 

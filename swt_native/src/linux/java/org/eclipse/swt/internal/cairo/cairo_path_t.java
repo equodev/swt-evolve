@@ -20,11 +20,16 @@
  * ***** END LICENSE BLOCK ***** */
 package org.eclipse.swt.internal.cairo;
 
-
 public class cairo_path_t {
-	public int status;
-	/** @field cast=(cairo_path_data_t *) */
-	public long data;
-	public int num_data;
-	public static final int sizeof = Cairo.cairo_path_t_sizeof();
+
+    public int status;
+
+    /**
+     * @field cast=(cairo_path_data_t *)
+     */
+    public long data;
+
+    public int num_data;
+
+    public static final int sizeof = Cairo.cairo_path_t_sizeof();
 }

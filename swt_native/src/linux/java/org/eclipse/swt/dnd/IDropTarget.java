@@ -3,9 +3,6 @@ package org.eclipse.swt.dnd;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 import org.eclipse.swt.widgets.*;
 
 public interface IDropTarget extends IWidget {
@@ -45,13 +42,15 @@ public interface IDropTarget extends IWidget {
      */
     void addDropListener(DropTargetListener listener);
 
+    void checkSubclass();
+
     /**
      * Returns the Control which is registered for this DropTarget.  This is the control over which the
      * user positions the cursor to drop the data.
      *
      * @return the Control which is registered for this DropTarget
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Returns an array of listeners who will be notified when a drag and drop
@@ -138,4 +137,6 @@ public interface IDropTarget extends IWidget {
      * @since 3.3
      */
     void setDropTargetEffect(DropTargetEffect effect);
+
+    DropTarget getApi();
 }

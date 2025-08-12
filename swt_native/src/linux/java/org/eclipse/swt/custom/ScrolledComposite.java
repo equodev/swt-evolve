@@ -18,7 +18,6 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import java.util.WeakHashMap;
 
 /**
  * A ScrolledComposite provides scrollbars and will scroll its content when the user
@@ -137,7 +136,8 @@ public class ScrolledComposite extends Composite {
      * @see #getStyle()
      */
     public ScrolledComposite(Composite parent, int style) {
-        this(new SWTScrolledComposite((SWTComposite) parent.delegate, style));
+        this((IScrolledComposite) null);
+        setImpl(new SwtScrolledComposite(parent, style, this));
     }
 
     /**
@@ -150,7 +150,7 @@ public class ScrolledComposite extends Composite {
      * @return the Always Show Scrollbars flag value
      */
     public boolean getAlwaysShowScrollBars() {
-        return ((IScrolledComposite) this.delegate).getAlwaysShowScrollBars();
+        return getImpl().getAlwaysShowScrollBars();
     }
 
     /**
@@ -167,7 +167,7 @@ public class ScrolledComposite extends Composite {
      * @since 3.2
      */
     public boolean getExpandHorizontal() {
-        return ((IScrolledComposite) this.delegate).getExpandHorizontal();
+        return getImpl().getExpandHorizontal();
     }
 
     /**
@@ -184,7 +184,7 @@ public class ScrolledComposite extends Composite {
      * @since 3.2
      */
     public boolean getExpandVertical() {
-        return ((IScrolledComposite) this.delegate).getExpandVertical();
+        return getImpl().getExpandVertical();
     }
 
     /**
@@ -200,7 +200,7 @@ public class ScrolledComposite extends Composite {
      * @since 3.2
      */
     public int getMinWidth() {
-        return ((IScrolledComposite) this.delegate).getMinWidth();
+        return getImpl().getMinWidth();
     }
 
     /**
@@ -216,7 +216,7 @@ public class ScrolledComposite extends Composite {
      * @since 3.2
      */
     public int getMinHeight() {
-        return ((IScrolledComposite) this.delegate).getMinHeight();
+        return getImpl().getMinHeight();
     }
 
     /**
@@ -225,7 +225,7 @@ public class ScrolledComposite extends Composite {
      * @return the control displayed in the content area
      */
     public Control getContent() {
-        return Control.getInstance(((IScrolledComposite) this.delegate).getContent());
+        return getImpl().getContent();
     }
 
     /**
@@ -242,7 +242,7 @@ public class ScrolledComposite extends Composite {
      * @since 3.4
      */
     public boolean getShowFocusedControl() {
-        return ((IScrolledComposite) this.delegate).getShowFocusedControl();
+        return getImpl().getShowFocusedControl();
     }
 
     /**
@@ -261,7 +261,7 @@ public class ScrolledComposite extends Composite {
      * @since 2.0
      */
     public Point getOrigin() {
-        return ((IScrolledComposite) this.delegate).getOrigin();
+        return getImpl().getOrigin();
     }
 
     /**
@@ -281,7 +281,7 @@ public class ScrolledComposite extends Composite {
      * @since 2.0
      */
     public void setOrigin(Point origin) {
-        ((IScrolledComposite) this.delegate).setOrigin(origin);
+        getImpl().setOrigin(origin);
     }
 
     /**
@@ -303,7 +303,7 @@ public class ScrolledComposite extends Composite {
      * @since 2.0
      */
     public void setOrigin(int x, int y) {
-        ((IScrolledComposite) this.delegate).setOrigin(x, y);
+        getImpl().setOrigin(x, y);
     }
 
     /**
@@ -321,7 +321,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setAlwaysShowScrollBars(boolean show) {
-        ((IScrolledComposite) this.delegate).setAlwaysShowScrollBars(show);
+        getImpl().setAlwaysShowScrollBars(show);
     }
 
     /**
@@ -335,7 +335,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setContent(Control content) {
-        ((IScrolledComposite) this.delegate).setContent((IControl) content.delegate);
+        getImpl().setContent(content);
     }
 
     /**
@@ -354,7 +354,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setExpandHorizontal(boolean expand) {
-        ((IScrolledComposite) this.delegate).setExpandHorizontal(expand);
+        getImpl().setExpandHorizontal(expand);
     }
 
     /**
@@ -373,7 +373,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setExpandVertical(boolean expand) {
-        ((IScrolledComposite) this.delegate).setExpandVertical(expand);
+        getImpl().setExpandVertical(expand);
     }
 
     /**
@@ -391,9 +391,8 @@ public class ScrolledComposite extends Composite {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setLayout(Layout layout) {
-        ((IScrolledComposite) this.delegate).setLayout(layout);
+        getImpl().setLayout(layout);
     }
 
     /**
@@ -409,7 +408,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setMinHeight(int height) {
-        ((IScrolledComposite) this.delegate).setMinHeight(height);
+        getImpl().setMinHeight(height);
     }
 
     /**
@@ -425,7 +424,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setMinSize(Point size) {
-        ((IScrolledComposite) this.delegate).setMinSize(size);
+        getImpl().setMinSize(size);
     }
 
     /**
@@ -442,7 +441,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setMinSize(int width, int height) {
-        ((IScrolledComposite) this.delegate).setMinSize(width, height);
+        getImpl().setMinSize(width, height);
     }
 
     /**
@@ -458,7 +457,7 @@ public class ScrolledComposite extends Composite {
      * </ul>
      */
     public void setMinWidth(int width) {
-        ((IScrolledComposite) this.delegate).setMinWidth(width);
+        getImpl().setMinWidth(width);
     }
 
     /**
@@ -478,7 +477,7 @@ public class ScrolledComposite extends Composite {
      * @since 3.4
      */
     public void setShowFocusedControl(boolean show) {
-        ((IScrolledComposite) this.delegate).setShowFocusedControl(show);
+        getImpl().setShowFocusedControl(show);
     }
 
     /**
@@ -498,23 +497,18 @@ public class ScrolledComposite extends Composite {
      * @since 3.4
      */
     public void showControl(Control control) {
-        ((IScrolledComposite) this.delegate).showControl((IControl) control.delegate);
+        getImpl().showControl(control);
     }
 
-    protected ScrolledComposite(IScrolledComposite delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected ScrolledComposite(IScrolledComposite impl) {
+        super(impl);
     }
 
-    public static ScrolledComposite getInstance(IScrolledComposite delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        ScrolledComposite ref = (ScrolledComposite) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new ScrolledComposite(delegate);
-        }
-        return ref;
+    static ScrolledComposite createApi(IScrolledComposite impl) {
+        return new ScrolledComposite(impl);
+    }
+
+    public IScrolledComposite getImpl() {
+        return (IScrolledComposite) super.getImpl();
     }
 }

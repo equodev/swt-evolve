@@ -28,4 +28,8 @@ public interface ITouchSource {
      * @return a string representation of the event
      */
     String toString();
+
+    TouchSource getApi();
+
+    void setApi(TouchSource api);
 }

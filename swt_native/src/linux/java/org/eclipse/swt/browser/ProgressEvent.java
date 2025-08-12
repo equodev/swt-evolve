@@ -49,7 +49,7 @@ public class ProgressEvent extends TypedEvent {
      *
      * @since 3.5
      */
-    public ProgressEvent(SWTWidget widget) {
+    public ProgressEvent(Widget widget) {
         super(widget);
     }
 

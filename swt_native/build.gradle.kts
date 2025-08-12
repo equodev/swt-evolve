@@ -35,7 +35,7 @@ val swtVersionConfig by configurations.creating {
 
 val swtVersionProvider = provider {
     val versionFiles = swtVersionConfig.files
-    if (versionFiles.isNotEmpty()) versionFiles.first().readText().trim() else swtVersion
+    if (versionFiles.isNotEmpty() && versionFiles.first().exists()) versionFiles.first().readText().trim() else swtVersion
 }
 
 dependencies {
@@ -62,16 +62,10 @@ dependencies {
 sourceSets {
     main {
         java {
-            // Include the shared sources and current OS-specific sources for IDE
-            if (currentOs == "linux") // temp exclude src/main from linux
-                setSrcDirs(listOf(
-                    "src/${currentOs}/java"
-                ))
-            else
-                setSrcDirs(listOf(
-                    "src/main/java",
-                    "src/${currentOs}/java"
-                ))
+            setSrcDirs(listOf(
+                "src/main/java",
+                "src/${currentOs}/java"
+            ))
         }
     }
 
@@ -79,15 +73,10 @@ sourceSets {
     oss.forEach { os ->
         create(os) {
             java {
-                if (os == "linux") // temp exclude src/main from linux
-                    setSrcDirs(listOf(
-                        "src/${os}/java"
-                    ))
-                else
-                    setSrcDirs(listOf(
-                        "src/main/java",
-                        "src/${os}/java"
-                    ))
+                setSrcDirs(listOf(
+                    "src/main/java",
+                    "src/${os}/java"
+                ))
             }
             annotationProcessorPath += sourceSets.main.get().annotationProcessorPath
             compileClasspath += sourceSets.main.get().compileClasspath

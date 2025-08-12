@@ -20,7 +20,6 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
-import java.util.WeakHashMap;
 
 /**
  * Instances of the receiver represent a selectable user
@@ -76,7 +75,8 @@ public class Scale extends Control {
      * @see Widget#getStyle
      */
     public Scale(Composite parent, int style) {
-        this(new SWTScale((SWTComposite) parent.delegate, style));
+        this((IScale) null);
+        setImpl(new SwtScale(parent, style, this));
     }
 
     /**
@@ -103,7 +103,7 @@ public class Scale extends Control {
      * @see #removeSelectionListener
      */
     public void addSelectionListener(SelectionListener listener) {
-        ((IScale) this.delegate).addSelectionListener(listener);
+        getImpl().addSelectionListener(listener);
     }
 
     /**
@@ -119,7 +119,7 @@ public class Scale extends Control {
      * </ul>
      */
     public int getIncrement() {
-        return ((IScale) this.delegate).getIncrement();
+        return getImpl().getIncrement();
     }
 
     /**
@@ -133,7 +133,7 @@ public class Scale extends Control {
      * </ul>
      */
     public int getMaximum() {
-        return ((IScale) this.delegate).getMaximum();
+        return getImpl().getMaximum();
     }
 
     /**
@@ -147,7 +147,7 @@ public class Scale extends Control {
      * </ul>
      */
     public int getMinimum() {
-        return ((IScale) this.delegate).getMinimum();
+        return getImpl().getMinimum();
     }
 
     /**
@@ -163,7 +163,7 @@ public class Scale extends Control {
      * </ul>
      */
     public int getPageIncrement() {
-        return ((IScale) this.delegate).getPageIncrement();
+        return getImpl().getPageIncrement();
     }
 
     /**
@@ -177,7 +177,7 @@ public class Scale extends Control {
      * </ul>
      */
     public int getSelection() {
-        return ((IScale) this.delegate).getSelection();
+        return getImpl().getSelection();
     }
 
     /**
@@ -198,7 +198,7 @@ public class Scale extends Control {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        ((IScale) this.delegate).removeSelectionListener(listener);
+        getImpl().removeSelectionListener(listener);
     }
 
     /**
@@ -215,7 +215,7 @@ public class Scale extends Control {
      * </ul>
      */
     public void setIncrement(int increment) {
-        ((IScale) this.delegate).setIncrement(increment);
+        getImpl().setIncrement(increment);
     }
 
     /**
@@ -232,7 +232,7 @@ public class Scale extends Control {
      * </ul>
      */
     public void setMaximum(int value) {
-        ((IScale) this.delegate).setMaximum(value);
+        getImpl().setMaximum(value);
     }
 
     /**
@@ -249,7 +249,7 @@ public class Scale extends Control {
      * </ul>
      */
     public void setMinimum(int value) {
-        ((IScale) this.delegate).setMinimum(value);
+        getImpl().setMinimum(value);
     }
 
     /**
@@ -266,7 +266,7 @@ public class Scale extends Control {
      * </ul>
      */
     public void setPageIncrement(int pageIncrement) {
-        ((IScale) this.delegate).setPageIncrement(pageIncrement);
+        getImpl().setPageIncrement(pageIncrement);
     }
 
     /**
@@ -281,23 +281,18 @@ public class Scale extends Control {
      * </ul>
      */
     public void setSelection(int value) {
-        ((IScale) this.delegate).setSelection(value);
+        getImpl().setSelection(value);
     }
 
-    protected Scale(IScale delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Scale(IScale impl) {
+        super(impl);
     }
 
-    public static Scale getInstance(IScale delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        Scale ref = (Scale) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new Scale(delegate);
-        }
-        return ref;
+    static Scale createApi(IScale impl) {
+        return new Scale(impl);
+    }
+
+    public IScale getImpl() {
+        return (IScale) super.getImpl();
     }
 }

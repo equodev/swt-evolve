@@ -19,12 +19,12 @@ class CTabFolderSwt<V extends VCTabFolder> extends CompositeSwt<V> {
   State createState() =>
       CTabFolderImpl<CTabFolderSwt<VCTabFolder>, VCTabFolder>();
 
-  void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
-  }
-
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/DefaultSelection", payload);
+  }
+
+  void sendSelectionSelection(V val, VEvent? payload) {
+    sendEvent(val, "Selection/Selection", payload);
   }
 }
 

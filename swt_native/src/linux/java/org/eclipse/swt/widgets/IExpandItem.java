@@ -3,11 +3,10 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 
 public interface IExpandItem extends IItem {
+
+    void checkSubclass();
 
     /**
      * Returns the control that is shown when the item is expanded.
@@ -20,7 +19,7 @@ public interface IExpandItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IControl getControl();
+    Control getControl();
 
     /**
      * Returns <code>true</code> if the receiver is expanded,
@@ -69,7 +68,7 @@ public interface IExpandItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    IExpandBar getParent();
+    ExpandBar getParent();
 
     /**
      * Sets the control that is shown when the item is expanded.
@@ -85,7 +84,7 @@ public interface IExpandItem extends IItem {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setControl(IControl control);
+    void setControl(Control control);
 
     /**
      * Sets the expanded state of the receiver.
@@ -115,4 +114,6 @@ public interface IExpandItem extends IItem {
     void setImage(Image image);
 
     void setText(String string);
+
+    ExpandItem getApi();
 }

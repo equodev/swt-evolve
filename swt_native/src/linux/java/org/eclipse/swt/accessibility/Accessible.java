@@ -48,60 +48,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class Accessible {
 
-    List<AccessibleListener> accessibleListeners;
-
-    List<AccessibleControlListener> accessibleControlListeners;
-
-    List<AccessibleTextListener> accessibleTextListeners;
-
-    List<AccessibleActionListener> accessibleActionListeners;
-
-    List<AccessibleEditableTextListener> accessibleEditableTextListeners;
-
-    List<AccessibleHyperlinkListener> accessibleHyperlinkListeners;
-
-    List<AccessibleTableListener> accessibleTableListeners;
-
-    List<AccessibleTableCellListener> accessibleTableCellListeners;
-
-    List<AccessibleTextExtendedListener> accessibleTextExtendedListeners;
-
-    List<AccessibleValueListener> accessibleValueListeners;
-
-    List<AccessibleAttributeListener> accessibleAttributeListeners;
-
-    Accessible parent;
-
-    AccessibleObject accessibleObject;
-
-    SWTControl control;
-
-    List<Relation> relations;
-
-    List<Accessible> children;
-
-    static class Relation {
-
-        int type;
-
-        Accessible target;
-
-        public Relation(int type, Accessible target) {
-            this.type = type;
-            this.target = target;
-        }
-
-        @Override
-        public boolean equals(Object object) {
-            if (object == this)
-                return true;
-            if (!(object instanceof Relation))
-                return false;
-            Relation relation = (Relation) object;
-            return (relation.type == this.type) && (relation.target == this.target);
-        }
-    }
-
     /**
      * Constructs a new instance of this class given its parent.
      *
@@ -117,11 +63,8 @@ public class Accessible {
      * @since 3.6
      */
     public Accessible(Accessible parent) {
-        this.parent = checkNull(parent);
-        this.control = parent.control;
-        if (parent.children == null)
-            parent.children = new ArrayList<>();
-        parent.children.add(this);
+        this((IAccessible) null);
+        setImpl(new SwtAccessible(parent, this));
     }
 
     /**
@@ -129,21 +72,14 @@ public class Accessible {
      * @deprecated
      */
     @Deprecated
-    public Accessible() {
+    protected Accessible() {
+        this((IAccessible) null);
+        setImpl(new SwtAccessible(this));
     }
 
-    static Accessible checkNull(Accessible parent) {
-        if (parent == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return parent;
-    }
-
-    Accessible(SWTControl control) {
-        super();
-        this.control = control;
-        long type = OS.G_OBJECT_TYPE(getControlHandle());
-        accessibleObject = new AccessibleObject(type, getControlHandle(), this, false);
-        addRelations();
+    Accessible(Control control) {
+        this((IAccessible) null);
+        setImpl(new SwtAccessible(control, this));
     }
 
     /**
@@ -168,12 +104,7 @@ public class Accessible {
      * @see #removeAccessibleListener
      */
     public void addAccessibleListener(AccessibleListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleListeners == null)
-            accessibleListeners = new ArrayList<>();
-        accessibleListeners.add(listener);
+        getImpl().addAccessibleListener(listener);
     }
 
     /**
@@ -198,12 +129,7 @@ public class Accessible {
      * @see #removeAccessibleControlListener
      */
     public void addAccessibleControlListener(AccessibleControlListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleControlListeners == null)
-            accessibleControlListeners = new ArrayList<>();
-        accessibleControlListeners.add(listener);
+        getImpl().addAccessibleControlListener(listener);
     }
 
     /**
@@ -231,18 +157,7 @@ public class Accessible {
      * @since 3.0
      */
     public void addAccessibleTextListener(AccessibleTextListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (listener instanceof AccessibleTextExtendedListener) {
-            if (accessibleTextExtendedListeners == null)
-                accessibleTextExtendedListeners = new ArrayList<>();
-            accessibleTextExtendedListeners.add((AccessibleTextExtendedListener) listener);
-        } else {
-            if (accessibleTextListeners == null)
-                accessibleTextListeners = new ArrayList<>();
-            accessibleTextListeners.add(listener);
-        }
+        getImpl().addAccessibleTextListener(listener);
     }
 
     /**
@@ -267,12 +182,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addAccessibleActionListener(AccessibleActionListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleActionListeners == null)
-            accessibleActionListeners = new ArrayList<>();
-        accessibleActionListeners.add(listener);
+        getImpl().addAccessibleActionListener(listener);
     }
 
     /**
@@ -297,12 +207,7 @@ public class Accessible {
      * @since 3.7
      */
     public void addAccessibleEditableTextListener(AccessibleEditableTextListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleEditableTextListeners == null)
-            accessibleEditableTextListeners = new ArrayList<>();
-        accessibleEditableTextListeners.add(listener);
+        getImpl().addAccessibleEditableTextListener(listener);
     }
 
     /**
@@ -327,12 +232,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addAccessibleHyperlinkListener(AccessibleHyperlinkListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleHyperlinkListeners == null)
-            accessibleHyperlinkListeners = new ArrayList<>();
-        accessibleHyperlinkListeners.add(listener);
+        getImpl().addAccessibleHyperlinkListener(listener);
     }
 
     /**
@@ -357,12 +257,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addAccessibleTableListener(AccessibleTableListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleTableListeners == null)
-            accessibleTableListeners = new ArrayList<>();
-        accessibleTableListeners.add(listener);
+        getImpl().addAccessibleTableListener(listener);
     }
 
     /**
@@ -387,12 +282,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addAccessibleTableCellListener(AccessibleTableCellListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleTableCellListeners == null)
-            accessibleTableCellListeners = new ArrayList<>();
-        accessibleTableCellListeners.add(listener);
+        getImpl().addAccessibleTableCellListener(listener);
     }
 
     /**
@@ -417,12 +307,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addAccessibleValueListener(AccessibleValueListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleValueListeners == null)
-            accessibleValueListeners = new ArrayList<>();
-        accessibleValueListeners.add(listener);
+        getImpl().addAccessibleValueListener(listener);
     }
 
     /**
@@ -447,12 +332,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addAccessibleAttributeListener(AccessibleAttributeListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleAttributeListeners == null)
-            accessibleAttributeListeners = new ArrayList<>();
-        accessibleAttributeListeners.add(listener);
+        getImpl().addAccessibleAttributeListener(listener);
     }
 
     /**
@@ -465,28 +345,7 @@ public class Accessible {
      * @since 3.6
      */
     public void addRelation(int type, Accessible target) {
-        checkWidget();
-        if (target == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (relations == null)
-            relations = new ArrayList<>();
-        Relation relation = new Relation(type, target);
-        if (relations.indexOf(relation) != -1)
-            return;
-        relations.add(relation);
-        if (accessibleObject != null)
-            accessibleObject.addRelation(type, target);
-    }
-
-    void addRelations() {
-        if (relations == null)
-            return;
-        if (accessibleObject == null)
-            return;
-        for (int i = 0; i < relations.size(); i++) {
-            Relation relation = relations.get(i);
-            accessibleObject.addRelation(relation.type, relation.target);
-        }
+        getImpl().addRelation(type, target);
     }
 
     /**
@@ -506,11 +365,7 @@ public class Accessible {
      * @since 3.6
      */
     public void dispose() {
-        if (parent == null)
-            return;
-        release();
-        parent.children.remove(this);
-        parent = null;
+        getImpl().dispose();
     }
 
     /**
@@ -519,60 +374,8 @@ public class Accessible {
      * @return the receiver's control
      * @since 3.0
      */
-    public SWTControl getControl() {
-        return control;
-    }
-
-    /* checkWidget was copied from Widget, and rewritten to work in this package */
-    void checkWidget() {
-        if (control == null) return;
-        if (!isValidThread())
-            SWT.error(SWT.ERROR_THREAD_INVALID_ACCESS);
-        if (control.isDisposed())
-            SWT.error(SWT.ERROR_WIDGET_DISPOSED);
-    }
-
-    AccessibleObject getAccessibleObject() {
-        if (accessibleObject == null) {
-            long widget = this.getControlHandle();
-            long type = OS.G_OBJECT_TYPE(widget);
-            if (parent == null) {
-                accessibleObject = new AccessibleObject(type, widget, this, false);
-            } else {
-                accessibleObject = new AccessibleObject(type, 0, this, true);
-                accessibleObject.parent = parent.getAccessibleObject();
-            }
-        }
-        return accessibleObject;
-    }
-
-    long getControlHandle() {
-        long result = control.handle;
-        if (control instanceof SWTLabel) {
-            if (GTK.GTK4) {
-                for (long child = GTK4.gtk_widget_get_first_child(result); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
-                    if (GTK.gtk_widget_get_visible(child)) {
-                        result = child;
-                        break;
-                    }
-                }
-            } else {
-                long list = GTK3.gtk_container_get_children(result);
-                if (list != 0) {
-                    long temp = list;
-                    while (temp != 0) {
-                        long widget = OS.g_list_data(temp);
-                        if (GTK.gtk_widget_get_visible(widget)) {
-                            result = widget;
-                            break;
-                        }
-                        temp = OS.g_list_next(temp);
-                    }
-                    OS.g_list_free(list);
-                }
-            }
-        }
-        return result;
+    public Control getControl() {
+        return getImpl().getControl();
     }
 
     /**
@@ -588,7 +391,7 @@ public class Accessible {
      * @noreference This method is not intended to be referenced by clients.
      */
     public void internal_dispose_Accessible() {
-        release();
+        getImpl().internal_dispose_Accessible();
     }
 
     /**
@@ -606,27 +409,8 @@ public class Accessible {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    public static Accessible internal_new_Accessible(SWTControl control) {
-        return new Accessible(control);
-    }
-
-    /* isValidThread was copied from Widget, and rewritten to work in this package */
-    boolean isValidThread() {
-        return ((SWTDisplay) (control.getDisplay())).getThread() == Thread.currentThread();
-    }
-
-    void release() {
-        if (children != null) {
-            List<Accessible> temp = new ArrayList<>(children);
-            for (int i = 0; i < temp.size(); i++) {
-                Accessible child = temp.get(i);
-                child.dispose();
-            }
-        }
-        if (accessibleObject != null) {
-            accessibleObject.release();
-            accessibleObject = null;
-        }
+    public static Accessible internal_new_Accessible(Control control) {
+        return SwtAccessible.internal_new_Accessible(control);
     }
 
     /**
@@ -649,14 +433,7 @@ public class Accessible {
      * @see #addAccessibleControlListener
      */
     public void removeAccessibleControlListener(AccessibleControlListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleControlListeners != null) {
-            accessibleControlListeners.remove(listener);
-            if (accessibleControlListeners.isEmpty())
-                accessibleControlListeners = null;
-        }
+        getImpl().removeAccessibleControlListener(listener);
     }
 
     /**
@@ -679,14 +456,7 @@ public class Accessible {
      * @see #addAccessibleListener
      */
     public void removeAccessibleListener(AccessibleListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleListeners != null) {
-            accessibleListeners.remove(listener);
-            if (accessibleListeners.isEmpty())
-                accessibleListeners = null;
-        }
+        getImpl().removeAccessibleListener(listener);
     }
 
     /**
@@ -712,22 +482,7 @@ public class Accessible {
      * @since 3.0
      */
     public void removeAccessibleTextListener(AccessibleTextListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (listener instanceof AccessibleTextExtendedListener) {
-            if (accessibleTextExtendedListeners != null) {
-                accessibleTextExtendedListeners.remove(listener);
-                if (accessibleTextExtendedListeners.isEmpty())
-                    accessibleTextExtendedListeners = null;
-            }
-        } else {
-            if (accessibleTextListeners != null) {
-                accessibleTextListeners.remove(listener);
-                if (accessibleTextListeners.isEmpty())
-                    accessibleTextListeners = null;
-            }
-        }
+        getImpl().removeAccessibleTextListener(listener);
     }
 
     /**
@@ -752,14 +507,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeAccessibleActionListener(AccessibleActionListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleActionListeners != null) {
-            accessibleActionListeners.remove(listener);
-            if (accessibleActionListeners.isEmpty())
-                accessibleActionListeners = null;
-        }
+        getImpl().removeAccessibleActionListener(listener);
     }
 
     /**
@@ -784,14 +532,7 @@ public class Accessible {
      * @since 3.7
      */
     public void removeAccessibleEditableTextListener(AccessibleEditableTextListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleEditableTextListeners != null) {
-            accessibleEditableTextListeners.remove(listener);
-            if (accessibleEditableTextListeners.isEmpty())
-                accessibleEditableTextListeners = null;
-        }
+        getImpl().removeAccessibleEditableTextListener(listener);
     }
 
     /**
@@ -816,14 +557,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeAccessibleHyperlinkListener(AccessibleHyperlinkListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleHyperlinkListeners != null) {
-            accessibleHyperlinkListeners.remove(listener);
-            if (accessibleHyperlinkListeners.isEmpty())
-                accessibleHyperlinkListeners = null;
-        }
+        getImpl().removeAccessibleHyperlinkListener(listener);
     }
 
     /**
@@ -848,14 +582,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeAccessibleTableListener(AccessibleTableListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleTableListeners != null) {
-            accessibleTableListeners.remove(listener);
-            if (accessibleTableListeners.isEmpty())
-                accessibleTableListeners = null;
-        }
+        getImpl().removeAccessibleTableListener(listener);
     }
 
     /**
@@ -880,14 +607,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeAccessibleTableCellListener(AccessibleTableCellListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleTableCellListeners != null) {
-            accessibleTableCellListeners.remove(listener);
-            if (accessibleTableCellListeners.isEmpty())
-                accessibleTableCellListeners = null;
-        }
+        getImpl().removeAccessibleTableCellListener(listener);
     }
 
     /**
@@ -912,14 +632,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeAccessibleValueListener(AccessibleValueListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleValueListeners != null) {
-            accessibleValueListeners.remove(listener);
-            if (accessibleValueListeners.isEmpty())
-                accessibleValueListeners = null;
-        }
+        getImpl().removeAccessibleValueListener(listener);
     }
 
     /**
@@ -944,14 +657,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeAccessibleAttributeListener(AccessibleAttributeListener listener) {
-        checkWidget();
-        if (listener == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (accessibleAttributeListeners != null) {
-            accessibleAttributeListeners.remove(listener);
-            if (accessibleAttributeListeners.isEmpty())
-                accessibleAttributeListeners = null;
-        }
+        getImpl().removeAccessibleAttributeListener(listener);
     }
 
     /**
@@ -964,18 +670,7 @@ public class Accessible {
      * @since 3.6
      */
     public void removeRelation(int type, Accessible target) {
-        checkWidget();
-        if (relations == null)
-            return;
-        if (target == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        Relation relation = new Relation(type, target);
-        int index = relations.indexOf(relation);
-        if (index == -1)
-            return;
-        relations.remove(index);
-        if (accessibleObject != null)
-            accessibleObject.removeRelation(type, target);
+        getImpl().removeRelation(type, target);
     }
 
     /**
@@ -1027,10 +722,7 @@ public class Accessible {
      * @since 3.6
      */
     public void sendEvent(int event, Object eventData) {
-        checkWidget();
-        if (accessibleObject != null) {
-            accessibleObject.sendEvent(event, eventData);
-        }
+        getImpl().sendEvent(event, eventData);
     }
 
     /**
@@ -1062,19 +754,7 @@ public class Accessible {
      * @since 3.8
      */
     public void sendEvent(int event, Object eventData, int childID) {
-        checkWidget();
-        if (accessibleObject != null) {
-            switch(event) {
-                case ACC.EVENT_STATE_CHANGED:
-                case ACC.EVENT_NAME_CHANGED:
-                case ACC.EVENT_VALUE_CHANGED:
-                case ACC.EVENT_LOCATION_CHANGED:
-                case ACC.EVENT_SELECTION_CHANGED:
-                case ACC.EVENT_TEXT_SELECTION_CHANGED:
-                case ACC.EVENT_DESCRIPTION_CHANGED:
-                    accessibleObject.sendEvent(event, eventData, childID);
-            }
-        }
+        getImpl().sendEvent(event, eventData, childID);
     }
 
     /**
@@ -1089,10 +769,7 @@ public class Accessible {
      * @since 3.0
      */
     public void selectionChanged() {
-        checkWidget();
-        if (accessibleObject != null) {
-            accessibleObject.selectionChanged();
-        }
+        getImpl().selectionChanged();
     }
 
     /**
@@ -1107,10 +784,7 @@ public class Accessible {
      * </ul>
      */
     public void setFocus(int childID) {
-        checkWidget();
-        if (accessibleObject != null) {
-            accessibleObject.setFocus(childID);
-        }
+        getImpl().setFocus(childID);
     }
 
     /**
@@ -1127,10 +801,7 @@ public class Accessible {
      * @since 3.0
      */
     public void textCaretMoved(int index) {
-        checkWidget();
-        if (accessibleObject != null) {
-            accessibleObject.textCaretMoved(index);
-        }
+        getImpl().textCaretMoved(index);
     }
 
     /**
@@ -1153,10 +824,7 @@ public class Accessible {
      * @since 3.0
      */
     public void textChanged(int type, int startIndex, int length) {
-        checkWidget();
-        if (accessibleObject != null) {
-            accessibleObject.textChanged(type, startIndex, length);
-        }
+        getImpl().textChanged(type, startIndex, length);
     }
 
     /**
@@ -1171,9 +839,26 @@ public class Accessible {
      * @since 3.0
      */
     public void textSelectionChanged() {
-        checkWidget();
-        if (accessibleObject != null) {
-            accessibleObject.textSelectionChanged();
-        }
+        getImpl().textSelectionChanged();
+    }
+
+    protected IAccessible impl;
+
+    protected Accessible(IAccessible impl) {
+        if (impl != null)
+            impl.setApi(this);
+    }
+
+    static Accessible createApi(IAccessible impl) {
+        return new Accessible(impl);
+    }
+
+    public IAccessible getImpl() {
+        return impl;
+    }
+
+    protected Accessible setImpl(IAccessible impl) {
+        this.impl = impl;
+        return this;
     }
 }

@@ -21,7 +21,7 @@ public class VButton extends VControl {
     }
 
     public void setAlignment(int value) {
-        ((DartButton) impl).alignment = value;
+        ((DartButton) impl).setAlignment(value);
     }
 
     public boolean getGrayed() {

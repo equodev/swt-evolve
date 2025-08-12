@@ -71,7 +71,7 @@ public interface ITreeCursor extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    ITreeItem getRow();
+    TreeItem getRow();
 
     /**
      * Removes the listener from the collection of listeners who will be notified when the
@@ -155,7 +155,9 @@ public interface ITreeCursor extends ICanvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setSelection(ITreeItem row, int column);
+    void setSelection(TreeItem row, int column);
 
     void setVisible(boolean visible);
+
+    TreeCursor getApi();
 }

@@ -25,7 +25,6 @@ import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
 import org.eclipse.swt.widgets.*;
-import java.util.WeakHashMap;
 
 /**
  *  <code>DragSource</code> defines the source object for a drag and drop transfer.
@@ -138,7 +137,8 @@ public class DragSource extends Widget {
      *  @see DND#DROP_LINK
      */
     public DragSource(Control control, int style) {
-        this(new SWTDragSource((SWTControl) control.delegate, style));
+        this((IDragSource) null);
+        setImpl(new SwtDragSource(control, style, this));
     }
 
     /**
@@ -172,7 +172,11 @@ public class DragSource extends Widget {
      * @see DragSourceEvent
      */
     public void addDragListener(DragSourceListener listener) {
-        ((IDragSource) this.delegate).addDragListener(listener);
+        getImpl().addDragListener(listener);
+    }
+
+    protected void checkSubclass() {
+        getImpl().checkSubclass();
     }
 
     /**
@@ -182,7 +186,7 @@ public class DragSource extends Widget {
      * @return the Control which is registered for this DragSource
      */
     public Control getControl() {
-        return Control.getInstance(((IDragSource) this.delegate).getControl());
+        return getImpl().getControl();
     }
 
     /**
@@ -206,7 +210,7 @@ public class DragSource extends Widget {
      * @since 3.4
      */
     public DragSourceListener[] getDragListeners() {
-        return ((IDragSource) this.delegate).getDragListeners();
+        return getImpl().getDragListeners();
     }
 
     /**
@@ -218,7 +222,7 @@ public class DragSource extends Widget {
      * @since 3.3
      */
     public DragSourceEffect getDragSourceEffect() {
-        return ((IDragSource) this.delegate).getDragSourceEffect();
+        return getImpl().getDragSourceEffect();
     }
 
     /**
@@ -227,7 +231,7 @@ public class DragSource extends Widget {
      * @return the list of data types that can be transferred by this DragSource
      */
     public Transfer[] getTransfer() {
-        return ((IDragSource) this.delegate).getTransfer();
+        return getImpl().getTransfer();
     }
 
     /**
@@ -249,7 +253,7 @@ public class DragSource extends Widget {
      * @see #getDragListeners
      */
     public void removeDragListener(DragSourceListener listener) {
-        ((IDragSource) this.delegate).removeDragListener(listener);
+        getImpl().removeDragListener(listener);
     }
 
     /**
@@ -261,7 +265,7 @@ public class DragSource extends Widget {
      * @since 3.3
      */
     public void setDragSourceEffect(DragSourceEffect effect) {
-        ((IDragSource) this.delegate).setDragSourceEffect(effect);
+        getImpl().setDragSourceEffect(effect);
     }
 
     /**
@@ -273,23 +277,18 @@ public class DragSource extends Widget {
      * dragged from this source
      */
     public void setTransfer(Transfer... transferAgents) {
-        ((IDragSource) this.delegate).setTransfer(transferAgents);
+        getImpl().setTransfer(transferAgents);
     }
 
-    protected DragSource(IDragSource delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected DragSource(IDragSource impl) {
+        super(impl);
     }
 
-    public static DragSource getInstance(IDragSource delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        DragSource ref = (DragSource) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new DragSource(delegate);
-        }
-        return ref;
+    static DragSource createApi(IDragSource impl) {
+        return new DragSource(impl);
+    }
+
+    public IDragSource getImpl() {
+        return (IDragSource) super.getImpl();
     }
 }

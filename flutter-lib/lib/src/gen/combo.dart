@@ -26,12 +26,12 @@ class ComboSwt<V extends VCombo> extends CompositeSwt<V> {
     sendEvent(val, "Segment/Segments", payload);
   }
 
-  void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
-  }
-
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/DefaultSelection", payload);
+  }
+
+  void sendSelectionSelection(V val, VEvent? payload) {
+    sendEvent(val, "Selection/Selection", payload);
   }
 
   void sendVerifyVerify(V val, VEvent? payload) {

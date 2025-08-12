@@ -16,12 +16,12 @@ class ToolItemSwt<V extends VToolItem> extends ItemSwt<V> {
   @override
   State createState() => ToolItemImpl<ToolItemSwt<VToolItem>, VToolItem>();
 
-  void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
-  }
-
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/DefaultSelection", payload);
+  }
+
+  void sendSelectionSelection(V val, VEvent? payload) {
+    sendEvent(val, "Selection/Selection", payload);
   }
 }
 

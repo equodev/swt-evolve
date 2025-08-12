@@ -18,7 +18,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import java.util.WeakHashMap;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -39,6 +39,8 @@ import java.util.WeakHashMap;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class CTabItem extends Item {
+
+    int state = SWT.NONE;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -69,8 +71,8 @@ public class CTabItem extends Item {
      * @see Widget#getStyle()
      */
     public CTabItem(CTabFolder parent, int style) {
-        this(parent.delegate instanceof SWTCTabFolder ? new SWTCTabItem((SWTCTabFolder) parent.delegate, style)
-                : new FlutterCTabItem((FlutterCTabFolder) parent.delegate, style));
+        this((ICTabItem) null);
+        setImpl(Config.isEquo(CTabItem.class, parent) ? new DartCTabItem(parent, style, this) : new SwtCTabItem(parent, style, this));
     }
 
     /**
@@ -104,13 +106,12 @@ public class CTabItem extends Item {
      * @see Widget#getStyle()
      */
     public CTabItem(CTabFolder parent, int style, int index) {
-        this(parent.delegate instanceof SWTCTabFolder ? new SWTCTabItem((SWTCTabFolder) parent.delegate, style, index)
-                : new FlutterCTabItem((FlutterCTabFolder) parent.delegate, style, index));
+        this((ICTabItem) null);
+        setImpl(Config.isEquo(CTabItem.class, parent) ? new DartCTabItem(parent, style, index, this) : new SwtCTabItem(parent, style, index, this));
     }
 
-    @Override
     public void dispose() {
-        ((ICTabItem) this.delegate).dispose();
+        getImpl().dispose();
     }
 
     /**
@@ -125,7 +126,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        return ((ICTabItem) this.delegate).getBounds();
+        return getImpl().getBounds();
     }
 
     /**
@@ -139,7 +140,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        return Control.getInstance(((ICTabItem) this.delegate).getControl());
+        return getImpl().getControl();
     }
 
     /**
@@ -156,7 +157,7 @@ public class CTabItem extends Item {
      */
     @Deprecated
     public Image getDisabledImage() {
-        return ((ICTabItem) this.delegate).getDisabledImage();
+        return getImpl().getDisabledImage();
     }
 
     /**
@@ -171,7 +172,7 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public Color getForeground() {
-        return ((ICTabItem) this.delegate).getForeground();
+        return getImpl().getForeground();
     }
 
     /**
@@ -186,7 +187,7 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public Color getSelectionForeground() {
-        return ((ICTabItem) this.delegate).getSelectionForeground();
+        return getImpl().getSelectionForeground();
     }
 
     /**
@@ -202,7 +203,7 @@ public class CTabItem extends Item {
      *  @since 3.0
      */
     public Font getFont() {
-        return ((ICTabItem) this.delegate).getFont();
+        return getImpl().getFont();
     }
 
     /**
@@ -216,7 +217,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public CTabFolder getParent() {
-        return CTabFolder.getInstance(((ICTabItem) this.delegate).getParent());
+        return getImpl().getParent();
     }
 
     /**
@@ -234,7 +235,7 @@ public class CTabItem extends Item {
      * @since 3.4
      */
     public boolean getShowClose() {
-        return ((ICTabItem) this.delegate).getShowClose();
+        return getImpl().getShowClose();
     }
 
     /**
@@ -249,7 +250,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public String getToolTipText() {
-        return ((ICTabItem) this.delegate).getToolTipText();
+        return getImpl().getToolTipText();
     }
 
     /**
@@ -265,7 +266,7 @@ public class CTabItem extends Item {
      * @since 3.0
      */
     public boolean isShowing() {
-        return ((ICTabItem) this.delegate).isShowing();
+        return getImpl().isShowing();
     }
 
     /**
@@ -284,7 +285,7 @@ public class CTabItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        ((ICTabItem) this.delegate).setControl((IControl) control.delegate);
+        getImpl().setControl(control);
     }
 
     /**
@@ -302,7 +303,7 @@ public class CTabItem extends Item {
      */
     @Deprecated
     public void setDisabledImage(Image image) {
-        ((ICTabItem) this.delegate).setDisabledImage(image);
+        getImpl().setDisabledImage(image);
     }
 
     /**
@@ -323,7 +324,7 @@ public class CTabItem extends Item {
      * @since 3.0
      */
     public void setFont(Font font) {
-        ((ICTabItem) this.delegate).setFont(font);
+        getImpl().setFont(font);
     }
 
     /**
@@ -343,7 +344,7 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public void setForeground(Color color) {
-        ((ICTabItem) this.delegate).setForeground(color);
+        getImpl().setForeground(color);
     }
 
     /**
@@ -363,12 +364,11 @@ public class CTabItem extends Item {
      * @since 3.114
      */
     public void setSelectionForeground(Color color) {
-        ((ICTabItem) this.delegate).setSelectionForeground(color);
+        getImpl().setSelectionForeground(color);
     }
 
-    @Override
     public void setImage(Image image) {
-        ((ICTabItem) this.delegate).setImage(image);
+        getImpl().setImage(image);
     }
 
     /**
@@ -386,7 +386,7 @@ public class CTabItem extends Item {
      * @since 3.4
      */
     public void setShowClose(boolean close) {
-        ((ICTabItem) this.delegate).setShowClose(close);
+        getImpl().setShowClose(close);
     }
 
     /**
@@ -400,9 +400,8 @@ public class CTabItem extends Item {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    @Override
     public void setText(String string) {
-        ((ICTabItem) this.delegate).setText(string);
+        getImpl().setText(string);
     }
 
     /**
@@ -426,23 +425,18 @@ public class CTabItem extends Item {
      * </ul>
      */
     public void setToolTipText(String string) {
-        ((ICTabItem) this.delegate).setToolTipText(string);
+        getImpl().setToolTipText(string);
     }
 
-    protected CTabItem(ICTabItem delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected CTabItem(ICTabItem impl) {
+        super(impl);
     }
 
-    public static CTabItem getInstance(ICTabItem delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        CTabItem ref = (CTabItem) INSTANCES.get(delegate);
-        if (ref == null) {
-            ref = new CTabItem(delegate);
-        }
-        return ref;
+    static CTabItem createApi(ICTabItem impl) {
+        return new CTabItem(impl);
+    }
+
+    public ICTabItem getImpl() {
+        return (ICTabItem) super.getImpl();
     }
 }

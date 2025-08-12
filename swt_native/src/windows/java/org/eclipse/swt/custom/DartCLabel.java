@@ -687,6 +687,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * </ul>
      */
     public void setAlignment(int align) {
+        dirty();
         checkWidget();
         if (align != SWT.LEFT && align != SWT.RIGHT && align != SWT.CENTER) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -695,11 +696,11 @@ public class DartCLabel extends DartCanvas implements ICLabel {
             this.align = align;
             redraw();
         }
-        getBridge().dirty(this);
     }
 
     @Override
     public void setBackground(Color color) {
+        dirty();
         super.setBackground(color);
         // Are these settings the same as before?
         if (backgroundImage == null && gradientColors == null && gradientPercents == null) {
@@ -716,7 +717,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         gradientColors = null;
         gradientPercents = null;
         redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -779,6 +779,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      *  @since 3.0
      */
     public void setBackground(Color[] colors, int[] percents, boolean vertical) {
+        dirty();
         checkWidget();
         if (colors != null) {
             if (percents == null || percents.length != colors.length - 1) {
@@ -835,7 +836,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         }
         // Refresh with the new settings
         redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -849,6 +849,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * </ul>
      */
     public void setBackground(Image image) {
+        dirty();
         checkWidget();
         if (image == backgroundImage)
             return;
@@ -858,7 +859,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         }
         backgroundImage = image;
         redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -874,19 +874,19 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * @since 3.6
      */
     public void setBottomMargin(int bottomMargin) {
+        dirty();
         checkWidget();
         if (this.bottomMargin == bottomMargin || bottomMargin < 0)
             return;
         this.bottomMargin = bottomMargin;
         redraw();
-        getBridge().dirty(this);
     }
 
     @Override
     public void setFont(Font font) {
+        dirty();
         super.setFont(font);
         redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -901,12 +901,12 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * </ul>
      */
     public void setImage(Image image) {
+        dirty();
         checkWidget();
         if (image != this.image) {
             this.image = image;
             redraw();
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -922,12 +922,12 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * @since 3.6
      */
     public void setLeftMargin(int leftMargin) {
+        dirty();
         checkWidget();
         if (this.leftMargin == leftMargin || leftMargin < 0)
             return;
         this.leftMargin = leftMargin;
         redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -945,13 +945,13 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * @since 3.6
      */
     public void setMargins(int leftMargin, int topMargin, int rightMargin, int bottomMargin) {
+        dirty();
         checkWidget();
         this.leftMargin = Math.max(0, leftMargin);
         this.topMargin = Math.max(0, topMargin);
         this.rightMargin = Math.max(0, rightMargin);
         this.bottomMargin = Math.max(0, bottomMargin);
         redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -967,12 +967,12 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * @since 3.6
      */
     public void setRightMargin(int rightMargin) {
+        dirty();
         checkWidget();
         if (this.rightMargin == rightMargin || rightMargin < 0)
             return;
         this.rightMargin = rightMargin;
         redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -1000,6 +1000,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * </ul>
      */
     public void setText(String text) {
+        dirty();
         checkWidget();
         //$NON-NLS-1$
         if (text == null)
@@ -1008,14 +1009,13 @@ public class DartCLabel extends DartCanvas implements ICLabel {
             this.text = text;
             redraw();
         }
-        getBridge().dirty(this);
     }
 
     @Override
     public void setToolTipText(String string) {
+        dirty();
         super.setToolTipText(string);
         appToolTipText = super.getToolTipText();
-        getBridge().dirty(this);
     }
 
     /**
@@ -1031,12 +1031,12 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * @since 3.6
      */
     public void setTopMargin(int topMargin) {
+        dirty();
         checkWidget();
         if (this.topMargin == topMargin || topMargin < 0)
             return;
         this.topMargin = topMargin;
         redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -1111,8 +1111,8 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         return lines;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
+    protected void _hookEvents() {
+        super._hookEvents();
     }
 
     public CLabel getApi() {

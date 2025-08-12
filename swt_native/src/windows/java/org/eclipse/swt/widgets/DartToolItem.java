@@ -187,7 +187,6 @@ public class DartToolItem extends DartItem implements IToolItem {
     }
 
     void click(boolean dropDown) {
-        long hwnd = parent.handle;
         ((DartToolBar) parent.getImpl()).ignoreMouse = true;
         ((DartToolBar) parent.getImpl()).ignoreMouse = false;
     }
@@ -575,6 +574,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setBackground(Color color) {
+        dirty();
         checkWidget();
         this._background = color;
         if (color != null && color.isDisposed()) {
@@ -586,7 +586,6 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         background = pixel;
         redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -605,6 +604,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setControl(Control control) {
+        dirty();
         checkWidget();
         if (control != null) {
             if (control.isDisposed())
@@ -632,7 +632,6 @@ public class DartToolItem extends DartItem implements IToolItem {
 	*/
         if ((parent.style & (SWT.WRAP | SWT.VERTICAL)) != 0) {
             boolean changed = false;
-            long hwnd = parent.handle;
             if (control == null) {
             } else {
             }
@@ -640,7 +639,6 @@ public class DartToolItem extends DartItem implements IToolItem {
             }
         }
         resizeControl();
-        getBridge().dirty(this);
     }
 
     /**
@@ -660,9 +658,9 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
+        dirty();
         checkWidget();
         this.enabled = enabled;
-        long hwnd = parent.handle;
         if (enabled) {
             getApi().state &= ~DISABLED;
         } else {
@@ -675,7 +673,6 @@ public class DartToolItem extends DartItem implements IToolItem {
         if (!enabled && ((DartToolBar) parent.getImpl()).lastFocusId == id) {
             ((DartToolBar) parent.getImpl()).lastFocusId = -1;
         }
-        getBridge().dirty(this);
     }
 
     /**
@@ -696,6 +693,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setDisabledImage(Image image) {
+        dirty();
         checkWidget();
         if (this.disabledImage == image)
             return;
@@ -706,7 +704,6 @@ public class DartToolItem extends DartItem implements IToolItem {
         parent.layout(isImageSizeChanged(disabledImage, image));
         disabledImage = image;
         updateImages(getEnabled() && parent.getEnabled());
-        getBridge().dirty(this);
     }
 
     /**
@@ -729,6 +726,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setForeground(Color color) {
+        dirty();
         checkWidget();
         this._foreground = color;
         if (color != null && color.isDisposed()) {
@@ -740,7 +738,6 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         foreground = pixel;
         redraw();
-        getBridge().dirty(this);
     }
 
     /**
@@ -761,6 +758,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setHotImage(Image image) {
+        dirty();
         checkWidget();
         if (this.hotImage == image)
             return;
@@ -771,11 +769,11 @@ public class DartToolItem extends DartItem implements IToolItem {
         parent.layout(isImageSizeChanged(hotImage, image));
         hotImage = image;
         updateImages(getEnabled() && parent.getEnabled());
-        getBridge().dirty(this);
     }
 
     @Override
     public void setImage(Image image) {
+        dirty();
         checkWidget();
         if (this.image == image)
             return;
@@ -786,7 +784,6 @@ public class DartToolItem extends DartItem implements IToolItem {
         parent.layout(isImageSizeChanged(super.image, image));
         super.setImage(image);
         updateImages(getEnabled() && parent.getEnabled());
-        getBridge().dirty(this);
     }
 
     boolean isImageSizeChanged(Image oldImage, Image image) {
@@ -824,11 +821,11 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setSelection(boolean selected) {
+        dirty();
         checkWidget();
         this.selection = selected;
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
-        long hwnd = parent.handle;
         if (selected) {
         } else {
         }
@@ -847,21 +844,18 @@ public class DartToolItem extends DartItem implements IToolItem {
                 updateImages(false);
             }
         }
-        getBridge().dirty(this);
     }
 
     @Override
     public boolean setTabItemFocus() {
         if (parent.getImpl().setTabItemFocus()) {
-            long hwnd = parent.handle;
             return true;
         }
         return false;
     }
 
     void _setText(String string) {
-        long hwnd = parent.handle;
-        long pszText = 0;
+        dirty();
         if (string.length() != 0) {
             if ((getApi().style & SWT.FLIP_TEXT_DIRECTION) != 0) {
             } else {
@@ -919,10 +913,8 @@ public class DartToolItem extends DartItem implements IToolItem {
 	* the tool bar to redraw and layout.
 	*/
         ((DartToolBar) parent.getImpl()).setDropDownItems(false);
-        long hwnd = parent.handle;
         ((DartToolBar) parent.getImpl()).setDropDownItems(true);
         ((DartToolBar) parent.getImpl()).layoutItems();
-        getBridge().dirty(this);
     }
 
     @Override
@@ -961,9 +953,9 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setToolTipText(String string) {
+        dirty();
         checkWidget();
         toolTipText = string;
-        getBridge().dirty(this);
     }
 
     /**
@@ -989,19 +981,17 @@ public class DartToolItem extends DartItem implements IToolItem {
     }
 
     void setWidthInPixels(int width) {
+        dirty();
         if ((getApi().style & SWT.SEPARATOR) == 0)
             return;
         if (width < 0)
             return;
-        long hwnd = parent.handle;
         ((DartToolBar) parent.getImpl()).layoutItems();
-        getBridge().dirty(this);
     }
 
     void updateImages(boolean enabled) {
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
-        long hwnd = parent.handle;
         ((DartToolBar) parent.getImpl()).layoutItems();
     }
 
@@ -1088,20 +1078,20 @@ public class DartToolItem extends DartItem implements IToolItem {
         if (bridge != null)
             return bridge;
         Composite p = parent;
-        while (!(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
-        return ((DartWidget) p.getImpl()).getBridge();
+        while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
     }
 
-    protected void hookEvents() {
-        super.hookEvents();
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Selection, e);
-            });
-        });
+    protected void _hookEvents() {
+        super._hookEvents();
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
             });
         });
     }

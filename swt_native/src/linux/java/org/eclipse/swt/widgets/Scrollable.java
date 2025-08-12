@@ -21,7 +21,6 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
-import java.util.WeakHashMap;
 
 /**
  * This class is the abstract superclass of all classes which
@@ -78,6 +77,7 @@ public abstract class Scrollable extends Control {
      * @see Widget#getStyle
      */
     public Scrollable(Composite parent, int style) {
+        super(parent, style);
     }
 
     /**
@@ -108,7 +108,7 @@ public abstract class Scrollable extends Control {
      * @see #getClientArea
      */
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return ((IScrollable) this.delegate).computeTrim(x, y, width, height);
+        return getImpl().computeTrim(x, y, width, height);
     }
 
     /**
@@ -126,7 +126,7 @@ public abstract class Scrollable extends Control {
      * @see #computeTrim
      */
     public Rectangle getClientArea() {
-        return ((IScrollable) this.delegate).getClientArea();
+        return getImpl().getClientArea();
     }
 
     /**
@@ -141,7 +141,7 @@ public abstract class Scrollable extends Control {
      * </ul>
      */
     public ScrollBar getHorizontalBar() {
-        return ScrollBar.getInstance(((IScrollable) this.delegate).getHorizontalBar());
+        return getImpl().getHorizontalBar();
     }
 
     /**
@@ -168,7 +168,7 @@ public abstract class Scrollable extends Control {
      * @since 3.8
      */
     public int getScrollbarsMode() {
-        return ((IScrollable) this.delegate).getScrollbarsMode();
+        return getImpl().getScrollbarsMode();
     }
 
     /**
@@ -193,7 +193,7 @@ public abstract class Scrollable extends Control {
      * @since 3.126
      */
     public void setScrollbarsMode(int mode) {
-        ((IScrollable) this.delegate).setScrollbarsMode(mode);
+        getImpl().setScrollbarsMode(mode);
     }
 
     /**
@@ -208,19 +208,14 @@ public abstract class Scrollable extends Control {
      * </ul>
      */
     public ScrollBar getVerticalBar() {
-        return ScrollBar.getInstance(((IScrollable) this.delegate).getVerticalBar());
+        return getImpl().getVerticalBar();
     }
 
-    protected Scrollable(IScrollable delegate) {
-        super(delegate);
-        this.delegate = delegate;
-        INSTANCES.put(delegate, this);
+    protected Scrollable(IScrollable impl) {
+        super(impl);
     }
 
-    public static Scrollable getInstance(IScrollable delegate) {
-        if (delegate == null) {
-            return null;
-        }
-        return (Scrollable) INSTANCES.get(delegate);
+    public IScrollable getImpl() {
+        return (IScrollable) super.getImpl();
     }
 }

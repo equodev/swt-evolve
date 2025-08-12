@@ -3,7 +3,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
 
 public interface IIME extends IWidget {
 
@@ -143,4 +142,6 @@ public interface IIME extends IWidget {
      * </ul>
      */
     void setCompositionOffset(int offset);
+
+    IME getApi();
 }
