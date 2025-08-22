@@ -825,7 +825,7 @@ public class DartCombo extends DartComposite implements ICombo {
         int[] end = new int[1];
         if (entryHandle != 0) {
         }
-        return new Point(start[0], end[0]);
+        return this.selection;
     }
 
     /**

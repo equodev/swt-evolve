@@ -1,10 +1,27 @@
 [versions]
 junit = "5.11.4"
+assertj = "3.25.3"
+equo-comm = "3.1.0.202405302201"
+auto-value = "1.10.4"
+dsl-json = "2.0.2"
+json-unit = "4.1.1"
+mockito = "5.18.0"
+instancio = "5.4.0"
 
 [libraries]
+# JUnit 5
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter" }
 junit-jupiter-params = { group = "org.junit.jupiter", name = "junit-jupiter-params" }
 junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine" }
 
-assertj = { group = "org.assertj", name = "assertj-core", version = "3.25.3" }
+# Testing
+assertj = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
+json-unit-assertj = { group = "net.javacrumbs.json-unit", name = "json-unit-assertj", version.ref = "json-unit" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
+instancio-junit = { group = "org.instancio", name = "instancio-junit", version.ref = "instancio" }
+
+# Core dependencies
+equo-comm-ws = { group = "dev.equo", name = "com.equo.comm.ws.provider", version.ref = "equo-comm" }
+auto-value-annotations = { group = "com.google.auto.value", name = "auto-value-annotations", version.ref = "auto-value" }
+dsl-json = { group = "com.dslplatform", name = "dsl-json", version.ref = "dsl-json" }

@@ -77,9 +77,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   Color fg = Colors.black;
   Color gcBg = Colors.transparent;
 
-  double _lineWidth = 1.0;
-  int _lineCap = 1;
-  int _lineJoin = 2;
+  // double _lineWidth = 1.0;
+  // int _lineCap = 1;
+  // int _lineJoin = 2;
   int _alpha = 255;
   Rect? clipRect;
 
@@ -102,7 +102,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   }
 
   @override
-  Widget build(BuildContext ctx) => CustomPaint(
+  Widget build(BuildContext context) => CustomPaint(
     size: const Size(100, 100),
     painter: ScenePainter(bg, List.unmodifiable(shapes)),
   );

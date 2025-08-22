@@ -272,7 +272,7 @@ public final class DartColor extends DartResource implements IColor {
 
     @Override
     void destroy() {
-        getApi().handle = null;
+        alpha = -1;
     }
 
     /**
@@ -329,10 +329,15 @@ public final class DartColor extends DartResource implements IColor {
             return false;
         if (isDisposed() || color.isDisposed())
             return false;
-        double[] rgbColor = color.handle;
-        if (getApi().handle == rgbColor)
-            return true;
-        return (int) (getApi().handle[0] * 255) == (int) (rgbColor[0] * 255) && (int) (getApi().handle[1] * 255) == (int) (rgbColor[1] * 255) && (int) (getApi().handle[2] * 255) == (int) (rgbColor[2] * 255) && (int) (getApi().handle[3] * 255) == (int) (rgbColor[3] * 255);
+        if (this.getRed() != color.getRed())
+            return false;
+        if (this.getGreen() != color.getGreen())
+            return false;
+        if (this.getBlue() != color.getBlue())
+            return false;
+        if (this.getAlpha() != color.getAlpha())
+            return false;
+        return true;
     }
 
     /**
@@ -348,7 +353,7 @@ public final class DartColor extends DartResource implements IColor {
     public int getAlpha() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return (int) (getApi().handle[3] * 255);
+        return this.alpha;
     }
 
     /**
@@ -363,7 +368,7 @@ public final class DartColor extends DartResource implements IColor {
     public int getBlue() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return (int) (getApi().handle[2] * 255);
+        return this.blue;
     }
 
     /**
@@ -378,7 +383,7 @@ public final class DartColor extends DartResource implements IColor {
     public int getGreen() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return (int) (getApi().handle[1] * 255);
+        return this.green;
     }
 
     /**
@@ -393,7 +398,7 @@ public final class DartColor extends DartResource implements IColor {
     public int getRed() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return (int) (getApi().handle[0] * 255);
+        return this.red;
     }
 
     /**
@@ -410,7 +415,7 @@ public final class DartColor extends DartResource implements IColor {
     public int hashCode() {
         if (isDisposed())
             return 0;
-        return (int) (getApi().handle[0] * 255) ^ (int) (getApi().handle[1] * 255) ^ (int) (getApi().handle[2] * 255) ^ (int) (getApi().handle[3] * 255);
+        return (((getAlpha() * 31) + getGreen()) * 31 + getBlue()) * 31 + getRed();
     }
 
     /**
@@ -488,7 +493,7 @@ public final class DartColor extends DartResource implements IColor {
      */
     @Override
     public boolean isDisposed() {
-        return getApi().handle == null;
+        return alpha == -1;
     }
 
     /**

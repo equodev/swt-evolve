@@ -274,6 +274,7 @@ public final class DartColor extends DartResource implements IColor {
 
     @Override
     void destroy() {
+        alpha = -1;
     }
 
     /**
@@ -326,9 +327,8 @@ public final class DartColor extends DartResource implements IColor {
     public boolean equals(Object object) {
         if (object == this.getApi())
             return true;
-        if (!(object instanceof Color))
+        if (!(object instanceof Color color))
             return false;
-        Color color = (Color) object;
         if (isDisposed() || color.isDisposed())
             return false;
         if (this.getRed() != color.getRed())
@@ -417,7 +417,7 @@ public final class DartColor extends DartResource implements IColor {
     public int hashCode() {
         if (isDisposed())
             return 0;
-        return (((this.getAlpha() * 31) + this.getGreen()) * 31 + this.getBlue()) * 31 + this.getRed();
+        return (((getAlpha() * 31) + getGreen()) * 31 + getBlue()) * 31 + getRed();
     }
 
     /**
@@ -495,7 +495,7 @@ public final class DartColor extends DartResource implements IColor {
      */
     @Override
     public boolean isDisposed() {
-        return false;
+        return alpha == -1;
     }
 
     /**
