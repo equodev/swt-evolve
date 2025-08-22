@@ -1,6 +1,11 @@
 package dev.equo.swt;
 
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.accessibility.Accessible;
+import org.eclipse.swt.accessibility.SwtAccessible;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.widgets.Canvas;
+import org.eclipse.swt.widgets.Caret;
 import org.eclipse.swt.widgets.Mocks;
 import org.eclipse.swt.widgets.Widget;
 import org.instancio.Instancio;
@@ -8,8 +13,11 @@ import org.instancio.InstancioObjectApi;
 import org.instancio.Select;
 import org.instancio.settings.*;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,6 +29,7 @@ import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 public class SerializeTestBase {
     private final Settings settings;
     Serializer serializer = new Serializer();
+    private MockedStatic<SwtAccessible> mockedStatic;
 
     protected  SerializeTestBase() {
         settings = Settings.defaults()
@@ -44,6 +53,15 @@ public class SerializeTestBase {
     @BeforeEach
     void mocks() {
         FlutterBridge.set(new MockFlutterBridge());
+
+        Accessible mockAcc = Mockito.mock(Accessible.class);
+        mockedStatic = Mockito.mockStatic(SwtAccessible.class);
+        mockedStatic.when(() -> SwtAccessible.internal_new_Accessible(Mockito.any())).thenReturn(mockAcc);
+    }
+
+    @AfterEach
+    void resetStatic() {
+        mockedStatic.close();
     }
 
     protected <T> String serialize(Object p) {
@@ -67,12 +85,14 @@ public class SerializeTestBase {
             inst
                     .ignore(Select.types().of(Class.forName("org.eclipse.swt.internal.cocoa.NSObject")));
         } catch (ClassNotFoundException e) {}
-        inst
+        inst = inst
                 .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
                 .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0)) // Always true
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, Integer.MAX_VALUE))
-                .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())))
-                .fill();
+                .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())));
+        if (w instanceof Canvas c)
+            inst.generate(Select.all(Caret.class), gen -> gen.oneOf(new Caret(c, SWT.NONE)));
+        inst.fill();
     }
 
     protected void setAll(Color w) {
@@ -109,6 +129,16 @@ public class SerializeTestBase {
                             .containsEntry("green", value.getGreen())
                             .containsEntry("blue", value.getBlue())
                             .containsEntry("alpha", value.getAlpha());
+            };
+        }
+
+        public Consumer<? super Object> equalsTo(Caret value, Object def) {
+            return n -> {
+                if (value == def)
+                    assertThatJson(n).node(field).isAbsent();
+                else
+                    assertThatJson(n).node(field).isObject()
+                            .containsEntry("visible", Boolean.TRUE);
             };
         }
     }

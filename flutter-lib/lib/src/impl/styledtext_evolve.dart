@@ -22,7 +22,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   bool _isInLocalEditMode = false;
 
   bool _isSelecting = false;
-  Offset? _selectionStartPosition;
+  // Offset? _selectionStartPosition;
   int? _selectionStartOffset;
 
   bool _editable = true;
@@ -38,7 +38,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   @override
-  Widget build(BuildContext ctx) {
+  Widget build(BuildContext context) {
     return Stack(
       children: [
         CustomPaint(
@@ -246,7 +246,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
             _editableTextShape = _editableTextShape!.clearSelection().moveCaret(caretOffset);
 
             _isSelecting = false;
-            _selectionStartPosition = null;
+            // _selectionStartPosition = null;
             _selectionStartOffset = null;
           });
 
@@ -432,7 +432,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   void _handleTapDown(Offset position) {
-    _selectionStartPosition = position;
+    // _selectionStartPosition = position;
     _isSelecting = false;
   }
 
@@ -441,7 +441,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _handleTap(position);
     }
     _isSelecting = false;
-    _selectionStartPosition = null;
+    // _selectionStartPosition = null;
     _selectionStartOffset = null;
   }
 
@@ -458,9 +458,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       }
     }
 
-    if (textShape == null) {
-      textShape = _findEditableTextShapeAtPosition(position, canvasSize);
-    }
+    textShape ??= _findEditableTextShapeAtPosition(position, canvasSize);
 
     if (textShape != null) {
       _isSelecting = true;
@@ -492,7 +490,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   void _handlePanEnd() {
     _isSelecting = false;
-    _selectionStartPosition = null;
+    // _selectionStartPosition = null;
     _selectionStartOffset = null;
   }
 
@@ -1667,16 +1665,14 @@ class TextShape extends Shape {
       );
 
       double maxW = double.infinity;
-      if (canvasSize != null) {
-        maxW = canvasSize.width - off.dx - indent.toDouble();
-        if (maxW <= 0) maxW = double.infinity;
-      }
+      maxW = canvasSize.width - off.dx - indent.toDouble();
+      if (maxW <= 0) maxW = double.infinity;
 
       tp.layout(maxWidth: maxW);
 
       double finalX = indent.toDouble();
 
-      if (canvasSize != null && maxW != double.infinity) {
+      if (maxW != double.infinity) {
         switch (effectiveAlign) {
           case TextAlign.center:
             final availableWidth = maxW;
@@ -1802,7 +1798,7 @@ class TextShape extends Shape {
   }
 
   @override
-  String toString() => 'EditableText "${text.length > 20 ? text.substring(0, 20) + "..." : text}" @ $off${caretInfo != null ? " [caret at ${caretInfo!.offset}]" : ""}${editable ? " [editable]" : ""}${clipRect != null ? " [clipped]" : ""}';
+  String toString() => 'EditableText "${text.length > 20 ? "${text.substring(0, 20)}..." : text}" @ $off${caretInfo != null ? " [caret at ${caretInfo!.offset}]" : ""}${editable ? " [editable]" : ""}${clipRect != null ? " [clipped]" : ""}';
 }
 
 class CaretInfo {

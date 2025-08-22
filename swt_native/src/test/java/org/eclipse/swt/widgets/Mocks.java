@@ -47,8 +47,7 @@ public class Mocks {
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {}
         when(display.getSystemColor(anyInt())).thenReturn(new Color(red(), green(), blue()));
         when(swtDisplay.getThread()).thenCallRealMethod();
-        Font font = mock(Font.class);
-        when(display.getSystemFont()).thenReturn(font);
+        org.eclipse.swt.graphics.Mocks.device(display, swtDisplay);
         return display;
     }
 

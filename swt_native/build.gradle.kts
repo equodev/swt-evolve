@@ -41,22 +41,22 @@ val swtVersionProvider = provider {
 dependencies {
     if (gradle.parent != null)
         swtVersionConfig("dev.equo:eclipse_run")
-    implementation("dev.equo:com.equo.comm.ws.provider:3.1.0.202405302201") {
+    implementation(libs.equo.comm.ws) {
         exclude(group = "dev.equo", module = "com.equo.comm.common")
     }
 
-    implementation("com.google.auto.value:auto-value-annotations:1.10.4")
-    annotationProcessor("com.google.auto.value:auto-value:1.10.4")
-    implementation("com.dslplatform:dsl-json:2.0.2")
-    annotationProcessor("com.dslplatform:dsl-json:2.0.2")
+    implementation(libs.auto.value.annotations)
+    annotationProcessor(libs.auto.value.annotations)
+    implementation(libs.dsl.json)
+    annotationProcessor(libs.dsl.json)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.assertj)
-    testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.1.1")
-    testImplementation("org.mockito:mockito-core:5.18.0")
-    testImplementation("org.instancio:instancio-junit:5.4.0")
+    testImplementation(libs.json.unit.assertj)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.instancio.junit)
 }
 
 sourceSets {
@@ -85,10 +85,19 @@ sourceSets {
     }
 }
 
+// Configure Java compilation
+tasks.compileJava {
+    options.encoding = "UTF-8"
+}
+
 tasks.test {
     useJUnitPlatform()
+    dependsOn("${currentPlatform}ExtractNatives")
 //    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
 //        jvmArgs = listOf("-XstartOnFirstThread")
+    systemProperty("swt.library.path", layout.buildDirectory.dir("natives/$currentPlatform").get().toString())
+    if (System.getProperty("test.debug") != null)
+        jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
 }
 
 tasks.jar {
@@ -100,6 +109,19 @@ tasks.jar {
 
     dependsOn("${currentPlatform}ExtractNatives")
     dependsOn("${currentPlatform}CopyFlutterBinaries")
+}
+
+val dart = tasks.register<Exec>("dartRunner") {
+    group = "build"
+    description = "Generate dart files"
+    workingDir = file("../flutter-lib")
+    inputs.files(fileTree("../flutter-lib/lib/src") {
+        include("gen/*.dart")
+        include("swt/*.dart")
+        exclude("**/*.g.dart")
+    })
+    outputs.files(fileTree("../flutter-lib/lib/src") { include("**/*.g.dart") })
+    commandLine = listOf("dart", "run", "build_runner", "build", "--delete-conflicting-outputs")
 }
 
 // Create tasks for each platform JAR
@@ -127,7 +149,11 @@ platforms.forEach { platform ->
     tasks.register<Exec>("${platform}FlutterLib") {
         group = "build"
         description = "Builds Flutter lib for $platform"
+        dependsOn(dart)
         workingDir = file("../flutter-lib")
+        inputs.dir("../flutter-lib/lib")
+        inputs.dir("../flutter-lib/${osArch[0]}")
+        outputs.dir("../flutter-lib/build/${osArch[0]}")
         when (osArch[0]) {
             "macos" -> {
                 val arch = when (osArch[1]) {
@@ -146,6 +172,8 @@ platforms.forEach { platform ->
     tasks.register<Copy>("${platform}CopyFlutterBinaries") {
         group = "build"
         description = "Copies Flutter binaries for $platform"
+        if (currentPlatform == platform && System.getProperty("skipFlutterLib") == null)
+            dependsOn("${platform}FlutterLib")
 
         val flutterArch = if (osArch[1] == "aarch64") "arm64" else "x64"
         when (osArch[0]) {
