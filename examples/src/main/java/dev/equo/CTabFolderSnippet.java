@@ -8,7 +8,15 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
 
-
+/**
+ * Demonstrates the use of CTabFolder (Custom Tab Folder) widget in SWT.
+ * This example creates a tab folder with 8 tabs, each containing a text area with sample content.
+ * The tab folder includes:
+ * - Minimize/maximize buttons in the tab bar
+ * - Support for minimizing, maximizing, and restoring the tab folder
+ * - Multi-line text content in each tab with scrollbars
+ * - Custom styling with borders and proper layout management
+ */
 public class CTabFolderSnippet {
     public static void main (String [] args) {
         Display display = new Display ();
@@ -51,7 +59,7 @@ public class CTabFolderSnippet {
                 shell.layout(true);
             }
         });
-        shell.setSize(300, 300);
+        shell.setSize(350, 300);
         shell.open ();
         while (!shell.isDisposed ()) {
             if (!display.readAndDispatch ()) display.sleep ();

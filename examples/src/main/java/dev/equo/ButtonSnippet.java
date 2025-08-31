@@ -6,6 +6,14 @@ import org.eclipse.swt.widgets.*;
 
 import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
 
+/**
+ * Demonstrates different types of SWT buttons including push, toggle, and check buttons.
+ * This example creates a shell with three different button types arranged vertically:
+ * - Push button: Standard clickable button
+ * - Toggle button: Button that maintains pressed/unpressed state
+ * - Check button: Checkbox with text label
+ * Each button prints a message to the console when clicked.
+ */
 public class ButtonSnippet {
     public static void main (String [] args) {
         Display display = new Display ();
@@ -25,7 +33,7 @@ public class ButtonSnippet {
         checkButton.addSelectionListener(widgetSelectedAdapter(e -> System.out.println("Check button clicked")));
 
         shell.setLayout (new RowLayout(SWT.VERTICAL));
-        shell.pack ();
+        shell.setSize(250, 150);
         shell.open ();
         while (!shell.isDisposed ()) {
             if (!display.readAndDispatch ()) display.sleep ();

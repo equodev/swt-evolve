@@ -7,6 +7,18 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
+/**
+ * Combines character-level styling with paragraph-level formatting in SWT StyledText.
+ * This example demonstrates both types of formatting applied together:
+ * Character-level styling:
+ * - First paragraph: Bold font style applied to specific text range
+ * - Second paragraph: Red foreground color applied to specific text range  
+ * - Third paragraph: Blue background color applied to specific text range
+ * Paragraph-level formatting:
+ * - First paragraph: 50-pixel left indentation
+ * - Second paragraph: Center alignment
+ * - Third paragraph: Justified alignment
+ */
 public class StyledTextSnippet3 {
     static String text =
             "This paragraph has an indentation of fifty pixels and bold font style applied.\n\n" +
