@@ -19,6 +19,10 @@ val currentOs = when {
 val arch = System.getProperty("os.arch")
 val currentPlatform = "$currentOs-${if (arch.contains("aarch64") || arch.contains("arm")) "aarch64" else "x86_64"}"
 
+tasks.compileJava {
+    options.encoding = "UTF-8"
+}
+
 dependencies {
     if (gradle.parent != null)
         implementation(project(":swt_native"))

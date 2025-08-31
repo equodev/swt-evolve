@@ -7,6 +7,14 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
+/**
+ * Demonstrates basic text styling with SWT StyledText widget.
+ * This example shows how to apply different text styles to different portions of text:
+ * - Bold formatting for the first 10 characters
+ * - Red foreground color for the middle section
+ * - Blue background color for the last section
+ * Each style range is applied using StyleRange objects with specific start positions and lengths.
+ */
 public class StyledTextSnippet1 {
 
 public static void main(String[] args) {

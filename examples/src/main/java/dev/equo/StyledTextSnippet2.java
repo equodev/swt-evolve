@@ -6,6 +6,14 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
+/**
+ * Demonstrates text paragraph formatting with SWT StyledText widget.
+ * This example shows different paragraph-level formatting options:
+ * - First paragraph: 50-pixel indentation from the left margin
+ * - Second paragraph: Center alignment
+ * - Third paragraph: Justified text alignment (text aligned to both margins)
+ * The text content explains each formatting feature while demonstrating it visually.
+ */
 public class StyledTextSnippet2 {
 
 	static String text =

@@ -7,6 +7,15 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
+/**
+ * Demonstrates a read-only StyledText widget that prevents user editing.
+ * This example shows:
+ * - A StyledText widget with editing disabled using setEditable(false)
+ * - Bold formatting applied to the entire text content
+ * - Text content that explains its read-only nature
+ * - Users can still select text and navigate with the cursor, but cannot modify the content
+ * Useful for displaying formatted text that should not be editable, like help text or status messages.
+ */
 public class StyledTextSnippet5 {
 
 public static void main(String[] args) {

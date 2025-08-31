@@ -16,7 +16,7 @@ import java.util.jar.JarFile;
  */
 public class FlutterLibraryLoader {
 
-    private static final String SEPARATOR = File.separator;
+    private static final String SEP = File.separator;
     private static final String USER_HOME = System.getProperty("user.home");
 
     // OS and Architecture Constants
@@ -33,7 +33,7 @@ public class FlutterLibraryLoader {
     private static final String MACOS_LIB_NAME = "libFlutterBridge.dylib";
     public static final String CONTENTS = "Contents";
     public static final String SWTFLUTTER_APP = "swtflutter.app";
-    public static final String SWTFLUTTER_APP_CONTENTS = "macos/Build/Products/Release/" + SWTFLUTTER_APP + SEPARATOR + CONTENTS;
+    public static final String SWTFLUTTER_APP_CONTENTS = "macos/Build/Products/Release/" + SWTFLUTTER_APP + SEP + CONTENTS;
     private static final String RUNNER_DIR_NAME = "runner";
     private static final String LINUX_BUNDLE_DIR_NAME = "bundle";
     private static final String LINUX_LIB_NAME = "libflutter_library.so";
@@ -43,7 +43,7 @@ public class FlutterLibraryLoader {
     public static final String WIN_X64_RELEASE = "windows/x64/runner/Release";
 
     private static final String EQUO_LIB_PATH_SUFFIX =
-            EQUO_BASE_DIR_NAME + SEPARATOR + SWT_DIR_NAME + SEPARATOR + LIB_SUB_DIR_NAME + SEPARATOR + getOS() + SEPARATOR + getArch();
+            EQUO_BASE_DIR_NAME + SEP + SWT_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP + getOS() + SEP + getArch();
 
     /**
      * Initializes the Flutter library loader. This is the main public entry point.
@@ -90,7 +90,7 @@ public class FlutterLibraryLoader {
     private static void extractAndLoadMacOSLibraries(File targetDir, boolean isDevelopmentMode) throws IOException {
         if (!isDevelopmentMode) {
             extractDirectoryFromJar(SWTFLUTTER_APP, targetDir);
-            File libFile = new File(targetDir, SWTFLUTTER_APP + SEPARATOR + CONTENTS + SEPARATOR + MACOS_LIB_NAME);
+            File libFile = new File(targetDir, SWTFLUTTER_APP + SEP + CONTENTS + SEP + MACOS_LIB_NAME);
             loadLibrary(libFile.getAbsolutePath());
         } else {
             loadOSLibraries(SWTFLUTTER_APP_CONTENTS, MACOS_LIB_NAME);
@@ -102,14 +102,18 @@ public class FlutterLibraryLoader {
             extractDirectoryFromJar(RUNNER_DIR_NAME, targetDir);
             extractDirectoryFromJar(LINUX_BUNDLE_DIR_NAME, targetDir);
 
-            File libFile = new File(targetDir, RUNNER_DIR_NAME + SEPARATOR + LINUX_LIB_NAME);
-            if (!libFile.exists()) {
+            File flutFile = new File(targetDir, LINUX_BUNDLE_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP + "libflutter_linux_gtk.so");
+            File libFile = new File(targetDir, RUNNER_DIR_NAME + SEP + LINUX_LIB_NAME);
+            if (!flutFile.exists())
+                throw new IOException("Essential Linux library not found after extraction: " + flutFile.getAbsolutePath());
+            if (!libFile.exists())
                 throw new IOException("Essential Linux library not found after extraction: " + libFile.getAbsolutePath());
-            }
+            setExecutablePermission(flutFile);
             setExecutablePermission(libFile);
+            loadLibrary(flutFile.getAbsolutePath());
             loadLibrary(libFile.getAbsolutePath());
         } else {
-            loadOSLibraries(LINUX_X64_RELEASE, RUNNER_DIR_NAME + SEPARATOR + LINUX_LIB_NAME);
+            loadOSLibraries(LINUX_X64_RELEASE, RUNNER_DIR_NAME + SEP + LINUX_LIB_NAME);
         }
     }
 
@@ -117,16 +121,16 @@ public class FlutterLibraryLoader {
         if (!isDevelopmentMode) {
             extractDirectoryFromJar(RUNNER_DIR_NAME, targetDir);
 
-            File lib1File = new File(targetDir, RUNNER_DIR_NAME + SEPARATOR + WIN_LIB1_NAME);
-            File libFile = new File(targetDir, RUNNER_DIR_NAME + SEPARATOR + WIN_LIB_NAME);
+            File lib1File = new File(targetDir, RUNNER_DIR_NAME + SEP + WIN_LIB1_NAME);
+            File libFile = new File(targetDir, RUNNER_DIR_NAME + SEP + WIN_LIB_NAME);
             if (!libFile.exists() || !lib1File.exists()) {
                 throw new IOException("Essential Windows library not found after extraction: " + libFile.getAbsolutePath() + ", "+lib1File.getAbsolutePath());
             }
             loadLibrary(lib1File.getAbsolutePath());
             loadLibrary(libFile.getAbsolutePath());
         } else {
-            loadOSLibraries(WIN_X64_RELEASE, SEPARATOR + WIN_LIB1_NAME);
-            loadOSLibraries(WIN_X64_RELEASE, SEPARATOR + WIN_LIB_NAME);
+            loadOSLibraries(WIN_X64_RELEASE, SEP + WIN_LIB1_NAME);
+            loadOSLibraries(WIN_X64_RELEASE, SEP + WIN_LIB_NAME);
         }
     }
 

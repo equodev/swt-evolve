@@ -7,6 +7,15 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
+/**
+ * Demonstrates an editable StyledText widget with user interaction capabilities.
+ * This example shows:
+ * - A StyledText widget that allows user input and text editing
+ * - Bold formatting applied to the entire initial text content
+ * - Interactive text editing where users can click anywhere to position the caret
+ * - Full editing capabilities including typing, deleting, and modifying text
+ * The text content explains its own interactive features to guide user interaction.
+ */
 public class StyledTextSnippet4 {
 
 public static void main(String[] args) {
@@ -22,7 +31,7 @@ public static void main(String[] args) {
 	style1.fontStyle = SWT.BOLD;
 	text.setStyleRange(style1);
 
-	shell.pack();
+	shell.setSize(500, 80);
 	shell.open();
 	while (!shell.isDisposed()) {
 		if (!display.readAndDispatch())
