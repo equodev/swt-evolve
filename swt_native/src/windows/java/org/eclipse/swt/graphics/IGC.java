@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
 
-public interface IGC extends IResource {
+public interface IGC extends IResource, ImplGC {
 
     /**
      * Copies a rectangular area of the receiver at the specified

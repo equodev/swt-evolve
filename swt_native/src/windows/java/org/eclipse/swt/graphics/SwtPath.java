@@ -421,9 +421,9 @@ public class SwtPath extends SwtResource implements IPath {
         int mode = OS.GetPolyFillMode(gc.handle) == OS.WINDING ? Gdip.FillModeWinding : Gdip.FillModeAlternate;
         Gdip.GraphicsPath_SetFillMode(getHandle(initialZoom), mode);
         if (outline) {
-            return Gdip.GraphicsPath_IsOutlineVisible(getHandle(initialZoom), x, y, ((SwtGC) gc.getImpl()).data.gdipPen, ((SwtGC) gc.getImpl()).data.gdipGraphics);
+            return Gdip.GraphicsPath_IsOutlineVisible(getHandle(initialZoom), x, y, gc.getImpl()._data().gdipPen, gc.getImpl()._data().gdipGraphics);
         } else {
-            return Gdip.GraphicsPath_IsVisible(getHandle(initialZoom), x, y, ((SwtGC) gc.getImpl()).data.gdipGraphics);
+            return Gdip.GraphicsPath_IsVisible(getHandle(initialZoom), x, y, gc.getImpl()._data().gdipGraphics);
         }
     }
 

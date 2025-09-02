@@ -13,6 +13,9 @@ VEvent _$VEventFromJson(Map<String, dynamic> json) => VEvent()
   ..detail = (json['detail'] as num?)?.toInt()
   ..doit = json['doit'] as bool?
   ..end = (json['end'] as num?)?.toInt()
+  ..gc = json['gc'] == null
+      ? null
+      : VGC.fromJson(json['gc'] as Map<String, dynamic>)
   ..height = (json['height'] as num?)?.toInt()
   ..index = (json['index'] as num?)?.toInt()
   ..item = json['item'] == null
@@ -49,6 +52,7 @@ Map<String, dynamic> _$VEventToJson(VEvent instance) => <String, dynamic>{
       'detail': instance.detail,
       'doit': instance.doit,
       'end': instance.end,
+      'gc': instance.gc,
       'height': instance.height,
       'index': instance.index,
       'item': instance.item,

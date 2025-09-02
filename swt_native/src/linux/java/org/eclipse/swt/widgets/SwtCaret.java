@@ -139,7 +139,9 @@ public class SwtCaret extends SwtWidget implements ICaret {
         long cairo = GDK.gdk_cairo_create(window);
         Point pt = display.map(parent, embeddedInto, new Point(0, 0));
         Cairo.cairo_translate(cairo, pt.x, pt.y);
-        ((SwtCanvas) parent.getImpl()).drawCaretInFocus(parent.handle, cairo);
+        if (parent.getImpl() instanceof SwtCanvas) {
+            ((SwtCanvas) parent.getImpl()).drawCaretInFocus(parent.handle, cairo);
+        }
         Cairo.cairo_destroy(cairo);
     }
 

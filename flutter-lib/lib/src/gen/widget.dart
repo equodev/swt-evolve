@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
@@ -8,7 +9,6 @@ part 'widget.g.dart';
 
 abstract class WidgetSwt<V extends VWidget> extends StatefulWidget {
   final V value;
-
   const WidgetSwt({super.key, required this.value});
 
   void sendEvent(V val, String ev, VEvent? payload) {
@@ -45,12 +45,6 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     extraSetState();
   }
 
-  void _onChange(V payload) {
-    print('On Widget Change, payload: $payload');
-
-    _setValue(payload);
-  }
-
   void _setValue(V value) {
     setState(() {
       state = value!;
@@ -58,7 +52,19 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     });
   }
 
+  void _onChange(V payload) {
+    print('On Widget Change, payload: $payload');
+    _setValue(payload);
+  }
+
   void extraSetState() {}
+
+  void onOp(String op, void Function(dynamic) handler) {
+    EquoCommService.onRaw("${state.swt}/${state.id}/$op", (opArgs) {
+      print('OnOp: "${state.swt}/${state.id}/$op" args: ${opArgs}');
+      handler(jsonDecode(opArgs as String));
+    });
+  }
 }
 
 @JsonSerializable()

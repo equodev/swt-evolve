@@ -1524,8 +1524,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     GC createNewGC(long hDC, GCData data) {
-        data.nativeZoom = getApi().nativeZoom;
-        return SwtGC.win32_new(hDC, data);
+        return null;
     }
 
     public int getZoom() {

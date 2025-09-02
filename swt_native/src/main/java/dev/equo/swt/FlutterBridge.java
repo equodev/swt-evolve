@@ -1,15 +1,16 @@
 package dev.equo.swt;
 
 import org.eclipse.swt.custom.*;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -18,7 +19,7 @@ public abstract class FlutterBridge {
     private static final String DEV_EQU_SWT_NEW = "dev.equ.swt.new";
     protected static final FlutterClient client;
     private static final Serializer serializer = new Serializer();
-    private static final Set<DartWidget> dirty = new HashSet<>();
+    private static final Set<Object> dirty = new HashSet<>();
     private static FlutterBridge bridge;
 
     static {
@@ -39,31 +40,32 @@ public abstract class FlutterBridge {
     protected FlutterBridge() {
     }
 
-    public static void update() {
-        for (DartWidget widget : dirty) {
-            if (widget.isDisposed()) break;
-            widget.getBridge().clientReady.thenRun(() -> {
+    public static CompletableFuture<Void> update() {
+        if (dirty.isEmpty()) {
+            return CompletableFuture.completedFuture(null);
+        }
+        
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        for (Object widget : dirty) {
+            if (isDisposed(widget)) break;
+            CompletableFuture<Void> future = getBridge(widget).clientReady.thenRun(() -> {
                 try {
                     if (widget instanceof DartStyledText){
-                        widget.getDisplay().asyncExec(() -> {
+                        getDisplay(widget).asyncExec(() -> {
                             StyledTextBridge.drawStyledText((DartStyledText) widget,
-                                    ((DartStyledText) widget).getLocation().x,
-                                    ((DartStyledText) widget).getLocation().y,
-                                    ((DartStyledText) widget).getCaret(),
-                                    id(widget),
-                                    client);
+                                ((DartStyledText) widget).getLocation().x,
+                                ((DartStyledText) widget).getLocation().y,
+                                ((DartStyledText) widget).getCaret(),
+                                id(widget),
+                                client
+                            );
                         });
 
                     }
                     if (!isNew(widget)) { // send with the parent
                         String event = event(widget);
-                        System.out.println("will send: " + event);
                         try {
-                            ByteArrayOutputStream out = new ByteArrayOutputStream();
-                            serializer.to(widget.getApi(), out);
-                            String payload = out.toString(StandardCharsets.UTF_8);
-                            System.out.println("send: " + event + ": " + payload);
-                            client.getComm().send(event, payload);
+                            serializeAndSend(event, getApi(widget));
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -74,16 +76,60 @@ public abstract class FlutterBridge {
                     e.printStackTrace();
                 }
             });
+            futures.add(future);
         }
         dirty.clear();
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
-    private static boolean isNew(DartWidget widget) {
-        return widget.getData("dev.equ.swt.new") == null;
+    private static boolean isNew(Object widget) {
+        if (widget instanceof DartWidget)
+            return ((DartWidget) widget).getData("dev.equ.swt.new") == null;
+        return false;
     }
 
-    private static void setNotNew(DartWidget control) {
-        control.setData(DEV_EQU_SWT_NEW, false);
+    private static boolean isDisposed(Object w) {
+        if (w instanceof DartWidget) return ((DartWidget) w).isDisposed();
+        if (w instanceof DartResource) return ((DartResource) w).isDisposed();
+        return true;
+    }
+
+    private static FlutterBridge getBridge(Object w) {
+        if (w instanceof DartWidget) return ((DartWidget) w).getBridge();
+        if (w instanceof DartResource) return ((DartResource) w).getBridge();
+        return null;
+    }
+
+    private static Display getDisplay(Object w) {
+        if (w instanceof DartWidget) return ((DartWidget) w).getDisplay();
+        if (w instanceof DartResource) {
+            Drawable drawable = ((DartGC) w)._drawable();
+            DartWidget widget = null;
+            if (drawable instanceof Canvas) {
+                widget = (DartWidget) ((Canvas) drawable).getImpl();
+            }
+            return widget.getDisplay();
+        }
+        return null;
+    }
+
+    private static Object getApi(Object w) {
+        if (w instanceof DartWidget) return ((DartWidget) w).getApi();
+        if (w instanceof DartResource) return ((DartResource) w).getApi();
+        return null;
+    }
+
+    private static void serializeAndSend(String eventName, Object args) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        serializer.to(args, out);
+        String serialized = out.toString(StandardCharsets.UTF_8);
+        System.out.println("send: " + eventName + ": " + serialized);
+        client.getComm().send(eventName, serialized);
+    }
+
+    private static void setNotNew(Object control) {
+        if (control instanceof DartWidget)
+            ((DartWidget) control).setData(DEV_EQU_SWT_NEW, false);
     }
 
     public static void set(FlutterBridge staticBridge) {
@@ -109,11 +155,22 @@ public abstract class FlutterBridge {
     }
 
     public static void onPayload(DartWidget widget, String event, Consumer<Object> cb) {
-        String eventName =  widgetName(widget)  + "/" + id(widget) + "/" + event;
+        String eventName =  eventName(widget, event);
         client.getComm().on(eventName, p -> {
             System.out.println(eventName + ", payload:"+p);
             cb.accept(p);
         });
+    }
+
+    public static void send(DartResource resource, String event, Object args) {
+        if (dirty.contains(resource)) {
+            update().join();
+        }
+        try {
+            serializeAndSend(eventName(resource, event), args);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     protected void onReady(DartControl control) {
@@ -130,6 +187,14 @@ public abstract class FlutterBridge {
         });
     }
 
+    public void dirty(DartResource resource) {
+        if (resource == null)
+            return;
+        synchronized (dirty) {
+            dirty.add(resource);
+        }
+    }
+
     public void dirty(DartWidget widget) {
         if (widget == null)
             return;
@@ -138,11 +203,21 @@ public abstract class FlutterBridge {
         }
     }
 
-    public static String widgetName(DartWidget w) {
-        return w.getClass().getSimpleName().substring(4);
+    public static String widgetName(Object w) {
+        if (w instanceof DartWidget) {
+            return w.getClass().getSimpleName().substring(4);
+        }
+        if (w instanceof DartResource) {
+            return w.getClass().getSimpleName().substring(4);
+        }
+        return null;
     }
 
-    public static String event(DartWidget w, String... events) {
+    public static String eventName(Object w, String event) {
+        return widgetName(w) + "/" + id(w) + "/" + event;
+    }
+
+    public static String event(Object w, String... events) {
         String ev = widgetName(w) + "/" + id(w);
         if (events.length > 0)
             ev += "/" + String.join("/", events);
@@ -172,8 +247,13 @@ public abstract class FlutterBridge {
     public void setCursor(DartControl control, long cursor) {
     }
 
-    public static long id(DartWidget w) {
-        return w.getApi().hashCode();
+    public static long id(Object w) {
+        if (w instanceof DartWidget)
+            return ((DartWidget) w).getApi().hashCode();
+        if (w instanceof DartResource) {
+            return ((DartResource) w).getApi().hashCode();
+        }
+        return 0;
     }
 
     static long id(Widget w) {

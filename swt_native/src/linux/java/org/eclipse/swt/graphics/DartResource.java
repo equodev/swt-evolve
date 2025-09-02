@@ -239,6 +239,18 @@ public abstract class DartResource implements IResource {
         return device;
     }
 
+    protected FlutterBridge bridge;
+
+    public FlutterBridge getBridge() {
+        return bridge;
+    }
+
+    protected void dirty() {
+        FlutterBridge bridge = getBridge();
+        if (bridge != null)
+            bridge.dirty(this);
+    }
+
     public Resource getApi() {
         return (Resource) api;
     }

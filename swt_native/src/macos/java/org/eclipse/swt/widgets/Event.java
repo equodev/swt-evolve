@@ -89,6 +89,7 @@ public class Event {
      * damaged region of the control.  It is valid
      * only during the paint and must not be disposed
      */
+    @JsonAttribute()
     public GC gc;
 
     /**

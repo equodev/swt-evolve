@@ -7,6 +7,7 @@ import '../gen/combo.dart';
 import '../gen/composite.dart';
 import '../gen/ctabfolder.dart';
 import '../gen/ctabitem.dart';
+import '../gen/gc.dart';
 import '../gen/label.dart';
 import '../gen/list.dart';
 import '../gen/scrollbar.dart';
@@ -32,6 +33,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "CTabItem" => VCTabItem.fromJson(child),
     "ToolItem" => VToolItem.fromJson(child),
     "Caret" => VCaret.fromJson(child),
+    "GC" => VGC.fromJson(child),
     "ScrollBar" => VScrollBar.fromJson(child),
     _ => throw "Unknown Widget Value $type"
   };
@@ -54,6 +56,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VCTabItem() => CTabItemSwt(key: ValueKey(id), value: child),
     VToolItem() => ToolItemSwt(key: ValueKey(id), value: child),
     VCaret() => CaretSwt(key: ValueKey(id), value: child),
+    VGC() => GCSwt(key: ValueKey(id), value: child),
     VScrollBar() => ScrollBarSwt(key: ValueKey(id), value: child),
     _ => throw "No widget for Value $type"
   };

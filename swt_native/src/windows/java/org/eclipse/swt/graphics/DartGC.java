@@ -15,11 +15,12 @@
  */
 package org.eclipse.swt.graphics;
 
-import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Config;
+import org.eclipse.swt.internal.gdip.*;
+import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.graphics.VGC.*;
+import dev.equo.swt.*;
 
 /**
  * Class <code>GC</code> is where all of the drawing capabilities that are
@@ -61,25 +62,59 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Examples: GraphicsExample, PaintExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public final class GC extends Resource {
+public final class DartGC extends DartResource implements IGC {
+
+    Drawable drawable;
+
+    GCData data;
+
+    static final int FOREGROUND = 1 << 0;
+
+    static final int BACKGROUND = 1 << 1;
+
+    static final int FONT = 1 << 2;
+
+    static final int LINE_STYLE = 1 << 3;
+
+    static final int LINE_WIDTH = 1 << 4;
+
+    static final int LINE_CAP = 1 << 5;
+
+    static final int LINE_JOIN = 1 << 6;
+
+    static final int LINE_MITERLIMIT = 1 << 7;
+
+    static final int FOREGROUND_TEXT = 1 << 8;
+
+    static final int BACKGROUND_TEXT = 1 << 9;
+
+    static final int BRUSH = 1 << 10;
+
+    static final int PEN = 1 << 11;
+
+    static final int NULL_BRUSH = 1 << 12;
+
+    static final int NULL_PEN = 1 << 13;
+
+    static final int DRAW_OFFSET = 1 << 14;
+
+    static final int DRAW = FOREGROUND | LINE_STYLE | LINE_WIDTH | LINE_CAP | LINE_JOIN | LINE_MITERLIMIT | PEN | NULL_BRUSH | DRAW_OFFSET;
+
+    static final int FILL = BACKGROUND | BRUSH | NULL_PEN;
+
+    static final float[] LINE_DOT_ZERO = new float[] { 3, 3 };
+
+    static final float[] LINE_DASH_ZERO = new float[] { 18, 6 };
+
+    static final float[] LINE_DASHDOT_ZERO = new float[] { 9, 6, 3, 6 };
+
+    static final float[] LINE_DASHDOTDOT_ZERO = new float[] { 9, 3, 3, 3, 3, 3 };
 
     /**
-     * the handle to the OS device context
-     * (Warning: This field is platform dependent)
-     * <p>
-     * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
-     * public API. It is marked public only so that it can be shared
-     * within the packages provided by SWT. It is not available on all
-     * platforms and should never be accessed from application code.
-     * </p>
-     *
-     * @noreference This field is not intended to be referenced by clients.
+     * Prevents uninitialized instances from being created outside the package.
      */
-    public NSGraphicsContext handle;
-
-    GC() {
-        this((IGC) null);
-        setImpl(Config.isEquo(GC.class) ? new DartGC(this) : new SwtGC(this));
+    DartGC(GC api) {
+        super(api);
     }
 
     /**
@@ -105,9 +140,8 @@ public final class GC extends Resource {
      * </ul>
      * @see #dispose()
      */
-    public GC(Drawable drawable) {
-        this((IGC) null);
-        setImpl(Config.isEquo(GC.class, drawable) ? new DartGC(drawable, this) : new SwtGC(drawable, this));
+    public DartGC(Drawable drawable, GC api) {
+        this(drawable, SWT.NONE, api);
     }
 
     /**
@@ -139,9 +173,220 @@ public final class GC extends Resource {
      *
      * @since 2.1.2
      */
-    public GC(Drawable drawable, int style) {
-        this((IGC) null);
-        setImpl(Config.isEquo(GC.class, drawable) ? new DartGC(drawable, this) : new SwtGC(drawable, this));
+    public DartGC(Drawable drawable, int style, GC api) {
+        super(api);
+        if (drawable == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        GCData data = new GCData();
+        data.style = checkStyle(style);
+        long hDC = drawable.internal_new_GC(data);
+        Device device = data.device;
+        if (device == null)
+            device = SwtDevice.getDevice();
+        if (device == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        this.device = data.device = device;
+        init(drawable, data, hDC);
+        init();
+    }
+
+    static int checkStyle(int style) {
+        if ((style & SWT.LEFT_TO_RIGHT) != 0)
+            style &= ~SWT.RIGHT_TO_LEFT;
+        return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+    }
+
+    void checkGC(int mask) {
+        int state = data.state;
+        if ((state & mask) == mask)
+            return;
+        state = (state ^ mask) & mask;
+        data.state |= mask;
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            long pen = data.gdipPen;
+            float width = data.lineWidth;
+            if ((state & FOREGROUND) != 0 || (pen == 0 && (state & (LINE_WIDTH | LINE_STYLE | LINE_MITERLIMIT | LINE_JOIN | LINE_CAP)) != 0)) {
+                data.gdipFgBrush = 0;
+                Pattern pattern = data.foregroundPattern;
+                if (pattern != null) {
+                    if (data.alpha == 0xFF) {
+                    } else {
+                    }
+                    if ((data.style & SWT.MIRRORED) != 0) {
+                    }
+                } else {
+                }
+                if (pen != 0) {
+                } else {
+                }
+            }
+            if ((state & LINE_WIDTH) != 0) {
+                switch(data.lineStyle) {
+                    case SWT.LINE_CUSTOM:
+                        state |= LINE_STYLE;
+                }
+            }
+            if ((state & LINE_STYLE) != 0) {
+                float[] dashes = null;
+                float dashOffset = 0;
+                switch(data.lineStyle) {
+                    case SWT.LINE_SOLID:
+                        break;
+                    case SWT.LINE_DOT:
+                        if (width == 0)
+                            dashes = LINE_DOT_ZERO;
+                        break;
+                    case SWT.LINE_DASH:
+                        if (width == 0)
+                            dashes = LINE_DASH_ZERO;
+                        break;
+                    case SWT.LINE_DASHDOT:
+                        if (width == 0)
+                            dashes = LINE_DASHDOT_ZERO;
+                        break;
+                    case SWT.LINE_DASHDOTDOT:
+                        if (width == 0)
+                            dashes = LINE_DASHDOTDOT_ZERO;
+                        break;
+                    case SWT.LINE_CUSTOM:
+                        {
+                            if (data.lineDashes != null) {
+                                dashOffset = data.lineDashesOffset / Math.max(1, width);
+                                dashes = new float[data.lineDashes.length * 2];
+                                for (int i = 0; i < data.lineDashes.length; i++) {
+                                    float dash = data.lineDashes[i] / Math.max(1, width);
+                                    dashes[i] = dash;
+                                    dashes[i + data.lineDashes.length] = dash;
+                                }
+                            }
+                        }
+                }
+                if (dashes != null) {
+                } else {
+                }
+            }
+            if ((state & LINE_MITERLIMIT) != 0) {
+            }
+            if ((state & LINE_JOIN) != 0) {
+                int joinStyle = 0;
+                switch(data.lineJoin) {
+                    case SWT.JOIN_MITER:
+                        break;
+                    case SWT.JOIN_BEVEL:
+                        break;
+                    case SWT.JOIN_ROUND:
+                        break;
+                }
+            }
+            if ((state & LINE_CAP) != 0) {
+                int capStyle = 0;
+                switch(data.lineCap) {
+                    case SWT.CAP_FLAT:
+                        break;
+                    case SWT.CAP_ROUND:
+                        break;
+                    case SWT.CAP_SQUARE:
+                        break;
+                }
+            }
+            if ((state & BACKGROUND) != 0) {
+                data.gdipBgBrush = 0;
+                Pattern pattern = data.backgroundPattern;
+                if (pattern != null) {
+                    if (data.alpha == 0xFF) {
+                        data.gdipBrush = ((SwtPattern) pattern.getImpl()).getHandle(getZoom());
+                    } else {
+                    }
+                    if ((data.style & SWT.MIRRORED) != 0) {
+                    }
+                } else {
+                }
+            }
+            if ((state & FONT) != 0) {
+                long[] hFont = new long[1];
+                data.hGDIFont = hFont[0];
+            }
+            if ((state & DRAW_OFFSET) != 0) {
+                int effectiveLineWidth = data.lineWidth < 1 ? 1 : Math.round(data.lineWidth);
+                if (effectiveLineWidth % 2 == 1) {
+                    // In case the effective line width is odd, shift coordinates by (0.5, 0.5).
+                    // I.e., a line starting at (0,0) will effectively start in the pixel right
+                    // The offset will be applied to the coordinate system of the GC; so transform
+                    // it from the drawing coordinate system to the coordinate system of the GC by
+                    // applying the inverse transformation as the one applied to the GC and correct
+                } else {
+                    data.gdipXOffset = data.gdipYOffset = 0;
+                }
+            }
+            return;
+        }
+        if ((state & (FOREGROUND | LINE_CAP | LINE_JOIN | LINE_STYLE | LINE_WIDTH)) != 0) {
+            int width = (int) data.lineWidth;
+            int[] dashes = null;
+            switch(data.lineStyle) {
+                case SWT.LINE_SOLID:
+                    break;
+                case SWT.LINE_DASH:
+                    break;
+                case SWT.LINE_DOT:
+                    break;
+                case SWT.LINE_DASHDOT:
+                    break;
+                case SWT.LINE_DASHDOTDOT:
+                    break;
+                case SWT.LINE_CUSTOM:
+                    {
+                        if (data.lineDashes != null) {
+                            dashes = new int[data.lineDashes.length];
+                            for (int i = 0; i < dashes.length; i++) {
+                                dashes[i] = (int) data.lineDashes[i];
+                            }
+                        }
+                        break;
+                    }
+            }
+            if ((state & LINE_STYLE) != 0) {
+            }
+            int joinStyle = 0;
+            switch(data.lineJoin) {
+                case SWT.JOIN_MITER:
+                    break;
+                case SWT.JOIN_ROUND:
+                    break;
+                case SWT.JOIN_BEVEL:
+                    break;
+            }
+            int capStyle = 0;
+            switch(data.lineCap) {
+                case SWT.CAP_ROUND:
+                    break;
+                case SWT.CAP_FLAT:
+                    break;
+                case SWT.CAP_SQUARE:
+                    break;
+            }
+            data.state |= PEN;
+            data.state &= ~NULL_PEN;
+        } else if ((state & PEN) != 0) {
+            data.state &= ~NULL_PEN;
+        } else if ((state & NULL_PEN) != 0) {
+            data.state &= ~PEN;
+        }
+        if ((state & BACKGROUND) != 0) {
+            data.state |= BRUSH;
+            data.state &= ~NULL_BRUSH;
+        } else if ((state & BRUSH) != 0) {
+            data.state &= ~NULL_BRUSH;
+        } else if ((state & NULL_BRUSH) != 0) {
+            data.state &= ~BRUSH;
+        }
+        if ((state & BACKGROUND_TEXT) != 0) {
+        }
+        if ((state & FOREGROUND_TEXT) != 0) {
+        }
+        if ((state & FONT) != 0) {
+        }
     }
 
     /**
@@ -161,7 +406,19 @@ public final class GC extends Resource {
      * </ul>
      */
     public void copyArea(Image image, int x, int y) {
-        getImpl().copyArea(image, x, y);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        copyAreaInPixels(image, x, y);
+    }
+
+    void copyAreaInPixels(Image image, int x, int y) {
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (image == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (image.type != SWT.BITMAP || image.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
     }
 
     /**
@@ -180,7 +437,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void copyArea(int srcX, int srcY, int width, int height, int destX, int destY) {
-        getImpl().copyArea(srcX, srcY, width, height, destX, destY);
+        copyArea(srcX, srcY, width, height, destX, destY, true);
     }
 
     /**
@@ -202,7 +459,88 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void copyArea(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
-        getImpl().copyArea(srcX, srcY, width, height, destX, destY, paint);
+        int deviceZoom = getZoom();
+        srcX = DPIUtil.scaleUp(drawable, srcX, deviceZoom);
+        srcY = DPIUtil.scaleUp(drawable, srcY, deviceZoom);
+        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
+        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
+        destX = DPIUtil.scaleUp(drawable, destX, deviceZoom);
+        destY = DPIUtil.scaleUp(drawable, destY, deviceZoom);
+        copyAreaInPixels(srcX, srcY, width, height, destX, destY, paint);
+    }
+
+    void copyAreaInPixels(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
+        VGCCopyArea drawOp = new VGCCopyArea();
+        drawOp.srcX = srcX;
+        drawOp.srcY = srcY;
+        drawOp.width = width;
+        drawOp.height = height;
+        drawOp.destX = destX;
+        drawOp.destY = destY;
+        drawOp.paint = paint;
+        FlutterBridge.send(this, "copyArea", drawOp);
+    }
+
+    /**
+     * Create a new brush with transparency from the image in {@link brush}.
+     *
+     * The returned brush has to be disposed by the caller.
+     *
+     * @param brush Brush with pattern
+     * @return new brush with transparency
+     * @exception SWTError <ul>
+     *    <li>ERROR_CANNOT_BE_ZERO - if the image in the brush is null</li>
+     *    <li>ERROR_NO_HANDLES - if no handles are available to perform the operation</li>
+     * </ul>
+     */
+    static long createAlphaTextureBrush(long brush, int alpha) {
+        if (brush == 0)
+            SWT.error(SWT.ERROR_NO_HANDLES);
+        return 0;
+    }
+
+    /**
+     * Disposes of the operating system resources associated with
+     * the graphics context. Applications must dispose of all GCs
+     * which they allocate.
+     *
+     * @exception SWTError <ul>
+     *    <li>ERROR_THREAD_INVALID_ACCESS if not called from the thread that created the drawable</li>
+     * </ul>
+     */
+    @Override
+    void destroy() {
+        boolean gdip = data.gdipGraphics != 0;
+        if (gdip && (data.style & SWT.MIRRORED) != 0) {
+        }
+        /* Select stock pen and brush objects and free resources */
+        if (data.hPen != 0) {
+            data.hPen = 0;
+        }
+        if (data.hBrush != 0) {
+            data.hBrush = 0;
+        }
+        /*
+	* Put back the original bitmap into the device context.
+	* This will ensure that we have not left a bitmap
+	* selected in it when we delete the HDC.
+	*/
+        long hNullBitmap = data.hNullBitmap;
+        if (hNullBitmap != 0) {
+            data.hNullBitmap = 0;
+        }
+        Image image = data.image;
+        if (image != null)
+            ((SwtImage) image.getImpl()).memGC = null;
+        /*
+	* Dispose the HDC.
+	*/
+        if (drawable != null)
+            drawable.internal_dispose_GC(getApi().handle, data);
+        drawable = null;
+        getApi().handle = 0;
+        data.image = null;
+        data = null;
     }
 
     /**
@@ -235,7 +573,23 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        getImpl().drawArc(x, y, width, height, startAngle, arcAngle);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
+        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
+        drawArcInPixels(x, y, width, height, startAngle, arcAngle);
+    }
+
+    void drawArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
+        VGCDrawArc drawOp = new VGCDrawArc();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        drawOp.startAngle = startAngle;
+        drawOp.arcAngle = arcAngle;
+        FlutterBridge.send(this, "drawArc", drawOp);
     }
 
     /**
@@ -256,7 +610,21 @@ public final class GC extends Resource {
      * @see #drawRectangle(int, int, int, int)
      */
     public void drawFocus(int x, int y, int width, int height) {
-        getImpl().drawFocus(x, y, width, height);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
+        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
+        drawFocusInPixels(x, y, width, height);
+    }
+
+    void drawFocusInPixels(int x, int y, int width, int height) {
+        VGCDrawFocus drawOp = new VGCDrawFocus();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        FlutterBridge.send(this, "drawFocus", drawOp);
     }
 
     /**
@@ -279,7 +647,20 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawImage(Image image, int x, int y) {
-        getImpl().drawImage(image, x, y);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        drawImageInPixels(image, x, y);
+    }
+
+    void drawImageInPixels(Image image, int x, int y) {
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (image == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (image.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        drawImage(image, 0, 0, -1, -1, x, y, -1, -1, true);
     }
 
     /**
@@ -315,7 +696,149 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
-        getImpl().drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (srcWidth == 0 || srcHeight == 0 || destWidth == 0 || destHeight == 0)
+            return;
+        if (srcX < 0 || srcY < 0 || srcWidth < 0 || srcHeight < 0 || destWidth < 0 || destHeight < 0) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        if (image == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (image.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        int deviceZoom = getZoom();
+        Rectangle src = DPIUtil.scaleUp(drawable, new Rectangle(srcX, srcY, srcWidth, srcHeight), deviceZoom);
+        Rectangle dest = DPIUtil.scaleUp(drawable, new Rectangle(destX, destY, destWidth, destHeight), deviceZoom);
+        if (deviceZoom != 100) {
+            /*
+		 * This is a HACK! Due to rounding errors at fractional scale factors,
+		 * the coordinates may be slightly off. The workaround is to restrict
+		 * coordinates to the allowed bounds.
+		 */
+            Rectangle b = ((SwtImage) image.getImpl()).getBounds(deviceZoom);
+            int errX = src.x + src.width - b.width;
+            int errY = src.y + src.height - b.height;
+            if (errX != 0 || errY != 0) {
+                if (errX <= deviceZoom / 100 && errY <= deviceZoom / 100) {
+                    src.intersect(b);
+                } else {
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                }
+            }
+        }
+        drawImage(image, src.x, src.y, src.width, src.height, dest.x, dest.y, dest.width, dest.height, false);
+    }
+
+    void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+        if (data.gdipGraphics != 0) {
+            if (simple) {
+            } else {
+            }
+            if (data.alpha != 0xFF) {
+            }
+            if ((data.style & SWT.MIRRORED) != 0) {
+            }
+            if ((data.style & SWT.MIRRORED) != 0) {
+            }
+            return;
+        }
+        switch(srcImage.type) {
+            case SWT.BITMAP:
+                drawBitmap(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                break;
+            case SWT.ICON:
+                drawIcon(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                break;
+        }
+    }
+
+    void drawIcon(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+        if (simple) {
+        }
+    }
+
+    void drawBitmap(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+        if (simple) {
+        } else {
+        }
+        boolean mustRestore = false;
+        GC memGC = ((SwtImage) srcImage.getImpl()).memGC;
+        if (memGC != null && !memGC.isDisposed()) {
+            ((DartGC) memGC.getImpl()).flush();
+            mustRestore = true;
+            GCData data = memGC.getImpl()._data();
+            if (data.hNullBitmap != 0) {
+                data.hNullBitmap = 0;
+            }
+        }
+        if (mustRestore) {
+        }
+    }
+
+    void drawBitmapAlpha(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+        boolean alphaBlendSupport = true;
+        if (alphaBlendSupport) {
+            return;
+        }
+        /* Check clipping */
+        Rectangle rect = getClippingInPixels();
+        rect = rect.intersection(new Rectangle(destX, destY, destWidth, destHeight));
+        if (rect.isEmpty())
+            return;
+        /*
+	* Optimization.  Recalculate src and dest rectangles so that
+	* only the clipping area is drawn.
+	*/
+        int sx1 = srcX + (((rect.x - destX) * srcWidth) / destWidth);
+        int sx2 = srcX + ((((rect.x + rect.width) - destX) * srcWidth) / destWidth);
+        int sy1 = srcY + (((rect.y - destY) * srcHeight) / destHeight);
+        int sy2 = srcY + ((((rect.y + rect.height) - destY) * srcHeight) / destHeight);
+        destX = rect.x;
+        destY = rect.y;
+        destWidth = rect.width;
+        destHeight = rect.height;
+        srcX = sx1;
+        srcY = sy1;
+        srcWidth = Math.max(1, sx2 - sx1);
+        srcHeight = Math.max(1, sy2 - sy1);
+        long memDib = SwtImage.createDIB(Math.max(srcWidth, destWidth), Math.max(srcHeight, destHeight), 32);
+        if (memDib == 0)
+            SWT.error(SWT.ERROR_NO_HANDLES);
+        int dp = 0;
+        for (int y = 0; y < destHeight; ++y) {
+            for (int x = 0; x < destWidth; ++x) {
+                dp += 4;
+            }
+        }
+    }
+
+    void drawBitmapMask(Image srcImage, long srcColor, long srcMask, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imgWidth, int imgHeight, boolean offscreen) {
+        int srcColorY = srcY;
+        if (srcColor == 0) {
+            srcColor = srcMask;
+            srcColorY += imgHeight;
+        }
+        long destHdc = getApi().handle;
+        int x = destX, y = destY;
+        long tempHdc = 0;
+        if (offscreen) {
+            destHdc = tempHdc;
+            x = y = 0;
+        } else {
+        }
+        if (!simple && (srcWidth != destWidth || srcHeight != destHeight)) {
+        } else {
+        }
+        if (offscreen) {
+        } else {
+        }
+    }
+
+    void drawBitmapColor(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+        if (!simple && (srcWidth != destWidth || srcHeight != destHeight)) {
+        } else {
+        }
     }
 
     /**
@@ -332,7 +855,21 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawLine(int x1, int y1, int x2, int y2) {
-        getImpl().drawLine(x1, y1, x2, y2);
+        int deviceZoom = getZoom();
+        x1 = DPIUtil.scaleUp(drawable, x1, deviceZoom);
+        x2 = DPIUtil.scaleUp(drawable, x2, deviceZoom);
+        y1 = DPIUtil.scaleUp(drawable, y1, deviceZoom);
+        y2 = DPIUtil.scaleUp(drawable, y2, deviceZoom);
+        drawLineInPixels(x1, y1, x2, y2);
+    }
+
+    void drawLineInPixels(int x1, int y1, int x2, int y2) {
+        VGCDrawLine drawOp = new VGCDrawLine();
+        drawOp.x1 = x1;
+        drawOp.y1 = y1;
+        drawOp.x2 = x2;
+        drawOp.y2 = y2;
+        FlutterBridge.send(this, "drawLine", drawOp);
     }
 
     /**
@@ -357,7 +894,21 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawOval(int x, int y, int width, int height) {
-        getImpl().drawOval(x, y, width, height);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
+        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
+        drawOvalInPixels(x, y, width, height);
+    }
+
+    void drawOvalInPixels(int x, int y, int width, int height) {
+        VGCDrawOval drawOp = new VGCDrawOval();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        FlutterBridge.send(this, "drawOval", drawOp);
     }
 
     /**
@@ -384,7 +935,14 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void drawPath(Path path) {
-        getImpl().drawPath(path);
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (path == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        long pathHandle = ((SwtPath) path.getImpl()).getHandle(getZoom());
+        if (pathHandle == 0)
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        checkGC(DRAW);
     }
 
     /**
@@ -405,7 +963,17 @@ public final class GC extends Resource {
      * @since 3.0
      */
     public void drawPoint(int x, int y) {
-        getImpl().drawPoint(x, y);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        drawPointInPixels(x, y);
+    }
+
+    void drawPointInPixels(int x, int y) {
+        VGCDrawPoint drawOp = new VGCDrawPoint();
+        drawOp.x = x;
+        drawOp.y = y;
+        FlutterBridge.send(this, "drawPoint", drawOp);
     }
 
     /**
@@ -426,7 +994,15 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawPolygon(int[] pointArray) {
-        getImpl().drawPolygon(pointArray);
+        if (pointArray == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        drawPolygonInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
+    }
+
+    void drawPolygonInPixels(int[] pointArray) {
+        VGCDrawPolygon drawOp = new VGCDrawPolygon();
+        drawOp.pointArray = pointArray;
+        FlutterBridge.send(this, "drawPolygon", drawOp);
     }
 
     /**
@@ -447,7 +1023,13 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawPolyline(int[] pointArray) {
-        getImpl().drawPolyline(pointArray);
+        drawPolylineInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
+    }
+
+    void drawPolylineInPixels(int[] pointArray) {
+        VGCDrawPolyline drawOp = new VGCDrawPolyline();
+        drawOp.pointArray = pointArray;
+        FlutterBridge.send(this, "drawPolyline", drawOp);
     }
 
     /**
@@ -466,7 +1048,21 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawRectangle(int x, int y, int width, int height) {
-        getImpl().drawRectangle(x, y, width, height);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
+        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
+        drawRectangleInPixels(x, y, width, height);
+    }
+
+    void drawRectangleInPixels(int x, int y, int width, int height) {
+        VGCDrawRectangle drawOp = new VGCDrawRectangle();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        FlutterBridge.send(this, "drawRectangle", drawOp);
     }
 
     /**
@@ -486,7 +1082,10 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawRectangle(Rectangle rect) {
-        getImpl().drawRectangle(rect);
+        if (rect == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        rect = DPIUtil.scaleUp(drawable, rect, getZoom());
+        drawRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
     }
 
     /**
@@ -511,7 +1110,25 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        getImpl().drawRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
+        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
+        arcWidth = DPIUtil.scaleUp(drawable, arcWidth, deviceZoom);
+        arcHeight = DPIUtil.scaleUp(drawable, arcHeight, deviceZoom);
+        drawRoundRectangleInPixels(x, y, width, height, arcWidth, arcHeight);
+    }
+
+    void drawRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+        VGCDrawRoundRectangle drawOp = new VGCDrawRoundRectangle();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        drawOp.arcWidth = arcWidth;
+        drawOp.arcHeight = arcHeight;
+        FlutterBridge.send(this, "drawRoundRectangle", drawOp);
     }
 
     /**
@@ -537,7 +1154,10 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawString(String string, int x, int y) {
-        getImpl().drawString(string, x, y);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        drawStringInPixels(string, x, y, false);
     }
 
     /**
@@ -568,7 +1188,17 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawString(String string, int x, int y, boolean isTransparent) {
-        getImpl().drawString(string, x, y, isTransparent);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        drawStringInPixels(string, x, y, isTransparent);
+    }
+
+    void drawStringInPixels(String string, int x, int y, boolean isTransparent) {
+        int flags = SWT.DRAW_DELIMITER | SWT.DRAW_TAB;
+        if (isTransparent)
+            flags |= SWT.DRAW_TRANSPARENT;
+        drawTextInPixels(string, x, y, flags);
     }
 
     /**
@@ -594,7 +1224,14 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawText(String string, int x, int y) {
-        getImpl().drawText(string, x, y);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        drawTextInPixels(string, x, y);
+    }
+
+    void drawTextInPixels(String string, int x, int y) {
+        drawTextInPixels(string, x, y, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
     }
 
     /**
@@ -622,7 +1259,17 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawText(String string, int x, int y, boolean isTransparent) {
-        getImpl().drawText(string, x, y, isTransparent);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        drawTextInPixels(string, x, y, isTransparent);
+    }
+
+    void drawTextInPixels(String string, int x, int y, boolean isTransparent) {
+        int flags = SWT.DRAW_DELIMITER | SWT.DRAW_TAB;
+        if (isTransparent)
+            flags |= SWT.DRAW_TRANSPARENT;
+        drawTextInPixels(string, x, y, flags);
     }
 
     /**
@@ -665,7 +1312,19 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawText(String string, int x, int y, int flags) {
-        getImpl().drawText(string, x, y, flags);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        drawTextInPixels(string, x, y, flags);
+    }
+
+    void drawTextInPixels(String string, int x, int y, int flags) {
+        VGCDrawText drawOp = new VGCDrawText();
+        drawOp.string = string;
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.flags = flags;
+        FlutterBridge.send(this, "drawText", drawOp);
     }
 
     /**
@@ -678,8 +1337,9 @@ public final class GC extends Resource {
      *
      * @see #hashCode
      */
+    @Override
     public boolean equals(Object object) {
-        return getImpl().equals(object);
+        return (object == this.getApi()) || ((object instanceof GC) && (getApi().handle == ((GC) object).handle));
     }
 
     /**
@@ -715,7 +1375,23 @@ public final class GC extends Resource {
      * @see #drawArc
      */
     public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        getImpl().fillArc(x, y, width, height, startAngle, arcAngle);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
+        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
+        fillArcInPixels(x, y, width, height, startAngle, arcAngle);
+    }
+
+    void fillArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
+        VGCFillArc drawOp = new VGCFillArc();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        drawOp.startAngle = startAngle;
+        drawOp.arcAngle = arcAngle;
+        FlutterBridge.send(this, "fillArc", drawOp);
     }
 
     /**
@@ -739,7 +1415,22 @@ public final class GC extends Resource {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillGradientRectangle(int x, int y, int width, int height, boolean vertical) {
-        getImpl().fillGradientRectangle(x, y, width, height, vertical);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
+        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
+        fillGradientRectangleInPixels(x, y, width, height, vertical);
+    }
+
+    void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean vertical) {
+        VGCFillGradientRectangle drawOp = new VGCFillGradientRectangle();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        drawOp.vertical = vertical;
+        FlutterBridge.send(this, "fillGradientRectangle", drawOp);
     }
 
     /**
@@ -759,7 +1450,21 @@ public final class GC extends Resource {
      * @see #drawOval
      */
     public void fillOval(int x, int y, int width, int height) {
-        getImpl().fillOval(x, y, width, height);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
+        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
+        fillOvalInPixels(x, y, width, height);
+    }
+
+    void fillOvalInPixels(int x, int y, int width, int height) {
+        VGCFillOval drawOp = new VGCFillOval();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        FlutterBridge.send(this, "fillOval", drawOp);
     }
 
     /**
@@ -786,7 +1491,14 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void fillPath(Path path) {
-        getImpl().fillPath(path);
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (path == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        final long pathHandle = ((SwtPath) path.getImpl()).getHandle(getZoom());
+        if (pathHandle == 0)
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        checkGC(FILL);
     }
 
     /**
@@ -809,7 +1521,15 @@ public final class GC extends Resource {
      * @see #drawPolygon
      */
     public void fillPolygon(int[] pointArray) {
-        getImpl().fillPolygon(pointArray);
+        if (pointArray == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        fillPolygonInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
+    }
+
+    void fillPolygonInPixels(int[] pointArray) {
+        VGCFillPolygon drawOp = new VGCFillPolygon();
+        drawOp.pointArray = pointArray;
+        FlutterBridge.send(this, "fillPolygon", drawOp);
     }
 
     /**
@@ -828,7 +1548,21 @@ public final class GC extends Resource {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(int x, int y, int width, int height) {
-        getImpl().fillRectangle(x, y, width, height);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
+        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
+        fillRectangleInPixels(x, y, width, height);
+    }
+
+    void fillRectangleInPixels(int x, int y, int width, int height) {
+        VGCFillRectangle drawOp = new VGCFillRectangle();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        FlutterBridge.send(this, "fillRectangle", drawOp);
     }
 
     /**
@@ -847,7 +1581,10 @@ public final class GC extends Resource {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(Rectangle rect) {
-        getImpl().fillRectangle(rect);
+        if (rect == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        rect = DPIUtil.scaleUp(drawable, rect, getZoom());
+        fillRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
     }
 
     /**
@@ -868,7 +1605,30 @@ public final class GC extends Resource {
      * @see #drawRoundRectangle
      */
     public void fillRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        getImpl().fillRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+        int deviceZoom = getZoom();
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
+        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
+        arcWidth = DPIUtil.scaleUp(drawable, arcWidth, deviceZoom);
+        arcHeight = DPIUtil.scaleUp(drawable, arcHeight, deviceZoom);
+        fillRoundRectangleInPixels(x, y, width, height, arcWidth, arcHeight);
+    }
+
+    void fillRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+        VGCFillRoundRectangle drawOp = new VGCFillRoundRectangle();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        drawOp.arcWidth = arcWidth;
+        drawOp.arcHeight = arcHeight;
+        FlutterBridge.send(this, "fillRoundRectangle", drawOp);
+    }
+
+    void flush() {
+        if (data.gdipGraphics != 0) {
+        }
     }
 
     /**
@@ -887,38 +1647,11 @@ public final class GC extends Resource {
      * </ul>
      */
     public int getAdvanceWidth(char ch) {
-        return getImpl().getAdvanceWidth(ch);
-    }
-
-    /**
-     * Returns the background color.
-     *
-     * @return the receiver's background color
-     *
-     * @exception SWTException <ul>
-     *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
-     * </ul>
-     */
-    public Color getBackground() {
-        return getImpl().getBackground();
-    }
-
-    /**
-     * Returns the background pattern. The default value is
-     * <code>null</code>.
-     *
-     * @return the receiver's background pattern
-     *
-     * @exception SWTException <ul>
-     *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
-     * </ul>
-     *
-     * @see Pattern
-     *
-     * @since 3.1
-     */
-    public Pattern getBackgroundPattern() {
-        return getImpl().getBackgroundPattern();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkGC(FONT);
+        int[] width = new int[1];
+        return width[0];
     }
 
     /**
@@ -947,7 +1680,9 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public boolean getAdvanced() {
-        return getImpl().getAdvanced();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return data.gdipGraphics != 0;
     }
 
     /**
@@ -963,7 +1698,9 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getAlpha() {
-        return getImpl().getAlpha();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return data.alpha;
     }
 
     /**
@@ -983,7 +1720,46 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getAntialias() {
-        return getImpl().getAntialias();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (data.gdipGraphics == 0)
+            return SWT.DEFAULT;
+        return SWT.DEFAULT;
+    }
+
+    /**
+     * Returns the background color.
+     *
+     * @return the receiver's background color
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+     * </ul>
+     */
+    public Color getBackground() {
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return this.background;
+    }
+
+    /**
+     * Returns the background pattern. The default value is
+     * <code>null</code>.
+     *
+     * @return the receiver's background pattern
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+     * </ul>
+     *
+     * @see Pattern
+     *
+     * @since 3.1
+     */
+    public Pattern getBackgroundPattern() {
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return data.backgroundPattern;
     }
 
     /**
@@ -1003,7 +1779,10 @@ public final class GC extends Resource {
      * </ul>
      */
     public int getCharWidth(char ch) {
-        return getImpl().getCharWidth(ch);
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkGC(FONT);
+        return 0;
     }
 
     /**
@@ -1019,7 +1798,16 @@ public final class GC extends Resource {
      * </ul>
      */
     public Rectangle getClipping() {
-        return getImpl().getClipping();
+        return DPIUtil.scaleDown(drawable, getClippingInPixels(), getZoom());
+    }
+
+    Rectangle getClippingInPixels() {
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+        }
+        return this.clipping;
     }
 
     /**
@@ -1037,7 +1825,20 @@ public final class GC extends Resource {
      * </ul>
      */
     public void getClipping(Region region) {
-        getImpl().getClipping(region);
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (region == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (region.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            return;
+        }
+    }
+
+    long getFgBrush() {
+        return data.foregroundPattern != null ? ((SwtPattern) data.foregroundPattern.getImpl()).getHandle(getZoom()) : data.gdipFgBrush;
     }
 
     /**
@@ -1053,7 +1854,9 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getFillRule() {
-        return getImpl().getFillRule();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return this.fillRule;
     }
 
     /**
@@ -1067,7 +1870,9 @@ public final class GC extends Resource {
      * </ul>
      */
     public Font getFont() {
-        return getImpl().getFont();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return data.font;
     }
 
     /**
@@ -1082,7 +1887,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public FontMetrics getFontMetrics() {
-        return getImpl().getFontMetrics();
+        return null;
     }
 
     /**
@@ -1095,7 +1900,9 @@ public final class GC extends Resource {
      * </ul>
      */
     public Color getForeground() {
-        return getImpl().getForeground();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return this.foreground;
     }
 
     /**
@@ -1113,7 +1920,9 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public Pattern getForegroundPattern() {
-        return getImpl().getForegroundPattern();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return data.foregroundPattern;
     }
 
     /**
@@ -1139,7 +1948,9 @@ public final class GC extends Resource {
      * @since 3.2
      */
     public GCData getGCData() {
-        return getImpl().getGCData();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return data;
     }
 
     /**
@@ -1156,7 +1967,11 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getInterpolation() {
-        return getImpl().getInterpolation();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (data.gdipGraphics == 0)
+            return SWT.DEFAULT;
+        return SWT.DEFAULT;
     }
 
     /**
@@ -1171,7 +1986,24 @@ public final class GC extends Resource {
      * @since 3.3
      */
     public LineAttributes getLineAttributes() {
-        return getImpl().getLineAttributes();
+        LineAttributes attributes = getLineAttributesInPixels();
+        int deviceZoom = getZoom();
+        attributes.width = DPIUtil.scaleDown(drawable, attributes.width, deviceZoom);
+        if (attributes.dash != null) {
+            attributes.dash = DPIUtil.scaleDown(drawable, attributes.dash, deviceZoom);
+        }
+        return attributes;
+    }
+
+    LineAttributes getLineAttributesInPixels() {
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        float[] dashes = null;
+        if (data.lineDashes != null) {
+            dashes = new float[data.lineDashes.length];
+            System.arraycopy(data.lineDashes, 0, dashes, 0, dashes.length);
+        }
+        return new LineAttributes(data.lineWidth, data.lineCap, data.lineJoin, data.lineStyle, dashes, data.lineDashesOffset, data.lineMiterLimit);
     }
 
     /**
@@ -1188,7 +2020,9 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getLineCap() {
-        return getImpl().getLineCap();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return data.lineCap;
     }
 
     /**
@@ -1204,7 +2038,16 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int[] getLineDash() {
-        return getImpl().getLineDash();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (data.lineDashes == null)
+            return null;
+        int[] lineDashes = new int[data.lineDashes.length];
+        int deviceZoom = getZoom();
+        for (int i = 0; i < lineDashes.length; i++) {
+            lineDashes[i] = DPIUtil.scaleDown(drawable, (int) data.lineDashes[i], deviceZoom);
+        }
+        return lineDashes;
     }
 
     /**
@@ -1221,7 +2064,9 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getLineJoin() {
-        return getImpl().getLineJoin();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return data.lineJoin;
     }
 
     /**
@@ -1237,7 +2082,9 @@ public final class GC extends Resource {
      * </ul>
      */
     public int getLineStyle() {
-        return getImpl().getLineStyle();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return data.lineStyle;
     }
 
     /**
@@ -1253,7 +2100,13 @@ public final class GC extends Resource {
      * </ul>
      */
     public int getLineWidth() {
-        return getImpl().getLineWidth();
+        return DPIUtil.scaleDown(drawable, getLineWidthInPixels(), getZoom());
+    }
+
+    int getLineWidthInPixels() {
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return (int) data.lineWidth;
     }
 
     /**
@@ -1275,7 +2128,9 @@ public final class GC extends Resource {
      * @since 2.1.2
      */
     public int getStyle() {
-        return getImpl().getStyle();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return data.style;
     }
 
     /**
@@ -1295,11 +2150,13 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getTextAntialias() {
-        return getImpl().getTextAntialias();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (data.gdipGraphics == 0)
+            return SWT.DEFAULT;
+        return SWT.DEFAULT;
     }
 
-    // Internal methos that returns the topView of the Control. It's the same view that would be returned
-    // by Control.topView(). But, we don't use Control.topView() since classes in the graphics package
     /**
      * Sets the parameter to the transform that is currently being
      * used by the receiver.
@@ -1319,7 +2176,17 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void getTransform(Transform transform) {
-        getImpl().getTransform(transform);
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (transform == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (transform.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+        } else {
+            transform.setElements(1, 0, 0, 1, 0, 0);
+        }
     }
 
     /**
@@ -1337,7 +2204,45 @@ public final class GC extends Resource {
      * </ul>
      */
     public boolean getXORMode() {
-        return getImpl().getXORMode();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        return this.xORMode;
+    }
+
+    long identity() {
+        if ((data.style & SWT.MIRRORED) != 0) {
+        }
+        return 0;
+    }
+
+    void init(Drawable drawable, GCData data, long hDC) {
+        int foreground = data.foreground;
+        if (foreground != -1) {
+            data.state &= ~(FOREGROUND | FOREGROUND_TEXT | PEN);
+        }
+        int background = data.background;
+        if (background != -1) {
+            data.state &= ~(BACKGROUND | BACKGROUND_TEXT | BRUSH);
+        }
+        if (data.font != null)
+            data.state &= ~FONT;
+        data.state &= ~DRAW_OFFSET;
+        Image image = data.image;
+        if (image != null)
+            ((SwtImage) image.getImpl()).memGC = this.getApi();
+        this.drawable = drawable;
+        this.data = data;
+        if (drawable instanceof Canvas) {
+            DartWidget widget = (DartWidget) ((Canvas) drawable).getImpl();
+            if (widget != null) {
+                this.bridge = widget.getBridge();
+                getApi().handle = ((Canvas) drawable).handle;
+            }
+        }
+    }
+
+    private static int extractZoom(long hDC) {
+        return 0;
     }
 
     /**
@@ -1354,8 +2259,12 @@ public final class GC extends Resource {
      *
      * @see #equals
      */
+    @Override
     public int hashCode() {
-        return getImpl().hashCode();
+        if (drawable instanceof Canvas) {
+            return drawable.hashCode();
+        }
+        return 0;
     }
 
     /**
@@ -1373,7 +2282,12 @@ public final class GC extends Resource {
      * </ul>
      */
     public boolean isClipped() {
-        return getImpl().isClipped();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+        }
+        return false;
     }
 
     /**
@@ -1386,8 +2300,13 @@ public final class GC extends Resource {
      *
      * @return <code>true</code> when the GC is disposed and <code>false</code> otherwise
      */
+    @Override
     public boolean isDisposed() {
-        return getImpl().isDisposed();
+        return getApi().handle == 0;
+    }
+
+    float measureSpace(long font, long format) {
+        return 0;
     }
 
     /**
@@ -1433,31 +2352,21 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setAdvanced(boolean advanced) {
-        getImpl().setAdvanced(advanced);
-    }
-
-    /**
-     * Sets the receiver's alpha value which must be
-     * between 0 (transparent) and 255 (opaque).
-     * <p>
-     * This operation requires the operating system's advanced
-     * graphics subsystem which may not be available on some
-     * platforms.
-     * </p>
-     * @param alpha the alpha value
-     *
-     * @exception SWTException <ul>
-     *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
-     *    <li>ERROR_NO_GRAPHICS_LIBRARY - if advanced graphics are not available</li>
-     * </ul>
-     *
-     * @see #getAdvanced
-     * @see #setAdvanced
-     *
-     * @since 3.1
-     */
-    public void setAlpha(int alpha) {
-        getImpl().setAlpha(alpha);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.advanced = advanced;
+        if (advanced && data.gdipGraphics != 0)
+            return;
+        if (advanced) {
+        } else {
+            data.alpha = 0xFF;
+            data.backgroundPattern = data.foregroundPattern = null;
+            data.state = 0;
+            setClipping(0);
+            if ((data.style & SWT.MIRRORED) != 0) {
+            }
+        }
     }
 
     /**
@@ -1489,7 +2398,59 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setAntialias(int antialias) {
-        getImpl().setAntialias(antialias);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.antialias = antialias;
+        if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT)
+            return;
+        switch(antialias) {
+            case SWT.DEFAULT:
+                break;
+            case SWT.OFF:
+                break;
+            case SWT.ON:
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+    }
+
+    /**
+     * Sets the receiver's alpha value which must be
+     * between 0 (transparent) and 255 (opaque).
+     * <p>
+     * This operation requires the operating system's advanced
+     * graphics subsystem which may not be available on some
+     * platforms.
+     * </p>
+     * @param alpha the alpha value
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_NO_GRAPHICS_LIBRARY - if advanced graphics are not available</li>
+     * </ul>
+     *
+     * @see #getAdvanced
+     * @see #setAdvanced
+     *
+     * @since 3.1
+     */
+    public void setAlpha(int alpha) {
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.alpha = alpha;
+        if (data.gdipGraphics == 0 && (alpha & 0xFF) == 0xFF)
+            return;
+        data.alpha = alpha & 0xFF;
+        data.state &= ~(BACKGROUND | FOREGROUND);
+        if (data.gdipFgPatternBrushAlpha != 0) {
+            data.gdipFgPatternBrushAlpha = 0;
+        }
+        if (data.gdipBgPatternBrushAlpha != 0) {
+            data.gdipBgPatternBrushAlpha = 0;
+        }
     }
 
     /**
@@ -1508,7 +2469,19 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setBackground(Color color) {
-        getImpl().setBackground(color);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.background = color;
+        if (color == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (color.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (data.backgroundPattern == null && data.background == color.handle)
+            return;
+        data.backgroundPattern = null;
+        data.background = color.handle;
+        data.state &= ~(BACKGROUND | BACKGROUND_TEXT);
     }
 
     /**
@@ -1536,7 +2509,37 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setBackgroundPattern(Pattern pattern) {
-        getImpl().setBackgroundPattern(pattern);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.backgroundPattern = pattern;
+        if (pattern != null && pattern.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (data.gdipGraphics == 0 && pattern == null)
+            return;
+        if (data.backgroundPattern == pattern)
+            return;
+        data.backgroundPattern = pattern;
+        data.state &= ~BACKGROUND;
+        if (data.gdipBgPatternBrushAlpha != 0) {
+            data.gdipBgPatternBrushAlpha = 0;
+        }
+    }
+
+    void setClipping(long clipRgn) {
+        dirty();
+        long hRgn = clipRgn;
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            if (hRgn != 0) {
+            } else {
+            }
+        } else {
+            if (hRgn != 0) {
+            }
+            if (hRgn != 0) {
+            }
+        }
     }
 
     /**
@@ -1554,7 +2557,19 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setClipping(int x, int y, int width, int height) {
-        getImpl().setClipping(x, y, width, height);
+        int deviceZoom = getZoom();
+        this.clipping = new Rectangle(x, y, width, height);
+        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
+        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
+        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
+        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
+        setClippingInPixels(x, y, width, height);
+    }
+
+    void setClippingInPixels(int x, int y, int width, int height) {
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
     }
 
     /**
@@ -1584,7 +2599,14 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setClipping(Path path) {
-        getImpl().setClipping(path);
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.clipping = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
+        if (path != null && path.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        setClipping(0);
+        if (path != null) {
+        }
     }
 
     /**
@@ -1601,7 +2623,15 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setClipping(Rectangle rect) {
-        getImpl().setClipping(rect);
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.clipping = rect;
+        if (rect == null) {
+            setClipping(0);
+        } else {
+            rect = DPIUtil.scaleUp(drawable, rect, getZoom());
+            setClippingInPixels(rect.x, rect.y, rect.width, rect.height);
+        }
     }
 
     /**
@@ -1621,7 +2651,11 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setClipping(Region region) {
-        getImpl().setClipping(region);
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.clipping = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
+        if (region != null && region.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
     }
 
     /**
@@ -1641,7 +2675,18 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setFillRule(int rule) {
-        getImpl().setFillRule(rule);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.fillRule = rule;
+        switch(rule) {
+            case SWT.FILL_WINDING:
+                break;
+            case SWT.FILL_EVEN_ODD:
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
     }
 
     /**
@@ -1660,7 +2705,13 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setFont(Font font) {
-        getImpl().setFont(font);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.font = font;
+        if (font != null && font.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        data.state &= ~FONT;
     }
 
     /**
@@ -1678,7 +2729,19 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setForeground(Color color) {
-        getImpl().setForeground(color);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.foreground = color;
+        if (color == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (color.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (data.foregroundPattern == null && color.handle == data.foreground)
+            return;
+        data.foregroundPattern = null;
+        data.foreground = color.handle;
+        data.state &= ~(FOREGROUND | FOREGROUND_TEXT);
     }
 
     /**
@@ -1705,7 +2768,21 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setForegroundPattern(Pattern pattern) {
-        getImpl().setForegroundPattern(pattern);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.foregroundPattern = pattern;
+        if (pattern != null && pattern.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (data.gdipGraphics == 0 && pattern == null)
+            return;
+        if (data.foregroundPattern == pattern)
+            return;
+        data.foregroundPattern = pattern;
+        data.state &= ~FOREGROUND;
+        if (data.gdipFgPatternBrushAlpha != 0) {
+            data.gdipFgPatternBrushAlpha = 0;
+        }
     }
 
     /**
@@ -1735,7 +2812,24 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setInterpolation(int interpolation) {
-        getImpl().setInterpolation(interpolation);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.interpolation = interpolation;
+        if (data.gdipGraphics == 0 && interpolation == SWT.DEFAULT)
+            return;
+        switch(interpolation) {
+            case SWT.DEFAULT:
+                break;
+            case SWT.NONE:
+                break;
+            case SWT.LOW:
+                break;
+            case SWT.HIGH:
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
     }
 
     /**
@@ -1763,7 +2857,111 @@ public final class GC extends Resource {
      * @since 3.3
      */
     public void setLineAttributes(LineAttributes attributes) {
-        getImpl().setLineAttributes(attributes);
+        if (attributes == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        this.lineAttributes = attributes;
+        attributes.width = DPIUtil.scaleUp(drawable, attributes.width, getZoom());
+        setLineAttributesInPixels(attributes);
+    }
+
+    void setLineAttributesInPixels(LineAttributes attributes) {
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        int mask = 0;
+        float lineWidth = attributes.width;
+        if (lineWidth != data.lineWidth) {
+            mask |= LINE_WIDTH | DRAW_OFFSET;
+        }
+        int lineStyle = attributes.style;
+        if (lineStyle != data.lineStyle) {
+            mask |= LINE_STYLE;
+            switch(lineStyle) {
+                case SWT.LINE_SOLID:
+                case SWT.LINE_DASH:
+                case SWT.LINE_DOT:
+                case SWT.LINE_DASHDOT:
+                case SWT.LINE_DASHDOTDOT:
+                    break;
+                case SWT.LINE_CUSTOM:
+                    if (attributes.dash == null)
+                        lineStyle = SWT.LINE_SOLID;
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+        }
+        int join = attributes.join;
+        if (join != data.lineJoin) {
+            mask |= LINE_JOIN;
+            switch(join) {
+                case SWT.JOIN_MITER:
+                case SWT.JOIN_ROUND:
+                case SWT.JOIN_BEVEL:
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+        }
+        int cap = attributes.cap;
+        if (cap != data.lineCap) {
+            mask |= LINE_CAP;
+            switch(cap) {
+                case SWT.CAP_FLAT:
+                case SWT.CAP_ROUND:
+                case SWT.CAP_SQUARE:
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+        }
+        float[] dashes = attributes.dash;
+        float[] lineDashes = data.lineDashes;
+        if (dashes != null && dashes.length > 0) {
+            boolean changed = lineDashes == null || lineDashes.length != dashes.length;
+            for (int i = 0; i < dashes.length; i++) {
+                float dash = dashes[i];
+                if (dash <= 0)
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                if (!changed && lineDashes[i] != dash)
+                    changed = true;
+            }
+            if (changed) {
+                float[] newDashes = new float[dashes.length];
+                int deviceZoom = getZoom();
+                for (int i = 0; i < newDashes.length; i++) {
+                    newDashes[i] = DPIUtil.scaleUp(drawable, dashes[i], deviceZoom);
+                }
+                dashes = newDashes;
+                mask |= LINE_STYLE;
+            } else {
+                dashes = lineDashes;
+            }
+        } else {
+            if (lineDashes != null && lineDashes.length > 0) {
+                mask |= LINE_STYLE;
+            } else {
+                dashes = lineDashes;
+            }
+        }
+        float dashOffset = attributes.dashOffset;
+        if (dashOffset != data.lineDashesOffset) {
+            mask |= LINE_STYLE;
+        }
+        float miterLimit = attributes.miterLimit;
+        if (miterLimit != data.lineMiterLimit) {
+            mask |= LINE_MITERLIMIT;
+        }
+        if (mask == 0)
+            return;
+        data.lineWidth = lineWidth;
+        data.lineStyle = lineStyle;
+        data.lineCap = cap;
+        data.lineJoin = join;
+        data.lineDashes = dashes;
+        data.lineDashesOffset = dashOffset;
+        data.lineMiterLimit = miterLimit;
+        data.state &= ~mask;
     }
 
     /**
@@ -1783,7 +2981,22 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setLineCap(int cap) {
-        getImpl().setLineCap(cap);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.lineCap = cap;
+        if (data.lineCap == cap)
+            return;
+        switch(cap) {
+            case SWT.CAP_ROUND:
+            case SWT.CAP_FLAT:
+            case SWT.CAP_SQUARE:
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        data.lineCap = cap;
+        data.state &= ~LINE_CAP;
     }
 
     /**
@@ -1804,7 +3017,32 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setLineDash(int[] dashes) {
-        getImpl().setLineDash(dashes);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        float[] lineDashes = data.lineDashes;
+        if (dashes != null && dashes.length > 0) {
+            boolean changed = data.lineStyle != SWT.LINE_CUSTOM || lineDashes == null || lineDashes.length != dashes.length;
+            float[] newDashes = new float[dashes.length];
+            int deviceZoom = getZoom();
+            for (int i = 0; i < dashes.length; i++) {
+                if (dashes[i] <= 0)
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                newDashes[i] = DPIUtil.scaleUp(drawable, (float) dashes[i], deviceZoom);
+                if (!changed && lineDashes[i] != newDashes[i])
+                    changed = true;
+            }
+            if (!changed)
+                return;
+            data.lineDashes = newDashes;
+            data.lineStyle = SWT.LINE_CUSTOM;
+        } else {
+            if (data.lineStyle == SWT.LINE_SOLID && (lineDashes == null || lineDashes.length == 0))
+                return;
+            data.lineDashes = null;
+            data.lineStyle = SWT.LINE_SOLID;
+        }
+        data.state &= ~LINE_STYLE;
     }
 
     /**
@@ -1824,7 +3062,22 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setLineJoin(int join) {
-        getImpl().setLineJoin(join);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.lineJoin = join;
+        if (data.lineJoin == join)
+            return;
+        switch(join) {
+            case SWT.JOIN_MITER:
+            case SWT.JOIN_ROUND:
+            case SWT.JOIN_BEVEL:
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        data.lineJoin = join;
+        data.state &= ~LINE_JOIN;
     }
 
     /**
@@ -1843,7 +3096,28 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setLineStyle(int lineStyle) {
-        getImpl().setLineStyle(lineStyle);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.lineStyle = lineStyle;
+        if (data.lineStyle == lineStyle)
+            return;
+        switch(lineStyle) {
+            case SWT.LINE_SOLID:
+            case SWT.LINE_DASH:
+            case SWT.LINE_DOT:
+            case SWT.LINE_DASHDOT:
+            case SWT.LINE_DASHDOTDOT:
+                break;
+            case SWT.LINE_CUSTOM:
+                if (data.lineDashes == null)
+                    lineStyle = SWT.LINE_SOLID;
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        data.lineStyle = lineStyle;
+        data.state &= ~LINE_STYLE;
     }
 
     /**
@@ -1867,7 +3141,19 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setLineWidth(int lineWidth) {
-        getImpl().setLineWidth(lineWidth);
+        lineWidth = DPIUtil.scaleUp(drawable, lineWidth, getZoom());
+        this.lineWidth = lineWidth;
+        setLineWidthInPixels(lineWidth);
+    }
+
+    void setLineWidthInPixels(int lineWidth) {
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (data.lineWidth == lineWidth)
+            return;
+        data.lineWidth = lineWidth;
+        data.state &= ~(LINE_WIDTH | DRAW_OFFSET);
     }
 
     /**
@@ -1885,7 +3171,10 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setXORMode(boolean xor) {
-        getImpl().setXORMode(xor);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.xORMode = xor;
     }
 
     /**
@@ -1917,7 +3206,22 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setTextAntialias(int antialias) {
-        getImpl().setTextAntialias(antialias);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.textAntialias = antialias;
+        if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT)
+            return;
+        switch(antialias) {
+            case SWT.DEFAULT:
+                break;
+            case SWT.OFF:
+                break;
+            case SWT.ON:
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
     }
 
     /**
@@ -1947,7 +3251,17 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setTransform(Transform transform) {
-        getImpl().setTransform(transform);
+        dirty();
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.transform = transform;
+        if (transform != null && transform.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (data.gdipGraphics == 0 && transform == null)
+            return;
+        if (transform != null) {
+        }
+        data.state &= ~DRAW_OFFSET;
     }
 
     /**
@@ -1970,7 +3284,25 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point stringExtent(String string) {
-        return getImpl().stringExtent(string);
+        if (string == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        return DPIUtil.scaleDown(drawable, stringExtentInPixels(string), getZoom());
+    }
+
+    Point stringExtentInPixels(String string) {
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkGC(FONT);
+        int length = string.length();
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            Point size = new Point(0, 0);
+            return size;
+        }
+        if (length == 0) {
+        } else {
+        }
+        return null;
     }
 
     /**
@@ -1993,7 +3325,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point textExtent(String string) {
-        return getImpl().textExtent(string);
+        return DPIUtil.scaleDown(drawable, textExtentInPixels(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB), getZoom());
     }
 
     /**
@@ -2028,7 +3360,23 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point textExtent(String string, int flags) {
-        return getImpl().textExtent(string, flags);
+        return DPIUtil.scaleDown(drawable, textExtentInPixels(string, flags), getZoom());
+    }
+
+    Point textExtentInPixels(String string, int flags) {
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (string == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        checkGC(FONT);
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            Point size = new Point(0, 0);
+            return size;
+        }
+        if (string.length() == 0) {
+        }
+        return null;
     }
 
     /**
@@ -2037,19 +3385,186 @@ public final class GC extends Resource {
      *
      * @return a string representation of the receiver
      */
+    @Override
     public String toString() {
-        return getImpl().toString();
+        if (isDisposed())
+            return "GC {*DISPOSED*}";
+        return "GC {" + getApi().handle + "}";
     }
 
-    protected GC(IGC impl) {
-        super(impl);
+    /**
+     * Answers the length of the side adjacent to the given angle
+     * of a right triangle. In other words, it returns the integer
+     * conversion of length * cos (angle).
+     *
+     * @param angle the angle in degrees
+     * @param length the length of the triangle's hypotenuse
+     * @return the integer conversion of length * cos (angle)
+     */
+    private static int cos(int angle, int length) {
+        return (int) (Math.cos(angle * (Math.PI / 180)) * length);
     }
 
-    static GC createApi(IGC impl) {
-        return new GC(impl);
+    /**
+     * Answers the length of the side opposite to the given angle
+     * of a right triangle. In other words, it returns the integer
+     * conversion of length * sin (angle).
+     *
+     * @param angle the angle in degrees
+     * @param length the length of the triangle's hypotenuse
+     * @return the integer conversion of length * sin (angle)
+     */
+    private static int sin(int angle, int length) {
+        return (int) (Math.sin(angle * (Math.PI / 180)) * length);
     }
 
-    public IGC getImpl() {
-        return (IGC) super.getImpl();
+    private int getZoom() {
+        return DPIUtil.getZoomForAutoscaleProperty(data.nativeZoom);
+    }
+
+    boolean advanced;
+
+    int alpha;
+
+    int antialias;
+
+    Color background;
+
+    Pattern backgroundPattern;
+
+    Rectangle clipping = new Rectangle(0, 0, 0, 0);
+
+    int fillRule;
+
+    Font font;
+
+    Color foreground;
+
+    Pattern foregroundPattern;
+
+    int interpolation;
+
+    LineAttributes lineAttributes;
+
+    int lineCap;
+
+    int[] lineDash = new int[0];
+
+    int lineJoin;
+
+    int lineStyle;
+
+    int lineWidth;
+
+    int style;
+
+    int textAntialias;
+
+    Transform transform;
+
+    boolean xORMode;
+
+    public Drawable _drawable() {
+        return drawable;
+    }
+
+    public GCData _data() {
+        return data;
+    }
+
+    public boolean _advanced() {
+        return advanced;
+    }
+
+    public int _alpha() {
+        return alpha;
+    }
+
+    public int _antialias() {
+        return antialias;
+    }
+
+    public Color _background() {
+        return background;
+    }
+
+    public Pattern _backgroundPattern() {
+        return backgroundPattern;
+    }
+
+    public Rectangle _clipping() {
+        return clipping;
+    }
+
+    public int _fillRule() {
+        return fillRule;
+    }
+
+    public Font _font() {
+        return font;
+    }
+
+    public Color _foreground() {
+        return foreground;
+    }
+
+    public Pattern _foregroundPattern() {
+        return foregroundPattern;
+    }
+
+    public int _interpolation() {
+        return interpolation;
+    }
+
+    public LineAttributes _lineAttributes() {
+        return lineAttributes;
+    }
+
+    public int _lineCap() {
+        return lineCap;
+    }
+
+    public int[] _lineDash() {
+        return lineDash;
+    }
+
+    public int _lineJoin() {
+        return lineJoin;
+    }
+
+    public int _lineStyle() {
+        return lineStyle;
+    }
+
+    public int _lineWidth() {
+        return lineWidth;
+    }
+
+    public int _style() {
+        return style;
+    }
+
+    public int _textAntialias() {
+        return textAntialias;
+    }
+
+    public Transform _transform() {
+        return transform;
+    }
+
+    public boolean _xORMode() {
+        return xORMode;
+    }
+
+    public GC getApi() {
+        if (api == null)
+            api = GC.createApi(this);
+        return (GC) api;
+    }
+
+    public VGC getValue() {
+        if (value == null)
+            value = new VGC(this);
+        return (VGC) value;
     }
 }

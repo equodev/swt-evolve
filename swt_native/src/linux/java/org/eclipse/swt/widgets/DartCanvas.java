@@ -157,47 +157,6 @@ public class DartCanvas extends DartComposite implements ICanvas {
         return ime;
     }
 
-    void drawCaretInFocus(long widget, long cairo) {
-        /*
-	 *  blink is needed to be checked as gtk_draw() signals sent from other parts of the canvas
-	 *  can interfere with the blinking state. This will ensure that we are only draw/redrawing the
-	 *  caret when it is intended to. See Bug 517487.
-	 *
-	 *  Additionally, only draw the caret if it has focus. See bug 528819.
-	 */
-        if (caret != null && blink == true && ((DartCaret) caret.getImpl()).isFocusCaret()) {
-            drawCaret(widget, cairo);
-            blink = false;
-        }
-    }
-
-    private void drawCaret(long widget, long cairo) {
-        if (this.isDisposed())
-            return;
-        if (cairo == 0)
-            error(SWT.ERROR_NO_HANDLES);
-        if (drawFlag) {
-            if (caret.getImpl()._image() != null && !caret.getImpl()._image().isDisposed() && caret.getImpl()._image().mask == 0) {
-                int nWidth = 0;
-                int nX = caret.getImpl()._x();
-                if ((getApi().style & SWT.MIRRORED) != 0)
-                    nX = getClientWidth() - nWidth - nX;
-            } else {
-                int nWidth = caret.getImpl()._width();
-                if (nWidth <= 0)
-                    nWidth = DartCaret.DEFAULT_WIDTH;
-                int nX = caret.getImpl()._x();
-                if ((getApi().style & SWT.MIRRORED) != 0)
-                    nX = getClientWidth() - nWidth - nX;
-            }
-            if (caret.getImpl()._embeddedInto() == null) {
-                drawFlag = false;
-            }
-        } else {
-            drawFlag = true;
-        }
-    }
-
     @Override
     void redrawWidget(int x, int y, int width, int height, boolean redrawAll, boolean all, boolean trim) {
         boolean isFocus = caret != null && ((DartCaret) caret.getImpl()).isFocusCaret();

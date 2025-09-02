@@ -173,8 +173,6 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
                                       UINT const message,
                                       WPARAM const wparam,
                                       LPARAM const lparam) noexcept {
-  std::cout << "Win32Window::WndProc msg=" << message << " hwnd=" << window
-            << " wp=" << wparam << " lp=" << lparam << std::endl;
 
   if (message == WM_NCCREATE) {
     auto window_struct = reinterpret_cast<CREATESTRUCT*>(lparam);
@@ -191,7 +189,6 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
       ShowWindow(window, SW_SHOWNORMAL);
     }
   } else if (Win32Window* that = GetThisFromHandle(window)) {
-    std::cout << "Win32Window::WndProc - Routing to Flutter window MessageHandler" << std::endl;
     return that->MessageHandler(window, message, wparam, lparam);
   }
 

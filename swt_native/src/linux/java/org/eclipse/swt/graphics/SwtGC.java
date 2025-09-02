@@ -4229,6 +4229,14 @@ public final class SwtGC extends SwtResource implements IGC {
         return "GC {" + getApi().handle + "}";
     }
 
+    public Drawable _drawable() {
+        return drawable;
+    }
+
+    public GCData _data() {
+        return data;
+    }
+
     public GC getApi() {
         if (api == null)
             api = GC.createApi(this);
