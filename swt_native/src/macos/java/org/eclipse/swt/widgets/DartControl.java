@@ -1467,21 +1467,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     @Override
     public long internal_new_GC(GCData data) {
-        checkWidget();
-        if (data != null) {
-            int mask = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
-            if ((data.style & mask) == 0) {
-                data.style |= getApi().style & (mask | SWT.MIRRORED);
-            }
-            data.device = display;
-            data.thread = ((SwtDisplay) display.getImpl()).thread;
-            data.foreground = getForegroundColor().handle;
-            Control control = findBackgroundControl();
-            if (control == null)
-                control = this.getApi();
-            data.background = control.getImpl().getBackgroundColor().handle;
-            data.font = font != null ? font : defaultFont();
-        }
         return 0;
     }
 
@@ -4144,7 +4129,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         });
         FlutterBridge.on(this, "Paint", "Paint", e -> {
             getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Paint, e);
+                Event event = new Event();
+                event.gc = new GC(this.getApi());
+                sendEvent(SWT.Paint, event);
             });
         });
         FlutterBridge.on(this, "Touch", "Touch", e -> {

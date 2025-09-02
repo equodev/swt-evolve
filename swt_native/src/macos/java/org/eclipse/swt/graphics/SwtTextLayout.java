@@ -501,245 +501,247 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (selectionBackground != null && selectionBackground.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        NSAutoreleasePool pool = ((SwtGC) gc.getImpl()).checkGC(SwtGC.CLIPPING | SwtGC.TRANSFORM | SwtGC.FOREGROUND);
-        try {
-            computeRuns();
-            int length = translateOffset(text.length());
-            if (length == 0 && flags == 0)
-                return;
-            y += getVerticalIndent();
-            gc.handle.saveGraphicsState();
-            NSPoint pt = new NSPoint();
-            pt.x = x;
-            pt.y = y;
-            NSRange range = new NSRange();
-            long numberOfGlyphs = layoutManager.numberOfGlyphs();
-            if (numberOfGlyphs > 0) {
-                range.location = 0;
-                range.length = numberOfGlyphs;
-                layoutManager.drawBackgroundForGlyphRange(range, pt);
-            }
-            boolean hasSelection = selectionStart <= selectionEnd && selectionStart != -1 && selectionEnd != -1;
-            if (hasSelection || ((flags & SWT.LAST_LINE_SELECTION) != 0 && (flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0)) {
-                if (selectionBackground == null)
-                    selectionBackground = device.getSystemColor(SWT.COLOR_LIST_SELECTION);
-                NSColor selectionColor = NSColor.colorWithDeviceRed(selectionBackground.handle[0], selectionBackground.handle[1], selectionBackground.handle[2], selectionBackground.handle[3]);
-                NSBezierPath path = NSBezierPath.bezierPath();
-                NSRect rect = new NSRect();
-                if (hasSelection) {
-                    range.location = translateOffset(selectionStart);
-                    range.length = translateOffset(selectionEnd - selectionStart + 1);
-                    long[] rectCount = new long[1];
-                    long pArray = layoutManager.rectArrayForCharacterRange(range, range, textContainer, rectCount);
-                    for (int k = 0; k < rectCount[0]; k++, pArray += NSRect.sizeof) {
-                        OS.memmove(rect, pArray, NSRect.sizeof);
-                        fixRect(rect);
-                        rect.x += pt.x;
-                        rect.y += pt.y;
-                        if (fixedLineMetrics != null)
-                            rect.height = ((SwtFontMetrics) fixedLineMetrics.getImpl()).height;
-                        rect.height = Math.max(rect.height, ascent + descent);
-                        if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && (/*hasSelection ||*/
-                        (flags & SWT.LAST_LINE_SELECTION) != 0)) {
-                            rect.height += spacing;
+        if (gc.getImpl() instanceof SwtGC) {
+            NSAutoreleasePool pool = ((SwtGC) gc.getImpl()).checkGC(SwtGC.CLIPPING | SwtGC.TRANSFORM | SwtGC.FOREGROUND);
+            try {
+                computeRuns();
+                int length = translateOffset(text.length());
+                if (length == 0 && flags == 0)
+                    return;
+                y += getVerticalIndent();
+                gc.handle.saveGraphicsState();
+                NSPoint pt = new NSPoint();
+                pt.x = x;
+                pt.y = y;
+                NSRange range = new NSRange();
+                long numberOfGlyphs = layoutManager.numberOfGlyphs();
+                if (numberOfGlyphs > 0) {
+                    range.location = 0;
+                    range.length = numberOfGlyphs;
+                    layoutManager.drawBackgroundForGlyphRange(range, pt);
+                }
+                boolean hasSelection = selectionStart <= selectionEnd && selectionStart != -1 && selectionEnd != -1;
+                if (hasSelection || ((flags & SWT.LAST_LINE_SELECTION) != 0 && (flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0)) {
+                    if (selectionBackground == null)
+                        selectionBackground = device.getSystemColor(SWT.COLOR_LIST_SELECTION);
+                    NSColor selectionColor = NSColor.colorWithDeviceRed(selectionBackground.handle[0], selectionBackground.handle[1], selectionBackground.handle[2], selectionBackground.handle[3]);
+                    NSBezierPath path = NSBezierPath.bezierPath();
+                    NSRect rect = new NSRect();
+                    if (hasSelection) {
+                        range.location = translateOffset(selectionStart);
+                        range.length = translateOffset(selectionEnd - selectionStart + 1);
+                        long[] rectCount = new long[1];
+                        long pArray = layoutManager.rectArrayForCharacterRange(range, range, textContainer, rectCount);
+                        for (int k = 0; k < rectCount[0]; k++, pArray += NSRect.sizeof) {
+                            OS.memmove(rect, pArray, NSRect.sizeof);
+                            fixRect(rect);
+                            rect.x += pt.x;
+                            rect.y += pt.y;
+                            if (fixedLineMetrics != null)
+                                rect.height = ((SwtFontMetrics) fixedLineMetrics.getImpl()).height;
+                            rect.height = Math.max(rect.height, ascent + descent);
+                            if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && (/*hasSelection ||*/
+                            (flags & SWT.LAST_LINE_SELECTION) != 0)) {
+                                rect.height += spacing;
+                            }
+                            path.appendBezierPathWithRect(rect);
                         }
+                    }
+                    //TODO draw full selection for wrapped text and delimiter selection for hard breaks
+                    if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && (/*hasSelection ||*/
+                    (flags & SWT.LAST_LINE_SELECTION) != 0)) {
+                        NSRect bounds = lineBounds[lineBounds.length - 1];
+                        rect.x = pt.x + bounds.x + bounds.width;
+                        rect.y = y + bounds.y;
+                        rect.width = (flags & SWT.FULL_SELECTION) != 0 ? 0x7fffffff : (bounds.height + spacing) / 3;
+                        rect.height = Math.max(bounds.height + spacing, ascent + descent);
                         path.appendBezierPathWithRect(rect);
                     }
+                    selectionColor.setFill();
+                    path.fill();
                 }
-                //TODO draw full selection for wrapped text and delimiter selection for hard breaks
-                if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && (/*hasSelection ||*/
-                (flags & SWT.LAST_LINE_SELECTION) != 0)) {
-                    NSRect bounds = lineBounds[lineBounds.length - 1];
-                    rect.x = pt.x + bounds.x + bounds.width;
-                    rect.y = y + bounds.y;
-                    rect.width = (flags & SWT.FULL_SELECTION) != 0 ? 0x7fffffff : (bounds.height + spacing) / 3;
-                    rect.height = Math.max(bounds.height + spacing, ascent + descent);
-                    path.appendBezierPathWithRect(rect);
-                }
-                selectionColor.setFill();
-                path.fill();
-            }
-            if (numberOfGlyphs > 0) {
-                range.location = 0;
-                range.length = numberOfGlyphs;
-                double[] fg = ((SwtGC) gc.getImpl()).data.foreground;
-                boolean defaultFg = fg[0] == 0 && fg[1] == 0 && fg[2] == 0 && fg[3] == 1 && ((SwtGC) gc.getImpl()).data.alpha == 255;
-                if (!defaultFg) {
-                    for (int i = 0; i < stylesCount - 1; i++) {
-                        StyleItem run = styles[i];
-                        if (run.style != null && run.style.foreground != null)
-                            continue;
-                        if (run.style != null && run.style.underline && run.style.underlineStyle == SWT.UNDERLINE_LINK)
-                            continue;
-                        range.location = length != 0 ? translateOffset(run.start) : 0;
-                        range.length = translateOffset(styles[i + 1].start) - range.location;
-                        layoutManager.addTemporaryAttribute(OS.NSForegroundColorAttributeName, ((SwtGC) gc.getImpl()).data.fg, range);
-                    }
-                }
-                NSPoint ptGlyphs = new NSPoint();
-                ptGlyphs.x = pt.x;
-                ptGlyphs.y = pt.y;
-                if (fixedLineMetrics != null)
-                    ptGlyphs.y += fixedLineMetricsDy;
-                range.location = 0;
-                range.length = numberOfGlyphs;
-                layoutManager.drawGlyphsForGlyphRange(range, ptGlyphs);
-                if (!defaultFg) {
+                if (numberOfGlyphs > 0) {
                     range.location = 0;
-                    range.length = length;
-                    layoutManager.removeTemporaryAttribute(OS.NSForegroundColorAttributeName, range);
-                }
-                NSPoint point = new NSPoint();
-                for (int j = 0; j < stylesCount; j++) {
-                    StyleItem run = styles[j];
-                    TextStyle style = run.style;
-                    if (style == null)
-                        continue;
-                    boolean drawUnderline = style.underline && !isUnderlineSupported(style);
-                    drawUnderline = drawUnderline && (j + 1 == stylesCount || !((SwtTextStyle) style.getImpl()).isAdherentUnderline(styles[j + 1].style));
-                    boolean drawBorder = style.borderStyle != SWT.NONE;
-                    drawBorder = drawBorder && (j + 1 == stylesCount || !((SwtTextStyle) style.getImpl()).isAdherentBorder(styles[j + 1].style));
-                    if (!drawUnderline && !drawBorder)
-                        continue;
-                    int end = j + 1 < stylesCount ? translateOffset(styles[j + 1].start - 1) : length;
-                    for (int i = 0; i < lineOffsets.length - 1; i++) {
-                        int lineStart = untranslateOffset(lineOffsets[i]);
-                        int lineEnd = untranslateOffset(lineOffsets[i + 1] - 1);
-                        if (drawUnderline) {
-                            int start = run.start;
-                            for (int k = j; k > 0 && ((SwtTextStyle) style.getImpl()).isAdherentUnderline(styles[k - 1].style); k--) {
-                                start = styles[k - 1].start;
-                            }
-                            start = translateOffset(start);
-                            if (!(start > lineEnd || end < lineStart)) {
-                                range.location = Math.max(lineStart, start);
-                                range.length = Math.min(lineEnd, end) + 1 - range.location;
-                                if (range.length > 0) {
-                                    long[] rectCount = new long[1];
-                                    long pArray = layoutManager.rectArrayForCharacterRange(range, range, textContainer, rectCount);
-                                    NSRect rect = new NSRect();
-                                    gc.handle.saveGraphicsState();
-                                    double baseline = layoutManager.typesetter().baselineOffsetInLayoutManager(layoutManager, lineStart);
-                                    double[] color = null;
-                                    if (style.underlineColor != null)
-                                        color = style.underlineColor.handle;
-                                    if (color == null && style.foreground != null)
-                                        color = style.foreground.handle;
-                                    if (color != null) {
-                                        NSColor.colorWithDeviceRed(color[0], color[1], color[2], color[3]).setStroke();
-                                    }
-                                    for (int k = 0; k < rectCount[0]; k++, pArray += NSRect.sizeof) {
-                                        OS.memmove(rect, pArray, NSRect.sizeof);
-                                        fixRect(rect);
-                                        double underlineX = pt.x + rect.x;
-                                        double underlineY = pt.y + rect.y + rect.height - baseline + 1;
-                                        NSBezierPath path = NSBezierPath.bezierPath();
-                                        switch(style.underlineStyle) {
-                                            case SWT.UNDERLINE_ERROR:
-                                                {
-                                                    path.setLineWidth(2f);
-                                                    path.setLineCapStyle(OS.NSRoundLineCapStyle);
-                                                    path.setLineJoinStyle(OS.NSRoundLineJoinStyle);
-                                                    path.setLineDash(new double[] { 1, 3f }, 2, 0);
-                                                    point.x = underlineX;
-                                                    point.y = underlineY + 0.5f;
-                                                    path.moveToPoint(point);
-                                                    point.x = underlineX + rect.width;
-                                                    point.y = underlineY + 0.5f;
-                                                    path.lineToPoint(point);
-                                                    break;
-                                                }
-                                            case SWT.UNDERLINE_SQUIGGLE:
-                                                {
-                                                    gc.handle.setShouldAntialias(false);
-                                                    path.setLineWidth(1.0f);
-                                                    path.setLineCapStyle(OS.NSButtLineCapStyle);
-                                                    path.setLineJoinStyle(OS.NSMiterLineJoinStyle);
-                                                    double lineBottom = pt.y + rect.y + rect.height;
-                                                    float squigglyThickness = 1;
-                                                    float squigglyHeight = 2 * squigglyThickness;
-                                                    double squigglyY = Math.min(underlineY - squigglyHeight / 2, lineBottom - squigglyHeight - 1);
-                                                    float[] points = computePolyline((int) underlineX, (int) squigglyY, (int) (underlineX + rect.width), (int) (squigglyY + squigglyHeight));
-                                                    point.x = points[0] + 0.5f;
-                                                    point.y = points[1] + 0.5f;
-                                                    path.moveToPoint(point);
-                                                    for (int p = 2; p < points.length; p += 2) {
-                                                        point.x = points[p] + 0.5f;
-                                                        point.y = points[p + 1] + 0.5f;
-                                                        path.lineToPoint(point);
-                                                    }
-                                                    break;
-                                                }
+                    range.length = numberOfGlyphs;
+                    double[] fg = gc.getImpl()._data().foreground;
+                    boolean defaultFg = fg[0] == 0 && fg[1] == 0 && fg[2] == 0 && fg[3] == 1 && gc.getImpl()._data().alpha == 255;
+                    if (!defaultFg) {
+                        for (int i = 0; i < stylesCount - 1; i++) {
+                            StyleItem run = styles[i];
+                            if (run.style != null && run.style.foreground != null)
+                                continue;
+                            if (run.style != null && run.style.underline && run.style.underlineStyle == SWT.UNDERLINE_LINK)
+                                continue;
+                            range.location = length != 0 ? translateOffset(run.start) : 0;
+                            range.length = translateOffset(styles[i + 1].start) - range.location;
+                            layoutManager.addTemporaryAttribute(OS.NSForegroundColorAttributeName, gc.getImpl()._data().fg, range);
+                        }
+                    }
+                    NSPoint ptGlyphs = new NSPoint();
+                    ptGlyphs.x = pt.x;
+                    ptGlyphs.y = pt.y;
+                    if (fixedLineMetrics != null)
+                        ptGlyphs.y += fixedLineMetricsDy;
+                    range.location = 0;
+                    range.length = numberOfGlyphs;
+                    layoutManager.drawGlyphsForGlyphRange(range, ptGlyphs);
+                    if (!defaultFg) {
+                        range.location = 0;
+                        range.length = length;
+                        layoutManager.removeTemporaryAttribute(OS.NSForegroundColorAttributeName, range);
+                    }
+                    NSPoint point = new NSPoint();
+                    for (int j = 0; j < stylesCount; j++) {
+                        StyleItem run = styles[j];
+                        TextStyle style = run.style;
+                        if (style == null)
+                            continue;
+                        boolean drawUnderline = style.underline && !isUnderlineSupported(style);
+                        drawUnderline = drawUnderline && (j + 1 == stylesCount || !((SwtTextStyle) style.getImpl()).isAdherentUnderline(styles[j + 1].style));
+                        boolean drawBorder = style.borderStyle != SWT.NONE;
+                        drawBorder = drawBorder && (j + 1 == stylesCount || !((SwtTextStyle) style.getImpl()).isAdherentBorder(styles[j + 1].style));
+                        if (!drawUnderline && !drawBorder)
+                            continue;
+                        int end = j + 1 < stylesCount ? translateOffset(styles[j + 1].start - 1) : length;
+                        for (int i = 0; i < lineOffsets.length - 1; i++) {
+                            int lineStart = untranslateOffset(lineOffsets[i]);
+                            int lineEnd = untranslateOffset(lineOffsets[i + 1] - 1);
+                            if (drawUnderline) {
+                                int start = run.start;
+                                for (int k = j; k > 0 && ((SwtTextStyle) style.getImpl()).isAdherentUnderline(styles[k - 1].style); k--) {
+                                    start = styles[k - 1].start;
+                                }
+                                start = translateOffset(start);
+                                if (!(start > lineEnd || end < lineStart)) {
+                                    range.location = Math.max(lineStart, start);
+                                    range.length = Math.min(lineEnd, end) + 1 - range.location;
+                                    if (range.length > 0) {
+                                        long[] rectCount = new long[1];
+                                        long pArray = layoutManager.rectArrayForCharacterRange(range, range, textContainer, rectCount);
+                                        NSRect rect = new NSRect();
+                                        gc.handle.saveGraphicsState();
+                                        double baseline = layoutManager.typesetter().baselineOffsetInLayoutManager(layoutManager, lineStart);
+                                        double[] color = null;
+                                        if (style.underlineColor != null)
+                                            color = style.underlineColor.handle;
+                                        if (color == null && style.foreground != null)
+                                            color = style.foreground.handle;
+                                        if (color != null) {
+                                            NSColor.colorWithDeviceRed(color[0], color[1], color[2], color[3]).setStroke();
                                         }
-                                        path.stroke();
+                                        for (int k = 0; k < rectCount[0]; k++, pArray += NSRect.sizeof) {
+                                            OS.memmove(rect, pArray, NSRect.sizeof);
+                                            fixRect(rect);
+                                            double underlineX = pt.x + rect.x;
+                                            double underlineY = pt.y + rect.y + rect.height - baseline + 1;
+                                            NSBezierPath path = NSBezierPath.bezierPath();
+                                            switch(style.underlineStyle) {
+                                                case SWT.UNDERLINE_ERROR:
+                                                    {
+                                                        path.setLineWidth(2f);
+                                                        path.setLineCapStyle(OS.NSRoundLineCapStyle);
+                                                        path.setLineJoinStyle(OS.NSRoundLineJoinStyle);
+                                                        path.setLineDash(new double[] { 1, 3f }, 2, 0);
+                                                        point.x = underlineX;
+                                                        point.y = underlineY + 0.5f;
+                                                        path.moveToPoint(point);
+                                                        point.x = underlineX + rect.width;
+                                                        point.y = underlineY + 0.5f;
+                                                        path.lineToPoint(point);
+                                                        break;
+                                                    }
+                                                case SWT.UNDERLINE_SQUIGGLE:
+                                                    {
+                                                        gc.handle.setShouldAntialias(false);
+                                                        path.setLineWidth(1.0f);
+                                                        path.setLineCapStyle(OS.NSButtLineCapStyle);
+                                                        path.setLineJoinStyle(OS.NSMiterLineJoinStyle);
+                                                        double lineBottom = pt.y + rect.y + rect.height;
+                                                        float squigglyThickness = 1;
+                                                        float squigglyHeight = 2 * squigglyThickness;
+                                                        double squigglyY = Math.min(underlineY - squigglyHeight / 2, lineBottom - squigglyHeight - 1);
+                                                        float[] points = computePolyline((int) underlineX, (int) squigglyY, (int) (underlineX + rect.width), (int) (squigglyY + squigglyHeight));
+                                                        point.x = points[0] + 0.5f;
+                                                        point.y = points[1] + 0.5f;
+                                                        path.moveToPoint(point);
+                                                        for (int p = 2; p < points.length; p += 2) {
+                                                            point.x = points[p] + 0.5f;
+                                                            point.y = points[p + 1] + 0.5f;
+                                                            path.lineToPoint(point);
+                                                        }
+                                                        break;
+                                                    }
+                                            }
+                                            path.stroke();
+                                        }
+                                        gc.handle.restoreGraphicsState();
                                     }
-                                    gc.handle.restoreGraphicsState();
                                 }
                             }
-                        }
-                        if (drawBorder) {
-                            int start = run.start;
-                            for (int k = j; k > 0 && ((SwtTextStyle) style.getImpl()).isAdherentBorder(styles[k - 1].style); k--) {
-                                start = styles[k - 1].start;
-                            }
-                            start = translateOffset(start);
-                            if (!(start > lineEnd || end < lineStart)) {
-                                range.location = Math.max(lineStart, start);
-                                range.length = Math.min(lineEnd, end) + 1 - range.location;
-                                if (range.length > 0) {
-                                    long[] rectCount = new long[1];
-                                    long pArray = layoutManager.rectArrayForCharacterRange(range, range, textContainer, rectCount);
-                                    NSRect rect = new NSRect();
-                                    gc.handle.saveGraphicsState();
-                                    double[] color = null;
-                                    if (style.borderColor != null)
-                                        color = style.borderColor.handle;
-                                    if (color == null && style.foreground != null)
-                                        color = style.foreground.handle;
-                                    if (color != null) {
-                                        NSColor.colorWithDeviceRed(color[0], color[1], color[2], color[3]).setStroke();
-                                    }
-                                    int width = 1;
-                                    float[] dashes = null;
-                                    switch(style.borderStyle) {
-                                        case SWT.BORDER_SOLID:
-                                            break;
-                                        case SWT.BORDER_DASH:
-                                            dashes = width != 0 ? SwtGC.LINE_DASH : SwtGC.LINE_DASH_ZERO;
-                                            break;
-                                        case SWT.BORDER_DOT:
-                                            dashes = width != 0 ? SwtGC.LINE_DOT : SwtGC.LINE_DOT_ZERO;
-                                            break;
-                                    }
-                                    double[] lengths = null;
-                                    if (dashes != null) {
-                                        lengths = new double[dashes.length];
-                                        for (int k = 0; k < lengths.length; k++) {
-                                            lengths[k] = width == 0 ? dashes[k] : dashes[k] * width;
+                            if (drawBorder) {
+                                int start = run.start;
+                                for (int k = j; k > 0 && ((SwtTextStyle) style.getImpl()).isAdherentBorder(styles[k - 1].style); k--) {
+                                    start = styles[k - 1].start;
+                                }
+                                start = translateOffset(start);
+                                if (!(start > lineEnd || end < lineStart)) {
+                                    range.location = Math.max(lineStart, start);
+                                    range.length = Math.min(lineEnd, end) + 1 - range.location;
+                                    if (range.length > 0) {
+                                        long[] rectCount = new long[1];
+                                        long pArray = layoutManager.rectArrayForCharacterRange(range, range, textContainer, rectCount);
+                                        NSRect rect = new NSRect();
+                                        gc.handle.saveGraphicsState();
+                                        double[] color = null;
+                                        if (style.borderColor != null)
+                                            color = style.borderColor.handle;
+                                        if (color == null && style.foreground != null)
+                                            color = style.foreground.handle;
+                                        if (color != null) {
+                                            NSColor.colorWithDeviceRed(color[0], color[1], color[2], color[3]).setStroke();
                                         }
+                                        int width = 1;
+                                        float[] dashes = null;
+                                        switch(style.borderStyle) {
+                                            case SWT.BORDER_SOLID:
+                                                break;
+                                            case SWT.BORDER_DASH:
+                                                dashes = width != 0 ? SwtGC.LINE_DASH : SwtGC.LINE_DASH_ZERO;
+                                                break;
+                                            case SWT.BORDER_DOT:
+                                                dashes = width != 0 ? SwtGC.LINE_DOT : SwtGC.LINE_DOT_ZERO;
+                                                break;
+                                        }
+                                        double[] lengths = null;
+                                        if (dashes != null) {
+                                            lengths = new double[dashes.length];
+                                            for (int k = 0; k < lengths.length; k++) {
+                                                lengths[k] = width == 0 ? dashes[k] : dashes[k] * width;
+                                            }
+                                        }
+                                        for (int k = 0; k < rectCount[0]; k++, pArray += NSRect.sizeof) {
+                                            OS.memmove(rect, pArray, NSRect.sizeof);
+                                            fixRect(rect);
+                                            rect.x += pt.x + 0.5f;
+                                            rect.y += pt.y + 0.5f;
+                                            rect.width -= 0.5f;
+                                            rect.height -= 0.5f;
+                                            NSBezierPath path = NSBezierPath.bezierPath();
+                                            path.setLineDash(lengths, lengths != null ? lengths.length : 0, 0);
+                                            path.appendBezierPathWithRect(rect);
+                                            path.stroke();
+                                        }
+                                        gc.handle.restoreGraphicsState();
                                     }
-                                    for (int k = 0; k < rectCount[0]; k++, pArray += NSRect.sizeof) {
-                                        OS.memmove(rect, pArray, NSRect.sizeof);
-                                        fixRect(rect);
-                                        rect.x += pt.x + 0.5f;
-                                        rect.y += pt.y + 0.5f;
-                                        rect.width -= 0.5f;
-                                        rect.height -= 0.5f;
-                                        NSBezierPath path = NSBezierPath.bezierPath();
-                                        path.setLineDash(lengths, lengths != null ? lengths.length : 0, 0);
-                                        path.appendBezierPathWithRect(rect);
-                                        path.stroke();
-                                    }
-                                    gc.handle.restoreGraphicsState();
                                 }
                             }
                         }
                     }
                 }
+                gc.handle.restoreGraphicsState();
+            } finally {
+                ((SwtGC) gc.getImpl()).uncheckGC(pool);
             }
-            gc.handle.restoreGraphicsState();
-        } finally {
-            ((SwtGC) gc.getImpl()).uncheckGC(pool);
         }
     }
 

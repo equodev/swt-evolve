@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.Config;
 
 /**
  * Class <code>GC</code> is where all of the drawing capabilities that are
@@ -81,7 +82,7 @@ public final class GC extends Resource {
      */
     GC() {
         this((IGC) null);
-        setImpl(new SwtGC(this));
+        setImpl(Config.isEquo(GC.class) ? new DartGC(this) : new SwtGC(this));
     }
 
     /**
@@ -109,7 +110,7 @@ public final class GC extends Resource {
      */
     public GC(Drawable drawable) {
         this((IGC) null);
-        setImpl(new SwtGC(drawable, this));
+        setImpl(Config.isEquo(GC.class, drawable) ? new DartGC(drawable, this) : new SwtGC(drawable, this));
     }
 
     /**
@@ -143,7 +144,7 @@ public final class GC extends Resource {
      */
     public GC(Drawable drawable, int style) {
         this((IGC) null);
-        setImpl(new SwtGC(drawable, style, this));
+        setImpl(Config.isEquo(GC.class, drawable) ? new DartGC(drawable, this) : new SwtGC(drawable, this));
     }
 
     /**

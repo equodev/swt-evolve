@@ -7,6 +7,7 @@ import com.dslplatform.json.StringConverter;
 import com.dslplatform.json.runtime.FormatConverter;
 import com.dslplatform.json.runtime.Settings;
 import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.graphics.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -60,6 +61,27 @@ public class Serializer {
         else if (converter.writeContentMinimal(writer, value)) writer.getByteBuffer()[writer.size() - 1] = '}';
         else writer.getByteBuffer()[writer.size() - 1] = '}';
 //        else writer.writeByte((byte)'}');
+    }
+
+    public static <T extends DartResource> void writeResourceWithId(DslJson json, JsonWriter writer, T impl) {
+        if (impl == null) {
+            writer.writeNull();
+            return;
+        }
+        boolean alwaysSerialize = !json.omitDefaults;
+        Object api = impl.getApi();
+        Object value = impl.getValue();
+        FormatConverter converter = ((FormatConverter) json.tryFindWriter(value.getClass()));
+        writer.writeByte((byte)'{');
+        writer.writeByte((byte)'"'); writer.writeAscii(name_id); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
+        NumberConverter.serialize(FlutterBridge.id(impl), writer);
+        writer.writeByte((byte)',');
+        writer.writeByte((byte)'"'); writer.writeAscii(name_swt); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
+        StringConverter.serialize(FlutterBridge.widgetName(impl), writer);
+        writer.writeByte((byte)',');
+        if (alwaysSerialize) { converter.writeContentFull(writer, value); writer.writeByte((byte)'}'); }
+        else if (converter.writeContentMinimal(writer, value)) writer.getByteBuffer()[writer.size() - 1] = '}';
+        else writer.getByteBuffer()[writer.size() - 1] = '}';
     }
 
 }

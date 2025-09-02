@@ -652,12 +652,14 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (selectionBackground != null && selectionBackground.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        ((SwtGC) gc.getImpl()).checkGC(SwtGC.FOREGROUND);
+        if (gc.getImpl() instanceof SwtGC) {
+            ((SwtGC) gc.getImpl()).checkGC(SwtGC.FOREGROUND);
+        }
         int length = text.length();
         x += Math.min(indent, wrapIndent);
         y += getScaledVerticalIndent();
         boolean hasSelection = selectionStart <= selectionEnd && selectionStart != -1 && selectionEnd != -1;
-        GCData data = ((SwtGC) gc.getImpl()).data;
+        GCData data = gc.getImpl()._data();
         long cairo = data.cairo;
         boolean extent = false;
         if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && (hasSelection || (flags & SWT.LAST_LINE_SELECTION) != 0)) {
@@ -775,7 +777,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
     }
 
     void drawWithCairo(GC gc, int x, int y, int start, int end, int yExtent, boolean fullSelection, GdkRGBA fg, GdkRGBA bg) {
-        GCData data = ((SwtGC) gc.getImpl()).data;
+        GCData data = gc.getImpl()._data();
         long cairo = data.cairo;
         Cairo.cairo_save(cairo);
         if (!fullSelection) {
@@ -808,7 +810,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
     }
 
     void drawBorder(GC gc, int x, int y, GdkRGBA selectionColor) {
-        GCData data = ((SwtGC) gc.getImpl()).data;
+        GCData data = gc.getImpl()._data();
         long cairo = data.cairo;
         long ptr = OS.pango_layout_get_text(layout);
         Cairo.cairo_save(cairo);

@@ -2697,43 +2697,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     /**
-     * Copies the region at the Cairo level, as we need to re-use these resources
-     * after the Region object is disposed.
-     *
-     * @param region the Region object to copy to this Control
-     */
-    void cairoCopyRegion(Region region) {
-        if (region == null || region.isDisposed() || region.handle == 0)
-            return;
-        return;
-    }
-
-    void cairoDisposeRegion() {
-        regionHandle = 0;
-        eventRegion = 0;
-    }
-
-    /**
-     * Convenience method that applies a region to the Control using cairo_clip.
-     *
-     * @param cairo the cairo context to apply the region to
-     */
-    void cairoClipRegion(long cairo) {
-        long regionHandle = this.regionHandle;
-        // Disposal check just in case
-        if (regionHandle == 0) {
-            drawRegion = false;
-            return;
-        }
-        // Draw the Shell bg using cairo, only if it's a different color
-        Shell shell = getShell();
-        Color shellBg = shell.getBackground();
-        if (shellBg != this.getBackground()) {
-        } else {
-        }
-    }
-
-    /**
      * Invokes platform specific functionality to allocate a new GC handle.
      * <p>
      * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
@@ -2750,29 +2713,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     @Override
     public long internal_new_GC(GCData data) {
-        checkWidget();
-        long gc = data.cairo;
-        if (gc != 0) {
-        } else {
-        }
-        if (gc == 0)
-            error(SWT.ERROR_NO_HANDLES);
-        if (data != null) {
-            int mask = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
-            if ((data.style & mask) == 0) {
-                data.style |= getApi().style & (mask | SWT.MIRRORED);
-            } else {
-                if ((data.style & SWT.RIGHT_TO_LEFT) != 0) {
-                    data.style |= SWT.MIRRORED;
-                }
-            }
-            data.device = display;
-            Control control = findBackgroundControl();
-            if (control == null)
-                control = this.getApi();
-            data.font = font != null ? font : defaultFont();
-        }
-        return gc;
+        return 0;
     }
 
     long imHandle() {
@@ -3086,7 +3027,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         super.releaseHandle();
         fixedHandle = 0;
         parent = null;
-        cairoDisposeRegion();
     }
 
     @Override
@@ -4950,7 +4890,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         });
         FlutterBridge.on(this, "Paint", "Paint", e -> {
             getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Paint, e);
+                Event event = new Event();
+                event.gc = new GC(this.getApi());
+                sendEvent(SWT.Paint, event);
             });
         });
         FlutterBridge.on(this, "Touch", "Touch", e -> {

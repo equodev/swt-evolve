@@ -820,7 +820,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
 
     private int getNativeZoom(GC gc) {
         if (gc != null) {
-            return ((SwtGC) gc.getImpl()).data.nativeZoom;
+            return gc.getImpl()._data().nativeZoom;
         }
         return nativeZoom;
     }
@@ -852,187 +852,189 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             return;
         y += getScaledVerticalIndent();
         long hdc = gc.handle;
-        Rectangle clip = ((SwtGC) gc.getImpl()).getClippingInPixels();
-        GCData data = ((SwtGC) gc.getImpl()).data;
-        long gdipGraphics = data.gdipGraphics;
-        int foreground = data.foreground;
-        int linkColor = OS.GetSysColor(OS.COLOR_HOTLIGHT);
-        int alpha = data.alpha;
-        boolean gdip = gdipGraphics != 0;
-        long gdipForeground = 0;
-        long gdipLinkColor = 0;
-        int state = 0;
-        if (gdip) {
-            ((SwtGC) gc.getImpl()).checkGC(SwtGC.FOREGROUND);
-            gdipForeground = ((SwtGC) gc.getImpl()).getFgBrush();
-        } else {
-            state = OS.SaveDC(hdc);
-            if ((data.style & SWT.MIRRORED) != 0) {
-                OS.SetLayout(hdc, OS.GetLayout(hdc) | OS.LAYOUT_RTL);
-            }
-        }
-        boolean hasSelection = selectionStart <= selectionEnd && selectionStart != -1 && selectionEnd != -1;
-        long gdipSelBackground = 0, gdipSelForeground = 0, gdipFont = 0, lastHFont = 0;
-        long selBackground = 0;
-        int selForeground = 0;
-        if (hasSelection || ((flags & SWT.LAST_LINE_SELECTION) != 0 && (flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0)) {
-            int fgSel = selectionForeground != null ? selectionForeground.handle : OS.GetSysColor(OS.COLOR_HIGHLIGHTTEXT);
-            int bgSel = selectionBackground != null ? selectionBackground.handle : OS.GetSysColor(OS.COLOR_HIGHLIGHT);
+        if (gc.getImpl() instanceof SwtGC) {
+            Rectangle clip = ((SwtGC) gc.getImpl()).getClippingInPixels();
+            GCData data = gc.getImpl()._data();
+            long gdipGraphics = data.gdipGraphics;
+            int foreground = data.foreground;
+            int linkColor = OS.GetSysColor(OS.COLOR_HOTLIGHT);
+            int alpha = data.alpha;
+            boolean gdip = gdipGraphics != 0;
+            long gdipForeground = 0;
+            long gdipLinkColor = 0;
+            int state = 0;
             if (gdip) {
-                gdipSelBackground = createGdipBrush(bgSel, alpha);
-                gdipSelForeground = createGdipBrush(fgSel, alpha);
+                ((SwtGC) gc.getImpl()).checkGC(SwtGC.FOREGROUND);
+                gdipForeground = ((SwtGC) gc.getImpl()).getFgBrush();
             } else {
-                selBackground = OS.CreateSolidBrush(bgSel);
-                selForeground = fgSel;
+                state = OS.SaveDC(hdc);
+                if ((data.style & SWT.MIRRORED) != 0) {
+                    OS.SetLayout(hdc, OS.GetLayout(hdc) | OS.LAYOUT_RTL);
+                }
             }
-            if (hasSelection) {
-                selectionStart = translateOffset(Math.min(Math.max(0, selectionStart), length - 1));
-                selectionEnd = translateOffset(Math.min(Math.max(0, selectionEnd), length - 1));
-            }
-        }
-        RECT rect = new RECT();
-        OS.SetBkMode(hdc, OS.TRANSPARENT);
-        for (int line = 0; line < runs.length; line++) {
-            int drawX = x + getLineIndentInPixel(line);
-            int drawY = y + DPIUtil.scaleUp(getDevice(), lineY[line], getZoom(gc));
-            StyleItem[] lineRuns = runs[line];
-            int lineHeight = DPIUtil.scaleUp(getDevice(), lineY[line + 1] - lineY[line] - lineSpacingInPoints, getZoom(gc));
-            int lineHeightWithSpacing = DPIUtil.scaleUp(getDevice(), lineY[line + 1] - lineY[line], getZoom(gc));
-            //Draw last line selection
-            boolean extents = false;
-            if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && (hasSelection || (flags & SWT.LAST_LINE_SELECTION) != 0)) {
-                if (line == runs.length - 1 && (flags & SWT.LAST_LINE_SELECTION) != 0) {
-                    extents = true;
+            boolean hasSelection = selectionStart <= selectionEnd && selectionStart != -1 && selectionEnd != -1;
+            long gdipSelBackground = 0, gdipSelForeground = 0, gdipFont = 0, lastHFont = 0;
+            long selBackground = 0;
+            int selForeground = 0;
+            if (hasSelection || ((flags & SWT.LAST_LINE_SELECTION) != 0 && (flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0)) {
+                int fgSel = selectionForeground != null ? selectionForeground.handle : OS.GetSysColor(OS.COLOR_HIGHLIGHTTEXT);
+                int bgSel = selectionBackground != null ? selectionBackground.handle : OS.GetSysColor(OS.COLOR_HIGHLIGHT);
+                if (gdip) {
+                    gdipSelBackground = createGdipBrush(bgSel, alpha);
+                    gdipSelForeground = createGdipBrush(fgSel, alpha);
                 } else {
-                    StyleItem run = lineRuns[lineRuns.length - 1];
-                    if (run.lineBreak && !run.softBreak) {
-                        if (selectionStart <= run.start && run.start <= selectionEnd)
-                            extents = true;
+                    selBackground = OS.CreateSolidBrush(bgSel);
+                    selForeground = fgSel;
+                }
+                if (hasSelection) {
+                    selectionStart = translateOffset(Math.min(Math.max(0, selectionStart), length - 1));
+                    selectionEnd = translateOffset(Math.min(Math.max(0, selectionEnd), length - 1));
+                }
+            }
+            RECT rect = new RECT();
+            OS.SetBkMode(hdc, OS.TRANSPARENT);
+            for (int line = 0; line < runs.length; line++) {
+                int drawX = x + getLineIndentInPixel(line);
+                int drawY = y + DPIUtil.scaleUp(getDevice(), lineY[line], getZoom(gc));
+                StyleItem[] lineRuns = runs[line];
+                int lineHeight = DPIUtil.scaleUp(getDevice(), lineY[line + 1] - lineY[line] - lineSpacingInPoints, getZoom(gc));
+                int lineHeightWithSpacing = DPIUtil.scaleUp(getDevice(), lineY[line + 1] - lineY[line], getZoom(gc));
+                //Draw last line selection
+                boolean extents = false;
+                if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && (hasSelection || (flags & SWT.LAST_LINE_SELECTION) != 0)) {
+                    if (line == runs.length - 1 && (flags & SWT.LAST_LINE_SELECTION) != 0) {
+                        extents = true;
                     } else {
-                        int endOffset = run.start + run.length - 1;
-                        if (selectionStart <= endOffset && endOffset < selectionEnd && (flags & SWT.FULL_SELECTION) != 0) {
-                            extents = true;
+                        StyleItem run = lineRuns[lineRuns.length - 1];
+                        if (run.lineBreak && !run.softBreak) {
+                            if (selectionStart <= run.start && run.start <= selectionEnd)
+                                extents = true;
+                        } else {
+                            int endOffset = run.start + run.length - 1;
+                            if (selectionStart <= endOffset && endOffset < selectionEnd && (flags & SWT.FULL_SELECTION) != 0) {
+                                extents = true;
+                            }
+                        }
+                    }
+                    if (extents) {
+                        int width;
+                        if ((flags & SWT.FULL_SELECTION) != 0) {
+                            width = 0x6FFFFFF;
+                        } else {
+                            width = lineHeightWithSpacing / 3;
+                        }
+                        if (gdip) {
+                            Gdip.Graphics_FillRectangle(gdipGraphics, gdipSelBackground, drawX + lineWidthInPixels[line], drawY, width, lineHeightWithSpacing);
+                        } else {
+                            OS.SelectObject(hdc, selBackground);
+                            OS.PatBlt(hdc, drawX + lineWidthInPixels[line], drawY, width, lineHeightWithSpacing, OS.PATCOPY);
                         }
                     }
                 }
-                if (extents) {
-                    int width;
-                    if ((flags & SWT.FULL_SELECTION) != 0) {
-                        width = 0x6FFFFFF;
-                    } else {
-                        width = lineHeightWithSpacing / 3;
-                    }
-                    if (gdip) {
-                        Gdip.Graphics_FillRectangle(gdipGraphics, gdipSelBackground, drawX + lineWidthInPixels[line], drawY, width, lineHeightWithSpacing);
-                    } else {
-                        OS.SelectObject(hdc, selBackground);
-                        OS.PatBlt(hdc, drawX + lineWidthInPixels[line], drawY, width, lineHeightWithSpacing, OS.PATCOPY);
-                    }
-                }
-            }
-            if (drawX > clip.x + clip.width)
-                continue;
-            if (drawX + lineWidthInPixels[line] < clip.x)
-                continue;
-            //Draw the background of the runs in the line
-            int alignmentX = drawX;
-            for (StyleItem run : lineRuns) {
-                if (run.length == 0)
-                    continue;
                 if (drawX > clip.x + clip.width)
-                    break;
-                if (drawX + run.width >= clip.x) {
-                    if (!run.lineBreak || run.softBreak) {
-                        if (extents) {
-                            OS.SetRect(rect, drawX, drawY, drawX + run.width, drawY + lineHeightWithSpacing);
-                        } else {
+                    continue;
+                if (drawX + lineWidthInPixels[line] < clip.x)
+                    continue;
+                //Draw the background of the runs in the line
+                int alignmentX = drawX;
+                for (StyleItem run : lineRuns) {
+                    if (run.length == 0)
+                        continue;
+                    if (drawX > clip.x + clip.width)
+                        break;
+                    if (drawX + run.width >= clip.x) {
+                        if (!run.lineBreak || run.softBreak) {
+                            if (extents) {
+                                OS.SetRect(rect, drawX, drawY, drawX + run.width, drawY + lineHeightWithSpacing);
+                            } else {
+                                OS.SetRect(rect, drawX, drawY, drawX + run.width, drawY + lineHeight);
+                            }
+                            if (gdip) {
+                                drawRunBackgroundGDIP(run, gdipGraphics, rect, selectionStart, selectionEnd, alpha, gdipSelBackground, hasSelection);
+                            } else {
+                                drawRunBackground(run, hdc, rect, selectionStart, selectionEnd, selBackground, hasSelection);
+                            }
+                        }
+                    }
+                    drawX += run.width;
+                }
+                //Draw the text, underline, strikeout, and border of the runs in the line
+                int baselineInPixels = Math.max(0, DPIUtil.scaleUp(getDevice(), ascent, getZoom(gc)));
+                int lineUnderlinePos = 0;
+                for (StyleItem run : lineRuns) {
+                    baselineInPixels = Math.max(baselineInPixels, DPIUtil.scaleUp(getDevice(), run.ascentInPoints, getZoom(gc)));
+                    lineUnderlinePos = Math.min(lineUnderlinePos, run.underlinePos);
+                }
+                RECT borderClip = null, underlineClip = null, strikeoutClip = null, pRect = null;
+                drawX = alignmentX;
+                for (int i = 0; i < lineRuns.length; i++) {
+                    StyleItem run = lineRuns[i];
+                    TextStyle style = run.style;
+                    boolean hasAdorners = style != null && (style.underline || style.strikeout || style.borderStyle != SWT.NONE);
+                    if (run.length == 0)
+                        continue;
+                    if (drawX > clip.x + clip.width)
+                        break;
+                    if (drawX + run.width >= clip.x) {
+                        boolean skipTab = run.tab && !hasAdorners;
+                        if (!skipTab && (!run.lineBreak || run.softBreak) && !(style != null && style.metrics != null)) {
                             OS.SetRect(rect, drawX, drawY, drawX + run.width, drawY + lineHeight);
-                        }
-                        if (gdip) {
-                            drawRunBackgroundGDIP(run, gdipGraphics, rect, selectionStart, selectionEnd, alpha, gdipSelBackground, hasSelection);
-                        } else {
-                            drawRunBackground(run, hdc, rect, selectionStart, selectionEnd, selBackground, hasSelection);
-                        }
-                    }
-                }
-                drawX += run.width;
-            }
-            //Draw the text, underline, strikeout, and border of the runs in the line
-            int baselineInPixels = Math.max(0, DPIUtil.scaleUp(getDevice(), ascent, getZoom(gc)));
-            int lineUnderlinePos = 0;
-            for (StyleItem run : lineRuns) {
-                baselineInPixels = Math.max(baselineInPixels, DPIUtil.scaleUp(getDevice(), run.ascentInPoints, getZoom(gc)));
-                lineUnderlinePos = Math.min(lineUnderlinePos, run.underlinePos);
-            }
-            RECT borderClip = null, underlineClip = null, strikeoutClip = null, pRect = null;
-            drawX = alignmentX;
-            for (int i = 0; i < lineRuns.length; i++) {
-                StyleItem run = lineRuns[i];
-                TextStyle style = run.style;
-                boolean hasAdorners = style != null && (style.underline || style.strikeout || style.borderStyle != SWT.NONE);
-                if (run.length == 0)
-                    continue;
-                if (drawX > clip.x + clip.width)
-                    break;
-                if (drawX + run.width >= clip.x) {
-                    boolean skipTab = run.tab && !hasAdorners;
-                    if (!skipTab && (!run.lineBreak || run.softBreak) && !(style != null && style.metrics != null)) {
-                        OS.SetRect(rect, drawX, drawY, drawX + run.width, drawY + lineHeight);
-                        if (gdip) {
-                            long hFont = getItemFont(run, gc);
-                            if (hFont != lastHFont) {
-                                lastHFont = hFont;
-                                if (gdipFont != 0)
-                                    Gdip.Font_delete(gdipFont);
-                                long oldFont = OS.SelectObject(hdc, hFont);
-                                gdipFont = Gdip.Font_new(hdc, hFont);
-                                OS.SelectObject(hdc, oldFont);
-                                if (gdipFont == 0)
-                                    SWT.error(SWT.ERROR_NO_HANDLES);
-                                if (!Gdip.Font_IsAvailable(gdipFont)) {
-                                    Gdip.Font_delete(gdipFont);
-                                    gdipFont = 0;
+                            if (gdip) {
+                                long hFont = getItemFont(run, gc);
+                                if (hFont != lastHFont) {
+                                    lastHFont = hFont;
+                                    if (gdipFont != 0)
+                                        Gdip.Font_delete(gdipFont);
+                                    long oldFont = OS.SelectObject(hdc, hFont);
+                                    gdipFont = Gdip.Font_new(hdc, hFont);
+                                    OS.SelectObject(hdc, oldFont);
+                                    if (gdipFont == 0)
+                                        SWT.error(SWT.ERROR_NO_HANDLES);
+                                    if (!Gdip.Font_IsAvailable(gdipFont)) {
+                                        Gdip.Font_delete(gdipFont);
+                                        gdipFont = 0;
+                                    }
                                 }
-                            }
-                            long gdipFg = gdipForeground;
-                            if (style != null && style.underline && style.underlineStyle == SWT.UNDERLINE_LINK) {
-                                if (gdipLinkColor == 0)
-                                    gdipLinkColor = createGdipBrush(linkColor, alpha);
-                                gdipFg = gdipLinkColor;
-                            }
-                            if (gdipFont != 0 && !run.analysis.fNoGlyphIndex) {
-                                pRect = drawRunTextGDIP(gc, gdipGraphics, run, rect, gdipFont, baselineInPixels, gdipFg, gdipSelForeground, selectionStart, selectionEnd, alpha);
+                                long gdipFg = gdipForeground;
+                                if (style != null && style.underline && style.underlineStyle == SWT.UNDERLINE_LINK) {
+                                    if (gdipLinkColor == 0)
+                                        gdipLinkColor = createGdipBrush(linkColor, alpha);
+                                    gdipFg = gdipLinkColor;
+                                }
+                                if (gdipFont != 0 && !run.analysis.fNoGlyphIndex) {
+                                    pRect = drawRunTextGDIP(gc, gdipGraphics, run, rect, gdipFont, baselineInPixels, gdipFg, gdipSelForeground, selectionStart, selectionEnd, alpha);
+                                } else {
+                                    int fg = style != null && style.underline && style.underlineStyle == SWT.UNDERLINE_LINK ? linkColor : foreground;
+                                    pRect = drawRunTextGDIPRaster(gc, gdipGraphics, run, rect, baselineInPixels, fg, selForeground, selectionStart, selectionEnd);
+                                }
+                                underlineClip = drawUnderlineGDIP(gc, gdipGraphics, x, drawY + baselineInPixels, lineUnderlinePos, drawY + lineHeight, lineRuns, i, gdipFg, gdipSelForeground, underlineClip, pRect, selectionStart, selectionEnd, alpha, clip);
+                                strikeoutClip = drawStrikeoutGDIP(gc, gdipGraphics, x, drawY + baselineInPixels, lineRuns, i, gdipFg, gdipSelForeground, strikeoutClip, pRect, selectionStart, selectionEnd, alpha, clip);
+                                borderClip = drawBorderGDIP(gdipGraphics, x, drawY, lineHeight, lineRuns, i, gdipFg, gdipSelForeground, borderClip, pRect, selectionStart, selectionEnd, alpha, clip);
                             } else {
                                 int fg = style != null && style.underline && style.underlineStyle == SWT.UNDERLINE_LINK ? linkColor : foreground;
-                                pRect = drawRunTextGDIPRaster(gc, gdipGraphics, run, rect, baselineInPixels, fg, selForeground, selectionStart, selectionEnd);
+                                pRect = drawRunText(gc, hdc, run, rect, baselineInPixels, fg, selForeground, selectionStart, selectionEnd);
+                                underlineClip = drawUnderline(gc, hdc, x, drawY + baselineInPixels, lineUnderlinePos, drawY + lineHeight, lineRuns, i, fg, selForeground, underlineClip, pRect, selectionStart, selectionEnd, clip);
+                                strikeoutClip = drawStrikeout(gc, hdc, x, drawY + baselineInPixels, lineRuns, i, fg, selForeground, strikeoutClip, pRect, selectionStart, selectionEnd, clip);
+                                borderClip = drawBorder(hdc, x, drawY, lineHeight, lineRuns, i, fg, selForeground, borderClip, pRect, selectionStart, selectionEnd, clip);
                             }
-                            underlineClip = drawUnderlineGDIP(gc, gdipGraphics, x, drawY + baselineInPixels, lineUnderlinePos, drawY + lineHeight, lineRuns, i, gdipFg, gdipSelForeground, underlineClip, pRect, selectionStart, selectionEnd, alpha, clip);
-                            strikeoutClip = drawStrikeoutGDIP(gc, gdipGraphics, x, drawY + baselineInPixels, lineRuns, i, gdipFg, gdipSelForeground, strikeoutClip, pRect, selectionStart, selectionEnd, alpha, clip);
-                            borderClip = drawBorderGDIP(gdipGraphics, x, drawY, lineHeight, lineRuns, i, gdipFg, gdipSelForeground, borderClip, pRect, selectionStart, selectionEnd, alpha, clip);
-                        } else {
-                            int fg = style != null && style.underline && style.underlineStyle == SWT.UNDERLINE_LINK ? linkColor : foreground;
-                            pRect = drawRunText(gc, hdc, run, rect, baselineInPixels, fg, selForeground, selectionStart, selectionEnd);
-                            underlineClip = drawUnderline(gc, hdc, x, drawY + baselineInPixels, lineUnderlinePos, drawY + lineHeight, lineRuns, i, fg, selForeground, underlineClip, pRect, selectionStart, selectionEnd, clip);
-                            strikeoutClip = drawStrikeout(gc, hdc, x, drawY + baselineInPixels, lineRuns, i, fg, selForeground, strikeoutClip, pRect, selectionStart, selectionEnd, clip);
-                            borderClip = drawBorder(hdc, x, drawY, lineHeight, lineRuns, i, fg, selForeground, borderClip, pRect, selectionStart, selectionEnd, clip);
                         }
                     }
+                    drawX += run.width;
                 }
-                drawX += run.width;
             }
+            if (gdipSelBackground != 0)
+                Gdip.SolidBrush_delete(gdipSelBackground);
+            if (gdipSelForeground != 0)
+                Gdip.SolidBrush_delete(gdipSelForeground);
+            if (gdipLinkColor != 0)
+                Gdip.SolidBrush_delete(gdipLinkColor);
+            if (gdipFont != 0)
+                Gdip.Font_delete(gdipFont);
+            if (state != 0)
+                OS.RestoreDC(hdc, state);
+            if (selBackground != 0)
+                OS.DeleteObject(selBackground);
         }
-        if (gdipSelBackground != 0)
-            Gdip.SolidBrush_delete(gdipSelBackground);
-        if (gdipSelForeground != 0)
-            Gdip.SolidBrush_delete(gdipSelForeground);
-        if (gdipLinkColor != 0)
-            Gdip.SolidBrush_delete(gdipLinkColor);
-        if (gdipFont != 0)
-            Gdip.Font_delete(gdipFont);
-        if (state != 0)
-            OS.RestoreDC(hdc, state);
-        if (selBackground != 0)
-            OS.DeleteObject(selBackground);
     }
 
     RECT drawBorder(long hdc, int x, int y, int lineHeight, StyleItem[] line, int index, int color, int selectionColor, RECT clipRect, RECT pRect, int selectionStart, int selectionEnd, Rectangle drawClip) {

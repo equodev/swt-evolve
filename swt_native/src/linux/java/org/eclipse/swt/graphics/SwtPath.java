@@ -408,7 +408,7 @@ public class SwtPath extends SwtResource implements IPath {
         ((SwtGC) gc.getImpl()).initCairo();
         ((SwtGC) gc.getImpl()).checkGC(SwtGC.LINE_CAP | SwtGC.LINE_JOIN | SwtGC.LINE_STYLE | SwtGC.LINE_WIDTH);
         boolean result = false;
-        long cairo = ((SwtGC) gc.getImpl()).data.cairo;
+        long cairo = gc.getImpl()._data().cairo;
         long copy = Cairo.cairo_copy_path(getApi().handle);
         if (copy == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);

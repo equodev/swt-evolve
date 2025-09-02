@@ -2,6 +2,7 @@ package dev.equo.swt;
 
 import org.eclipse.swt.custom.*;
 import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.graphics.*;
 
 import java.util.Map;
 
@@ -24,7 +25,8 @@ public class Config {
                 CTabFolderRenderer.class, Impl.equo,
                 Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo,
                 StyledText.class, Impl.equo,
-                Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo
+                Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo,
+                Canvas.class, Impl.equo
             );
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -70,6 +72,10 @@ public class Config {
             return true;
 
         return false;
+    }
+
+    public static boolean isEquo(Class<?> clazz, Drawable parent){
+        return parent instanceof Canvas && clazz == GC.class;
     }
 
     public static boolean isEquo(Class<?> clazz, Scrollable parent) {

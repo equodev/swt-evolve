@@ -1060,25 +1060,6 @@ public class DartComposite extends DartScrollable implements IComposite {
     void connectFixedHandleDraw() {
     }
 
-    /**
-     * <p>Propagates draw events from a parent container to its children using
-     * gtk_container_propagate_draw(). This method only works if the fixedHandle
-     * has been connected to the "draw" signal, and only propagates draw events
-     * to other siblings of handle (i.e. other children of fixedHandle, but not
-     * handle itself).</p>
-     *
-     * <p>It's useful to propagate draw events to other child widgets for things
-     * like Table/Tree editors, or other scenarios where a widget is a child of
-     * a non-standard container widget (i.e., not a direct child of a Composite).</p>
-     *
-     * @param container the parent container, i.e. fixedHandle
-     * @param cairo the cairo context provided by GTK
-     */
-    void propagateDraw(long container, long cairo) {
-        if (container == fixedHandle) {
-        }
-    }
-
     @Override
     void redrawChildren() {
         super.redrawChildren();

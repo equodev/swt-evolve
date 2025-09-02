@@ -512,7 +512,7 @@ public class SwtPath extends SwtResource implements IPath {
                     C.free(pixel);
                     SWT.error(SWT.ERROR_NO_HANDLES);
                 }
-                GCData data = ((SwtGC) gc.getImpl()).data;
+                GCData data = gc.getImpl()._data();
                 int capStyle = 0;
                 switch(data.lineCap) {
                     case SWT.CAP_ROUND:

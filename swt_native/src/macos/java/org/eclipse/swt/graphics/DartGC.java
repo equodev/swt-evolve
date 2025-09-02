@@ -18,8 +18,9 @@ package org.eclipse.swt.graphics;
 import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Config;
+import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.graphics.VGC.*;
+import dev.equo.swt.*;
 
 /**
  * Class <code>GC</code> is where all of the drawing capabilities that are
@@ -61,25 +62,133 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Examples: GraphicsExample, PaintExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public final class GC extends Resource {
+public final class DartGC extends DartResource implements IGC {
+
+    Drawable drawable;
+
+    GCData data;
+
+    GCTextData.Cache textDataCache = new GCTextData.Cache(20);
+
+    int count, typeCount;
+
+    byte[] types;
+
+    double[] points;
+
+    double[] point;
+
+    static final int TAB_COUNT = 32;
+
+    final static int FOREGROUND = 1 << 0;
+
+    final static int BACKGROUND = 1 << 1;
+
+    final static int FONT = 1 << 2;
+
+    final static int LINE_STYLE = 1 << 3;
+
+    final static int LINE_CAP = 1 << 4;
+
+    final static int LINE_JOIN = 1 << 5;
+
+    final static int LINE_WIDTH = 1 << 6;
+
+    final static int LINE_MITERLIMIT = 1 << 7;
+
+    final static int FOREGROUND_FILL = 1 << 8;
+
+    final static int DRAW_OFFSET = 1 << 9;
+
+    final static int CLIPPING = 1 << 10;
+
+    final static int TRANSFORM = 1 << 11;
+
+    final static int VISIBLE_REGION = 1 << 12;
+
+    final static int DRAW = CLIPPING | TRANSFORM | FOREGROUND | LINE_WIDTH | LINE_STYLE | LINE_CAP | LINE_JOIN | LINE_MITERLIMIT | DRAW_OFFSET;
+
+    final static int FILL = CLIPPING | TRANSFORM | BACKGROUND;
+
+    static final float[] LINE_DOT = new float[] { 1, 1 };
+
+    static final float[] LINE_DASH = new float[] { 3, 1 };
+
+    static final float[] LINE_DASHDOT = new float[] { 3, 1, 1, 1 };
+
+    static final float[] LINE_DASHDOTDOT = new float[] { 3, 1, 1, 1, 1, 1 };
+
+    static final float[] LINE_DOT_ZERO = new float[] { 3, 3 };
+
+    static final float[] LINE_DASH_ZERO = new float[] { 18, 6 };
+
+    static final float[] LINE_DASHDOT_ZERO = new float[] { 9, 6, 3, 6 };
+
+    static final float[] LINE_DASHDOTDOT_ZERO = new float[] { 9, 3, 3, 3, 3, 3 };
 
     /**
-     * the handle to the OS device context
-     * (Warning: This field is platform dependent)
-     * <p>
-     * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
-     * public API. It is marked public only so that it can be shared
-     * within the packages provided by SWT. It is not available on all
-     * platforms and should never be accessed from application code.
-     * </p>
-     *
-     * @noreference This field is not intended to be referenced by clients.
+     * Instances of this class are descriptions of GCs for text drawing in terms of
+     * platform-specific data fields. Can be cached to improve repeat render
+     * performance.
      */
-    public NSGraphicsContext handle;
+    private static class GCTextData {
 
-    GC() {
-        this((IGC) null);
-        setImpl(Config.isEquo(GC.class) ? new DartGC(this) : new SwtGC(this));
+        /**
+         * Key object to use for Cache consisting of text string, alpho, font and foreground color
+         */
+        private static record Key(String string, int alpha, long font, double[] fgColor) {
+        }
+
+        /**
+         * Simple {@link GCTextData} cache limited to a set number of items.
+         */
+        private static class Cache {
+
+            private final int cacheSize;
+
+            private final Map<Key, GCTextData> cache = new LinkedHashMap<>() {
+
+                private static final long serialVersionUID = 1L;
+
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<Key, GCTextData> eldest) {
+                    if (size() >= cacheSize) {
+                        ((GCTextData) eldest.getValue()).release();
+                        return true;
+                    }
+                    return false;
+                }
+            };
+
+            public Cache(int cacheSize) {
+                this.cacheSize = cacheSize;
+            }
+
+            public void release() {
+                for (GCTextData data : cache.values()) {
+                    data.release();
+                }
+                cache.clear();
+            }
+
+            public GCTextData get(Key key) {
+                return cache.get(key);
+            }
+
+            public void put(Key key, GCTextData data) {
+                cache.put(key, data);
+            }
+        }
+
+        public void release() {
+        }
+
+        public void draw(int x, int y) {
+        }
+    }
+
+    DartGC(GC api) {
+        super(api);
     }
 
     /**
@@ -105,9 +214,8 @@ public final class GC extends Resource {
      * </ul>
      * @see #dispose()
      */
-    public GC(Drawable drawable) {
-        this((IGC) null);
-        setImpl(Config.isEquo(GC.class, drawable) ? new DartGC(drawable, this) : new SwtGC(drawable, this));
+    public DartGC(Drawable drawable, GC api) {
+        this(drawable, 0, api);
     }
 
     /**
@@ -139,9 +247,43 @@ public final class GC extends Resource {
      *
      * @since 2.1.2
      */
-    public GC(Drawable drawable, int style) {
-        this((IGC) null);
-        setImpl(Config.isEquo(GC.class, drawable) ? new DartGC(drawable, this) : new SwtGC(drawable, this));
+    public DartGC(Drawable drawable, int style, GC api) {
+        super(api);
+        if (drawable == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        try {
+            GCData data = new GCData();
+            data.style = checkStyle(style);
+            long contextId = drawable.internal_new_GC(data);
+            Device device = data.device;
+            if (device == null)
+                device = SwtDevice.getDevice();
+            if (device == null)
+                SWT.error(SWT.ERROR_NULL_ARGUMENT);
+            this.device = data.device = device;
+            init(drawable, data, contextId);
+            init();
+        } finally {
+        }
+    }
+
+    static int checkStyle(int style) {
+        if ((style & SWT.LEFT_TO_RIGHT) != 0)
+            style &= ~SWT.RIGHT_TO_LEFT;
+        return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+    }
+
+    long applierFunc(long info, long elementPtr) {
+        int type = 0, length = 1;
+        if (types != null) {
+            types[typeCount] = (byte) type;
+            if (length > 0) {
+                System.arraycopy(point, 0, points, count, length * 2);
+            }
+        }
+        typeCount++;
+        count += length * 2;
+        return 0;
     }
 
     /**
@@ -161,7 +303,21 @@ public final class GC extends Resource {
      * </ul>
      */
     public void copyArea(Image image, int x, int y) {
-        getImpl().copyArea(image, x, y);
+        if (image == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (image.type != SWT.BITMAP || image.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        try {
+            if (data.image != null) {
+                return;
+            }
+        } finally {
+        }
+    }
+
+    void copyArea(Image image, int x, int y, long srcImage) {
+        if (srcImage == 0)
+            return;
     }
 
     /**
@@ -180,7 +336,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void copyArea(int srcX, int srcY, int width, int height, int destX, int destY) {
-        getImpl().copyArea(srcX, srcY, width, height, destX, destY);
+        copyArea(srcX, srcY, width, height, destX, destY, true);
     }
 
     /**
@@ -202,7 +358,32 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void copyArea(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
-        getImpl().copyArea(srcX, srcY, width, height, destX, destY, paint);
+        VGCCopyArea drawOp = new VGCCopyArea();
+        drawOp.srcX = srcX;
+        drawOp.srcY = srcY;
+        drawOp.width = width;
+        drawOp.height = height;
+        drawOp.destX = destX;
+        drawOp.destY = destY;
+        drawOp.paint = paint;
+        FlutterBridge.send(this, "copyArea", drawOp);
+    }
+
+    void createLayout() {
+    }
+
+    @Override
+    void destroy() {
+        /* Free resources */
+        Image image = data.image;
+        if (image != null) {
+            ((SwtImage) image.getImpl()).memGC = null;
+            ((SwtImage) image.getImpl()).createAlpha();
+        }
+        textDataCache.release();
+        drawable = null;
+        data.image = null;
+        data = null;
     }
 
     /**
@@ -235,7 +416,14 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        getImpl().drawArc(x, y, width, height, startAngle, arcAngle);
+        VGCDrawArc drawOp = new VGCDrawArc();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        drawOp.startAngle = startAngle;
+        drawOp.arcAngle = arcAngle;
+        FlutterBridge.send(this, "drawArc", drawOp);
     }
 
     /**
@@ -256,7 +444,12 @@ public final class GC extends Resource {
      * @see #drawRectangle(int, int, int, int)
      */
     public void drawFocus(int x, int y, int width, int height) {
-        getImpl().drawFocus(x, y, width, height);
+        VGCDrawFocus drawOp = new VGCDrawFocus();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        FlutterBridge.send(this, "drawFocus", drawOp);
     }
 
     /**
@@ -279,7 +472,11 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawImage(Image image, int x, int y) {
-        getImpl().drawImage(image, x, y);
+        if (image == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (image.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        drawImage(image, 0, 0, -1, -1, x, y, -1, -1, true);
     }
 
     /**
@@ -315,7 +512,28 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
-        getImpl().drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
+        if (srcWidth == 0 || srcHeight == 0 || destWidth == 0 || destHeight == 0)
+            return;
+        if (srcX < 0 || srcY < 0 || srcWidth < 0 || srcHeight < 0 || destWidth < 0 || destHeight < 0) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        if (image == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (image.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, false);
+    }
+
+    void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+        if (simple) {
+        } else {
+        }
+        try {
+            if (((SwtImage) srcImage.getImpl()).memGC != null) {
+                ((SwtImage) srcImage.getImpl()).createAlpha();
+            }
+        } finally {
+        }
     }
 
     /**
@@ -332,7 +550,12 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawLine(int x1, int y1, int x2, int y2) {
-        getImpl().drawLine(x1, y1, x2, y2);
+        VGCDrawLine drawOp = new VGCDrawLine();
+        drawOp.x1 = x1;
+        drawOp.y1 = y1;
+        drawOp.x2 = x2;
+        drawOp.y2 = y2;
+        FlutterBridge.send(this, "drawLine", drawOp);
     }
 
     /**
@@ -357,7 +580,12 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawOval(int x, int y, int width, int height) {
-        getImpl().drawOval(x, y, width, height);
+        VGCDrawOval drawOp = new VGCDrawOval();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        FlutterBridge.send(this, "drawOval", drawOp);
     }
 
     /**
@@ -384,7 +612,14 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void drawPath(Path path) {
-        getImpl().drawPath(path);
+        if (path == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        try {
+            Pattern pattern = data.foregroundPattern;
+            if (pattern != null)
+                setPatternPhase(pattern);
+        } finally {
+        }
     }
 
     /**
@@ -405,7 +640,10 @@ public final class GC extends Resource {
      * @since 3.0
      */
     public void drawPoint(int x, int y) {
-        getImpl().drawPoint(x, y);
+        VGCDrawPoint drawOp = new VGCDrawPoint();
+        drawOp.x = x;
+        drawOp.y = y;
+        FlutterBridge.send(this, "drawPoint", drawOp);
     }
 
     /**
@@ -426,7 +664,9 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawPolygon(int[] pointArray) {
-        getImpl().drawPolygon(pointArray);
+        VGCDrawPolygon drawOp = new VGCDrawPolygon();
+        drawOp.pointArray = pointArray;
+        FlutterBridge.send(this, "drawPolygon", drawOp);
     }
 
     /**
@@ -447,7 +687,9 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawPolyline(int[] pointArray) {
-        getImpl().drawPolyline(pointArray);
+        VGCDrawPolyline drawOp = new VGCDrawPolyline();
+        drawOp.pointArray = pointArray;
+        FlutterBridge.send(this, "drawPolyline", drawOp);
     }
 
     /**
@@ -466,7 +708,12 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawRectangle(int x, int y, int width, int height) {
-        getImpl().drawRectangle(x, y, width, height);
+        VGCDrawRectangle drawOp = new VGCDrawRectangle();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        FlutterBridge.send(this, "drawRectangle", drawOp);
     }
 
     /**
@@ -486,7 +733,9 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawRectangle(Rectangle rect) {
-        getImpl().drawRectangle(rect);
+        if (rect == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        drawRectangle(rect.x, rect.y, rect.width, rect.height);
     }
 
     /**
@@ -511,7 +760,14 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        getImpl().drawRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+        VGCDrawRoundRectangle drawOp = new VGCDrawRoundRectangle();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        drawOp.arcWidth = arcWidth;
+        drawOp.arcHeight = arcHeight;
+        FlutterBridge.send(this, "drawRoundRectangle", drawOp);
     }
 
     /**
@@ -537,7 +793,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawString(String string, int x, int y) {
-        getImpl().drawString(string, x, y);
+        drawString(string, x, y, false);
     }
 
     /**
@@ -568,7 +824,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawString(String string, int x, int y, boolean isTransparent) {
-        getImpl().drawString(string, x, y, isTransparent);
+        drawText(string, x, y, isTransparent ? SWT.DRAW_TRANSPARENT : 0);
     }
 
     /**
@@ -594,7 +850,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawText(String string, int x, int y) {
-        getImpl().drawText(string, x, y);
+        drawText(string, x, y, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
     }
 
     /**
@@ -622,7 +878,10 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawText(String string, int x, int y, boolean isTransparent) {
-        getImpl().drawText(string, x, y, isTransparent);
+        int flags = SWT.DRAW_DELIMITER | SWT.DRAW_TAB;
+        if (isTransparent)
+            flags |= SWT.DRAW_TRANSPARENT;
+        drawText(string, x, y, flags);
     }
 
     /**
@@ -665,7 +924,30 @@ public final class GC extends Resource {
      * </ul>
      */
     public void drawText(String string, int x, int y, int flags) {
-        getImpl().drawText(string, x, y, flags);
+        VGCDrawText drawOp = new VGCDrawText();
+        drawOp.string = string;
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.flags = flags;
+        FlutterBridge.send(this, "drawText", drawOp);
+    }
+
+    private void doFastDrawText(String string, int x, int y) {
+        GCTextData data = getTextData(string);
+        data.draw(x, y);
+    }
+
+    private GCTextData getTextData(String string) {
+        // Create a cache key from the string, alpha, font and foreground color
+        return null;
+    }
+
+    private void doDrawText(String string, int x, int y, int flags) {
+        if ((flags & SWT.DRAW_TRANSPARENT) == 0) {
+            Pattern pattern = data.backgroundPattern;
+            if (pattern != null)
+                setPatternPhase(pattern);
+        }
     }
 
     /**
@@ -678,8 +960,13 @@ public final class GC extends Resource {
      *
      * @see #hashCode
      */
+    @Override
     public boolean equals(Object object) {
-        return getImpl().equals(object);
+        if (object == this.getApi())
+            return true;
+        if (!(object instanceof GC))
+            return false;
+        return false;
     }
 
     /**
@@ -715,7 +1002,14 @@ public final class GC extends Resource {
      * @see #drawArc
      */
     public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        getImpl().fillArc(x, y, width, height, startAngle, arcAngle);
+        VGCFillArc drawOp = new VGCFillArc();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        drawOp.startAngle = startAngle;
+        drawOp.arcAngle = arcAngle;
+        FlutterBridge.send(this, "fillArc", drawOp);
     }
 
     /**
@@ -739,7 +1033,13 @@ public final class GC extends Resource {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillGradientRectangle(int x, int y, int width, int height, boolean vertical) {
-        getImpl().fillGradientRectangle(x, y, width, height, vertical);
+        VGCFillGradientRectangle drawOp = new VGCFillGradientRectangle();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        drawOp.vertical = vertical;
+        FlutterBridge.send(this, "fillGradientRectangle", drawOp);
     }
 
     /**
@@ -759,7 +1059,12 @@ public final class GC extends Resource {
      * @see #drawOval
      */
     public void fillOval(int x, int y, int width, int height) {
-        getImpl().fillOval(x, y, width, height);
+        VGCFillOval drawOp = new VGCFillOval();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        FlutterBridge.send(this, "fillOval", drawOp);
     }
 
     /**
@@ -786,7 +1091,14 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void fillPath(Path path) {
-        getImpl().fillPath(path);
+        if (path == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        try {
+            Pattern pattern = data.backgroundPattern;
+            if (pattern != null)
+                setPatternPhase(pattern);
+        } finally {
+        }
     }
 
     /**
@@ -809,7 +1121,9 @@ public final class GC extends Resource {
      * @see #drawPolygon
      */
     public void fillPolygon(int[] pointArray) {
-        getImpl().fillPolygon(pointArray);
+        VGCFillPolygon drawOp = new VGCFillPolygon();
+        drawOp.pointArray = pointArray;
+        FlutterBridge.send(this, "fillPolygon", drawOp);
     }
 
     /**
@@ -828,7 +1142,12 @@ public final class GC extends Resource {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(int x, int y, int width, int height) {
-        getImpl().fillRectangle(x, y, width, height);
+        VGCFillRectangle drawOp = new VGCFillRectangle();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        FlutterBridge.send(this, "fillRectangle", drawOp);
     }
 
     /**
@@ -847,7 +1166,9 @@ public final class GC extends Resource {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(Rectangle rect) {
-        getImpl().fillRectangle(rect);
+        if (rect == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        fillRectangle(rect.x, rect.y, rect.width, rect.height);
     }
 
     /**
@@ -868,7 +1189,17 @@ public final class GC extends Resource {
      * @see #drawRoundRectangle
      */
     public void fillRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        getImpl().fillRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+        VGCFillRoundRectangle drawOp = new VGCFillRoundRectangle();
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.width = width;
+        drawOp.height = height;
+        drawOp.arcWidth = arcWidth;
+        drawOp.arcHeight = arcHeight;
+        FlutterBridge.send(this, "fillRoundRectangle", drawOp);
+    }
+
+    void flush() {
     }
 
     /**
@@ -887,7 +1218,8 @@ public final class GC extends Resource {
      * </ul>
      */
     public int getAdvanceWidth(char ch) {
-        return getImpl().getAdvanceWidth(ch);
+        //NOT DONE
+        return stringExtent(new String(new char[] { ch })).x;
     }
 
     /**
@@ -900,7 +1232,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Color getBackground() {
-        return getImpl().getBackground();
+        return this.background;
     }
 
     /**
@@ -918,7 +1250,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public Pattern getBackgroundPattern() {
-        return getImpl().getBackgroundPattern();
+        return data.backgroundPattern;
     }
 
     /**
@@ -947,7 +1279,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public boolean getAdvanced() {
-        return getImpl().getAdvanced();
+        return true;
     }
 
     /**
@@ -963,7 +1295,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getAlpha() {
-        return getImpl().getAlpha();
+        return data.alpha;
     }
 
     /**
@@ -983,7 +1315,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getAntialias() {
-        return getImpl().getAntialias();
+        return data.antialias;
     }
 
     /**
@@ -1003,7 +1335,8 @@ public final class GC extends Resource {
      * </ul>
      */
     public int getCharWidth(char ch) {
-        return getImpl().getCharWidth(ch);
+        //NOT DONE
+        return stringExtent(new String(new char[] { ch })).x;
     }
 
     /**
@@ -1019,7 +1352,10 @@ public final class GC extends Resource {
      * </ul>
      */
     public Rectangle getClipping() {
-        return getImpl().getClipping();
+        try {
+        } finally {
+        }
+        return this.clipping;
     }
 
     /**
@@ -1037,7 +1373,14 @@ public final class GC extends Resource {
      * </ul>
      */
     public void getClipping(Region region) {
-        getImpl().getClipping(region);
+        if (region == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (region.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        try {
+            region.subtract(region);
+        } finally {
+        }
     }
 
     /**
@@ -1053,7 +1396,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getFillRule() {
-        return getImpl().getFillRule();
+        return data.fillRule;
     }
 
     /**
@@ -1067,7 +1410,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Font getFont() {
-        return getImpl().getFont();
+        return data.font;
     }
 
     /**
@@ -1082,7 +1425,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public FontMetrics getFontMetrics() {
-        return getImpl().getFontMetrics();
+        return null;
     }
 
     /**
@@ -1095,7 +1438,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Color getForeground() {
-        return getImpl().getForeground();
+        return this.foreground;
     }
 
     /**
@@ -1113,7 +1456,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public Pattern getForegroundPattern() {
-        return getImpl().getForegroundPattern();
+        return data.foregroundPattern;
     }
 
     /**
@@ -1139,7 +1482,7 @@ public final class GC extends Resource {
      * @since 3.2
      */
     public GCData getGCData() {
-        return getImpl().getGCData();
+        return data;
     }
 
     /**
@@ -1156,7 +1499,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getInterpolation() {
-        return getImpl().getInterpolation();
+        return SWT.DEFAULT;
     }
 
     /**
@@ -1171,7 +1514,12 @@ public final class GC extends Resource {
      * @since 3.3
      */
     public LineAttributes getLineAttributes() {
-        return getImpl().getLineAttributes();
+        float[] dashes = null;
+        if (data.lineDashes != null) {
+            dashes = new float[data.lineDashes.length];
+            System.arraycopy(data.lineDashes, 0, dashes, 0, dashes.length);
+        }
+        return new LineAttributes(data.lineWidth, data.lineCap, data.lineJoin, data.lineStyle, dashes, data.lineDashesOffset, data.lineMiterLimit);
     }
 
     /**
@@ -1188,7 +1536,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getLineCap() {
-        return getImpl().getLineCap();
+        return data.lineCap;
     }
 
     /**
@@ -1204,7 +1552,13 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int[] getLineDash() {
-        return getImpl().getLineDash();
+        if (data.lineDashes == null)
+            return null;
+        int[] lineDashes = new int[data.lineDashes.length];
+        for (int i = 0; i < lineDashes.length; i++) {
+            lineDashes[i] = (int) data.lineDashes[i];
+        }
+        return lineDashes;
     }
 
     /**
@@ -1221,7 +1575,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getLineJoin() {
-        return getImpl().getLineJoin();
+        return data.lineJoin;
     }
 
     /**
@@ -1237,7 +1591,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public int getLineStyle() {
-        return getImpl().getLineStyle();
+        return data.lineStyle;
     }
 
     /**
@@ -1253,7 +1607,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public int getLineWidth() {
-        return getImpl().getLineWidth();
+        return (int) data.lineWidth;
     }
 
     /**
@@ -1275,7 +1629,7 @@ public final class GC extends Resource {
      * @since 2.1.2
      */
     public int getStyle() {
-        return getImpl().getStyle();
+        return data.style;
     }
 
     /**
@@ -1295,7 +1649,7 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public int getTextAntialias() {
-        return getImpl().getTextAntialias();
+        return data.textAntialias;
     }
 
     // Internal methos that returns the topView of the Control. It's the same view that would be returned
@@ -1319,7 +1673,10 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void getTransform(Transform transform) {
-        getImpl().getTransform(transform);
+        if (transform == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (transform.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
     }
 
     /**
@@ -1337,7 +1694,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public boolean getXORMode() {
-        return getImpl().getXORMode();
+        return data.xorMode;
     }
 
     /**
@@ -1354,8 +1711,98 @@ public final class GC extends Resource {
      *
      * @see #equals
      */
+    @Override
     public int hashCode() {
-        return getImpl().hashCode();
+        if (drawable instanceof Canvas) {
+            return drawable.hashCode();
+        }
+        return 0;
+    }
+
+    void init(Drawable drawable, GCData data, long context) {
+        if (data.foreground != null)
+            data.state &= ~(FOREGROUND | FOREGROUND_FILL);
+        if (data.background != null)
+            data.state &= ~(BACKGROUND);
+        if (data.font != null)
+            data.state &= ~FONT;
+        data.state &= ~DRAW_OFFSET;
+        Image image = data.image;
+        if (image != null)
+            ((SwtImage) image.getImpl()).memGC = this.getApi();
+        this.drawable = drawable;
+        this.data = data;
+        if (drawable instanceof Canvas) {
+            DartWidget widget = (DartWidget) ((Canvas) drawable).getImpl();
+            if (widget != null) {
+                this.bridge = widget.getBridge();
+            }
+        }
+    }
+
+    void initCGContext(long cgContext) {
+        int state = data.state;
+        if ((state & LINE_WIDTH) != 0) {
+            switch(data.lineStyle) {
+                case SWT.LINE_DOT:
+                case SWT.LINE_DASH:
+                case SWT.LINE_DASHDOT:
+                case SWT.LINE_DASHDOTDOT:
+                    state |= LINE_STYLE;
+            }
+        }
+        if ((state & LINE_STYLE) != 0) {
+            float[] dashes = null;
+            float width = data.lineWidth;
+            switch(data.lineStyle) {
+                case SWT.LINE_SOLID:
+                    break;
+                case SWT.LINE_DASH:
+                    dashes = width != 0 ? LINE_DASH : LINE_DASH_ZERO;
+                    break;
+                case SWT.LINE_DOT:
+                    dashes = width != 0 ? LINE_DOT : LINE_DOT_ZERO;
+                    break;
+                case SWT.LINE_DASHDOT:
+                    dashes = width != 0 ? LINE_DASHDOT : LINE_DASHDOT_ZERO;
+                    break;
+                case SWT.LINE_DASHDOTDOT:
+                    dashes = width != 0 ? LINE_DASHDOTDOT : LINE_DASHDOTDOT_ZERO;
+                    break;
+                case SWT.LINE_CUSTOM:
+                    dashes = data.lineDashes;
+                    break;
+            }
+            if (dashes != null) {
+                double[] lengths = new double[dashes.length];
+                for (int i = 0; i < lengths.length; i++) {
+                    lengths[i] = width == 0 || data.lineStyle == SWT.LINE_CUSTOM ? dashes[i] : dashes[i] * width;
+                }
+            } else {
+            }
+        }
+        if ((state & LINE_MITERLIMIT) != 0) {
+        }
+        if ((state & LINE_JOIN) != 0) {
+            switch(data.lineJoin) {
+                case SWT.JOIN_MITER:
+                    break;
+                case SWT.JOIN_ROUND:
+                    break;
+                case SWT.JOIN_BEVEL:
+                    break;
+            }
+        }
+        if ((state & LINE_CAP) != 0) {
+            switch(data.lineCap) {
+                case SWT.CAP_ROUND:
+                    break;
+                case SWT.CAP_FLAT:
+                    break;
+                case SWT.CAP_SQUARE:
+                    break;
+            }
+        }
     }
 
     /**
@@ -1373,7 +1820,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public boolean isClipped() {
-        return getImpl().isClipped();
+        return false;
     }
 
     /**
@@ -1386,8 +1833,13 @@ public final class GC extends Resource {
      *
      * @return <code>true</code> when the GC is disposed and <code>false</code> otherwise
      */
+    @Override
     public boolean isDisposed() {
-        return getImpl().isDisposed();
+        return false;
+    }
+
+    boolean isIdentity(float[] transform) {
+        return transform[0] == 1 && transform[1] == 0 && transform[2] == 0 && transform[3] == 1 && transform[4] == 0 && transform[5] == 0;
     }
 
     /**
@@ -1433,7 +1885,17 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setAdvanced(boolean advanced) {
-        getImpl().setAdvanced(advanced);
+        dirty();
+        this.advanced = advanced;
+        if (!advanced) {
+            setAlpha(0xFF);
+            setAntialias(SWT.DEFAULT);
+            setBackgroundPattern(null);
+            setForegroundPattern(null);
+            setInterpolation(SWT.DEFAULT);
+            setTextAntialias(SWT.DEFAULT);
+            setTransform(null);
+        }
     }
 
     /**
@@ -1457,7 +1919,10 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setAlpha(int alpha) {
-        getImpl().setAlpha(alpha);
+        dirty();
+        this.alpha = alpha;
+        data.alpha = alpha & 0xFF;
+        data.state &= ~(BACKGROUND | FOREGROUND | FOREGROUND_FILL);
     }
 
     /**
@@ -1489,7 +1954,22 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setAntialias(int antialias) {
-        getImpl().setAntialias(antialias);
+        dirty();
+        this.antialias = antialias;
+        boolean mode = true;
+        switch(antialias) {
+            case SWT.DEFAULT:
+                break;
+            case SWT.OFF:
+                mode = false;
+                break;
+            case SWT.ON:
+                mode = true;
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        data.antialias = antialias;
     }
 
     /**
@@ -1508,7 +1988,15 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setBackground(Color color) {
-        getImpl().setBackground(color);
+        dirty();
+        this.background = color;
+        if (color == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (color.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        data.background = color.handle;
+        data.backgroundPattern = null;
+        data.state &= ~BACKGROUND;
     }
 
     /**
@@ -1536,7 +2024,14 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setBackgroundPattern(Pattern pattern) {
-        getImpl().setBackgroundPattern(pattern);
+        dirty();
+        this.backgroundPattern = pattern;
+        if (pattern != null && pattern.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (data.backgroundPattern == pattern)
+            return;
+        data.backgroundPattern = pattern;
+        data.state &= ~BACKGROUND;
     }
 
     /**
@@ -1554,7 +2049,19 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setClipping(int x, int y, int width, int height) {
-        getImpl().setClipping(x, y, width, height);
+        dirty();
+        this.clipping = new Rectangle(x, y, width, height);
+        try {
+            if (width < 0) {
+                x = x + width;
+                width = -width;
+            }
+            if (height < 0) {
+                y = y + height;
+                height = -height;
+            }
+        } finally {
+        }
     }
 
     /**
@@ -1584,7 +2091,13 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setClipping(Path path) {
-        getImpl().setClipping(path);
+        dirty();
+        this.clipping = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
+        if (path != null && path.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        try {
+        } finally {
+        }
     }
 
     /**
@@ -1601,7 +2114,12 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setClipping(Rectangle rect) {
-        getImpl().setClipping(rect);
+        dirty();
+        this.clipping = rect;
+        if (rect == null) {
+        } else {
+            setClipping(rect.x, rect.y, rect.width, rect.height);
+        }
     }
 
     /**
@@ -1621,7 +2139,12 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setClipping(Region region) {
-        getImpl().setClipping(region);
+        this.clipping = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
+        if (region != null && region.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        try {
+        } finally {
+        }
     }
 
     /**
@@ -1641,7 +2164,16 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setFillRule(int rule) {
-        getImpl().setFillRule(rule);
+        dirty();
+        this.fillRule = rule;
+        switch(rule) {
+            case SWT.FILL_WINDING:
+            case SWT.FILL_EVEN_ODD:
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        data.fillRule = rule;
     }
 
     /**
@@ -1660,7 +2192,12 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setFont(Font font) {
-        getImpl().setFont(font);
+        dirty();
+        this.font = font;
+        if (font != null && font.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        data.font = font != null ? font : ((SwtDevice) data.device.getImpl()).systemFont;
+        data.state &= ~FONT;
     }
 
     /**
@@ -1678,7 +2215,15 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setForeground(Color color) {
-        getImpl().setForeground(color);
+        dirty();
+        this.foreground = color;
+        if (color == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (color.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        data.foreground = color.handle;
+        data.foregroundPattern = null;
+        data.state &= ~(FOREGROUND | FOREGROUND_FILL);
     }
 
     /**
@@ -1705,7 +2250,14 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setForegroundPattern(Pattern pattern) {
-        getImpl().setForegroundPattern(pattern);
+        dirty();
+        this.foregroundPattern = pattern;
+        if (pattern != null && pattern.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (data.foregroundPattern == pattern)
+            return;
+        data.foregroundPattern = pattern;
+        data.state &= ~(FOREGROUND | FOREGROUND_FILL);
     }
 
     /**
@@ -1735,7 +2287,20 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setInterpolation(int interpolation) {
-        getImpl().setInterpolation(interpolation);
+        dirty();
+        this.interpolation = interpolation;
+        switch(interpolation) {
+            case SWT.DEFAULT:
+                break;
+            case SWT.NONE:
+                break;
+            case SWT.LOW:
+                break;
+            case SWT.HIGH:
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
     }
 
     /**
@@ -1763,7 +2328,101 @@ public final class GC extends Resource {
      * @since 3.3
      */
     public void setLineAttributes(LineAttributes attributes) {
-        getImpl().setLineAttributes(attributes);
+        dirty();
+        this.lineAttributes = attributes;
+        if (attributes == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        int mask = 0;
+        float lineWidth = attributes.width;
+        if (lineWidth != data.lineWidth) {
+            mask |= LINE_WIDTH | DRAW_OFFSET;
+        }
+        int lineStyle = attributes.style;
+        if (lineStyle != data.lineStyle) {
+            mask |= LINE_STYLE;
+            switch(lineStyle) {
+                case SWT.LINE_SOLID:
+                case SWT.LINE_DASH:
+                case SWT.LINE_DOT:
+                case SWT.LINE_DASHDOT:
+                case SWT.LINE_DASHDOTDOT:
+                    break;
+                case SWT.LINE_CUSTOM:
+                    if (attributes.dash == null)
+                        lineStyle = SWT.LINE_SOLID;
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+        }
+        int join = attributes.join;
+        if (join != data.lineJoin) {
+            mask |= LINE_JOIN;
+            switch(join) {
+                case SWT.JOIN_MITER:
+                case SWT.JOIN_ROUND:
+                case SWT.JOIN_BEVEL:
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+        }
+        int cap = attributes.cap;
+        if (cap != data.lineCap) {
+            mask |= LINE_CAP;
+            switch(cap) {
+                case SWT.CAP_FLAT:
+                case SWT.CAP_ROUND:
+                case SWT.CAP_SQUARE:
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+        }
+        float[] dashes = attributes.dash;
+        float[] lineDashes = data.lineDashes;
+        if (dashes != null && dashes.length > 0) {
+            boolean changed = lineDashes == null || lineDashes.length != dashes.length;
+            for (int i = 0; i < dashes.length; i++) {
+                float dash = dashes[i];
+                if (dash <= 0)
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                if (!changed && lineDashes[i] != dash)
+                    changed = true;
+            }
+            if (changed) {
+                float[] newDashes = new float[dashes.length];
+                System.arraycopy(dashes, 0, newDashes, 0, dashes.length);
+                dashes = newDashes;
+                mask |= LINE_STYLE;
+            } else {
+                dashes = lineDashes;
+            }
+        } else {
+            if (lineDashes != null && lineDashes.length > 0) {
+                mask |= LINE_STYLE;
+            } else {
+                dashes = lineDashes;
+            }
+        }
+        float dashOffset = attributes.dashOffset;
+        if (dashOffset != data.lineDashesOffset) {
+            mask |= LINE_STYLE;
+        }
+        float miterLimit = attributes.miterLimit;
+        if (miterLimit != data.lineMiterLimit) {
+            mask |= LINE_MITERLIMIT;
+        }
+        if (mask == 0)
+            return;
+        data.lineWidth = lineWidth;
+        data.lineStyle = lineStyle;
+        data.lineCap = cap;
+        data.lineJoin = join;
+        data.lineDashes = dashes;
+        data.lineDashesOffset = dashOffset;
+        data.lineMiterLimit = miterLimit;
+        data.state &= ~mask;
     }
 
     /**
@@ -1783,7 +2442,20 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setLineCap(int cap) {
-        getImpl().setLineCap(cap);
+        dirty();
+        this.lineCap = cap;
+        if (data.lineCap == cap)
+            return;
+        switch(cap) {
+            case SWT.CAP_ROUND:
+            case SWT.CAP_FLAT:
+            case SWT.CAP_SQUARE:
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        data.lineCap = cap;
+        data.state &= ~LINE_CAP;
     }
 
     /**
@@ -1804,7 +2476,31 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setLineDash(int[] dashes) {
-        getImpl().setLineDash(dashes);
+        dirty();
+        float[] lineDashes = data.lineDashes;
+        if (dashes != null && dashes.length > 0) {
+            boolean changed = data.lineStyle != SWT.LINE_CUSTOM || lineDashes == null || lineDashes.length != dashes.length;
+            for (int i = 0; i < dashes.length; i++) {
+                int dash = dashes[i];
+                if (dash <= 0)
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                if (!changed && lineDashes[i] != dash)
+                    changed = true;
+            }
+            if (!changed)
+                return;
+            data.lineDashes = new float[dashes.length];
+            for (int i = 0; i < dashes.length; i++) {
+                data.lineDashes[i] = dashes[i];
+            }
+            data.lineStyle = SWT.LINE_CUSTOM;
+        } else {
+            if (data.lineStyle == SWT.LINE_SOLID && (lineDashes == null || lineDashes.length == 0))
+                return;
+            data.lineDashes = null;
+            data.lineStyle = SWT.LINE_SOLID;
+        }
+        data.state &= ~LINE_STYLE;
     }
 
     /**
@@ -1824,7 +2520,20 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setLineJoin(int join) {
-        getImpl().setLineJoin(join);
+        dirty();
+        this.lineJoin = join;
+        if (data.lineJoin == join)
+            return;
+        switch(join) {
+            case SWT.JOIN_MITER:
+            case SWT.JOIN_ROUND:
+            case SWT.JOIN_BEVEL:
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        data.lineJoin = join;
+        data.state &= ~LINE_JOIN;
     }
 
     /**
@@ -1843,7 +2552,26 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setLineStyle(int lineStyle) {
-        getImpl().setLineStyle(lineStyle);
+        dirty();
+        this.lineStyle = lineStyle;
+        if (data.lineStyle == lineStyle)
+            return;
+        switch(lineStyle) {
+            case SWT.LINE_SOLID:
+            case SWT.LINE_DASH:
+            case SWT.LINE_DOT:
+            case SWT.LINE_DASHDOT:
+            case SWT.LINE_DASHDOTDOT:
+                break;
+            case SWT.LINE_CUSTOM:
+                if (data.lineDashes == null)
+                    lineStyle = SWT.LINE_SOLID;
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        data.lineStyle = lineStyle;
+        data.state &= ~LINE_STYLE;
     }
 
     /**
@@ -1867,7 +2595,19 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setLineWidth(int lineWidth) {
-        getImpl().setLineWidth(lineWidth);
+        dirty();
+        this.lineWidth = lineWidth;
+        if (data.lineWidth == lineWidth)
+            return;
+        data.lineWidth = lineWidth;
+        data.state &= ~(LINE_WIDTH | DRAW_OFFSET);
+    }
+
+    void setPatternPhase(Pattern pattern) {
+        if (((SwtPattern) pattern.getImpl()).image == null)
+            return;
+        if (data.image != null) {
+        }
     }
 
     /**
@@ -1885,7 +2625,9 @@ public final class GC extends Resource {
      * </ul>
      */
     public void setXORMode(boolean xor) {
-        getImpl().setXORMode(xor);
+        dirty();
+        this.xORMode = xor;
+        data.xorMode = xor;
     }
 
     /**
@@ -1917,7 +2659,17 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setTextAntialias(int antialias) {
-        getImpl().setTextAntialias(antialias);
+        dirty();
+        this.textAntialias = antialias;
+        switch(antialias) {
+            case SWT.DEFAULT:
+            case SWT.OFF:
+            case SWT.ON:
+                break;
+            default:
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        data.textAntialias = antialias;
     }
 
     /**
@@ -1947,7 +2699,14 @@ public final class GC extends Resource {
      * @since 3.1
      */
     public void setTransform(Transform transform) {
-        getImpl().setTransform(transform);
+        dirty();
+        this.transform = transform;
+        if (transform != null && transform.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (transform != null) {
+        } else {
+        }
+        data.state &= ~(TRANSFORM | DRAW_OFFSET);
     }
 
     /**
@@ -1970,7 +2729,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point stringExtent(String string) {
-        return getImpl().stringExtent(string);
+        return textExtent(string, 0);
     }
 
     /**
@@ -1993,7 +2752,7 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point textExtent(String string) {
-        return getImpl().textExtent(string);
+        return textExtent(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
     }
 
     /**
@@ -2028,7 +2787,12 @@ public final class GC extends Resource {
      * </ul>
      */
     public Point textExtent(String string, int flags) {
-        return getImpl().textExtent(string, flags);
+        if (string == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        try {
+        } finally {
+        }
+        return null;
     }
 
     /**
@@ -2037,19 +2801,176 @@ public final class GC extends Resource {
      *
      * @return a string representation of the receiver
      */
+    @Override
     public String toString() {
-        return getImpl().toString();
+        if (isDisposed())
+            return "GC {*DISPOSED*}";
+        return null;
     }
 
-    protected GC(IGC impl) {
-        super(impl);
+    boolean advanced;
+
+    int alpha;
+
+    int antialias;
+
+    Color background;
+
+    Pattern backgroundPattern;
+
+    Rectangle clipping = new Rectangle(0, 0, 0, 0);
+
+    int fillRule;
+
+    Font font;
+
+    Color foreground;
+
+    Pattern foregroundPattern;
+
+    int interpolation;
+
+    LineAttributes lineAttributes;
+
+    int lineCap;
+
+    int[] lineDash = new int[0];
+
+    int lineJoin;
+
+    int lineStyle;
+
+    int lineWidth;
+
+    int style;
+
+    int textAntialias;
+
+    Transform transform;
+
+    boolean xORMode;
+
+    public Drawable _drawable() {
+        return drawable;
     }
 
-    static GC createApi(IGC impl) {
-        return new GC(impl);
+    public GCData _data() {
+        return data;
     }
 
-    public IGC getImpl() {
-        return (IGC) super.getImpl();
+    public int _count() {
+        return count;
+    }
+
+    public int _typeCount() {
+        return typeCount;
+    }
+
+    public byte[] _types() {
+        return types;
+    }
+
+    public double[] _points() {
+        return points;
+    }
+
+    public double[] _point() {
+        return point;
+    }
+
+    public boolean _advanced() {
+        return advanced;
+    }
+
+    public int _alpha() {
+        return alpha;
+    }
+
+    public int _antialias() {
+        return antialias;
+    }
+
+    public Color _background() {
+        return background;
+    }
+
+    public Pattern _backgroundPattern() {
+        return backgroundPattern;
+    }
+
+    public Rectangle _clipping() {
+        return clipping;
+    }
+
+    public int _fillRule() {
+        return fillRule;
+    }
+
+    public Font _font() {
+        return font;
+    }
+
+    public Color _foreground() {
+        return foreground;
+    }
+
+    public Pattern _foregroundPattern() {
+        return foregroundPattern;
+    }
+
+    public int _interpolation() {
+        return interpolation;
+    }
+
+    public LineAttributes _lineAttributes() {
+        return lineAttributes;
+    }
+
+    public int _lineCap() {
+        return lineCap;
+    }
+
+    public int[] _lineDash() {
+        return lineDash;
+    }
+
+    public int _lineJoin() {
+        return lineJoin;
+    }
+
+    public int _lineStyle() {
+        return lineStyle;
+    }
+
+    public int _lineWidth() {
+        return lineWidth;
+    }
+
+    public int _style() {
+        return style;
+    }
+
+    public int _textAntialias() {
+        return textAntialias;
+    }
+
+    public Transform _transform() {
+        return transform;
+    }
+
+    public boolean _xORMode() {
+        return xORMode;
+    }
+
+    public GC getApi() {
+        if (api == null)
+            api = GC.createApi(this);
+        return (GC) api;
+    }
+
+    public VGC getValue() {
+        if (value == null)
+            value = new VGC(this);
+        return (VGC) value;
     }
 }

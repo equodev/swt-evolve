@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/src/gen/event.dart';
@@ -29,6 +28,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   bool _wordWrap = true;
 
   final bool useDarkTheme = getCurrentTheme();
+
+  @override
+  void initState() {
+    super.initState();
+    registerListeners();
+  }
 
   @override
   void extraSetState() {
@@ -884,9 +889,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     };
   }
 
-
   void registerListeners(){
-    super.registerListeners();
     _styledTextListener();
   }
 

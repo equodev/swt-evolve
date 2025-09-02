@@ -1310,7 +1310,7 @@ public final class SwtGC extends SwtResource implements IGC {
         if (memGC != null && !memGC.isDisposed()) {
             ((SwtGC) memGC.getImpl()).flush();
             mustRestore = true;
-            GCData data = ((SwtGC) memGC.getImpl()).data;
+            GCData data = memGC.getImpl()._data();
             if (data.hNullBitmap != 0) {
                 OS.SelectObject(memGC.handle, data.hNullBitmap);
                 data.hNullBitmap = 0;
@@ -1327,7 +1327,7 @@ public final class SwtGC extends SwtResource implements IGC {
         }
         if (mustRestore) {
             long hOldBitmap = OS.SelectObject(memGC.handle, SwtImage.win32_getHandle(srcImage, getZoom()));
-            ((SwtGC) memGC.getImpl()).data.hNullBitmap = hOldBitmap;
+            memGC.getImpl()._data().hNullBitmap = hOldBitmap;
         }
     }
 
@@ -5435,6 +5435,14 @@ public final class SwtGC extends SwtResource implements IGC {
 
     private int getZoom() {
         return DPIUtil.getZoomForAutoscaleProperty(data.nativeZoom);
+    }
+
+    public Drawable _drawable() {
+        return drawable;
+    }
+
+    public GCData _data() {
+        return data;
     }
 
     public GC getApi() {

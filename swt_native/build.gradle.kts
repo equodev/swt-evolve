@@ -164,7 +164,8 @@ platforms.forEach { platform ->
                 commandLine = listOf("bash", "-c", "./set-arch.sh $arch && flutter build macos")
             }
             else -> {
-                commandLine = listOf("flutter", "build", osArch[0])
+                val flutterCmd = if (System.getProperty("os.name").toLowerCase().contains("windows")) "flutter.bat" else "flutter"
+                commandLine = listOf(flutterCmd, "build", osArch[0])
             }
         }
     }
