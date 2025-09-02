@@ -18,6 +18,14 @@ Words don't do it justice. Here is a standard Eclipse RCP application running wi
 
 ![SWT Evolve Demo](docs/demo.gif)
 
+### 🎨 SWT Evolve Widget Gallery
+
+Check out the gallery of SWT snippets showing **SWT Evolve** implementations:  
+👉 [**SWT Evolve Gallery**](https://equo.dev/swt-gallery)
+
+This gallery provides small, focused SWT code snippets with rendered previews —  
+a quick way to explore available widgets and see how they look in practice.
+
 ---
 
 ## 🚀 Getting Started: 2-Minute Modernization
@@ -43,9 +51,7 @@ The easiest way to see SWT Evolve in action is to run the examples included in t
 ### Modernize Your Own App
 
 1.  **Get SWT Evolve:** Clone this repository and build it (see [CONTRIBUTING.md](./CONTRIBUTING.md)), or get the `swt-evolve.jar` file from:
-   - [macOS x86_64](https://gitlab.com/api/v4/projects/72079350/packages/maven/dev/equo/swt-evolve/0.2.0/swt-evolve-0.2.0-macos-x86_64.jar)
-   - [macOS Apple Silicon (aarch64)](https://gitlab.com/api/v4/projects/72079350/packages/maven/dev/equo/swt-evolve/0.2.0/swt-evolve-0.2.0-macos-aarch64.jar)
-   - [Windows](https://gitlab.com/api/v4/projects/72079350/packages/maven/dev/equo/swt-evolve/0.2.0/swt-evolve-0.2.0-windows-x86_64.jar)
+    - [Download latest release](https://github.com/equodev/swt-evolve/releases/latest)
 2.  **Locate Your Old SWT Jar:** Find the original `swt.jar` in your SWT application.
 3.  **Replace and Run:** Rename the swt-evolve JAR to match the exact filename of the original SWT JAR you located. Then, use your renamed file to replace the original. That's it—run your application to see the modernized UI.
 
