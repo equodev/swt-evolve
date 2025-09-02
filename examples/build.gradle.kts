@@ -27,7 +27,7 @@ dependencies {
     if (gradle.parent != null)
         implementation(project(":swt_native"))
     else
-        implementation("dev.equo:swt-evolve:0.2.0:$currentPlatform")
+        implementation("dev.equo:swt-evolve:+:$currentPlatform")
 }
 
 tasks.register<JavaExec>("runExample") {
