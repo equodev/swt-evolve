@@ -24,7 +24,6 @@ abstract class GCState<T extends GCSwt, V extends VGC>
     _registerListeners();
   }
 
-  @override
   void _setValue(V value) {
     state = value!;
     extraSetState();
@@ -203,7 +202,7 @@ class VGCDrawPoint {
 class VGCDrawPolygon {
   List<int>? pointArray;
 
-  VGCDrawPolygon({this.pointArray = null});
+  VGCDrawPolygon();
 
   factory VGCDrawPolygon.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawPolygonFromJson(json);
@@ -214,7 +213,7 @@ class VGCDrawPolygon {
 class VGCDrawPolyline {
   List<int>? pointArray;
 
-  VGCDrawPolyline({this.pointArray = null});
+  VGCDrawPolyline();
 
   factory VGCDrawPolyline.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawPolylineFromJson(json);
@@ -331,7 +330,7 @@ class VGCFillOval {
 class VGCFillPolygon {
   List<int>? pointArray;
 
-  VGCFillPolygon({this.pointArray = null});
+  VGCFillPolygon();
 
   factory VGCFillPolygon.fromJson(Map<String, dynamic> json) =>
       _$VGCFillPolygonFromJson(json);

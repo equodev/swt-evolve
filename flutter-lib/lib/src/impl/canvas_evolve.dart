@@ -17,7 +17,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   Color fg = Colors.black;
   Color gcBg = Colors.transparent;
 
-  int _alpha = 255;
+  final int _alpha = 255;
   Rect? clipRect;
 
   Color applyAlpha(Color color) {
@@ -37,7 +37,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   }
 
   @override
-  Widget build(BuildContext ctx) {
+  Widget build(BuildContext context) {
     VGC gc = VGC.empty()..id=state.id;
     return GCSwt<VGC>(value: gc);
   }

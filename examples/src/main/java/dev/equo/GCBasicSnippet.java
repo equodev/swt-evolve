@@ -1,5 +1,6 @@
 package dev.equo;
 
+import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.Canvas;
@@ -14,6 +15,7 @@ import org.eclipse.swt.widgets.Shell;
 
 public class GCBasicSnippet {
     public static void main (String [] args) {
+        Config.forceEquo();
         Display display = new Display();
         Shell shell = new Shell(display);
         shell.setText("GCBasicSnippet");

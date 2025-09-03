@@ -152,12 +152,10 @@ Map<String, dynamic> _$VGCDrawPointToJson(VGCDrawPoint instance) =>
     };
 
 VGCDrawPolygon _$VGCDrawPolygonFromJson(Map<String, dynamic> json) =>
-    VGCDrawPolygon(
-      pointArray: (json['pointArray'] as List<dynamic>?)
-              ?.map((e) => (e as num).toInt())
-              .toList() ??
-          null,
-    );
+    VGCDrawPolygon()
+      ..pointArray = (json['pointArray'] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
+          .toList();
 
 Map<String, dynamic> _$VGCDrawPolygonToJson(VGCDrawPolygon instance) =>
     <String, dynamic>{
@@ -165,12 +163,10 @@ Map<String, dynamic> _$VGCDrawPolygonToJson(VGCDrawPolygon instance) =>
     };
 
 VGCDrawPolyline _$VGCDrawPolylineFromJson(Map<String, dynamic> json) =>
-    VGCDrawPolyline(
-      pointArray: (json['pointArray'] as List<dynamic>?)
-              ?.map((e) => (e as num).toInt())
-              .toList() ??
-          null,
-    );
+    VGCDrawPolyline()
+      ..pointArray = (json['pointArray'] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
+          .toList();
 
 Map<String, dynamic> _$VGCDrawPolylineToJson(VGCDrawPolyline instance) =>
     <String, dynamic>{
@@ -285,12 +281,10 @@ Map<String, dynamic> _$VGCFillOvalToJson(VGCFillOval instance) =>
     };
 
 VGCFillPolygon _$VGCFillPolygonFromJson(Map<String, dynamic> json) =>
-    VGCFillPolygon(
-      pointArray: (json['pointArray'] as List<dynamic>?)
-              ?.map((e) => (e as num).toInt())
-              .toList() ??
-          null,
-    );
+    VGCFillPolygon()
+      ..pointArray = (json['pointArray'] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
+          .toList();
 
 Map<String, dynamic> _$VGCFillPolygonToJson(VGCFillPolygon instance) =>
     <String, dynamic>{
