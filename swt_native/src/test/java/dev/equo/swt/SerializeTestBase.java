@@ -4,6 +4,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.accessibility.Accessible;
 import org.eclipse.swt.accessibility.SwtAccessible;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Caret;
 import org.eclipse.swt.widgets.Mocks;
@@ -97,6 +98,22 @@ public class SerializeTestBase {
 
     protected void setAll(Color w) {
         // no setters
+    }
+
+    protected void setAll(GC w) {
+        InstancioObjectApi<GC> inst = Instancio.ofObject(w)
+                .withSettings(settings);
+        try {
+            inst
+                    .ignore(Select.types().of(Class.forName("org.eclipse.swt.internal.cocoa.NSObject")));
+        } catch (ClassNotFoundException e) {}
+        inst = inst
+                .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
+                .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0)) // Always true
+                .generate(Select.all(int.class), gen -> gen.ints().range(1, 40))
+                .generate(Select.all(int[].class), gen -> gen.array().length(2))
+                .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())));
+        inst.fill();
     }
 
     protected AssertConsumer node(String field) {

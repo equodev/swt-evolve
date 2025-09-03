@@ -25,8 +25,8 @@ public class Config {
                 CTabFolderRenderer.class, Impl.equo,
                 Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo,
                 StyledText.class, Impl.equo,
-                Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo,
-                Canvas.class, Impl.equo
+                Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo
+//                Canvas.class, Impl.equo
             );
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -40,7 +40,7 @@ public class Config {
         defaultImpl = Impl.equo;
     }
 
-    static void forceEquo() {
+    public static void forceEquo() {
         defaultImpl = Impl.force_equo;
     }
 
@@ -75,7 +75,7 @@ public class Config {
     }
 
     public static boolean isEquo(Class<?> clazz, Drawable parent){
-        return parent instanceof Canvas && clazz == GC.class;
+        return parent instanceof Canvas && clazz == GC.class && ((Canvas) parent).getImpl() instanceof DartCanvas;
     }
 
     public static boolean isEquo(Class<?> clazz, Scrollable parent) {

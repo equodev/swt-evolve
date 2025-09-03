@@ -3053,6 +3053,7 @@ public final class DartGC extends DartResource implements IGC {
             data.lineStyle = SWT.LINE_SOLID;
         }
         data.state &= ~LINE_STYLE;
+        this.lineDash = dashes;
     }
 
     /**

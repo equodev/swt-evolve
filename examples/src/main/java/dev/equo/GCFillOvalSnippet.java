@@ -1,5 +1,6 @@
 package dev.equo;
 
+import dev.equo.swt.Config;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
@@ -13,6 +14,7 @@ import org.eclipse.swt.widgets.*;
 public class GCFillOvalSnippet {
 
     public static void main (String [] args) {
+        Config.forceEquo();
         final Display display = new Display ();
         final Shell shell = new Shell (display, SWT.SHELL_TRIM);
         shell.setText("GCFillOvalSnippet");

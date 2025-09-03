@@ -8,6 +8,8 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.graphics.Font;
 import org.instancio.Instancio;
+import org.instancio.InstancioObjectApi;
+import org.instancio.Select;
 import org.mockito.Mockito;
 
 import java.lang.reflect.InvocationTargetException;
@@ -39,6 +41,7 @@ public class Mocks {
         Display display = mock(Display.class);
         SwtDisplay swtDisplay = mock(SwtDisplay.class);
         swtDisplay.thread = Thread.currentThread();
+        SwtDisplay.Default =  display;
         when(display.getThread()).thenCallRealMethod();
         when(display.getImpl()).thenReturn(swtDisplay);
         try { // mac only
@@ -79,6 +82,13 @@ public class Mocks {
 
     public static Canvas canvas() {
         Canvas w = mock(Canvas.class);
+        InstancioObjectApi<Canvas> inst = Instancio.ofObject(w);
+        if ("gtk".equals(org.eclipse.swt.SWT.getPlatform())) {
+            inst = inst.set(Select.field(Widget.class, "handle"), Instancio.gen().longs().range(1L, Long.MAX_VALUE).get());
+        } else if ("win32".equals(org.eclipse.swt.SWT.getPlatform())) {
+            inst = inst.set(Select.field(Control.class, "handle"), Instancio.gen().longs().range(1L, Long.MAX_VALUE).get());
+        }
+        inst.fill();
         DartCanvas impl = mock(DartCanvas.class);
         when(w.getImpl()).thenReturn(impl);
         Display display = display();
@@ -100,5 +110,9 @@ public class Mocks {
 
     public static int blue() {
         return Instancio.gen().ints().range(1, 255).get();
+    }
+
+    public static Canvas drawable() {
+        return canvas();
     }
 }
