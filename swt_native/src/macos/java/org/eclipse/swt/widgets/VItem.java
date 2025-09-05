@@ -14,9 +14,11 @@ public class VItem extends VWidget {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public Image getImage() {
-        return ((DartItem) impl).image;
+        Image val = ((DartItem) impl).image;
+        if (val != null && !(val.getImpl() instanceof DartImage))
+            return null;
+        return val;
     }
 
     public void setImage(Image value) {

@@ -13,6 +13,9 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
   ..background = json['background'] == null
       ? null
       : VColor.fromJson(json['background'] as Map<String, dynamic>)
+  ..backgroundImage = json['backgroundImage'] == null
+      ? null
+      : VImage.fromJson(json['backgroundImage'] as Map<String, dynamic>)
   ..bounds = json['bounds'] == null
       ? null
       : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>)
@@ -61,6 +64,9 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
       ? null
       : VColor.fromJson(json['selectionBackground'] as Map<String, dynamic>)
   ..selectionBarThickness = (json['selectionBarThickness'] as num?)?.toInt()
+  ..selectionBgImage = json['selectionBgImage'] == null
+      ? null
+      : VImage.fromJson(json['selectionBgImage'] as Map<String, dynamic>)
   ..selectionForeground = json['selectionForeground'] == null
       ? null
       : VColor.fromJson(json['selectionForeground'] as Map<String, dynamic>)
@@ -90,6 +96,7 @@ Map<String, dynamic> _$VCTabFolderToJson(VCTabFolder instance) =>
       'id': instance.id,
       'style': instance.style,
       'background': instance.background,
+      'backgroundImage': instance.backgroundImage,
       'bounds': instance.bounds,
       'capture': instance.capture,
       'dragDetect': instance.dragDetect,
@@ -122,6 +129,7 @@ Map<String, dynamic> _$VCTabFolderToJson(VCTabFolder instance) =>
       'selection': instance.selection,
       'selectionBackground': instance.selectionBackground,
       'selectionBarThickness': instance.selectionBarThickness,
+      'selectionBgImage': instance.selectionBgImage,
       'selectionForeground': instance.selectionForeground,
       'selectionGradientColors': instance.selectionGradientColors,
       'selectionGradientPercents': instance.selectionGradientPercents,

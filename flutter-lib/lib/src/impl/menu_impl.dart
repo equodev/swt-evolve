@@ -33,7 +33,8 @@ class MenuImpl<T extends MenuSwt, V extends MenuValue>
           leading: const Icon(FluentIcons.share),
           text: Text(menuItem.text ?? ""),
           onPressed: () {
-            MenuItemSwt mItem = mapWidgetFromValue(menuItem) as MenuItemSwt<MenuItemValue>;
+            MenuItemSwt mItem =
+                mapWidgetFromValue(menuItem) as MenuItemSwt<MenuItemValue>;
             mItem.sendSelectionSelection(mItem.value, menuItem.id);
           }, //Flyout.of(context).close,
         ));

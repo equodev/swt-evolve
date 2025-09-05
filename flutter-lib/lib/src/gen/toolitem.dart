@@ -3,6 +3,7 @@ import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
+import '../gen/image.dart';
 import '../gen/item.dart';
 import '../impl/toolitem_evolve.dart';
 import 'event.dart';
@@ -34,8 +35,10 @@ class VToolItem extends VItem {
 
   VColor? background;
   VControl? control;
+  VImage? disabledImage;
   bool? enabled;
   VColor? foreground;
+  VImage? hotImage;
   bool? selection;
   String? toolTipText;
   int? width;

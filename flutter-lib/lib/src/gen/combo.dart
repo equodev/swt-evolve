@@ -4,6 +4,7 @@ import '../comm/comm.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
+import '../gen/image.dart';
 import '../gen/point.dart';
 import '../gen/rectangle.dart';
 import '../impl/combo_evolve.dart';

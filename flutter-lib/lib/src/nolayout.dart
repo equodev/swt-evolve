@@ -50,13 +50,14 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
       layoutChild(child.id, BoxConstraints.tightFor(width: w, height: h));
       positionChild(child.id, Offset(x.toDouble(), y.toDouble()));
     }
-    for (var child in children.whereType<CaretValue>()){
+    for (var child in children.whereType<CaretValue>()) {
       var bounds = child.bounds;
       double x = bounds?.x.toDouble() ?? 0;
       double y = bounds?.y.toDouble() ?? 0;
       double width = bounds?.width.toDouble() ?? 2;
       double height = bounds?.height.toDouble() ?? 20;
-      layoutChild(child.id, BoxConstraints.tightFor(width: width, height: height));
+      layoutChild(
+          child.id, BoxConstraints.tightFor(width: width, height: height));
       positionChild(child.id, Offset(x, y));
     }
   }

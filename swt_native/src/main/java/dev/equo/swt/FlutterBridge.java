@@ -15,6 +15,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import static dev.equo.swt.Config.getConfigFlags;
+
 public abstract class FlutterBridge {
     private static final String DEV_EQU_SWT_NEW = "dev.equ.swt.new";
     protected static final FlutterClient client;
@@ -260,4 +262,15 @@ public abstract class FlutterBridge {
         return w.hashCode();
     }
 
+    public void sendSwtEvolveProperties() {
+        ConfigFlags properties = getConfigFlags();
+        System.out.println("will send: " + properties);
+        try {
+            serializeAndSend("swt.evolve.properties", properties);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }
+

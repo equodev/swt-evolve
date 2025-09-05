@@ -16,7 +16,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     if (state.style.has(SWT.BORDER)) {
       widget = Container(
           decoration:
-          BoxDecoration(border: Border.all(width: 0.5, color: Colors.grey)),
+              BoxDecoration(border: Border.all(width: 0.5, color: Colors.grey)),
           child: widget);
     }
 
@@ -36,5 +36,4 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
     return widget;
   }
-
 }

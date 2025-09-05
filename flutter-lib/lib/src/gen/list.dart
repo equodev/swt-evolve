@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
 import '../gen/color.dart';
+import '../gen/image.dart';
 import '../gen/rectangle.dart';
 import '../gen/scrollable.dart';
 import '../impl/list_evolve.dart';

@@ -19,7 +19,8 @@ class LabelImpl<T extends LabelSwt<V>, V extends LabelValue>
 
     if (state.style.has(SWT.SEPARATOR)) {
       child = SeparatorLabel(
-        direction: state.style.has(SWT.VERTICAL) ? Axis.vertical : Axis.horizontal,
+        direction:
+            state.style.has(SWT.VERTICAL) ? Axis.vertical : Axis.horizontal,
         useDarkTheme: useDarkTheme,
       );
     } else {

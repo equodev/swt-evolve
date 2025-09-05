@@ -27,9 +27,11 @@ public class VCLabel extends VCanvas {
         ((DartCLabel) impl).align = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Image getBackgroundImage() {
-        return ((DartCLabel) impl).backgroundImage;
+        Image val = ((DartCLabel) impl).backgroundImage;
+        if (val != null && !(val.getImpl() instanceof DartImage))
+            return null;
+        return val;
     }
 
     public void setBackgroundImage(Image value) {
@@ -74,9 +76,11 @@ public class VCLabel extends VCanvas {
         ((DartCLabel) impl).gradientVertical = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Image getImage() {
-        return ((DartCLabel) impl).image;
+        Image val = ((DartCLabel) impl).image;
+        if (val != null && !(val.getImpl() instanceof DartImage))
+            return null;
+        return val;
     }
 
     public void setImage(Image value) {

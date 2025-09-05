@@ -6,11 +6,11 @@ import '../comm/comm.dart';
 import '../swt/shell.dart';
 import '../widgets.dart';
 import 'decorations_impl.dart';
-import '../../native_platform.dart' if (dart.library.html) '../../web_platform.dart';
+import '../../native_platform.dart'
+    if (dart.library.html) '../../web_platform.dart';
 
 class ShellImpl<T extends ShellSwt<V>, V extends ShellValue>
     extends DecorationsImpl<T, V> {
-
   @override
   void initState() {
     super.initState();

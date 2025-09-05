@@ -20,6 +20,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.internal.graphics.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class are graphics which have been prepared
@@ -106,7 +107,7 @@ public final class Image extends Resource implements Drawable {
      */
     Image(Device device) {
         this((IImage) null);
-        setImpl(new SwtImage(device, this));
+        setImpl(Config.isEquo(Image.class) ? new DartImage(device, this) : new SwtImage(device, this));
     }
 
     /**
@@ -146,7 +147,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, int width, int height) {
         this((IImage) null);
-        setImpl(new SwtImage(device, width, height, this));
+        setImpl(Config.isEquo(Image.class) ? new DartImage(device, width, height, this) : new SwtImage(device, width, height, this));
     }
 
     /**
@@ -187,7 +188,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, Image srcImage, int flag) {
         this((IImage) null);
-        setImpl(new SwtImage(device, srcImage, flag, this));
+        setImpl(Config.isEquo(Image.class) ? new DartImage(device, srcImage, flag, this) : new SwtImage(device, srcImage, flag, this));
     }
 
     /**
@@ -227,7 +228,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, Rectangle bounds) {
         this((IImage) null);
-        setImpl(new SwtImage(device, bounds, this));
+        setImpl(Config.isEquo(Image.class) ? new DartImage(device, bounds, this) : new SwtImage(device, bounds, this));
     }
 
     /**
@@ -255,7 +256,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, ImageData data) {
         this((IImage) null);
-        setImpl(new SwtImage(device, data, this));
+        setImpl(Config.isEquo(Image.class) ? new DartImage(device, data, this) : new SwtImage(device, data, this));
     }
 
     /**
@@ -290,7 +291,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, ImageData source, ImageData mask) {
         this((IImage) null);
-        setImpl(new SwtImage(device, source, mask, this));
+        setImpl(Config.isEquo(Image.class) ? new DartImage(device, source, mask, this) : new SwtImage(device, source, mask, this));
     }
 
     /**
@@ -348,7 +349,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, InputStream stream) {
         this((IImage) null);
-        setImpl(new SwtImage(device, stream, this));
+        setImpl(Config.isEquo(Image.class) ? new DartImage(device, stream, this) : new SwtImage(device, stream, this));
     }
 
     /**
@@ -385,7 +386,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, String filename) {
         this((IImage) null);
-        setImpl(new SwtImage(device, filename, this));
+        setImpl(Config.isEquo(Image.class) ? new DartImage(device, filename, this) : new SwtImage(device, filename, this));
     }
 
     /**
@@ -419,7 +420,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
         this((IImage) null);
-        setImpl(new SwtImage(device, imageFileNameProvider, this));
+        setImpl(Config.isEquo(Image.class) ? new DartImage(device, imageFileNameProvider, this) : new SwtImage(device, imageFileNameProvider, this));
     }
 
     /**
@@ -453,7 +454,7 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, ImageDataProvider imageDataProvider) {
         this((IImage) null);
-        setImpl(new SwtImage(device, imageDataProvider, this));
+        setImpl(Config.isEquo(Image.class) ? new DartImage(device, imageDataProvider, this) : new SwtImage(device, imageDataProvider, this));
     }
 
     /**

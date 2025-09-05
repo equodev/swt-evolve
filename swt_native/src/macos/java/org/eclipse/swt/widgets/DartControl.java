@@ -2965,7 +2965,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             Menu[] menus = oldShell.getImpl().findMenus(this.getApi());
             fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
         }
-        this.parent = parent;
+        ControlUtils.reparent(this, parent);
         reskin(SWT.ALL);
         return true;
     }

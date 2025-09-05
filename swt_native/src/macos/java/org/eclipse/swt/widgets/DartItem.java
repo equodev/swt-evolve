@@ -183,7 +183,7 @@ public abstract class DartItem extends DartWidget implements IItem {
             return;
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        this.image = image;
+        this.image = ImageUtils.copyImage(display, image);
     }
 
     /**

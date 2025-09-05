@@ -740,8 +740,13 @@ public final class SwtGC extends SwtResource implements IGC {
             Cairo.cairo_region_destroy(clipRgn);
         Image image = data.image;
         if (image != null) {
-            ((SwtImage) image.getImpl()).memGC = null;
-            if (((SwtImage) image.getImpl()).transparentPixel != -1)
+            if (image.getImpl() instanceof DartImage) {
+                ((DartImage) image.getImpl()).memGC = null;
+            }
+            if (image.getImpl() instanceof SwtImage) {
+                ((SwtImage) image.getImpl()).memGC = null;
+            }
+            if (image.getImpl()._transparentPixel() != -1)
                 ((SwtImage) image.getImpl()).createMask();
         }
         disposeLayout();
@@ -941,8 +946,10 @@ public final class SwtGC extends SwtResource implements IGC {
     }
 
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
-        /* Refresh Image as per zoom level, if required. */
-        ((SwtImage) srcImage.getImpl()).refreshImageForZoom();
+        if (srcImage.getImpl() instanceof SwtImage) {
+            /* Refresh Image as per zoom level, if required. */
+            ((SwtImage) srcImage.getImpl()).refreshImageForZoom();
+        }
         ImageData srcImageData = srcImage.getImageData();
         int imgWidth = srcImageData.width;
         int imgHeight = srcImageData.height;
@@ -958,7 +965,9 @@ public final class SwtGC extends SwtResource implements IGC {
         }
         long cairo = data.cairo;
         if (data.alpha != 0) {
-            ((SwtImage) srcImage.getImpl()).createSurface();
+            if (srcImage.getImpl() instanceof SwtImage) {
+                ((SwtImage) srcImage.getImpl()).createSurface();
+            }
             Cairo.cairo_save(cairo);
             if ((data.style & SWT.MIRRORED) != 0) {
                 Cairo.cairo_scale(cairo, -1f, 1);
@@ -2843,13 +2852,18 @@ public final class SwtGC extends SwtResource implements IGC {
             data.state &= ~FONT;
         Image image = data.image;
         if (image != null) {
-            ((SwtImage) image.getImpl()).memGC = this.getApi();
+            if (image.getImpl() instanceof DartImage) {
+                ((DartImage) image.getImpl()).memGC = this.getApi();
+            }
+            if (image.getImpl() instanceof SwtImage) {
+                ((SwtImage) image.getImpl()).memGC = this.getApi();
+            }
             /*
 		 * The transparent pixel mask might change when drawing on
 		 * the image.  Destroy it so that it is regenerated when
 		 * necessary.
 		 */
-            if (((SwtImage) image.getImpl()).transparentPixel != -1)
+            if (image.getImpl()._transparentPixel() != -1)
                 ((SwtImage) image.getImpl()).destroyMask();
         }
         this.drawable = drawable;

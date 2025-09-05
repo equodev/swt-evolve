@@ -20,6 +20,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import com.dslplatform.json.CompiledJson;
 import com.dslplatform.json.CompiledJson.*;
+import dev.equo.swt.ImageDataCodec;
 import com.dslplatform.json.JsonAttribute;
 
 /**
@@ -95,7 +96,6 @@ public final class ImageData implements Cloneable {
      * significant byte order.
      * </p>
      */
-    @JsonAttribute()
     public byte[] data;
 
     /**
@@ -2594,5 +2594,14 @@ public final class ImageData implements Cloneable {
             }
         }
         image.dispose();
+    }
+
+    @JsonAttribute(name = "data")
+    public byte[] getData() {
+        return ImageDataCodec.encode(this);
+    }
+
+    public void setData(byte[] encoded) {
+        ImageDataCodec.decode(this, encoded);
     }
 }
