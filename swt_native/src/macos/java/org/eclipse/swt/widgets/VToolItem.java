@@ -36,9 +36,11 @@ public class VToolItem extends VItem {
         ((DartToolItem) impl).control = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Image getDisabledImage() {
-        return ((DartToolItem) impl).disabledImage;
+        Image val = ((DartToolItem) impl).disabledImage;
+        if (val != null && !(val.getImpl() instanceof DartImage))
+            return null;
+        return val;
     }
 
     public void setDisabledImage(Image value) {
@@ -61,9 +63,11 @@ public class VToolItem extends VItem {
         ((DartToolItem) impl).foreground = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Image getHotImage() {
-        return ((DartToolItem) impl).hotImage;
+        Image val = ((DartToolItem) impl).hotImage;
+        if (val != null && !(val.getImpl() instanceof DartImage))
+            return null;
+        return val;
     }
 
     public void setHotImage(Image value) {

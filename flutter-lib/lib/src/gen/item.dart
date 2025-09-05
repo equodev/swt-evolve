@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import '../gen/image.dart';
 import '../gen/widget.dart';
 import 'widgets.dart';
 
@@ -15,6 +16,7 @@ class VItem extends VWidget {
     swt = "Item";
   }
 
+  VImage? image;
   String? text;
 
   factory VItem.fromJson(Map<String, dynamic> json) => _$VItemFromJson(json);

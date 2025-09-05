@@ -1,17 +1,29 @@
 import 'dart:io';
+import 'dart:typed_data' show Uint8List;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as material;
 import 'package:flutter/widgets.dart';
 import '../gen/ctabitem.dart';
 import '../gen/widget.dart';
+import '../gen/image.dart';
 import '../impl/item_evolve.dart';
-import 'icons_map.dart';
+import './utils/image_utils.dart';
 import 'widget_config.dart';
 
 class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     extends ItemImpl<T, V> {
-
   final bool useDarkTheme = getCurrentTheme();
+
+  /// Helper method to build an image widget from VImage using ImageUtils
+  Widget? _buildImageWidget(VImage? image) {
+    return ImageUtils.buildVImageWidget(
+      image,
+      size: AppSizes.tabIconSize,
+      enabled: true,
+      useBinaryImage: false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,11 +31,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
   }
 
   Widget buildTabItemContent(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    final textColor = isDark ? Colors.grey.shade300 : Colors.grey.shade800;
-    final iconColor = isDark ? Colors.grey.shade400 : Colors.grey.shade700;
+    final imageWidget = _buildImageWidget(state.image);
 
     return Padding(
       padding: const EdgeInsets.only(right: 2.0),
@@ -32,59 +40,27 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // if (state.image != null)
-          //   Padding(
-          //     padding: const EdgeInsets.only(bottom: 1.0, right: 3.0),
-          //     child: !materialIconMap.containsKey(state.image)
-          //         ? Image.file(
-          //       File(state.image!),
-          //       width: 16,
-          //       height: 16,
-          //     )
-          //         : Icon(
-          //       getMaterialIconByName(state.image!),
-          //       size: 16,
-          //       color: iconColor,
-          //     ),
-          //   ),
+          if (imageWidget != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 1.0, right: 3.0),
+              child: imageWidget,
+            ),
           Padding(
             padding: const EdgeInsets.only(bottom: 2.0),
             child: Text(
               state.text ?? "",
               style: TextStyle(
                 fontSize: 12,
-                color: textColor,
+                color: AppColors.getTextColor(),
               ),
             ),
           ),
-          // if (state.showClose == true) ...[
-          //   const SizedBox(width: 6),
-          //   MouseRegion(
-          //     cursor: SystemMouseCursors.click,
-          //     child: GestureDetector(
-          //       onTap: () {
-          //         // Implementar cierre de la pestaña
-          //         onCloseRequest();
-          //       },
-          //       child: Padding(
-          //         padding: const EdgeInsets.only(bottom: 1.0),
-          //         child: Icon(
-          //           Icons.close,
-          //           size: 14,
-          //           color: iconColor,
-          //         ),
-          //       ),
-          //     ),
-          //   ),
-          // ],
         ],
       ),
     );
   }
 
-  void onCloseRequest() {
-  }
+  void onCloseRequest() {}
 
-  void onTabSelected() {
-  }
+  void onTabSelected() {}
 }

@@ -31,8 +31,10 @@ class ButtonSerializeTest extends SerializeTestBase {
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
         assertJ.satisfies(node("grayed").equalsTo(w.getGrayed(), orAbsentIfFalse));
+        assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
         assertJ.satisfies(node("selection").equalsTo(w.getSelection(), orAbsentIfFalse));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
+        assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
         assertJ.satisfies(node("bounds").equalsTo(w.getBounds(), orAbsentIfNull));
         assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));

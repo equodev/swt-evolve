@@ -2623,6 +2623,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void setBoundsInPixels(int x, int y, int width, int height) {
+        this.bounds = new Rectangle(x, y, width, height);
         dirty();
     }
 
@@ -2632,6 +2633,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void setBoundsInPixels(int x, int y, int width, int height, int flags, boolean defer) {
+        this.bounds = new Rectangle(x, y, width, height);
         dirty();
         if (findImageControl() != null) {
         } else {
@@ -3953,7 +3955,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             Menu[] menus = oldShell.getImpl().findMenus(this.getApi());
             fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
         }
-        this.parent = parent;
+        ControlUtils.reparent(this, parent);
         // If parent changed, zoom level might need to be adjusted
         if (parent.nativeZoom != getApi().nativeZoom) {
         }

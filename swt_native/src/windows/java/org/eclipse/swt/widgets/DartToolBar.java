@@ -273,7 +273,10 @@ public class DartToolBar extends DartComposite implements IToolBar {
             lastArrowId = -1;
         if (((DartToolItem) item.getImpl()).id == lastHotId)
             lastHotId = -1;
-        items[((DartToolItem) item.getImpl()).id] = null;
+        int itemId = ((DartToolItem) item.getImpl()).id;
+        if (itemId >= 0 && itemId < items.length) {
+            items[itemId] = null;
+        }
         ((DartToolItem) item.getImpl()).id = -1;
         layoutItems();
     }
@@ -319,7 +322,11 @@ public class DartToolBar extends DartComposite implements IToolBar {
      */
     public ToolItem getItem(int index) {
         checkWidget();
-        return null;
+        ToolItem[] items = _getItems();
+        if (index < 0 || index >= items.length) {
+            error(SWT.ERROR_INVALID_RANGE);
+        }
+        return items[index];
     }
 
     /**
@@ -366,7 +373,14 @@ public class DartToolBar extends DartComposite implements IToolBar {
      */
     public int getItemCount() {
         checkWidget();
-        return 0;
+        if (items == null)
+            return 0;
+        int count = 0;
+        for (ToolItem item : items) {
+            if (item != null)
+                count++;
+        }
+        return count;
     }
 
     /**
@@ -391,7 +405,22 @@ public class DartToolBar extends DartComposite implements IToolBar {
     }
 
     ToolItem[] _getItems() {
-        return null;
+        if (items == null) {
+            return new ToolItem[0];
+        }
+        int count = 0;
+        for (ToolItem item : items) {
+            if (item != null)
+                count++;
+        }
+        ToolItem[] result = new ToolItem[count];
+        int index = 0;
+        for (ToolItem item : items) {
+            if (item != null) {
+                result[index++] = item;
+            }
+        }
+        return result;
     }
 
     /**
@@ -459,7 +488,13 @@ public class DartToolBar extends DartComposite implements IToolBar {
             error(SWT.ERROR_NULL_ARGUMENT);
         if (item.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        return 0;
+        ToolItem[] items = _getItems();
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] == item) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     void layoutItems() {
@@ -804,6 +839,37 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     public boolean _ignoreMouse() {
         return ignoreMouse;
+    }
+
+    void addItem(ToolItem item) {
+        int length = items.length;
+        ToolItem[] newItems = new ToolItem[length + 1];
+        System.arraycopy(items, 0, newItems, 0, length);
+        newItems[length] = item;
+        items = newItems;
+    }
+
+    void insertItem(ToolItem item, int index) {
+        if (index < 0 || index > items.length) {
+            error(SWT.ERROR_INVALID_RANGE);
+        }
+        int length = items.length;
+        ToolItem[] newItems = new ToolItem[length + 1];
+        System.arraycopy(items, 0, newItems, 0, index);
+        newItems[index] = item;
+        System.arraycopy(items, index, newItems, index + 1, length - index);
+        items = newItems;
+    }
+
+    void removeItem(ToolItem item) {
+        int index = indexOf(item);
+        if (index != -1) {
+            int length = items.length;
+            ToolItem[] newItems = new ToolItem[length - 1];
+            System.arraycopy(items, 0, newItems, 0, index);
+            System.arraycopy(items, index + 1, newItems, index, length - index - 1);
+            items = newItems;
+        }
     }
 
     protected void _hookEvents() {

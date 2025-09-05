@@ -75,26 +75,27 @@ class MaterialDropdownButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(borderRadius),
               ),
               child: Row(
-                mainAxisSize: MainAxisSize.min, // Critical for making it as compact as possible
+                mainAxisSize: MainAxisSize
+                    .min, // Critical for making it as compact as possible
                 children: [
                   // Image
-                  !materialIconMap.containsKey(image)
+                  !iconMap.containsKey(image)
                       ? (image!.toLowerCase().endsWith('.svg')
-                      ? SvgPicture.file(
-                    File(image!),
-                    width: iconSize * 1.3,
-                    height: iconSize * 1.3,
-                  )
-                      : Image.file(
-                    File(image!),
-                    width: iconSize * 1.3,
-                    height: iconSize * 1.3,
-                  ))
+                          ? SvgPicture.file(
+                              File(image!),
+                              width: iconSize * 1.3,
+                              height: iconSize * 1.3,
+                            )
+                          : Image.file(
+                              File(image!),
+                              width: iconSize * 1.3,
+                              height: iconSize * 1.3,
+                            ))
                       : Icon(
-                    getMaterialIconByName(image!),
-                    size: iconSize * 1.3,
-                    color: textColor.withOpacity(enabled ? 1.0 : 0.5),
-                  ),
+                          getIconByName(image!),
+                          size: iconSize * 1.3,
+                          color: textColor.withOpacity(enabled ? 1.0 : 0.5),
+                        ),
                   // Minimal space
                   const SizedBox(width: 2),
                   // Text
@@ -215,12 +216,17 @@ class SelectableButton extends StatelessWidget {
     final Color lightSelectedTextColor = const Color(0xFFFFFFFF);
     final Color lightUnselectedTextColor = const Color(0xFF595858);
 
-    final Color selectedColor = useDarkTheme ? darkSelectedColor : lightSelectedColor;
-    final Color unselectedColor = useDarkTheme ? darkUnselectedColor : lightUnselectedColor;
-    final Color selectedTextColor = useDarkTheme ? darkSelectedTextColor : lightSelectedTextColor;
-    final Color unselectedTextColor = useDarkTheme ? darkUnselectedTextColor : lightUnselectedTextColor;
+    final Color selectedColor =
+        useDarkTheme ? darkSelectedColor : lightSelectedColor;
+    final Color unselectedColor =
+        useDarkTheme ? darkUnselectedColor : lightUnselectedColor;
+    final Color selectedTextColor =
+        useDarkTheme ? darkSelectedTextColor : lightSelectedTextColor;
+    final Color unselectedTextColor =
+        useDarkTheme ? darkUnselectedTextColor : lightUnselectedTextColor;
 
-    final Color iconColor = isSelected ? selectedTextColor : unselectedTextColor;
+    final Color iconColor =
+        isSelected ? selectedTextColor : unselectedTextColor;
 
     final bool isIconOnly = image != null && (text == null || text!.isEmpty);
 
@@ -244,26 +250,28 @@ class SelectableButton extends StatelessWidget {
             child: Container(
                 width: iconSize + 8,
                 height: iconSize + 8,
-                decoration: isSelected ? BoxDecoration(
-                  color: selectedColor.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ) : null,
+                decoration: isSelected
+                    ? BoxDecoration(
+                        color: selectedColor.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      )
+                    : null,
                 child: Center(
-                  child: !materialIconMap.containsKey(image)
+                  child: !iconMap.containsKey(image)
                       ? (image!.toLowerCase().endsWith('.svg')
-                      ? SvgPicture.file(
-                    File(image!),
-                  )
-                      : Image.file(
-                    File(image!),
-                    width: iconSize,
-                    height: iconSize,
-                  ))
+                          ? SvgPicture.file(
+                              File(image!),
+                            )
+                          : Image.file(
+                              File(image!),
+                              width: iconSize,
+                              height: iconSize,
+                            ))
                       : Icon(
-                    getMaterialIconByName(image!),
-                    size: iconSize,
-                    color: iconColor,
-                  ),
+                          getIconByName(image!),
+                          size: iconSize,
+                          color: iconColor,
+                        ),
                 )),
           ),
         ),
@@ -303,21 +311,21 @@ class SelectableButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (image != null) ...[
-                !materialIconMap.containsKey(image)
+                !iconMap.containsKey(image)
                     ? (image!.toLowerCase().endsWith('.svg')
-                    ? SvgPicture.file(
-                  File(image!),
-                )
-                    : Image.file(
-                  File(image!),
-                  width: iconSize - 8,
-                  height: iconSize - 8,
-                ))
+                        ? SvgPicture.file(
+                            File(image!),
+                          )
+                        : Image.file(
+                            File(image!),
+                            width: iconSize - 8,
+                            height: iconSize - 8,
+                          ))
                     : Icon(
-                  getMaterialIconByName(image!),
-                  size: iconSize - 8,
-                  color: iconColor,
-                ),
+                        getIconByName(image!),
+                        size: iconSize - 8,
+                        color: iconColor,
+                      ),
                 const SizedBox(width: 6),
               ],
               // Display text
@@ -377,7 +385,6 @@ class _PushButtonState extends State<PushButton> {
 
   @override
   Widget build(BuildContext context) {
-
     final Color darkSelectedColor = const Color(0xFF6366F1);
     final Color darkUnselectedColor = const Color(0xFF6366F1);
     final Color darkSelectedTextColor = const Color(0xFFFFFFFF);
@@ -388,14 +395,21 @@ class _PushButtonState extends State<PushButton> {
     final Color lightSelectedTextColor = const Color(0xFFFFFFFF);
     final Color lightUnselectedTextColor = const Color(0xFFFFFFFF);
 
-    final Color selectedColor = widget.useDarkTheme ? darkSelectedColor : lightSelectedColor;
-    final Color unselectedColor = widget.useDarkTheme ? darkUnselectedColor : lightUnselectedColor;
-    final Color selectedTextColor = widget.useDarkTheme ? darkSelectedTextColor : lightSelectedTextColor;
-    final Color unselectedTextColor = widget.useDarkTheme ? darkUnselectedTextColor : lightUnselectedTextColor;
+    final Color selectedColor =
+        widget.useDarkTheme ? darkSelectedColor : lightSelectedColor;
+    final Color unselectedColor =
+        widget.useDarkTheme ? darkUnselectedColor : lightUnselectedColor;
+    final Color selectedTextColor =
+        widget.useDarkTheme ? darkSelectedTextColor : lightSelectedTextColor;
+    final Color unselectedTextColor = widget.useDarkTheme
+        ? darkUnselectedTextColor
+        : lightUnselectedTextColor;
 
-    final Color iconColor = _isPressed ? selectedTextColor : unselectedTextColor;
+    final Color iconColor =
+        _isPressed ? selectedTextColor : unselectedTextColor;
 
-    final bool isIconOnly = widget.image != null && (widget.text == null || widget.text!.isEmpty);
+    final bool isIconOnly =
+        widget.image != null && (widget.text == null || widget.text!.isEmpty);
     const double iconSize = 24.0;
 
     if (isIconOnly) {
@@ -411,43 +425,47 @@ class _PushButtonState extends State<PushButton> {
             }
           },
           child: InkWell(
-            onTap: widget.enabled ? () {
-              setState(() {
-                _isPressed = true;
-              });
-              widget.onPressed();
-              Future.delayed(const Duration(milliseconds: 200), () {
-                if (mounted) {
-                  setState(() {
-                    _isPressed = false;
-                  });
-                }
-              });
-            } : null,
+            onTap: widget.enabled
+                ? () {
+                    setState(() {
+                      _isPressed = true;
+                    });
+                    widget.onPressed();
+                    Future.delayed(const Duration(milliseconds: 200), () {
+                      if (mounted) {
+                        setState(() {
+                          _isPressed = false;
+                        });
+                      }
+                    });
+                  }
+                : null,
             borderRadius: BorderRadius.circular(iconSize),
             child: Container(
               width: iconSize + 8,
               height: iconSize + 8,
-              decoration: _isPressed ? BoxDecoration(
-                color: selectedColor.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ) : null,
+              decoration: _isPressed
+                  ? BoxDecoration(
+                      color: selectedColor.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    )
+                  : null,
               child: Center(
-                child: !materialIconMap.containsKey(widget.image)
+                child: !iconMap.containsKey(widget.image)
                     ? (widget.image!.toLowerCase().endsWith('.svg')
-                    ? SvgPicture.file(
-                  File(widget.image!),
-                )
-                    : Image.file(
-                  File(widget.image!),
-                  width: iconSize,
-                  height: iconSize,
-                ))
+                        ? SvgPicture.file(
+                            File(widget.image!),
+                          )
+                        : Image.file(
+                            File(widget.image!),
+                            width: iconSize,
+                            height: iconSize,
+                          ))
                     : Icon(
-                  getMaterialIconByName(widget.image!),
-                  size: iconSize,
-                  color: iconColor,
-                ),
+                        getIconByName(widget.image!),
+                        size: iconSize,
+                        color: iconColor,
+                      ),
               ),
             ),
           ),
@@ -467,19 +485,21 @@ class _PushButtonState extends State<PushButton> {
           }
         },
         child: MaterialButton(
-          onPressed: widget.enabled ? () {
-            setState(() {
-              _isPressed = true;
-            });
-            widget.onPressed();
-            Future.delayed(const Duration(milliseconds: 200), () {
-              if (mounted) {
-                setState(() {
-                  _isPressed = false;
-                });
-              }
-            });
-          } : null,
+          onPressed: widget.enabled
+              ? () {
+                  setState(() {
+                    _isPressed = true;
+                  });
+                  widget.onPressed();
+                  Future.delayed(const Duration(milliseconds: 200), () {
+                    if (mounted) {
+                      setState(() {
+                        _isPressed = false;
+                      });
+                    }
+                  });
+                }
+              : null,
           elevation: 0,
           focusElevation: 0,
           hoverElevation: 0,
@@ -489,7 +509,9 @@ class _PushButtonState extends State<PushButton> {
           minWidth: widget.minWidth,
           padding: EdgeInsets.zero,
           color: _isPressed
-              ? (widget.enabled ? selectedColor : selectedColor.withOpacity(0.5))
+              ? (widget.enabled
+                  ? selectedColor
+                  : selectedColor.withOpacity(0.5))
               : unselectedColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(widget.borderRadius),
@@ -501,21 +523,21 @@ class _PushButtonState extends State<PushButton> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (widget.image != null) ...[
-                !materialIconMap.containsKey(widget.image)
+                !iconMap.containsKey(widget.image)
                     ? (widget.image!.toLowerCase().endsWith('.svg')
-                    ? SvgPicture.file(
-                  File(widget.image!),
-                )
-                    : Image.file(
-                  File(widget.image!),
-                  width: iconSize - 8,
-                  height: iconSize - 8,
-                ))
+                        ? SvgPicture.file(
+                            File(widget.image!),
+                          )
+                        : Image.file(
+                            File(widget.image!),
+                            width: iconSize - 8,
+                            height: iconSize - 8,
+                          ))
                     : Icon(
-                  getMaterialIconByName(widget.image!),
-                  size: iconSize - 8,
-                  color: iconColor,
-                ),
+                        getIconByName(widget.image!),
+                        size: iconSize - 8,
+                        color: iconColor,
+                      ),
                 const SizedBox(width: 6),
               ],
               Text(
@@ -560,7 +582,8 @@ class MaterialRadioButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color activeColor = const Color(0xFF6366F1);
-    final Color inactiveColor = useDarkTheme ? Colors.white70 : const Color(0xFF757575);
+    final Color inactiveColor =
+        useDarkTheme ? Colors.white70 : const Color(0xFF757575);
     final Color textColor = useDarkTheme ? Colors.white : Colors.black87;
 
     return MouseRegion(
@@ -602,13 +625,13 @@ class MaterialRadioButton extends StatelessWidget {
                 child: Center(
                   child: checked
                       ? Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: activeColor,
-                    ),
-                  )
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: activeColor,
+                          ),
+                        )
                       : null,
                 ),
               ),
@@ -659,7 +682,8 @@ class MaterialCheckBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color activeColor = const Color(0xFF6366F1);
-    final Color inactiveColor = useDarkTheme ? Colors.white70 : const Color(0xFF757575);
+    final Color inactiveColor =
+        useDarkTheme ? Colors.white70 : const Color(0xFF757575);
     final Color textColor = useDarkTheme ? Colors.white : Colors.black87;
 
     return MouseRegion(
@@ -701,10 +725,10 @@ class MaterialCheckBox extends StatelessWidget {
                 ),
                 child: checked
                     ? const Icon(
-                  Icons.check,
-                  size: 14,
-                  color: Colors.white,
-                )
+                        Icons.check,
+                        size: 14,
+                        color: Colors.white,
+                      )
                     : null,
               ),
               const SizedBox(width: 12),

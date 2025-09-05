@@ -16,7 +16,8 @@ class ExpandItemImpl<T extends ExpandItemSwt, V extends ExpandItemValue>
     if (state.children != null && state.children!.isNotEmpty) {
       content = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: state.children!.map((child) => mapWidgetFromValue(child)).toList(),
+        children:
+            state.children!.map((child) => mapWidgetFromValue(child)).toList(),
       );
     }
 
@@ -26,7 +27,8 @@ class ExpandItemImpl<T extends ExpandItemSwt, V extends ExpandItemValue>
           : null, // Si es null o -1, dejamos que el contenido determine la altura
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min, // Para que solo tome el espacio necesario
+        mainAxisSize:
+            MainAxisSize.min, // Para que solo tome el espacio necesario
         children: [
           if (state.text != null)
             Padding(

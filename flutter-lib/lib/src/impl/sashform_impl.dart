@@ -74,9 +74,9 @@ class SashFormImpl<T extends SashFormSwt, V extends SashFormValue>
               behavior: HitTestBehavior.opaque,
               onVerticalDragUpdate: (details) {
                 final RenderBox topRenderBox =
-                _childKey0.currentContext!.findRenderObject() as RenderBox;
+                    _childKey0.currentContext!.findRenderObject() as RenderBox;
                 final RenderBox bottomRenderBox =
-                _childKey1.currentContext!.findRenderObject() as RenderBox;
+                    _childKey1.currentContext!.findRenderObject() as RenderBox;
 
                 final double topHeight = topRenderBox.size.height;
                 final double bottomHeight = bottomRenderBox.size.height;
@@ -115,9 +115,9 @@ class SashFormImpl<T extends SashFormSwt, V extends SashFormValue>
             behavior: HitTestBehavior.opaque,
             onHorizontalDragUpdate: (details) {
               final RenderBox leftRenderBox =
-              _childKey0.currentContext!.findRenderObject() as RenderBox;
+                  _childKey0.currentContext!.findRenderObject() as RenderBox;
               final RenderBox rightRenderBox =
-              _childKey1.currentContext!.findRenderObject() as RenderBox;
+                  _childKey1.currentContext!.findRenderObject() as RenderBox;
 
               final double leftWidth = leftRenderBox.size.width;
               final double rightWidth = rightRenderBox.size.width;

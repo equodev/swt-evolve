@@ -3,10 +3,14 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:swtflutter/main.dart';
+import '../gen/composite.dart';
+import '../gen/control.dart';
 import '../gen/ctabfolder.dart';
 import '../gen/ctabitem.dart';
 import '../gen/event.dart';
 import '../gen/swt.dart';
+import '../gen/toolbar.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
@@ -15,9 +19,9 @@ import 'widget_config.dart';
 
 class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     extends CompositeImpl<T, V> {
-
   final bool useDarkTheme = getCurrentTheme();
   late int _selectedIndex;
+  bool _hoveringTopBar = false;
 
   @override
   void initState() {
@@ -41,52 +45,49 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     final tabItems = getTabItems();
     final tabBodies = getTabBodies();
 
-    // Decidir si usar una implementación simple o avanzada basada en el estado
-    // final useSimpleStyle = state.simple ?? false;
     final useSimpleStyle = false;
     final isSingle = state.single ?? false;
     final isTabBottom = state.tabPosition == SWT.BOTTOM ?? false;
 
-    // Configurar la altura de los tabs si está especificada
-    final double tabHeight = (state.tabHeight != null && state.tabHeight != SWT.DEFAULT)
-        ? state.tabHeight!.toDouble()
-        : 28.0;
+    final double tabHeight =
+        (state.tabHeight != null && state.tabHeight != SWT.DEFAULT)
+            ? state.tabHeight!.toDouble()
+            : 28.0;
 
     return Column(
       children: [
         if (!isTabBottom)
           buildTabBar(tabItems, tabHeight, useSimpleStyle, isSingle),
-
         Expanded(
           child: IndexedStack(
             index: _selectedIndex < tabBodies.length ? _selectedIndex : 0,
             children: tabBodies,
           ),
         ),
-
         if (isTabBottom)
           buildTabBar(tabItems, tabHeight, useSimpleStyle, isSingle),
       ],
     );
   }
 
-  Widget buildTabBar(List<CTabItem> tabItems, double height, bool useSimpleStyle, bool isSingle) {
+  Widget buildTabBar(List<CTabItem> tabItems, double height,
+      bool useSimpleStyle, bool isSingle) {
     List<CTabItem> visibleTabs = isSingle
         ? (_selectedIndex < tabItems.length ? [tabItems[_selectedIndex]] : [])
         : tabItems;
 
+    final topRightComposite = getTopRightComposite();
     if (useSimpleStyle) {
       return buildSimpleTabBar(visibleTabs, height);
     } else {
-      return buildAdvancedTabBar(visibleTabs, height);
+      return buildAdvancedTabBar(visibleTabs, height, topRightComposite);
     }
   }
 
   Widget buildSimpleTabBar(List<CTabItem> tabs, double height) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final backgroundColor = isDark ? Color(0xFF1E1E1E) : Color(0xFFF2F2F2);
-    final borderColor = isDark ? Color(0xFF333333) : Color(0xFFDDDDDD);
+    final backgroundColor = AppColors.getBackgroundColor();
+    final borderColor = AppColors.getBorderColor();
 
     return Container(
       height: height,
@@ -107,67 +108,82 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
               isSelected: index == _selectedIndex,
               tab: tab,
               onTap: () => _handleTabSelection(index),
-              onClose: tab.showCloseButton ? () => _handleTabClose(index) : null,
+              onClose:
+                  tab.showCloseButton ? () => _handleTabClose(index) : null,
             );
           }).toList(),
-
           Spacer(),
-
         ],
       ),
     );
   }
 
-  Widget buildAdvancedTabBar(List<CTabItem> tabs, double height) {
+  Widget buildAdvancedTabBar(
+      List<CTabItem> tabs, double height, VComposite? topRightComposite) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final backgroundColor = isDark ? Color(0xFF1A1A1A) : Color(0xFFF2F2F2);
-    final borderColor = isDark ? Color(0xFF333333) : Color(0xFFDDDDDD);
+    final backgroundColor = AppColors.getBackgroundColor();
+    final borderColor = AppColors.getBorderColor();
 
     final showMinimizeButton = state.minimizeVisible ?? false;
     final showMaximizeButton = state.maximizeVisible ?? false;
     final isMinimized = state.minimized ?? false;
     final isMaximized = state.maximized ?? false;
 
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        border: Border(
-          bottom: BorderSide(color: borderColor, width: 1),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hoveringTopBar = true),
+      onExit: (_) => setState(() => _hoveringTopBar = false),
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          border: Border(bottom: BorderSide(color: borderColor, width: 1)),
         ),
-      ),
-      child: Row(
-        children: [
-          ...tabs.asMap().entries.map((entry) {
-            final int index = entry.key;
-            final CTabItem tab = entry.value;
+        child: Row(
+          children: [
+            ...tabs.asMap().entries.map((entry) {
+              final int index = entry.key;
+              final CTabItem tab = entry.value;
 
-            return _buildAdvancedTab(
-              context: context,
-              isSelected: index == _selectedIndex,
-              tab: tab,
-              onTap: () => _handleTabSelection(index),
-              onClose: tab.showCloseButton ? () => _handleTabClose(index) : null,
-            );
-          }).toList(),
-
-          Spacer(),
-
-          if (showMinimizeButton)
-            _buildControlButton(
-              icon: isMinimized ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-              onTap: _toggleMinimize,
-            ),
-
-          if (showMaximizeButton)
-            _buildControlButton(
-              icon: isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
-              onTap: _toggleMaximize,
-            ),
-
-          SizedBox(width: 4),
-        ],
+              return _buildAdvancedTab(
+                context: context,
+                isSelected: index == _selectedIndex,
+                tab: tab,
+                onTap: () => _handleTabSelection(index),
+                onClose:
+                    tab.showCloseButton ? () => _handleTabClose(index) : null,
+              );
+            }),
+            const Spacer(),
+            if (topRightComposite != null ||
+                showMinimizeButton ||
+                showMaximizeButton)
+              _HoverReveal(
+                visible: getConfigFlags().ctabfolder_visible_controls == true
+                    ? true
+                    : _hoveringTopBar,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (topRightComposite != null)
+                      _buildTopRightComposite(topRightComposite),
+                    if (showMinimizeButton)
+                      _buildControlButton(
+                        icon: isMinimized ? Icons.maximize : Icons.minimize,
+                        onTap: _toggleMinimize,
+                      ),
+                    if (showMaximizeButton)
+                      _buildControlButton(
+                        icon: isMaximized
+                            ? Icons.fullscreen_exit
+                            : Icons.fullscreen,
+                        onTap: _toggleMaximize,
+                      ),
+                    const SizedBox(width: 4),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -180,14 +196,11 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     VoidCallback? onClose,
   }) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = useDarkTheme;
 
-    final backgroundColor = isDark ? Color(0xFF1A1A1A) : Color(0xFFF2F2F2);
-    final selectedColor = isDark ? Color(0xFF2D2D2D) : Colors.white;
-    final borderColor = isDark ? Color(0xFF333333) : Color(0xFFDDDDDD);
-
-    final textColor = isDark ? Colors.grey.shade400 : Colors.grey.shade700;
-    final selectedTextColor = isDark ? Colors.white : Colors.grey.shade900;
+    final backgroundColor = AppColors.getBackgroundColor();
+    final selectedColor = AppColors.getSelectedColor();
+    final borderColor = AppColors.getBorderColor();
 
     return Material(
       color: Colors.transparent,
@@ -208,26 +221,28 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Contenido del tab
               tab.customContent ??
                   Text(
                     tab.label,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isSelected ? selectedTextColor : textColor,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: isSelected
+                          ? AppColors.getSelectedTextColor()
+                          : AppColors.getTextColor(),
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
                   ),
-
-              // Botón de cierre
               if (onClose != null) ...[
                 const SizedBox(width: 4),
                 InkWell(
                   onTap: onClose,
                   child: Icon(
                     Icons.close,
-                    size: 14,
-                    color: isSelected ? selectedTextColor : textColor,
+                    size: AppSizes.tabCloseIconSize,
+                    color: isSelected
+                        ? AppColors.getSelectedTextColor()
+                        : AppColors.getTextColor(),
                   ),
                 ),
               ],
@@ -246,18 +261,17 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     VoidCallback? onClose,
   }) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = useDarkTheme;
 
-    final backgroundColor = isDark ? Color(0xFF1A1A1A) : Color(0xFFF2F2F2);
-    final selectedColor = isDark ? Color(0xFF2D2D2D) : Colors.white;
-    final borderColor = isDark ? Color(0xFF333333) : Color(0xFFDDDDDD);
+    final backgroundColor = AppColors.getBackgroundColor();
+    final selectedColor = AppColors.getSelectedColor();
+    final borderColor = AppColors.getBorderColor();
 
-    final textColor = isDark ? Colors.grey.shade400 : Colors.grey.shade700;
-    final selectedTextColor = isDark ? Colors.white : Colors.grey.shade900;
-    final highlightColor = isDark ? Color(0xFF6366F1) : theme.primaryColor;
+    final highlightColor = AppColors.highlight;
 
     final showUnselectedClose = state.unselectedCloseVisible ?? false;
-    final shouldShowClose = (onClose != null) && (isSelected || showUnselectedClose);
+    final shouldShowClose =
+        (onClose != null) && (isSelected || showUnselectedClose);
 
     final showUnselectedImage = state.unselectedImageVisible ?? false;
     final shouldShowImage = isSelected || showUnselectedImage;
@@ -291,45 +305,54 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             children: [
               tab.customContent != null
                   ? DefaultTextStyle(
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isSelected ? selectedTextColor : textColor,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                ),
-                child: tab.customContent!,
-              )
-                  : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (tab.image != null && shouldShowImage)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 1.0, right: 3.0),
-                      child: !materialIconMap.containsKey(tab.image)
-                          ? Image.file(
-                        File(tab.image!),
-                        width: 16,
-                        height: 16,
-                      )
-                          : Icon(
-                        getMaterialIconByName(tab.image!),
-                        size: 16,
-                        color: isSelected ? selectedTextColor : textColor,
-                      ),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 2.0),
-                    child: Text(
-                      tab.label,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isSelected ? selectedTextColor : textColor,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        color: isSelected
+                            ? AppColors.getSelectedTextColor()
+                            : AppColors.getTextColor(),
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.normal,
                       ),
+                      child: tab.customContent!,
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (tab.image != null && shouldShowImage)
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(bottom: 1.0, right: 3.0),
+                            child: !iconMap.containsKey(tab.image)
+                                ? Image.file(
+                                    File(tab.image!),
+                                    width: AppSizes.tabIconSize,
+                                    height: AppSizes.tabIconSize,
+                                  )
+                                : Icon(
+                                    getIconByName(tab.image!),
+                                    size: AppSizes.tabIconSize,
+                                    color: isSelected
+                                        ? AppColors.getSelectedTextColor()
+                                        : AppColors.getTextColor(),
+                                  ),
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 2.0),
+                          child: Text(
+                            tab.label,
+                            style: TextStyle(
+                              fontSize: AppSizes.tabTextSize,
+                              color: isSelected
+                                  ? AppColors.getSelectedTextColor()
+                                  : AppColors.getTextColor(),
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-
               if (shouldShowClose) ...[
                 const SizedBox(width: 6),
                 MouseRegion(
@@ -340,10 +363,10 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                       padding: const EdgeInsets.only(bottom: 1.0),
                       child: Icon(
                         Icons.close,
-                        size: 14,
+                        size: AppSizes.tabCloseIconSize,
                         color: isSelected
-                            ? selectedTextColor.withOpacity(0.9)
-                            : textColor.withOpacity(0.7),
+                            ? AppColors.getSelectedTextColor().withOpacity(0.9)
+                            : AppColors.getTextColor().withOpacity(0.7),
                       ),
                     ),
                   ),
@@ -356,13 +379,34 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     );
   }
 
+  Widget _buildTopRightComposite(VComposite composite) {
+    return CompositeSwt<VComposite>(
+      key: ValueKey(composite.id),
+      value: composite,
+    );
+  }
+
+  VComposite? getTopRightComposite() {
+    if (state.topRight == null) {
+      return null;
+    }
+    if (state.topRight is VComposite) {
+      return state.topRight as VComposite;
+    }
+    return null;
+  }
+
   Widget _buildControlButton({
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final iconColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+    final darkTheme = ThemeData.dark().copyWith(
+      primaryColor: Color(0xFF6366F1),
+      scaffoldBackgroundColor: Color(0xFF1A1A1A),
+    );
+
+    final toolbarTheme = useDarkTheme ? darkTheme : Theme.of(context);
+    final iconColor = toolbarTheme.iconTheme.color;
 
     return Material(
       color: Colors.transparent,
@@ -372,7 +416,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Icon(
             icon,
-            size: 16,
+            size: AppSizes.controlButtonSize,
             color: iconColor,
           ),
         ),
@@ -390,7 +434,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   }
 
   void _handleTabClose(int index) {
-
+    var e = VEvent()..index = index;
+    widget.sendCTabFolder2close(state, e);
   }
 
   void _toggleMinimize() {
@@ -465,4 +510,30 @@ class CTabItem {
     this.customContent,
     this.toolTipText,
   });
+}
+
+class _HoverReveal extends StatelessWidget {
+  final bool visible;
+  final Widget child;
+
+  const _HoverReveal({required this.visible, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Visibility(
+      visible: true,
+      maintainSize: true,
+      maintainAnimation: true,
+      maintainState: true,
+      child: AnimatedOpacity(
+        opacity: visible ? 1.0 : 0.0,
+        duration: Duration(milliseconds: visible ? 250 : 500),
+        curve: Curves.easeOut,
+        child: IgnorePointer(
+          ignoring: !visible,
+          child: child,
+        ),
+      ),
+    );
+  }
 }

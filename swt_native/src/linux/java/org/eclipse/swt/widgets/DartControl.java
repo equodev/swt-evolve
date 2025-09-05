@@ -654,7 +654,19 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     Accessible _getAccessible() {
         if (accessible == null) {
-            accessible = SwtAccessible.internal_new_Accessible(this.getApi());
+            Widget current = this.getApi();
+            while (current != null) {
+                if (current instanceof Control ctrl) {
+                    if (ctrl.handle != 0) {
+                        this.getApi().handle = ctrl.handle;
+                        break;
+                    }
+                    current = ctrl.getParent();
+                }
+            }
+            if (accessible == null) {
+                accessible = SwtAccessible.internal_new_Accessible(this.getApi());
+            }
         }
         return accessible;
     }
@@ -3791,7 +3803,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (oldShell != newShell || oldDecorations != newDecorations) {
             fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
         }
-        this.parent = parent;
+        ControlUtils.reparent(this, parent);
         setZOrder(null, false, true);
         reskin(SWT.ALL);
         return true;

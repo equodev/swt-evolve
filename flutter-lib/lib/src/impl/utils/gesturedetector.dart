@@ -4,13 +4,15 @@ import '../../swt/menu.dart';
 import '../../swt/widget.dart';
 import '../../widgets.dart';
 
-GestureDetector createGestureDetector(List<WidgetValue>? items, Widget widget, BuildContext context, state) {
+GestureDetector createGestureDetector(
+    List<WidgetValue>? items, Widget widget, BuildContext context, state) {
   final contextController = FlyoutController();
   final contextAttachKey = GlobalKey();
 
   return GestureDetector(
     onSecondaryTapUp: (clickDetails) {
-      _generateMenu(context, state, contextAttachKey, contextController, clickDetails, items);
+      _generateMenu(context, state, contextAttachKey, contextController,
+          clickDetails, items);
     },
     child: FlyoutTarget(
       key: contextAttachKey,
@@ -20,9 +22,13 @@ GestureDetector createGestureDetector(List<WidgetValue>? items, Widget widget, B
   );
 }
 
-void _generateMenu(BuildContext context, state, GlobalKey contextAttachKey,
-              FlyoutController contextController, TapUpDetails clickDetails,
-              List<WidgetValue>? items) {
+void _generateMenu(
+    BuildContext context,
+    state,
+    GlobalKey contextAttachKey,
+    FlyoutController contextController,
+    TapUpDetails clickDetails,
+    List<WidgetValue>? items) {
   // This calculates the position of the flyout according to the parent navigator
   final targetContext = contextAttachKey.currentContext;
   if (targetContext == null) return;

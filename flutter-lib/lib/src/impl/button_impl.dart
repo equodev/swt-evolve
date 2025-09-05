@@ -6,7 +6,6 @@ import '../impl/control_impl.dart';
 import 'styled_buttons.dart';
 import 'widget_config.dart';
 
-
 class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
     extends ControlImpl<T, V> {
   final bool useDarkTheme = getCurrentTheme();
@@ -15,7 +14,7 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
   Widget build(BuildContext context) {
     var text = state.text;
     var image = state.image;
-    var enabled = state.enabled?? true;
+    var enabled = state.enabled ?? true;
 
     print('STYLE ${state.style}');
 
@@ -44,9 +43,9 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
         onChanged: !enabled
             ? null
             : (checked) {
-          onPressed();
-          setState(() => state.selection = checked);
-        },
+                onPressed();
+                setState(() => state.selection = checked);
+              },
         onMouseEnter: () => handleMouseEnter(),
         onMouseExit: () => handleMouseExit(),
         onFocusIn: () => handleFocusIn(),
@@ -60,9 +59,9 @@ class ButtonImpl<T extends ButtonSwt<V>, V extends ButtonValue>
         onChanged: !enabled
             ? null
             : (checked) {
-          onPressed();
-          setState(() => state.selection = checked);
-        },
+                onPressed();
+                setState(() => state.selection = checked);
+              },
         onMouseEnter: () => handleMouseEnter(),
         onMouseExit: () => handleMouseExit(),
         onFocusIn: () => handleFocusIn(),

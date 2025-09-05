@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.custom.DartCTabFolder;
 import org.eclipse.swt.custom.DartStyledText;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 
 public class Sizes {
     private static final double AVERAGE_CHAR_WIDTH = 7.974;
@@ -34,5 +35,17 @@ public class Sizes {
 
     public static Point compute(DartStyledText c) {
         return new Point(c.getText().length()*15+20, 25);
+    }
+
+    public static Rectangle getBounds(DartToolItem item) {
+        return new Rectangle(0,0,0,0);
+    }
+
+    public static Point getSize(DartScrollBar scrollBar) {
+        return null;
+    }
+
+    public static Point computeSizeInPixels(DartComposite composite) {
+        return new Point(10, 10); // TODO
     }
 }

@@ -38,6 +38,8 @@ dependencies:
 
   flutter_svg: ^2.1.0
   json_annotation: ^4.9.0
+  image: ^4.0.17
+  font_awesome_flutter: ^10.9.0
 
 dev_dependencies:
   flutter_test:

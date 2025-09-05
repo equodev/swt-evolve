@@ -18,11 +18,13 @@ class EquoCommService {
       onSuccess(payload.dartify());
       print("comm chromium on jsCallback after onSuccess");
     }
+
     impl.EquoCommService.on(userEventActionId, jsCallback.toJS);
     // print("comm chromium on after: $userEventActionId");
   }
 
-  static void on<V extends VWidget>(String userEventActionId, CommCallback<V> onSuccess) {
+  static void on<V extends VWidget>(
+      String userEventActionId, CommCallback<V> onSuccess) {
     // print("comm chromium on: $userEventActionId");
     void jsCallback(String? payload) {
       // print("comm chromium on jsCallback: $payload");
@@ -34,6 +36,7 @@ class EquoCommService {
       onSuccess(widgetValue as V);
       // print("comm chromium on jsCallback after onSucess");
     }
+
     impl.EquoCommService.on(userEventActionId, jsCallback.toJS);
     // print("comm chromium on after: $userEventActionId");
   }
@@ -56,7 +59,8 @@ class EquoCommService {
       _ => jsonEncode(payload).toJS,
     };
     print("json: $payloadJS");
-    final promise = impl.EquoCommService.sendPayload(userEventActionId, payloadJS);
+    final promise =
+        impl.EquoCommService.sendPayload(userEventActionId, payloadJS);
     print("comm chromium after sendPauload $promise");
     return Future.delayed(const Duration(milliseconds: 2));
     // print("comm_chromium after sendPayload");

@@ -60,17 +60,27 @@ public class Config {
     }
 
     public static boolean isEquo(Class<?> clazz) {
+        if (isEditor(clazz)) {
+            return false;
+        }
         if (defaultImpl == Impl.force_equo && notNegatedDefault(clazz, Impl.equo))
             return true;
         if ((defaultImpl == Impl.equo && equoEnabled.containsKey(clazz)) && notNegatedDefault(clazz, Impl.equo))
             return true;
         if (defaultImpl == Impl.eclipse && !notNegatedDefault(clazz, Impl.eclipse))
             return true;
-        StackWalker.StackFrame caller = StackWalker.getInstance()
-                .walk(stream -> stream.skip(2).findFirst().orElse(null));
-        if (caller != null && caller.getFileName().startsWith(DART)) // Scrollbar and other created inside Dart widget should be also Dart
-            return true;
+        return isCreatedInsideDart();
+    }
 
+    private static boolean isCreatedInsideDart() {
+        StackWalker walker = StackWalker.getInstance();
+
+        for (int skip : new int[]{3, 4}) {
+            StackWalker.StackFrame frame = walker.walk(stream -> stream.skip(skip).findFirst().orElse(null));
+            if (frame != null && frame.getFileName() != null && frame.getFileName().startsWith(DART)) {
+            return true;
+            }
+        }
         return false;
     }
 
@@ -79,6 +89,18 @@ public class Config {
     }
 
     public static boolean isEquo(Class<?> clazz, Scrollable parent) {
+        if (isEditor(clazz)) {
+            return false;
+        }
+        /// This is used because Eclipse creates "hidden" toolbars as children of the shell
+        if (clazz == ToolBar.class && parent instanceof Shell) {
+            return true;
+        }
+
+        if (isAncestorOf(parent, DartCTabFolder.class) && isToolBar()) {
+            return true;
+        }
+
         Object data = parent != null ? parent.getData(getKey(clazz)) : null;
         if (data != null) {
             if (Impl.equo.equals(data)) return true;
@@ -91,12 +113,22 @@ public class Config {
             return true;
         if (parent != null && clazz == Caret.class && parent.getImpl().getClass().getSimpleName().startsWith(DART))
             return true;
-        return false;
+
+        return parent != null && parent.getImpl().getClass().getSimpleName().startsWith(DART) && !isCTabFolderBody(clazz, parent);
+    }
+
+    private static boolean isCTabFolderBody(Class<?> clazz, Scrollable parent) {
+        return clazz == Composite.class && parent.getClass() == CTabFolder.class;
     }
 
     static boolean isCustomAncestor(Scrollable parent) {
+        Class<DartMainToolbar> dartMainToolbarClass = DartMainToolbar.class;
+        return isAncestorOf(parent, dartMainToolbarClass);
+    }
+
+    private static boolean isAncestorOf(Scrollable parent, Class<?> classType) {
         while (parent != null) {
-            if (parent.getImpl() instanceof DartMainToolbar)
+            if (classType.isInstance(parent.getImpl()))
                 return true;
             parent = parent.getImpl()._parent();
         }
@@ -123,6 +155,28 @@ public class Config {
         return false;
     }
 
+    private static final String EDITOR_CLASS  = "org.eclipse.ui.texteditor.AbstractTextEditor";
+
+    private static boolean isEditor(Class<?> clazz) {
+        StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+
+        return (clazz == StyledText.class || clazz.getSimpleName().equals("StyledTextRenderer")) && walker.walk(frames ->
+                frames.anyMatch(f -> EDITOR_CLASS.equals(f.getClassName()))
+        );
+    }
+
+    private static final String E4_CLASS  = "org.eclipse.e4.ui.workbench.renderers.swt.StackRenderer";
+    private static final String E4_METHOD = "addTopRight";
+
+    private static boolean isToolBar() {
+        StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+
+        return walker.walk(frames ->
+                frames.anyMatch(f -> E4_CLASS.equals(f.getClassName())
+                        && E4_METHOD.equals(f.getMethodName()))
+        );
+    }
+
     private static String getId(Class<?> clazz, Composite parent) {
         String id = "";
         while (clazz != null) {
@@ -140,5 +194,16 @@ public class Config {
 
     private static String getKey(Class<?> clazz) {
         return PROPERTY_PREFIX + clazz.getSimpleName();
+    }
+
+    private static ConfigFlags configFlags;
+
+    public static ConfigFlags getConfigFlags() {
+        if (configFlags == null) {
+            configFlags = new ConfigFlags();
+            configFlags.ctabfolder_visible_controls = Boolean.getBoolean("swt.evolve.ctabfolder_visible_controls");
+            configFlags.image_disable_icons_replacement = Boolean.getBoolean("swt.evolve.image_disable_icons_replacement");
+        }
+        return configFlags;
     }
 }

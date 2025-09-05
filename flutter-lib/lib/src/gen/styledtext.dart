@@ -5,6 +5,7 @@ import '../gen/canvas.dart';
 import '../gen/caret.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
+import '../gen/image.dart';
 import '../gen/point.dart';
 import '../gen/rectangle.dart';
 import '../impl/styledtext_evolve.dart';
@@ -20,8 +21,32 @@ class StyledTextSwt<V extends VStyledText> extends CanvasSwt<V> {
   State createState() =>
       StyledTextImpl<StyledTextSwt<VStyledText>, VStyledText>();
 
+  void sendBidiSegmentlineGetSegments(V val, VEvent? payload) {
+    sendEvent(val, "BidiSegment/lineGetSegments", payload);
+  }
+
+  void sendCaretcaretMoved(V val, VEvent? payload) {
+    sendEvent(val, "Caret/caretMoved", payload);
+  }
+
+  void sendExtendedModifymodifyText(V val, VEvent? payload) {
+    sendEvent(val, "ExtendedModify/modifyText", payload);
+  }
+
+  void sendLineBackgroundlineGetBackground(V val, VEvent? payload) {
+    sendEvent(val, "LineBackground/lineGetBackground", payload);
+  }
+
+  void sendLineStylelineGetStyle(V val, VEvent? payload) {
+    sendEvent(val, "LineStyle/lineGetStyle", payload);
+  }
+
   void sendModifyModify(V val, VEvent? payload) {
     sendEvent(val, "Modify/Modify", payload);
+  }
+
+  void sendPaintObjectpaintObject(V val, VEvent? payload) {
+    sendEvent(val, "PaintObject/paintObject", payload);
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
@@ -30,6 +55,18 @@ class StyledTextSwt<V extends VStyledText> extends CanvasSwt<V> {
 
   void sendVerifyVerify(V val, VEvent? payload) {
     sendEvent(val, "Verify/Verify", payload);
+  }
+
+  void sendVerifyKeyverifyKey(V val, VEvent? payload) {
+    sendEvent(val, "VerifyKey/verifyKey", payload);
+  }
+
+  void sendWordMovementgetNextOffset(V val, VEvent? payload) {
+    sendEvent(val, "WordMovement/getNextOffset", payload);
+  }
+
+  void sendWordMovementgetPreviousOffset(V val, VEvent? payload) {
+    sendEvent(val, "WordMovement/getPreviousOffset", payload);
   }
 }
 

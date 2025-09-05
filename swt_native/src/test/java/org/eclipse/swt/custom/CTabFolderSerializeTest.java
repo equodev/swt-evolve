@@ -40,6 +40,7 @@ class CTabFolderSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("selection").equalsTo(w.getSelectionIndex(), orAbsentIf0));
         assertJ.satisfies(node("selectionBackground").equalsTo(w.getSelectionBackground(), orAbsentIfNull));
         assertJ.satisfies(node("selectionBarThickness").equalsTo(value(w).getSelectionBarThickness(), orAbsentIf0));
+        assertJ.satisfies(node("selectionBgImage").equalsTo(value(w).getSelectionBgImage(), orAbsentIfNull));
         assertJ.satisfies(node("selectionForeground").equalsTo(w.getSelectionForeground(), orAbsentIfNull));
         assertJ.satisfies(node("simple").equalsTo(w.getSimple(), orAbsentIfFalse));
         assertJ.satisfies(node("single").equalsTo(w.getSingle(), orAbsentIfFalse));
@@ -52,6 +53,7 @@ class CTabFolderSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("layoutDeferred").equalsTo(w.getLayoutDeferred(), orAbsentIfFalse));
         assertJ.satisfies(node("scrollbarsMode").equalsTo(w.getScrollbarsMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
+        assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
         assertJ.satisfies(node("bounds").equalsTo(w.getBounds(), orAbsentIfNull));
         assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));

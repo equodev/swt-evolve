@@ -1232,7 +1232,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             return;
         this.x = x;
         this.y = y;
-        hasLocation = true;
+        hasLocation = false;
     }
 
     /**
