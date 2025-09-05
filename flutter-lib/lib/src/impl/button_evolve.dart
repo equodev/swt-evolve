@@ -16,7 +16,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     var text = state.text;
     // var image = state.image;
     String? image;
-    var enabled = state.enabled?? true;
+    var enabled = state.enabled ?? true;
 
     if (state.style.has(SWT.TOGGLE)) {
       return SelectableButton(
@@ -43,9 +43,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         onChanged: !enabled
             ? null
             : (checked) {
-          onPressed();
-          setState(() => state.selection = checked);
-        },
+                onPressed();
+                setState(() => state.selection = checked);
+              },
         onMouseEnter: () => handleMouseEnter(),
         onMouseExit: () => handleMouseExit(),
         onFocusIn: () => handleFocusIn(),
@@ -59,9 +59,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         onChanged: !enabled
             ? null
             : (checked) {
-          onPressed();
-          setState(() => state.selection = checked);
-        },
+                onPressed();
+                setState(() => state.selection = checked);
+              },
         onMouseEnter: () => handleMouseEnter(),
         onMouseExit: () => handleMouseExit(),
         onFocusIn: () => handleFocusIn(),

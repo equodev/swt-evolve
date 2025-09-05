@@ -11,7 +11,6 @@ import 'widget_config.dart';
 
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     extends CanvasImpl<T, V> {
-
   TextShape? _editableTextShape;
   bool _isEditingText = false;
   Timer? _caretBlinkTimer;
@@ -48,12 +47,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       children: [
         CustomPaint(
           size: const Size(100, 100),
-          painter: ScenePainter(bg, List.unmodifiable([
-            ...shapes,
-            if (_editableTextShape != null) _editableTextShape!
-          ])),
+          painter: ScenePainter(
+              bg,
+              List.unmodifiable([
+                ...shapes,
+                if (_editableTextShape != null) _editableTextShape!
+              ])),
         ),
-
         Positioned.fill(
           child: RawKeyboardListener(
             focusNode: FocusNode(),
@@ -81,12 +81,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   void handleTextModify() {
-    final newText = VEvent()
-      ..text = _editableTextShape!.text;
+    final newText = VEvent()..text = _editableTextShape!.text;
     widget.sendModifyModify(state, newText);
   }
 
-  void handleRangeModify(){
+  void handleRangeModify() {
     final currentText = _editableTextShape!.text;
     if (currentText.isEmpty) return;
 
@@ -108,20 +107,21 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     sendObjectEvent(state, "RangeModify", newRanges);
   }
 
-  void handleLineInfoModify(){
+  void handleLineInfoModify() {
     if (_localEditingState?.lineProperties.isEmpty ?? true) return;
-    Map<String, Object> newLineProperties = _convertLinePropertiesToJava(_localEditingState!.lineProperties);
+    Map<String, Object> newLineProperties =
+        _convertLinePropertiesToJava(_localEditingState!.lineProperties);
     sendObjectEvent(state, "LineInfoModify", newLineProperties);
   }
 
-  void handleCaretModify(){
+  void handleCaretModify() {
     final exactCaretPosition = _editableTextShape!.caretInfo?.offset ?? 0;
-    final newCaret = VEvent()
-      ..start = exactCaretPosition;
+    final newCaret = VEvent()..start = exactCaretPosition;
     widget.sendModifyModify(state, newCaret);
   }
 
-  List<Map<String, Object>> _convertCharacterRangesToJava(List<StyleRange> ranges) {
+  List<Map<String, Object>> _convertCharacterRangesToJava(
+      List<StyleRange> ranges) {
     return ranges.map((range) {
       Map<String, Object> javaRange = {};
 
@@ -149,7 +149,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       }
 
       int fontStyle = 0;
-      if (style.fontWeight == FontWeight.bold && style.fontStyle == FontStyle.italic) {
+      if (style.fontWeight == FontWeight.bold &&
+          style.fontStyle == FontStyle.italic) {
         fontStyle = 3;
       } else if (style.fontWeight == FontWeight.bold) {
         fontStyle = 1;
@@ -180,7 +181,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     }).toList();
   }
 
-  Map<String, Object> _convertLinePropertiesToJava(Map<int, LineProperties> lineProps) {
+  Map<String, Object> _convertLinePropertiesToJava(
+      Map<int, LineProperties> lineProps) {
     Map<String, Object> javaLineProps = {};
 
     lineProps.forEach((lineIndex, props) {
@@ -216,7 +218,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
     for (int i = shapes.length - 1; i >= 0; i--) {
       final shape = shapes[i];
-      if (shape is TextShape && shape.editable && shape.containsPoint(position, canvasSize)) {
+      if (shape is TextShape &&
+          shape.editable &&
+          shape.containsPoint(position, canvasSize)) {
         tappedTextShape = shape;
         shapeIndex = i;
         break;
@@ -224,9 +228,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     }
 
     if (tappedTextShape != null && shapeIndex != null) {
-      final caretOffset = tappedTextShape.getOffsetFromPosition(position, canvasSize);
+      final caretOffset =
+          tappedTextShape.getOffsetFromPosition(position, canvasSize);
 
-      if (!_isEditingText || _editableTextShape?.styledTextId != tappedTextShape.styledTextId) {
+      if (!_isEditingText ||
+          _editableTextShape?.styledTextId != tappedTextShape.styledTextId) {
         if (_isEditingText) {
           _stopEditing();
         }
@@ -234,7 +240,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       }
 
       setState(() {
-        _editableTextShape = _editableTextShape!.clearSelection().moveCaret(caretOffset);
+        _editableTextShape =
+            _editableTextShape!.clearSelection().moveCaret(caretOffset);
       });
 
       _startCaretBlinking();
@@ -245,10 +252,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         if (_editableTextShape!.containsPoint(position, canvasSize)) {
           clickedInEditableText = true;
 
-          final caretOffset = _editableTextShape!.getOffsetFromPosition(position, canvasSize);
+          final caretOffset =
+              _editableTextShape!.getOffsetFromPosition(position, canvasSize);
 
           setState(() {
-            _editableTextShape = _editableTextShape!.clearSelection().moveCaret(caretOffset);
+            _editableTextShape =
+                _editableTextShape!.clearSelection().moveCaret(caretOffset);
 
             _isSelecting = false;
             // _selectionStartPosition = null;
@@ -279,8 +288,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         newShape = currentShape.backspace();
       } else if (event.logicalKey == LogicalKeyboardKey.delete) {
         newShape = currentShape.delete();
-      }
-      else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+      } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
         final newOffset = (currentShape.caretInfo?.offset ?? 0) - 1;
         if (isShiftPressed) {
           newShape = currentShape.extendSelectionTo(newOffset);
@@ -296,8 +304,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           newShape = currentShape.clearSelection();
         }
         newShape = (newShape ?? currentShape).moveCaret(newOffset);
-      }
-      else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
         if (currentShape.wordWrap == true) {
           final newOffset = _calculateVerticalNavigation(currentShape, -1);
           if (isShiftPressed) {
@@ -333,8 +340,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           }
           newShape = (newShape ?? currentShape).moveCaret(newOffset);
         }
-      }
-      else if (event.logicalKey == LogicalKeyboardKey.home) {
+      } else if (event.logicalKey == LogicalKeyboardKey.home) {
         int newOffset;
         if (currentShape.wordWrap == true) {
           newOffset = _calculateLineNavigation(currentShape, isHome: true);
@@ -360,47 +366,42 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           newShape = currentShape.clearSelection();
         }
         newShape = (newShape ?? currentShape).moveCaret(newOffset);
-      }
-      else if (event.logicalKey == LogicalKeyboardKey.keyA &&
+      } else if (event.logicalKey == LogicalKeyboardKey.keyA &&
           event.data.isControlPressed) {
         newShape = currentShape.selectAll();
-      }
-      else if (event.logicalKey == LogicalKeyboardKey.keyC &&
+      } else if (event.logicalKey == LogicalKeyboardKey.keyC &&
           event.data.isControlPressed) {
         final selectedText = currentShape.getSelectedText();
         if (selectedText.isNotEmpty) {
           Clipboard.setData(ClipboardData(text: selectedText));
         }
         return;
-      }
-      else if (event.logicalKey == LogicalKeyboardKey.keyX &&
+      } else if (event.logicalKey == LogicalKeyboardKey.keyX &&
           event.data.isControlPressed) {
         final selectedText = currentShape.getSelectedText();
         if (selectedText.isNotEmpty) {
           Clipboard.setData(ClipboardData(text: selectedText));
           newShape = currentShape.deleteSelection();
         }
-      }
-      else if (event.logicalKey == LogicalKeyboardKey.keyV &&
+      } else if (event.logicalKey == LogicalKeyboardKey.keyV &&
           event.data.isControlPressed) {
         _handlePaste();
         return;
-      }
-      else if (event.logicalKey == LogicalKeyboardKey.escape) {
+      } else if (event.logicalKey == LogicalKeyboardKey.escape) {
         newShape = currentShape.clearSelection();
-      }
-      else if (event.logicalKey == LogicalKeyboardKey.enter) {
+      } else if (event.logicalKey == LogicalKeyboardKey.enter) {
         if (currentShape.wordWrap == true) {
-          newShape = currentShape.insertText('\n', currentShape.caretInfo?.offset ?? 0);
+          newShape = currentShape.insertText(
+              '\n', currentShape.caretInfo?.offset ?? 0);
         } else {
           _stopEditing();
           return;
         }
-      }
-      else if (event.character != null && event.character!.isNotEmpty) {
+      } else if (event.character != null && event.character!.isNotEmpty) {
         final char = event.character!;
         if (char.codeUnitAt(0) >= 32) {
-          newShape = currentShape.insertText(char, currentShape.caretInfo?.offset ?? 0);
+          newShape = currentShape.insertText(
+              char, currentShape.caretInfo?.offset ?? 0);
         }
       }
 
@@ -422,9 +423,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       if (data?.text != null && _editableTextShape != null) {
         setState(() {
           _editableTextShape = _editableTextShape!.insertText(
-              data!.text!,
-              _editableTextShape!.caretInfo?.offset ?? 0
-          );
+              data!.text!, _editableTextShape!.caretInfo?.offset ?? 0);
 
           if (_isInLocalEditMode && _editableTextShape!.editingState != null) {
             _localEditingState = _editableTextShape!.editingState;
@@ -467,7 +466,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
     if (textShape != null) {
       _isSelecting = true;
-      _selectionStartOffset = textShape.getOffsetFromPosition(position, canvasSize);
+      _selectionStartOffset =
+          textShape.getOffsetFromPosition(position, canvasSize);
 
       if (!_isEditingText) {
         _startEditing(textShape, _getTextShapeIndex(textShape));
@@ -476,16 +476,22 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   void _handlePanUpdate(Offset position) {
-    if (!_isSelecting || _editableTextShape == null || _selectionStartOffset == null) return;
+    if (!_isSelecting ||
+        _editableTextShape == null ||
+        _selectionStartOffset == null) {
+      return;
+    }
 
     final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
     final canvasSize = renderBox.size;
-    final currentOffset = _editableTextShape!.getOffsetFromPosition(position, canvasSize);
+    final currentOffset =
+        _editableTextShape!.getOffsetFromPosition(position, canvasSize);
 
     setState(() {
-      final selection = SelectionInfo.fromRange(_selectionStartOffset!, currentOffset);
+      final selection =
+          SelectionInfo.fromRange(_selectionStartOffset!, currentOffset);
       _editableTextShape = _editableTextShape!.copyWithSelection(selection);
 
       final caretPos = currentOffset;
@@ -501,17 +507,19 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   void _startCaretBlinking() {
     _caretBlinkTimer?.cancel();
-    _caretBlinkTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+    _caretBlinkTimer =
+        Timer.periodic(const Duration(milliseconds: 500), (timer) {
       if (_editableTextShape?.caretInfo != null) {
         setState(() {
           final caret = _editableTextShape!.caretInfo!;
           final newCaret = caret.copyWith(visible: !caret.visible);
           _editableTextShape = _editableTextShape!.copyWithCaret(newCaret);
 
-          final index = shapes.indexWhere((s) =>
-          s is TextShape && s.styledTextId == caret.styledTextId);
+          final index = shapes.indexWhere(
+              (s) => s is TextShape && s.styledTextId == caret.styledTextId);
           if (index != -1) {
-            shapes[index] = (shapes[index] as TextShape).copyWithCaret(newCaret);
+            shapes[index] =
+                (shapes[index] as TextShape).copyWithCaret(newCaret);
           }
         });
       }
@@ -530,29 +538,33 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _isInLocalEditMode = true;
     _originalServerTextShape = textShape;
 
-    _localEditingState = textShape.editingState ?? _extractEditingStateFromTextShape(textShape);
+    _localEditingState =
+        textShape.editingState ?? _extractEditingStateFromTextShape(textShape);
 
     _updateLocalTextShape();
   }
 
   TextEditingState _createEditingStateFromServerData(
-      String text,
-      List<dynamic> ranges,
-      double defaultFontSize,
-      String defaultFontName,
-      int defaultFontStyle,
-      Map<int, LineProperties> lineProperties,
-      ) {
+    String text,
+    List<dynamic> ranges,
+    double defaultFontSize,
+    String defaultFontName,
+    int defaultFontStyle,
+    Map<int, LineProperties> lineProperties,
+  ) {
     List<StyleRange> characterRanges = [];
 
     if (text.isNotEmpty) {
-      final defaultTextColor = useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
+      final defaultTextColor =
+          useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
 
       final defaultStyle = TextStyle(
         fontSize: defaultFontSize,
         fontFamily: defaultFontName,
-        fontWeight: defaultFontStyle & 1 != 0 ? FontWeight.bold : FontWeight.normal,
-        fontStyle: defaultFontStyle & 2 != 0 ? FontStyle.italic : FontStyle.normal,
+        fontWeight:
+            defaultFontStyle & 1 != 0 ? FontWeight.bold : FontWeight.normal,
+        fontStyle:
+            defaultFontStyle & 2 != 0 ? FontStyle.italic : FontStyle.normal,
         color: defaultTextColor,
       );
 
@@ -576,10 +588,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
             defaultFontStyle,
           );
 
-          final defaultTextColor = useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
+          final defaultTextColor =
+              useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
 
           characterRanges.removeWhere((r) =>
-          r.start <= start && r.end >= end &&
+              r.start <= start &&
+              r.end >= end &&
               r.style.color == defaultTextColor &&
               r.style.fontSize == defaultFontSize);
 
@@ -621,9 +635,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     }
 
     if (textShape.textSpan != null) {
-      _extractCharacterRangesFromTextSpan(textShape.textSpan!, characterRanges, 0);
+      _extractCharacterRangesFromTextSpan(
+          textShape.textSpan!, characterRanges, 0);
     } else {
-      final defaultTextColor = useDarkTheme ? Color(0xFFFFFFFF) : textShape.style.color;
+      final defaultTextColor =
+          useDarkTheme ? Color(0xFFFFFFFF) : textShape.style.color;
 
       characterRanges.add(StyleRange(
         start: 0,
@@ -639,10 +655,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   void _extractCharacterRangesFromTextSpan(
-      TextSpan span,
-      List<StyleRange> ranges,
-      int currentOffset,
-      ) {
+    TextSpan span,
+    List<StyleRange> ranges,
+    int currentOffset,
+  ) {
     if (span.text != null && span.text!.isNotEmpty) {
       final textLength = span.text!.length;
       if (span.style != null) {
@@ -666,7 +682,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   void _updateLocalTextShape() {
-    if (!_isInLocalEditMode || _originalServerTextShape == null || _localEditingState == null) {
+    if (!_isInLocalEditMode ||
+        _originalServerTextShape == null ||
+        _localEditingState == null) {
       return;
     }
 
@@ -681,8 +699,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _getCanvasSize(),
       _wordWrap,
       _originalServerTextShape!.styledTextId,
-          (newText, caretOffset) {
-      },
+      (newText, caretOffset) {},
       _localEditingState,
       null,
     );
@@ -716,10 +733,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _caretBlinkTimer?.cancel();
   }
 
-  TextShape? _findEditableTextShapeAtPosition(Offset position, Size canvasSize) {
+  TextShape? _findEditableTextShapeAtPosition(
+      Offset position, Size canvasSize) {
     for (int i = shapes.length - 1; i >= 0; i--) {
       final shape = shapes[i];
-      if (shape is TextShape && shape.editable && shape.containsPoint(position, canvasSize)) {
+      if (shape is TextShape &&
+          shape.editable &&
+          shape.containsPoint(position, canvasSize)) {
         return shape;
       }
     }
@@ -744,7 +764,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final canvasSize = _getCanvasSize();
     if (canvasSize == null) return textShape.caretInfo?.offset ?? 0;
 
-    return textShape.calculateLineNavigation(isHome: isHome, canvasSize: canvasSize);
+    return textShape.calculateLineNavigation(
+        isHome: isHome, canvasSize: canvasSize);
   }
 
   Size? _getCanvasSize() {
@@ -752,22 +773,23 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     return renderBox?.size;
   }
 
-
   TextSpan _buildUnifiedTextSpan(
-      String text,
-      List<dynamic> ranges,
-      double defaultFontSize,
-      String defaultFontName,
-      int defaultFontStyle,
-      ) {
+    String text,
+    List<dynamic> ranges,
+    double defaultFontSize,
+    String defaultFontName,
+    int defaultFontStyle,
+  ) {
     if (ranges.isEmpty) {
       return TextSpan(
         text: text,
-        style: _getDefaultTextStyle(defaultFontSize, defaultFontName, defaultFontStyle),
+        style: _getDefaultTextStyle(
+            defaultFontSize, defaultFontName, defaultFontStyle),
       );
     }
 
-    ranges.sort((a, b) => (a['startIndex'] ?? 0).compareTo(b['startIndex'] ?? 0));
+    ranges
+        .sort((a, b) => (a['startIndex'] ?? 0).compareTo(b['startIndex'] ?? 0));
 
     List<TextSpan> children = [];
     int currentPos = 0;
@@ -783,7 +805,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         final unstyledText = text.substring(currentPos, start);
         children.add(TextSpan(
           text: unstyledText,
-          style: _getDefaultTextStyle(defaultFontSize, defaultFontName, defaultFontStyle),
+          style: _getDefaultTextStyle(
+              defaultFontSize, defaultFontName, defaultFontStyle),
         ));
       }
 
@@ -807,7 +830,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       final remainingText = text.substring(currentPos);
       children.add(TextSpan(
         text: remainingText,
-        style: _getDefaultTextStyle(defaultFontSize, defaultFontName, defaultFontStyle),
+        style: _getDefaultTextStyle(
+            defaultFontSize, defaultFontName, defaultFontStyle),
       ));
     }
 
@@ -815,11 +839,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   TextStyle _buildTextStyleFromRange(
-      Map<String, dynamic> range,
-      double defaultFontSize,
-      String defaultFontName,
-      int defaultFontStyle,
-      ) {
+    Map<String, dynamic> range,
+    double defaultFontSize,
+    String defaultFontName,
+    int defaultFontStyle,
+  ) {
     final fontSize = (range['fontSize'] ?? defaultFontSize).toDouble();
     final fontName = range['fontName'] ?? defaultFontName;
     final fontStyle = range['fontStyle'] ?? defaultFontStyle;
@@ -850,7 +874,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     );
   }
 
-  TextStyle _getDefaultTextStyle(double fontSize, String fontName, int fontStyle) {
+  TextStyle _getDefaultTextStyle(
+      double fontSize, String fontName, int fontStyle) {
     final styleMap = _convertSwtFontStyle(fontStyle);
     final weight = styleMap['weight'] as FontWeight;
     final style = styleMap['style'] as FontStyle;
@@ -889,12 +914,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     };
   }
 
-  void registerListeners(){
+  void registerListeners() {
     _styledTextListener();
   }
 
-  void _styledTextListener() =>
-      EquoCommService.onRaw("DrawStyledText", (m) {
+  void _styledTextListener() => EquoCommService.onRaw("DrawStyledText", (m) {
         if (m is Map<String, dynamic>) {
           final styledTextId = m['styledTextId'] as int?;
           final text = m['text'] ?? '';
@@ -916,7 +940,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           CaretInfo? caretInfo;
 
           if (caretInfoMap != null && styledTextId != null) {
-            final caretColor = useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
+            final caretColor =
+                useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
             caretInfo = CaretInfo(
               offset: caretInfoMap['offset'] as int? ?? 0,
               width: (caretInfoMap['width'] as int? ?? 1).toDouble(),
@@ -956,7 +981,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           );
 
           final textToUse = (_isInLocalEditMode &&
-              styledTextId == _originalServerTextShape?.styledTextId)
+                  styledTextId == _originalServerTextShape?.styledTextId)
               ? _editableTextShape?.text ?? text
               : text;
 
@@ -966,8 +991,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
             TextStyle(
               fontSize: defaultFontSize,
               fontFamily: defaultFontName,
-              fontWeight: defaultFontStyle & 1 != 0 ? FontWeight.bold : FontWeight.normal,
-              fontStyle: defaultFontStyle & 2 != 0 ? FontStyle.italic : FontStyle.normal,
+              fontWeight: defaultFontStyle & 1 != 0
+                  ? FontWeight.bold
+                  : FontWeight.normal,
+              fontStyle: defaultFontStyle & 2 != 0
+                  ? FontStyle.italic
+                  : FontStyle.normal,
               color: useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg),
             ),
             clipRect,
@@ -977,8 +1006,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
             _getCanvasSize(),
             _editable,
             styledTextId,
-                (newText, caretOffset) {
-            },
+            (newText, caretOffset) {},
             editingState,
             null,
           );
@@ -999,9 +1027,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           });
         }
       });
-
-
-
 }
 
 class TextShape extends Shape {
@@ -1023,20 +1048,20 @@ class TextShape extends Shape {
   final SelectionInfo? selectionInfo;
 
   TextShape(
-      this.text,
-      this.off,
-      this.style, [
-        this.clipRect,
-        this.textSpan,
-        this.caretInfo,
-        this.wordWrap,
-        this.canvasSize,
-        this.editable = false,
-        this.styledTextId,
-        this.onTextChanged,
-        this.editingState,
-        this.selectionInfo,
-      ]);
+    this.text,
+    this.off,
+    this.style, [
+    this.clipRect,
+    this.textSpan,
+    this.caretInfo,
+    this.wordWrap,
+    this.canvasSize,
+    this.editable = false,
+    this.styledTextId,
+    this.onTextChanged,
+    this.editingState,
+    this.selectionInfo,
+  ]);
 
   @override
   void draw(Canvas c) {
@@ -1048,7 +1073,8 @@ class TextShape extends Shape {
     TextSpan effectiveTextSpan;
 
     if (editingState != null) {
-      effectiveTextSpan = TextRenderer.buildFinalTextSpan(text, editingState!, style);
+      effectiveTextSpan =
+          TextRenderer.buildFinalTextSpan(text, editingState!, style);
     } else if (textSpan != null) {
       effectiveTextSpan = textSpan!;
     } else {
@@ -1100,14 +1126,18 @@ class TextShape extends Shape {
             final availableWidth = maxW;
             final textWidth = tp.width;
             if (textWidth < availableWidth) {
-              finalX = paintOffset.dx + indent.toDouble() + (availableWidth - textWidth) / 2;
+              finalX = paintOffset.dx +
+                  indent.toDouble() +
+                  (availableWidth - textWidth) / 2;
             }
             break;
           case TextAlign.right:
             final availableWidth = maxW;
             final textWidth = tp.width;
             if (textWidth < availableWidth) {
-              finalX = paintOffset.dx + indent.toDouble() + (availableWidth - textWidth);
+              finalX = paintOffset.dx +
+                  indent.toDouble() +
+                  (availableWidth - textWidth);
             }
             break;
           case TextAlign.justify:
@@ -1134,7 +1164,8 @@ class TextShape extends Shape {
     }
   }
 
-  TextSpan _getTextSpanForLine(String lineText, int lineIndex, TextSpan unifiedTextSpan) {
+  TextSpan _getTextSpanForLine(
+      String lineText, int lineIndex, TextSpan unifiedTextSpan) {
     if (editingState != null) {
       return _buildLineTextSpanFromState(lineText, lineIndex);
     } else {
@@ -1163,18 +1194,22 @@ class TextShape extends Shape {
       return TextSpan(text: lineText, style: style);
     }
 
-    final relativeRanges = lineRanges.map((range) {
-      return StyleRange(
-        start: math.max(0, range.start - lineStartOffset),
-        end: math.min(lineText.length, range.end - lineStartOffset),
-        style: range.style,
-      );
-    }).where((range) => range.start < range.end).toList();
+    final relativeRanges = lineRanges
+        .map((range) {
+          return StyleRange(
+            start: math.max(0, range.start - lineStartOffset),
+            end: math.min(lineText.length, range.end - lineStartOffset),
+            style: range.style,
+          );
+        })
+        .where((range) => range.start < range.end)
+        .toList();
 
     return _buildTextSpanFromRelativeRanges(lineText, relativeRanges);
   }
 
-  TextSpan _buildTextSpanFromRelativeRanges(String lineText, List<StyleRange> ranges) {
+  TextSpan _buildTextSpanFromRelativeRanges(
+      String lineText, List<StyleRange> ranges) {
     if (ranges.isEmpty) {
       return TextSpan(text: lineText, style: style);
     }
@@ -1250,7 +1285,8 @@ class TextShape extends Shape {
     int alignValue = 16384;
     bool justify = false;
 
-    if (editingState != null && editingState!.lineProperties.containsKey(currentLineIndex)) {
+    if (editingState != null &&
+        editingState!.lineProperties.containsKey(currentLineIndex)) {
       final lineProps = editingState!.lineProperties[currentLineIndex]!;
       indent = lineProps.indent ?? 0;
       alignValue = lineProps.alignment ?? 16384;
@@ -1269,7 +1305,8 @@ class TextShape extends Shape {
     double currentY = off.dy;
     for (int i = 0; i < currentLineIndex; i++) {
       final prevLine = lines[i];
-      final prevLineTextSpan = _getTextSpanForLine(prevLine, i, TextSpan(text: text, style: style));
+      final prevLineTextSpan =
+          _getTextSpanForLine(prevLine, i, TextSpan(text: text, style: style));
 
       int prevIndent = 0;
       int prevAlignValue = 16384;
@@ -1302,7 +1339,8 @@ class TextShape extends Shape {
     }
 
     final currentLine = lines[currentLineIndex];
-    final lineTextSpan = _getTextSpanForLine(currentLine, currentLineIndex, TextSpan(text: text, style: style));
+    final lineTextSpan = _getTextSpanForLine(
+        currentLine, currentLineIndex, TextSpan(text: text, style: style));
 
     final tp = TextPainter(
       text: lineTextSpan,
@@ -1354,7 +1392,8 @@ class TextShape extends Shape {
       final lineLength = lines[i].length;
       final lineEndOffset = currentLineStartOffset + lineLength;
 
-      if (startOffset >= currentLineStartOffset && startOffset <= lineEndOffset) {
+      if (startOffset >= currentLineStartOffset &&
+          startOffset <= lineEndOffset) {
         startLineIndex = i;
         startPositionInLine = startOffset - currentLineStartOffset;
       }
@@ -1377,7 +1416,8 @@ class TextShape extends Shape {
       int alignValue = 16384;
       bool justify = false;
 
-      if (editingState != null && editingState!.lineProperties.containsKey(lineIndex)) {
+      if (editingState != null &&
+          editingState!.lineProperties.containsKey(lineIndex)) {
         final lineProps = editingState!.lineProperties[lineIndex]!;
         indent = lineProps.indent ?? 0;
         alignValue = lineProps.alignment ?? 16384;
@@ -1387,7 +1427,8 @@ class TextShape extends Shape {
       final align = _mapSwtAlignmentToTextAlign(alignValue);
       final effectiveAlign = justify ? TextAlign.justify : align;
 
-      final lineTextSpan = _getTextSpanForLine(line, lineIndex, TextSpan(text: text, style: style));
+      final lineTextSpan = _getTextSpanForLine(
+          line, lineIndex, TextSpan(text: text, style: style));
       final tp = TextPainter(
         text: lineTextSpan,
         textAlign: effectiveAlign,
@@ -1445,10 +1486,19 @@ class TextShape extends Shape {
 
   TextShape copyWithSelection(SelectionInfo? selection) {
     return TextShape(
-        text, off, style, clipRect, textSpan, caretInfo, wordWrap,
-        canvasSize, editable, styledTextId, onTextChanged,
-        editingState, selection
-    );
+        text,
+        off,
+        style,
+        clipRect,
+        textSpan,
+        caretInfo,
+        wordWrap,
+        canvasSize,
+        editable,
+        styledTextId,
+        onTextChanged,
+        editingState,
+        selection);
   }
 
   TextShape selectAll() {
@@ -1469,7 +1519,8 @@ class TextShape extends Shape {
     }
   }
 
-  TextShape copyWithText(String newText, int caretOffset, [TextEditingState? newEditingState]) {
+  TextShape copyWithText(String newText, int caretOffset,
+      [TextEditingState? newEditingState]) {
     return TextShape(
       newText,
       off,
@@ -1491,10 +1542,19 @@ class TextShape extends Shape {
 
   TextShape copyWithCaret(CaretInfo caretInfo) {
     return TextShape(
-        text, off, style, clipRect, textSpan, caretInfo, wordWrap,
-        canvasSize, editable, styledTextId, onTextChanged,
-        editingState, selectionInfo
-    );
+        text,
+        off,
+        style,
+        clipRect,
+        textSpan,
+        caretInfo,
+        wordWrap,
+        canvasSize,
+        editable,
+        styledTextId,
+        onTextChanged,
+        editingState,
+        selectionInfo);
   }
 
   TextShape updateCaretOffset(int offset) {
@@ -1512,34 +1572,31 @@ class TextShape extends Shape {
       newText = text.substring(0, start) + insertText + text.substring(end);
       newCaretPos = start + insertText.length;
     } else {
-      newText = text.substring(0, position) + insertText + text.substring(position);
+      newText =
+          text.substring(0, position) + insertText + text.substring(position);
       newCaretPos = position + insertText.length;
     }
 
     TextEditingState? newEditingState;
 
     if (editingState != null) {
-      newEditingState = TextEditor.insertText(text, insertText, position, editingState!);
+      newEditingState =
+          TextEditor.insertText(text, insertText, position, editingState!);
     } else {
       final currentStyle = _getStyleAtPosition(position);
 
       newEditingState = TextEditingState(
         characterRanges: [
-          if (position > 0)
-            StyleRange(start: 0, end: position, style: style),
-
+          if (position > 0) StyleRange(start: 0, end: position, style: style),
           StyleRange(
               start: position,
               end: position + insertText.length,
-              style: currentStyle
-          ),
-
+              style: currentStyle),
           if (position < text.length)
             StyleRange(
                 start: position + insertText.length,
                 end: newText.length,
-                style: style
-            ),
+                style: style),
         ].where((range) => range.start < range.end).toList(),
         lineProperties: editingState?.lineProperties ?? {},
       );
@@ -1567,7 +1624,6 @@ class TextShape extends Shape {
     return '\n'.allMatches(text.substring(0, offset)).length;
   }
 
-
   TextShape deleteText(int start, int end) {
     final actualStart = start.clamp(0, text.length);
     final actualEnd = end.clamp(actualStart, text.length);
@@ -1581,7 +1637,8 @@ class TextShape extends Shape {
     TextEditingState? newEditingState;
 
     if (editingState != null) {
-      newEditingState = TextEditor.deleteText(text, actualStart, actualEnd, editingState!);
+      newEditingState =
+          TextEditor.deleteText(text, actualStart, actualEnd, editingState!);
     } else if (newText.isEmpty) {
       newEditingState = TextEditingState(
         characterRanges: [],
@@ -1659,7 +1716,8 @@ class TextShape extends Shape {
       final align = _mapSwtAlignmentToTextAlign(alignValue);
       final effectiveAlign = justify ? TextAlign.justify : align;
 
-      final lineTextSpan = _getTextSpanForLine(line, i, TextSpan(text: text, style: style));
+      final lineTextSpan =
+          _getTextSpanForLine(line, i, TextSpan(text: text, style: style));
 
       final tp = TextPainter(
         text: lineTextSpan,
@@ -1698,9 +1756,11 @@ class TextShape extends Shape {
         }
       }
 
-      if (relativePosition.dy >= currentY && relativePosition.dy < currentY + tp.height) {
+      if (relativePosition.dy >= currentY &&
+          relativePosition.dy < currentY + tp.height) {
         final lineRelativeX = relativePosition.dx - finalX;
-        final lineRelativePosition = Offset(lineRelativeX, relativePosition.dy - currentY);
+        final lineRelativePosition =
+            Offset(lineRelativeX, relativePosition.dy - currentY);
 
         final textPosition = tp.getPositionForOffset(lineRelativePosition);
         final offsetInLine = textPosition.offset.clamp(0, line.length);
@@ -1770,11 +1830,13 @@ class TextShape extends Shape {
     final newY = currentPosition.dy + (direction * lineHeight);
     final clampedY = newY.clamp(0.0, tp.height);
 
-    final newPosition = tp.getPositionForOffset(Offset(currentPosition.dx, clampedY));
+    final newPosition =
+        tp.getPositionForOffset(Offset(currentPosition.dx, clampedY));
     return newPosition.offset.clamp(0, text.length);
   }
 
-  int calculateLineNavigation({required bool isHome, required Size canvasSize}) {
+  int calculateLineNavigation(
+      {required bool isHome, required Size canvasSize}) {
     final tp = TextPainter(
       text: textSpan ?? TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
@@ -1795,13 +1857,15 @@ class TextShape extends Shape {
     );
 
     final targetX = isHome ? 0.0 : tp.width;
-    final targetPosition = tp.getPositionForOffset(Offset(targetX, currentPosition.dy));
+    final targetPosition =
+        tp.getPositionForOffset(Offset(targetX, currentPosition.dy));
 
     return targetPosition.offset.clamp(0, text.length);
   }
 
   @override
-  String toString() => 'EditableText "${text.length > 20 ? "${text.substring(0, 20)}..." : text}" @ $off${caretInfo != null ? " [caret at ${caretInfo!.offset}]" : ""}${editable ? " [editable]" : ""}${clipRect != null ? " [clipped]" : ""}';
+  String toString() =>
+      'EditableText "${text.length > 20 ? "${text.substring(0, 20)}..." : text}" @ $off${caretInfo != null ? " [caret at ${caretInfo!.offset}]" : ""}${editable ? " [editable]" : ""}${clipRect != null ? " [clipped]" : ""}';
 }
 
 class CaretInfo {
@@ -1866,12 +1930,15 @@ class StyleRange {
         end = data['endIndex'] ?? 0,
         style = _buildStyleFromMap(data, defaultStyle),
         meta = {
-          if (data.containsKey('lineAlignment')) 'lineAlignment': data['lineAlignment'],
+          if (data.containsKey('lineAlignment'))
+            'lineAlignment': data['lineAlignment'],
           if (data.containsKey('lineIndent')) 'lineIndent': data['lineIndent'],
-          if (data.containsKey('lineJustify')) 'lineJustify': data['lineJustify'],
+          if (data.containsKey('lineJustify'))
+            'lineJustify': data['lineJustify'],
         };
 
-  static TextStyle _buildStyleFromMap(Map<String, dynamic> data, TextStyle defaultStyle) {
+  static TextStyle _buildStyleFromMap(
+      Map<String, dynamic> data, TextStyle defaultStyle) {
     Color? color;
     Color? backgroundColor;
     FontWeight? fontWeight;
@@ -2037,10 +2104,10 @@ class LineProperties {
 
 class TextRenderer {
   static TextSpan buildFinalTextSpan(
-      String text,
-      TextEditingState state,
-      TextStyle defaultStyle,
-      ) {
+    String text,
+    TextEditingState state,
+    TextStyle defaultStyle,
+  ) {
     if (text.isEmpty) {
       return TextSpan(text: '', style: defaultStyle);
     }
@@ -2054,7 +2121,8 @@ class TextRenderer {
       final lineLength = line.length;
 
       final lineCharRanges = state.characterRanges
-          .where((range) => _rangeOverlapsLine(range, currentOffset, lineLength))
+          .where(
+              (range) => _rangeOverlapsLine(range, currentOffset, lineLength))
           .toList();
 
       final lineSpan = _buildLineTextSpan(
@@ -2071,27 +2139,28 @@ class TextRenderer {
     return TextSpan(children: lineSpans);
   }
 
-  static bool _rangeOverlapsLine(StyleRange range, int lineStart, int lineLength) {
+  static bool _rangeOverlapsLine(
+      StyleRange range, int lineStart, int lineLength) {
     final lineEnd = lineStart + lineLength;
     return range.start < lineEnd && range.end > lineStart;
   }
 
   static TextSpan _buildLineTextSpan(
-      String lineText,
-      List<StyleRange> lineRanges,
-      int lineStartOffset,
-      TextStyle defaultStyle,
-      ) {
+    String lineText,
+    List<StyleRange> lineRanges,
+    int lineStartOffset,
+    TextStyle defaultStyle,
+  ) {
     if (lineRanges.isEmpty) {
       return TextSpan(text: lineText, style: defaultStyle);
     }
 
     final relativeRanges = lineRanges
         .map((range) => StyleRange(
-      start: math.max(0, range.start - lineStartOffset),
-      end: math.min(lineText.length, range.end - lineStartOffset),
-      style: range.style,
-    ))
+              start: math.max(0, range.start - lineStartOffset),
+              end: math.min(lineText.length, range.end - lineStartOffset),
+              style: range.style,
+            ))
         .where((range) => range.start < range.end)
         .toList();
 
@@ -2099,10 +2168,10 @@ class TextRenderer {
   }
 
   static TextSpan _buildTextSpanFromRanges(
-      String text,
-      List<StyleRange> ranges,
-      TextStyle defaultStyle,
-      ) {
+    String text,
+    List<StyleRange> ranges,
+    TextStyle defaultStyle,
+  ) {
     if (ranges.isEmpty) {
       return TextSpan(text: text, style: defaultStyle);
     }
@@ -2141,11 +2210,11 @@ class TextRenderer {
 
 class TextEditor {
   static TextEditingState insertText(
-      String originalText,
-      String insertText,
-      int position,
-      TextEditingState currentState,
-      ) {
+    String originalText,
+    String insertText,
+    int position,
+    TextEditingState currentState,
+  ) {
     final newCharRanges = _updateCharacterRanges(
       currentState.characterRanges,
       position,
@@ -2169,11 +2238,11 @@ class TextEditor {
   }
 
   static TextEditingState deleteText(
-      String originalText,
-      int start,
-      int end,
-      TextEditingState currentState,
-      ) {
+    String originalText,
+    int start,
+    int end,
+    TextEditingState currentState,
+  ) {
     final deleteLength = end - start;
 
     final newCharRanges = _updateCharacterRanges(
@@ -2182,7 +2251,8 @@ class TextEditor {
       -deleteLength,
     );
 
-    final newText = originalText.substring(0, start) + originalText.substring(end);
+    final newText =
+        originalText.substring(0, start) + originalText.substring(end);
     final newLineProps = _updateLinePropertiesForDeletion(
       currentState.lineProperties,
       originalText,
@@ -2198,10 +2268,10 @@ class TextEditor {
   }
 
   static List<StyleRange> _updateCharacterRanges(
-      List<StyleRange> currentRanges,
-      int position,
-      int textDiff,
-      ) {
+    List<StyleRange> currentRanges,
+    int position,
+    int textDiff,
+  ) {
     List<StyleRange> updatedRanges = [];
 
     for (final range in currentRanges) {
@@ -2258,7 +2328,9 @@ class TextEditor {
         }
       }
 
-      if (newRange != null && newRange.start < newRange.end && newRange.start >= 0) {
+      if (newRange != null &&
+          newRange.start < newRange.end &&
+          newRange.start >= 0) {
         updatedRanges.add(newRange);
       }
     }
@@ -2267,11 +2339,11 @@ class TextEditor {
   }
 
   static Map<int, LineProperties> _updateLinePropertiesForInsertion(
-      Map<int, LineProperties> currentProps,
-      String originalText,
-      String insertText,
-      int position,
-      ) {
+    Map<int, LineProperties> currentProps,
+    String originalText,
+    String insertText,
+    int position,
+  ) {
     final newLineCount = '\n'.allMatches(insertText).length;
     if (newLineCount == 0) return currentProps;
 
@@ -2299,13 +2371,14 @@ class TextEditor {
   }
 
   static Map<int, LineProperties> _updateLinePropertiesForDeletion(
-      Map<int, LineProperties> currentProps,
-      String originalText,
-      String newText,
-      int deleteStart,
-      int deleteEnd,
-      ) {
-    final deletedLineCount = '\n'.allMatches(originalText.substring(deleteStart, deleteEnd)).length;
+    Map<int, LineProperties> currentProps,
+    String originalText,
+    String newText,
+    int deleteStart,
+    int deleteEnd,
+  ) {
+    final deletedLineCount =
+        '\n'.allMatches(originalText.substring(deleteStart, deleteEnd)).length;
     if (deletedLineCount == 0) return currentProps;
 
     final deleteStartLine = _getLineFromOffset(deleteStart, originalText);

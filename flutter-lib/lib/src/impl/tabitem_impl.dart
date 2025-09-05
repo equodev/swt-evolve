@@ -7,7 +7,6 @@ import 'icons_map.dart';
 
 class TabItemImpl<T extends TabItemSwt, V extends TabItemValue>
     extends ItemImpl<T, V> {
-
   final bool useDarkTheme = getCurrentTheme();
 
   @override
@@ -29,16 +28,16 @@ class TabItemImpl<T extends TabItemSwt, V extends TabItemValue>
           if (state.image != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 1.0, right: 3.0),
-              child: !materialIconMap.containsKey(state.image)
+              child: !iconMap.containsKey(state.image)
                   ? Image.file(
-                File(state.image!),
-                width: 16,
-                height: 16,
-              )
+                      File(state.image!),
+                      width: 16,
+                      height: 16,
+                    )
                   : Icon(
-                getMaterialIconByName(state.image!),
-                size: 16,
-              ),
+                      getIconByName(state.image!),
+                      size: 16,
+                    ),
             ),
           Padding(
             padding: const EdgeInsets.only(bottom: 2.0),

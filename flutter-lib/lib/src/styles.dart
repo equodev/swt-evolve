@@ -1,6 +1,4 @@
-
 extension type StyleBits(int s) {
-
   bool has(int bit) {
     return s.has(bit);
   }
@@ -17,7 +15,6 @@ extension type StyleBits(int s) {
       _ => has(flag),
     };
   }
-
 }
 
 extension StyleTester on int {

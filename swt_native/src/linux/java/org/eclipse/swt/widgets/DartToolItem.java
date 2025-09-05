@@ -221,6 +221,11 @@ public class DartToolItem extends DartItem implements IToolItem {
     void createWidget(int index) {
         super.createWidget(index);
         showWidget(index);
+        if (index >= ((DartToolBar) parent.getImpl()).getItemCount()) {
+            ((DartToolBar) parent.getImpl()).addItem(this.getApi());
+        } else {
+            ((DartToolBar) parent.getImpl()).insertItem(this.getApi(), index);
+        }
         ((DartToolBar) parent.getImpl()).relayout();
     }
 
@@ -252,6 +257,7 @@ public class DartToolItem extends DartItem implements IToolItem {
         if (isDisposed())
             return;
         ToolBar parent = this.parent;
+        ((DartToolBar) parent.getImpl()).removeItem(this.getApi());
         super.dispose();
         ((DartToolBar) parent.getImpl()).relayout();
     }
@@ -296,7 +302,7 @@ public class DartToolItem extends DartItem implements IToolItem {
     Rectangle getBoundsInPixels() {
         checkWidget();
         ((DartControl) parent.getImpl()).forceResize();
-        return null;
+        return new Rectangle(0, 0, 0, 0);
     }
 
     /**
@@ -713,7 +719,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
-        disabledImage = image;
+        this.disabledImage = ImageUtils.copyImage(display, image);
         if (image != null) {
             if (!enabled) {
                 _setImage(image);
@@ -827,7 +833,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
-        hotImage = image;
+        this.hotImage = ImageUtils.copyImage(display, image);
         if (image != null) {
         }
     }

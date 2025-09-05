@@ -33,7 +33,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends TreeItemValue>
     final List<String>? texts = state.texts;
     final bool expanded = state.expanded ?? false;
     final bool selected = state.selected ?? false;
-    final bool hasChildren = state.children != null && state.children!.isNotEmpty;
+    final bool hasChildren =
+        state.children != null && state.children!.isNotEmpty;
     final bool isCheckMode = _context?.isCheckMode ?? false;
     final bool checked = state.checked ?? false;
     final bool grayed = state.grayed ?? false;
@@ -47,21 +48,25 @@ class TreeItemImpl<T extends TreeItemSwt, V extends TreeItemValue>
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      onEnter: (_) => _context?.parentTree.sendMouseTrackMouseEnter(_context!.parentTreeValue, null),
-      onExit: (_) => _context?.parentTree.sendMouseTrackMouseExit(_context!.parentTreeValue, null),
+      onEnter: (_) => _context?.parentTree
+          .sendMouseTrackMouseEnter(_context!.parentTreeValue, null),
+      onExit: (_) => _context?.parentTree
+          .sendMouseTrackMouseExit(_context!.parentTreeValue, null),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // TreeItem row
           GestureDetector(
             onTap: () {
-              _context?.parentTree.sendSelectionSelection(_context!.parentTreeValue, state.id);
+              _context?.parentTree
+                  .sendSelectionSelection(_context!.parentTreeValue, state.id);
               setState(() {
                 state.selected = true;
               });
             },
             onDoubleTap: () {
-              _context?.parentTree.sendSelectionDefaultSelection(_context!.parentTreeValue, state.id);
+              _context?.parentTree.sendSelectionDefaultSelection(
+                  _context!.parentTreeValue, state.id);
             },
             child: Container(
               decoration: BoxDecoration(
@@ -75,41 +80,46 @@ class TreeItemImpl<T extends TreeItemSwt, V extends TreeItemValue>
                   // Expand/collapse icon
                   hasChildren
                       ? MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: () {
-                        if (expanded) {
-                          setState(() {
-                            state.expanded = false;
-                          });
-                          _context?.parentTree.sendTreeCollapse(
-                              _context!.parentTreeValue,
-                              state.id
-                          );
-                        } else {
-                          if (state.children != null && state.children!.isNotEmpty &&
-                              !(state.children!.length == 1 &&
-                                  state.children![0] is TreeItemValue &&
-                                  (state.children![0] as TreeItemValue).text == null &&
-                                  (state.children![0] as TreeItemValue).texts == null)) {
-                            setState(() {
-                              state.expanded = true;
-                            });
-                          } else {
-                            _context?.parentTree.sendTreeExpand(
-                                _context!.parentTreeValue,
-                                state.id
-                            );
-                          }
-                        }
-                      },
-                      child: Icon(
-                        expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                        size: 16,
-                        color: useDarkTheme ? Colors.white70 : Colors.black54,
-                      ),
-                    ),
-                  )
+                          cursor: SystemMouseCursors.click,
+                          child: GestureDetector(
+                            onTap: () {
+                              if (expanded) {
+                                setState(() {
+                                  state.expanded = false;
+                                });
+                                _context?.parentTree.sendTreeCollapse(
+                                    _context!.parentTreeValue, state.id);
+                              } else {
+                                if (state.children != null &&
+                                    state.children!.isNotEmpty &&
+                                    !(state.children!.length == 1 &&
+                                        state.children![0] is TreeItemValue &&
+                                        (state.children![0] as TreeItemValue)
+                                                .text ==
+                                            null &&
+                                        (state.children![0] as TreeItemValue)
+                                                .texts ==
+                                            null)) {
+                                  setState(() {
+                                    state.expanded = true;
+                                  });
+                                } else {
+                                  _context?.parentTree.sendTreeExpand(
+                                      _context!.parentTreeValue, state.id);
+                                }
+                              }
+                            },
+                            child: Icon(
+                              expanded
+                                  ? Icons.keyboard_arrow_down
+                                  : Icons.keyboard_arrow_right,
+                              size: 16,
+                              color: useDarkTheme
+                                  ? Colors.white70
+                                  : Colors.black54,
+                            ),
+                          ),
+                        )
                       : const SizedBox(width: 16),
 
                   // Checkbox (if in check mode)
@@ -124,52 +134,58 @@ class TreeItemImpl<T extends TreeItemSwt, V extends TreeItemValue>
                           tristate: grayed,
                           activeColor: const Color(0xFF6366F1),
                           side: BorderSide(
-                            color: useDarkTheme ? Colors.white70 : Colors.grey.shade600,
+                            color: useDarkTheme
+                                ? Colors.white70
+                                : Colors.grey.shade600,
                             width: 1.5,
                           ),
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
                           onChanged: (value) {
                             setState(() {
                               state.checked = value ?? false;
                             });
                             _context?.parentTree.sendSelectionSelection(
-                                _context!.parentTreeValue,
-                                state.id
-                            );
+                                _context!.parentTreeValue, state.id);
                           },
                         ),
                       ),
                     ),
 
-                  // Item icon - Modificado para usar la variable image
                   Container(
                     margin: const EdgeInsets.only(right: 4),
                     child: (image != null)
-                        ? (materialIconMap.containsKey(image)
-                        ? Icon(
-                      getMaterialIconByName(image),
-                      size: 16,
-                      color: useDarkTheme ? Colors.white70 : Colors.grey.shade700,
-                    )
-                        : (image.toLowerCase().endsWith('.svg')
-                        ? SvgPicture.file(
-                      File(image),
-                      width: 16,
-                      height: 16,
-                      color: useDarkTheme ? Colors.white70 : Colors.grey.shade700,
-                    )
-                        : Image.file(
-                      File(image),
-                      width: 16,
-                      height: 16,
-                    )))
+                        ? (iconMap.containsKey(image)
+                            ? Icon(
+                                getIconByName(image),
+                                size: 16,
+                                color: useDarkTheme
+                                    ? Colors.white70
+                                    : Colors.grey.shade700,
+                              )
+                            : (image.toLowerCase().endsWith('.svg')
+                                ? SvgPicture.file(
+                                    File(image),
+                                    width: 16,
+                                    height: 16,
+                                    color: useDarkTheme
+                                        ? Colors.white70
+                                        : Colors.grey.shade700,
+                                  )
+                                : Image.file(
+                                    File(image),
+                                    width: 16,
+                                    height: 16,
+                                  )))
                         : Icon(
-                      hasChildren
-                          ? (expanded ? Icons.folder_open : Icons.folder)
-                          : Icons.insert_drive_file,
-                      size: 16,
-                      color: useDarkTheme ? Colors.white70 : Colors.grey.shade700,
-                    ),
+                            hasChildren
+                                ? (expanded ? Icons.folder_open : Icons.folder)
+                                : Icons.insert_drive_file,
+                            size: 16,
+                            color: useDarkTheme
+                                ? Colors.white70
+                                : Colors.grey.shade700,
+                          ),
                   ),
 
                   // Text content
@@ -192,17 +208,15 @@ class TreeItemImpl<T extends TreeItemSwt, V extends TreeItemValue>
           ),
 
           // Child items (if expanded)
-          if (expanded && hasChildren)
-            ...buildChildItems(),
+          if (expanded && hasChildren) ...buildChildItems(),
         ],
       ),
     );
   }
 
   List<Widget> buildChildItems() {
-    final List<TreeItemValue> childItems = state.children
-        ?.whereType<TreeItemValue>()
-        .toList() ?? [];
+    final List<TreeItemValue> childItems =
+        state.children?.whereType<TreeItemValue>().toList() ?? [];
 
     return childItems.map((childItem) {
       return TreeItemContextProvider(

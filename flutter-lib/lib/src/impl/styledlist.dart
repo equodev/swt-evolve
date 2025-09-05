@@ -50,7 +50,9 @@ class _StyledListState extends State<StyledList> {
           decoration: BoxDecoration(
             color: widget.useDarkTheme ? const Color(0xFF1E1E1E) : Colors.white,
             border: Border.all(
-              color: widget.useDarkTheme ? const Color(0xFF3C3C3C) : const Color(0xFFD4D4D4),
+              color: widget.useDarkTheme
+                  ? const Color(0xFF3C3C3C)
+                  : const Color(0xFFD4D4D4),
               width: 1,
             ),
           ),

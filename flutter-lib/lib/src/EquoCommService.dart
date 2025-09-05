@@ -6,7 +6,8 @@ extension type EquoCommService._(JSObject _) implements JSObject {
       String userEventActionId, JSFunction onSuccessCallback);
   external static JSPromise send(String userEventActionId);
   @JS("send")
-  external static JSPromise sendPayload(String userEventActionId, JSAny? payload);
+  external static JSPromise sendPayload(
+      String userEventActionId, JSAny? payload);
   external static void remove(String eventName);
 }
 

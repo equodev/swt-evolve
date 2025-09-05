@@ -1,11 +1,13 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart' as mat;
+import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'src/custom/maintoolbar_impl.dart';
 import 'src/swt/composite.dart';
 import 'src/styles.dart';
+import 'dart:convert';
 
 import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
 
@@ -26,6 +28,8 @@ void main(List<String> args) async {
   }
   var theme = getTheme(args) == "dark" ? ThemeMode.dark : ThemeMode.light;
 
+  initSwtEvolveProperties();
+
   WidgetsFlutterBinding.ensureInitialized();
 
   Widget contentWidget = createContentWidget(widgetName!, widgetId!);
@@ -37,6 +41,16 @@ void main(List<String> args) async {
 
   EquoCommService.send("${widgetName}/${widgetId}/ClientReady");
   print("Sent ${widgetName}/${widgetId}/ClientReady");
+}
+
+void initSwtEvolveProperties() {
+  EquoCommService.onRaw("swt.evolve.properties", (dynamic data) {
+    try {
+      setConfigFlags(ConfigFlags.fromJson(jsonDecode(data)));
+    } catch (e) {
+      print('Error parsing properties: $e');
+    }
+  });
 }
 
 Widget createContentWidget(String widgetName, int widgetId) {
@@ -53,7 +67,7 @@ Widget? customWidget(Map<String, dynamic> child) {
   var id = child['id'];
   return switch (type) {
     "MainToolbar" =>
-        MainToolbarSwt(key: ValueKey(id), value: VComposite.fromJson(child)),
+      MainToolbarSwt(key: ValueKey(id), value: VComposite.fromJson(child)),
     _ => null
   };
 }
@@ -71,8 +85,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool useDarkTheme = getCurrentTheme();
-    final Color backgroundColor = useDarkTheme ? Color(0xFF2C2C2C) : Color(0xFFF2F4F7);
-    final ThemeMode currentTheme = useDarkTheme ? ThemeMode.dark : ThemeMode.light;
+    final Color backgroundColor =
+        useDarkTheme ? Color(0xFF2C2C2C) : Color(0xFFF2F4F7);
+    final ThemeMode currentTheme =
+        useDarkTheme ? ThemeMode.dark : ThemeMode.light;
 
     return FluentApp(
       title: 'Flutter Demo',

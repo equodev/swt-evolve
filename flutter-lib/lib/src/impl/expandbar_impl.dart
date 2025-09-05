@@ -40,7 +40,8 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends ExpandBarValue>
       data: useDarkTheme ? ThemeData.dark() : ThemeData.light(),
       child: Container(
         // Es importante dar una altura limitada al ExpandBar
-        height: MediaQuery.of(context).size.height - 100, // O cualquier altura apropiada
+        height: MediaQuery.of(context).size.height -
+            100, // O cualquier altura apropiada
         color: backgroundColor,
         child: expandBar,
       ),
@@ -65,8 +66,10 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends ExpandBarValue>
     return Builder(
       builder: (context) {
         final textColor = useDarkTheme ? Colors.white : Color(0xFF595858);
-        final expandedColor = useDarkTheme ? Color(0xFF3D3D3D) : Color(0xFFF3F4F6);
-        final borderColor = useDarkTheme ? Color(0xFF444444) : Color(0xFFE5E7EB);
+        final expandedColor =
+            useDarkTheme ? Color(0xFF3D3D3D) : Color(0xFFF3F4F6);
+        final borderColor =
+            useDarkTheme ? Color(0xFF444444) : Color(0xFFE5E7EB);
 
         return Container(
           decoration: BoxDecoration(
@@ -78,9 +81,9 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends ExpandBarValue>
             data: Theme.of(context).copyWith(
               dividerColor: Colors.transparent,
               textTheme: Theme.of(context).textTheme.apply(
-                bodyColor: textColor,
-                displayColor: textColor,
-              ),
+                    bodyColor: textColor,
+                    displayColor: textColor,
+                  ),
             ),
             child: ExpansionTile(
               title: Text(

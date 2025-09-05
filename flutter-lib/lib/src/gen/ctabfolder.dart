@@ -5,6 +5,7 @@ import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/ctabitem.dart';
+import '../gen/image.dart';
 import '../gen/rectangle.dart';
 import '../impl/ctabfolder_evolve.dart';
 import 'event.dart';
@@ -18,6 +19,30 @@ class CTabFolderSwt<V extends VCTabFolder> extends CompositeSwt<V> {
   @override
   State createState() =>
       CTabFolderImpl<CTabFolderSwt<VCTabFolder>, VCTabFolder>();
+
+  void sendCTabFolderitemClosed(V val, VEvent? payload) {
+    sendEvent(val, "CTabFolder/itemClosed", payload);
+  }
+
+  void sendCTabFolder2close(V val, VEvent? payload) {
+    sendEvent(val, "CTabFolder2/close", payload);
+  }
+
+  void sendCTabFolder2maximize(V val, VEvent? payload) {
+    sendEvent(val, "CTabFolder2/maximize", payload);
+  }
+
+  void sendCTabFolder2minimize(V val, VEvent? payload) {
+    sendEvent(val, "CTabFolder2/minimize", payload);
+  }
+
+  void sendCTabFolder2restore(V val, VEvent? payload) {
+    sendEvent(val, "CTabFolder2/restore", payload);
+  }
+
+  void sendCTabFolder2showList(V val, VEvent? payload) {
+    sendEvent(val, "CTabFolder2/showList", payload);
+  }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/DefaultSelection", payload);
@@ -51,6 +76,7 @@ class VCTabFolder extends VComposite {
   int? selection;
   VColor? selectionBackground;
   int? selectionBarThickness;
+  VImage? selectionBgImage;
   VColor? selectionForeground;
   List<VColor>? selectionGradientColors;
   List<int>? selectionGradientPercents;

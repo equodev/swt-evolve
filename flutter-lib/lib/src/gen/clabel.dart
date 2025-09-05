@@ -4,6 +4,7 @@ import '../gen/canvas.dart';
 import '../gen/caret.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
+import '../gen/image.dart';
 import '../gen/rectangle.dart';
 import '../impl/clabel_evolve.dart';
 import 'widgets.dart';
@@ -25,10 +26,12 @@ class VCLabel extends VCanvas {
   }
 
   int? alignment;
+  VImage? backgroundImage;
   int? bottomMargin;
   List<VColor>? gradientColors;
   List<int>? gradientPercents;
   bool? gradientVertical;
+  VImage? image;
   int? leftMargin;
   int? rightMargin;
   String? text;

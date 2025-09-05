@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
 import '../gen/color.dart';
+import '../gen/image.dart';
 import '../gen/rectangle.dart';
 import '../gen/widget.dart';
 import 'event.dart';
@@ -104,6 +105,7 @@ class VControl extends VWidget {
   }
 
   VColor? background;
+  VImage? backgroundImage;
   VRectangle? bounds;
   bool? capture;
   bool? dragDetect;
@@ -117,6 +119,7 @@ class VControl extends VWidget {
   bool? visible;
 
   factory VControl.fromJson(Map<String, dynamic> json) =>
-      _$VControlFromJson(json);
-  Map<String, dynamic> toJson() => _$VControlToJson(this);
+      mapWidgetValue(json) as VControl;
+  Map<String, dynamic> toJson() =>
+      throw UnsupportedError("Unsupported toJson in Control");
 }

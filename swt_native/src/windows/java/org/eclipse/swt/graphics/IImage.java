@@ -8,7 +8,7 @@ import org.eclipse.swt.internal.DPIUtil.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.widgets.*;
 
-public interface IImage extends IResource {
+public interface IImage extends IResource, ImplImage {
 
     /**
      * Compares the argument to the receiver, and returns true

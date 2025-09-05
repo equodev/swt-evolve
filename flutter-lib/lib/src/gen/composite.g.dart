@@ -13,6 +13,9 @@ VComposite _$VCompositeFromJson(Map<String, dynamic> json) => VComposite()
   ..background = json['background'] == null
       ? null
       : VColor.fromJson(json['background'] as Map<String, dynamic>)
+  ..backgroundImage = json['backgroundImage'] == null
+      ? null
+      : VImage.fromJson(json['backgroundImage'] as Map<String, dynamic>)
   ..bounds = json['bounds'] == null
       ? null
       : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>)
@@ -44,6 +47,7 @@ Map<String, dynamic> _$VCompositeToJson(VComposite instance) =>
       'id': instance.id,
       'style': instance.style,
       'background': instance.background,
+      'backgroundImage': instance.backgroundImage,
       'bounds': instance.bounds,
       'capture': instance.capture,
       'dragDetect': instance.dragDetect,

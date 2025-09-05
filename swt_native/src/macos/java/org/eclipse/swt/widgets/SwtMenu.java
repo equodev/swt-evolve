@@ -1108,7 +1108,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
         checkWidget();
         this.x = x;
         this.y = y;
-        hasLocation = true;
+        hasLocation = false;
     }
 
     /**

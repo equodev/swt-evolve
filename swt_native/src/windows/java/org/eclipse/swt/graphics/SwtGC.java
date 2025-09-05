@@ -788,8 +788,14 @@ public final class SwtGC extends SwtResource implements IGC {
             data.hNullBitmap = 0;
         }
         Image image = data.image;
-        if (image != null)
-            ((SwtImage) image.getImpl()).memGC = null;
+        if (image != null) {
+            if (image.getImpl() instanceof DartImage) {
+                ((DartImage) image.getImpl()).memGC = null;
+            }
+            if (image.getImpl() instanceof SwtImage) {
+                ((SwtImage) image.getImpl()).memGC = null;
+            }
+        }
         /*
 	* Dispose the HDC.
 	*/
@@ -1086,19 +1092,21 @@ public final class SwtGC extends SwtResource implements IGC {
         Rectangle src = DPIUtil.scaleUp(drawable, new Rectangle(srcX, srcY, srcWidth, srcHeight), deviceZoom);
         Rectangle dest = DPIUtil.scaleUp(drawable, new Rectangle(destX, destY, destWidth, destHeight), deviceZoom);
         if (deviceZoom != 100) {
-            /*
+            if (image.getImpl() instanceof SwtImage) {
+                /*
 		 * This is a HACK! Due to rounding errors at fractional scale factors,
 		 * the coordinates may be slightly off. The workaround is to restrict
 		 * coordinates to the allowed bounds.
 		 */
-            Rectangle b = ((SwtImage) image.getImpl()).getBounds(deviceZoom);
-            int errX = src.x + src.width - b.width;
-            int errY = src.y + src.height - b.height;
-            if (errX != 0 || errY != 0) {
-                if (errX <= deviceZoom / 100 && errY <= deviceZoom / 100) {
-                    src.intersect(b);
-                } else {
-                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                Rectangle b = ((SwtImage) image.getImpl()).getBounds(deviceZoom);
+                int errX = src.x + src.width - b.width;
+                int errY = src.y + src.height - b.height;
+                if (errX != 0 || errY != 0) {
+                    if (errX <= deviceZoom / 100 && errY <= deviceZoom / 100) {
+                        src.intersect(b);
+                    } else {
+                        SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                    }
                 }
             }
         }
@@ -1107,50 +1115,52 @@ public final class SwtGC extends SwtResource implements IGC {
 
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
         if (data.gdipGraphics != 0) {
-            //TODO - cache bitmap
-            long[] gdipImage = ((SwtImage) srcImage.getImpl()).createGdipImage(getZoom());
-            long img = gdipImage[0];
-            int imgWidth = Gdip.Image_GetWidth(img);
-            int imgHeight = Gdip.Image_GetHeight(img);
-            if (simple) {
-                srcWidth = destWidth = imgWidth;
-                srcHeight = destHeight = imgHeight;
-            } else {
-                if (srcX + srcWidth > imgWidth || srcY + srcHeight > imgHeight) {
-                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            if (srcImage.getImpl() instanceof SwtImage) {
+                //TODO - cache bitmap
+                long[] gdipImage = ((SwtImage) srcImage.getImpl()).createGdipImage(getZoom());
+                long img = gdipImage[0];
+                int imgWidth = Gdip.Image_GetWidth(img);
+                int imgHeight = Gdip.Image_GetHeight(img);
+                if (simple) {
+                    srcWidth = destWidth = imgWidth;
+                    srcHeight = destHeight = imgHeight;
+                } else {
+                    if (srcX + srcWidth > imgWidth || srcY + srcHeight > imgHeight) {
+                        SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                    }
+                    simple = srcX == 0 && srcY == 0 && srcWidth == destWidth && destWidth == imgWidth && srcHeight == destHeight && destHeight == imgHeight;
                 }
-                simple = srcX == 0 && srcY == 0 && srcWidth == destWidth && destWidth == imgWidth && srcHeight == destHeight && destHeight == imgHeight;
-            }
-            Rect rect = new Rect();
-            rect.X = destX;
-            rect.Y = destY;
-            rect.Width = destWidth;
-            rect.Height = destHeight;
-            /*
+                Rect rect = new Rect();
+                rect.X = destX;
+                rect.Y = destY;
+                rect.Width = destWidth;
+                rect.Height = destHeight;
+                /*
 		* Note that if the wrap mode is not WrapModeTileFlipXY, the scaled image
 		* is translucent around the borders.
 		*/
-            long attrib = Gdip.ImageAttributes_new();
-            Gdip.ImageAttributes_SetWrapMode(attrib, Gdip.WrapModeTileFlipXY);
-            if (data.alpha != 0xFF) {
-                float[] matrix = new float[] { 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, data.alpha / (float) 0xFF, 0, 0, 0, 0, 0, 1 };
-                Gdip.ImageAttributes_SetColorMatrix(attrib, matrix, Gdip.ColorMatrixFlagsDefault, Gdip.ColorAdjustTypeBitmap);
-            }
-            int gstate = 0;
-            if ((data.style & SWT.MIRRORED) != 0) {
-                gstate = Gdip.Graphics_Save(data.gdipGraphics);
-                Gdip.Graphics_ScaleTransform(data.gdipGraphics, -1, 1, Gdip.MatrixOrderPrepend);
-                Gdip.Graphics_TranslateTransform(data.gdipGraphics, -2 * destX - destWidth, 0, Gdip.MatrixOrderPrepend);
-            }
-            Gdip.Graphics_DrawImage(data.gdipGraphics, img, rect, srcX, srcY, srcWidth, srcHeight, Gdip.UnitPixel, attrib, 0, 0);
-            if ((data.style & SWT.MIRRORED) != 0) {
-                Gdip.Graphics_Restore(data.gdipGraphics, gstate);
-            }
-            Gdip.ImageAttributes_delete(attrib);
-            Gdip.Bitmap_delete(img);
-            if (gdipImage[1] != 0) {
-                long hHeap = OS.GetProcessHeap();
-                OS.HeapFree(hHeap, 0, gdipImage[1]);
+                long attrib = Gdip.ImageAttributes_new();
+                Gdip.ImageAttributes_SetWrapMode(attrib, Gdip.WrapModeTileFlipXY);
+                if (data.alpha != 0xFF) {
+                    float[] matrix = new float[] { 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, data.alpha / (float) 0xFF, 0, 0, 0, 0, 0, 1 };
+                    Gdip.ImageAttributes_SetColorMatrix(attrib, matrix, Gdip.ColorMatrixFlagsDefault, Gdip.ColorAdjustTypeBitmap);
+                }
+                int gstate = 0;
+                if ((data.style & SWT.MIRRORED) != 0) {
+                    gstate = Gdip.Graphics_Save(data.gdipGraphics);
+                    Gdip.Graphics_ScaleTransform(data.gdipGraphics, -1, 1, Gdip.MatrixOrderPrepend);
+                    Gdip.Graphics_TranslateTransform(data.gdipGraphics, -2 * destX - destWidth, 0, Gdip.MatrixOrderPrepend);
+                }
+                Gdip.Graphics_DrawImage(data.gdipGraphics, img, rect, srcX, srcY, srcWidth, srcHeight, Gdip.UnitPixel, attrib, 0, 0);
+                if ((data.style & SWT.MIRRORED) != 0) {
+                    Gdip.Graphics_Restore(data.gdipGraphics, gstate);
+                }
+                Gdip.ImageAttributes_delete(attrib);
+                Gdip.Bitmap_delete(img);
+                if (gdipImage[1] != 0) {
+                    long hHeap = OS.GetProcessHeap();
+                    OS.HeapFree(hHeap, 0, gdipImage[1]);
+                }
             }
             return;
         }
@@ -1306,7 +1316,7 @@ public final class SwtGC extends SwtResource implements IGC {
             simple = srcX == 0 && srcY == 0 && srcWidth == destWidth && destWidth == imgWidth && srcHeight == destHeight && destHeight == imgHeight;
         }
         boolean mustRestore = false;
-        GC memGC = ((SwtImage) srcImage.getImpl()).memGC;
+        GC memGC = srcImage.getImpl()._memGC();
         if (memGC != null && !memGC.isDisposed()) {
             ((SwtGC) memGC.getImpl()).flush();
             mustRestore = true;
@@ -1320,7 +1330,7 @@ public final class SwtGC extends SwtResource implements IGC {
         int depth = bm.bmPlanes * bm.bmBitsPixel;
         if (isDib && depth == 32) {
             drawBitmapAlpha(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-        } else if (((SwtImage) srcImage.getImpl()).transparentPixel != -1) {
+        } else if (srcImage.getImpl()._transparentPixel() != -1) {
             drawBitmapTransparent(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple, bm, imgWidth, imgHeight);
         } else {
             drawBitmapColor(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
@@ -1583,7 +1593,7 @@ public final class SwtGC extends SwtResource implements IGC {
         long srcHdc = OS.CreateCompatibleDC(getApi().handle);
         long oldSrcBitmap = OS.SelectObject(srcHdc, hBitmap);
         byte[] originalColors = null;
-        int transparentColor = ((SwtImage) srcImage.getImpl()).transparentColor;
+        int transparentColor = srcImage.getImpl()._transparentColor();
         if (transparentColor == -1) {
             int transBlue = 0, transGreen = 0, transRed = 0;
             boolean fixPalette = false;
@@ -1592,7 +1602,7 @@ public final class SwtGC extends SwtResource implements IGC {
                     int maxColors = 1 << bm.bmBitsPixel;
                     byte[] oldColors = new byte[maxColors * 4];
                     OS.GetDIBColorTable(srcHdc, 0, maxColors, oldColors);
-                    int offset = ((SwtImage) srcImage.getImpl()).transparentPixel * 4;
+                    int offset = srcImage.getImpl()._transparentPixel() * 4;
                     for (int i = 0; i < oldColors.length; i += 4) {
                         if (i != offset) {
                             if (oldColors[offset] == oldColors[i] && oldColors[offset + 1] == oldColors[i + 1] && oldColors[offset + 2] == oldColors[i + 2]) {
@@ -1625,14 +1635,14 @@ public final class SwtGC extends SwtResource implements IGC {
                     byte[] bmi = new byte[BITMAPINFOHEADER.sizeof + numColors * 4];
                     OS.MoveMemory(bmi, bmiHeader, BITMAPINFOHEADER.sizeof);
                     OS.GetDIBits(srcHdc, SwtImage.win32_getHandle(srcImage, getZoom()), 0, 0, null, bmi, OS.DIB_RGB_COLORS);
-                    int offset = BITMAPINFOHEADER.sizeof + 4 * ((SwtImage) srcImage.getImpl()).transparentPixel;
+                    int offset = BITMAPINFOHEADER.sizeof + 4 * srcImage.getImpl()._transparentPixel();
                     transRed = bmi[offset + 2] & 0xFF;
                     transGreen = bmi[offset + 1] & 0xFF;
                     transBlue = bmi[offset] & 0xFF;
                 }
             } else {
                 /* Direct color image */
-                int pixel = ((SwtImage) srcImage.getImpl()).transparentPixel;
+                int pixel = srcImage.getImpl()._transparentPixel();
                 switch(bm.bmBitsPixel) {
                     case 16:
                         transBlue = (pixel & 0x1F) << 3;
@@ -1652,8 +1662,14 @@ public final class SwtGC extends SwtResource implements IGC {
                 }
             }
             transparentColor = transBlue << 16 | transGreen << 8 | transRed;
-            if (!fixPalette)
-                ((SwtImage) srcImage.getImpl()).transparentColor = transparentColor;
+            if (!fixPalette) {
+                if (srcImage.getImpl() instanceof DartImage) {
+                    ((DartImage) srcImage.getImpl()).transparentColor = transparentColor;
+                }
+                if (srcImage.getImpl() instanceof SwtImage) {
+                    ((SwtImage) srcImage.getImpl()).transparentColor = transparentColor;
+                }
+            }
         }
         if (originalColors == null) {
             int mode = OS.SetStretchBltMode(getApi().handle, OS.COLORONCOLOR);
@@ -4117,7 +4133,12 @@ public final class SwtGC extends SwtResource implements IGC {
         Image image = data.image;
         if (image != null) {
             data.hNullBitmap = OS.SelectObject(hDC, SwtImage.win32_getHandle(image, DPIUtil.getZoomForAutoscaleProperty(data.nativeZoom)));
-            ((SwtImage) image.getImpl()).memGC = this.getApi();
+            if (image.getImpl() instanceof DartImage) {
+                ((DartImage) image.getImpl()).memGC = this.getApi();
+            }
+            if (image.getImpl() instanceof SwtImage) {
+                ((SwtImage) image.getImpl()).memGC = this.getApi();
+            }
         }
         int layout = data.layout;
         if (layout != -1) {

@@ -377,8 +377,13 @@ public final class DartGC extends DartResource implements IGC {
         /* Free resources */
         Image image = data.image;
         if (image != null) {
-            ((SwtImage) image.getImpl()).memGC = null;
-            ((SwtImage) image.getImpl()).createAlpha();
+            if (image.getImpl() instanceof DartImage) {
+                ((DartImage) image.getImpl()).memGC = null;
+            }
+            if (image.getImpl() instanceof SwtImage) {
+                ((SwtImage) image.getImpl()).memGC = null;
+            }
+            image.getImpl().createAlpha();
         }
         textDataCache.release();
         drawable = null;
@@ -529,8 +534,8 @@ public final class DartGC extends DartResource implements IGC {
         } else {
         }
         try {
-            if (((SwtImage) srcImage.getImpl()).memGC != null) {
-                ((SwtImage) srcImage.getImpl()).createAlpha();
+            if (srcImage.getImpl()._memGC() != null) {
+                srcImage.getImpl().createAlpha();
             }
         } finally {
         }

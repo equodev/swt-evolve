@@ -21,13 +21,14 @@ class MainToolbarSwt<V extends VComposite> extends CompositeSwt<V> {
 
 class MainToolbarImpl<T extends MainToolbarSwt, V extends VComposite>
     extends CompositeImpl<T, V> {
-
   final bool useDarkTheme = getCurrentTheme();
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor = useDarkTheme ? const Color(0xFF2A2A2A) : const Color(0xFFF5F5F5);
-    final Color separatorColor = useDarkTheme ? const Color(0xFF3B3B3B) : const Color(0xFFDDDDDD);
+    final Color backgroundColor =
+        useDarkTheme ? const Color(0xFF2A2A2A) : const Color(0xFFF5F5F5);
+    final Color separatorColor =
+        useDarkTheme ? const Color(0xFF3B3B3B) : const Color(0xFFDDDDDD);
 
     return super.wrap(
       Container(
@@ -39,27 +40,22 @@ class MainToolbarImpl<T extends MainToolbarSwt, V extends VComposite>
               onPressed: () => print('Test button works!'),
               child: Text('Test'),
             ),
-
             const Spacer(),
-
             Container(
               height: 22,
               width: 1.5,
               margin: const EdgeInsets.symmetric(vertical: 9),
               color: separatorColor,
             ),
-
             Container(
               height: 22,
               width: 1.5,
               margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 9),
               color: separatorColor,
             ),
-
           ],
         ),
       ),
     );
   }
-
 }

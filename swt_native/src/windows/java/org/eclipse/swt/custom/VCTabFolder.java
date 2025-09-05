@@ -159,9 +159,11 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).selectionHighlightBarThickness = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Image getSelectionBgImage() {
-        return ((DartCTabFolder) impl).selectionBgImage;
+        Image val = ((DartCTabFolder) impl).selectionBgImage;
+        if (val != null && !(val.getImpl() instanceof DartImage))
+            return null;
+        return val;
     }
 
     public void setSelectionBgImage(Image value) {

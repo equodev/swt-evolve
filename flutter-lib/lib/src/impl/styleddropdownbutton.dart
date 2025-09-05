@@ -24,9 +24,11 @@ class StyledDropdownButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor = useDarkTheme ? Color(0xFF1E1E1E) : Colors.white;
+    final Color backgroundColor =
+        useDarkTheme ? Color(0xFF1E1E1E) : Colors.white;
     final Color textColor = useDarkTheme ? Colors.white : Color(0xFF595858);
-    final Color borderColor = useDarkTheme ? Color(0xFF3C3C3C) : Color(0xFFD1D5DB);
+    final Color borderColor =
+        useDarkTheme ? Color(0xFF3C3C3C) : Color(0xFFD1D5DB);
 
     return MouseRegion(
       onEnter: (_) => onMouseEnter?.call(),
@@ -95,9 +97,11 @@ class StyledSimpleCombo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor = useDarkTheme ? Color(0xFF1E1E1E) : Colors.white;
+    final Color backgroundColor =
+        useDarkTheme ? Color(0xFF1E1E1E) : Colors.white;
     final Color textColor = useDarkTheme ? Colors.white : Color(0xFF595858);
-    final Color borderColor = useDarkTheme ? Color(0xFF3C3C3C) : Color(0xFFD1D5DB);
+    final Color borderColor =
+        useDarkTheme ? Color(0xFF3C3C3C) : Color(0xFFD1D5DB);
 
     return MouseRegion(
       onEnter: (_) => onMouseEnter?.call(),
@@ -179,9 +183,11 @@ class StyledEditableCombo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor = useDarkTheme ? Color(0xFF1E1E1E) : Colors.white;
+    final Color backgroundColor =
+        useDarkTheme ? Color(0xFF1E1E1E) : Colors.white;
     final Color textColor = useDarkTheme ? Colors.white : Color(0xFF595858);
-    final Color borderColor = useDarkTheme ? Color(0xFF3C3C3C) : Color(0xFFD1D5DB);
+    final Color borderColor =
+        useDarkTheme ? Color(0xFF3C3C3C) : Color(0xFFD1D5DB);
 
     return MouseRegion(
       onEnter: (_) => onMouseEnter?.call(),

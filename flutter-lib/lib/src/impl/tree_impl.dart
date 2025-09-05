@@ -43,11 +43,11 @@ class TreeImpl<T extends TreeSwt, V extends TreeValue>
               // Header row with TreeColumn widgets
               if (state.headerVisible == true && columns.isNotEmpty)
                 Row(
-                  children: columns.map((column) =>
-                      Expanded(
-                        child: getWidgetForTreeColumn(column),
-                      )
-                  ).toList(),
+                  children: columns
+                      .map((column) => Expanded(
+                            child: getWidgetForTreeColumn(column),
+                          ))
+                      .toList(),
                 ),
               // Tree content
               Expanded(
@@ -72,9 +72,7 @@ class TreeImpl<T extends TreeSwt, V extends TreeValue>
     if (state.children == null) {
       return [];
     }
-    return state.children!
-        .whereType<TreeColumnValue>()
-        .toList();
+    return state.children!.whereType<TreeColumnValue>().toList();
   }
 
   List<Widget> getTreeItems() {
@@ -157,7 +155,6 @@ class TreeImpl<T extends TreeSwt, V extends TreeValue>
   }
 }
 
-
 class TreeItemSwtWrapper extends StatelessWidget {
   final TreeItemValue treeItem;
   final int level;
@@ -204,7 +201,8 @@ class TreeItemContext {
   });
 
   static TreeItemContext? of(BuildContext context) {
-    final provider = context.dependOnInheritedWidgetOfExactType<TreeItemContextProvider>();
+    final provider =
+        context.dependOnInheritedWidgetOfExactType<TreeItemContextProvider>();
     return provider?.context;
   }
 }
@@ -220,12 +218,12 @@ class TreeItemContextProvider extends InheritedWidget {
     required TreeSwt parentTree,
     required TreeValue parentTreeValue,
     required Widget child,
-  }) : context = TreeItemContext(
-    level: level,
-    isCheckMode: isCheckMode,
-    parentTree: parentTree,
-    parentTreeValue: parentTreeValue,
-  ),
+  })  : context = TreeItemContext(
+          level: level,
+          isCheckMode: isCheckMode,
+          parentTree: parentTree,
+          parentTreeValue: parentTreeValue,
+        ),
         super(key: key, child: child);
 
   @override

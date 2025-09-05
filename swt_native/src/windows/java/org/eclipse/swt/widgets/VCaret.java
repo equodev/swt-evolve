@@ -24,9 +24,11 @@ public class VCaret extends VWidget {
         ((DartCaret) impl).font = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Image getImage() {
-        return ((DartCaret) impl).image;
+        Image val = ((DartCaret) impl).image;
+        if (val != null && !(val.getImpl() instanceof DartImage))
+            return null;
+        return val;
     }
 
     public void setImage(Image value) {

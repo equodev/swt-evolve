@@ -6,18 +6,18 @@ typedef WithSizeBuilder = Widget Function(
 class IntrinsicSizeBuilder extends StatefulWidget {
   const IntrinsicSizeBuilder(
       {super.key,
-        required this.subject,
-        required this.builder,
-        this.listener,
-        this.constrainedAxis = Axis.horizontal,
-        this.firstFrameWidget});
+      required this.subject,
+      required this.builder,
+      this.listener,
+      this.constrainedAxis = Axis.horizontal,
+      this.firstFrameWidget});
 
   final Widget subject;
   final WithSizeBuilder builder;
   final void Function(
-      BuildContext context,
-      Size size,
-      )? listener;
+    BuildContext context,
+    Size size,
+  )? listener;
 
   /// The axis to retain constraints on, if any, when determining subject size.
   ///
@@ -96,13 +96,13 @@ class _IntrinsicSizeBuilderState extends State<IntrinsicSizeBuilder> {
     final child = _size == null
         ? null
         : KeyedSubtree(
-      key: _evaluatedKey,
-      child: widget.builder(
-        context,
-        _size!,
-        widget.subject,
-      ),
-    );
+            key: _evaluatedKey,
+            child: widget.builder(
+              context,
+              _size!,
+              widget.subject,
+            ),
+          );
     return LayoutBuilder(
       builder: (context, constraints) {
         if (_previousConstraints != null &&

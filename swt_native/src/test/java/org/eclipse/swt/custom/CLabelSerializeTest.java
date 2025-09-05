@@ -30,7 +30,9 @@ class CLabelSerializeTest extends SerializeTestBase {
                .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
+        assertJ.satisfies(node("backgroundImage").equalsTo(value(w).getBackgroundImage(), orAbsentIfNull));
         assertJ.satisfies(node("bottomMargin").equalsTo(w.getBottomMargin(), orAbsentIf0));
+        assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
         assertJ.satisfies(node("leftMargin").equalsTo(w.getLeftMargin(), orAbsentIf0));
         assertJ.satisfies(node("rightMargin").equalsTo(w.getRightMargin(), orAbsentIf0));
         assertJ.satisfies(node("topMargin").equalsTo(w.getTopMargin(), orAbsentIf0));
@@ -39,6 +41,7 @@ class CLabelSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("layoutDeferred").equalsTo(w.getLayoutDeferred(), orAbsentIfFalse));
         assertJ.satisfies(node("scrollbarsMode").equalsTo(w.getScrollbarsMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
+        assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
         assertJ.satisfies(node("bounds").equalsTo(w.getBounds(), orAbsentIfNull));
         assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));

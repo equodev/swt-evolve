@@ -297,7 +297,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return null;
+        return Sizes.getBounds(this);
     }
 
     /**
@@ -706,7 +706,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
-        disabledImage = image;
+        this.disabledImage = ImageUtils.copyImage(display, image);
         updateImage(true);
     }
 
@@ -774,7 +774,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
-        hotImage = image;
+        this.hotImage = ImageUtils.copyImage(display, image);
         updateImage(true);
     }
 

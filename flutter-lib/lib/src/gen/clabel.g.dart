@@ -41,6 +41,9 @@ VCLabel _$VCLabelFromJson(Map<String, dynamic> json) => VCLabel()
       ? null
       : VCaret.fromJson(json['caret'] as Map<String, dynamic>)
   ..alignment = (json['alignment'] as num?)?.toInt()
+  ..backgroundImage = json['backgroundImage'] == null
+      ? null
+      : VImage.fromJson(json['backgroundImage'] as Map<String, dynamic>)
   ..bottomMargin = (json['bottomMargin'] as num?)?.toInt()
   ..gradientColors = (json['gradientColors'] as List<dynamic>?)
       ?.map((e) => VColor.fromJson(e as Map<String, dynamic>))
@@ -49,6 +52,9 @@ VCLabel _$VCLabelFromJson(Map<String, dynamic> json) => VCLabel()
       ?.map((e) => (e as num).toInt())
       .toList()
   ..gradientVertical = json['gradientVertical'] as bool?
+  ..image = json['image'] == null
+      ? null
+      : VImage.fromJson(json['image'] as Map<String, dynamic>)
   ..leftMargin = (json['leftMargin'] as num?)?.toInt()
   ..rightMargin = (json['rightMargin'] as num?)?.toInt()
   ..text = json['text'] as String?
@@ -77,10 +83,12 @@ Map<String, dynamic> _$VCLabelToJson(VCLabel instance) => <String, dynamic>{
       'tabList': instance.tabList,
       'caret': instance.caret,
       'alignment': instance.alignment,
+      'backgroundImage': instance.backgroundImage,
       'bottomMargin': instance.bottomMargin,
       'gradientColors': instance.gradientColors,
       'gradientPercents': instance.gradientPercents,
       'gradientVertical': instance.gradientVertical,
+      'image': instance.image,
       'leftMargin': instance.leftMargin,
       'rightMargin': instance.rightMargin,
       'text': instance.text,

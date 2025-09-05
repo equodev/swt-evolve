@@ -32,9 +32,11 @@ public class VButton extends VControl {
         ((DartButton) impl).grayed = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Image getImage() {
-        return ((DartButton) impl).image;
+        Image val = ((DartButton) impl).image;
+        if (val != null && !(val.getImpl() instanceof DartImage))
+            return null;
+        return val;
     }
 
     public void setImage(Image value) {

@@ -260,7 +260,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                             OS.DeleteDC(hdcDest);
                             /* Release the HDC for the device */
                             device.internal_dispose_GC(hDC, null);
-                            transparentPixel = ((SwtImage) srcImage.getImpl()).transparentPixel;
+                            transparentPixel = srcImage.getImpl()._transparentPixel();
                             break;
                         case SWT.ICON:
                             setHandleForZoomLevel(OS.CopyImage(srcImage.handle, OS.IMAGE_ICON, rect.width, rect.height, 0), getZoom());
@@ -483,7 +483,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         ImageData data = DPIUtil.autoScaleUp(device, this.dataAtBaseZoom);
         init(data, getZoom());
         init();
-        ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
+        //((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
+        ;
     }
 
     /**
@@ -520,6 +521,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      */
     public SwtImage(Device device, String filename, Image api) {
         super(device, api);
+        this.filename = ImageUtils.getFilename(filename);
         if (filename == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         initialNativeZoom = DPIUtil.getNativeDeviceZoom();
@@ -561,6 +563,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      */
     public SwtImage(Device device, ImageFileNameProvider imageFileNameProvider, Image api) {
         super(device, api);
+        this.filename = ImageUtils.getFilename(imageFileNameProvider.getImagePath(100));
         this.imageFileNameProvider = imageFileNameProvider;
         initialNativeZoom = DPIUtil.getNativeDeviceZoom();
         ElementAtZoom<String> fileName = DPIUtil.validateAndGetImagePathAtZoom(imageFileNameProvider, getZoom());
@@ -795,17 +798,21 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             ElementAtZoom<String> imageCandidate = DPIUtil.validateAndGetImagePathAtZoom(((SwtImage) image.getImpl()).imageFileNameProvider, zoom);
             ImageData imageData = new ImageData(imageCandidate.element());
             if (imageCandidate.zoom() == zoom) {
-                /* Release current native resources */
-                long handle = ((SwtImage) image.getImpl()).initNative(imageCandidate.element(), zoom);
-                if (handle == 0)
-                    ((SwtImage) image.getImpl()).init(imageData, zoom);
+                if (image.getImpl() instanceof SwtImage) {
+                    /* Release current native resources */
+                    long handle = ((SwtImage) image.getImpl()).initNative(imageCandidate.element(), zoom);
+                    if (handle == 0)
+                        ((SwtImage) image.getImpl()).init(imageData, zoom);
+                }
                 if (image.getImpl() instanceof SwtResource) {
                     ((SwtResource) image.getImpl()).init();
                 }
             } else {
                 ImageData resizedData = DPIUtil.scaleImageData(image.getImpl()._device(), imageData, zoom, imageCandidate.zoom());
-                ImageData newData = ((SwtImage) image.getImpl()).adaptImageDataIfDisabledOrGray(resizedData);
-                ((SwtImage) image.getImpl()).init(newData, zoom);
+                if (image.getImpl() instanceof SwtImage) {
+                    ImageData newData = ((SwtImage) image.getImpl()).adaptImageDataIfDisabledOrGray(resizedData);
+                    ((SwtImage) image.getImpl()).init(newData, zoom);
+                }
             }
         } else if (((SwtImage) image.getImpl()).imageDataProvider != null) {
             ElementAtZoom<ImageData> imageCandidate;
@@ -813,20 +820,26 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                 imageCandidate = DPIUtil.validateAndGetImageDataAtZoom(((SwtImage) image.getImpl()).imageDataProvider, zoom);
             }
             ImageData resizedData = DPIUtil.scaleImageData(image.getImpl()._device(), imageCandidate.element(), zoom, imageCandidate.zoom());
-            ImageData newData = ((SwtImage) image.getImpl()).adaptImageDataIfDisabledOrGray(resizedData);
-            ((SwtImage) image.getImpl()).init(newData, zoom);
+            if (image.getImpl() instanceof SwtImage) {
+                ImageData newData = ((SwtImage) image.getImpl()).adaptImageDataIfDisabledOrGray(resizedData);
+                ((SwtImage) image.getImpl()).init(newData, zoom);
+            }
             if (image.getImpl() instanceof SwtResource) {
                 ((SwtResource) image.getImpl()).init();
             }
         } else {
-            if (((SwtImage) image.getImpl()).dataAtBaseZoom == null && ((SwtImage) image.getImpl()).memGC == null) {
-                // Cache data at base zoom before refresh.
-                ((SwtImage) image.getImpl()).dataAtBaseZoom = new ElementAtZoom<>(image.getImageData(((SwtImage) image.getImpl()).getZoom()), ((SwtImage) image.getImpl()).getZoom());
+            if (((SwtImage) image.getImpl()).dataAtBaseZoom == null && image.getImpl()._memGC() == null) {
+                if (image.getImpl() instanceof SwtImage) {
+                    // Cache data at base zoom before refresh.
+                    ((SwtImage) image.getImpl()).dataAtBaseZoom = new ElementAtZoom<>(image.getImageData(((SwtImage) image.getImpl()).getZoom()), ((SwtImage) image.getImpl()).getZoom());
+                }
             }
             if (((SwtImage) image.getImpl()).dataAtBaseZoom != null) {
                 ImageData resizedData = image.getImageData(zoom);
-                ImageData newData = ((SwtImage) image.getImpl()).adaptImageDataIfDisabledOrGray(resizedData);
-                ((SwtImage) image.getImpl()).init(newData, zoom);
+                if (image.getImpl() instanceof SwtImage) {
+                    ImageData newData = ((SwtImage) image.getImpl()).adaptImageDataIfDisabledOrGray(resizedData);
+                    ((SwtImage) image.getImpl()).init(newData, zoom);
+                }
                 if (image.getImpl() instanceof SwtResource) {
                     ((SwtResource) image.getImpl()).init();
                 }
@@ -1267,12 +1280,14 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      */
     @Override
     public boolean equals(Object object) {
+        if (object != null && ((Image) object).getImpl() instanceof DartImage)
+            return false;
         if (object == this.getApi())
             return true;
         if (!(object instanceof Image))
             return false;
         Image image = (Image) object;
-        if (device != image.getImpl()._device() || transparentPixel != ((SwtImage) image.getImpl()).transparentPixel || getZoom() != ((SwtImage) image.getImpl()).getZoom())
+        if (device != image.getImpl()._device() || transparentPixel != image.getImpl()._transparentPixel() || getZoom() != ((SwtImage) image.getImpl()).getZoom())
             return false;
         if (imageDataProvider != null && ((SwtImage) image.getImpl()).imageDataProvider != null) {
             return (styleFlag == ((SwtImage) image.getImpl()).styleFlag) && imageDataProvider.equals(((SwtImage) image.getImpl()).imageDataProvider);
@@ -2127,7 +2142,12 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             } else {
                 ((SwtImage) image.getImpl()).setHandleForZoomLevel(hDib, zoom);
                 image.type = SWT.BITMAP;
-                ((SwtImage) image.getImpl()).transparentPixel = i.transparentPixel;
+                if (image.getImpl() instanceof DartImage) {
+                    ((DartImage) image.getImpl()).transparentPixel = i.transparentPixel;
+                }
+                if (image.getImpl() instanceof SwtImage) {
+                    ((SwtImage) image.getImpl()).transparentPixel = i.transparentPixel;
+                }
             }
         }
         return result;
@@ -2440,6 +2460,28 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             }
         }
     }
+
+    public int _transparentPixel() {
+        return transparentPixel;
+    }
+
+    public int _transparentColor() {
+        return transparentColor;
+    }
+
+    public GC _memGC() {
+        return memGC;
+    }
+
+    public int _width() {
+        return width;
+    }
+
+    public int _height() {
+        return height;
+    }
+
+    String filename;
 
     public Image getApi() {
         if (api == null)

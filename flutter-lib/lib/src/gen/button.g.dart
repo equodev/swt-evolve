@@ -13,6 +13,9 @@ VButton _$VButtonFromJson(Map<String, dynamic> json) => VButton()
   ..background = json['background'] == null
       ? null
       : VColor.fromJson(json['background'] as Map<String, dynamic>)
+  ..backgroundImage = json['backgroundImage'] == null
+      ? null
+      : VImage.fromJson(json['backgroundImage'] as Map<String, dynamic>)
   ..bounds = json['bounds'] == null
       ? null
       : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>)
@@ -30,6 +33,9 @@ VButton _$VButtonFromJson(Map<String, dynamic> json) => VButton()
   ..visible = json['visible'] as bool?
   ..alignment = (json['alignment'] as num?)?.toInt()
   ..grayed = json['grayed'] as bool?
+  ..image = json['image'] == null
+      ? null
+      : VImage.fromJson(json['image'] as Map<String, dynamic>)
   ..selection = json['selection'] as bool?
   ..text = json['text'] as String?;
 
@@ -38,6 +44,7 @@ Map<String, dynamic> _$VButtonToJson(VButton instance) => <String, dynamic>{
       'id': instance.id,
       'style': instance.style,
       'background': instance.background,
+      'backgroundImage': instance.backgroundImage,
       'bounds': instance.bounds,
       'capture': instance.capture,
       'dragDetect': instance.dragDetect,
@@ -51,6 +58,7 @@ Map<String, dynamic> _$VButtonToJson(VButton instance) => <String, dynamic>{
       'visible': instance.visible,
       'alignment': instance.alignment,
       'grayed': instance.grayed,
+      'image': instance.image,
       'selection': instance.selection,
       'text': instance.text,
     };

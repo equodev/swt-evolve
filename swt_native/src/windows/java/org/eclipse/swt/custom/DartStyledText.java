@@ -11860,12 +11860,36 @@ public class DartStyledText extends DartCanvas implements IStyledText {
 
     protected void _hookEvents() {
         super._hookEvents();
+        FlutterBridge.on(this, "BidiSegment", "lineGetSegments", e -> {
+            getDisplay().asyncExec(() -> {
+            });
+        });
+        FlutterBridge.on(this, "Caret", "caretMoved", e -> {
+            getDisplay().asyncExec(() -> {
+            });
+        });
+        FlutterBridge.on(this, "ExtendedModify", "modifyText", e -> {
+            getDisplay().asyncExec(() -> {
+            });
+        });
+        FlutterBridge.on(this, "LineBackground", "lineGetBackground", e -> {
+            getDisplay().asyncExec(() -> {
+            });
+        });
+        FlutterBridge.on(this, "LineStyle", "lineGetStyle", e -> {
+            getDisplay().asyncExec(() -> {
+            });
+        });
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
                 if (e.text != null)
                     setText(e.text);
                 if (e.start >= 0)
                     setCaretOffset(e.start);
+            });
+        });
+        FlutterBridge.on(this, "PaintObject", "paintObject", e -> {
+            getDisplay().asyncExec(() -> {
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
@@ -11876,6 +11900,18 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         FlutterBridge.on(this, "Verify", "Verify", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.Verify, e);
+            });
+        });
+        FlutterBridge.on(this, "VerifyKey", "verifyKey", e -> {
+            getDisplay().asyncExec(() -> {
+            });
+        });
+        FlutterBridge.on(this, "WordMovement", "getNextOffset", e -> {
+            getDisplay().asyncExec(() -> {
+            });
+        });
+        FlutterBridge.on(this, "WordMovement", "getPreviousOffset", e -> {
+            getDisplay().asyncExec(() -> {
             });
         });
     }

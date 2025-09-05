@@ -24,12 +24,16 @@ class TableImpl<T extends TableSwt, V extends TableValue>
     bool headerVisible = state.headerVisible ?? true;
     bool linesVisible = state.linesVisible ?? true;
 
-    Color backgroundColor = useDarkTheme ? const Color(0xFF1D1D1D) : Colors.white;
-    Color borderColor = useDarkTheme ? const Color(0xFF333333) : Colors.grey.shade300;
-    Color headerBackgroundColor = useDarkTheme ? const Color(0xFF1E1E1E) : Colors.white;
+    Color backgroundColor =
+        useDarkTheme ? const Color(0xFF1D1D1D) : Colors.white;
+    Color borderColor =
+        useDarkTheme ? const Color(0xFF333333) : Colors.grey.shade300;
+    Color headerBackgroundColor =
+        useDarkTheme ? const Color(0xFF1E1E1E) : Colors.white;
     Color headerTextColor = useDarkTheme ? Colors.white : Colors.black;
     Color rowTextColor = useDarkTheme ? Colors.white : Colors.black;
-    Color alternateRowColor = useDarkTheme ? const Color(0xFF121212) : const Color(0xFFF5F5F5);
+    Color alternateRowColor =
+        useDarkTheme ? const Color(0xFF121212) : const Color(0xFFF5F5F5);
 
     return Container(
       decoration: BoxDecoration(
@@ -52,55 +56,56 @@ class TableImpl<T extends TableSwt, V extends TableValue>
                 columnWidths: generateColumnWidths(columns.length),
                 children: <TableRow>[
                   TableRow(
-                    children: columns.map((column) =>
-                        Container(
-                          height: 40,
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0.0),
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            column.text ?? "",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: headerTextColor,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        )
-                    ).toList(),
+                    children: columns
+                        .map((column) => Container(
+                              height: 40,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0, vertical: 0.0),
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                column.text ?? "",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: headerTextColor,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ))
+                        .toList(),
                   ),
                 ],
               ),
             ),
-
           Container(
             color: backgroundColor,
             height: calculateTableHeight(items.length),
             child: items.isEmpty
                 ? Container()
                 : SingleChildScrollView(
-              child: Table(
-                border: TableBorder(
-                  horizontalInside: BorderSide.none,
-                  verticalInside: BorderSide(color: borderColor, width: 2.0),
-                  top: BorderSide.none,
-                  bottom: BorderSide.none,
-                  left: BorderSide.none,
-                  right: BorderSide.none,
-                ),
-                columnWidths: generateColumnWidths(columns.length),
-                children: items.map((item) =>
-                    _buildTableRow(
-                      items.indexOf(item),
-                      item,
-                      backgroundColor,
-                      alternateRowColor,
-                      rowTextColor,
-                      columns.length,
-                    )
-                ).toList(),
-              ),
-            ),
+                    child: Table(
+                      border: TableBorder(
+                        horizontalInside: BorderSide.none,
+                        verticalInside:
+                            BorderSide(color: borderColor, width: 2.0),
+                        top: BorderSide.none,
+                        bottom: BorderSide.none,
+                        left: BorderSide.none,
+                        right: BorderSide.none,
+                      ),
+                      columnWidths: generateColumnWidths(columns.length),
+                      children: items
+                          .map((item) => _buildTableRow(
+                                items.indexOf(item),
+                                item,
+                                backgroundColor,
+                                alternateRowColor,
+                                rowTextColor,
+                                columns.length,
+                              ))
+                          .toList(),
+                    ),
+                  ),
           ),
         ],
       ),
@@ -123,13 +128,20 @@ class TableImpl<T extends TableSwt, V extends TableValue>
     for (int i = 0; i < columnCount; i++) {
       if (columnCount == 4) {
         switch (i) {
-          case 0: widths[i] = const FlexColumnWidth(3); break;
-          case 1: widths[i] = const FlexColumnWidth(2); break;
-          case 2: widths[i] = const FlexColumnWidth(2); break;
-          case 3: widths[i] = const FlexColumnWidth(3); break;
+          case 0:
+            widths[i] = const FlexColumnWidth(3);
+            break;
+          case 1:
+            widths[i] = const FlexColumnWidth(2);
+            break;
+          case 2:
+            widths[i] = const FlexColumnWidth(2);
+            break;
+          case 3:
+            widths[i] = const FlexColumnWidth(3);
+            break;
         }
-      }
-      else {
+      } else {
         widths[i] = const FlexColumnWidth(1);
       }
     }
@@ -138,13 +150,13 @@ class TableImpl<T extends TableSwt, V extends TableValue>
   }
 
   TableRow _buildTableRow(
-      int index,
-      TableItemValue item,
-      Color backgroundColor,
-      Color alternateRowColor,
-      Color textColor,
-      int columnCount,
-      ) {
+    int index,
+    TableItemValue item,
+    Color backgroundColor,
+    Color alternateRowColor,
+    Color textColor,
+    int columnCount,
+  ) {
     List<String?> cellTexts = item.texts ?? [];
     bool isSelected = index == _selectedRowIndex || isItemSelected(item);
 
@@ -152,46 +164,42 @@ class TableImpl<T extends TableSwt, V extends TableValue>
 
     List<Widget> rowCells = [];
 
-    rowCells.add(
-        GestureDetector(
-          onTap: () => _handleRowTap(index, item),
-          onDoubleTap: () => _handleRowDoubleTap(index, item),
-          child: Container(
-            height: 22,
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0.0),
-            alignment: Alignment.centerLeft,
-            child: Text(
-              item.text ?? "",
-              style: TextStyle(
-                fontSize: 13,
-                color: textColor,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
+    rowCells.add(GestureDetector(
+      onTap: () => _handleRowTap(index, item),
+      onDoubleTap: () => _handleRowDoubleTap(index, item),
+      child: Container(
+        height: 22,
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0.0),
+        alignment: Alignment.centerLeft,
+        child: Text(
+          item.text ?? "",
+          style: TextStyle(
+            fontSize: 13,
+            color: textColor,
           ),
-        )
-    );
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    ));
 
     for (int i = 0; i < columnCount - 1; i++) {
-      rowCells.add(
-          GestureDetector(
-            onTap: () => _handleRowTap(index, item),
-            onDoubleTap: () => _handleRowDoubleTap(index, item),
-            child: Container(
-              height: 22,
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0.0),
-              alignment: Alignment.centerLeft,
-              child: Text(
-                i < cellTexts.length ? (cellTexts[i] ?? "") : "",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: textColor,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
+      rowCells.add(GestureDetector(
+        onTap: () => _handleRowTap(index, item),
+        onDoubleTap: () => _handleRowDoubleTap(index, item),
+        child: Container(
+          height: 22,
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0.0),
+          alignment: Alignment.centerLeft,
+          child: Text(
+            i < cellTexts.length ? (cellTexts[i] ?? "") : "",
+            style: TextStyle(
+              fontSize: 13,
+              color: textColor,
             ),
-          )
-      );
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ));
     }
 
     return TableRow(
@@ -205,7 +213,8 @@ class TableImpl<T extends TableSwt, V extends TableValue>
   void _handleRowTap(int index, TableItemValue item) {
     setState(() {
       int previousSelectedIndex = _selectedRowIndex;
-      Object? previousSelectedId = previousSelectedIndex >= 0 && previousSelectedIndex < getTableItems().length
+      Object? previousSelectedId = previousSelectedIndex >= 0 &&
+              previousSelectedIndex < getTableItems().length
           ? getTableItems()[previousSelectedIndex].id
           : null;
 
@@ -237,7 +246,8 @@ class TableImpl<T extends TableSwt, V extends TableValue>
   void _handleRowDoubleTap(int index, TableItemValue item) {
     setState(() {
       int previousSelectedIndex = _selectedRowIndex;
-      Object? previousSelectedId = previousSelectedIndex >= 0 && previousSelectedIndex < getTableItems().length
+      Object? previousSelectedId = previousSelectedIndex >= 0 &&
+              previousSelectedIndex < getTableItems().length
           ? getTableItems()[previousSelectedIndex].id
           : null;
 

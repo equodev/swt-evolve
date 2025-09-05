@@ -251,23 +251,25 @@ public class SwtPattern extends SwtResource implements IPattern {
     }
 
     void setImageHandle(Image image, int zoom) {
-        long[] gdipImage = ((SwtImage) image.getImpl()).createGdipImage(zoom);
-        long img = gdipImage[0];
-        int width = Gdip.Image_GetWidth(img);
-        int height = Gdip.Image_GetHeight(img);
-        long handle = Gdip.TextureBrush_new(img, Gdip.WrapModeTile, 0, 0, width, height);
-        bitmapDestructor = () -> {
-            Gdip.Bitmap_delete(img);
-            if (gdipImage[1] != 0) {
-                long hHeap = OS.GetProcessHeap();
-                OS.HeapFree(hHeap, 0, gdipImage[1]);
+        if (image.getImpl() instanceof SwtImage) {
+            long[] gdipImage = ((SwtImage) image.getImpl()).createGdipImage(zoom);
+            long img = gdipImage[0];
+            int width = Gdip.Image_GetWidth(img);
+            int height = Gdip.Image_GetHeight(img);
+            long handle = Gdip.TextureBrush_new(img, Gdip.WrapModeTile, 0, 0, width, height);
+            bitmapDestructor = () -> {
+                Gdip.Bitmap_delete(img);
+                if (gdipImage[1] != 0) {
+                    long hHeap = OS.GetProcessHeap();
+                    OS.HeapFree(hHeap, 0, gdipImage[1]);
+                }
+            };
+            if (handle == 0) {
+                bitmapDestructor.run();
+                SWT.error(SWT.ERROR_NO_HANDLES);
+            } else {
+                zoomLevelToHandle.put(zoom, handle);
             }
-        };
-        if (handle == 0) {
-            bitmapDestructor.run();
-            SWT.error(SWT.ERROR_NO_HANDLES);
-        } else {
-            zoomLevelToHandle.put(zoom, handle);
         }
     }
 

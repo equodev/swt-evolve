@@ -58,7 +58,9 @@ class TextImpl<T extends TextSwt<V>, V extends TextValue>
           textAlign: textAlign,
           style: _getTextStyle(),
           decoration: _getInputDecoration(),
-          keyboardType: state.style.has(SWT.MULTI) ? TextInputType.multiline : TextInputType.text,
+          keyboardType: state.style.has(SWT.MULTI)
+              ? TextInputType.multiline
+              : TextInputType.text,
           maxLength: state.textLimit,
           onChanged: _handleTextChanged,
           onSubmitted: _handleSubmitted,
@@ -91,27 +93,30 @@ class TextImpl<T extends TextSwt<V>, V extends TextValue>
       focusedBorder: _getBorder(isFocused: true),
       fillColor: useDarkTheme ? const Color(0xFF1E1E1E) : Colors.white,
       filled: true,
-      prefixIcon: state.style.has(SWT.SEARCH) || state.style.has(SWT.ICON_SEARCH)
-          ? const Icon(Icons.search, size: 16)
-          : null,
+      prefixIcon:
+          state.style.has(SWT.SEARCH) || state.style.has(SWT.ICON_SEARCH)
+              ? const Icon(Icons.search, size: 16)
+              : null,
       prefixIconConstraints: const BoxConstraints(
         minHeight: 32,
         minWidth: 32,
       ),
-      suffixIcon: (state.style.has(SWT.SEARCH) && state.text != null && state.text!.isNotEmpty)
-          || state.style.has(SWT.ICON_CANCEL)
+      suffixIcon: (state.style.has(SWT.SEARCH) &&
+                  state.text != null &&
+                  state.text!.isNotEmpty) ||
+              state.style.has(SWT.ICON_CANCEL)
           ? IconButton(
-        icon: const Icon(Icons.clear, size: 16),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(
-          minHeight: 32,
-          minWidth: 32,
-        ),
-        onPressed: () {
-          _controller.clear();
-          widget.sendSelectionDefaultSelection(state, SWT.ICON_CANCEL);
-        },
-      )
+              icon: const Icon(Icons.clear, size: 16),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(
+                minHeight: 32,
+                minWidth: 32,
+              ),
+              onPressed: () {
+                _controller.clear();
+                widget.sendSelectionDefaultSelection(state, SWT.ICON_CANCEL);
+              },
+            )
           : null,
       suffixIconConstraints: const BoxConstraints(
         minHeight: 32,

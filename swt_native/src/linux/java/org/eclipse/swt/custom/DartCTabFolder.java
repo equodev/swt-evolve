@@ -3470,8 +3470,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         if (color == null)
             color = getDisplay().getSystemColor(SELECTION_BACKGROUND);
         selectionBackground = color;
-        //TODO:  need better caching strategy
-        ((DartCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
+        // ((DartCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
+        ;
         if (selectedIndex > -1)
             redraw();
     }
@@ -3657,8 +3657,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             ((DartCTabFolderRenderer) renderer.getImpl()).disposeSelectionHighlightGradientColors();
         }
         selectionBgImage = image;
-        //TODO:  need better caching strategy
-        ((DartCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
+        // ((DartCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
+        ;
         if (selectedIndex > -1)
             redraw();
     }
@@ -4151,9 +4151,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                                 if (controlBkImages[i] != null)
                                     controlBkImages[i].dispose();
                                 controlBkImages[i] = new Image(control.getDisplay(), bounds);
-                                GC gc = new GC(controlBkImages[i]);
-                                renderer.draw(CTabFolderRenderer.PART_BACKGROUND, 0, bounds, gc);
-                                gc.dispose();
+                                //Coming soon with GC support: GC gc = new GC(controlBkImages[i]);
+                                ;
+                                //Coming soon with GC support: renderer.draw(CTabFolderRenderer.PART_BACKGROUND, 0, bounds, gc);
+                                ;
+                                //Coming soon with GC support: gc.dispose();
+                                ;
                                 control.setBackground(null);
                                 control.setBackgroundImage(controlBkImages[i]);
                             }
@@ -4713,6 +4716,31 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     protected void _hookEvents() {
         super._hookEvents();
+        FlutterBridge.on(this, "CTabFolder", "itemClosed", e -> {
+            getDisplay().asyncExec(() -> {
+            });
+        });
+        FlutterBridge.on(this, "CTabFolder2", "close", e -> {
+            getDisplay().asyncExec(() -> {
+                CTabFolderHelper.handleClose(this, e);
+            });
+        });
+        FlutterBridge.on(this, "CTabFolder2", "maximize", e -> {
+            getDisplay().asyncExec(() -> {
+            });
+        });
+        FlutterBridge.on(this, "CTabFolder2", "minimize", e -> {
+            getDisplay().asyncExec(() -> {
+            });
+        });
+        FlutterBridge.on(this, "CTabFolder2", "restore", e -> {
+            getDisplay().asyncExec(() -> {
+            });
+        });
+        FlutterBridge.on(this, "CTabFolder2", "showList", e -> {
+            getDisplay().asyncExec(() -> {
+            });
+        });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.DefaultSelection, e);
