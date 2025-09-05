@@ -66,8 +66,10 @@ class _StyledLinkState extends State<StyledLink> {
 
   @override
   Widget build(BuildContext context) {
-    final Color linkColor = widget.useDarkTheme ? Colors.lightBlue : Colors.blue;
-    final Color disabledColor = widget.useDarkTheme ? Colors.grey[600]! : Colors.grey[400]!;
+    final Color linkColor =
+        widget.useDarkTheme ? Colors.lightBlue : Colors.blue;
+    final Color disabledColor =
+        widget.useDarkTheme ? Colors.grey[600]! : Colors.grey[400]!;
 
     return MouseRegion(
       onEnter: (_) {
@@ -98,7 +100,8 @@ class _StyledLinkState extends State<StyledLink> {
   }
 
   Widget _buildRichText(Color linkColor, Color disabledColor) {
-    final List<TextSpan> spans = _parseText(widget.text, linkColor, disabledColor);
+    final List<TextSpan> spans =
+        _parseText(widget.text, linkColor, disabledColor);
 
     return RichText(
       text: TextSpan(
@@ -114,7 +117,8 @@ class _StyledLinkState extends State<StyledLink> {
   }
 
   List<TextSpan> _parseText(String text, Color linkColor, Color disabledColor) {
-    final regex = RegExp(r'<a(?:\s+href="([^"]*)")?>(.+?)<\/a>|([^<]+)', caseSensitive: false);
+    final regex = RegExp(r'<a(?:\s+href="([^"]*)")?>(.+?)<\/a>|([^<]+)',
+        caseSensitive: false);
     final matches = regex.allMatches(text);
 
     return matches.map((match) {
@@ -125,7 +129,8 @@ class _StyledLinkState extends State<StyledLink> {
           text: linkText,
           style: TextStyle(
             color: widget.enabled ? linkColor : disabledColor,
-            decoration: _isHovered || _isFocused ? TextDecoration.underline : null,
+            decoration:
+                _isHovered || _isFocused ? TextDecoration.underline : null,
             height: 1.0,
           ),
           recognizer: widget.enabled

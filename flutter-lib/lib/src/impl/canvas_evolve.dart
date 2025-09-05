@@ -5,7 +5,8 @@ import 'composite_evolve.dart';
 
 abstract class Shape {
   void draw(Canvas c);
-  @override String toString();
+  @override
+  String toString();
 
   Rect? get clipRect => null;
 }
@@ -38,19 +39,16 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
 
   @override
   Widget build(BuildContext context) {
-    VGC gc = VGC.empty()..id=state.id;
+    VGC gc = VGC.empty()..id = state.id;
     return GCSwt<VGC>(value: gc);
   }
 
   Size getBounds() {
-    return Size(
-        (state.bounds?.width ?? 100).toDouble(),
-        (state.bounds?.height ?? 100).toDouble()
-    );
+    return Size((state.bounds?.width ?? 100).toDouble(),
+        (state.bounds?.height ?? 100).toDouble());
   }
 
-  Color rgbMapToColor(Map<String, dynamic> m) =>
-      Color.fromARGB(
+  Color rgbMapToColor(Map<String, dynamic> m) => Color.fromARGB(
         (m['alpha'] ?? 255) as int,
         (m['red'] ?? 0) as int,
         (m['green'] ?? 0) as int,

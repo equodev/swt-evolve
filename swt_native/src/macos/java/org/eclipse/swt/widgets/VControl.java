@@ -25,9 +25,11 @@ public class VControl extends VWidget {
         ((DartControl) impl)._background = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Image getBackgroundImage() {
-        return ((DartControl) impl).backgroundImage;
+        Image val = ((DartControl) impl).backgroundImage;
+        if (val != null && !(val.getImpl() instanceof DartImage))
+            return null;
+        return val;
     }
 
     public void setBackgroundImage(Image value) {

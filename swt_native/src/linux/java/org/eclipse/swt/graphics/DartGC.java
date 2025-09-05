@@ -461,9 +461,14 @@ public final class DartGC extends DartResource implements IGC {
         long clipRgn = data.clipRgn;
         Image image = data.image;
         if (image != null) {
-            ((SwtImage) image.getImpl()).memGC = null;
-            if (((SwtImage) image.getImpl()).transparentPixel != -1)
-                ((SwtImage) image.getImpl()).createMask();
+            if (image.getImpl() instanceof DartImage) {
+                ((DartImage) image.getImpl()).memGC = null;
+            }
+            if (image.getImpl() instanceof SwtImage) {
+                ((SwtImage) image.getImpl()).memGC = null;
+            }
+            if (image.getImpl()._transparentPixel() != -1)
+                ((DartImage) image.getImpl()).createMask();
         }
         disposeLayout();
         /* Dispose the GC */
@@ -642,7 +647,7 @@ public final class DartGC extends DartResource implements IGC {
 
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
         /* Refresh Image as per zoom level, if required. */
-        ((SwtImage) srcImage.getImpl()).refreshImageForZoom();
+        ((DartImage) srcImage.getImpl()).refreshImageForZoom();
         ImageData srcImageData = srcImage.getImageData();
         int imgWidth = srcImageData.width;
         int imgHeight = srcImageData.height;
@@ -657,7 +662,7 @@ public final class DartGC extends DartResource implements IGC {
             }
         }
         if (data.alpha != 0) {
-            ((SwtImage) srcImage.getImpl()).createSurface();
+            ((DartImage) srcImage.getImpl()).createSurface();
             if ((data.style & SWT.MIRRORED) != 0) {
             }
             if (srcWidth != destWidth || srcHeight != destHeight) {

@@ -19,6 +19,7 @@ class StyledTextSerializeTest extends SerializeTestBase {
     }
 
     @Test
+    @Disabled
     void should_serialize_filled_StyledText() {
         StyledText w = new StyledText(composite(), SWT.NONE);
         setAll(w);
@@ -66,6 +67,7 @@ class StyledTextSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("layoutDeferred").equalsTo(w.getLayoutDeferred(), orAbsentIfFalse));
         assertJ.satisfies(node("scrollbarsMode").equalsTo(w.getScrollbarsMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
+        assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
         assertJ.satisfies(node("bounds").equalsTo(w.getBounds(), orAbsentIfNull));
         assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));

@@ -1,7 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import com.dslplatform.json.DslJson;
-import com.dslplatform.json.runtime.Settings;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterLibraryLoader;
 import org.eclipse.swt.SWT;
@@ -10,10 +8,7 @@ import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.Platform;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.*;
-import java.util.List;
 
 public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     private final DartWidget forWidget;
@@ -61,6 +56,7 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     void initFlutterView(Composite parent, DartControl control) {
         super.onReady(control);
         context = InitializeFlutterWindow(client.getPort(), getHandle(parent), id(control), widgetName(control));
+        sendSwtEvolveProperties();
         long view = GetView(context);
         setHandle(control, view);
     }

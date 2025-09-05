@@ -23,7 +23,7 @@ target_compile_definitions(${FLUTTER_LIBRARY_NAME} PUBLIC FLUTTER_LIBRARY_EXPORT
 apply_standard_settings(${FLUTTER_LIBRARY_NAME})
 set_target_properties(${FLUTTER_LIBRARY_NAME} PROPERTIES
   CXX_VISIBILITY_PRESET hidden)
-#target_compile_features(${FLUTTER_LIBRARY_NAME} PUBLIC cxx_std_17)
+target_compile_features(${FLUTTER_LIBRARY_NAME} PUBLIC cxx_std_17)
 
 # Link Flutter Linux and required libraries
 target_link_libraries(${FLUTTER_LIBRARY_NAME} PRIVATE 
@@ -53,6 +53,7 @@ add_executable(${BINARY_NAME}
 # Apply the standard set of build settings. This can be removed for applications
 # that need different build settings.
 apply_standard_settings(${BINARY_NAME})
+target_compile_features(${BINARY_NAME} PUBLIC cxx_std_17)
 
 # Add preprocessor definitions for the application ID.
 add_definitions(-DAPPLICATION_ID="${APPLICATION_ID}")

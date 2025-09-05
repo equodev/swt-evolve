@@ -267,7 +267,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
      */
     public int getItemCount() {
         checkWidget();
-        int itemCount = 0;
+        int itemCount = items.length;
         return itemCount;
     }
 
@@ -293,7 +293,10 @@ public class DartToolBar extends DartComposite implements IToolBar {
     }
 
     ToolItem[] _getItems() {
-        return null;
+        if (items == null) {
+            items = new ToolItem[0];
+        }
+        return Arrays.copyOf(items, items.length);
     }
 
     /**
@@ -574,6 +577,37 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     public ToolItem[] _items() {
         return items;
+    }
+
+    void addItem(ToolItem item) {
+        int length = items.length;
+        ToolItem[] newItems = new ToolItem[length + 1];
+        System.arraycopy(items, 0, newItems, 0, length);
+        newItems[length] = item;
+        items = newItems;
+    }
+
+    void insertItem(ToolItem item, int index) {
+        if (index < 0 || index > items.length) {
+            error(SWT.ERROR_INVALID_RANGE);
+        }
+        int length = items.length;
+        ToolItem[] newItems = new ToolItem[length + 1];
+        System.arraycopy(items, 0, newItems, 0, index);
+        newItems[index] = item;
+        System.arraycopy(items, index, newItems, index + 1, length - index);
+        items = newItems;
+    }
+
+    void removeItem(ToolItem item) {
+        int index = indexOf(item);
+        if (index != -1) {
+            int length = items.length;
+            ToolItem[] newItems = new ToolItem[length - 1];
+            System.arraycopy(items, 0, newItems, 0, index);
+            System.arraycopy(items, index + 1, newItems, index, length - index - 1);
+            items = newItems;
+        }
     }
 
     protected void _hookEvents() {

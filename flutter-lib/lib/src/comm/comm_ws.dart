@@ -9,19 +9,20 @@ class EquoCommService {
   static int port = 0;
   static final impl = EquoComm(host: "localhost", port: _getPort());
 
-  static void onRaw(
-      String userEventActionId, CommCallback<dynamic> onSuccess) {
+  static void onRaw(String userEventActionId, CommCallback<dynamic> onSuccess) {
     // print("comm ws onraw: $userEventActionId");
     void callback(dynamic payload) {
       // print("comm ws on callback: ${payload ?? 'null'}");
       onSuccess(payload);
       print("comm ws on callback after onSuccess");
     }
+
     impl.on(userEventActionId, callback);
     // print("comm chromium on after: $userEventActionId");
   }
 
-  static void on<V extends VWidget>(String userEventActionId, CommCallback<V> onSuccess) {
+  static void on<V extends VWidget>(
+      String userEventActionId, CommCallback<V> onSuccess) {
     // print("comm ws on: $userEventActionId");
     void callback(dynamic payload) {
       // print("comm ws on callback: ${payload ?? 'null'}");
@@ -33,6 +34,7 @@ class EquoCommService {
       onSuccess(widgetValue as V);
       print("comm ws on callback after onSucess");
     }
+
     impl.on(userEventActionId, callback);
     // print("comm chromium on after: $userEventActionId");
   }
@@ -58,7 +60,9 @@ class EquoCommService {
   }
 
   static int _getPort() {
-    final p = port != 0 ? port : const int.fromEnvironment("equo.comm_port",defaultValue: 0);
+    final p = port != 0
+        ? port
+        : const int.fromEnvironment("equo.comm_port", defaultValue: 0);
     return p;
   }
 }
@@ -92,7 +96,8 @@ class UserEvent {
 
 class SDKMessage extends UserEvent {
   String? callbackId;
-  SDKMessage({this.callbackId, required super.actionId, super.payload, super.error});
+  SDKMessage(
+      {this.callbackId, required super.actionId, super.payload, super.error});
 }
 
 class UserEventCallback {
@@ -100,14 +105,16 @@ class UserEventCallback {
   OnSuccessCallback<dynamic> onSuccess;
   OnErrorCallback? onError;
   CallbackArgs? args;
-  UserEventCallback({this.id, required this.onSuccess, this.onError, this.args});
+  UserEventCallback(
+      {this.id, required this.onSuccess, this.onError, this.args});
 }
 
 class EquoComm {
   Map<String, UserEventCallback> userEventCallbacks = {};
   Future<WebSocket> ws;
 
-  EquoComm({String? host, int? port}) : ws = WebSocket.connect("ws://$host:$port") {
+  EquoComm({String? host, int? port})
+      : ws = WebSocket.connect("ws://$host:$port") {
     ws.then((websocket) {
       websocket.listen((event) {
         print("WS onData $event");
@@ -133,18 +140,25 @@ class EquoComm {
           if (message.callbackId != null) {
             Future(() async {
               callback.onSuccess(message.payload!);
-              sendToJava(UserEvent(actionId: message.callbackId!, payload: null));
+              sendToJava(
+                  UserEvent(actionId: message.callbackId!, payload: null));
             }).catchError((error) {
               var userError = SDKCommError(code: -1, message: '');
               if (error is String) {
                 userError.message = error;
-                sendToJava(UserEvent(actionId: message.callbackId!, payload: userError, error: SDKCommError(code: 1, message: '')));
+                sendToJava(UserEvent(
+                    actionId: message.callbackId!,
+                    payload: userError,
+                    error: SDKCommError(code: 1, message: '')));
               } else if (error != null) {
                 if (error is SDKCommError && error.code != null) {
                   userError.code = error.code;
                 }
                 userError.message = jsonEncode(error);
-                sendToJava(UserEvent(actionId: message.callbackId!, payload: userError, error: SDKCommError(code: 1, message: '')));
+                sendToJava(UserEvent(
+                    actionId: message.callbackId!,
+                    payload: userError,
+                    error: SDKCommError(code: 1, message: '')));
               }
             });
           } else {
@@ -163,9 +177,14 @@ class EquoComm {
         }
       } else {
         if (message.callbackId != null) {
-          final ERROR_CALLBACK_DOES_NOT_EXIST = 'An event handler does not exist for the user event \'${message.actionId}\'';
-          final error = SDKCommError(code: 255, message: ERROR_CALLBACK_DOES_NOT_EXIST);
-          sendToJava(UserEvent(actionId: message.callbackId!, payload: error, error: SDKCommError(code: 1, message: '')));
+          final ERROR_CALLBACK_DOES_NOT_EXIST =
+              'An event handler does not exist for the user event \'${message.actionId}\'';
+          final error =
+              SDKCommError(code: 255, message: ERROR_CALLBACK_DOES_NOT_EXIST);
+          sendToJava(UserEvent(
+              actionId: message.callbackId!,
+              payload: error,
+              error: SDKCommError(code: 1, message: '')));
         }
       }
     }
@@ -183,12 +202,16 @@ class EquoComm {
     return SDKMessage(
       actionId: json['actionId'],
       payload: json['payload'],
-      error: json['error'] != null ? SDKCommError(code: json['error']['code'], message: json['error']['message']) : null,
+      error: json['error'] != null
+          ? SDKCommError(
+              code: json['error']['code'], message: json['error']['message'])
+          : null,
       callbackId: json['callbackId'],
     );
   }
 
-  Future sendToJava(UserEvent userEvent, [UserEventCallback? callback, SendArgs? args]) {
+  Future sendToJava(UserEvent userEvent,
+      [UserEventCallback? callback, SendArgs? args]) {
     final event = jsonEncode({
       'actionId': userEvent.actionId,
       'payload': userEvent.payload,
@@ -207,9 +230,11 @@ class EquoComm {
     return sendToJava(userEvent, null, args);
   }
 
-  void on(String userEventActionId, OnSuccessCallback<dynamic> onSuccessCallback,
+  void on(
+      String userEventActionId, OnSuccessCallback<dynamic> onSuccessCallback,
       [OnErrorCallback? onErrorCallback, CallbackArgs? args]) {
-    final callback = UserEventCallback(onSuccess: onSuccessCallback, onError: onErrorCallback, args: args);
+    final callback = UserEventCallback(
+        onSuccess: onSuccessCallback, onError: onErrorCallback, args: args);
     userEventCallbacks[userEventActionId] = callback;
   }
 

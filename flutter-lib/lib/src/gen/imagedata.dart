@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import '../impl/utils/image_utils.dart';
 
 part 'imagedata.g.dart';
 
@@ -8,13 +9,22 @@ class VImageData {
   VImageData.empty();
 
   int? alpha;
+  @JsonKey(
+      fromJson: ImageUtils.parseByteArray,
+      toJson: ImageUtils.serializeByteArray)
   List<int>? alphaData;
   int? bytesPerLine;
+  @JsonKey(
+      fromJson: ImageUtils.parseByteArray,
+      toJson: ImageUtils.serializeByteArray)
   List<int>? data;
   int? delayTime;
   int? depth;
   int? disposalMethod;
   int? height;
+  @JsonKey(
+      fromJson: ImageUtils.parseByteArray,
+      toJson: ImageUtils.serializeByteArray)
   List<int>? maskData;
   int? maskPad;
   int? scanlinePad;

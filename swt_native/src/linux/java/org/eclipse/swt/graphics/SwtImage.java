@@ -226,10 +226,10 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         this.styleFlag = ((SwtImage) srcImage.getImpl()).styleFlag | flag;
         this.currentDeviceZoom = ((SwtImage) srcImage.getImpl()).currentDeviceZoom;
         if (flag != SWT.IMAGE_DISABLE)
-            transparentPixel = ((SwtImage) srcImage.getImpl()).transparentPixel;
+            transparentPixel = srcImage.getImpl()._transparentPixel();
         long imageSurface = srcImage.surface;
-        int width = this.width = ((SwtImage) srcImage.getImpl()).width;
-        int height = this.height = ((SwtImage) srcImage.getImpl()).height;
+        int width = this.width = srcImage.getImpl()._width();
+        int height = this.height = srcImage.getImpl()._height();
         int format = Cairo.cairo_surface_get_content(imageSurface) == Cairo.CAIRO_CONTENT_COLOR ? Cairo.CAIRO_FORMAT_RGB24 : Cairo.CAIRO_FORMAT_ARGB32;
         boolean hasAlpha = format == Cairo.CAIRO_FORMAT_ARGB32;
         getApi().surface = Cairo.cairo_image_surface_create(format, width, height);
@@ -537,6 +537,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      */
     public SwtImage(Device device, String filename, Image api) {
         super(device, api);
+        this.filename = ImageUtils.getFilename(filename);
         if (filename == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         ImageData data = new ImageData(filename);
@@ -577,6 +578,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      */
     public SwtImage(Device device, ImageFileNameProvider imageFileNameProvider, Image api) {
         super(device, api);
+        this.filename = ImageUtils.getFilename(imageFileNameProvider.getImagePath(100));
         this.imageFileNameProvider = imageFileNameProvider;
         currentDeviceZoom = DPIUtil.getDeviceZoom();
         ElementAtZoom<String> filename = DPIUtil.validateAndGetImagePathAtZoom(imageFileNameProvider, currentDeviceZoom);
@@ -889,7 +891,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         if (!(object instanceof Image))
             return false;
         Image image = (Image) object;
-        if (device != image.getImpl()._device() || transparentPixel != ((SwtImage) image.getImpl()).transparentPixel)
+        if (device != image.getImpl()._device() || transparentPixel != image.getImpl()._transparentPixel())
             return false;
         if (imageDataProvider != null && ((SwtImage) image.getImpl()).imageDataProvider != null) {
             return (styleFlag == ((SwtImage) image.getImpl()).styleFlag) && imageDataProvider.equals(((SwtImage) image.getImpl()).imageDataProvider);
@@ -1496,6 +1498,24 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         }
         return "Image {" + getApi().surface + "}";
     }
+
+    public int _transparentPixel() {
+        return transparentPixel;
+    }
+
+    public GC _memGC() {
+        return memGC;
+    }
+
+    public int _width() {
+        return width;
+    }
+
+    public int _height() {
+        return height;
+    }
+
+    String filename;
 
     public Image getApi() {
         if (api == null)

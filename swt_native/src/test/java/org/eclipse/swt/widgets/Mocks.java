@@ -1,12 +1,10 @@
 package org.eclipse.swt.widgets;
 
-import org.eclipse.swt.SWT;
+import dev.equo.swt.MockFlutterBridge;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.DartCTabFolder;
-import org.eclipse.swt.custom.SwtCTabFolder;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Device;
-import org.eclipse.swt.graphics.Font;
 import org.instancio.Instancio;
 import org.instancio.InstancioObjectApi;
 import org.instancio.Select;
@@ -40,6 +38,7 @@ public class Mocks {
     public static Display display() {
         Display display = mock(Display.class);
         SwtDisplay swtDisplay = mock(SwtDisplay.class);
+        when(swtDisplay.isValidThread()).thenReturn(true);
         swtDisplay.thread = Thread.currentThread();
         SwtDisplay.Default =  display;
         when(display.getThread()).thenCallRealMethod();
@@ -59,7 +58,7 @@ public class Mocks {
     }
 
     public static Device device() {
-        return mock(Device.class);
+        return display();
     }
 
     public static CTabFolder cTabFolder() {
@@ -75,7 +74,9 @@ public class Mocks {
         ToolBar w = mock(ToolBar.class);
         DartToolBar impl = mock(DartToolBar.class);
         when(w.getImpl()).thenReturn(impl);
+        when(impl.getBridge()).thenReturn(new MockFlutterBridge());
         Display display = display();
+        //when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
         return w;
     }
@@ -110,6 +111,14 @@ public class Mocks {
 
     public static int blue() {
         return Instancio.gen().ints().range(1, 255).get();
+    }
+
+    public static int width() {
+        return Instancio.gen().ints().range(10, 100).get();
+    }
+
+    public static int height() {
+        return Instancio.gen().ints().range(10, 100).get();
     }
 
     public static Canvas drawable() {

@@ -11,10 +11,10 @@ int? getWidgetId(List<String> args) {
 }
 
 String? getWidgetName(List<String> args) {
-    if (args.length >= 2) {
-        return args[2];
-    }
-    return null;
+  if (args.length >= 2) {
+    return args[2];
+  }
+  return null;
 }
 
 String? getTheme(List<String> args) {

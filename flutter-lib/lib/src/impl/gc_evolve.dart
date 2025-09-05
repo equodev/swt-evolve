@@ -8,11 +8,12 @@ import '../gen/widget.dart';
 import 'canvas_evolve.dart';
 
 class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
-
   List<Shape> shapes = [];
 
-  Color get bg => _colorFromVColor(state.background, defaultColor: Color(0xFFFFFFFF));
-  Color get fg => _colorFromVColor(state.foreground, defaultColor: Color(0xFF333232));
+  Color get bg =>
+      _colorFromVColor(state.background, defaultColor: Color(0xFFFFFFFF));
+  Color get fg =>
+      _colorFromVColor(state.foreground, defaultColor: Color(0xFF333232));
   double get lineWidth => (state.lineWidth ?? 1).toDouble();
   int get lineCap => state.lineCap ?? 1;
   int get lineJoin => state.lineJoin ?? 1;
@@ -21,13 +22,10 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     final width = state.clipping!.width?.toDouble() ?? 0;
     final height = state.clipping!.height?.toDouble() ?? 0;
     if (width <= 0 || height <= 0) return null;
-    return Rect.fromLTWH(
-      state.clipping!.x?.toDouble() ?? 0,
-      state.clipping!.y?.toDouble() ?? 0,
-      width,
-      height
-    );
+    return Rect.fromLTWH(state.clipping!.x?.toDouble() ?? 0,
+        state.clipping!.y?.toDouble() ?? 0, width, height);
   }
+
   Size get bounds {
     final canvas = context.findAncestorWidgetOfExactType<CanvasSwt>();
     if (canvas != null && canvas.value.id == state.id) {
@@ -96,52 +94,82 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
 
-    setState(() => shapes = [...shapes, RoundRectShape(
-        rect, radiusX, radiusY, color, strokeWidth, lineCap, lineJoin, isFilled: isFilled, clipRect: clipping
-    )]);
+    setState(() => shapes = [
+          ...shapes,
+          RoundRectShape(
+              rect, radiusX, radiusY, color, strokeWidth, lineCap, lineJoin,
+              isFilled: isFilled, clipRect: clipping)
+        ]);
   }
 
-  void _addOvalShape({required int x, required int y, required int width, required int height, required bool isFilled}) {
+  void _addOvalShape(
+      {required int x,
+      required int y,
+      required int width,
+      required int height,
+      required bool isFilled}) {
     final rect = _getRectFromArgs(x, y, width, height);
     final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
 
-    setState(() => shapes = [...shapes, OvalShape(rect, color, strokeWidth, isFilled: isFilled, clipRect: clipping)]);
+    setState(() => shapes = [
+          ...shapes,
+          OvalShape(rect, color, strokeWidth,
+              isFilled: isFilled, clipRect: clipping)
+        ]);
   }
 
-  void _addRectShape({required int x, required int y, required int width, required int height, required bool isFilled}) {
+  void _addRectShape(
+      {required int x,
+      required int y,
+      required int width,
+      required int height,
+      required bool isFilled}) {
     final rect = _getRectFromArgs(x, y, width, height);
     final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
 
-    setState(() => shapes = [...shapes, RectShape(rect, color, strokeWidth, lineCap, lineJoin, isFilled: isFilled, clipRect: clipping)]);
+    setState(() => shapes = [
+          ...shapes,
+          RectShape(rect, color, strokeWidth, lineCap, lineJoin,
+              isFilled: isFilled, clipRect: clipping)
+        ]);
   }
 
-  void _addPolygonShape({required List<int> points, required bool isFilled, int minPoints = 6}) {
+  void _addPolygonShape(
+      {required List<int> points, required bool isFilled, int minPoints = 6}) {
     if (points.length >= minPoints && points.length % 2 == 0) {
       final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
       final strokeWidth = isFilled ? 0.0 : lineWidth;
 
-      setState(() => shapes = [...shapes, PolygonShape(
-          points, color, strokeWidth, lineCap, lineJoin, isFilled: isFilled, clipRect: clipping
-      )]);
+      setState(() => shapes = [
+            ...shapes,
+            PolygonShape(points, color, strokeWidth, lineCap, lineJoin,
+                isFilled: isFilled, clipRect: clipping)
+          ]);
     }
   }
 
-  void _addArcShape({
-    required int x, required int y, required int width, required int height,
-    required int startAngle, required int arcAngle, required bool isFilled
-  }) {
+  void _addArcShape(
+      {required int x,
+      required int y,
+      required int width,
+      required int height,
+      required int startAngle,
+      required int arcAngle,
+      required bool isFilled}) {
     final rect = _getRectFromArgs(x, y, width, height);
     final startAngleRadians = _degToRad(-startAngle.toDouble());
     final sweepAngleRadians = _degToRad(-arcAngle.toDouble());
     final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
 
-    setState(() => shapes = [...shapes, ArcShape(
-        rect, startAngleRadians, sweepAngleRadians, color, strokeWidth,
-        lineCap, lineJoin, isFilled: isFilled, clipRect: clipping
-    )]);
+    setState(() => shapes = [
+          ...shapes,
+          ArcShape(rect, startAngleRadians, sweepAngleRadians, color,
+              strokeWidth, lineCap, lineJoin,
+              isFilled: isFilled, clipRect: clipping)
+        ]);
   }
 
   @override
@@ -159,9 +187,11 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   @override
   void onDrawFocus(VGCDrawFocus opArgs) {
-    final rect = _getRectFromArgs(opArgs.x, opArgs.y, opArgs.width, opArgs.height);
+    final rect =
+        _getRectFromArgs(opArgs.x, opArgs.y, opArgs.width, opArgs.height);
 
-    setState(() => shapes = [...shapes, FocusRectShape(rect, applyAlpha(fg), clipping)]);
+    setState(() =>
+        shapes = [...shapes, FocusRectShape(rect, applyAlpha(fg), clipping)]);
   }
 
   @override
@@ -170,7 +200,11 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     final y1 = opArgs.y1?.toDouble() ?? 0.0;
     final x2 = opArgs.x2?.toDouble() ?? 0.0;
     final y2 = opArgs.y2?.toDouble() ?? 0.0;
-    setState(() => shapes = [...shapes, LineShape(Offset(x1, y1), Offset(x2, y2), applyAlpha(fg), lineWidth, lineCap, lineJoin, clipping)]);
+    setState(() => shapes = [
+          ...shapes,
+          LineShape(Offset(x1, y1), Offset(x2, y2), applyAlpha(fg), lineWidth,
+              lineCap, lineJoin, clipping)
+        ]);
   }
 
   @override
@@ -191,7 +225,8 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       (opArgs.y ?? 0).toDouble(),
     );
 
-    setState(() => shapes = [...shapes, PointShape(point, applyAlpha(fg), clipping)]);
+    setState(() =>
+        shapes = [...shapes, PointShape(point, applyAlpha(fg), clipping)]);
   }
 
   @override
@@ -261,13 +296,14 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       )..layout();
 
       final rect = Rect.fromLTWH(x, y, textPainter.width, textPainter.height);
-      newShapes.add(RectShape(rect, applyAlpha(bg), 0, lineCap, lineJoin, isFilled: true, clipRect: clipping));
+      newShapes.add(RectShape(rect, applyAlpha(bg), 0, lineCap, lineJoin,
+          isFilled: true, clipRect: clipping));
     }
 
     newShapes.add(TextShape(processedText, Offset(x, y), textStyle, clipping));
     setState(() => shapes = [...shapes, ...newShapes]);
   }
-  
+
   String _processTextFlags(String text, int flags) {
     return text
         .replaceAll('\r\n', (flags & SWT.DRAW_DELIMITER) != 0 ? '\n' : ' ')
@@ -291,13 +327,17 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   @override
   void onFillGradientRectangle(VGCFillGradientRectangle opArgs) {
-    final rect = _getRectFromArgs(opArgs.x, opArgs.y, opArgs.width, opArgs.height);
+    final rect =
+        _getRectFromArgs(opArgs.x, opArgs.y, opArgs.width, opArgs.height);
 
     final vertical = opArgs.vertical ?? false;
     final fromColor = applyAlpha(fg);
     final toColor = applyAlpha(bg);
 
-    setState(() => shapes = [...shapes, GradientRectShape(rect, fromColor, toColor, vertical, clipping)]);
+    setState(() => shapes = [
+          ...shapes,
+          GradientRectShape(rect, fromColor, toColor, vertical, clipping)
+        ]);
   }
 
   @override
@@ -346,7 +386,8 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   @override
   void onCopyArea(VGCCopyArea opArgs) {
-    final srcRect = _getRectFromArgs(opArgs.srcX, opArgs.srcY, opArgs.width, opArgs.height);
+    final srcRect =
+        _getRectFromArgs(opArgs.srcX, opArgs.srcY, opArgs.width, opArgs.height);
     final destOffset = Offset(
       (opArgs.destX ?? 0) - (opArgs.srcX ?? 0).toDouble(),
       (opArgs.destY ?? 0) - (opArgs.srcY ?? 0).toDouble(),
@@ -360,12 +401,17 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     setState(() => shapes = [...shapes, ...copiedShapes]);
   }
 
-  Rect _getRectFromArgs(int? x, int? y, int? w, int? h) =>
-      Rect.fromLTWH((x ?? 0).toDouble(), (y ?? 0).toDouble(), (w ?? 0).toDouble(), (h ?? 0).toDouble());
+  Rect _getRectFromArgs(int? x, int? y, int? w, int? h) => Rect.fromLTWH(
+      (x ?? 0).toDouble(),
+      (y ?? 0).toDouble(),
+      (w ?? 0).toDouble(),
+      (h ?? 0).toDouble());
 
   bool _shapeIntersects(Shape shape, Rect area) {
     return switch (shape) {
-      LineShape s => area.contains(s.p1) || area.contains(s.p2) || area.overlaps(Rect.fromPoints(s.p1, s.p2)),
+      LineShape s => area.contains(s.p1) ||
+          area.contains(s.p2) ||
+          area.overlaps(Rect.fromPoints(s.p1, s.p2)),
       RectShape s => s.rect.overlaps(area),
       OvalShape s => s.rect.overlaps(area),
       ArcShape s => s.rect.overlaps(area),
@@ -374,8 +420,9 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       FocusRectShape s => s.rect.overlaps(area),
       TextShape s => area.contains(s.off),
       PointShape s => area.contains(s.point),
-      PolygonShape s => s.points.indexed.where((e) => e.$1 % 2 == 0)
-          .any((e) => area.contains(Offset(s.points[e.$1].toDouble(), s.points[e.$1 + 1].toDouble()))),
+      PolygonShape s =>
+        s.points.indexed.where((e) => e.$1 % 2 == 0).any((e) => area.contains(
+            Offset(s.points[e.$1].toDouble(), s.points[e.$1 + 1].toDouble()))),
       _ => true,
     };
   }
@@ -384,22 +431,40 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     final clipArea = srcArea.translate(offset.dx, offset.dy);
 
     return switch (shape) {
-      LineShape s => LineShape(s.p1 + offset, s.p2 + offset, s.color, s.strokeWidth, s.lineCap, s.lineJoin, clipArea),
-      RectShape s => RectShape(s.rect.translate(offset.dx, offset.dy), s.color, s.strokeWidth,
-          s.lineCap, s.lineJoin, isFilled: s.isFilled, clipRect: clipArea),
-      OvalShape s => OvalShape(s.rect.translate(offset.dx, offset.dy), s.color, s.strokeWidth,
+      LineShape s => LineShape(s.p1 + offset, s.p2 + offset, s.color,
+          s.strokeWidth, s.lineCap, s.lineJoin, clipArea),
+      RectShape s => RectShape(s.rect.translate(offset.dx, offset.dy), s.color,
+          s.strokeWidth, s.lineCap, s.lineJoin,
+          isFilled: s.isFilled, clipRect: clipArea),
+      OvalShape s => OvalShape(
+          s.rect.translate(offset.dx, offset.dy), s.color, s.strokeWidth,
           isFilled: s.isFilled, clipRect: clipArea),
       TextShape s => TextShape(s.text, s.off + offset, s.style, clipArea),
       PointShape s => PointShape(s.point + offset, s.color, clipArea),
-      PolygonShape s => PolygonShape(_translatePoints(s.points, offset), s.color, s.strokeWidth,
-          s.lineCap, s.lineJoin, isFilled: s.isFilled, clipRect: clipArea),
-      ArcShape s => ArcShape(s.rect.translate(offset.dx, offset.dy), s.startAngle, s.sweepAngle,
-          s.color, s.strokeWidth, s.lineCap, s.lineJoin, isFilled: s.isFilled, clipRect: clipArea),
-      RoundRectShape s => RoundRectShape(s.rect.translate(offset.dx, offset.dy), s.radiusX, s.radiusY,
-          s.color, s.strokeWidth, s.lineCap, s.lineJoin, isFilled: s.isFilled, clipRect: clipArea),
-      GradientRectShape s => GradientRectShape(s.rect.translate(offset.dx, offset.dy),
-          s.fromColor, s.toColor, s.vertical, clipArea),
-      FocusRectShape s => FocusRectShape(s.rect.translate(offset.dx, offset.dy), s.color, clipArea),
+      PolygonShape s => PolygonShape(_translatePoints(s.points, offset),
+          s.color, s.strokeWidth, s.lineCap, s.lineJoin,
+          isFilled: s.isFilled, clipRect: clipArea),
+      ArcShape s => ArcShape(
+          s.rect.translate(offset.dx, offset.dy),
+          s.startAngle,
+          s.sweepAngle,
+          s.color,
+          s.strokeWidth,
+          s.lineCap,
+          s.lineJoin,
+          isFilled: s.isFilled,
+          clipRect: clipArea),
+      RoundRectShape s => RoundRectShape(s.rect.translate(offset.dx, offset.dy),
+          s.radiusX, s.radiusY, s.color, s.strokeWidth, s.lineCap, s.lineJoin,
+          isFilled: s.isFilled, clipRect: clipArea),
+      GradientRectShape s => GradientRectShape(
+          s.rect.translate(offset.dx, offset.dy),
+          s.fromColor,
+          s.toColor,
+          s.vertical,
+          clipArea),
+      FocusRectShape s => FocusRectShape(
+          s.rect.translate(offset.dx, offset.dy), s.color, clipArea),
       _ => shape,
     };
   }
@@ -434,7 +499,8 @@ class ScenePainter extends CustomPainter {
 
 abstract class Shape {
   void draw(Canvas c);
-  @override String toString();
+  @override
+  String toString();
 
 // Each shape can have an associated clip
   Rect? get clipRect => null;
@@ -468,12 +534,14 @@ class TextShape extends Shape {
   }
 
   @override
-  String toString() => 'Text "$text" @ $off${clipRect != null ? " [clipped]" : ""}';
+  String toString() =>
+      'Text "$text" @ $off${clipRect != null ? " [clipped]" : ""}';
 }
 
-
 class LineShape extends Shape {
-  LineShape(this.p1, this.p2, this.color, this.strokeWidth, this.lineCap, this.lineJoin, [this.clipRect]);
+  LineShape(this.p1, this.p2, this.color, this.strokeWidth, this.lineCap,
+      this.lineJoin,
+      [this.clipRect]);
 
   final Offset p1, p2;
   final Color color;
@@ -497,8 +565,7 @@ class LineShape extends Shape {
           ..color = color
           ..strokeWidth = strokeWidth
           ..strokeCap = getStrokeCap(lineCap)
-          ..strokeJoin = getStrokeJoin(lineJoin)
-    );
+          ..strokeJoin = getStrokeJoin(lineJoin));
 
     if (clipRect != null) {
       c.restore();
@@ -506,12 +573,13 @@ class LineShape extends Shape {
   }
 
   @override
-  String toString() => 'Line $p1 → $p2 (width: $strokeWidth)${clipRect != null ? " [clipped]" : ""}';
-
+  String toString() =>
+      'Line $p1 → $p2 (width: $strokeWidth)${clipRect != null ? " [clipped]" : ""}';
 }
 
 class OvalShape extends Shape {
-  OvalShape(this.rect, this.color, this.strokeWidth, {this.isFilled = false, this.clipRect});
+  OvalShape(this.rect, this.color, this.strokeWidth,
+      {this.isFilled = false, this.clipRect});
 
   final Rect rect;
   final Color color;
@@ -532,8 +600,7 @@ class OvalShape extends Shape {
         Paint()
           ..color = color
           ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-    );
+          ..strokeWidth = strokeWidth);
 
     if (clipRect != null) {
       c.restore();
@@ -541,11 +608,14 @@ class OvalShape extends Shape {
   }
 
   @override
-  String toString() => '${isFilled ? "Fill" : ""}Oval $rect${clipRect != null ? " [clipped]" : ""}';
+  String toString() =>
+      '${isFilled ? "Fill" : ""}Oval $rect${clipRect != null ? " [clipped]" : ""}';
 }
 
 class RectShape extends Shape {
-  RectShape(this.rect, this.color, this.strokeWidth, this.lineCap, this.lineJoin, {this.isFilled = false, this.clipRect});
+  RectShape(
+      this.rect, this.color, this.strokeWidth, this.lineCap, this.lineJoin,
+      {this.isFilled = false, this.clipRect});
 
   final Rect rect;
   final Color color;
@@ -583,12 +653,13 @@ class RectShape extends Shape {
   }
 
   @override
-  String toString() => '${isFilled ? "Fill" : ""}Rect $rect${isFilled ? "" : " (width: $strokeWidth)"}${clipRect != null ? " [clipped]" : ""}';
-
+  String toString() =>
+      '${isFilled ? "Fill" : ""}Rect $rect${isFilled ? "" : " (width: $strokeWidth)"}${clipRect != null ? " [clipped]" : ""}';
 }
 
 class GradientRectShape extends Shape {
-  GradientRectShape(this.rect, this.fromColor, this.toColor, this.vertical, [this.clipRect]);
+  GradientRectShape(this.rect, this.fromColor, this.toColor, this.vertical,
+      [this.clipRect]);
 
   final Rect rect;
   final Color fromColor;
@@ -625,11 +696,14 @@ class GradientRectShape extends Shape {
   }
 
   @override
-  String toString() => 'GradientRect $rect (${vertical ? 'vertical' : 'horizontal'})${clipRect != null ? " [clipped]" : ""}';
+  String toString() =>
+      'GradientRect $rect (${vertical ? 'vertical' : 'horizontal'})${clipRect != null ? " [clipped]" : ""}';
 }
 
 class PolygonShape extends Shape {
-  PolygonShape(this.points, this.color, this.strokeWidth, this.lineCap, this.lineJoin, {this.isFilled = false, this.clipRect});
+  PolygonShape(
+      this.points, this.color, this.strokeWidth, this.lineCap, this.lineJoin,
+      {this.isFilled = false, this.clipRect});
 
   final List<int> points;
   final Color color;
@@ -672,13 +746,14 @@ class PolygonShape extends Shape {
   }
 
   @override
-  String toString() => '${isFilled ? "Fill" : ""}Polygon ${points.length ~/ 2} points${clipRect != null ? " [clipped]" : ""}';
-
+  String toString() =>
+      '${isFilled ? "Fill" : ""}Polygon ${points.length ~/ 2} points${clipRect != null ? " [clipped]" : ""}';
 }
 
-
 class ArcShape extends Shape {
-  ArcShape(this.rect, this.startAngle, this.sweepAngle, this.color, this.strokeWidth, this.lineCap, this.lineJoin, {this.isFilled = false, this.clipRect});
+  ArcShape(this.rect, this.startAngle, this.sweepAngle, this.color,
+      this.strokeWidth, this.lineCap, this.lineJoin,
+      {this.isFilled = false, this.clipRect});
 
   final Rect rect;
   final double startAngle;
@@ -726,14 +801,16 @@ class ArcShape extends Shape {
   }
 
   @override
-  String toString() => '${isFilled ? "Fill" : "Draw"}Arc $rect (${_radToDeg(startAngle)}° + ${_radToDeg(sweepAngle)}°)${clipRect != null ? " [clipped]" : ""}';
-
+  String toString() =>
+      '${isFilled ? "Fill" : "Draw"}Arc $rect (${_radToDeg(startAngle)}° + ${_radToDeg(sweepAngle)}°)${clipRect != null ? " [clipped]" : ""}';
 
   double _radToDeg(double rad) => rad * 180 / 3.14159;
 }
 
 class RoundRectShape extends Shape {
-  RoundRectShape(this.rect, this.radiusX, this.radiusY, this.color, this.strokeWidth, this.lineCap, this.lineJoin, {this.isFilled = false, this.clipRect});
+  RoundRectShape(this.rect, this.radiusX, this.radiusY, this.color,
+      this.strokeWidth, this.lineCap, this.lineJoin,
+      {this.isFilled = false, this.clipRect});
 
   final Rect rect;
   final double radiusX;
@@ -768,8 +845,7 @@ class RoundRectShape extends Shape {
           ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
           ..strokeWidth = strokeWidth
           ..strokeCap = getStrokeCap(lineCap)
-          ..strokeJoin = getStrokeJoin(lineJoin)
-    );
+          ..strokeJoin = getStrokeJoin(lineJoin));
 
     if (clipRect != null) {
       c.restore();
@@ -777,8 +853,8 @@ class RoundRectShape extends Shape {
   }
 
   @override
-  String toString() => '${isFilled ? "Fill" : ""}RoundRect $rect (radius: $radiusX x $radiusY)${clipRect != null ? " [clipped]" : ""}';
-
+  String toString() =>
+      '${isFilled ? "Fill" : ""}RoundRect $rect (radius: $radiusX x $radiusY)${clipRect != null ? " [clipped]" : ""}';
 }
 
 class PointShape extends Shape {
@@ -800,8 +876,7 @@ class PointShape extends Shape {
         Rect.fromLTWH(point.dx, point.dy, 1, 1),
         Paint()
           ..color = color
-          ..style = PaintingStyle.fill
-    );
+          ..style = PaintingStyle.fill);
 
     if (clipRect != null) {
       c.restore();
@@ -833,10 +908,14 @@ class FocusRectShape extends Shape {
       ..strokeWidth = 1;
 
     final Path path = Path();
-    _addDottedLine(path, Offset(rect.left, rect.top), Offset(rect.right, rect.top));
-    _addDottedLine(path, Offset(rect.right, rect.top), Offset(rect.right, rect.bottom));
-    _addDottedLine(path, Offset(rect.right, rect.bottom), Offset(rect.left, rect.bottom));
-    _addDottedLine(path, Offset(rect.left, rect.bottom), Offset(rect.left, rect.top));
+    _addDottedLine(
+        path, Offset(rect.left, rect.top), Offset(rect.right, rect.top));
+    _addDottedLine(
+        path, Offset(rect.right, rect.top), Offset(rect.right, rect.bottom));
+    _addDottedLine(
+        path, Offset(rect.right, rect.bottom), Offset(rect.left, rect.bottom));
+    _addDottedLine(
+        path, Offset(rect.left, rect.bottom), Offset(rect.left, rect.top));
 
     c.drawPath(path, paint);
 
@@ -881,18 +960,26 @@ class FocusRectShape extends Shape {
 
 StrokeCap getStrokeCap(int swtCap) {
   switch (swtCap) {
-    case SWT.CAP_FLAT: return StrokeCap.butt;
-    case SWT.CAP_ROUND: return StrokeCap.round;
-    case SWT.CAP_SQUARE: return StrokeCap.square;
-    default: return StrokeCap.butt;
+    case SWT.CAP_FLAT:
+      return StrokeCap.butt;
+    case SWT.CAP_ROUND:
+      return StrokeCap.round;
+    case SWT.CAP_SQUARE:
+      return StrokeCap.square;
+    default:
+      return StrokeCap.butt;
   }
 }
 
 StrokeJoin getStrokeJoin(int swtJoin) {
   switch (swtJoin) {
-    case SWT.JOIN_MITER: return StrokeJoin.miter;
-    case SWT.JOIN_ROUND: return StrokeJoin.round;
-    case SWT.JOIN_BEVEL: return StrokeJoin.bevel;
-    default: return StrokeJoin.miter;
+    case SWT.JOIN_MITER:
+      return StrokeJoin.miter;
+    case SWT.JOIN_ROUND:
+      return StrokeJoin.round;
+    case SWT.JOIN_BEVEL:
+      return StrokeJoin.bevel;
+    default:
+      return StrokeJoin.miter;
   }
 }

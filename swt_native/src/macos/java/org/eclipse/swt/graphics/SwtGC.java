@@ -605,9 +605,11 @@ public final class SwtGC extends SwtResource implements IGC {
                 int imgHeight = (int) srcSize.height;
                 int destWidth = (int) srcSize.width - x, destHeight = (int) srcSize.height - y;
                 int srcWidth = destWidth, srcHeight = destHeight;
-                NSGraphicsContext context = NSGraphicsContext.graphicsContextWithBitmapImageRep(((SwtImage) image.getImpl()).getRepresentation());
-                NSGraphicsContext.static_saveGraphicsState();
-                NSGraphicsContext.setCurrentContext(context);
+                if (image.getImpl() instanceof SwtImage) {
+                    NSGraphicsContext context = NSGraphicsContext.graphicsContextWithBitmapImageRep(((SwtImage) image.getImpl()).getRepresentation());
+                    NSGraphicsContext.static_saveGraphicsState();
+                    NSGraphicsContext.setCurrentContext(context);
+                }
                 NSAffineTransform transform = NSAffineTransform.transform();
                 NSSize size = image.handle.size();
                 transform.translateXBy(0, size.height - (destHeight + 2 * destY));
@@ -641,9 +643,11 @@ public final class SwtGC extends SwtResource implements IGC {
 			 * This is handled by Control.cacheDisplayInRect_toBitmapImageRep().
 			 */
                 topView.cacheDisplayInRect(rect, imageRep);
-                NSBitmapImageRep rep = ((SwtImage) image.getImpl()).getRepresentation();
-                image.handle.addRepresentation(imageRep);
-                image.handle.removeRepresentation(rep);
+                if (image.getImpl() instanceof SwtImage) {
+                    NSBitmapImageRep rep = ((SwtImage) image.getImpl()).getRepresentation();
+                    image.handle.addRepresentation(imageRep);
+                    image.handle.removeRepresentation(rep);
+                }
                 return;
             }
             if (getApi().handle.isDrawingToScreen()) {
@@ -707,31 +711,33 @@ public final class SwtGC extends SwtResource implements IGC {
     void copyArea(Image image, int x, int y, long srcImage) {
         if (srcImage == 0)
             return;
-        NSBitmapImageRep rep = ((SwtImage) image.getImpl()).getRepresentation();
-        long bpc = rep.bitsPerSample();
-        long width = rep.pixelsWide();
-        long height = rep.pixelsHigh();
-        long bpr = rep.bytesPerRow();
-        long data = rep.bitmapData();
-        long format = rep.bitmapFormat();
-        int alphaInfo;
-        if (rep.hasAlpha()) {
-            alphaInfo = (format & OS.NSAlphaFirstBitmapFormat) != 0 ? OS.kCGImageAlphaFirst : OS.kCGImageAlphaLast;
-        } else {
-            alphaInfo = (format & OS.NSAlphaFirstBitmapFormat) != 0 ? OS.kCGImageAlphaNoneSkipFirst : OS.kCGImageAlphaNoneSkipLast;
-        }
-        long colorspace = OS.CGColorSpaceCreateDeviceRGB();
-        long context = OS.CGBitmapContextCreate(data, width, height, bpc, bpr, colorspace, alphaInfo);
-        OS.CGColorSpaceRelease(colorspace);
-        if (context != 0) {
-            CGRect rect = new CGRect();
-            rect.origin.x = -x;
-            rect.origin.y = y;
-            rect.size.width = OS.CGImageGetWidth(srcImage);
-            rect.size.height = OS.CGImageGetHeight(srcImage);
-            OS.CGContextTranslateCTM(context, 0, -(rect.size.height - height));
-            OS.CGContextDrawImage(context, rect, srcImage);
-            OS.CGContextRelease(context);
+        if (image.getImpl() instanceof SwtImage) {
+            NSBitmapImageRep rep = ((SwtImage) image.getImpl()).getRepresentation();
+            long bpc = rep.bitsPerSample();
+            long width = rep.pixelsWide();
+            long height = rep.pixelsHigh();
+            long bpr = rep.bytesPerRow();
+            long data = rep.bitmapData();
+            long format = rep.bitmapFormat();
+            int alphaInfo;
+            if (rep.hasAlpha()) {
+                alphaInfo = (format & OS.NSAlphaFirstBitmapFormat) != 0 ? OS.kCGImageAlphaFirst : OS.kCGImageAlphaLast;
+            } else {
+                alphaInfo = (format & OS.NSAlphaFirstBitmapFormat) != 0 ? OS.kCGImageAlphaNoneSkipFirst : OS.kCGImageAlphaNoneSkipLast;
+            }
+            long colorspace = OS.CGColorSpaceCreateDeviceRGB();
+            long context = OS.CGBitmapContextCreate(data, width, height, bpc, bpr, colorspace, alphaInfo);
+            OS.CGColorSpaceRelease(colorspace);
+            if (context != 0) {
+                CGRect rect = new CGRect();
+                rect.origin.x = -x;
+                rect.origin.y = y;
+                rect.size.width = OS.CGImageGetWidth(srcImage);
+                rect.size.height = OS.CGImageGetHeight(srcImage);
+                OS.CGContextTranslateCTM(context, 0, -(rect.size.height - height));
+                OS.CGContextDrawImage(context, rect, srcImage);
+                OS.CGContextRelease(context);
+            }
         }
     }
 
@@ -1088,8 +1094,13 @@ public final class SwtGC extends SwtResource implements IGC {
         /* Free resources */
         Image image = data.image;
         if (image != null) {
-            ((SwtImage) image.getImpl()).memGC = null;
-            ((SwtImage) image.getImpl()).createAlpha();
+            if (image.getImpl() instanceof DartImage) {
+                ((DartImage) image.getImpl()).memGC = null;
+            }
+            if (image.getImpl() instanceof SwtImage) {
+                ((SwtImage) image.getImpl()).memGC = null;
+            }
+            image.getImpl().createAlpha();
         }
         if (data.textStorage != null)
             data.textStorage.release();
@@ -1322,8 +1333,8 @@ public final class SwtGC extends SwtResource implements IGC {
         }
         NSAutoreleasePool pool = checkGC(CLIPPING | TRANSFORM);
         try {
-            if (((SwtImage) srcImage.getImpl()).memGC != null) {
-                ((SwtImage) srcImage.getImpl()).createAlpha();
+            if (srcImage.getImpl()._memGC() != null) {
+                srcImage.getImpl().createAlpha();
             }
             getApi().handle.saveGraphicsState();
             NSAffineTransform transform = NSAffineTransform.transform();
@@ -3290,8 +3301,14 @@ public final class SwtGC extends SwtResource implements IGC {
             data.state &= ~FONT;
         data.state &= ~DRAW_OFFSET;
         Image image = data.image;
-        if (image != null)
-            ((SwtImage) image.getImpl()).memGC = this.getApi();
+        if (image != null) {
+            if (image.getImpl() instanceof DartImage) {
+                ((DartImage) image.getImpl()).memGC = this.getApi();
+            }
+            if (image.getImpl() instanceof SwtImage) {
+                ((SwtImage) image.getImpl()).memGC = this.getApi();
+            }
+        }
         this.drawable = drawable;
         this.data = data;
         getApi().handle = new NSGraphicsContext(context);

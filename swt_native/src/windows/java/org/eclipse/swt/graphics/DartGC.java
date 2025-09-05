@@ -530,8 +530,14 @@ public final class DartGC extends DartResource implements IGC {
             data.hNullBitmap = 0;
         }
         Image image = data.image;
-        if (image != null)
-            ((SwtImage) image.getImpl()).memGC = null;
+        if (image != null) {
+            if (image.getImpl() instanceof DartImage) {
+                ((DartImage) image.getImpl()).memGC = null;
+            }
+            if (image.getImpl() instanceof SwtImage) {
+                ((SwtImage) image.getImpl()).memGC = null;
+            }
+        }
         /*
 	* Dispose the HDC.
 	*/
@@ -716,7 +722,7 @@ public final class DartGC extends DartResource implements IGC {
 		 * the coordinates may be slightly off. The workaround is to restrict
 		 * coordinates to the allowed bounds.
 		 */
-            Rectangle b = ((SwtImage) image.getImpl()).getBounds(deviceZoom);
+            Rectangle b = ((DartImage) image.getImpl()).getBounds(deviceZoom);
             int errX = src.x + src.width - b.width;
             int errY = src.y + src.height - b.height;
             if (errX != 0 || errY != 0) {
@@ -763,7 +769,7 @@ public final class DartGC extends DartResource implements IGC {
         } else {
         }
         boolean mustRestore = false;
-        GC memGC = ((SwtImage) srcImage.getImpl()).memGC;
+        GC memGC = srcImage.getImpl()._memGC();
         if (memGC != null && !memGC.isDisposed()) {
             ((DartGC) memGC.getImpl()).flush();
             mustRestore = true;
@@ -802,7 +808,7 @@ public final class DartGC extends DartResource implements IGC {
         srcY = sy1;
         srcWidth = Math.max(1, sx2 - sx1);
         srcHeight = Math.max(1, sy2 - sy1);
-        long memDib = SwtImage.createDIB(Math.max(srcWidth, destWidth), Math.max(srcHeight, destHeight), 32);
+        long memDib = DartImage.createDIB(Math.max(srcWidth, destWidth), Math.max(srcHeight, destHeight), 32);
         if (memDib == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
         int dp = 0;

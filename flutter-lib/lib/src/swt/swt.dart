@@ -1,5 +1,4 @@
 class SWT {
-
   static const int None = 0;
   static const int KeyDown = 1;
   static const int KeyUp = 2;
@@ -221,7 +220,8 @@ class SWT {
   static const int BUTTON3 = 1 << 21;
   static const int BUTTON4 = 1 << 23;
   static const int BUTTON5 = 1 << 25;
-  static const int BUTTON_MASK = BUTTON1 | BUTTON2 | BUTTON3 | BUTTON4 | BUTTON5;
+  static const int BUTTON_MASK =
+      BUTTON1 | BUTTON2 | BUTTON3 | BUTTON4 | BUTTON5;
   static const int MOD1 = CONTROL;
   static const int MOD2 = SHIFT;
   static const int MOD3 = ALT;

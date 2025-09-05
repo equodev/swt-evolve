@@ -23,9 +23,11 @@ public class VLabel extends VControl {
         ((DartLabel) impl).setAlignment(value);
     }
 
-    @JsonAttribute(ignore = true)
     public Image getImage() {
-        return ((DartLabel) impl).image;
+        Image val = ((DartLabel) impl).image;
+        if (val != null && !(val.getImpl() instanceof DartImage))
+            return null;
+        return val;
     }
 
     public void setImage(Image value) {

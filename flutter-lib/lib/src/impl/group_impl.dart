@@ -12,8 +12,10 @@ class GroupImpl<T extends GroupSwt, V extends GroupValue>
   @override
   Widget build(BuildContext context) {
     debugPrint("GroupImpl.build - texto: ${state.text}");
-    final borderColor = useDarkTheme ? const Color(0xFF3F3F3F) : const Color(0xFFD1D1D1);
-    final backgroundColor = useDarkTheme ? const Color(0xFF1E1E1E) : Colors.white;
+    final borderColor =
+        useDarkTheme ? const Color(0xFF3F3F3F) : const Color(0xFFD1D1D1);
+    final backgroundColor =
+        useDarkTheme ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = useDarkTheme ? Colors.white : const Color(0xFF333333);
 
     Widget? child;

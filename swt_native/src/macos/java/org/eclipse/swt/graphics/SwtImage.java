@@ -709,6 +709,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      */
     public SwtImage(Device device, String filename, Image api) {
         super(device, api);
+        this.filename = ImageUtils.getFilename(filename);
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
@@ -756,6 +757,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      */
     public SwtImage(Device device, ImageFileNameProvider imageFileNameProvider, Image api) {
         super(device, api);
+        this.filename = ImageUtils.getFilename(imageFileNameProvider.getImagePath(100));
         if (imageFileNameProvider == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.imageFileNameProvider = imageFileNameProvider;
@@ -937,7 +939,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         return image;
     }
 
-    void createAlpha() {
+    public void createAlpha() {
         AlphaInfo info = alphaInfo_100;
         if (info.transparentPixel == -1 && info.alpha == -1 && info.alphaData == null)
             return;
@@ -1719,6 +1721,20 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             return "Image {*DISPOSED*}";
         return "Image {" + getApi().handle + "}";
     }
+
+    public GC _memGC() {
+        return memGC;
+    }
+
+    public int _width() {
+        return width;
+    }
+
+    public int _height() {
+        return height;
+    }
+
+    String filename;
 
     public Image getApi() {
         if (api == null)

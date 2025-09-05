@@ -8,19 +8,14 @@ part of 'imagedata.dart';
 
 VImageData _$VImageDataFromJson(Map<String, dynamic> json) => VImageData()
   ..alpha = (json['alpha'] as num?)?.toInt()
-  ..alphaData = (json['alphaData'] as List<dynamic>?)
-      ?.map((e) => (e as num).toInt())
-      .toList()
+  ..alphaData = ImageUtils.parseByteArray(json['alphaData'])
   ..bytesPerLine = (json['bytesPerLine'] as num?)?.toInt()
-  ..data =
-      (json['data'] as List<dynamic>?)?.map((e) => (e as num).toInt()).toList()
+  ..data = ImageUtils.parseByteArray(json['data'])
   ..delayTime = (json['delayTime'] as num?)?.toInt()
   ..depth = (json['depth'] as num?)?.toInt()
   ..disposalMethod = (json['disposalMethod'] as num?)?.toInt()
   ..height = (json['height'] as num?)?.toInt()
-  ..maskData = (json['maskData'] as List<dynamic>?)
-      ?.map((e) => (e as num).toInt())
-      .toList()
+  ..maskData = ImageUtils.parseByteArray(json['maskData'])
   ..maskPad = (json['maskPad'] as num?)?.toInt()
   ..scanlinePad = (json['scanlinePad'] as num?)?.toInt()
   ..transparentPixel = (json['transparentPixel'] as num?)?.toInt()
@@ -32,14 +27,14 @@ VImageData _$VImageDataFromJson(Map<String, dynamic> json) => VImageData()
 Map<String, dynamic> _$VImageDataToJson(VImageData instance) =>
     <String, dynamic>{
       'alpha': instance.alpha,
-      'alphaData': instance.alphaData,
+      'alphaData': ImageUtils.serializeByteArray(instance.alphaData),
       'bytesPerLine': instance.bytesPerLine,
-      'data': instance.data,
+      'data': ImageUtils.serializeByteArray(instance.data),
       'delayTime': instance.delayTime,
       'depth': instance.depth,
       'disposalMethod': instance.disposalMethod,
       'height': instance.height,
-      'maskData': instance.maskData,
+      'maskData': ImageUtils.serializeByteArray(instance.maskData),
       'maskPad': instance.maskPad,
       'scanlinePad': instance.scanlinePad,
       'transparentPixel': instance.transparentPixel,

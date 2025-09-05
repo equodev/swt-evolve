@@ -228,7 +228,7 @@ public class DartToolItem extends DartItem implements IToolItem {
     }
 
     Rectangle getBoundsInPixels() {
-        return null;
+        return new Rectangle(0, 0, 0, 0);
     }
 
     /**
@@ -702,7 +702,7 @@ public class DartToolItem extends DartItem implements IToolItem {
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         parent.layout(isImageSizeChanged(disabledImage, image));
-        disabledImage = image;
+        this.disabledImage = ImageUtils.copyImage(display, image);
         updateImages(getEnabled() && parent.getEnabled());
     }
 
@@ -767,7 +767,7 @@ public class DartToolItem extends DartItem implements IToolItem {
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         parent.layout(isImageSizeChanged(hotImage, image));
-        hotImage = image;
+        this.hotImage = ImageUtils.copyImage(display, image);
         updateImages(getEnabled() && parent.getEnabled());
     }
 

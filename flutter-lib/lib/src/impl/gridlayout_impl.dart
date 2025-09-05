@@ -16,7 +16,10 @@ class GridLayoutImpl extends GridLayoutSwt {
   late final int leaves;
 
   GridLayoutImpl(
-      {super.key, required super.value, required super.children, required super.composite}) {
+      {super.key,
+      required super.value,
+      required super.children,
+      required super.composite}) {
     leaves = children.where((el) => el is! CompositeValue).length;
   }
   final List<ControlValue> sizes = [];
@@ -24,13 +27,13 @@ class GridLayoutImpl extends GridLayoutSwt {
   @override
   Widget build(BuildContext context) {
     return Table(
-      // defaultColumnWidth: const FlexColumnWidth(),
-      defaultColumnWidth: const IntrinsicColumnWidth(),
-      children: _buildTableRows(children, value.numColumns)
-    );
+        // defaultColumnWidth: const FlexColumnWidth(),
+        defaultColumnWidth: const IntrinsicColumnWidth(),
+        children: _buildTableRows(children, value.numColumns));
   }
 
-  List<TableRow> _buildTableRows(List<WidgetValue> childrenValues, int numColumns) {
+  List<TableRow> _buildTableRows(
+      List<WidgetValue> childrenValues, int numColumns) {
     List<TableRow> rows = [];
     int totalCells = childrenValues.length;
     int currentCell = 0;
@@ -53,5 +56,4 @@ class GridLayoutImpl extends GridLayoutSwt {
 
     return rows;
   }
-
 }

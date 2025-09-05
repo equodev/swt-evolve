@@ -5,6 +5,9 @@ import org.eclipse.swt.accessibility.Accessible;
 import org.eclipse.swt.accessibility.SwtAccessible;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.DartImage;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Caret;
 import org.eclipse.swt.widgets.Mocks;
@@ -23,9 +26,11 @@ import org.mockito.Mockito;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.function.Consumer;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SerializeTestBase {
     private final Settings settings;
@@ -90,7 +95,10 @@ public class SerializeTestBase {
                 .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
                 .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0)) // Always true
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, Integer.MAX_VALUE))
-                .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())));
+                .generate(Select.all(Image.class), gen -> gen.oneOf(createTestImage()));
+        if (!(w instanceof Caret)) {
+            inst = inst.generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())));
+        }
         if (w instanceof Canvas c)
             inst.generate(Select.all(Caret.class), gen -> gen.oneOf(new Caret(c, SWT.NONE)));
         inst.fill();
@@ -116,8 +124,32 @@ public class SerializeTestBase {
         inst.fill();
     }
 
+    private Image createTestImage() {
+        try {
+            java.io.InputStream resourceStream = getClass().getClassLoader().getResourceAsStream("collapseall.png");
+            if (resourceStream != null) {
+                ImageData imageData = new ImageData(resourceStream);
+                Image image = new Image(null, imageData);
+                resourceStream.close();
+                return image;
+            }
+        } catch (Exception e) {
+            // Resource not available, create default image
+        }
+        return new Image(null, 16, 16);
+    }
+
+    protected void setAll(Image i) {
+        i.setBackground(new Color(Mocks.red(), Mocks.green(), Mocks.blue()));
+    }
+
     protected AssertConsumer node(String field) {
         return new AssertConsumer(field);
+    }
+
+    private static String serializeByteArray(byte[] value) {
+        if (value == null) return null;
+        return Base64.getEncoder().encodeToString(value);
     }
 
     public static class AssertConsumer {
@@ -156,6 +188,43 @@ public class SerializeTestBase {
                 else
                     assertThatJson(n).node(field).isObject()
                             .containsEntry("visible", Boolean.TRUE);
+            };
+        }
+
+
+        public Consumer<? super Object> equalsTo(Image value, Object def) {
+            return n -> {
+                if (value == def)
+                    assertThatJson(n).node(field).isAbsent();
+                else {
+                    String filename = ((DartImage) value.getImpl())._filename();
+                    if (filename != null) {
+                        assertThatJson(n).node(field).isObject().containsEntry("filename", filename);
+                    } else {
+                        assertThatJson(n).node(field).isObject().node("imageData").isObject()
+                                .containsEntry("width", value.getImageData().width)
+                                .containsEntry("height", value.getImageData().height);
+
+                    }
+                }
+            };
+        }
+
+        public Consumer<? super Object> equalsTo(ImageData value, Object def) {
+            return n -> {
+                if (value == def)
+                    assertThatJson(n).node(field).isAbsent();
+                else
+                    assertThatJson(n).node(field).isObject()
+                            .containsEntry("scanlinePad", value.scanlinePad)
+                            .containsEntry("height", value.height)
+                            .containsEntry("alphaData", serializeByteArray(value.alphaData))
+                            .containsEntry("bytesPerLine", value.bytesPerLine)
+                            .containsEntry("width", value.width)
+                            .containsEntry("alpha", value.alpha)
+                            .containsEntry("depth", value.depth)
+                            .containsEntry("type", value.type)
+                            .containsEntry("transparentPixel", value.transparentPixel);
             };
         }
     }
