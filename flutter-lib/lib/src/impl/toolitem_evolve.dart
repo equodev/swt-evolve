@@ -49,6 +49,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     Color? backgroundColor,
     BoxConstraints? constraints,
     String? tooltip,
+    bool isDropdown = false,
   }) {
     return Material(
       color: backgroundColor ?? Colors.transparent,
@@ -66,7 +67,22 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
             verticalOffset: 0,
             margin: const EdgeInsets.symmetric(horizontal: 20),
             waitDuration: const Duration(seconds: 1),
-            child: child,
+            child: isDropdown
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      child,
+                      GestureDetector(
+                        onTap: enabled ? openMenu : null,
+                        child: Icon(
+                          Icons.arrow_drop_down,
+                          size: 12,
+                          color: AppColors.getColor(enabled),
+                        ),
+                      ),
+                    ],
+                  )
+                : child,
           ),
         ),
       ),
@@ -128,28 +144,33 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
             final image = _getImageForState(enabled);
             final imageWidget = _buildImageWidget(image, enabled);
 
-            return _buildToolbarButton(
-              enabled: enabled,
-              constraints: AppConstraints.toolbarSmallConstraints,
-              onTap: null,
-              child: PopupMenuButton<String>(
-                tooltip: state.toolTipText ?? '',
-                icon: imageWidget ??
-                    const Icon(Icons.arrow_drop_down_circle_outlined,
-                        size: AppSizes.fontAwesomeIcon),
-                iconSize: AppSizes.fontAwesomeIcon,
-                constraints: const BoxConstraints(),
+            if (imageWidget != null) {
+              return _buildToolbarButton(
                 enabled: enabled,
-                onSelected: (value) {
-                  onPressed();
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                      value: 'option',
-                      child: Text(text ?? 'option')), // TODO mapping
-                ],
-              ),
-            );
+                tooltip: state.toolTipText ?? text ?? '',
+                child: imageWidget,
+                isDropdown: true,
+              );
+            } else if (text != null && text.isNotEmpty) {
+              return _buildToolbarButton(
+                enabled: enabled,
+                tooltip: state.toolTipText ?? text ?? '',
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Center(
+                    child: Text(
+                      text!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: AppSizes.toolbarTextSize,
+                        color: AppColors.getColor(enabled),
+                      ),
+                    ),
+                  ),
+                ),
+                isDropdown: true,
+              );
+            }
           }(),
         SWT.PUSH => () {
             final image = _getImageForState(enabled);
@@ -225,5 +246,9 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
 
   void onPressed() {
     widget.sendSelectionSelection(state, null);
+  }
+
+  void openMenu() {
+    widget.sendSelectionOpenMenu(state, null);
   }
 }

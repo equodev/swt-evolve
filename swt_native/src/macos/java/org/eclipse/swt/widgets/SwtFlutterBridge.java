@@ -42,6 +42,9 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     boolean forceFocus(DartControl widget, NSView focusView) {
+        if (focusView == null) {
+            return false;
+        }
         NSWindow window = focusView.window();
         if (window == null) {
             return false;

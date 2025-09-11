@@ -257,6 +257,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         if (hHint != SWT.DEFAULT)
             size.y = hHint;
         Rectangle trim = computeTrim(0, 0, size.x, size.y);
+        if (size.y == 64)
+            trim.height = 32;
         return new Point(trim.width, trim.height);
     }
 

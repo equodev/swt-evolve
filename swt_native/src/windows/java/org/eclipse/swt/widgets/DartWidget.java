@@ -1551,6 +1551,11 @@ public abstract class DartWidget implements IWidget {
         return data;
     }
 
+    void register() {
+        _hookEvents();
+        bridge = FlutterBridge.of(this);
+    }
+
     protected FlutterBridge bridge;
 
     public FlutterBridge getBridge() {
