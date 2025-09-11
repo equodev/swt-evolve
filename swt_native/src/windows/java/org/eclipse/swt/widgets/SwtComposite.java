@@ -252,6 +252,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 	 */
         int zoom = getZoom();
         Rectangle trim = DPIUtil.scaleUp(computeTrim(0, 0, DPIUtil.scaleDown(size.x, zoom), DPIUtil.scaleDown(size.y, zoom)), zoom);
+        if (size.y == 64)
+            trim.height = 32;
         return new Point(trim.width, trim.height);
     }
 

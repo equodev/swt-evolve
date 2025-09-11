@@ -221,6 +221,19 @@ final Map<String, IconData> iconMap = {
   //'plugin_depend': Icons.extension_outlined,
   'plugin_javasearch': Icons.extension,
   //'package': FontAwesomeIcons.folderTree,
+  'save_edit': Icons.save,
+  'saveall_edit': FontAwesomeIcons.floppyDisk,
+  'undo_edit': Icons.undo,
+  'redo_edit': Icons.redo,
+  'console_view': Icons.terminal,
+  'pin_editor': Icons.push_pin_outlined,
+  'copy_edit': Icons.copy,
+  'cut_edit': Icons.cut,
+  'paste_edit': Icons.paste,
+  'delete_edit': Icons.delete_outline,
+  'block_selection_mode': Icons.select_all_outlined,
+  'run_exc': Icons.play_arrow_outlined,
+  'debug_exc': Icons.bug_report_outlined,
 };
 
 IconData? getIconByName(String name) => iconMap[name];

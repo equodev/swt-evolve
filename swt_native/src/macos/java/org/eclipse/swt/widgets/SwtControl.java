@@ -4277,7 +4277,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         NSView topView = topView();
         topView.retain();
         topView.removeFromSuperview();
-        ((SwtControl) parent.getImpl()).contentView().addSubview(topView, OS.NSWindowBelow, null);
+        if (!(parent.getImpl() instanceof DartComposite))
+            ((SwtControl) parent.getImpl()).contentView().addSubview(topView, OS.NSWindowBelow, null);
         topView.release();
         this.parent = parent;
         reskin(SWT.ALL);
