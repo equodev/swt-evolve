@@ -121,7 +121,7 @@ std::wstring GetDllPath() {
     return L""; // Return an empty wide string on failure
 }
 
-void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::string widgetName) {
+void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::string widgetName, std::string theme, int backgroundColor, int parentBackgroundColor) {
     std::cout<<"InitializeFlutterWindow"<<std::endl;
   // Attach to console when present (e.g., 'flutter run') or create a new console when running with a debugger.
   if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {
@@ -137,7 +137,7 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
   flutter::DartProject project(GetDllPath() + L"\\data");
 
 //  std::vector<std::string> command_line_arguments = GetCommandLineArguments();
-  std::vector<std::string> arguments = {std::to_string(port), std::to_string(widgetId), widgetName};
+  std::vector<std::string> arguments = {std::to_string(port), std::to_string(widgetId), widgetName, theme, std::to_string(backgroundColor), std::to_string(parentBackgroundColor)};
 //  project->set_dart_entrypoint_arguments(std::move(command_line_arguments));
 //  project->set_dart_entrypoint_arguments(std::move(arguments));
   project.set_dart_entrypoint_arguments(std::move(arguments));
@@ -254,12 +254,16 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
     // UpdateWindow(window_handle_);
 }
 
-JNIEXPORT jlong JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_InitializeFlutterWindow(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name) {
+JNIEXPORT jlong JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_InitializeFlutterWindow(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name, jstring theme, jint background_color, jint parent_background_color) {
     const char* cstr = env->GetStringUTFChars(widget_name, nullptr);
     std::string widgetNameStr(cstr);
     env->ReleaseStringUTFChars(widget_name, cstr);
-
-    return (jlong) initializeFlutterWindow(port, (void*)parent, widget_id, widgetNameStr);
+    
+    const char* theme_cstr = env->GetStringUTFChars(theme, nullptr);
+    std::string themeStr(theme_cstr);
+    env->ReleaseStringUTFChars(theme, theme_cstr);
+    
+    return (jlong) initializeFlutterWindow(port, (void*)parent, widget_id, widgetNameStr, themeStr, background_color, parent_background_color);
 }
 
 JNIEXPORT jlong JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_GetView(JNIEnv* env, jclass cls, jlong context) {

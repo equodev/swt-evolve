@@ -10,6 +10,7 @@ import '../gen/image.dart';
 import '../impl/item_evolve.dart';
 import './utils/image_utils.dart';
 import 'widget_config.dart';
+import 'utils/text_utils.dart';
 
 class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     extends ItemImpl<T, V> {
@@ -48,7 +49,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
           Padding(
             padding: const EdgeInsets.only(bottom: 2.0),
             child: Text(
-              state.text ?? "",
+              stripAccelerators(state.text) ?? "",
               style: TextStyle(
                 fontSize: 12,
                 color: AppColors.getTextColor(),

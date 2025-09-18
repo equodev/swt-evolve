@@ -2,11 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 
 final bool useDarkTheme = false;
+bool _useDarkTheme = false;
+int? _parentBackgroundColor;
+
+void setCurrentTheme(bool isDark) {
+  _useDarkTheme = isDark;
+}
 
 ConfigFlags configFlags = ConfigFlags();
 
 bool getCurrentTheme() {
-  return useDarkTheme;
+  return _useDarkTheme;
+}
+
+void setParentBackgroundColor(int? color) {
+  _parentBackgroundColor = color;
+}
+
+int? getCurrentParentBackgroundColor() {
+  return _parentBackgroundColor;
 }
 
 ConfigFlags getConfigFlags() {

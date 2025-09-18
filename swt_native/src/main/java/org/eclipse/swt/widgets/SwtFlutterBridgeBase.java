@@ -5,6 +5,7 @@ import dev.equo.swt.FlutterLibraryLoader;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.*;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.Platform;
 
@@ -55,7 +56,30 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
 
     void initFlutterView(Composite parent, DartControl control) {
         super.onReady(control);
-        context = InitializeFlutterWindow(client.getPort(), getHandle(parent), id(control), widgetName(control));
+
+        boolean isDark = Display.isSystemDarkTheme();
+        String theme = isDark ? "dark" : "light";
+        System.out.println("Detected theme: " + theme);
+
+        Color backgroundColor = parent.getShell().getBackground();
+        System.out.println("Color from Shell: " + backgroundColor);
+
+        if (backgroundColor == null) {
+            backgroundColor = parent.getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
+        }
+        int backgroundColorInt = (backgroundColor.getRed() << 16) | (backgroundColor.getGreen() << 8) | backgroundColor.getBlue();
+
+        // Get parent background color for the Button
+        Color parentBackgroundColor = parent.getBackground();
+        System.out.println("Color from parent: " + parentBackgroundColor);
+
+        if (parentBackgroundColor == null) {
+            parentBackgroundColor = backgroundColor; // use shell color as fallback
+        }
+        int parentBackgroundColorInt = (parentBackgroundColor.getRed() << 16) | (parentBackgroundColor.getGreen() << 8) | parentBackgroundColor.getBlue();
+
+        context = InitializeFlutterWindow(client.getPort(), getHandle(parent), id(control), widgetName(control), theme, backgroundColorInt, parentBackgroundColorInt);
+
         sendSwtEvolveProperties();
         long view = GetView(context);
         setHandle(control, view);
@@ -100,7 +124,7 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     @Override
     public abstract Object container(DartComposite parent);
 
-    static native long InitializeFlutterWindow(int port, long parentHandle, long widgetId, String widgetName);
+    static native long InitializeFlutterWindow(int port, long parentHandle, long widgetId, String widgetName, String theme, int backgroundColor, int parentBackgroundColor);
 
     static native long Dispose(long context);
 
