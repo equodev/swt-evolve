@@ -39,7 +39,7 @@ std::string GetSharedLibraryPath() {
 }
 
 uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
-                                  const char *widget_name) {
+                                  const char *widget_name, const char *theme, jint background_color, jint parent_background_color) {
   FlDartProject *project = fl_dart_project_new();
   std::string base_path = GetSharedLibraryPath();
   fl_dart_project_set_aot_library_path(
@@ -53,11 +53,20 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
   char widget_id_c[256];
   sprintf(widget_id_c, "%ld", widget_id);
 
-  char *args[4];
+  char background_color_c[256];
+  sprintf(background_color_c, "%d", background_color);
+
+  char parent_background_color_c[256];
+  sprintf(parent_background_color_c, "%d", parent_background_color);
+
+  char *args[7];
   args[0] = port_c;
   args[1] = widget_id_c;
   args[2] = (char *)widget_name;
-  args[3] = 0;
+  args[3] = (char *)theme;
+  args[4] = background_color_c;
+  args[5] = parent_background_color_c;
+  args[6] = 0;
 
   fl_dart_project_set_dart_entrypoint_arguments(project, args);
 
@@ -81,11 +90,13 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
 JNIEXPORT jlong JNICALL
 Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_InitializeFlutterWindow(
     JNIEnv *env, jclass cls, jint port, jlong parent, jlong widget_id,
-    jstring widget_name) {
+    jstring widget_name, jstring theme, jint background_color, jint parent_background_color) {
   const char *widget_name_cstr = env->GetStringUTFChars(widget_name, NULL);
+  const char *theme_cstr = env->GetStringUTFChars(theme, NULL);
   jlong result = (jlong)InitializeFlutterWindow(port, (void *)parent, widget_id,
-                                                widget_name_cstr);
+                                                widget_name_cstr, theme_cstr, background_color, parent_background_color);
   env->ReleaseStringUTFChars(widget_name, widget_name_cstr);
+  env->ReleaseStringUTFChars(theme, theme_cstr);
   return result;
 }
 

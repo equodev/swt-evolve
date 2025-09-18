@@ -27,6 +27,12 @@ void main(List<String> args) async {
     return;
   }
   var theme = getTheme(args) == "dark" ? ThemeMode.dark : ThemeMode.light;
+  int? backgroundColor = getBackgroundColor(args);
+  int? parentBackgroundColor = getParentBackgroundColor(args);
+  // Set the global theme for getCurrentTheme() usage
+  setCurrentTheme(theme == ThemeMode.dark);
+  // Set the parent background color for buttons
+  setParentBackgroundColor(parentBackgroundColor);
 
   initSwtEvolveProperties();
 
@@ -37,6 +43,7 @@ void main(List<String> args) async {
   runApp(MyApp(
     contentWidget: contentWidget,
     theme: theme,
+    backgroundColor: backgroundColor,
   ));
 
   EquoCommService.send("${widgetName}/${widgetId}/ClientReady");
@@ -75,35 +82,38 @@ Widget? customWidget(Map<String, dynamic> child) {
 class MyApp extends StatelessWidget {
   final Widget contentWidget;
   final ThemeMode theme;
+  final int? backgroundColor;
 
   const MyApp({
     Key? key,
     required this.contentWidget,
     this.theme = ThemeMode.dark,
+    this.backgroundColor,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final bool useDarkTheme = getCurrentTheme();
-    final Color backgroundColor =
-        useDarkTheme ? Color(0xFF2C2C2C) : Color(0xFFF2F4F7);
-    final ThemeMode currentTheme =
-        useDarkTheme ? ThemeMode.dark : ThemeMode.light;
+    final ThemeMode currentTheme = useDarkTheme ? ThemeMode.dark : ThemeMode.light;
+
+    final Color finalBackgroundColor = backgroundColor != null
+        ? Color(0xFF000000 | backgroundColor!)
+        : (useDarkTheme ? Color(0xFF2C2C2C) : Color(0xFFF2F4F7));
 
     return FluentApp(
       title: 'Flutter Demo',
-      darkTheme: FluentThemeData.light().copyWith(
+      darkTheme: FluentThemeData.dark().copyWith(
         accentColor: Colors.blue,
-        scaffoldBackgroundColor: backgroundColor,
+        scaffoldBackgroundColor: finalBackgroundColor,
       ),
       theme: FluentThemeData.light().copyWith(
         accentColor: Colors.blue,
-        scaffoldBackgroundColor: backgroundColor,
+        scaffoldBackgroundColor: finalBackgroundColor,
       ),
       themeMode: currentTheme,
       debugShowCheckedModeBanner: false,
       home: Container(
-        color: backgroundColor,
+        color: finalBackgroundColor,
         child: contentWidget,
       ),
     );

@@ -18,10 +18,24 @@ String? getWidgetName(List<String> args) {
 }
 
 String? getTheme(List<String> args) {
-//  if (args.length >= 2) {
-//    return args[2];
-//  }
-//  return null;
+  if (args.length >= 4) {
+    return args[3];
+  }
+  return "light"; // default fallback
+}
+
+int? getBackgroundColor(List<String> args) {
+  if (args.length >= 5) {
+    return int.parse(args[4]);
+  }
+  return null;
+}
+
+int? getParentBackgroundColor(List<String> args) {
+  if (args.length >= 6) {
+    return int.parse(args[5]);
+  }
+  return null;
 }
 
 void close() {

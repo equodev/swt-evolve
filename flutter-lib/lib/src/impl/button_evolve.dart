@@ -6,24 +6,47 @@ import '../impl/control_evolve.dart';
 import '../styles.dart';
 import 'styled_buttons.dart';
 import 'widget_config.dart';
+import 'utils/text_utils.dart';
 
 class ButtonImpl<T extends ButtonSwt, V extends VButton>
     extends ControlImpl<T, V> {
   final bool useDarkTheme = getCurrentTheme();
+
+  Color? getSwtBackgroundColor(BuildContext context) {
+    var swtBackground = state.background;
+    if (swtBackground != null) {
+      return Color.fromARGB(
+        swtBackground.alpha,
+        swtBackground.red,
+        swtBackground.green,
+        swtBackground.blue,
+      );
+    }
+
+    // If it has no color of its own, use the parent color
+    int? parentColor = getCurrentParentBackgroundColor();
+    if (parentColor != null) {
+      return Color(0xFF000000 | parentColor);
+    }
+
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
     var text = state.text;
     // var image = state.image;
     String? image;
-    var enabled = state.enabled ?? true;
+    var enabled = state.enabled?? true;
+    var backgroundColor = getSwtBackgroundColor(context);
 
     if (state.style.has(SWT.TOGGLE)) {
       return SelectableButton(
-        text: state.text,
+        text: stripAccelerators(state.text),
         isSelected: state.selection ?? false,
         enabled: enabled,
         useDarkTheme: useDarkTheme,
+        backgroundColor: backgroundColor,
         onPressed: () {
           if (enabled) {
             onPressed();
@@ -37,15 +60,16 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       );
     } else if (state.style.has(SWT.CHECK)) {
       return MaterialCheckBox(
-        text: state.text,
+        text: stripAccelerators(state.text),
         checked: state.selection ?? false,
         useDarkTheme: useDarkTheme,
+        backgroundColor: backgroundColor,
         onChanged: !enabled
             ? null
             : (checked) {
-                onPressed();
-                setState(() => state.selection = checked);
-              },
+          onPressed();
+          setState(() => state.selection = checked);
+        },
         onMouseEnter: () => handleMouseEnter(),
         onMouseExit: () => handleMouseExit(),
         onFocusIn: () => handleFocusIn(),
@@ -53,15 +77,16 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       );
     } else if (state.style.has(SWT.RADIO) || state.style.has(SWT.NONE)) {
       return MaterialRadioButton(
-        text: state.text,
+        text: stripAccelerators(state.text),
         checked: state.selection ?? false,
         useDarkTheme: useDarkTheme,
+        backgroundColor: backgroundColor,
         onChanged: !enabled
             ? null
             : (checked) {
-                onPressed();
-                setState(() => state.selection = checked);
-              },
+          onPressed();
+          setState(() => state.selection = checked);
+        },
         onMouseEnter: () => handleMouseEnter(),
         onMouseExit: () => handleMouseExit(),
         onFocusIn: () => handleFocusIn(),
@@ -69,7 +94,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       );
     } else if (state.style.has(SWT.DROP_DOWN)) {
       return MaterialDropdownButton(
-        text: text ?? "",
+        text: stripAccelerators(text) ?? "",
         height: 50.0,
         enabled: enabled,
         useDarkTheme: useDarkTheme,
@@ -81,7 +106,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       );
     } else if (state.style.has(SWT.PUSH)) {
       return PushButton(
-        text: state.text,
+        text: stripAccelerators(state.text),
         image: image,
         enabled: enabled,
         useDarkTheme: useDarkTheme,
@@ -95,10 +120,12 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         onFocusOut: () => handleFocusOut(),
       );
     } else {
-      // Default case
-      return ElevatedButton(
-        onPressed: enabled ? onPressed : null,
-        child: Text(state.text ?? ""),
+      // Default case - Wrap with Material to provide Material context
+      return Material(
+        child: ElevatedButton(
+          onPressed: enabled ? onPressed : null,
+          child: Text(stripAccelerators(state.text) ?? ""),
+        ),
       );
     }
   }
