@@ -965,15 +965,18 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Color getBackground() {
         checkWidget();
-        if (backgroundAlpha == 0) {
-            Color color = SwtColor.cocoa_new(display, background, 0);
-            return color;
-        } else {
+        if (this._background != null) {
+            return this._background;
+        }
+        if (backgroundAlpha != 0) {
             Control control = findBackgroundControl();
             if (control == null)
                 control = this.getApi();
-            return control.getImpl().getBackgroundColor();
+            if (control != null && control != this.getApi()) {
+                return control.getImpl().getBackgroundColor();
+            }
         }
+        return defaultBackground();
     }
 
     public Color getBackgroundColor() {

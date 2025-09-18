@@ -21,10 +21,10 @@ class FlutterBridgeController {
         print("FlutterBridgeController.init")
     }
 
-    func initialize(parentView: NSView?, port: Int32, widgetId: Int64, widgetName: String) -> NSView? {
+    func initialize(parentView: NSView?, port: Int32, widgetId: Int64, widgetName: String, theme: String, backgroundColor: Int32, parentBackgroundColor: Int32) -> NSView? {
         print("FlutterBridgeController.initialize port:\(port) parent:\(String(describing: parentView)) id:\(widgetId) name:\(widgetName)")
 
-        let arguments = [String(port), String(widgetId), widgetName]
+        let arguments = [String(port), String(widgetId), widgetName, theme, String(backgroundColor), String(parentBackgroundColor)]
         let frameworkPath = getDylibDirectory()! + "/Frameworks/App.framework"
         let project = FlutterDartProject(precompiledDartBundle: Bundle(path: frameworkPath))
         project.dartEntrypointArguments = arguments
@@ -118,13 +118,19 @@ func getDylibDirectory() -> String? {
 
 // JNI bridge function
 @MainActor @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_InitializeFlutterWindow")
-public func InitializeFlutterWindow(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, port: jint, parent: jlong, widget_id: jlong, widget_name: jstring) -> jlong {
+public func InitializeFlutterWindow(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, port: jint, parent: jlong, widget_id: jlong, widget_name: jstring, theme: jstring, background_color: jint, parent_background_color: jint) -> jlong {
     let parentView = parent != 0 ? unsafeBitCast(UInt(parent), to: NSView.self) : nil
+    
     let cString = env.pointee!.pointee.GetStringUTFChars(env, widget_name, nil)
     let swiftString = String(cString: cString!)
     env.pointee?.pointee.ReleaseStringUTFChars(env, widget_name, cString)
+    
+    let themeCString = env.pointee!.pointee.GetStringUTFChars(env, theme, nil)
+    let themeString = String(cString: themeCString!)
+    env.pointee?.pointee.ReleaseStringUTFChars(env, theme, themeCString)
+    
     let controller = FlutterBridgeController()
-    let _ = controller.initialize(parentView: parentView, port: port, widgetId: Int64(widget_id), widgetName: swiftString)
+    let _ = controller.initialize(parentView: parentView, port: port, widgetId: Int64(widget_id), widgetName: swiftString, theme: themeString, backgroundColor: background_color, parentBackgroundColor: parent_background_color)
     let controllerPtr = Unmanaged.passRetained(controller).toOpaque() // ToDo: return this
 //     let viewPtr = Unmanaged.passRetained(view!).toOpaque()
     return jlong(Int(bitPattern: controllerPtr))
