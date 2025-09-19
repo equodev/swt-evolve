@@ -795,7 +795,12 @@ public abstract class SwtDevice implements Drawable, IDevice {
             try {
                 BufferedReader buffer;
                 if (isResource) {
-                    buffer = new BufferedReader(new InputStreamReader(SwtDevice.class.getResourceAsStream(path)));
+                    InputStream stream = SwtDevice.class.getResourceAsStream(path);
+                    if (stream == null) {
+                        System.err.println("SWT Warning: Resource not found: " + path);
+                        return "";
+                    }
+                    buffer = new BufferedReader(new InputStreamReader(stream));
                 } else {
                     buffer = new BufferedReader(new FileReader(new File(path)));
                 }
