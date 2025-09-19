@@ -1,6 +1,8 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import '../gen/control.dart';
 import '../gen/gc.dart';
 import '../gen/canvas.dart';
+import '../gen/widgets.dart';
 import 'composite_evolve.dart';
 
 abstract class Shape {
@@ -39,8 +41,25 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
 
   @override
   Widget build(BuildContext context) {
-    VGC gc = VGC.empty()..id = state.id;
-    return GCSwt<VGC>(value: gc);
+    final children = state.children;
+
+    if (children == null || children.isEmpty) {
+      VGC gc = VGC.empty()..id = state.id;
+      return GCSwt<VGC>(value: gc);
+    }
+
+    return buildCanvas(children);
+  }
+
+  Widget buildCanvas(List<VControl>? children) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: children!
+          .map((child) => mapWidgetFromValue(child))
+          .toList()
+          .reversed
+          .toList(),
+    );
   }
 
   Size getBounds() {

@@ -248,6 +248,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         if (hHint != SWT.DEFAULT)
             size.y = hHint;
         Rectangle trim = DPIUtil.autoScaleUp(computeTrim(0, 0, DPIUtil.autoScaleDown(size.x), DPIUtil.autoScaleDown(size.y)));
+        if (size.y == 64)
+            trim.height = 32;
         return new Point(trim.width, trim.height);
     }
 

@@ -125,7 +125,7 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     }
 
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
-        return null;
+        return new Rectangle(x, y, width, height);
     }
 
     @Override
