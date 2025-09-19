@@ -21,6 +21,10 @@ class ToolItemSwt<V extends VToolItem> extends ItemSwt<V> {
     sendEvent(val, "Selection/DefaultSelection", payload);
   }
 
+  void sendSelectionOpenMenu(V val, VEvent? payload) {
+    sendEvent(val, "Selection/OpenMenu", payload);
+  }
+
   void sendSelectionSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/Selection", payload);
   }

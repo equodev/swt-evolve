@@ -52,7 +52,7 @@ public class Serializer {
         writer.writeByte((byte)',');
         writer.writeByte((byte)'"'); writer.writeAscii(name_swt); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
         Class<? extends Widget> aClass = api.getClass();
-        StringConverter.serialize(aClass.isAnonymousClass() ? aClass.getSuperclass().getSimpleName() : aClass.getSimpleName(), writer);
+        StringConverter.serialize(Config.getSwtBaseClassName(aClass), writer);
         writer.writeByte((byte)',');
 //        writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
 //        NumberConverter.serialize(api.getStyle(), writer);

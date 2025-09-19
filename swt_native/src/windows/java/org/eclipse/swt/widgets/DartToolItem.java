@@ -1074,6 +1074,13 @@ public class DartToolItem extends DartItem implements IToolItem {
         return width;
     }
 
+    private void sendOpenMenu(Event e) {
+        if (e == null)
+            e = new Event();
+        e.detail = SWT.ARROW;
+        sendEvent(SWT.Selection, e);
+    }
+
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
@@ -1087,6 +1094,11 @@ public class DartToolItem extends DartItem implements IToolItem {
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "OpenMenu", e -> {
+            getDisplay().asyncExec(() -> {
+                sendOpenMenu(e);
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {

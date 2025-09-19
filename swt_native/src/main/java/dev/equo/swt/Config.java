@@ -13,8 +13,10 @@ public class Config {
     static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.equo.name()));
     static Impl toolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.toolbar", Impl.eclipse.name()));
 
+    private static final String os = System.getProperty("os.name").toLowerCase();
     static final Map<Class<?>, Impl> equoEnabled;
     private static boolean toolBarDrawn;
+    private static boolean isMainToolbarCreated = false;
 
     static {
         try {
@@ -89,6 +91,10 @@ public class Config {
     }
 
     public static boolean isEquo(Class<?> clazz, Scrollable parent) {
+        if(!isLinux() && clazz == Composite.class && isMainToolbarComposite() && !isMainToolbarCreated) {
+            isMainToolbarCreated = true;
+            return true;
+        }
         if (isEditor(clazz)) {
             return false;
         }
@@ -115,6 +121,13 @@ public class Config {
             return true;
 
         return parent != null && parent.getImpl().getClass().getSimpleName().startsWith(DART) && !isCTabFolderBody(clazz, parent);
+    }
+
+    private static final String E4_MAIN_TOOLBAR_CLASS  = "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";
+    private static final String E4_MAIN_TOOLBAR_METHOD = "getTrimComposite";
+
+    private static boolean isMainToolbarComposite() {
+        return isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
     }
 
     private static boolean isCTabFolderBody(Class<?> clazz, Scrollable parent) {
@@ -146,11 +159,8 @@ public class Config {
     private static boolean isMainToolbar(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
         if (id.startsWith("//Shell//-1//Composite//") && (id.endsWith("1") || id.endsWith("2"))) { // it changes on first launch
-            StackWalker.StackFrame caller = StackWalker.getInstance()
-                    .walk(stream -> stream.skip(11).findFirst().orElse(null));
-            if (caller != null && "org.eclipse.e4.ui.internal.workbench.swt.PartRenderingEngine".equals(caller.getClassName())
-                    && "subscribeTopicToBeRendered".equals(caller.getMethodName()))
-                return true;
+            return isInStackTraceAtSkip("org.eclipse.e4.ui.internal.workbench.swt.PartRenderingEngine", 
+                                      "subscribeTopicToBeRendered", 11);
         }
         return false;
     }
@@ -158,23 +168,38 @@ public class Config {
     private static final String EDITOR_CLASS  = "org.eclipse.ui.texteditor.AbstractTextEditor";
 
     private static boolean isEditor(Class<?> clazz) {
+        return (clazz == StyledText.class || clazz.getSimpleName().equals("StyledTextRenderer")) && 
+               isInStackTrace(EDITOR_CLASS);
+    }
+
+    private static boolean isInStackTrace(String className) {
+        return isInStackTrace(className, null);
+    }
+
+    private static boolean isInStackTrace(String className, String methodName) {
         StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 
-        return (clazz == StyledText.class || clazz.getSimpleName().equals("StyledTextRenderer")) && walker.walk(frames ->
-                frames.anyMatch(f -> EDITOR_CLASS.equals(f.getClassName()))
+        return walker.walk(frames ->
+                frames.anyMatch(f -> className.equals(f.getClassName()) && 
+                        (methodName == null || methodName.equals(f.getMethodName())))
         );
+    }
+
+    private static boolean isInStackTraceAtSkip(String className, String methodName, int skip) {
+        StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+        
+        StackWalker.StackFrame frame = walker.walk(stream -> 
+                stream.skip(skip).findFirst().orElse(null));
+        
+        return frame != null && className.equals(frame.getClassName()) && 
+               methodName.equals(frame.getMethodName());
     }
 
     private static final String E4_CLASS  = "org.eclipse.e4.ui.workbench.renderers.swt.StackRenderer";
     private static final String E4_METHOD = "addTopRight";
 
     private static boolean isToolBar() {
-        StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-
-        return walker.walk(frames ->
-                frames.anyMatch(f -> E4_CLASS.equals(f.getClassName())
-                        && E4_METHOD.equals(f.getMethodName()))
-        );
+        return isInStackTrace(E4_CLASS, E4_METHOD);
     }
 
     private static String getId(Class<?> clazz, Composite parent) {
@@ -206,4 +231,27 @@ public class Config {
         }
         return configFlags;
     }
+
+    static String getSwtBaseClassName(Class<?> clazz) {
+        Class<?> target = clazz;
+
+        if (clazz.isAnonymousClass()) {
+            target = clazz.getSuperclass();
+        } else {
+            while (target.getSuperclass() != null) {
+                String pkg = target.getPackageName();
+                if (pkg.startsWith("org.eclipse.swt.widgets") ||
+                        pkg.startsWith("org.eclipse.swt.custom")) {
+                    break;
+                }
+                target = target.getSuperclass();
+            }
+            }
+
+        return target.getSimpleName();
+        }
+
+        private static boolean isLinux() {
+            return os.contains("linux");
+        }
 }

@@ -2001,8 +2001,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void register() {
-        _hookEvents();
-        bridge = FlutterBridge.of(this);
+        super.register();
     }
 
     @Override
@@ -3459,7 +3458,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     Point toDisplayInPixels(int x, int y) {
-        return null;
+        return new Point(x, y);
     }
 
     /**

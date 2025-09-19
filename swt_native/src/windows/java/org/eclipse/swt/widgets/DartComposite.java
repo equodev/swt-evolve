@@ -192,7 +192,37 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.computeSizeInPixels(this);
+        ((SwtDisplay) display.getImpl()).runSkin();
+        Point size;
+        if (layout != null) {
+            if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
+                changed |= (getApi().state & LAYOUT_CHANGED) != 0;
+                getApi().state &= ~LAYOUT_CHANGED;
+                int zoom = getZoom();
+                size = DPIUtil.scaleUp(layout.computeSize(this.getApi(), DPIUtil.scaleDown(wHint, zoom), DPIUtil.scaleDown(hHint, zoom), changed), zoom);
+            } else {
+                size = new Point(wHint, hHint);
+            }
+        } else {
+            size = minimumSize(wHint, hHint, changed);
+            if (size.x == 0)
+                size.x = DEFAULT_WIDTH;
+            if (size.y == 0)
+                size.y = DEFAULT_HEIGHT;
+        }
+        if (wHint != SWT.DEFAULT)
+            size.x = wHint;
+        if (hHint != SWT.DEFAULT)
+            size.y = hHint;
+        /*
+	 * Since computeTrim can be overridden by subclasses, we cannot
+	 * call computeTrimInPixels directly.
+	 */
+        int zoom = getZoom();
+        Rectangle trim = DPIUtil.scaleUp(computeTrim(0, 0, DPIUtil.scaleDown(size.x, zoom), DPIUtil.scaleDown(size.y, zoom)), zoom);
+        if (size.y == 64)
+            trim.height = 32;
+        return new Point(trim.width, trim.height);
     }
 
     /**
