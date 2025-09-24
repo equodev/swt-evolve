@@ -3444,7 +3444,7 @@ public final class DartGC extends DartResource implements IGC {
 
     Font font;
 
-    Color foreground = new Color(0, 0, 0);
+    Color foreground;
 
     Pattern foregroundPattern;
 

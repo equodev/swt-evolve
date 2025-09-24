@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -71,7 +72,7 @@ public class TableItem extends Item {
      */
     public TableItem(Table parent, int style) {
         this((ITableItem) null);
-        setImpl(new SwtTableItem(parent, style, this));
+        setImpl(Config.isEquo(TableItem.class, parent) ? new DartTableItem(parent, style, this) : new SwtTableItem(parent, style, this));
     }
 
     /**
@@ -108,12 +109,12 @@ public class TableItem extends Item {
      */
     public TableItem(Table parent, int style, int index) {
         this((ITableItem) null);
-        setImpl(new SwtTableItem(parent, style, index, this));
+        setImpl(Config.isEquo(TableItem.class, parent) ? new DartTableItem(parent, style, index, this) : new SwtTableItem(parent, style, index, this));
     }
 
     TableItem(Table parent, int style, int index, boolean create) {
         this((ITableItem) null);
-        setImpl(new SwtTableItem(parent, style, index, create, this));
+        setImpl(Config.isEquo(TableItem.class, parent) ? new DartTableItem(parent, style, index, create, this) : new SwtTableItem(parent, style, index, create, this));
     }
 
     protected void checkSubclass() {

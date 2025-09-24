@@ -1465,7 +1465,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
 
     boolean expanded;
 
-    Color _foreground = new Color(0, 0, 0);
+    Color _foreground;
 
     TreeItem[] items = new TreeItem[0];
 

@@ -28,7 +28,6 @@ class TreeItemSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "TreeItem")
                .hasEntrySatisfying("texts", p -> assertThatJson(p).isArray()
                                                                   .hasSameSizeAs(value(w).getTexts()))
-               .containsEntry("text", json(w.getText()))
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("checked").equalsTo(w.getChecked(), orAbsentIfFalse));

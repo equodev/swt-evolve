@@ -34,6 +34,7 @@ class VList extends VScrollable {
   }
 
   List<String>? items;
+  List<int>? selection;
   int? topIndex;
 
   factory VList.fromJson(Map<String, dynamic> json) => _$VListFromJson(json);

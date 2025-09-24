@@ -24,6 +24,7 @@ import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class implement a selectable user interface
@@ -113,7 +114,7 @@ public class Table extends Composite {
      */
     public Table(Composite parent, int style) {
         this((ITable) null);
-        setImpl(new SwtTable(parent, style, this));
+        setImpl(Config.isEquo(Table.class, parent) ? new DartTable(parent, style, this) : new SwtTable(parent, style, this));
     }
 
     protected void checkSubclass() {

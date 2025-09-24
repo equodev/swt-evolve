@@ -221,8 +221,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     }
 
     boolean _getChecked() {
-        int[] ptr = new int[1];
-        return ptr[0] != 0;
+        return true;
     }
 
     Color _getForeground() {
@@ -1510,7 +1509,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
 
     Color background;
 
-    Color foreground = new Color(0, 0, 0);
+    Color foreground;
 
     TreeItem[] items = new TreeItem[0];
 

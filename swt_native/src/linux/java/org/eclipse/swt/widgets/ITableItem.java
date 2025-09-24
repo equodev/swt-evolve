@@ -5,7 +5,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 
-public interface ITableItem extends IItem {
+public interface ITableItem extends IItem, ImplTableItem {
 
     void checkSubclass();
 

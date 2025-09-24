@@ -815,7 +815,9 @@ public class SwtTable extends SwtComposite implements ITable {
         columns[index] = column;
         if ((getApi().state & FONT) != 0) {
             long fontDesc = getFontDescription();
-            ((SwtTableColumn) column.getImpl()).setFontDescription(fontDesc);
+            if (column.getImpl() instanceof SwtTableColumn) {
+                ((SwtTableColumn) column.getImpl()).setFontDescription(fontDesc);
+            }
             OS.pango_font_description_free(fontDesc);
         }
         if (columnCount >= 1) {
@@ -4379,6 +4381,142 @@ public class SwtTable extends SwtComposite implements ITable {
             OS.g_object_unref(headerCSSProvider);
             headerCSSProvider = 0;
         }
+    }
+
+    public long _modelHandle() {
+        return modelHandle;
+    }
+
+    public long _checkRenderer() {
+        return checkRenderer;
+    }
+
+    public int _itemCount() {
+        return itemCount;
+    }
+
+    public int _columnCount() {
+        return columnCount;
+    }
+
+    public int _lastIndexOf() {
+        return lastIndexOf;
+    }
+
+    public int _sortDirection() {
+        return sortDirection;
+    }
+
+    public int _selectionCountOnPress() {
+        return selectionCountOnPress;
+    }
+
+    public int _selectionCountOnRelease() {
+        return selectionCountOnRelease;
+    }
+
+    public long _ignoreCell() {
+        return ignoreCell;
+    }
+
+    public TableItem[] _items() {
+        return items;
+    }
+
+    public TableColumn[] _columns() {
+        return columns;
+    }
+
+    public TableItem _currentItem() {
+        return currentItem;
+    }
+
+    public TableColumn _sortColumn() {
+        return sortColumn;
+    }
+
+    public boolean _firstCustomDraw() {
+        return firstCustomDraw;
+    }
+
+    public boolean _firstCompute() {
+        return firstCompute;
+    }
+
+    public int _drawState() {
+        return drawState;
+    }
+
+    public int _drawFlags() {
+        return drawFlags;
+    }
+
+    public Color _headerBackground() {
+        return headerBackground;
+    }
+
+    public Color _headerForeground() {
+        return headerForeground;
+    }
+
+    public boolean _ownerDraw() {
+        return ownerDraw;
+    }
+
+    public boolean _ignoreSize() {
+        return ignoreSize;
+    }
+
+    public boolean _pixbufSizeSet() {
+        return pixbufSizeSet;
+    }
+
+    public boolean _hasChildren() {
+        return hasChildren;
+    }
+
+    public int _maxWidth() {
+        return maxWidth;
+    }
+
+    public int _topIndex() {
+        return topIndex;
+    }
+
+    public double _cachedAdjustment() {
+        return cachedAdjustment;
+    }
+
+    public double _currentAdjustment() {
+        return currentAdjustment;
+    }
+
+    public int _pixbufHeight() {
+        return pixbufHeight;
+    }
+
+    public int _pixbufWidth() {
+        return pixbufWidth;
+    }
+
+    public int _headerHeight() {
+        return headerHeight;
+    }
+
+    public boolean _boundsChangedSinceLastDraw() {
+        return boundsChangedSinceLastDraw;
+    }
+
+    public boolean _headerVisible() {
+        return headerVisible;
+    }
+
+    public boolean _wasScrolled() {
+        return wasScrolled;
+    }
+
+    public boolean _rowActivated() {
+        return rowActivated;
     }
 
     public Table getApi() {

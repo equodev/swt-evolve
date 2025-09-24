@@ -932,6 +932,26 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
         }
     }
 
+    public Table _parent() {
+        return parent;
+    }
+
+    public boolean _resizable() {
+        return resizable;
+    }
+
+    public boolean _moveable() {
+        return moveable;
+    }
+
+    public String _toolTipText() {
+        return toolTipText;
+    }
+
+    public int _id() {
+        return id;
+    }
+
     public TableColumn getApi() {
         if (api == null)
             api = TableColumn.createApi(this);

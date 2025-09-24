@@ -1,18 +1,16 @@
 package dev.equo;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import dev.equo.swt.Config;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.window.ApplicationWindow;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class JFaceTreeViewerExample extends ApplicationWindow {
 
@@ -84,6 +82,9 @@ public class JFaceTreeViewerExample extends ApplicationWindow {
     }
 
     public static void main(String[] args) {
+        Config.useEquo(Tree.class);
+        Config.useEquo(TreeItem.class);
+        Config.useEquo(TreeColumn.class);
         JFaceTreeViewerExample window = new JFaceTreeViewerExample();
         window.setBlockOnOpen(true);
         window.open();

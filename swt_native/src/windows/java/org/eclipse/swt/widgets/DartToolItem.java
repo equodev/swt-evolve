@@ -1008,7 +1008,7 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     boolean enabled = true;
 
-    Color _foreground = new Color(0, 0, 0);
+    Color _foreground;
 
     boolean selection;
 

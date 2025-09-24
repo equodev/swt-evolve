@@ -24,15 +24,18 @@ public class Config {
         try {
             equoEnabled = Map.ofEntries(
                 entry(Button.class, Impl.equo),
-                entry(Tree.class, Impl.equo),
-                entry(TreeItem.class, Impl.equo),
-                entry(TreeColumn.class, Impl.equo),
                 entry(CTabFolder.class, Impl.equo),
                 entry(CTabItem.class, Impl.equo),
                 entry(CTabFolderRenderer.class, Impl.equo),
                 entry(Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo),
                 entry(StyledText.class, Impl.equo),
                 entry(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo),
+                entry(Table.class, Impl.equo),
+                entry(TableItem.class, Impl.equo),
+                entry(TableColumn.class, Impl.equo)
+                //entry(Tree.class, Impl.equo),
+                //entry(TreeItem.class, Impl.equo),
+                //entry(TreeColumn.class, Impl.equo),
                 //entry(Canvas.class, Impl.equo)
             );
         } catch (ClassNotFoundException e) {
@@ -56,10 +59,7 @@ public class Config {
     }
 
     public static void useEquo(Class<?> clazz) {
-        if (defaultImpl == Impl.eclipse)
-           System.setProperty(getKey(clazz), "");
-        else if (defaultImpl == Impl.equo)
-           System.clearProperty(getKey(clazz));
+       System.setProperty(getKey(clazz), Impl.equo.name());
     }
 
     public static void useEclipse(Class<?> clazz) {
@@ -67,14 +67,17 @@ public class Config {
     }
 
     public static boolean isEquo(Class<?> clazz) {
+        String forcedImpl = System.getProperty(getKey(clazz));
+        if (forcedImpl != null) {
+            return Impl.equo.name().equals(forcedImpl);
+        }
+
         if (isEditor(clazz)) {
             return false;
         }
-        if (defaultImpl == Impl.force_equo && notNegatedDefault(clazz, Impl.equo))
+        if (defaultImpl == Impl.force_equo)
             return true;
-        if ((defaultImpl == Impl.equo && equoEnabled.containsKey(clazz)) && notNegatedDefault(clazz, Impl.equo))
-            return true;
-        if (defaultImpl == Impl.eclipse && !notNegatedDefault(clazz, Impl.eclipse))
+        if ((defaultImpl == Impl.equo && equoEnabled.containsKey(clazz)))
             return true;
         return isCreatedInsideDart();
     }
@@ -85,7 +88,7 @@ public class Config {
         for (int skip : new int[]{3, 4}) {
             StackWalker.StackFrame frame = walker.walk(stream -> stream.skip(skip).findFirst().orElse(null));
             if (frame != null && frame.getFileName() != null && frame.getFileName().startsWith(DART)) {
-            return true;
+                return true;
             }
         }
         return false;
@@ -215,11 +218,6 @@ public class Config {
             parent = (parent != null) ? parent.getParent() : null;
         }
         return id;
-    }
-
-    private static boolean notNegatedDefault(Class<?> clazz, Impl def) {
-        String property = System.getProperty(getKey(clazz));
-        return property == null || def.name().equals(property);
     }
 
     private static String getKey(Class<?> clazz) {
