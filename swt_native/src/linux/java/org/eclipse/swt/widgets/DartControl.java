@@ -369,6 +369,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     @Override
     long hoverProc(long widget) {
         int[] x = new int[1], y = new int[1], mask = new int[1];
+        {
+            ((SwtDisplay) display.getImpl()).getWindowPointerPosition(0, x, y, mask);
+        }
         if (containedInRegion(x[0], y[0]))
             return 0;
         sendMouseEvent(SWT.MouseHover, 0, 0, x[0], y[0], false, mask[0]);
@@ -719,8 +722,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBounds(Rectangle rect) {
         checkWidget();
-        this.bounds = rect;
-        getBridge().setBounds(this, bounds);
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         rect = DPIUtil.autoScaleUp(rect);
@@ -764,8 +765,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBounds(int x, int y, int width, int height) {
         checkWidget();
-        this.bounds = new Rectangle(x, y, width, height);
-        getBridge().setBounds(this, bounds);
         Rectangle rect = DPIUtil.autoScaleUp(new Rectangle(x, y, width, height));
         setBounds(rect.x, rect.y, Math.max(0, rect.width), Math.max(0, rect.height), true, true);
     }
@@ -854,6 +853,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             sendEvent(SWT.Resize);
             result |= RESIZED;
         }
+        this.bounds = new Rectangle(x, y, width, height);
+        getBridge().setBounds(this, bounds);
         return result;
     }
 
@@ -899,8 +900,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setLocation(Point location) {
         dirty();
         checkWidget();
-        this.bounds = new Rectangle(location.x, location.y, bounds.width, bounds.height);
-        getBridge().setBounds(this, bounds);
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         location = DPIUtil.autoScaleUp(location);
@@ -932,8 +931,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setLocation(int x, int y) {
         dirty();
         checkWidget();
-        this.bounds = new Rectangle(x, y, bounds.width, bounds.height);
-        getBridge().setBounds(this, bounds);
         Point loc = DPIUtil.autoScaleUp(new Point(x, y));
         setBounds(loc.x, loc.y, 0, 0, true, false);
     }
@@ -992,8 +989,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setSize(Point size) {
         dirty();
         checkWidget();
-        this.bounds = new Rectangle(bounds.x, bounds.y, size.x, size.y);
-        getBridge().setBounds(this, bounds);
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         size = DPIUtil.autoScaleUp(size);
@@ -1069,8 +1064,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setSize(int width, int height) {
         dirty();
         checkWidget();
-        this.bounds = new Rectangle(bounds.x, bounds.y, width, height);
-        getBridge().setBounds(this, bounds);
         Point size = DPIUtil.autoScaleUp(new Point(width, height));
         setBounds(0, 0, Math.max(0, size.x), Math.max(0, size.y), false, true);
     }
@@ -3083,6 +3076,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     @Override
     void destroyWidget() {
+        {
+            super.destroyWidget();
+        }
     }
 
     /**
@@ -3336,7 +3332,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBackground(Color color) {
         checkWidget();
-        this.background = color;
         _setBackground(color);
         if (color != null) {
             this.updateBackgroundMode();
@@ -3363,6 +3358,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             }
         }
         redrawChildren();
+        this.background = color;
     }
 
     /**
@@ -3484,12 +3480,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setDragDetect(boolean dragDetect) {
         dirty();
         checkWidget();
-        this.dragDetect = dragDetect;
         if (dragDetect) {
             getApi().state |= DRAG_DETECT;
         } else {
             getApi().state &= ~DRAG_DETECT;
         }
+        this.dragDetect = dragDetect;
     }
 
     /**
@@ -3508,7 +3504,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setEnabled(boolean enabled) {
         dirty();
         checkWidget();
-        this.enabled = enabled;
         if (((getApi().state & DISABLED) == 0) == enabled)
             return;
         Control control = null;
@@ -3529,6 +3524,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return;
         if (fixFocus)
             fixFocus(control);
+        this.enabled = enabled;
     }
 
     void cleanupEnableWindow() {
@@ -3616,7 +3612,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setForeground(Color color) {
         checkWidget();
-        this.foreground = color;
         if (((getApi().state & FOREGROUND) == 0) && color == null)
             return;
         if (color != null && color.isDisposed()) {
@@ -3845,7 +3840,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setRedraw(boolean redraw) {
         dirty();
         checkWidget();
-        this.redraw = redraw;
         if (redraw) {
             if (--drawCount == 0) {
             }
@@ -3853,6 +3847,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             if (drawCount++ == 0) {
             }
         }
+        this.redraw = redraw;
     }
 
     @Override
@@ -3990,7 +3985,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setVisible(boolean visible) {
         dirty();
         checkWidget();
-        this.visible = visible;
         if (((getApi().state & HIDDEN) == 0) == visible)
             return;
         if (visible) {
@@ -4031,6 +4025,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 return;
             sendEvent(SWT.Hide);
         }
+        this.visible = visible;
     }
 
     void setZOrder(Control sibling, boolean above, boolean fixRelations) {
@@ -4135,6 +4130,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return false;
         if (event.doit) {
             if (menu != null && !menu.isDisposed()) {
+                {
+                    Rectangle rect = DPIUtil.autoScaleUp(event.getBounds());
+                    if (rect.x != x || rect.y != y) {
+                        ((SwtMenu) menu.getImpl()).setLocationInPixels(rect.x, rect.y);
+                    }
+                    menu.setVisible(true);
+                    return true;
+                }
             }
         }
         return false;
@@ -4625,7 +4628,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     boolean enabled = true;
 
-    Color foreground;
+    Color foreground = new Color(0, 0, 0);
 
     boolean redraw;
 

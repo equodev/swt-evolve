@@ -870,6 +870,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         /* Get the HDC for the device */
         long hDC = device.internal_new_GC(null);
         int red = 0, green = 0, blue = 0;
+        {
+        }
         /* Release the HDC for the device */
         device.internal_dispose_GC(hDC, null);
         return SwtColor.win32_new(device, (blue << 16) | (green << 8) | red);
@@ -1500,7 +1502,6 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public void setBackground(Color color) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.background = color;
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
@@ -1512,6 +1513,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         long hDC = device.internal_new_GC(null);
         /* Release the HDC for the device */
         device.internal_dispose_GC(hDC, null);
+        this.background = color;
     }
 
     private int getZoom() {

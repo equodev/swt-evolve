@@ -783,7 +783,9 @@ public class SwtTree extends SwtComposite implements ITree {
         if (item.getImpl() instanceof SwtWidget) {
             ((SwtWidget) item.getImpl()).createJNIRef();
         }
-        ((SwtTreeItem) item.getImpl()).register();
+        if (item.getImpl() instanceof SwtTreeItem) {
+            ((SwtTreeItem) item.getImpl()).register();
+        }
         if (parentItem != null) {
             ((SwtTreeItem) parentItem.getImpl()).itemCount = count;
         } else {
@@ -2326,10 +2328,16 @@ public class SwtTree extends SwtComposite implements ITree {
         }
         for (int i = 0; i < columnCount; i++) {
             if (((SwtTreeColumn) columns[i].getImpl()).nsColumn.id == tableColumn) {
-                return ((SwtTreeItem) item.getImpl()).createString(i).id;
+                if (item.getImpl() instanceof SwtTreeItem) {
+                    return ((SwtTreeItem) item.getImpl()).createString(i).id;
+                } else
+                    return 0;
             }
         }
-        return ((SwtTreeItem) item.getImpl()).createString(0).id;
+        if (item.getImpl() instanceof SwtTreeItem) {
+            return ((SwtTreeItem) item.getImpl()).createString(0).id;
+        } else
+            return 0;
     }
 
     @Override
@@ -2602,7 +2610,7 @@ public class SwtTree extends SwtComposite implements ITree {
         for (int i = 0; i < items.length; i++) {
             TreeItem item = items[i];
             if (item != null && !item.isDisposed()) {
-                ((SwtTreeItem) item.getImpl()).release(false);
+                item.getImpl().release(false);
             }
         }
         items = null;
@@ -2657,7 +2665,7 @@ public class SwtTree extends SwtComposite implements ITree {
         for (int i = 0; i < items.length; i++) {
             TreeItem item = items[i];
             if (item != null && !item.isDisposed())
-                ((SwtTreeItem) item.getImpl()).release(false);
+                item.getImpl().release(false);
         }
         items = new TreeItem[4];
         itemCount = 0;
@@ -2772,7 +2780,9 @@ public class SwtTree extends SwtComposite implements ITree {
         if (oldMark != null && !oldMark.isDisposed())
             ((SwtTreeItem) oldMark.getImpl()).redraw(-1);
         if (item != null)
-            ((SwtTreeItem) item.getImpl()).redraw(-1);
+            if (item == null || item.getImpl() instanceof SwtTreeItem) {
+                ((SwtTreeItem) item.getImpl()).redraw(-1);
+            }
     }
 
     /**
@@ -3251,7 +3261,7 @@ public class SwtTree extends SwtComposite implements ITree {
             for (int index = count; index < itemCount; index++) {
                 TreeItem item = children[index];
                 if (item != null && !item.isDisposed())
-                    ((SwtTreeItem) item.getImpl()).release(false);
+                    item.getImpl().release(false);
             }
             selectItems(selectedItems, true);
             TreeItem[] newItems = new TreeItem[length];
@@ -3746,6 +3756,98 @@ public class SwtTree extends SwtComposite implements ITree {
         if (headerView == null)
             return;
         updateCursorRects(enabled, headerView);
+    }
+
+    public TreeItem[] _items() {
+        return items;
+    }
+
+    public int _itemCount() {
+        return itemCount;
+    }
+
+    public TreeColumn[] _columns() {
+        return columns;
+    }
+
+    public TreeColumn _sortColumn() {
+        return sortColumn;
+    }
+
+    public int _columnCount() {
+        return columnCount;
+    }
+
+    public int _sortDirection() {
+        return sortDirection;
+    }
+
+    public int _selectedRowIndex() {
+        return selectedRowIndex;
+    }
+
+    public boolean _ignoreExpand() {
+        return ignoreExpand;
+    }
+
+    public boolean _ignoreSelect() {
+        return ignoreSelect;
+    }
+
+    public boolean _ignoreRedraw() {
+        return ignoreRedraw;
+    }
+
+    public boolean _reloadPending() {
+        return reloadPending;
+    }
+
+    public boolean _drawExpansion() {
+        return drawExpansion;
+    }
+
+    public boolean _didSelect() {
+        return didSelect;
+    }
+
+    public boolean _preventSelect() {
+        return preventSelect;
+    }
+
+    public boolean _dragDetected() {
+        return dragDetected;
+    }
+
+    public Rectangle _imageBounds() {
+        return imageBounds;
+    }
+
+    public TreeItem _insertItem() {
+        return insertItem;
+    }
+
+    public boolean _insertBefore() {
+        return insertBefore;
+    }
+
+    public double[] _headerBackground() {
+        return headerBackground;
+    }
+
+    public double[] _headerForeground() {
+        return headerForeground;
+    }
+
+    public boolean _shouldExpand() {
+        return shouldExpand;
+    }
+
+    public boolean _shouldScroll() {
+        return shouldScroll;
+    }
+
+    public boolean _keyDown() {
+        return keyDown;
     }
 
     public Tree getApi() {

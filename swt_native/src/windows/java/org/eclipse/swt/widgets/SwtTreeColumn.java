@@ -378,10 +378,12 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
                     long hFont = ((SwtTreeItem) item.getImpl()).fontHandle(index);
                     if (hFont != -1)
                         hFont = OS.SelectObject(hDC, hFont);
-                    RECT itemRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, false, false, false, hDC);
-                    if (hFont != -1)
-                        OS.SelectObject(hDC, hFont);
-                    itemRight = itemRect.right;
+                    if (item.getImpl() instanceof SwtTreeItem) {
+                        RECT itemRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, false, false, false, hDC);
+                        if (hFont != -1)
+                            OS.SelectObject(hDC, hFont);
+                        itemRight = itemRect.right;
+                    }
                 }
                 columnWidth = Math.max(columnWidth, itemRight - headerRect.left);
             }
@@ -817,6 +819,26 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
         if (image != null) {
             treeColumn.setImage(image);
         }
+    }
+
+    public Tree _parent() {
+        return parent;
+    }
+
+    public boolean _resizable() {
+        return resizable;
+    }
+
+    public boolean _moveable() {
+        return moveable;
+    }
+
+    public String _toolTipText() {
+        return toolTipText;
+    }
+
+    public int _id() {
+        return id;
     }
 
     public TreeColumn getApi() {

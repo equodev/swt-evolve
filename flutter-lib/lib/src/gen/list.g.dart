@@ -33,9 +33,7 @@ VList _$VListFromJson(Map<String, dynamic> json) => VList()
   ..visible = json['visible'] as bool?
   ..scrollbarsMode = (json['scrollbarsMode'] as num?)?.toInt()
   ..items = (json['items'] as List<dynamic>?)?.map((e) => e as String).toList()
-  ..selection =
-      (json['selection'] as List<dynamic>?)?.map((e) => e as String).toList()
-  ..selectionIndices = (json['selectionIndices'] as List<dynamic>?)
+  ..selection = (json['selection'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
       .toList()
   ..topIndex = (json['topIndex'] as num?)?.toInt();
@@ -60,6 +58,5 @@ Map<String, dynamic> _$VListToJson(VList instance) => <String, dynamic>{
       'scrollbarsMode': instance.scrollbarsMode,
       'items': instance.items,
       'selection': instance.selection,
-      'selectionIndices': instance.selectionIndices,
       'topIndex': instance.topIndex,
     };

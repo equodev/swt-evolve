@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 
-public interface ITreeItem extends IItem {
+public interface ITreeItem extends IItem, ImplTreeItem {
 
     void checkSubclass();
 

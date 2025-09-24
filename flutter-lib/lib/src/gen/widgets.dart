@@ -12,8 +12,14 @@ import '../gen/label.dart';
 import '../gen/list.dart';
 import '../gen/scrollbar.dart';
 import '../gen/styledtext.dart';
+import '../gen/table.dart';
+import '../gen/tablecolumn.dart';
+import '../gen/tableitem.dart';
 import '../gen/toolbar.dart';
 import '../gen/toolitem.dart';
+import '../gen/tree.dart';
+import '../gen/treecolumn.dart';
+import '../gen/treeitem.dart';
 import '../gen/widget.dart';
 
 VWidget mapWidgetValue(Map<String, dynamic> child) {
@@ -25,13 +31,19 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "CTabFolder" => VCTabFolder.fromJson(child),
     "Canvas" => VCanvas.fromJson(child),
     "Combo" => VCombo.fromJson(child),
+    "Table" => VTable.fromJson(child),
     "ToolBar" => VToolBar.fromJson(child),
+    "Tree" => VTree.fromJson(child),
     "Composite" => VComposite.fromJson(child),
     "List" => VList.fromJson(child),
     "Button" => VButton.fromJson(child),
     "Label" => VLabel.fromJson(child),
     "CTabItem" => VCTabItem.fromJson(child),
+    "TableColumn" => VTableColumn.fromJson(child),
+    "TableItem" => VTableItem.fromJson(child),
     "ToolItem" => VToolItem.fromJson(child),
+    "TreeColumn" => VTreeColumn.fromJson(child),
+    "TreeItem" => VTreeItem.fromJson(child),
     "Caret" => VCaret.fromJson(child),
     "GC" => VGC.fromJson(child),
     "ScrollBar" => VScrollBar.fromJson(child),
@@ -48,13 +60,19 @@ Widget mapWidgetFromValue(VWidget child) {
     VCTabFolder() => CTabFolderSwt(key: ValueKey(id), value: child),
     VCanvas() => CanvasSwt(key: ValueKey(id), value: child),
     VCombo() => ComboSwt(key: ValueKey(id), value: child),
+    VTable() => TableSwt(key: ValueKey(id), value: child),
     VToolBar() => ToolBarSwt(key: ValueKey(id), value: child),
+    VTree() => TreeSwt(key: ValueKey(id), value: child),
     VComposite() => CompositeSwt(key: ValueKey(id), value: child),
     VList() => ListSwt(key: ValueKey(id), value: child),
     VButton() => ButtonSwt(key: ValueKey(id), value: child),
     VLabel() => LabelSwt(key: ValueKey(id), value: child),
     VCTabItem() => CTabItemSwt(key: ValueKey(id), value: child),
+    VTableColumn() => TableColumnSwt(key: ValueKey(id), value: child),
+    VTableItem() => TableItemSwt(key: ValueKey(id), value: child),
     VToolItem() => ToolItemSwt(key: ValueKey(id), value: child),
+    VTreeColumn() => TreeColumnSwt(key: ValueKey(id), value: child),
+    VTreeItem() => TreeItemSwt(key: ValueKey(id), value: child),
     VCaret() => CaretSwt(key: ValueKey(id), value: child),
     VGC() => GCSwt(key: ValueKey(id), value: child),
     VScrollBar() => ScrollBarSwt(key: ValueKey(id), value: child),

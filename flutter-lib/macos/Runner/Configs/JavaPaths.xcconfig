@@ -4,7 +4,7 @@
 // Set JAVA_HOME environment variable to your JDK installation directory.
 
 // Default fallback to system java if JAVA_HOME is not set
-JAVA_HOME_FALLBACK = /usr/libexec/java_home -v 17
+JAVA_HOME_FALLBACK = /Library/Java/JavaVirtualMachines/amazon-corretto-17.jdk/Contents/Home
 
 // Use JAVA_HOME if set, otherwise use system default
 JAVA_INCLUDE_PATH = $(JAVA_HOME:default=$(JAVA_HOME_FALLBACK))/include

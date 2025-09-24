@@ -19,6 +19,7 @@ import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.CompiledJson;
 import com.dslplatform.json.CompiledJson.*;
 import com.dslplatform.json.JsonAttribute;
+import dev.equo.swt.IntArrayConverter;
 
 /**
  * Instances of this class provide a description of a particular
@@ -288,7 +289,7 @@ public class Event {
      * Bidi segment offsets
      * @since 3.8
      */
-    @JsonAttribute()
+    @JsonAttribute(converter = IntArrayConverter.class)
     public int[] segments;
 
     /**

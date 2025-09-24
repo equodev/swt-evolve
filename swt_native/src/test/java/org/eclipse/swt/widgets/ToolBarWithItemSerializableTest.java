@@ -59,7 +59,6 @@ class ToolBarWithItemSerializableTest extends SerializeTestBase {
         // Create two ToolItems
         ToolItem item1 = new ToolItem(toolBar, SWT.NONE);
         item1.setText("Item 1");
-
         ToolItem item2 = new ToolItem(toolBar, SWT.NONE);
         item2.setText("Item 2");
         

@@ -710,11 +710,11 @@ public class DartButton extends DartControl implements IButton {
     public void setSelection(boolean selected) {
         dirty();
         checkWidget();
-        this.selection = selected;
         if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
             return;
         if ((getApi().style & SWT.CHECK) != 0) {
         }
+        this.selection = selected;
     }
 
     /**
@@ -796,6 +796,9 @@ public class DartButton extends DartControl implements IButton {
 
     private int getCheckboxTextOffset(long hdc) {
         int result = 0;
+        {
+            result += DPIUtil.scaleUp(13, getApi().nativeZoom);
+        }
         return result;
     }
 

@@ -523,9 +523,9 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setIncrement(int value) {
         dirty();
         checkWidget();
-        this.increment = value;
         if (value < 1)
             return;
+        this.increment = value;
     }
 
     /**
@@ -563,9 +563,9 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setMinimum(int value) {
         dirty();
         checkWidget();
-        this.minimum = value;
         if (value < 0)
             return;
+        this.minimum = value;
     }
 
     @Override
@@ -595,9 +595,9 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setPageIncrement(int value) {
         dirty();
         checkWidget();
-        this.pageIncrement = value;
         if (value < 1)
             return;
+        this.pageIncrement = value;
     }
 
     /**
@@ -615,8 +615,8 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setSelection(int selection) {
         dirty();
         checkWidget();
-        this.selection = selection;
         selection = Math.min(selection, getMaximum() - getThumb());
+        this.selection = selection;
     }
 
     /**
@@ -639,9 +639,9 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setThumb(int value) {
         dirty();
         checkWidget();
-        this.thumb = value;
         if (value < 1)
             return;
+        this.thumb = value;
     }
 
     /**
@@ -699,11 +699,11 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setVisible(boolean visible) {
         dirty();
         checkWidget();
-        this.visible = visible;
         if (((DartScrollable) parent.getImpl()).setScrollBarVisible(this.getApi(), visible)) {
             sendEvent(visible ? SWT.Show : SWT.Hide);
             parent.getImpl().sendEvent(SWT.Resize);
         }
+        this.visible = visible;
     }
 
     boolean enabled = true;
