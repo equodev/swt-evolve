@@ -1791,6 +1791,42 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         }
     }
 
+    public Tree _parent() {
+        return parent;
+    }
+
+    public Font _font() {
+        return font;
+    }
+
+    public Font[] _cellFont() {
+        return cellFont;
+    }
+
+    public String[] _strings() {
+        return strings;
+    }
+
+    public boolean _cached() {
+        return cached;
+    }
+
+    public boolean _grayed() {
+        return grayed;
+    }
+
+    public boolean _isExpanded() {
+        return isExpanded;
+    }
+
+    public boolean _updated() {
+        return updated;
+    }
+
+    public boolean _settingData() {
+        return settingData;
+    }
+
     public TreeItem getApi() {
         if (api == null)
             api = TreeItem.createApi(this);

@@ -1324,10 +1324,12 @@ public class DartCombo extends DartComposite implements ICombo {
      * </ul>
      */
     public void select(int index) {
+        dirty();
         checkWidget();
         if (index < 0 || index >= items.length)
             return;
         unselected = false;
+        this.selection = new Point(selection.x, selection.y);
     }
 
     @Override
@@ -1467,10 +1469,10 @@ public class DartCombo extends DartComposite implements ICombo {
     public void setListVisible(boolean visible) {
         dirty();
         checkWidget();
-        this.listVisible = visible;
         if (visible) {
         } else {
         }
+        this.listVisible = visible;
     }
 
     @Override
@@ -1521,13 +1523,13 @@ public class DartCombo extends DartComposite implements ICombo {
     public void setSelection(Point selection) {
         dirty();
         checkWidget();
-        this.selection = selection;
         if (selection == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if ((getApi().style & SWT.READ_ONLY) != 0)
             return;
         if (entryHandle != 0) {
         }
+        this.selection = selection;
     }
 
     /**
@@ -1561,7 +1563,6 @@ public class DartCombo extends DartComposite implements ICombo {
     public void setText(String string) {
         dirty();
         checkWidget();
-        this.text = string;
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if ((getApi().style & SWT.READ_ONLY) != 0) {
@@ -1581,6 +1582,7 @@ public class DartCombo extends DartComposite implements ICombo {
                 return;
         }
         sendEvent(SWT.Modify);
+        this.text = string;
     }
 
     /**
@@ -1606,9 +1608,9 @@ public class DartCombo extends DartComposite implements ICombo {
     public void setTextLimit(int limit) {
         dirty();
         checkWidget();
-        this.textLimit = limit;
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
+        this.textLimit = limit;
     }
 
     @Override

@@ -234,18 +234,13 @@ public class SwtTabItem extends SwtItem implements ITabItem {
 
     @Override
     long gtk_enter_notify_event(long widget, long event) {
-        if (parent.getImpl() instanceof SwtControl) {
-            ((SwtControl) parent.getImpl()).gtk_enter_notify_event(widget, event);
-        }
+        ((SwtControl) parent.getImpl()).gtk_enter_notify_event(widget, event);
         return 0;
     }
 
     @Override
     long gtk_mnemonic_activate(long widget, long arg1) {
-        if (parent.getImpl() instanceof SwtControl) {
-            return ((SwtControl) parent.getImpl()).gtk_mnemonic_activate(widget, arg1);
-        } else
-            return 0;
+        return ((SwtControl) parent.getImpl()).gtk_mnemonic_activate(widget, arg1);
     }
 
     @Override

@@ -576,7 +576,6 @@ public class DartToolItem extends DartItem implements IToolItem {
     public void setBackground(Color color) {
         dirty();
         checkWidget();
-        this._background = color;
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -586,6 +585,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         background = pixel;
         redraw();
+        this._background = color;
     }
 
     /**
@@ -660,7 +660,6 @@ public class DartToolItem extends DartItem implements IToolItem {
     public void setEnabled(boolean enabled) {
         dirty();
         checkWidget();
-        this.enabled = enabled;
         if (enabled) {
             getApi().state &= ~DISABLED;
         } else {
@@ -673,6 +672,7 @@ public class DartToolItem extends DartItem implements IToolItem {
         if (!enabled && ((DartToolBar) parent.getImpl()).lastFocusId == id) {
             ((DartToolBar) parent.getImpl()).lastFocusId = -1;
         }
+        this.enabled = enabled;
     }
 
     /**
@@ -728,7 +728,6 @@ public class DartToolItem extends DartItem implements IToolItem {
     public void setForeground(Color color) {
         dirty();
         checkWidget();
-        this._foreground = color;
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -738,6 +737,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         foreground = pixel;
         redraw();
+        this._foreground = color;
     }
 
     /**
@@ -823,7 +823,6 @@ public class DartToolItem extends DartItem implements IToolItem {
     public void setSelection(boolean selected) {
         dirty();
         checkWidget();
-        this.selection = selected;
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
         if (selected) {
@@ -844,6 +843,7 @@ public class DartToolItem extends DartItem implements IToolItem {
                 updateImages(false);
             }
         }
+        this.selection = selected;
     }
 
     @Override
@@ -976,7 +976,6 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setWidth(int width) {
         checkWidget();
-        this.width = width;
         setWidthInPixels(DPIUtil.scaleUp(width, getZoom()));
     }
 
@@ -987,6 +986,7 @@ public class DartToolItem extends DartItem implements IToolItem {
         if (width < 0)
             return;
         ((DartToolBar) parent.getImpl()).layoutItems();
+        this.width = width;
     }
 
     void updateImages(boolean enabled) {
@@ -1008,7 +1008,7 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     boolean enabled = true;
 
-    Color _foreground;
+    Color _foreground = new Color(0, 0, 0);
 
     boolean selection;
 

@@ -6,6 +6,8 @@ import org.eclipse.swt.graphics.*;
 
 import java.util.Map;
 
+import static java.util.Map.entry;
+
 public class Config {
 
     public enum Impl { eclipse, equo, force_equo }
@@ -20,15 +22,18 @@ public class Config {
 
     static {
         try {
-            equoEnabled = Map.of(
-                Button.class, Impl.equo,
-                CTabFolder.class, Impl.equo,
-                CTabItem.class, Impl.equo,
-                CTabFolderRenderer.class, Impl.equo,
-                Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo,
-                StyledText.class, Impl.equo,
-                Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo
-//                Canvas.class, Impl.equo
+            equoEnabled = Map.ofEntries(
+                entry(Button.class, Impl.equo),
+                entry(Tree.class, Impl.equo),
+                entry(TreeItem.class, Impl.equo),
+                entry(TreeColumn.class, Impl.equo),
+                entry(CTabFolder.class, Impl.equo),
+                entry(CTabItem.class, Impl.equo),
+                entry(CTabFolderRenderer.class, Impl.equo),
+                entry(Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo),
+                entry(StyledText.class, Impl.equo),
+                entry(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo),
+                //entry(Canvas.class, Impl.equo)
             );
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);

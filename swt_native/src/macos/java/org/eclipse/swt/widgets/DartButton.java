@@ -561,12 +561,12 @@ public class DartButton extends DartControl implements IButton {
     public void setSelection(boolean selected) {
         dirty();
         checkWidget();
-        this.selection = selected;
         if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
             return;
         if (grayed) {
         } else {
         }
+        this.selection = selected;
     }
 
     /**

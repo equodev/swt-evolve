@@ -520,11 +520,13 @@ public class SwtTree extends SwtComposite implements ITree {
                         OS.SetRect(pClipRect, width, nmcd.top, nmcd.right, nmcd.bottom);
                         if (explorerTheme) {
                             if (hooks(SWT.EraseItem)) {
-                                RECT itemRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, false, false, true, hDC);
-                                itemRect.left -= EXPLORER_EXTRA;
-                                itemRect.right += EXPLORER_EXTRA + 1;
-                                pClipRect.left = itemRect.left;
-                                pClipRect.right = itemRect.right;
+                                if (item.getImpl() instanceof SwtTreeItem) {
+                                    RECT itemRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, false, false, true, hDC);
+                                    itemRect.left -= EXPLORER_EXTRA;
+                                    itemRect.right += EXPLORER_EXTRA + 1;
+                                    pClipRect.left = itemRect.left;
+                                    pClipRect.right = itemRect.right;
+                                }
                                 if (columnCount > 0 && hwndHeader != 0) {
                                     HDITEM hdItem = new HDITEM();
                                     hdItem.mask = OS.HDI_WIDTH;
@@ -589,10 +591,12 @@ public class SwtTree extends SwtComposite implements ITree {
                                         GCData data = new GCData();
                                         data.device = display;
                                         GC gc = createNewGC(hDC, data);
-                                        // Pixels
-                                        RECT iconRect = ((SwtTreeItem) item.getImpl()).getBounds(index, false, true, false, false, true, hDC);
-                                        gc.setClipping(DPIUtil.scaleDown(new Rectangle(iconRect.left, iconRect.top, iconRect.right - iconRect.left, iconRect.bottom - iconRect.top), zoom));
-                                        gc.drawImage(image, 0, 0, bounds.width, bounds.height, DPIUtil.scaleDown(iconRect.left, zoom), DPIUtil.scaleDown(iconRect.top, zoom), size.x, size.y);
+                                        if (item.getImpl() instanceof SwtTreeItem) {
+                                            // Pixels
+                                            RECT iconRect = ((SwtTreeItem) item.getImpl()).getBounds(index, false, true, false, false, true, hDC);
+                                            gc.setClipping(DPIUtil.scaleDown(new Rectangle(iconRect.left, iconRect.top, iconRect.right - iconRect.left, iconRect.bottom - iconRect.top), zoom));
+                                            gc.drawImage(image, 0, 0, bounds.width, bounds.height, DPIUtil.scaleDown(iconRect.left, zoom), DPIUtil.scaleDown(iconRect.top, zoom), size.x, size.y);
+                                        }
                                         OS.SelectClipRgn(hDC, 0);
                                         gc.dispose();
                                     }
@@ -600,7 +604,9 @@ public class SwtTree extends SwtComposite implements ITree {
                             }
                         } else {
                             drawItem = drawText = drawBackground = true;
-                            rect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, false, false, false, true, hDC);
+                            if (item.getImpl() instanceof SwtTreeItem) {
+                                rect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, false, false, false, true, hDC);
+                            }
                             if (linesVisible) {
                                 rect.right++;
                                 rect.bottom++;
@@ -615,11 +621,15 @@ public class SwtTree extends SwtComposite implements ITree {
                     backgroundRect = rect;
                     if (hooks(SWT.EraseItem)) {
                         drawItem = drawText = drawImage = true;
-                        rect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, false, false, true, hDC);
+                        if (item.getImpl() instanceof SwtTreeItem) {
+                            rect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, false, false, true, hDC);
+                        }
                         if ((getApi().style & SWT.FULL_SELECTION) != 0) {
                             backgroundRect = rect;
                         } else {
-                            backgroundRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, false, false, false, true, hDC);
+                            if (item.getImpl() instanceof SwtTreeItem) {
+                                backgroundRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, false, false, false, true, hDC);
+                            }
                         }
                     }
                 } else {
@@ -682,128 +692,130 @@ public class SwtTree extends SwtComposite implements ITree {
                                 break;
                         }
                         if (hooks(SWT.EraseItem)) {
-                            RECT cellRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, true, true, true, hDC);
-                            int nSavedDC = OS.SaveDC(hDC);
-                            GCData data = new GCData();
-                            data.device = display;
-                            data.foreground = OS.GetTextColor(hDC);
-                            data.background = OS.GetBkColor(hDC);
-                            if (!selected || (getApi().style & SWT.FULL_SELECTION) == 0) {
-                                if (clrText != -1)
-                                    data.foreground = clrText;
+                            if (item.getImpl() instanceof SwtTreeItem) {
+                                RECT cellRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, true, true, true, hDC);
+                                int nSavedDC = OS.SaveDC(hDC);
+                                GCData data = new GCData();
+                                data.device = display;
+                                data.foreground = OS.GetTextColor(hDC);
+                                data.background = OS.GetBkColor(hDC);
+                                if (!selected || (getApi().style & SWT.FULL_SELECTION) == 0) {
+                                    if (clrText != -1)
+                                        data.foreground = clrText;
+                                    if (clrTextBk != -1)
+                                        data.background = clrTextBk;
+                                }
+                                data.font = item.getFont(index);
+                                data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
+                                GC gc = createNewGC(hDC, data);
+                                Event event = new Event();
+                                event.item = item;
+                                event.index = index;
+                                event.gc = gc;
+                                event.detail |= SWT.FOREGROUND;
                                 if (clrTextBk != -1)
-                                    data.background = clrTextBk;
-                            }
-                            data.font = item.getFont(index);
-                            data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
-                            GC gc = createNewGC(hDC, data);
-                            Event event = new Event();
-                            event.item = item;
-                            event.index = index;
-                            event.gc = gc;
-                            event.detail |= SWT.FOREGROUND;
-                            if (clrTextBk != -1)
-                                event.detail |= SWT.BACKGROUND;
-                            if ((getApi().style & SWT.FULL_SELECTION) != 0) {
-                                if (hot)
-                                    event.detail |= SWT.HOT;
-                                if (selected)
-                                    event.detail |= SWT.SELECTED;
-                                if (!explorerTheme) {
-                                    //if ((nmcd.uItemState & OS.CDIS_FOCUS) != 0) {
-                                    if (OS.SendMessage(getApi().handle, OS.TVM_GETNEXTITEM, OS.TVGN_CARET, 0) == nmcd.dwItemSpec) {
-                                        if (getApi().handle == OS.GetFocus()) {
-                                            int uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
-                                            if ((uiState & OS.UISF_HIDEFOCUS) == 0)
-                                                event.detail |= SWT.FOCUSED;
+                                    event.detail |= SWT.BACKGROUND;
+                                if ((getApi().style & SWT.FULL_SELECTION) != 0) {
+                                    if (hot)
+                                        event.detail |= SWT.HOT;
+                                    if (selected)
+                                        event.detail |= SWT.SELECTED;
+                                    if (!explorerTheme) {
+                                        //if ((nmcd.uItemState & OS.CDIS_FOCUS) != 0) {
+                                        if (OS.SendMessage(getApi().handle, OS.TVM_GETNEXTITEM, OS.TVGN_CARET, 0) == nmcd.dwItemSpec) {
+                                            if (getApi().handle == OS.GetFocus()) {
+                                                int uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
+                                                if ((uiState & OS.UISF_HIDEFOCUS) == 0)
+                                                    event.detail |= SWT.FOCUSED;
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            Rectangle bounds = DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom());
-                            event.setBounds(bounds);
-                            gc.setClipping(bounds);
-                            sendEvent(SWT.EraseItem, event);
-                            event.gc = null;
-                            int newTextClr = data.foreground;
-                            gc.dispose();
-                            OS.RestoreDC(hDC, nSavedDC);
-                            if (isDisposed() || item.isDisposed())
-                                break;
-                            if (event.doit) {
-                                ignoreDrawForeground = (event.detail & SWT.FOREGROUND) == 0;
-                                ignoreDrawBackground = (event.detail & SWT.BACKGROUND) == 0;
-                                if ((getApi().style & SWT.FULL_SELECTION) != 0) {
-                                    ignoreDrawSelection = (event.detail & SWT.SELECTED) == 0;
-                                    ignoreDrawFocus = (event.detail & SWT.FOCUSED) == 0;
-                                    ignoreDrawHot = (event.detail & SWT.HOT) == 0;
-                                }
-                            } else {
-                                ignoreDrawForeground = ignoreDrawBackground = ignoreDrawSelection = ignoreDrawFocus = ignoreDrawHot = true;
-                            }
-                            if (selected && ignoreDrawSelection)
-                                ignoreDrawHot = true;
-                            if ((getApi().style & SWT.FULL_SELECTION) != 0) {
-                                if (ignoreDrawSelection)
-                                    ignoreFullSelection = true;
-                                if (!ignoreDrawSelection || !ignoreDrawHot) {
-                                    if (!selected && !hot) {
-                                        selectionForeground = OS.GetSysColor(OS.COLOR_HIGHLIGHTTEXT);
-                                    } else {
-                                        if (!explorerTheme) {
-                                            drawBackground = true;
-                                            ignoreDrawBackground = false;
-                                            if ((getApi().handle == OS.GetFocus() || display.getHighContrast()) && OS.IsWindowEnabled(getApi().handle)) {
-                                                clrTextBk = OS.GetSysColor(OS.COLOR_HIGHLIGHT);
-                                            } else {
-                                                clrTextBk = OS.GetSysColor(OS.COLOR_3DFACE);
-                                            }
-                                            if (!ignoreFullSelection && index == columnCount - 1) {
-                                                RECT selectionRect = new RECT();
-                                                OS.SetRect(selectionRect, backgroundRect.left, backgroundRect.top, nmcd.right, backgroundRect.bottom);
-                                                backgroundRect = selectionRect;
-                                            }
-                                        } else {
-                                            RECT pRect = new RECT();
-                                            OS.SetRect(pRect, nmcd.left, nmcd.top, nmcd.right, nmcd.bottom);
-                                            if (columnCount > 0 && hwndHeader != 0) {
-                                                int totalWidth = 0;
-                                                HDITEM hdItem = new HDITEM();
-                                                hdItem.mask = OS.HDI_WIDTH;
-                                                for (int j = 0; j < columnCount; j++) {
-                                                    OS.SendMessage(hwndHeader, OS.HDM_GETITEM, j, hdItem);
-                                                    totalWidth += hdItem.cxy;
-                                                }
-                                                if (totalWidth > clientRect.right - clientRect.left) {
-                                                    pRect.left = 0;
-                                                    pRect.right = totalWidth;
-                                                } else {
-                                                    pRect.left = clientRect.left;
-                                                    pRect.right = clientRect.right;
-                                                }
-                                                if (index == columnCount - 1) {
-                                                    RECT selectionRect = new RECT();
-                                                    OS.SetRect(selectionRect, backgroundRect.left, backgroundRect.top, pRect.right, backgroundRect.bottom);
-                                                    backgroundRect = selectionRect;
-                                                }
-                                            }
-                                            long hTheme = OS.OpenThemeData(getApi().handle, SwtDisplay.TREEVIEW, getZoom());
-                                            int iStateId = selected ? OS.TREIS_SELECTED : OS.TREIS_HOT;
-                                            if (OS.GetFocus() != getApi().handle && selected && !hot)
-                                                iStateId = OS.TREIS_SELECTEDNOTFOCUS;
-                                            OS.DrawThemeBackground(hTheme, hDC, OS.TVP_TREEITEM, iStateId, pRect, backgroundRect);
-                                            OS.CloseThemeData(hTheme);
-                                        }
+                                Rectangle bounds = DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom());
+                                event.setBounds(bounds);
+                                gc.setClipping(bounds);
+                                sendEvent(SWT.EraseItem, event);
+                                event.gc = null;
+                                int newTextClr = data.foreground;
+                                gc.dispose();
+                                OS.RestoreDC(hDC, nSavedDC);
+                                if (isDisposed() || item.isDisposed())
+                                    break;
+                                if (event.doit) {
+                                    ignoreDrawForeground = (event.detail & SWT.FOREGROUND) == 0;
+                                    ignoreDrawBackground = (event.detail & SWT.BACKGROUND) == 0;
+                                    if ((getApi().style & SWT.FULL_SELECTION) != 0) {
+                                        ignoreDrawSelection = (event.detail & SWT.SELECTED) == 0;
+                                        ignoreDrawFocus = (event.detail & SWT.FOCUSED) == 0;
+                                        ignoreDrawHot = (event.detail & SWT.HOT) == 0;
                                     }
                                 } else {
-                                    if (selected) {
-                                        selectionForeground = newTextClr;
-                                        if (!explorerTheme) {
-                                            if (clrTextBk == -1 && OS.IsWindowEnabled(getApi().handle)) {
-                                                Control control = findBackgroundControl();
-                                                if (control == null)
-                                                    control = this.getApi();
-                                                clrTextBk = control.getImpl().getBackgroundPixel();
+                                    ignoreDrawForeground = ignoreDrawBackground = ignoreDrawSelection = ignoreDrawFocus = ignoreDrawHot = true;
+                                }
+                                if (selected && ignoreDrawSelection)
+                                    ignoreDrawHot = true;
+                                if ((getApi().style & SWT.FULL_SELECTION) != 0) {
+                                    if (ignoreDrawSelection)
+                                        ignoreFullSelection = true;
+                                    if (!ignoreDrawSelection || !ignoreDrawHot) {
+                                        if (!selected && !hot) {
+                                            selectionForeground = OS.GetSysColor(OS.COLOR_HIGHLIGHTTEXT);
+                                        } else {
+                                            if (!explorerTheme) {
+                                                drawBackground = true;
+                                                ignoreDrawBackground = false;
+                                                if ((getApi().handle == OS.GetFocus() || display.getHighContrast()) && OS.IsWindowEnabled(getApi().handle)) {
+                                                    clrTextBk = OS.GetSysColor(OS.COLOR_HIGHLIGHT);
+                                                } else {
+                                                    clrTextBk = OS.GetSysColor(OS.COLOR_3DFACE);
+                                                }
+                                                if (!ignoreFullSelection && index == columnCount - 1) {
+                                                    RECT selectionRect = new RECT();
+                                                    OS.SetRect(selectionRect, backgroundRect.left, backgroundRect.top, nmcd.right, backgroundRect.bottom);
+                                                    backgroundRect = selectionRect;
+                                                }
+                                            } else {
+                                                RECT pRect = new RECT();
+                                                OS.SetRect(pRect, nmcd.left, nmcd.top, nmcd.right, nmcd.bottom);
+                                                if (columnCount > 0 && hwndHeader != 0) {
+                                                    int totalWidth = 0;
+                                                    HDITEM hdItem = new HDITEM();
+                                                    hdItem.mask = OS.HDI_WIDTH;
+                                                    for (int j = 0; j < columnCount; j++) {
+                                                        OS.SendMessage(hwndHeader, OS.HDM_GETITEM, j, hdItem);
+                                                        totalWidth += hdItem.cxy;
+                                                    }
+                                                    if (totalWidth > clientRect.right - clientRect.left) {
+                                                        pRect.left = 0;
+                                                        pRect.right = totalWidth;
+                                                    } else {
+                                                        pRect.left = clientRect.left;
+                                                        pRect.right = clientRect.right;
+                                                    }
+                                                    if (index == columnCount - 1) {
+                                                        RECT selectionRect = new RECT();
+                                                        OS.SetRect(selectionRect, backgroundRect.left, backgroundRect.top, pRect.right, backgroundRect.bottom);
+                                                        backgroundRect = selectionRect;
+                                                    }
+                                                }
+                                                long hTheme = OS.OpenThemeData(getApi().handle, SwtDisplay.TREEVIEW, getZoom());
+                                                int iStateId = selected ? OS.TREIS_SELECTED : OS.TREIS_HOT;
+                                                if (OS.GetFocus() != getApi().handle && selected && !hot)
+                                                    iStateId = OS.TREIS_SELECTEDNOTFOCUS;
+                                                OS.DrawThemeBackground(hTheme, hDC, OS.TVP_TREEITEM, iStateId, pRect, backgroundRect);
+                                                OS.CloseThemeData(hTheme);
+                                            }
+                                        }
+                                    } else {
+                                        if (selected) {
+                                            selectionForeground = newTextClr;
+                                            if (!explorerTheme) {
+                                                if (clrTextBk == -1 && OS.IsWindowEnabled(getApi().handle)) {
+                                                    Control control = findBackgroundControl();
+                                                    if (control == null)
+                                                        control = this.getApi();
+                                                    clrTextBk = control.getImpl().getBackgroundPixel();
+                                                }
                                             }
                                         }
                                     }
@@ -928,61 +940,63 @@ public class SwtTree extends SwtComposite implements ITree {
                 if (selectionForeground != -1)
                     clrText = selectionForeground;
                 if (hooks(SWT.PaintItem)) {
-                    RECT itemRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, false, false, false, hDC);
-                    int nSavedDC = OS.SaveDC(hDC);
-                    GCData data = new GCData();
-                    data.device = display;
-                    data.font = item.getFont(index);
-                    data.foreground = OS.GetTextColor(hDC);
-                    data.background = OS.GetBkColor(hDC);
-                    if (selected && (getApi().style & SWT.FULL_SELECTION) != 0) {
-                        if (selectionForeground != -1)
-                            data.foreground = selectionForeground;
-                    } else {
-                        if (clrText != -1)
-                            data.foreground = clrText;
+                    if (item.getImpl() instanceof SwtTreeItem) {
+                        RECT itemRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, false, false, false, hDC);
+                        int nSavedDC = OS.SaveDC(hDC);
+                        GCData data = new GCData();
+                        data.device = display;
+                        data.font = item.getFont(index);
+                        data.foreground = OS.GetTextColor(hDC);
+                        data.background = OS.GetBkColor(hDC);
+                        if (selected && (getApi().style & SWT.FULL_SELECTION) != 0) {
+                            if (selectionForeground != -1)
+                                data.foreground = selectionForeground;
+                        } else {
+                            if (clrText != -1)
+                                data.foreground = clrText;
+                            if (clrTextBk != -1)
+                                data.background = clrTextBk;
+                        }
+                        data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
+                        GC gc = createNewGC(hDC, data);
+                        Event event = new Event();
+                        event.item = item;
+                        event.index = index;
+                        event.gc = gc;
+                        event.detail |= SWT.FOREGROUND;
                         if (clrTextBk != -1)
-                            data.background = clrTextBk;
-                    }
-                    data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
-                    GC gc = createNewGC(hDC, data);
-                    Event event = new Event();
-                    event.item = item;
-                    event.index = index;
-                    event.gc = gc;
-                    event.detail |= SWT.FOREGROUND;
-                    if (clrTextBk != -1)
-                        event.detail |= SWT.BACKGROUND;
-                    if (hot)
-                        event.detail |= SWT.HOT;
-                    if (selected && (i == 0 || /*nmcd.iSubItem == 0*/
-                    (getApi().style & SWT.FULL_SELECTION) != 0)) {
-                        event.detail |= SWT.SELECTED;
-                    }
-                    if (!explorerTheme) {
-                        //if ((nmcd.uItemState & OS.CDIS_FOCUS) != 0) {
-                        if (OS.SendMessage(getApi().handle, OS.TVM_GETNEXTITEM, OS.TVGN_CARET, 0) == nmcd.dwItemSpec) {
-                            if (i == 0 || /*nmcd.iSubItem == 0*/
-                            (getApi().style & SWT.FULL_SELECTION) != 0) {
-                                if (getApi().handle == OS.GetFocus()) {
-                                    int uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
-                                    if ((uiState & OS.UISF_HIDEFOCUS) == 0)
-                                        event.detail |= SWT.FOCUSED;
+                            event.detail |= SWT.BACKGROUND;
+                        if (hot)
+                            event.detail |= SWT.HOT;
+                        if (selected && (i == 0 || /*nmcd.iSubItem == 0*/
+                        (getApi().style & SWT.FULL_SELECTION) != 0)) {
+                            event.detail |= SWT.SELECTED;
+                        }
+                        if (!explorerTheme) {
+                            //if ((nmcd.uItemState & OS.CDIS_FOCUS) != 0) {
+                            if (OS.SendMessage(getApi().handle, OS.TVM_GETNEXTITEM, OS.TVGN_CARET, 0) == nmcd.dwItemSpec) {
+                                if (i == 0 || /*nmcd.iSubItem == 0*/
+                                (getApi().style & SWT.FULL_SELECTION) != 0) {
+                                    if (getApi().handle == OS.GetFocus()) {
+                                        int uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
+                                        if ((uiState & OS.UISF_HIDEFOCUS) == 0)
+                                            event.detail |= SWT.FOCUSED;
+                                    }
                                 }
                             }
                         }
+                        event.setBounds(DPIUtil.scaleDown(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
+                        RECT cellRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, true, true, true, hDC);
+                        int cellWidth = cellRect.right - cellRect.left;
+                        int cellHeight = cellRect.bottom - cellRect.top;
+                        gc.setClipping(DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellWidth, cellHeight), zoom));
+                        sendEvent(SWT.PaintItem, event);
+                        if (data.focusDrawn)
+                            focusRect = null;
+                        event.gc = null;
+                        gc.dispose();
+                        OS.RestoreDC(hDC, nSavedDC);
                     }
-                    event.setBounds(DPIUtil.scaleDown(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
-                    RECT cellRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, true, true, true, hDC);
-                    int cellWidth = cellRect.right - cellRect.left;
-                    int cellHeight = cellRect.bottom - cellRect.top;
-                    gc.setClipping(DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellWidth, cellHeight), zoom));
-                    sendEvent(SWT.PaintItem, event);
-                    if (data.focusDrawn)
-                        focusRect = null;
-                    event.gc = null;
-                    gc.dispose();
-                    OS.RestoreDC(hDC, nSavedDC);
                     if (isDisposed() || item.isDisposed())
                         break;
                 }
@@ -1023,10 +1037,12 @@ public class SwtTree extends SwtComposite implements ITree {
                                     OS.DrawFocusRect(hDC, focusRect);
                                 } else {
                                     int index = getFirstColumnIndex();
-                                    RECT focusRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, false, false, false, false, hDC);
-                                    RECT clipRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, false, false, false, true, hDC);
-                                    OS.IntersectClipRect(hDC, clipRect.left, clipRect.top, clipRect.right, clipRect.bottom);
-                                    OS.DrawFocusRect(hDC, focusRect);
+                                    if (item.getImpl() instanceof SwtTreeItem) {
+                                        RECT focusRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, false, false, false, false, hDC);
+                                        RECT clipRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, false, false, false, true, hDC);
+                                        OS.IntersectClipRect(hDC, clipRect.left, clipRect.top, clipRect.right, clipRect.bottom);
+                                        OS.DrawFocusRect(hDC, focusRect);
+                                    }
                                     OS.SelectClipRgn(hDC, 0);
                                 }
                             }
@@ -1161,199 +1177,203 @@ public class SwtTree extends SwtComposite implements ITree {
             if (hooks(SWT.EraseItem)) {
                 RECT rect = new RECT();
                 OS.SetRect(rect, nmcd.left, nmcd.top, nmcd.right, nmcd.bottom);
-                RECT cellRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, true, true, true, hDC);
-                if (clrSortBk != -1) {
-                    drawBackground(hDC, cellRect, clrSortBk, 0, 0);
-                } else {
-                    if (OS.IsWindowEnabled(getApi().handle) || findImageControl() != null) {
-                        drawBackground(hDC, rect);
+                if (item.getImpl() instanceof SwtTreeItem) {
+                    RECT cellRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, true, true, true, hDC);
+                    if (clrSortBk != -1) {
+                        drawBackground(hDC, cellRect, clrSortBk, 0, 0);
                     } else {
-                        fillBackground(hDC, OS.GetBkColor(hDC), rect);
+                        if (OS.IsWindowEnabled(getApi().handle) || findImageControl() != null) {
+                            drawBackground(hDC, rect);
+                        } else {
+                            fillBackground(hDC, OS.GetBkColor(hDC), rect);
+                        }
                     }
-                }
-                int nSavedDC = OS.SaveDC(hDC);
-                GCData data = new GCData();
-                data.device = display;
-                if (selected && explorerTheme) {
-                    data.foreground = OS.GetSysColor(OS.COLOR_WINDOWTEXT);
-                } else {
-                    data.foreground = OS.GetTextColor(hDC);
-                }
-                data.background = OS.GetBkColor(hDC);
-                if (!selected) {
-                    if (clrText != -1)
-                        data.foreground = clrText;
+                    int nSavedDC = OS.SaveDC(hDC);
+                    GCData data = new GCData();
+                    data.device = display;
+                    if (selected && explorerTheme) {
+                        data.foreground = OS.GetSysColor(OS.COLOR_WINDOWTEXT);
+                    } else {
+                        data.foreground = OS.GetTextColor(hDC);
+                    }
+                    data.background = OS.GetBkColor(hDC);
+                    if (!selected) {
+                        if (clrText != -1)
+                            data.foreground = clrText;
+                        if (clrTextBk != -1)
+                            data.background = clrTextBk;
+                    }
+                    data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
+                    data.font = item.getFont(index);
+                    GC gc = createNewGC(hDC, data);
+                    Event event = new Event();
+                    event.index = index;
+                    event.item = item;
+                    event.gc = gc;
+                    event.detail |= SWT.FOREGROUND;
                     if (clrTextBk != -1)
-                        data.background = clrTextBk;
-                }
-                data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
-                data.font = item.getFont(index);
-                GC gc = createNewGC(hDC, data);
-                Event event = new Event();
-                event.index = index;
-                event.item = item;
-                event.gc = gc;
-                event.detail |= SWT.FOREGROUND;
-                if (clrTextBk != -1)
-                    event.detail |= SWT.BACKGROUND;
-                if (hot)
-                    event.detail |= SWT.HOT;
-                if (selected)
-                    event.detail |= SWT.SELECTED;
-                //if ((nmcd.uItemState & OS.CDIS_FOCUS) != 0) {
-                if (OS.SendMessage(getApi().handle, OS.TVM_GETNEXTITEM, OS.TVGN_CARET, 0) == nmcd.dwItemSpec) {
-                    if (getApi().handle == OS.GetFocus()) {
-                        int uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
-                        if ((uiState & OS.UISF_HIDEFOCUS) == 0) {
-                            if (!explorerTheme || !selected) {
-                                focused = true;
-                                event.detail |= SWT.FOCUSED;
+                        event.detail |= SWT.BACKGROUND;
+                    if (hot)
+                        event.detail |= SWT.HOT;
+                    if (selected)
+                        event.detail |= SWT.SELECTED;
+                    //if ((nmcd.uItemState & OS.CDIS_FOCUS) != 0) {
+                    if (OS.SendMessage(getApi().handle, OS.TVM_GETNEXTITEM, OS.TVGN_CARET, 0) == nmcd.dwItemSpec) {
+                        if (getApi().handle == OS.GetFocus()) {
+                            int uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
+                            if ((uiState & OS.UISF_HIDEFOCUS) == 0) {
+                                if (!explorerTheme || !selected) {
+                                    focused = true;
+                                    event.detail |= SWT.FOCUSED;
+                                }
                             }
                         }
                     }
-                }
-                Rectangle bounds = DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom());
-                event.setBounds(bounds);
-                gc.setClipping(bounds);
-                sendEvent(SWT.EraseItem, event);
-                event.gc = null;
-                int newTextClr = data.foreground;
-                gc.dispose();
-                OS.RestoreDC(hDC, nSavedDC);
-                if (isDisposed() || item.isDisposed())
-                    return null;
-                if (event.doit) {
-                    ignoreDrawForeground = (event.detail & SWT.FOREGROUND) == 0;
-                    ignoreDrawBackground = (event.detail & SWT.BACKGROUND) == 0;
-                    ignoreDrawSelection = (event.detail & SWT.SELECTED) == 0;
-                    ignoreDrawFocus = (event.detail & SWT.FOCUSED) == 0;
-                    ignoreDrawHot = (event.detail & SWT.HOT) == 0;
-                } else {
-                    ignoreDrawForeground = ignoreDrawBackground = ignoreDrawSelection = ignoreDrawFocus = ignoreDrawHot = true;
-                }
-                if (selected && ignoreDrawSelection)
-                    ignoreDrawHot = true;
-                if (!ignoreDrawBackground && clrTextBk != -1) {
-                    boolean draw = !selected && !hot;
-                    if (!explorerTheme && selected)
-                        draw = !ignoreDrawSelection;
-                    if (draw) {
-                        if (columnCount == 0) {
-                            if ((getApi().style & SWT.FULL_SELECTION) != 0) {
-                                fillBackground(hDC, clrTextBk, rect);
-                            } else {
-                                RECT textRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, false, false, false, true, hDC);
-                                if (measureEvent != null) {
-                                    textRect.right = Math.min(cellRect.right, boundsInPixels.x + boundsInPixels.width);
+                    Rectangle bounds = DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom());
+                    event.setBounds(bounds);
+                    gc.setClipping(bounds);
+                    sendEvent(SWT.EraseItem, event);
+                    event.gc = null;
+                    int newTextClr = data.foreground;
+                    gc.dispose();
+                    OS.RestoreDC(hDC, nSavedDC);
+                    if (isDisposed() || item.isDisposed())
+                        return null;
+                    if (event.doit) {
+                        ignoreDrawForeground = (event.detail & SWT.FOREGROUND) == 0;
+                        ignoreDrawBackground = (event.detail & SWT.BACKGROUND) == 0;
+                        ignoreDrawSelection = (event.detail & SWT.SELECTED) == 0;
+                        ignoreDrawFocus = (event.detail & SWT.FOCUSED) == 0;
+                        ignoreDrawHot = (event.detail & SWT.HOT) == 0;
+                    } else {
+                        ignoreDrawForeground = ignoreDrawBackground = ignoreDrawSelection = ignoreDrawFocus = ignoreDrawHot = true;
+                    }
+                    if (selected && ignoreDrawSelection)
+                        ignoreDrawHot = true;
+                    if (!ignoreDrawBackground && clrTextBk != -1) {
+                        boolean draw = !selected && !hot;
+                        if (!explorerTheme && selected)
+                            draw = !ignoreDrawSelection;
+                        if (draw) {
+                            if (columnCount == 0) {
+                                if ((getApi().style & SWT.FULL_SELECTION) != 0) {
+                                    fillBackground(hDC, clrTextBk, rect);
+                                } else {
+                                    RECT textRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, false, false, false, true, hDC);
+                                    if (measureEvent != null) {
+                                        textRect.right = Math.min(cellRect.right, boundsInPixels.x + boundsInPixels.width);
+                                    }
+                                    fillBackground(hDC, clrTextBk, textRect);
                                 }
-                                fillBackground(hDC, clrTextBk, textRect);
+                            } else {
+                                fillBackground(hDC, clrTextBk, cellRect);
+                            }
+                        }
+                    }
+                    if (ignoreDrawSelection)
+                        ignoreFullSelection = true;
+                    if (!ignoreDrawSelection || !ignoreDrawHot) {
+                        if (!selected && !hot) {
+                            selectionForeground = clrText = OS.GetSysColor(OS.COLOR_HIGHLIGHTTEXT);
+                        }
+                        if (explorerTheme) {
+                            if ((getApi().style & SWT.FULL_SELECTION) == 0) {
+                                RECT pRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, false, false, false, hDC);
+                                RECT pClipRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, true, false, true, hDC);
+                                if (measureEvent != null) {
+                                    pRect.right = Math.min(pClipRect.right, boundsInPixels.x + boundsInPixels.width);
+                                } else {
+                                    pRect.right += EXPLORER_EXTRA;
+                                    pClipRect.right += EXPLORER_EXTRA;
+                                }
+                                pRect.left -= EXPLORER_EXTRA;
+                                pClipRect.left -= EXPLORER_EXTRA;
+                                long hTheme = OS.OpenThemeData(getApi().handle, SwtDisplay.TREEVIEW, getZoom());
+                                int iStateId = selected ? OS.TREIS_SELECTED : OS.TREIS_HOT;
+                                if (OS.GetFocus() != getApi().handle && selected && !hot)
+                                    iStateId = OS.TREIS_SELECTEDNOTFOCUS;
+                                OS.DrawThemeBackground(hTheme, hDC, OS.TVP_TREEITEM, iStateId, pRect, pClipRect);
+                                OS.CloseThemeData(hTheme);
                             }
                         } else {
-                            fillBackground(hDC, clrTextBk, cellRect);
-                        }
-                    }
-                }
-                if (ignoreDrawSelection)
-                    ignoreFullSelection = true;
-                if (!ignoreDrawSelection || !ignoreDrawHot) {
-                    if (!selected && !hot) {
-                        selectionForeground = clrText = OS.GetSysColor(OS.COLOR_HIGHLIGHTTEXT);
-                    }
-                    if (explorerTheme) {
-                        if ((getApi().style & SWT.FULL_SELECTION) == 0) {
-                            RECT pRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, false, false, false, hDC);
-                            RECT pClipRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, true, false, true, hDC);
-                            if (measureEvent != null) {
-                                pRect.right = Math.min(pClipRect.right, boundsInPixels.x + boundsInPixels.width);
-                            } else {
-                                pRect.right += EXPLORER_EXTRA;
-                                pClipRect.right += EXPLORER_EXTRA;
-                            }
-                            pRect.left -= EXPLORER_EXTRA;
-                            pClipRect.left -= EXPLORER_EXTRA;
-                            long hTheme = OS.OpenThemeData(getApi().handle, SwtDisplay.TREEVIEW, getZoom());
-                            int iStateId = selected ? OS.TREIS_SELECTED : OS.TREIS_HOT;
-                            if (OS.GetFocus() != getApi().handle && selected && !hot)
-                                iStateId = OS.TREIS_SELECTEDNOTFOCUS;
-                            OS.DrawThemeBackground(hTheme, hDC, OS.TVP_TREEITEM, iStateId, pRect, pClipRect);
-                            OS.CloseThemeData(hTheme);
-                        }
-                    } else {
-                        /*
+                            /*
 					* Feature in Windows.  When the tree has the style
 					* TVS_FULLROWSELECT, the background color for the
 					* entire row is filled when an item is painted,
 					* drawing on top of any custom drawing.  The fix
 					* is to emulate TVS_FULLROWSELECT.
 					*/
-                        if ((getApi().style & SWT.FULL_SELECTION) != 0) {
-                            if ((getApi().style & SWT.FULL_SELECTION) != 0 && columnCount == 0) {
-                                fillBackground(hDC, OS.GetBkColor(hDC), rect);
+                            if ((getApi().style & SWT.FULL_SELECTION) != 0) {
+                                if ((getApi().style & SWT.FULL_SELECTION) != 0 && columnCount == 0) {
+                                    fillBackground(hDC, OS.GetBkColor(hDC), rect);
+                                } else {
+                                    fillBackground(hDC, OS.GetBkColor(hDC), cellRect);
+                                }
                             } else {
-                                fillBackground(hDC, OS.GetBkColor(hDC), cellRect);
+                                RECT textRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, false, false, false, true, hDC);
+                                if (measureEvent != null) {
+                                    textRect.right = Math.min(cellRect.right, boundsInPixels.x + boundsInPixels.width);
+                                }
+                                fillBackground(hDC, OS.GetBkColor(hDC), textRect);
                             }
-                        } else {
-                            RECT textRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, false, false, false, true, hDC);
-                            if (measureEvent != null) {
-                                textRect.right = Math.min(cellRect.right, boundsInPixels.x + boundsInPixels.width);
-                            }
-                            fillBackground(hDC, OS.GetBkColor(hDC), textRect);
                         }
-                    }
-                } else {
-                    if (selected || hot) {
-                        selectionForeground = clrText = newTextClr;
-                        ignoreDrawSelection = ignoreDrawHot = true;
-                    }
-                    if (explorerTheme) {
-                        nmcd.uItemState |= OS.CDIS_DISABLED;
-                        /*
+                    } else {
+                        if (selected || hot) {
+                            selectionForeground = clrText = newTextClr;
+                            ignoreDrawSelection = ignoreDrawHot = true;
+                        }
+                        if (explorerTheme) {
+                            nmcd.uItemState |= OS.CDIS_DISABLED;
+                            /*
 					* Feature in Windows.  On Vista only, when the text
 					* color is unchanged and an item is asked to draw
 					* disabled, it uses the disabled color.  The fix is
 					* to modify the color so that is it no longer equal.
 					*/
-                        int newColor = clrText == -1 ? getForegroundPixel() : clrText;
-                        if (nmcd.clrText == newColor) {
-                            nmcd.clrText |= 0x20000000;
-                            if (nmcd.clrText == newColor)
-                                nmcd.clrText &= ~0x20000000;
-                        } else {
-                            nmcd.clrText = newColor;
+                            int newColor = clrText == -1 ? getForegroundPixel() : clrText;
+                            if (nmcd.clrText == newColor) {
+                                nmcd.clrText |= 0x20000000;
+                                if (nmcd.clrText == newColor)
+                                    nmcd.clrText &= ~0x20000000;
+                            } else {
+                                nmcd.clrText = newColor;
+                            }
+                            OS.MoveMemory(lParam, nmcd, NMTVCUSTOMDRAW.sizeof);
                         }
+                    }
+                    if (focused && !ignoreDrawFocus && (getApi().style & SWT.FULL_SELECTION) == 0) {
+                        RECT textRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, explorerTheme, false, false, true, hDC);
+                        if (measureEvent != null) {
+                            textRect.right = Math.min(cellRect.right, boundsInPixels.x + boundsInPixels.width);
+                        }
+                        nmcd.uItemState &= ~OS.CDIS_FOCUS;
                         OS.MoveMemory(lParam, nmcd, NMTVCUSTOMDRAW.sizeof);
+                        focusRect = textRect;
                     }
-                }
-                if (focused && !ignoreDrawFocus && (getApi().style & SWT.FULL_SELECTION) == 0) {
-                    RECT textRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, explorerTheme, false, false, true, hDC);
-                    if (measureEvent != null) {
-                        textRect.right = Math.min(cellRect.right, boundsInPixels.x + boundsInPixels.width);
-                    }
-                    nmcd.uItemState &= ~OS.CDIS_FOCUS;
-                    OS.MoveMemory(lParam, nmcd, NMTVCUSTOMDRAW.sizeof);
-                    focusRect = textRect;
                 }
                 if (explorerTheme) {
                     if (selected || (hot && ignoreDrawHot))
                         nmcd.uItemState &= ~OS.CDIS_HOT;
                     OS.MoveMemory(lParam, nmcd, NMTVCUSTOMDRAW.sizeof);
                 }
-                RECT itemRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, false, false, false, hDC);
-                OS.SaveDC(hDC);
-                OS.SelectClipRgn(hDC, 0);
-                if (explorerTheme) {
-                    itemRect.left -= EXPLORER_EXTRA;
-                    itemRect.right += EXPLORER_EXTRA;
+                if (item.getImpl() instanceof SwtTreeItem) {
+                    RECT itemRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, false, false, false, hDC);
+                    OS.SaveDC(hDC);
+                    OS.SelectClipRgn(hDC, 0);
+                    if (explorerTheme) {
+                        itemRect.left -= EXPLORER_EXTRA;
+                        itemRect.right += EXPLORER_EXTRA;
+                    }
+                    /*if (selected)*/
+                    itemRect.right++;
+                    if (linesVisible)
+                        itemRect.bottom++;
+                    if (clipRect != null) {
+                        OS.IntersectClipRect(hDC, clipRect.left, clipRect.top, clipRect.right, clipRect.bottom);
+                    }
+                    OS.ExcludeClipRect(hDC, itemRect.left, itemRect.top, itemRect.right, itemRect.bottom);
                 }
                 //TODO - bug in Windows selection or SWT itemRect
-                /*if (selected)*/
-                itemRect.right++;
-                if (linesVisible)
-                    itemRect.bottom++;
-                if (clipRect != null) {
-                    OS.IntersectClipRect(hDC, clipRect.left, clipRect.top, clipRect.right, clipRect.bottom);
-                }
-                OS.ExcludeClipRect(hDC, itemRect.left, itemRect.top, itemRect.right, itemRect.bottom);
                 return new LRESULT(OS.CDRF_DODEFAULT | OS.CDRF_NOTIFYPOSTPAINT);
             }
             /*
@@ -1472,8 +1492,10 @@ public class SwtTree extends SwtComposite implements ITree {
                                 }
                                 fillBackground(hDC, clrTextBk, rect);
                             } else {
-                                RECT textRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, false, true, false, true, hDC);
-                                fillBackground(hDC, clrTextBk, textRect);
+                                if (item.getImpl() instanceof SwtTreeItem) {
+                                    RECT textRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, false, true, false, true, hDC);
+                                    fillBackground(hDC, clrTextBk, textRect);
+                                }
                             }
                         }
                     }
@@ -8699,6 +8721,202 @@ public class SwtTree extends SwtComposite implements ITree {
         ((SwtTree) tree.getImpl()).setScrollWidth();
         // Reset of CheckBox Size required (if SWT.Check is not set, this is a no-op)
         ((SwtTree) tree.getImpl()).setCheckboxImageList();
+    }
+
+    public TreeItem[] _items() {
+        return items;
+    }
+
+    public TreeColumn[] _columns() {
+        return columns;
+    }
+
+    public int _columnCount() {
+        return columnCount;
+    }
+
+    public TreeItem _currentItem() {
+        return currentItem;
+    }
+
+    public TreeColumn _sortColumn() {
+        return sortColumn;
+    }
+
+    public long _hAnchor() {
+        return hAnchor;
+    }
+
+    public long _hInsert() {
+        return hInsert;
+    }
+
+    public long _hSelect() {
+        return hSelect;
+    }
+
+    public int _lastID() {
+        return lastID;
+    }
+
+    public int _sortDirection() {
+        return sortDirection;
+    }
+
+    public boolean _dragStarted() {
+        return dragStarted;
+    }
+
+    public boolean _gestureCompleted() {
+        return gestureCompleted;
+    }
+
+    public boolean _insertAfter() {
+        return insertAfter;
+    }
+
+    public boolean _shrink() {
+        return shrink;
+    }
+
+    public boolean _ignoreShrink() {
+        return ignoreShrink;
+    }
+
+    public boolean _ignoreSelect() {
+        return ignoreSelect;
+    }
+
+    public boolean _ignoreExpand() {
+        return ignoreExpand;
+    }
+
+    public boolean _ignoreDeselect() {
+        return ignoreDeselect;
+    }
+
+    public boolean _ignoreResize() {
+        return ignoreResize;
+    }
+
+    public boolean _lockSelection() {
+        return lockSelection;
+    }
+
+    public boolean _oldSelected() {
+        return oldSelected;
+    }
+
+    public boolean _newSelected() {
+        return newSelected;
+    }
+
+    public boolean _ignoreColumnMove() {
+        return ignoreColumnMove;
+    }
+
+    public boolean _ignoreColumnResize() {
+        return ignoreColumnResize;
+    }
+
+    public boolean _linesVisible() {
+        return linesVisible;
+    }
+
+    public boolean _customDraw() {
+        return customDraw;
+    }
+
+    public boolean _painted() {
+        return painted;
+    }
+
+    public boolean _ignoreItemHeight() {
+        return ignoreItemHeight;
+    }
+
+    public boolean _ignoreCustomDraw() {
+        return ignoreCustomDraw;
+    }
+
+    public boolean _ignoreDrawForeground() {
+        return ignoreDrawForeground;
+    }
+
+    public boolean _ignoreDrawBackground() {
+        return ignoreDrawBackground;
+    }
+
+    public boolean _ignoreDrawFocus() {
+        return ignoreDrawFocus;
+    }
+
+    public boolean _ignoreDrawSelection() {
+        return ignoreDrawSelection;
+    }
+
+    public boolean _ignoreDrawHot() {
+        return ignoreDrawHot;
+    }
+
+    public boolean _ignoreFullSelection() {
+        return ignoreFullSelection;
+    }
+
+    public boolean _explorerTheme() {
+        return explorerTheme;
+    }
+
+    public boolean _createdAsRTL() {
+        return createdAsRTL;
+    }
+
+    public boolean _headerItemDragging() {
+        return headerItemDragging;
+    }
+
+    public int _scrollWidth() {
+        return scrollWidth;
+    }
+
+    public int _selectionForeground() {
+        return selectionForeground;
+    }
+
+    public long _lastTimerID() {
+        return lastTimerID;
+    }
+
+    public int _lastTimerCount() {
+        return lastTimerCount;
+    }
+
+    public int _headerBackground() {
+        return headerBackground;
+    }
+
+    public int _headerForeground() {
+        return headerForeground;
+    }
+
+    public int[] _cachedItemOrder() {
+        return cachedItemOrder;
+    }
+
+    public long _cachedFirstItem() {
+        return cachedFirstItem;
+    }
+
+    public long _cachedIndexItem() {
+        return cachedIndexItem;
+    }
+
+    public int _cachedIndex() {
+        return cachedIndex;
+    }
+
+    public int _cachedItemCount() {
+        return cachedItemCount;
     }
 
     public Tree getApi() {

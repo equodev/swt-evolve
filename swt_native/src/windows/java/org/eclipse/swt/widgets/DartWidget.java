@@ -1231,7 +1231,12 @@ public abstract class DartWidget implements IWidget {
         MouseWheelData(boolean isVertical, ScrollBar scrollBar, long wParam, Point remainder) {
             /* Wheel speed can be configured in Windows mouse settings */
             if (isVertical) {
+                int[] wheelSpeed = new int[1];
+                {
+                    detail = SWT.SCROLL_LINE;
+                }
             } else {
+                int[] wheelSpeed = new int[1];
                 /* For legacy compatibility reasons, detail is set to 0 here */
                 detail = 0;
             }

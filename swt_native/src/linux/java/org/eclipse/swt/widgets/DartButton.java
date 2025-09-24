@@ -532,6 +532,19 @@ public class DartButton extends DartControl implements IButton {
             return;
         } else {
             super.setFontDescription(fontDesc);
+            {
+                /*
+			 * GTK3 Workaround for bug which causes incorrect size
+			 * calculation when the button (radio/check) is set active
+			 * before setting font description.
+			 */
+                boolean selected = getSelection();
+                if (selected)
+                    setSelection(!selected);
+                if (labelHandle != 0)
+                    setFontDescription(labelHandle, fontDesc);
+                setSelection(selected);
+            }
         }
     }
 
@@ -640,13 +653,13 @@ public class DartButton extends DartControl implements IButton {
     public void setSelection(boolean selected) {
         dirty();
         checkWidget();
-        this.selection = selected;
         if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
             return;
         if ((getApi().style & SWT.CHECK) != 0) {
         }
         if ((getApi().style & SWT.RADIO) != 0) {
         }
+        this.selection = selected;
     }
 
     /**

@@ -67,9 +67,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         onChanged: !enabled
             ? null
             : (checked) {
-          onPressed();
-          setState(() => state.selection = checked);
-        },
+                onPressed();
+                setState(() => state.selection = checked);
+              },
         onMouseEnter: () => handleMouseEnter(),
         onMouseExit: () => handleMouseExit(),
         onFocusIn: () => handleFocusIn(),
@@ -84,9 +84,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         onChanged: !enabled
             ? null
             : (checked) {
-          onPressed();
-          setState(() => state.selection = checked);
-        },
+                onPressed();
+                setState(() => state.selection = checked);
+              },
         onMouseEnter: () => handleMouseEnter(),
         onMouseExit: () => handleMouseExit(),
         onFocusIn: () => handleFocusIn(),

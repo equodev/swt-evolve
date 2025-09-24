@@ -5,7 +5,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 
-public interface ITreeItem extends IItem {
+public interface ITreeItem extends IItem, ImplTreeItem {
 
     void checkSubclass();
 

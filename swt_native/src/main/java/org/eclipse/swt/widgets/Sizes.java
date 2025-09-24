@@ -11,7 +11,7 @@ public class Sizes {
     
     public static Point compute(DartButton c) {
         double textWidth = (c.text != null ? c.text.length() : 0) * AVERAGE_CHAR_WIDTH;
-        
+
         double totalWidth = textWidth + (2 * HORIZONTAL_PADDING);
         
         return new Point((int) totalWidth, 25);
@@ -41,11 +41,25 @@ public class Sizes {
         return new Rectangle(0,0,0,0);
     }
 
+    public static Point compute(DartTree t) {
+        int columnCount = t.getColumnCount();
+        int itemCount = t.getItemCount();
+
+        int width = columnCount > 0 ? columnCount * 30 : 200;
+        int height = itemCount * 20;
+
+        return new Point(width, height);
+    }
+
     public static Point getSize(DartScrollBar scrollBar) {
         return null;
     }
 
     public static Point computeSizeInPixels(DartComposite composite) {
         return new Point(10, 10); // TODO
+    }
+
+    public static Point compute(DartTable c) {
+        return new Point(c.getColumnCount() * 70, c.getItemCount() * 20);
     }
 }

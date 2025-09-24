@@ -128,7 +128,10 @@ public class DartLabel extends DartControl implements ILabel {
 
     @Override
     Point computeNativeSize(long h, int wHint, int hHint, boolean changed) {
-        return null;
+        int width = wHint, height = hHint;
+        {
+            return super.computeNativeSize(h, wHint, hHint, changed);
+        }
     }
 
     @Override

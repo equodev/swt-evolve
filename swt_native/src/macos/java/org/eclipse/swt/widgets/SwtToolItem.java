@@ -418,12 +418,9 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     NSAttributedString createString() {
         double[] fg = foreground != null ? foreground.handle : ((SwtControl) parent.getImpl()).foreground;
-        if (parent.getImpl() instanceof SwtControl) {
-            NSAttributedString attribStr = ((SwtControl) parent.getImpl()).createString(text, null, fg, SWT.CENTER, false, true, true);
-            attribStr.autorelease();
-            return attribStr;
-        }
-        return null;
+        NSAttributedString attribStr = ((SwtControl) parent.getImpl()).createString(text, null, fg, SWT.CENTER, false, true, true);
+        attribStr.autorelease();
+        return attribStr;
     }
 
     @Override
@@ -607,9 +604,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     void setClipRegion(NSView view) {
-        if (parent.getImpl() instanceof SwtControl) {
-            ((SwtControl) parent.getImpl()).setClipRegion(view);
-        }
+        ((SwtControl) parent.getImpl()).setClipRegion(view);
     }
 
     /**
@@ -836,10 +831,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     long menuForEvent(long id, long sel, long theEvent) {
-        if (parent.getImpl() instanceof SwtControl) {
-            return ((SwtControl) parent.getImpl()).menuForEvent(id, sel, theEvent);
-        } else
-            return 0;
+        return ((SwtControl) parent.getImpl()).menuForEvent(id, sel, theEvent);
     }
 
     @Override

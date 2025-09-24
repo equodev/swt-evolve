@@ -5,7 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 
-public interface ITree extends IComposite {
+public interface ITree extends IComposite, ImplTree {
 
     /**
      * Adds the listener to the collection of listeners who will

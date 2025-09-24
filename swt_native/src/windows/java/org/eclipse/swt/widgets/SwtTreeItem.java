@@ -1322,7 +1322,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
                     hBottomItem = hItem;
                     oldRect = new RECT();
                     OS.GetClientRect(hwnd, oldRect);
-                    long topHandle = ((SwtTree) parent.getImpl()).topHandle();
+                    long topHandle = parent.getImpl().topHandle();
                     OS.UpdateWindow(topHandle);
                     OS.DefWindowProc(topHandle, OS.WM_SETREDRAW, 0, 0);
                     if (hwnd != topHandle) {
@@ -1396,7 +1396,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
                         fixScroll = index == count && hItem == hBottomItem;
                     }
                 }
-                long topHandle = ((SwtTree) parent.getImpl()).topHandle();
+                long topHandle = parent.getImpl().topHandle();
                 OS.DefWindowProc(topHandle, OS.WM_SETREDRAW, 1, 0);
                 if (hwnd != topHandle) {
                     OS.DefWindowProc(hwnd, OS.WM_SETREDRAW, 1, 0);
@@ -1938,6 +1938,46 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         for (TreeItem item : treeItem.getItems()) {
             DPIZoomChangeRegistry.applyChange(item, newZoom, scalingFactor);
         }
+    }
+
+    public Tree _parent() {
+        return parent;
+    }
+
+    public String[] _strings() {
+        return strings;
+    }
+
+    public Image[] _images() {
+        return images;
+    }
+
+    public Font _font() {
+        return font;
+    }
+
+    public Font[] _cellFont() {
+        return cellFont;
+    }
+
+    public boolean _cached() {
+        return cached;
+    }
+
+    public int _background() {
+        return background;
+    }
+
+    public int _foreground() {
+        return foreground;
+    }
+
+    public int[] _cellBackground() {
+        return cellBackground;
+    }
+
+    public int[] _cellForeground() {
+        return cellForeground;
     }
 
     public TreeItem getApi() {

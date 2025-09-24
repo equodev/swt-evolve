@@ -24,6 +24,7 @@ import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class provide a selectable user interface object
@@ -119,7 +120,7 @@ public class Tree extends Composite {
      */
     public Tree(Composite parent, int style) {
         this((ITree) null);
-        setImpl(new SwtTree(parent, style, this));
+        setImpl(Config.isEquo(Tree.class, parent) ? new DartTree(parent, style, this) : new SwtTree(parent, style, this));
     }
 
     protected void checkSubclass() {

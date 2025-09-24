@@ -214,12 +214,17 @@ class SelectableButton extends StatelessWidget {
     final Color lightSelectedTextColor = const Color(0xFFFFFFFF);
     final Color lightUnselectedTextColor = const Color(0xFF595858);
 
-    final Color selectedColor = useDarkTheme ? darkSelectedColor : lightSelectedColor;
-    final Color unselectedColor = useDarkTheme ? darkUnselectedColor : lightUnselectedColor;
-    final Color selectedTextColor = useDarkTheme ? darkSelectedTextColor : lightSelectedTextColor;
-    final Color unselectedTextColor = useDarkTheme ? darkUnselectedTextColor : lightUnselectedTextColor;
+    final Color selectedColor =
+        useDarkTheme ? darkSelectedColor : lightSelectedColor;
+    final Color unselectedColor =
+        useDarkTheme ? darkUnselectedColor : lightUnselectedColor;
+    final Color selectedTextColor =
+        useDarkTheme ? darkSelectedTextColor : lightSelectedTextColor;
+    final Color unselectedTextColor =
+        useDarkTheme ? darkUnselectedTextColor : lightUnselectedTextColor;
 
-    final Color iconColor = isSelected ? selectedTextColor : unselectedTextColor;
+    final Color iconColor =
+        isSelected ? selectedTextColor : unselectedTextColor;
 
     final bool isIconOnly = image != null && (text == null || text!.isEmpty);
 
@@ -396,14 +401,21 @@ class _PushButtonState extends State<PushButton> {
     final Color lightSelectedTextColor = const Color(0xFFFFFFFF);
     final Color lightUnselectedTextColor = const Color(0xFFFFFFFF);
 
-    final Color selectedColor = widget.useDarkTheme ? darkSelectedColor : lightSelectedColor;
-    final Color unselectedColor = widget.useDarkTheme ? darkUnselectedColor : lightUnselectedColor;
-    final Color selectedTextColor = widget.useDarkTheme ? darkSelectedTextColor : lightSelectedTextColor;
-    final Color unselectedTextColor = widget.useDarkTheme ? darkUnselectedTextColor : lightUnselectedTextColor;
+    final Color selectedColor =
+        widget.useDarkTheme ? darkSelectedColor : lightSelectedColor;
+    final Color unselectedColor =
+        widget.useDarkTheme ? darkUnselectedColor : lightUnselectedColor;
+    final Color selectedTextColor =
+        widget.useDarkTheme ? darkSelectedTextColor : lightSelectedTextColor;
+    final Color unselectedTextColor = widget.useDarkTheme
+        ? darkUnselectedTextColor
+        : lightUnselectedTextColor;
 
-    final Color iconColor = _isPressed ? selectedTextColor : unselectedTextColor;
+    final Color iconColor =
+        _isPressed ? selectedTextColor : unselectedTextColor;
 
-    final bool isIconOnly = widget.image != null && (widget.text == null || widget.text!.isEmpty);
+    final bool isIconOnly =
+        widget.image != null && (widget.text == null || widget.text!.isEmpty);
     const double iconSize = 24.0;
 
     if (isIconOnly) {
@@ -575,7 +587,8 @@ class MaterialRadioButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color activeColor = const Color(0xFF6366F1);
-    final Color inactiveColor = useDarkTheme ? Colors.white70 : const Color(0xFF757575);
+    final Color inactiveColor =
+        useDarkTheme ? Colors.white70 : const Color(0xFF757575);
     final Color textColor = useDarkTheme ? Colors.white : Colors.black87;
 
     Widget child = Material(
@@ -679,7 +692,8 @@ class MaterialCheckBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color activeColor = const Color(0xFF6366F1);
-    final Color inactiveColor = useDarkTheme ? Colors.white70 : const Color(0xFF757575);
+    final Color inactiveColor =
+        useDarkTheme ? Colors.white70 : const Color(0xFF757575);
     final Color textColor = useDarkTheme ? Colors.white : Colors.black87;
 
     Widget child = MouseRegion(

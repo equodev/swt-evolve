@@ -289,7 +289,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
      */
     public ToolItem[] getItems() {
         checkWidget();
-        return _getItems();
+        return this.items;
     }
 
     ToolItem[] _getItems() {
