@@ -28,6 +28,7 @@ public class ConfigTest {
 
     @Test
     void should_default_to_swt() {
+        System.clearProperty("dev.equo.swt.Point");
         Config.defaultToEclipse();
         assertThat(Config.defaultImpl).isEqualTo(Config.Impl.eclipse);
         assertThat(Config.isEquo(Point.class)).isFalse();
@@ -54,7 +55,7 @@ public class ConfigTest {
 
     @Test
     void class_should_default_to_equo_with_property() {
-        System.setProperty("dev.equo.swt.Point", "");
+        System.setProperty("dev.equo.swt.Point", Config.Impl.equo.name());
         assertThat(Config.isEquo(Point.class)).isTrue();
     }
 
@@ -87,7 +88,7 @@ public class ConfigTest {
 
         @Test
         void button_should_default_to_equo_with_property() {
-            System.setProperty("dev.equo.swt.Button", "");
+            System.setProperty("dev.equo.swt.Button", Config.Impl.equo.name());
             assertThat(Config.isEquo(Button.class)).isTrue();
         }
 

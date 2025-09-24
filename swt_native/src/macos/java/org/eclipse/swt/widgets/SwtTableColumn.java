@@ -250,14 +250,12 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
         NSTableHeaderCell headerCell = nsColumn.headerCell();
         if (displayText != null) {
             Font font = SwtFont.cocoa_new(display, headerCell.font());
-            /* space between image and text */
-            if (parent.getImpl() instanceof SwtControl) {
-                attrString = ((SwtControl) parent.getImpl()).createString(displayText, font, ((SwtTable) parent.getImpl()).getHeaderForegroundColor().handle, SWT.LEFT, false, (parent.state & DISABLED) == 0, false);
-            }
+            attrString = ((SwtControl) parent.getImpl()).createString(displayText, font, ((SwtTable) parent.getImpl()).getHeaderForegroundColor().handle, SWT.LEFT, false, (parent.state & DISABLED) == 0, false);
             stringSize = attrString.size();
             contentWidth += Math.ceil(stringSize.width);
             if (image != null)
                 contentWidth += MARGIN;
+            /* space between image and text */
         }
         if (((SwtTable) parent.getImpl()).headerBackground != null) {
             // fill header background
@@ -645,15 +643,17 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
             return;
         getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
-        NSTableView tableView = ((NSTableView) parent.view);
-        NSTableHeaderView headerView = tableView.headerView();
-        if (headerView == null)
-            return;
-        index = ((SwtTable) parent.getImpl()).indexOf(nsColumn);
-        NSRect rect = headerView.headerRectOfColumn(index);
-        headerView.setNeedsDisplayInRect(rect);
-        rect = tableView.rectOfColumn(index);
-        parent.view.setNeedsDisplayInRect(rect);
+        if (parent == null || parent.getImpl() instanceof SwtTable) {
+            NSTableView tableView = ((NSTableView) parent.view);
+            NSTableHeaderView headerView = tableView.headerView();
+            if (headerView == null)
+                return;
+            index = ((SwtTable) parent.getImpl()).indexOf(nsColumn);
+            NSRect rect = headerView.headerRectOfColumn(index);
+            headerView.setNeedsDisplayInRect(rect);
+            rect = tableView.rectOfColumn(index);
+            parent.view.setNeedsDisplayInRect(rect);
+        }
     }
 
     @Override
@@ -663,12 +663,14 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         super.setImage(image);
-        NSTableHeaderView headerView = ((NSTableView) parent.view).headerView();
-        if (headerView == null)
-            return;
-        int index = ((SwtTable) parent.getImpl()).indexOf(nsColumn);
-        NSRect rect = headerView.headerRectOfColumn(index);
-        headerView.setNeedsDisplayInRect(rect);
+        if (parent == null || parent.getImpl() instanceof SwtTable) {
+            NSTableHeaderView headerView = ((NSTableView) parent.view).headerView();
+            if (headerView == null)
+                return;
+            int index = ((SwtTable) parent.getImpl()).indexOf(nsColumn);
+            NSRect rect = headerView.headerRectOfColumn(index);
+            headerView.setNeedsDisplayInRect(rect);
+        }
     }
 
     /**
@@ -728,12 +730,14 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
         displayText = new String(buffer, 0, length);
         NSString title = NSString.stringWith(displayText);
         nsColumn.headerCell().setTitle(title);
-        NSTableHeaderView headerView = ((NSTableView) parent.view).headerView();
-        if (headerView == null)
-            return;
-        int index = ((SwtTable) parent.getImpl()).indexOf(nsColumn);
-        NSRect rect = headerView.headerRectOfColumn(index);
-        headerView.setNeedsDisplayInRect(rect);
+        if (parent == null || parent.getImpl() instanceof SwtTable) {
+            NSTableHeaderView headerView = ((NSTableView) parent.view).headerView();
+            if (headerView == null)
+                return;
+            int index = ((SwtTable) parent.getImpl()).indexOf(nsColumn);
+            NSRect rect = headerView.headerRectOfColumn(index);
+            headerView.setNeedsDisplayInRect(rect);
+        }
     }
 
     /**
@@ -791,6 +795,22 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
     @Override
     String tooltipText() {
         return toolTipText;
+    }
+
+    public Table _parent() {
+        return parent;
+    }
+
+    public String _toolTipText() {
+        return toolTipText;
+    }
+
+    public String _displayText() {
+        return displayText;
+    }
+
+    public boolean _movable() {
+        return movable;
     }
 
     public TableColumn getApi() {

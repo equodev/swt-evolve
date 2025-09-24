@@ -94,6 +94,18 @@ public class Mocks {
         return w;
     }
 
+    public static Tree tree() {
+        Tree w = mock(Tree.class);
+        DartTree impl = mock(DartTree.class);
+        when(impl.checkData(any())).thenReturn(true);
+        when(w.getImpl()).thenReturn(impl);
+        when(impl.getBridge()).thenReturn(new MockFlutterBridge());
+        Display display = display();
+        //when(w.getDisplay()).thenReturn(display);
+        when(impl._display()).thenReturn(display);
+        return w;
+    }
+
     public static int index() {
         return 0;
     }

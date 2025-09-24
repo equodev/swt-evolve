@@ -1107,8 +1107,10 @@ public class SwtTable extends SwtComposite implements ITable {
                             }
                         }
                         if (clrSelection != -1) {
-                            RECT rect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, nmcd.iSubItem != 0, true, false, hDC);
-                            fillBackground(hDC, clrSelection, rect);
+                            if (item.getImpl() instanceof SwtTableItem) {
+                                RECT rect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, nmcd.iSubItem != 0, true, false, hDC);
+                                fillBackground(hDC, clrSelection, rect);
+                            }
                         }
                     }
                 }
@@ -3634,133 +3636,137 @@ public class SwtTable extends SwtComposite implements ITable {
         data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
         int nSavedDC = OS.SaveDC(hDC);
         GC gc = createNewGC(hDC, data);
-        RECT cellRect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, true, true, true, hDC);
-        Event event = new Event();
-        event.item = item;
-        event.gc = gc;
-        event.index = nmcd.iSubItem;
-        event.detail |= SWT.FOREGROUND;
-        //	if ((nmcd.uItemState & OS.CDIS_FOCUS) != 0) {
-        if (OS.SendMessage(getApi().handle, OS.LVM_GETNEXTITEM, -1, OS.LVNI_FOCUSED) == nmcd.dwItemSpec) {
-            if (nmcd.iSubItem == 0 || (getApi().style & SWT.FULL_SELECTION) != 0) {
-                if (getApi().handle == OS.GetFocus()) {
-                    int uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
-                    if ((uiState & OS.UISF_HIDEFOCUS) == 0)
-                        event.detail |= SWT.FOCUSED;
-                }
-            }
-        }
-        boolean focused = (event.detail & SWT.FOCUSED) != 0;
-        if (drawHot)
-            event.detail |= SWT.HOT;
-        if (drawSelected)
-            event.detail |= SWT.SELECTED;
-        if (drawBackground)
-            event.detail |= SWT.BACKGROUND;
-        Rectangle bounds = DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom());
-        event.setBounds(bounds);
-        gc.setClipping(bounds);
-        sendEvent(SWT.EraseItem, event);
-        event.gc = null;
-        int clrSelectionText = data.foreground;
-        gc.dispose();
-        OS.RestoreDC(hDC, nSavedDC);
-        if (isDisposed() || item.isDisposed())
-            return;
-        if (event.doit) {
-            ignoreDrawForeground = (event.detail & SWT.FOREGROUND) == 0;
-            ignoreDrawBackground = (event.detail & SWT.BACKGROUND) == 0;
-            ignoreDrawSelection = (event.detail & SWT.SELECTED) == 0;
-            ignoreDrawFocus = (event.detail & SWT.FOCUSED) == 0;
-            ignoreDrawHot = (event.detail & SWT.HOT) == 0;
-        } else {
-            ignoreDrawForeground = ignoreDrawBackground = ignoreDrawSelection = ignoreDrawFocus = ignoreDrawHot = true;
-        }
-        if (drawSelected) {
-            if (ignoreDrawSelection) {
-                ignoreDrawHot = true;
+        if (item.getImpl() instanceof SwtTableItem) {
+            RECT cellRect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, true, true, true, hDC);
+            Event event = new Event();
+            event.item = item;
+            event.gc = gc;
+            event.index = nmcd.iSubItem;
+            event.detail |= SWT.FOREGROUND;
+            //	if ((nmcd.uItemState & OS.CDIS_FOCUS) != 0) {
+            if (OS.SendMessage(getApi().handle, OS.LVM_GETNEXTITEM, -1, OS.LVNI_FOCUSED) == nmcd.dwItemSpec) {
                 if (nmcd.iSubItem == 0 || (getApi().style & SWT.FULL_SELECTION) != 0) {
-                    selectionForeground = clrSelectionText;
-                }
-                nmcd.uItemState &= ~OS.CDIS_SELECTED;
-                OS.MoveMemory(lParam, nmcd, NMLVCUSTOMDRAW.sizeof);
-            }
-        } else {
-            if (ignoreDrawSelection) {
-                nmcd.uItemState |= OS.CDIS_SELECTED;
-                OS.MoveMemory(lParam, nmcd, NMLVCUSTOMDRAW.sizeof);
-            }
-        }
-        boolean firstColumn = nmcd.iSubItem == OS.SendMessage(hwndHeader, OS.HDM_ORDERTOINDEX, 0, 0);
-        if (ignoreDrawForeground && ignoreDrawHot && !drawDrophilited) {
-            if (!ignoreDrawBackground && drawBackground) {
-                RECT backgroundRect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, false, true, false, hDC);
-                fillBackground(hDC, clrTextBk, backgroundRect);
-            }
-        }
-        focusRect = null;
-        if (!ignoreDrawHot || !ignoreDrawSelection || !ignoreDrawFocus || drawDrophilited) {
-            boolean fullText = (getApi().style & SWT.FULL_SELECTION) != 0 || !firstColumn;
-            RECT textRect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, false, fullText, false, hDC);
-            if ((getApi().style & SWT.FULL_SELECTION) == 0) {
-                if (measureEvent != null) {
-                    Rectangle boundsInPixels = DPIUtil.scaleUp(measureEvent.getBounds(), getZoom());
-                    textRect.right = Math.min(cellRect.right, boundsInPixels.x + boundsInPixels.width);
-                }
-                if (!ignoreDrawFocus) {
-                    nmcd.uItemState &= ~OS.CDIS_FOCUS;
-                    OS.MoveMemory(lParam, nmcd, NMLVCUSTOMDRAW.sizeof);
-                    focusRect = textRect;
-                }
-            }
-            // Draw selection background
-            if (explorerTheme) {
-                boolean backgroundWanted = !ignoreDrawHot || drawDrophilited || (!ignoreDrawSelection && clrSelectionBk != -1);
-                if (backgroundWanted) {
-                    RECT pClipRect = new RECT();
-                    OS.SetRect(pClipRect, nmcd.left, nmcd.top, nmcd.right, nmcd.bottom);
-                    RECT rect = new RECT();
-                    OS.SetRect(rect, nmcd.left, nmcd.top, nmcd.right, nmcd.bottom);
-                    if ((getApi().style & SWT.FULL_SELECTION) != 0) {
-                        int count = (int) OS.SendMessage(hwndHeader, OS.HDM_GETITEMCOUNT, 0, 0);
-                        int index = (int) OS.SendMessage(hwndHeader, OS.HDM_ORDERTOINDEX, count - 1, 0);
-                        RECT headerRect = new RECT();
-                        OS.SendMessage(hwndHeader, OS.HDM_GETITEMRECT, index, headerRect);
-                        OS.MapWindowPoints(hwndHeader, getApi().handle, headerRect, 2);
-                        rect.right = headerRect.right;
-                        index = (int) OS.SendMessage(hwndHeader, OS.HDM_ORDERTOINDEX, 0, 0);
-                        OS.SendMessage(hwndHeader, OS.HDM_GETITEMRECT, index, headerRect);
-                        OS.MapWindowPoints(hwndHeader, getApi().handle, headerRect, 2);
-                        rect.left = headerRect.left;
-                        pClipRect.left = cellRect.left;
-                        pClipRect.right += EXPLORER_EXTRA;
-                    } else {
-                        rect.right += EXPLORER_EXTRA;
-                        pClipRect.right += EXPLORER_EXTRA;
+                    if (getApi().handle == OS.GetFocus()) {
+                        int uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
+                        if ((uiState & OS.UISF_HIDEFOCUS) == 0)
+                            event.detail |= SWT.FOCUSED;
                     }
-                    long hTheme = OS.OpenThemeData(getApi().handle, SwtDisplay.TREEVIEW, getZoom());
-                    int iStateId = selected ? OS.LISS_SELECTED : OS.LISS_HOT;
-                    if (OS.GetFocus() != getApi().handle && selected && !drawHot)
-                        iStateId = OS.LISS_SELECTEDNOTFOCUS;
-                    if (drawDrophilited)
-                        iStateId = OS.LISS_SELECTED;
-                    OS.DrawThemeBackground(hTheme, hDC, OS.LVP_LISTITEM, iStateId, rect, pClipRect);
-                    OS.CloseThemeData(hTheme);
+                }
+            }
+            boolean focused = (event.detail & SWT.FOCUSED) != 0;
+            if (drawHot)
+                event.detail |= SWT.HOT;
+            if (drawSelected)
+                event.detail |= SWT.SELECTED;
+            if (drawBackground)
+                event.detail |= SWT.BACKGROUND;
+            Rectangle bounds = DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom());
+            event.setBounds(bounds);
+            gc.setClipping(bounds);
+            sendEvent(SWT.EraseItem, event);
+            event.gc = null;
+            int clrSelectionText = data.foreground;
+            gc.dispose();
+            OS.RestoreDC(hDC, nSavedDC);
+            if (isDisposed() || item.isDisposed())
+                return;
+            if (event.doit) {
+                ignoreDrawForeground = (event.detail & SWT.FOREGROUND) == 0;
+                ignoreDrawBackground = (event.detail & SWT.BACKGROUND) == 0;
+                ignoreDrawSelection = (event.detail & SWT.SELECTED) == 0;
+                ignoreDrawFocus = (event.detail & SWT.FOCUSED) == 0;
+                ignoreDrawHot = (event.detail & SWT.HOT) == 0;
+            } else {
+                ignoreDrawForeground = ignoreDrawBackground = ignoreDrawSelection = ignoreDrawFocus = ignoreDrawHot = true;
+            }
+            if (drawSelected) {
+                if (ignoreDrawSelection) {
+                    ignoreDrawHot = true;
+                    if (nmcd.iSubItem == 0 || (getApi().style & SWT.FULL_SELECTION) != 0) {
+                        selectionForeground = clrSelectionText;
+                    }
+                    nmcd.uItemState &= ~OS.CDIS_SELECTED;
+                    OS.MoveMemory(lParam, nmcd, NMLVCUSTOMDRAW.sizeof);
                 }
             } else {
-                if (!ignoreDrawSelection && clrSelectionBk != -1)
-                    fillBackground(hDC, clrSelectionBk, textRect);
+                if (ignoreDrawSelection) {
+                    nmcd.uItemState |= OS.CDIS_SELECTED;
+                    OS.MoveMemory(lParam, nmcd, NMLVCUSTOMDRAW.sizeof);
+                }
+            }
+            boolean firstColumn = nmcd.iSubItem == OS.SendMessage(hwndHeader, OS.HDM_ORDERTOINDEX, 0, 0);
+            if (ignoreDrawForeground && ignoreDrawHot && !drawDrophilited) {
+                if (!ignoreDrawBackground && drawBackground) {
+                    RECT backgroundRect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, false, true, false, hDC);
+                    fillBackground(hDC, clrTextBk, backgroundRect);
+                }
+            }
+            focusRect = null;
+            if (!ignoreDrawHot || !ignoreDrawSelection || !ignoreDrawFocus || drawDrophilited) {
+                boolean fullText = (getApi().style & SWT.FULL_SELECTION) != 0 || !firstColumn;
+                RECT textRect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, false, fullText, false, hDC);
+                if ((getApi().style & SWT.FULL_SELECTION) == 0) {
+                    if (measureEvent != null) {
+                        Rectangle boundsInPixels = DPIUtil.scaleUp(measureEvent.getBounds(), getZoom());
+                        textRect.right = Math.min(cellRect.right, boundsInPixels.x + boundsInPixels.width);
+                    }
+                    if (!ignoreDrawFocus) {
+                        nmcd.uItemState &= ~OS.CDIS_FOCUS;
+                        OS.MoveMemory(lParam, nmcd, NMLVCUSTOMDRAW.sizeof);
+                        focusRect = textRect;
+                    }
+                }
+                // Draw selection background
+                if (explorerTheme) {
+                    boolean backgroundWanted = !ignoreDrawHot || drawDrophilited || (!ignoreDrawSelection && clrSelectionBk != -1);
+                    if (backgroundWanted) {
+                        RECT pClipRect = new RECT();
+                        OS.SetRect(pClipRect, nmcd.left, nmcd.top, nmcd.right, nmcd.bottom);
+                        RECT rect = new RECT();
+                        OS.SetRect(rect, nmcd.left, nmcd.top, nmcd.right, nmcd.bottom);
+                        if ((getApi().style & SWT.FULL_SELECTION) != 0) {
+                            int count = (int) OS.SendMessage(hwndHeader, OS.HDM_GETITEMCOUNT, 0, 0);
+                            int index = (int) OS.SendMessage(hwndHeader, OS.HDM_ORDERTOINDEX, count - 1, 0);
+                            RECT headerRect = new RECT();
+                            OS.SendMessage(hwndHeader, OS.HDM_GETITEMRECT, index, headerRect);
+                            OS.MapWindowPoints(hwndHeader, getApi().handle, headerRect, 2);
+                            rect.right = headerRect.right;
+                            index = (int) OS.SendMessage(hwndHeader, OS.HDM_ORDERTOINDEX, 0, 0);
+                            OS.SendMessage(hwndHeader, OS.HDM_GETITEMRECT, index, headerRect);
+                            OS.MapWindowPoints(hwndHeader, getApi().handle, headerRect, 2);
+                            rect.left = headerRect.left;
+                            pClipRect.left = cellRect.left;
+                            pClipRect.right += EXPLORER_EXTRA;
+                        } else {
+                            rect.right += EXPLORER_EXTRA;
+                            pClipRect.right += EXPLORER_EXTRA;
+                        }
+                        long hTheme = OS.OpenThemeData(getApi().handle, SwtDisplay.TREEVIEW, getZoom());
+                        int iStateId = selected ? OS.LISS_SELECTED : OS.LISS_HOT;
+                        if (OS.GetFocus() != getApi().handle && selected && !drawHot)
+                            iStateId = OS.LISS_SELECTEDNOTFOCUS;
+                        if (drawDrophilited)
+                            iStateId = OS.LISS_SELECTED;
+                        OS.DrawThemeBackground(hTheme, hDC, OS.LVP_LISTITEM, iStateId, rect, pClipRect);
+                        OS.CloseThemeData(hTheme);
+                    }
+                } else {
+                    if (!ignoreDrawSelection && clrSelectionBk != -1)
+                        fillBackground(hDC, clrSelectionBk, textRect);
+                }
+            }
+            if (focused && ignoreDrawFocus) {
+                nmcd.uItemState &= ~OS.CDIS_FOCUS;
+                OS.MoveMemory(lParam, nmcd, NMLVCUSTOMDRAW.sizeof);
             }
         }
-        if (focused && ignoreDrawFocus) {
-            nmcd.uItemState &= ~OS.CDIS_FOCUS;
-            OS.MoveMemory(lParam, nmcd, NMLVCUSTOMDRAW.sizeof);
-        }
         if (ignoreDrawForeground) {
-            RECT clipRect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, true, true, false, hDC);
-            OS.SaveDC(hDC);
-            OS.SelectClipRgn(hDC, 0);
-            OS.ExcludeClipRect(hDC, clipRect.left, clipRect.top, clipRect.right, clipRect.bottom);
+            if (item.getImpl() instanceof SwtTableItem) {
+                RECT clipRect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, true, true, false, hDC);
+                OS.SaveDC(hDC);
+                OS.SelectClipRgn(hDC, 0);
+                OS.ExcludeClipRect(hDC, clipRect.left, clipRect.top, clipRect.right, clipRect.bottom);
+            }
         }
     }
 
@@ -4093,37 +4099,39 @@ public class SwtTable extends SwtComposite implements ITable {
         data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
         int nSavedDC = OS.SaveDC(hDC);
         GC gc = createNewGC(hDC, data);
-        RECT itemRect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, true, false, false, hDC);
-        Event event = new Event();
-        event.item = item;
-        event.gc = gc;
-        event.index = nmcd.iSubItem;
-        event.detail |= SWT.FOREGROUND;
-        //	if ((nmcd.uItemState & OS.CDIS_FOCUS) != 0) {
-        if (OS.SendMessage(getApi().handle, OS.LVM_GETNEXTITEM, -1, OS.LVNI_FOCUSED) == nmcd.dwItemSpec) {
-            if (nmcd.iSubItem == 0 || (getApi().style & SWT.FULL_SELECTION) != 0) {
-                if (getApi().handle == OS.GetFocus()) {
-                    int uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
-                    if ((uiState & OS.UISF_HIDEFOCUS) == 0)
-                        event.detail |= SWT.FOCUSED;
+        if (item.getImpl() instanceof SwtTableItem) {
+            RECT itemRect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, true, false, false, hDC);
+            Event event = new Event();
+            event.item = item;
+            event.gc = gc;
+            event.index = nmcd.iSubItem;
+            event.detail |= SWT.FOREGROUND;
+            //	if ((nmcd.uItemState & OS.CDIS_FOCUS) != 0) {
+            if (OS.SendMessage(getApi().handle, OS.LVM_GETNEXTITEM, -1, OS.LVNI_FOCUSED) == nmcd.dwItemSpec) {
+                if (nmcd.iSubItem == 0 || (getApi().style & SWT.FULL_SELECTION) != 0) {
+                    if (getApi().handle == OS.GetFocus()) {
+                        int uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
+                        if ((uiState & OS.UISF_HIDEFOCUS) == 0)
+                            event.detail |= SWT.FOCUSED;
+                    }
                 }
             }
+            if (drawHot)
+                event.detail |= SWT.HOT;
+            if (drawSelected)
+                event.detail |= SWT.SELECTED;
+            if (drawBackground)
+                event.detail |= SWT.BACKGROUND;
+            event.setBounds(DPIUtil.scaleDown(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
+            RECT cellRect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, true, true, true, hDC);
+            int cellWidth = cellRect.right - cellRect.left;
+            int cellHeight = cellRect.bottom - cellRect.top;
+            gc.setClipping(DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellWidth, cellHeight), getZoom()));
+            sendEvent(SWT.PaintItem, event);
+            if (data.focusDrawn)
+                focusRect = null;
+            event.gc = null;
         }
-        if (drawHot)
-            event.detail |= SWT.HOT;
-        if (drawSelected)
-            event.detail |= SWT.SELECTED;
-        if (drawBackground)
-            event.detail |= SWT.BACKGROUND;
-        event.setBounds(DPIUtil.scaleDown(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
-        RECT cellRect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, true, true, true, hDC);
-        int cellWidth = cellRect.right - cellRect.left;
-        int cellHeight = cellRect.bottom - cellRect.top;
-        gc.setClipping(DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellWidth, cellHeight), getZoom()));
-        sendEvent(SWT.PaintItem, event);
-        if (data.focusDrawn)
-            focusRect = null;
-        event.gc = null;
         gc.dispose();
         OS.RestoreDC(hDC, nSavedDC);
     }
@@ -6019,70 +6027,72 @@ public class SwtTable extends SwtComposite implements ITable {
             RECT clientRect = new RECT();
             OS.GetClientRect(getApi().handle, clientRect);
             TableItem item = _getItem(selection);
-            RECT rect = ((SwtTableItem) item.getImpl()).getBounds(selection, 0, true, true, true);
-            if ((getApi().style & SWT.FULL_SELECTION) != 0) {
-                int width = DRAG_IMAGE_SIZE;
-                rect.left = Math.max(clientRect.left, mousePos.x - width / 2);
-                if (clientRect.right > rect.left + width) {
-                    rect.right = rect.left + width;
-                } else {
-                    rect.right = clientRect.right;
-                    rect.left = Math.max(clientRect.left, rect.right - width);
+            if (item.getImpl() instanceof SwtTableItem) {
+                RECT rect = ((SwtTableItem) item.getImpl()).getBounds(selection, 0, true, true, true);
+                if ((getApi().style & SWT.FULL_SELECTION) != 0) {
+                    int width = DRAG_IMAGE_SIZE;
+                    rect.left = Math.max(clientRect.left, mousePos.x - width / 2);
+                    if (clientRect.right > rect.left + width) {
+                        rect.right = rect.left + width;
+                    } else {
+                        rect.right = clientRect.right;
+                        rect.left = Math.max(clientRect.left, rect.right - width);
+                    }
                 }
+                long hRgn = OS.CreateRectRgn(rect.left, rect.top, rect.right, rect.bottom);
+                while ((selection = (int) OS.SendMessage(getApi().handle, OS.LVM_GETNEXTITEM, selection, OS.LVNI_SELECTED)) != -1) {
+                    if (rect.bottom - rect.top > DRAG_IMAGE_SIZE)
+                        break;
+                    if (rect.bottom > clientRect.bottom)
+                        break;
+                    RECT itemRect = ((SwtTableItem) item.getImpl()).getBounds(selection, 0, true, true, true);
+                    long rectRgn = OS.CreateRectRgn(rect.left, itemRect.top, rect.right, itemRect.bottom);
+                    OS.CombineRgn(hRgn, hRgn, rectRgn, OS.RGN_OR);
+                    OS.DeleteObject(rectRgn);
+                    rect.bottom = itemRect.bottom;
+                }
+                OS.GetRgnBox(hRgn, rect);
+                /* Create resources */
+                long hdc = OS.GetDC(getApi().handle);
+                long memHdc = OS.CreateCompatibleDC(hdc);
+                BITMAPINFOHEADER bmiHeader = new BITMAPINFOHEADER();
+                bmiHeader.biSize = BITMAPINFOHEADER.sizeof;
+                bmiHeader.biWidth = rect.right - rect.left;
+                bmiHeader.biHeight = -(rect.bottom - rect.top);
+                bmiHeader.biPlanes = 1;
+                bmiHeader.biBitCount = 32;
+                bmiHeader.biCompression = OS.BI_RGB;
+                byte[] bmi = new byte[BITMAPINFOHEADER.sizeof];
+                OS.MoveMemory(bmi, bmiHeader, BITMAPINFOHEADER.sizeof);
+                long[] pBits = new long[1];
+                long memDib = OS.CreateDIBSection(0, bmi, OS.DIB_RGB_COLORS, pBits, 0, 0);
+                if (memDib == 0)
+                    error(SWT.ERROR_NO_HANDLES);
+                long oldMemBitmap = OS.SelectObject(memHdc, memDib);
+                int colorKey = 0x0000FD;
+                POINT pt = new POINT();
+                OS.SetWindowOrgEx(memHdc, rect.left, rect.top, pt);
+                OS.FillRect(memHdc, rect, findBrush(colorKey, OS.BS_SOLID));
+                OS.OffsetRgn(hRgn, -rect.left, -rect.top);
+                OS.SelectClipRgn(memHdc, hRgn);
+                OS.PrintWindow(getApi().handle, memHdc, 0);
+                OS.SetWindowOrgEx(memHdc, pt.x, pt.y, null);
+                OS.SelectObject(memHdc, oldMemBitmap);
+                OS.DeleteDC(memHdc);
+                OS.ReleaseDC(0, hdc);
+                OS.DeleteObject(hRgn);
+                SHDRAGIMAGE shdi = new SHDRAGIMAGE();
+                shdi.hbmpDragImage = memDib;
+                shdi.crColorKey = colorKey;
+                shdi.sizeDragImage.cx = bmiHeader.biWidth;
+                shdi.sizeDragImage.cy = -bmiHeader.biHeight;
+                shdi.ptOffset.x = mousePos.x - rect.left;
+                shdi.ptOffset.y = mousePos.y - rect.top;
+                if ((getApi().style & SWT.MIRRORED) != 0) {
+                    shdi.ptOffset.x = shdi.sizeDragImage.cx - shdi.ptOffset.x;
+                }
+                OS.MoveMemory(lParam, shdi, SHDRAGIMAGE.sizeof);
             }
-            long hRgn = OS.CreateRectRgn(rect.left, rect.top, rect.right, rect.bottom);
-            while ((selection = (int) OS.SendMessage(getApi().handle, OS.LVM_GETNEXTITEM, selection, OS.LVNI_SELECTED)) != -1) {
-                if (rect.bottom - rect.top > DRAG_IMAGE_SIZE)
-                    break;
-                if (rect.bottom > clientRect.bottom)
-                    break;
-                RECT itemRect = ((SwtTableItem) item.getImpl()).getBounds(selection, 0, true, true, true);
-                long rectRgn = OS.CreateRectRgn(rect.left, itemRect.top, rect.right, itemRect.bottom);
-                OS.CombineRgn(hRgn, hRgn, rectRgn, OS.RGN_OR);
-                OS.DeleteObject(rectRgn);
-                rect.bottom = itemRect.bottom;
-            }
-            OS.GetRgnBox(hRgn, rect);
-            /* Create resources */
-            long hdc = OS.GetDC(getApi().handle);
-            long memHdc = OS.CreateCompatibleDC(hdc);
-            BITMAPINFOHEADER bmiHeader = new BITMAPINFOHEADER();
-            bmiHeader.biSize = BITMAPINFOHEADER.sizeof;
-            bmiHeader.biWidth = rect.right - rect.left;
-            bmiHeader.biHeight = -(rect.bottom - rect.top);
-            bmiHeader.biPlanes = 1;
-            bmiHeader.biBitCount = 32;
-            bmiHeader.biCompression = OS.BI_RGB;
-            byte[] bmi = new byte[BITMAPINFOHEADER.sizeof];
-            OS.MoveMemory(bmi, bmiHeader, BITMAPINFOHEADER.sizeof);
-            long[] pBits = new long[1];
-            long memDib = OS.CreateDIBSection(0, bmi, OS.DIB_RGB_COLORS, pBits, 0, 0);
-            if (memDib == 0)
-                error(SWT.ERROR_NO_HANDLES);
-            long oldMemBitmap = OS.SelectObject(memHdc, memDib);
-            int colorKey = 0x0000FD;
-            POINT pt = new POINT();
-            OS.SetWindowOrgEx(memHdc, rect.left, rect.top, pt);
-            OS.FillRect(memHdc, rect, findBrush(colorKey, OS.BS_SOLID));
-            OS.OffsetRgn(hRgn, -rect.left, -rect.top);
-            OS.SelectClipRgn(memHdc, hRgn);
-            OS.PrintWindow(getApi().handle, memHdc, 0);
-            OS.SetWindowOrgEx(memHdc, pt.x, pt.y, null);
-            OS.SelectObject(memHdc, oldMemBitmap);
-            OS.DeleteDC(memHdc);
-            OS.ReleaseDC(0, hdc);
-            OS.DeleteObject(hRgn);
-            SHDRAGIMAGE shdi = new SHDRAGIMAGE();
-            shdi.hbmpDragImage = memDib;
-            shdi.crColorKey = colorKey;
-            shdi.sizeDragImage.cx = bmiHeader.biWidth;
-            shdi.sizeDragImage.cy = -bmiHeader.biHeight;
-            shdi.ptOffset.x = mousePos.x - rect.left;
-            shdi.ptOffset.y = mousePos.y - rect.top;
-            if ((getApi().style & SWT.MIRRORED) != 0) {
-                shdi.ptOffset.x = shdi.sizeDragImage.cx - shdi.ptOffset.x;
-            }
-            OS.MoveMemory(lParam, shdi, SHDRAGIMAGE.sizeof);
             return 1;
         }
         return super.windowProc(hwnd, msg, wParam, lParam);
@@ -7543,25 +7553,27 @@ public class SwtTable extends SwtComposite implements ITable {
                                         OS.MoveMemory(lpnmtdi.lpszText, new char[1], 2);
                                         OS.MoveMemory(lParam, lpnmtdi, NMTTDISPINFO.sizeof);
                                     }
-                                    RECT cellRect = ((SwtTableItem) item.getImpl()).getBounds(pinfo.iItem, pinfo.iSubItem, true, true, true, true, hDC);
-                                    RECT clientRect = new RECT();
-                                    OS.GetClientRect(getApi().handle, clientRect);
-                                    if (itemRect.right > cellRect.right || itemRect.right > clientRect.right) {
-                                        //TEMPORARY CODE
-                                        String string = " ";
-                                        //								String string = null;
-                                        //								if (pinfo.iSubItem == 0) {
-                                        //									string = item.text;
-                                        //								} else {
-                                        //									String [] strings  = item.strings;
-                                        //									if (strings != null) string = strings [pinfo.iSubItem];
-                                        //								}
-                                        if (string != null) {
-                                            Shell shell = getShell();
-                                            char[] chars = new char[string.length() + 1];
-                                            string.getChars(0, string.length(), chars, 0);
-                                            ((SwtShell) shell.getImpl()).setToolTipText(lpnmtdi, chars);
-                                            OS.MoveMemory(lParam, lpnmtdi, NMTTDISPINFO.sizeof);
+                                    if (item.getImpl() instanceof SwtTableItem) {
+                                        RECT cellRect = ((SwtTableItem) item.getImpl()).getBounds(pinfo.iItem, pinfo.iSubItem, true, true, true, true, hDC);
+                                        RECT clientRect = new RECT();
+                                        OS.GetClientRect(getApi().handle, clientRect);
+                                        if (itemRect.right > cellRect.right || itemRect.right > clientRect.right) {
+                                            //TEMPORARY CODE
+                                            String string = " ";
+                                            //								String string = null;
+                                            //								if (pinfo.iSubItem == 0) {
+                                            //									string = item.text;
+                                            //								} else {
+                                            //									String [] strings  = item.strings;
+                                            //									if (strings != null) string = strings [pinfo.iSubItem];
+                                            //								}
+                                            if (string != null) {
+                                                Shell shell = getShell();
+                                                char[] chars = new char[string.length() + 1];
+                                                string.getChars(0, string.length(), chars, 0);
+                                                ((SwtShell) shell.getImpl()).setToolTipText(lpnmtdi, chars);
+                                                OS.MoveMemory(lParam, lpnmtdi, NMTTDISPINFO.sizeof);
+                                            }
                                         }
                                     }
                                 }
@@ -7614,65 +7626,69 @@ public class SwtTable extends SwtComposite implements ITable {
                             hFont = OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0);
                         long oldFont = OS.SelectObject(hDC, hFont);
                         boolean drawForeground = true;
-                        RECT cellRect = ((SwtTableItem) item.getImpl()).getBounds(pinfo.iItem, pinfo.iSubItem, true, true, false, false, hDC);
-                        if (hooks(SWT.EraseItem)) {
-                            Event event = sendEraseItemEvent(item, nmcd, pinfo.iSubItem, cellRect);
-                            if (isDisposed() || item.isDisposed())
-                                break;
-                            if (event.doit) {
-                                drawForeground = (event.detail & SWT.FOREGROUND) != 0;
-                            } else {
-                                drawForeground = false;
-                            }
-                        }
-                        if (drawForeground) {
-                            int nSavedDC = OS.SaveDC(nmcd.hdc);
-                            int gridWidth = getLinesVisible() ? SwtTable.GRID_WIDTH : 0;
-                            RECT insetRect = toolTipInset(cellRect);
-                            OS.SetWindowOrgEx(nmcd.hdc, insetRect.left, insetRect.top, null);
-                            GCData data = new GCData();
-                            data.device = display;
-                            data.foreground = OS.GetTextColor(nmcd.hdc);
-                            data.background = OS.GetBkColor(nmcd.hdc);
-                            data.font = SwtFont.win32_new(display, hFont);
-                            GC gc = createNewGC(nmcd.hdc, data);
-                            int x = cellRect.left;
-                            if (pinfo.iSubItem != 0)
-                                x -= gridWidth;
-                            Image image = item.getImage(pinfo.iSubItem);
-                            if (image != null) {
-                                Rectangle rect = image.getBoundsInPixels();
-                                RECT imageRect = ((SwtTableItem) item.getImpl()).getBounds(pinfo.iItem, pinfo.iSubItem, false, true, false, false, hDC);
-                                Point size = imageList == null ? new Point(rect.width, rect.height) : imageList.getImageSize();
-                                int y = imageRect.top + Math.max(0, (imageRect.bottom - imageRect.top - size.y) / 2);
-                                int zoom = getZoom();
-                                rect = DPIUtil.scaleDown(rect, zoom);
-                                gc.drawImage(image, rect.x, rect.y, rect.width, rect.height, DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom), DPIUtil.scaleDown(size.x, zoom), DPIUtil.scaleDown(size.y, zoom));
-                                x += size.x + INSET + (pinfo.iSubItem == 0 ? -2 : 4);
-                            } else {
-                                x += INSET + 2;
-                            }
-                            String string = item.getText(pinfo.iSubItem);
-                            if (string != null) {
-                                int flags = OS.DT_NOPREFIX | OS.DT_SINGLELINE | OS.DT_VCENTER;
-                                TableColumn column = columns != null ? columns[pinfo.iSubItem] : null;
-                                if (column != null) {
-                                    if ((column.style & SWT.CENTER) != 0)
-                                        flags |= OS.DT_CENTER;
-                                    if ((column.style & SWT.RIGHT) != 0)
-                                        flags |= OS.DT_RIGHT;
+                        if (item.getImpl() instanceof SwtTableItem) {
+                            RECT cellRect = ((SwtTableItem) item.getImpl()).getBounds(pinfo.iItem, pinfo.iSubItem, true, true, false, false, hDC);
+                            if (hooks(SWT.EraseItem)) {
+                                Event event = sendEraseItemEvent(item, nmcd, pinfo.iSubItem, cellRect);
+                                if (isDisposed() || item.isDisposed())
+                                    break;
+                                if (event.doit) {
+                                    drawForeground = (event.detail & SWT.FOREGROUND) != 0;
+                                } else {
+                                    drawForeground = false;
                                 }
-                                char[] buffer = string.toCharArray();
-                                RECT textRect = new RECT();
-                                OS.SetRect(textRect, x, cellRect.top, cellRect.right, cellRect.bottom);
-                                OS.DrawText(nmcd.hdc, buffer, buffer.length, textRect, flags);
                             }
-                            gc.dispose();
-                            OS.RestoreDC(nmcd.hdc, nSavedDC);
+                            if (drawForeground) {
+                                int nSavedDC = OS.SaveDC(nmcd.hdc);
+                                int gridWidth = getLinesVisible() ? SwtTable.GRID_WIDTH : 0;
+                                RECT insetRect = toolTipInset(cellRect);
+                                OS.SetWindowOrgEx(nmcd.hdc, insetRect.left, insetRect.top, null);
+                                GCData data = new GCData();
+                                data.device = display;
+                                data.foreground = OS.GetTextColor(nmcd.hdc);
+                                data.background = OS.GetBkColor(nmcd.hdc);
+                                data.font = SwtFont.win32_new(display, hFont);
+                                GC gc = createNewGC(nmcd.hdc, data);
+                                int x = cellRect.left;
+                                if (pinfo.iSubItem != 0)
+                                    x -= gridWidth;
+                                Image image = item.getImage(pinfo.iSubItem);
+                                if (image != null) {
+                                    Rectangle rect = image.getBoundsInPixels();
+                                    RECT imageRect = ((SwtTableItem) item.getImpl()).getBounds(pinfo.iItem, pinfo.iSubItem, false, true, false, false, hDC);
+                                    Point size = imageList == null ? new Point(rect.width, rect.height) : imageList.getImageSize();
+                                    int y = imageRect.top + Math.max(0, (imageRect.bottom - imageRect.top - size.y) / 2);
+                                    int zoom = getZoom();
+                                    rect = DPIUtil.scaleDown(rect, zoom);
+                                    gc.drawImage(image, rect.x, rect.y, rect.width, rect.height, DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom), DPIUtil.scaleDown(size.x, zoom), DPIUtil.scaleDown(size.y, zoom));
+                                    x += size.x + INSET + (pinfo.iSubItem == 0 ? -2 : 4);
+                                } else {
+                                    x += INSET + 2;
+                                }
+                                String string = item.getText(pinfo.iSubItem);
+                                if (string != null) {
+                                    int flags = OS.DT_NOPREFIX | OS.DT_SINGLELINE | OS.DT_VCENTER;
+                                    TableColumn column = columns != null ? columns[pinfo.iSubItem] : null;
+                                    if (column != null) {
+                                        if ((column.style & SWT.CENTER) != 0)
+                                            flags |= OS.DT_CENTER;
+                                        if ((column.style & SWT.RIGHT) != 0)
+                                            flags |= OS.DT_RIGHT;
+                                    }
+                                    char[] buffer = string.toCharArray();
+                                    RECT textRect = new RECT();
+                                    OS.SetRect(textRect, x, cellRect.top, cellRect.right, cellRect.bottom);
+                                    OS.DrawText(nmcd.hdc, buffer, buffer.length, textRect, flags);
+                                }
+                                gc.dispose();
+                                OS.RestoreDC(nmcd.hdc, nSavedDC);
+                            }
                         }
                         if (hooks(SWT.PaintItem)) {
-                            RECT itemRect = ((SwtTableItem) item.getImpl()).getBounds(pinfo.iItem, pinfo.iSubItem, true, true, false, false, hDC);
-                            sendPaintItemEvent(item, nmcd, pinfo.iSubItem, itemRect);
+                            if (item.getImpl() instanceof SwtTableItem) {
+                                RECT itemRect = ((SwtTableItem) item.getImpl()).getBounds(pinfo.iItem, pinfo.iSubItem, true, true, false, false, hDC);
+                                sendPaintItemEvent(item, nmcd, pinfo.iSubItem, itemRect);
+                            }
                         }
                         OS.SelectObject(hDC, oldFont);
                         OS.ReleaseDC(getApi().handle, hDC);
@@ -7716,6 +7732,174 @@ public class SwtTable extends SwtComposite implements ITable {
         }
         ((SwtTable) table.getImpl()).fixCheckboxImageListColor(true);
         ((SwtTable) table.getImpl()).settingItemHeight = false;
+    }
+
+    public TableItem[] _items() {
+        return items;
+    }
+
+    public TableColumn[] _columns() {
+        return columns;
+    }
+
+    public int _columnCount() {
+        return columnCount;
+    }
+
+    public TableItem _currentItem() {
+        return currentItem;
+    }
+
+    public TableColumn _sortColumn() {
+        return sortColumn;
+    }
+
+    public boolean[] _columnVisible() {
+        return columnVisible;
+    }
+
+    public long _headerToolTipHandle() {
+        return headerToolTipHandle;
+    }
+
+    public long _hwndHeader() {
+        return hwndHeader;
+    }
+
+    public long _itemToolTipHandle() {
+        return itemToolTipHandle;
+    }
+
+    public boolean _ignoreCustomDraw() {
+        return ignoreCustomDraw;
+    }
+
+    public boolean _ignoreDrawForeground() {
+        return ignoreDrawForeground;
+    }
+
+    public boolean _ignoreDrawBackground() {
+        return ignoreDrawBackground;
+    }
+
+    public boolean _ignoreDrawFocus() {
+        return ignoreDrawFocus;
+    }
+
+    public boolean _ignoreDrawSelection() {
+        return ignoreDrawSelection;
+    }
+
+    public boolean _ignoreDrawHot() {
+        return ignoreDrawHot;
+    }
+
+    public boolean _customDraw() {
+        return customDraw;
+    }
+
+    public boolean _dragStarted() {
+        return dragStarted;
+    }
+
+    public boolean _explorerTheme() {
+        return explorerTheme;
+    }
+
+    public boolean _firstColumnImage() {
+        return firstColumnImage;
+    }
+
+    public boolean _fixScrollWidth() {
+        return fixScrollWidth;
+    }
+
+    public boolean _tipRequested() {
+        return tipRequested;
+    }
+
+    public boolean _wasSelected() {
+        return wasSelected;
+    }
+
+    public boolean _wasResized() {
+        return wasResized;
+    }
+
+    public boolean _painted() {
+        return painted;
+    }
+
+    public boolean _ignoreActivate() {
+        return ignoreActivate;
+    }
+
+    public boolean _ignoreSelect() {
+        return ignoreSelect;
+    }
+
+    public boolean _ignoreShrink() {
+        return ignoreShrink;
+    }
+
+    public boolean _ignoreResize() {
+        return ignoreResize;
+    }
+
+    public boolean _ignoreColumnMove() {
+        return ignoreColumnMove;
+    }
+
+    public boolean _ignoreColumnResize() {
+        return ignoreColumnResize;
+    }
+
+    public boolean _fullRowSelect() {
+        return fullRowSelect;
+    }
+
+    public boolean _settingItemHeight() {
+        return settingItemHeight;
+    }
+
+    public boolean _headerItemDragging() {
+        return headerItemDragging;
+    }
+
+    public int _itemHeight() {
+        return itemHeight;
+    }
+
+    public int _lastIndexOf() {
+        return lastIndexOf;
+    }
+
+    public int _lastWidth() {
+        return lastWidth;
+    }
+
+    public int _sortDirection() {
+        return sortDirection;
+    }
+
+    public int _resizeCount() {
+        return resizeCount;
+    }
+
+    public int _selectionForeground() {
+        return selectionForeground;
+    }
+
+    public int _hotIndex() {
+        return hotIndex;
+    }
+
+    public int _headerBackground() {
+        return headerBackground;
+    }
+
+    public int _headerForeground() {
+        return headerForeground;
     }
 
     public Table getApi() {

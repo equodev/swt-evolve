@@ -189,16 +189,18 @@ public class SwtTableItem extends SwtItem implements ITableItem {
             event.item = this.getApi();
             event.index = index;
             event.gc = gc;
-            NSTableView widget = (NSTableView) parent.view;
-            int height = (int) widget.rowHeight();
-            event.width = width;
-            event.height = height;
-            if (rowSelected && ((parent.style & SWT.HIDE_SELECTION) == 0 || ((SwtControl) parent.getImpl()).hasFocus()))
-                event.detail |= SWT.SELECTED;
-            parent.getImpl().sendEvent(SWT.MeasureItem, event);
-            if (height < event.height) {
-                widget.setRowHeight(event.height);
-                widget.setNeedsDisplay(true);
+            if (parent == null || parent.getImpl() instanceof SwtTable) {
+                NSTableView widget = (NSTableView) parent.view;
+                int height = (int) widget.rowHeight();
+                event.width = width;
+                event.height = height;
+                if (rowSelected && ((parent.style & SWT.HIDE_SELECTION) == 0 || ((SwtControl) parent.getImpl()).hasFocus()))
+                    event.detail |= SWT.SELECTED;
+                parent.getImpl().sendEvent(SWT.MeasureItem, event);
+                if (height < event.height) {
+                    widget.setRowHeight(event.height);
+                    widget.setNeedsDisplay(true);
+                }
             }
             width = event.width;
         }
@@ -301,47 +303,50 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         checkWidget();
         if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
-        NSTableView widget = (NSTableView) parent.view;
-        int rowIndex = parent.indexOf(this.getApi());
-        NSTableColumn column = ((SwtTable) parent.getImpl()).columnCount == 0 ? ((SwtTable) parent.getImpl()).firstColumn : ((SwtTableColumn) ((SwtTable) parent.getImpl()).columns[0].getImpl()).nsColumn;
-        int columnIndex = ((SwtTable) parent.getImpl()).indexOf(column);
-        NSRect titleRect = widget.frameOfCellAtColumn(columnIndex, rowIndex);
-        if (image != null) {
-            titleRect.x += ((SwtTable) parent.getImpl()).imageBounds.width + SwtTable.IMAGE_GAP;
-        }
-        Font font = null;
-        if (cellFont != null)
-            font = cellFont[columnIndex];
-        if (font == null)
-            font = this.font;
-        if (font == null)
-            font = ((SwtControl) parent.getImpl()).font;
-        if (font == null)
-            font = ((SwtControl) parent.getImpl()).defaultFont();
-        NSCell cell = ((SwtTable) parent.getImpl()).dataCell;
-        cell.setImage(null);
-        if (font.extraTraits != 0) {
-            NSAttributedString attribStr = ((SwtControl) parent.getImpl()).createString(text, font, null, 0, false, true, false);
-            cell.setAttributedStringValue(attribStr);
-            attribStr.release();
-        } else {
-            cell.setFont(font.handle);
-            NSString str = (NSString) new NSString().alloc();
-            str = str.initWithString(text);
-            cell.setTitle(str);
-            str.release();
+        if (parent == null || parent.getImpl() instanceof SwtTable) {
+            NSTableView widget = (NSTableView) parent.view;
+            int rowIndex = parent.indexOf(this.getApi());
+            NSTableColumn column = ((SwtTable) parent.getImpl()).columnCount == 0 ? ((SwtTable) parent.getImpl()).firstColumn : ((SwtTableColumn) ((SwtTable) parent.getImpl()).columns[0].getImpl()).nsColumn;
+            int columnIndex = ((SwtTable) parent.getImpl()).indexOf(column);
+            NSRect titleRect = widget.frameOfCellAtColumn(columnIndex, rowIndex);
+            if (image != null) {
+                titleRect.x += ((SwtTable) parent.getImpl()).imageBounds.width + SwtTable.IMAGE_GAP;
+            }
+            Font font = null;
+            if (cellFont != null)
+                font = cellFont[columnIndex];
+            if (font == null)
+                font = this.font;
+            if (font == null)
+                font = ((SwtControl) parent.getImpl()).font;
+            if (font == null)
+                font = ((SwtControl) parent.getImpl()).defaultFont();
+            NSCell cell = ((SwtTable) parent.getImpl()).dataCell;
+            cell.setImage(null);
+            if (font.extraTraits != 0) {
+                NSAttributedString attribStr = ((SwtControl) parent.getImpl()).createString(text, font, null, 0, false, true, false);
+                cell.setAttributedStringValue(attribStr);
+                attribStr.release();
+            } else {
+                cell.setFont(font.handle);
+                NSString str = (NSString) new NSString().alloc();
+                str = str.initWithString(text);
+                cell.setTitle(str);
+                str.release();
+            }
+            // eventually send another MeasureItem event.
+            objc_super super_struct = new objc_super();
+            super_struct.receiver = cell.id;
+            super_struct.super_class = OS.objc_msgSend(cell.id, OS.sel_superclass);
+            NSSize size = new NSSize();
+            OS.objc_msgSendSuper_stret(size, super_struct, OS.sel_cellSize);
+            //	NSSize size = cell.cellSize ();
+            NSRect columnRect = widget.rectOfColumn(columnIndex);
+            size.width = Math.min(size.width, columnRect.width - (titleRect.x - columnRect.x));
+            return new Rectangle((int) titleRect.x, (int) titleRect.y, (int) Math.ceil(size.width), (int) Math.ceil(titleRect.height));
         }
         // Inlined for performance.  Also prevents a NPE or potential loop, because cellSize() will
-        // eventually send another MeasureItem event.
-        objc_super super_struct = new objc_super();
-        super_struct.receiver = cell.id;
-        super_struct.super_class = OS.objc_msgSend(cell.id, OS.sel_superclass);
-        NSSize size = new NSSize();
-        OS.objc_msgSendSuper_stret(size, super_struct, OS.sel_cellSize);
-        //	NSSize size = cell.cellSize ();
-        NSRect columnRect = widget.rectOfColumn(columnIndex);
-        size.width = Math.min(size.width, columnRect.width - (titleRect.x - columnRect.x));
-        return new Rectangle((int) titleRect.x, (int) titleRect.y, (int) Math.ceil(size.width), (int) Math.ceil(titleRect.height));
+        return null;
     }
 
     /**
@@ -362,15 +367,18 @@ public class SwtTableItem extends SwtItem implements ITableItem {
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (!(0 <= index && index < Math.max(1, ((SwtTable) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
-        NSTableView tableView = (NSTableView) parent.view;
-        if (((SwtTable) parent.getImpl()).columnCount == 0) {
-            index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
-        } else {
-            TableColumn column = parent.getColumn(index);
-            index = ((SwtTable) parent.getImpl()).indexOf(((SwtTableColumn) column.getImpl()).nsColumn);
+        if (parent == null || parent.getImpl() instanceof SwtTable) {
+            NSTableView tableView = (NSTableView) parent.view;
+            if (((SwtTable) parent.getImpl()).columnCount == 0) {
+                index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
+            } else {
+                TableColumn column = parent.getColumn(index);
+                index = ((SwtTable) parent.getImpl()).indexOf(((SwtTableColumn) column.getImpl()).nsColumn);
+            }
+            NSRect rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this.getApi()));
+            return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
         }
-        NSRect rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this.getApi()));
-        return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
+        return null;
     }
 
     /**
@@ -557,22 +565,25 @@ public class SwtTableItem extends SwtItem implements ITableItem {
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (!(0 <= index && index < Math.max(1, ((SwtTable) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
-        NSTableView tableView = (NSTableView) parent.view;
-        Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
-        if (((SwtTable) parent.getImpl()).columnCount == 0) {
-            index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
-        } else {
-            TableColumn column = parent.getColumn(index);
-            index = ((SwtTable) parent.getImpl()).indexOf(((SwtTableColumn) column.getImpl()).nsColumn);
+        if (parent == null || parent.getImpl() instanceof SwtTable) {
+            NSTableView tableView = (NSTableView) parent.view;
+            Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
+            if (((SwtTable) parent.getImpl()).columnCount == 0) {
+                index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
+            } else {
+                TableColumn column = parent.getColumn(index);
+                index = ((SwtTable) parent.getImpl()).indexOf(((SwtTableColumn) column.getImpl()).nsColumn);
+            }
+            NSRect rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this.getApi()));
+            rect.x += SwtTable.IMAGE_GAP;
+            if (image != null) {
+                rect.width = ((SwtTable) parent.getImpl()).imageBounds.width;
+            } else {
+                rect.width = 0;
+            }
+            return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
         }
-        NSRect rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this.getApi()));
-        rect.x += SwtTable.IMAGE_GAP;
-        if (image != null) {
-            rect.width = ((SwtTable) parent.getImpl()).imageBounds.width;
-        } else {
-            rect.width = 0;
-        }
-        return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
+        return null;
     }
 
     /**
@@ -674,23 +685,26 @@ public class SwtTableItem extends SwtItem implements ITableItem {
             error(SWT.ERROR_WIDGET_DISPOSED);
         if (!(0 <= index && index < Math.max(1, ((SwtTable) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
-        NSTableView tableView = (NSTableView) parent.view;
-        Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
-        if (((SwtTable) parent.getImpl()).columnCount == 0) {
-            index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
-        } else {
-            TableColumn column = parent.getColumn(index);
-            index = ((SwtTable) parent.getImpl()).indexOf(((SwtTableColumn) column.getImpl()).nsColumn);
+        if (parent == null || parent.getImpl() instanceof SwtTable) {
+            NSTableView tableView = (NSTableView) parent.view;
+            Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
+            if (((SwtTable) parent.getImpl()).columnCount == 0) {
+                index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
+            } else {
+                TableColumn column = parent.getColumn(index);
+                index = ((SwtTable) parent.getImpl()).indexOf(((SwtTableColumn) column.getImpl()).nsColumn);
+            }
+            NSRect rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this.getApi()));
+            rect.x += SwtTable.TEXT_GAP;
+            rect.width -= SwtTable.TEXT_GAP;
+            if (image != null) {
+                int offset = ((SwtTable) parent.getImpl()).imageBounds.width + SwtTable.IMAGE_GAP;
+                rect.x += offset;
+                rect.width -= offset;
+            }
+            return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
         }
-        NSRect rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this.getApi()));
-        rect.x += SwtTable.TEXT_GAP;
-        rect.width -= SwtTable.TEXT_GAP;
-        if (image != null) {
-            int offset = ((SwtTable) parent.getImpl()).imageBounds.width + SwtTable.IMAGE_GAP;
-            rect.x += offset;
-            rect.width -= offset;
-        }
-        return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
+        return null;
     }
 
     @Override
@@ -701,25 +715,27 @@ public class SwtTableItem extends SwtItem implements ITableItem {
     void redraw(int columnIndex) {
         if (((SwtTable) parent.getImpl()).currentItem == this.getApi() || !isDrawing())
             return;
-        /* redraw the full item if columnIndex == -1 */
-        NSTableView tableView = (NSTableView) parent.view;
-        NSRect rect = null;
-        if (columnIndex == -1 || ((SwtWidget) parent.getImpl()).hooks(SWT.MeasureItem) || ((SwtWidget) parent.getImpl()).hooks(SWT.EraseItem) || ((SwtWidget) parent.getImpl()).hooks(SWT.PaintItem)) {
-            rect = tableView.rectOfRow(parent.indexOf(this.getApi()));
-        } else {
-            int index;
-            if (((SwtTable) parent.getImpl()).columnCount == 0) {
-                index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
+        if (parent == null || parent.getImpl() instanceof SwtTable) {
+            /* redraw the full item if columnIndex == -1 */
+            NSTableView tableView = (NSTableView) parent.view;
+            NSRect rect = null;
+            if (columnIndex == -1 || ((SwtWidget) parent.getImpl()).hooks(SWT.MeasureItem) || ((SwtWidget) parent.getImpl()).hooks(SWT.EraseItem) || ((SwtWidget) parent.getImpl()).hooks(SWT.PaintItem)) {
+                rect = tableView.rectOfRow(parent.indexOf(this.getApi()));
             } else {
-                if (0 <= columnIndex && columnIndex < ((SwtTable) parent.getImpl()).columnCount) {
-                    index = ((SwtTable) parent.getImpl()).indexOf(((SwtTableColumn) ((SwtTable) parent.getImpl()).columns[columnIndex].getImpl()).nsColumn);
+                int index;
+                if (((SwtTable) parent.getImpl()).columnCount == 0) {
+                    index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
                 } else {
-                    return;
+                    if (0 <= columnIndex && columnIndex < ((SwtTable) parent.getImpl()).columnCount) {
+                        index = ((SwtTable) parent.getImpl()).indexOf(((SwtTableColumn) ((SwtTable) parent.getImpl()).columns[columnIndex].getImpl()).nsColumn);
+                    } else {
+                        return;
+                    }
                 }
+                rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this.getApi()));
             }
-            rect = tableView.frameOfCellAtColumn(index, parent.indexOf(this.getApi()));
+            tableView.setNeedsDisplayInRect(rect);
         }
-        tableView.setNeedsDisplayInRect(rect);
     }
 
     @Override
@@ -1182,6 +1198,58 @@ public class SwtTableItem extends SwtItem implements ITableItem {
     public void setText(String string) {
         checkWidget();
         setText(0, string);
+    }
+
+    public Table _parent() {
+        return parent;
+    }
+
+    public String[] _strings() {
+        return strings;
+    }
+
+    public Image[] _images() {
+        return images;
+    }
+
+    public boolean _checked() {
+        return checked;
+    }
+
+    public boolean _grayed() {
+        return grayed;
+    }
+
+    public boolean _cached() {
+        return cached;
+    }
+
+    public Color _foreground() {
+        return foreground;
+    }
+
+    public Color _background() {
+        return background;
+    }
+
+    public Color[] _cellForeground() {
+        return cellForeground;
+    }
+
+    public Color[] _cellBackground() {
+        return cellBackground;
+    }
+
+    public Font _font() {
+        return font;
+    }
+
+    public Font[] _cellFont() {
+        return cellFont;
+    }
+
+    public int _width() {
+        return width;
     }
 
     public TableItem getApi() {

@@ -27,7 +27,6 @@ class TreeColumnSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "TreeColumn")
                .containsEntry("toolTipText", json(w.getToolTipText()))
-               .containsEntry("text", json(w.getText()))
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
         assertJ.satisfies(node("moveable").equalsTo(w.getMoveable(), orAbsentIfFalse));

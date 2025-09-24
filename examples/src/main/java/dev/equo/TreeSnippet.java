@@ -20,6 +20,7 @@ package dev.equo;
  * http://www.eclipse.org/swt/snippets/
  */
 
+import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
@@ -30,6 +31,7 @@ import org.eclipse.swt.widgets.TreeItem;
 public class TreeSnippet {
 
 public static void main (String [] args) {
+	Config.forceEquo();
 	Display display = new Display ();
 	Shell shell = new Shell (display);
 	shell.setText("TreeSnippet");
