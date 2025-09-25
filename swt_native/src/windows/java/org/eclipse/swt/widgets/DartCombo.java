@@ -342,6 +342,8 @@ public class DartCombo extends DartComposite implements ICombo {
         if (!noSelection) {
         }
         while (index-- > 0) {
+            {
+            }
         }
     }
 
@@ -619,7 +621,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public int getItemCount() {
         checkWidget();
-        return 0;
+        return this.items != null ? this.items.length : 0;
     }
 
     /**
@@ -1279,7 +1281,9 @@ public class DartCombo extends DartComposite implements ICombo {
      * </ul>
      */
     public void select(int index) {
+        dirty();
         checkWidget();
+        this.selection = new Point(selection.x, selection.y);
     }
 
     @Override
@@ -1497,9 +1501,9 @@ public class DartCombo extends DartComposite implements ICombo {
     public void setSelection(Point selection) {
         dirty();
         checkWidget();
-        this.selection = selection;
         if (selection == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        this.selection = selection;
     }
 
     /**
@@ -1533,7 +1537,6 @@ public class DartCombo extends DartComposite implements ICombo {
     public void setText(String string) {
         dirty();
         checkWidget();
-        this.text = string;
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if ((getApi().style & SWT.READ_ONLY) != 0) {
@@ -1546,6 +1549,7 @@ public class DartCombo extends DartComposite implements ICombo {
         int limit = Combo.LIMIT;
         if (string.length() > limit)
             string = string.substring(0, limit);
+        this.text = string;
     }
 
     /**
@@ -1571,12 +1575,12 @@ public class DartCombo extends DartComposite implements ICombo {
     public void setTextLimit(int limit) {
         dirty();
         checkWidget();
-        this.textLimit = limit;
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
         if (segments != null && limit > 0) {
         } else {
         }
+        this.textLimit = limit;
     }
 
     @Override

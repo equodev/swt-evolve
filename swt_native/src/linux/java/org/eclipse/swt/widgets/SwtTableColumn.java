@@ -417,10 +417,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
 
     @Override
     long gtk_mnemonic_activate(long widget, long arg1) {
-        if (parent.getImpl() instanceof SwtControl) {
-            return ((SwtControl) parent.getImpl()).gtk_mnemonic_activate(widget, arg1);
-        } else
-            return 0;
+        return ((SwtControl) parent.getImpl()).gtk_mnemonic_activate(widget, arg1);
     }
 
     @Override
@@ -876,6 +873,58 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
             setImage(image);
         }
         return 0;
+    }
+
+    public long _headerButtonCSSProvider() {
+        return headerButtonCSSProvider;
+    }
+
+    public long _labelHandle() {
+        return labelHandle;
+    }
+
+    public long _imageHandle() {
+        return imageHandle;
+    }
+
+    public long _buttonHandle() {
+        return buttonHandle;
+    }
+
+    public Table _parent() {
+        return parent;
+    }
+
+    public int _modelIndex() {
+        return modelIndex;
+    }
+
+    public int _lastButton() {
+        return lastButton;
+    }
+
+    public int _lastTime() {
+        return lastTime;
+    }
+
+    public int _lastX() {
+        return lastX;
+    }
+
+    public int _lastWidth() {
+        return lastWidth;
+    }
+
+    public boolean _customDraw() {
+        return customDraw;
+    }
+
+    public boolean _useFixedWidth() {
+        return useFixedWidth;
+    }
+
+    public String _toolTipText() {
+        return toolTipText;
     }
 
     public TableColumn getApi() {

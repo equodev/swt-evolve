@@ -5,7 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 
-public interface ITreeColumn extends IItem {
+public interface ITreeColumn extends IItem, ImplTreeColumn {
 
     /**
      * Adds the listener to the collection of listeners who will

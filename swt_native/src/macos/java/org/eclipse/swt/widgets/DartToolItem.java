@@ -238,6 +238,9 @@ public class DartToolItem extends DartItem implements IToolItem {
             if ((getApi().style & SWT.DROP_DOWN) != 0) {
                 width += ARROW_WIDTH + INSET;
             }
+            {
+                height -= 2;
+            }
         }
         return new Point(width, height);
     }
@@ -669,7 +672,6 @@ public class DartToolItem extends DartItem implements IToolItem {
     public void setEnabled(boolean enabled) {
         dirty();
         checkWidget();
-        this.enabled = enabled;
         if ((getApi().state & DISABLED) == 0 && enabled)
             return;
         if (enabled) {
@@ -678,6 +680,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             getApi().state |= DISABLED;
         }
         enableWidget(enabled);
+        this.enabled = enabled;
     }
 
     /**
@@ -905,6 +908,9 @@ public class DartToolItem extends DartItem implements IToolItem {
         if (string != null && string.equals(toolTipText))
             return;
         toolTipText = string;
+        {
+            ((DartControl) parent.getImpl()).checkToolTip(this.getApi());
+        }
     }
 
     void setVisible(boolean visible) {

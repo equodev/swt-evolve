@@ -7,7 +7,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 
-public interface ITree extends IComposite {
+public interface ITree extends IComposite, ImplTree {
 
     void checkSubclass();
 

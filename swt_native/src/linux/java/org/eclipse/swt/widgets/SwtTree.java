@@ -998,7 +998,9 @@ public class SwtTree extends SwtComposite implements ITree {
         columns[index] = column;
         if ((getApi().state & FONT) != 0) {
             long fontDesc = getFontDescription();
-            ((SwtTreeColumn) column.getImpl()).setFontDescription(fontDesc);
+            if (column.getImpl() instanceof SwtTreeColumn) {
+                ((SwtTreeColumn) column.getImpl()).setFontDescription(fontDesc);
+            }
             OS.pango_font_description_free(fontDesc);
         }
         if (columnCount >= 1) {
@@ -3554,16 +3556,18 @@ public class SwtTree extends SwtComposite implements ITree {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (((SwtTreeItem) item.getImpl()).parent != this.getApi())
             return;
-        Rectangle rect = ((SwtTreeItem) item.getImpl()).getBoundsInPixels();
-        long[] path = new long[1];
-        GTK.gtk_widget_realize(getApi().handle);
-        if (!GTK.gtk_tree_view_get_path_at_pos(getApi().handle, rect.x, rect.y, path, null, null, null))
-            return;
-        if (path[0] == 0)
-            return;
-        int position = before ? GTK.GTK_TREE_VIEW_DROP_BEFORE : GTK.GTK_TREE_VIEW_DROP_AFTER;
-        GTK.gtk_tree_view_set_drag_dest_row(getApi().handle, path[0], position);
-        GTK.gtk_tree_path_free(path[0]);
+        if (item.getImpl() instanceof SwtTreeItem) {
+            Rectangle rect = ((SwtTreeItem) item.getImpl()).getBoundsInPixels();
+            long[] path = new long[1];
+            GTK.gtk_widget_realize(getApi().handle);
+            if (!GTK.gtk_tree_view_get_path_at_pos(getApi().handle, rect.x, rect.y, path, null, null, null))
+                return;
+            if (path[0] == 0)
+                return;
+            int position = before ? GTK.GTK_TREE_VIEW_DROP_BEFORE : GTK.GTK_TREE_VIEW_DROP_AFTER;
+            GTK.gtk_tree_view_set_drag_dest_row(getApi().handle, path[0], position);
+            GTK.gtk_tree_path_free(path[0]);
+        }
     }
 
     void setItemCount(long parentIter, int count) {
@@ -4442,6 +4446,142 @@ public class SwtTree extends SwtComposite implements ITree {
             OS.g_object_unref(headerCSSProvider);
             headerCSSProvider = 0;
         }
+    }
+
+    public long _modelHandle() {
+        return modelHandle;
+    }
+
+    public long _checkRenderer() {
+        return checkRenderer;
+    }
+
+    public int _columnCount() {
+        return columnCount;
+    }
+
+    public int _sortDirection() {
+        return sortDirection;
+    }
+
+    public int _selectionCountOnPress() {
+        return selectionCountOnPress;
+    }
+
+    public int _selectionCountOnRelease() {
+        return selectionCountOnRelease;
+    }
+
+    public long _ignoreCell() {
+        return ignoreCell;
+    }
+
+    public TreeItem[] _items() {
+        return items;
+    }
+
+    public int _nextId() {
+        return nextId;
+    }
+
+    public TreeColumn[] _columns() {
+        return columns;
+    }
+
+    public TreeColumn _sortColumn() {
+        return sortColumn;
+    }
+
+    public TreeItem _currentItem() {
+        return currentItem;
+    }
+
+    public boolean _firstCustomDraw() {
+        return firstCustomDraw;
+    }
+
+    public boolean _firstCompute() {
+        return firstCompute;
+    }
+
+    public boolean _modelChanged() {
+        return modelChanged;
+    }
+
+    public boolean _expandAll() {
+        return expandAll;
+    }
+
+    public int _drawState() {
+        return drawState;
+    }
+
+    public int _drawFlags() {
+        return drawFlags;
+    }
+
+    public boolean _isOwnerDrawn() {
+        return isOwnerDrawn;
+    }
+
+    public boolean _ignoreSize() {
+        return ignoreSize;
+    }
+
+    public boolean _pixbufSizeSet() {
+        return pixbufSizeSet;
+    }
+
+    public boolean _hasChildren() {
+        return hasChildren;
+    }
+
+    public int _pixbufHeight() {
+        return pixbufHeight;
+    }
+
+    public int _pixbufWidth() {
+        return pixbufWidth;
+    }
+
+    public int _headerHeight() {
+        return headerHeight;
+    }
+
+    public boolean _headerVisible() {
+        return headerVisible;
+    }
+
+    public TreeItem _topItem() {
+        return topItem;
+    }
+
+    public double _cachedAdjustment() {
+        return cachedAdjustment;
+    }
+
+    public double _currentAdjustment() {
+        return currentAdjustment;
+    }
+
+    public Color _headerBackground() {
+        return headerBackground;
+    }
+
+    public Color _headerForeground() {
+        return headerForeground;
+    }
+
+    public boolean _boundsChangedSinceLastDraw() {
+        return boundsChangedSinceLastDraw;
+    }
+
+    public boolean _wasScrolled() {
+        return wasScrolled;
+    }
+
+    public boolean _rowActivated() {
+        return rowActivated;
     }
 
     public Tree getApi() {

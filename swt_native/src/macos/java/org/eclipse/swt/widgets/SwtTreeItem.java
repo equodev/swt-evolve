@@ -262,21 +262,25 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
             event.item = this.getApi();
             event.index = index;
             event.gc = gc;
-            NSTableView widget = (NSTableView) parent.view;
-            int height = (int) widget.rowHeight();
-            event.width = width;
-            event.height = height;
-            event.detail = (cell.isHighlighted() && ((getApi().style & SWT.HIDE_SELECTION) == 0 || ((SwtControl) parent.getImpl()).hasFocus())) ? SWT.SELECTED : 0;
-            parent.getImpl().sendEvent(SWT.MeasureItem, event);
-            if (height < event.height) {
-                widget.setRowHeight(event.height);
-                widget.setNeedsDisplay(true);
+            if (parent == null || parent.getImpl() instanceof SwtTree) {
+                NSTableView widget = (NSTableView) parent.view;
+                int height = (int) widget.rowHeight();
+                event.width = width;
+                event.height = height;
+                event.detail = (cell.isHighlighted() && ((getApi().style & SWT.HIDE_SELECTION) == 0 || ((SwtControl) parent.getImpl()).hasFocus())) ? SWT.SELECTED : 0;
+                parent.getImpl().sendEvent(SWT.MeasureItem, event);
+                if (height < event.height) {
+                    widget.setRowHeight(event.height);
+                    widget.setNeedsDisplay(true);
+                }
             }
             width = event.width;
         }
         if (index == 0) {
-            NSOutlineView outlineView = (NSOutlineView) parent.view;
-            width += outlineView.indentationPerLevel() * (1 + outlineView.levelForItem(getApi().handle));
+            if (parent == null || parent.getImpl() instanceof SwtTree) {
+                NSOutlineView outlineView = (NSOutlineView) parent.view;
+                width += outlineView.indentationPerLevel() * (1 + outlineView.levelForItem(getApi().handle));
+            }
             this.width = width;
         }
         return width;
@@ -450,49 +454,52 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         if (!((SwtTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         ((SwtTree) parent.getImpl()).checkItems();
-        NSOutlineView widget = (NSOutlineView) parent.view;
-        int rowIndex = (int) widget.rowForItem(getApi().handle);
-        if (rowIndex == -1)
-            return new Rectangle(0, 0, 0, 0);
-        NSTableColumn column = ((SwtTree) parent.getImpl()).columnCount == 0 ? ((SwtTree) parent.getImpl()).firstColumn : ((SwtTreeColumn) ((SwtTree) parent.getImpl()).columns[0].getImpl()).nsColumn;
-        int columnIndex = ((SwtTree) parent.getImpl()).indexOf(column);
-        NSRect titleRect = widget.frameOfCellAtColumn(columnIndex, rowIndex);
-        if (image != null) {
-            titleRect.x += ((SwtTree) parent.getImpl()).imageBounds.width + SwtTree.IMAGE_GAP;
-        }
-        Font font = null;
-        if (cellFont != null)
-            font = cellFont[columnIndex];
-        if (font == null)
-            font = this.font;
-        if (font == null)
-            font = ((SwtControl) parent.getImpl()).font;
-        if (font == null)
-            font = ((SwtControl) parent.getImpl()).defaultFont();
-        NSCell cell = ((SwtTree) parent.getImpl()).dataCell;
-        cell.setImage(null);
-        if (font.extraTraits != 0) {
-            NSAttributedString attribStr = ((SwtControl) parent.getImpl()).createString(text, font, null, 0, false, true, false);
-            cell.setAttributedStringValue(attribStr);
-            attribStr.release();
-        } else {
-            cell.setFont(font.handle);
-            NSString str = (NSString) new NSString().alloc();
-            str = str.initWithString(text);
-            cell.setTitle(str);
-            str.release();
+        if (parent == null || parent.getImpl() instanceof SwtTree) {
+            NSOutlineView widget = (NSOutlineView) parent.view;
+            int rowIndex = (int) widget.rowForItem(getApi().handle);
+            if (rowIndex == -1)
+                return new Rectangle(0, 0, 0, 0);
+            NSTableColumn column = ((SwtTree) parent.getImpl()).columnCount == 0 ? ((SwtTree) parent.getImpl()).firstColumn : ((SwtTreeColumn) ((SwtTree) parent.getImpl()).columns[0].getImpl()).nsColumn;
+            int columnIndex = ((SwtTree) parent.getImpl()).indexOf(column);
+            NSRect titleRect = widget.frameOfCellAtColumn(columnIndex, rowIndex);
+            if (image != null) {
+                titleRect.x += ((SwtTree) parent.getImpl()).imageBounds.width + SwtTree.IMAGE_GAP;
+            }
+            Font font = null;
+            if (cellFont != null)
+                font = cellFont[columnIndex];
+            if (font == null)
+                font = this.font;
+            if (font == null)
+                font = ((SwtControl) parent.getImpl()).font;
+            if (font == null)
+                font = ((SwtControl) parent.getImpl()).defaultFont();
+            NSCell cell = ((SwtTree) parent.getImpl()).dataCell;
+            cell.setImage(null);
+            if (font.extraTraits != 0) {
+                NSAttributedString attribStr = ((SwtControl) parent.getImpl()).createString(text, font, null, 0, false, true, false);
+                cell.setAttributedStringValue(attribStr);
+                attribStr.release();
+            } else {
+                cell.setFont(font.handle);
+                NSString str = (NSString) new NSString().alloc();
+                str = str.initWithString(text);
+                cell.setTitle(str);
+                str.release();
+            }
+            // eventually send another MeasureItem event.
+            objc_super super_struct = new objc_super();
+            super_struct.receiver = cell.id;
+            super_struct.super_class = OS.objc_msgSend(cell.id, OS.sel_superclass);
+            NSSize size = new NSSize();
+            OS.objc_msgSendSuper_stret(size, super_struct, OS.sel_cellSize);
+            //	NSSize size = cell.cellSize ();
+            NSRect columnRect = widget.rectOfColumn(columnIndex);
+            size.width = Math.min(size.width, columnRect.width - (titleRect.x - columnRect.x));
+            return new Rectangle((int) titleRect.x, (int) titleRect.y, (int) Math.ceil(size.width), (int) Math.ceil(titleRect.height));
         }
         // Inlined for performance.  Also prevents a NPE or potential loop, because cellSize() will
-        // eventually send another MeasureItem event.
-        objc_super super_struct = new objc_super();
-        super_struct.receiver = cell.id;
-        super_struct.super_class = OS.objc_msgSend(cell.id, OS.sel_superclass);
-        NSSize size = new NSSize();
-        OS.objc_msgSendSuper_stret(size, super_struct, OS.sel_cellSize);
-        //	NSSize size = cell.cellSize ();
-        NSRect columnRect = widget.rectOfColumn(columnIndex);
-        size.width = Math.min(size.width, columnRect.width - (titleRect.x - columnRect.x));
-        return new Rectangle((int) titleRect.x, (int) titleRect.y, (int) Math.ceil(size.width), (int) Math.ceil(titleRect.height));
+        return null;
     }
 
     /**
@@ -516,15 +523,18 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         if (!(0 <= index && index < Math.max(1, ((SwtTree) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
         ((SwtTree) parent.getImpl()).checkItems();
-        NSOutlineView outlineView = (NSOutlineView) parent.view;
-        if (((SwtTree) parent.getImpl()).columnCount == 0) {
-            index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
-        } else {
-            TreeColumn column = parent.getColumn(index);
-            index = ((SwtTree) parent.getImpl()).indexOf(((SwtTreeColumn) column.getImpl()).nsColumn);
+        if (parent == null || parent.getImpl() instanceof SwtTree) {
+            NSOutlineView outlineView = (NSOutlineView) parent.view;
+            if (((SwtTree) parent.getImpl()).columnCount == 0) {
+                index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
+            } else {
+                TreeColumn column = parent.getColumn(index);
+                index = ((SwtTree) parent.getImpl()).indexOf(((SwtTreeColumn) column.getImpl()).nsColumn);
+            }
+            NSRect rect = outlineView.frameOfCellAtColumn(index, outlineView.rowForItem(getApi().handle));
+            return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
         }
-        NSRect rect = outlineView.frameOfCellAtColumn(index, outlineView.rowForItem(getApi().handle));
-        return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
+        return null;
     }
 
     /**
@@ -731,22 +741,25 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         if (!(0 <= index && index < Math.max(1, ((SwtTree) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
         ((SwtTree) parent.getImpl()).checkItems();
-        NSOutlineView outlineView = (NSOutlineView) parent.view;
-        Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
-        if (((SwtTree) parent.getImpl()).columnCount == 0) {
-            index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
-        } else {
-            TreeColumn column = parent.getColumn(index);
-            index = ((SwtTree) parent.getImpl()).indexOf(((SwtTreeColumn) column.getImpl()).nsColumn);
+        if (parent == null || parent.getImpl() instanceof SwtTree) {
+            NSOutlineView outlineView = (NSOutlineView) parent.view;
+            Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
+            if (((SwtTree) parent.getImpl()).columnCount == 0) {
+                index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
+            } else {
+                TreeColumn column = parent.getColumn(index);
+                index = ((SwtTree) parent.getImpl()).indexOf(((SwtTreeColumn) column.getImpl()).nsColumn);
+            }
+            NSRect rect = outlineView.frameOfCellAtColumn(index, outlineView.rowForItem(getApi().handle));
+            rect.x += SwtTree.IMAGE_GAP;
+            if (image != null) {
+                rect.width = ((SwtTree) parent.getImpl()).imageBounds.width;
+            } else {
+                rect.width = 0;
+            }
+            return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
         }
-        NSRect rect = outlineView.frameOfCellAtColumn(index, outlineView.rowForItem(getApi().handle));
-        rect.x += SwtTree.IMAGE_GAP;
-        if (image != null) {
-            rect.width = ((SwtTree) parent.getImpl()).imageBounds.width;
-        } else {
-            rect.width = 0;
-        }
-        return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
+        return null;
     }
 
     /**
@@ -923,23 +936,26 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         if (!(0 <= index && index < Math.max(1, ((SwtTree) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
         ((SwtTree) parent.getImpl()).checkItems();
-        NSOutlineView outlineView = (NSOutlineView) parent.view;
-        Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
-        if (((SwtTree) parent.getImpl()).columnCount == 0) {
-            index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
-        } else {
-            TreeColumn column = parent.getColumn(index);
-            index = ((SwtTree) parent.getImpl()).indexOf(((SwtTreeColumn) column.getImpl()).nsColumn);
+        if (parent == null || parent.getImpl() instanceof SwtTree) {
+            NSOutlineView outlineView = (NSOutlineView) parent.view;
+            Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
+            if (((SwtTree) parent.getImpl()).columnCount == 0) {
+                index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
+            } else {
+                TreeColumn column = parent.getColumn(index);
+                index = ((SwtTree) parent.getImpl()).indexOf(((SwtTreeColumn) column.getImpl()).nsColumn);
+            }
+            NSRect rect = outlineView.frameOfCellAtColumn(index, outlineView.rowForItem(getApi().handle));
+            rect.x += SwtTree.TEXT_GAP;
+            rect.width -= SwtTree.TEXT_GAP;
+            if (image != null) {
+                int offset = ((SwtTree) parent.getImpl()).imageBounds.width + SwtTree.IMAGE_GAP;
+                rect.x += offset;
+                rect.width -= offset;
+            }
+            return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
         }
-        NSRect rect = outlineView.frameOfCellAtColumn(index, outlineView.rowForItem(getApi().handle));
-        rect.x += SwtTree.TEXT_GAP;
-        rect.width -= SwtTree.TEXT_GAP;
-        if (image != null) {
-            int offset = ((SwtTree) parent.getImpl()).imageBounds.width + SwtTree.IMAGE_GAP;
-            rect.x += offset;
-            rect.width -= offset;
-        }
-        return new Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
+        return null;
     }
 
     /**
@@ -985,25 +1001,27 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
     void redraw(int columnIndex) {
         if (((SwtTree) parent.getImpl()).ignoreRedraw || !isDrawing())
             return;
-        /* redraw the full item if columnIndex == -1 */
-        NSOutlineView outlineView = (NSOutlineView) parent.view;
-        NSRect rect;
-        if (columnIndex == -1 || ((SwtWidget) parent.getImpl()).hooks(SWT.MeasureItem) || ((SwtWidget) parent.getImpl()).hooks(SWT.EraseItem) || ((SwtWidget) parent.getImpl()).hooks(SWT.PaintItem)) {
-            rect = outlineView.rectOfRow(outlineView.rowForItem(getApi().handle));
-        } else {
-            int index;
-            if (((SwtTree) parent.getImpl()).columnCount == 0) {
-                index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
+        if (parent == null || parent.getImpl() instanceof SwtTree) {
+            /* redraw the full item if columnIndex == -1 */
+            NSOutlineView outlineView = (NSOutlineView) parent.view;
+            NSRect rect;
+            if (columnIndex == -1 || ((SwtWidget) parent.getImpl()).hooks(SWT.MeasureItem) || ((SwtWidget) parent.getImpl()).hooks(SWT.EraseItem) || ((SwtWidget) parent.getImpl()).hooks(SWT.PaintItem)) {
+                rect = outlineView.rectOfRow(outlineView.rowForItem(getApi().handle));
             } else {
-                if (0 <= columnIndex && columnIndex < ((SwtTree) parent.getImpl()).columnCount) {
-                    index = ((SwtTree) parent.getImpl()).indexOf(((SwtTreeColumn) ((SwtTree) parent.getImpl()).columns[columnIndex].getImpl()).nsColumn);
+                int index;
+                if (((SwtTree) parent.getImpl()).columnCount == 0) {
+                    index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
                 } else {
-                    return;
+                    if (0 <= columnIndex && columnIndex < ((SwtTree) parent.getImpl()).columnCount) {
+                        index = ((SwtTree) parent.getImpl()).indexOf(((SwtTreeColumn) ((SwtTree) parent.getImpl()).columns[columnIndex].getImpl()).nsColumn);
+                    } else {
+                        return;
+                    }
                 }
+                rect = outlineView.frameOfCellAtColumn(index, outlineView.rowForItem(getApi().handle));
             }
-            rect = outlineView.frameOfCellAtColumn(index, outlineView.rowForItem(getApi().handle));
+            outlineView.setNeedsDisplayInRect(rect);
         }
-        outlineView.setNeedsDisplayInRect(rect);
     }
 
     @Override
@@ -1030,7 +1048,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         for (int i = 0; i < items.length; i++) {
             TreeItem item = items[i];
             if (item != null && !item.isDisposed()) {
-                ((SwtTreeItem) item.getImpl()).release(false);
+                item.getImpl().release(false);
             }
         }
         items = null;
@@ -1206,9 +1224,13 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         ((SwtTree) parent.getImpl()).ignoreExpand = true;
         this.expanded = expanded;
         if (expanded) {
-            ((NSOutlineView) parent.view).expandItem(getApi().handle);
+            if (parent == null || parent.getImpl() instanceof SwtTree) {
+                ((NSOutlineView) parent.view).expandItem(getApi().handle);
+            }
         } else {
-            ((NSOutlineView) parent.view).collapseItem(getApi().handle);
+            if (parent == null || parent.getImpl() instanceof SwtTree) {
+                ((NSOutlineView) parent.view).collapseItem(getApi().handle);
+            }
         }
         ((SwtTree) parent.getImpl()).ignoreExpand = false;
         cached = true;
@@ -1574,18 +1596,88 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
     void updateExpanded() {
         if (itemCount == 0)
             return;
-        NSOutlineView outlineView = (NSOutlineView) parent.view;
-        if (expanded != outlineView.isItemExpanded(getApi().handle)) {
-            if (expanded) {
-                outlineView.expandItem(getApi().handle);
-            } else {
-                outlineView.collapseItem(getApi().handle);
+        if (parent == null || parent.getImpl() instanceof SwtTree) {
+            NSOutlineView outlineView = (NSOutlineView) parent.view;
+            if (expanded != outlineView.isItemExpanded(getApi().handle)) {
+                if (expanded) {
+                    outlineView.expandItem(getApi().handle);
+                } else {
+                    outlineView.collapseItem(getApi().handle);
+                }
             }
         }
         for (int i = 0; i < itemCount; i++) {
             if (items[i] != null)
                 ((SwtTreeItem) items[i].getImpl()).updateExpanded();
         }
+    }
+
+    public Tree _parent() {
+        return parent;
+    }
+
+    public TreeItem _parentItem() {
+        return parentItem;
+    }
+
+    public TreeItem[] _items() {
+        return items;
+    }
+
+    public int _itemCount() {
+        return itemCount;
+    }
+
+    public String[] _strings() {
+        return strings;
+    }
+
+    public Image[] _images() {
+        return images;
+    }
+
+    public boolean _checked() {
+        return checked;
+    }
+
+    public boolean _grayed() {
+        return grayed;
+    }
+
+    public boolean _cached() {
+        return cached;
+    }
+
+    public boolean _expanded() {
+        return expanded;
+    }
+
+    public Color _foreground() {
+        return foreground;
+    }
+
+    public Color _background() {
+        return background;
+    }
+
+    public Color[] _cellForeground() {
+        return cellForeground;
+    }
+
+    public Color[] _cellBackground() {
+        return cellBackground;
+    }
+
+    public Font _font() {
+        return font;
+    }
+
+    public Font[] _cellFont() {
+        return cellFont;
+    }
+
+    public int _width() {
+        return width;
     }
 
     public TreeItem getApi() {

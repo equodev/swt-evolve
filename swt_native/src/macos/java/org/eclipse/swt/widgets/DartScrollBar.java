@@ -460,6 +460,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
 
     @Override
     void sendSelection() {
+        int value = 0;
+        {
+            value = getSelection();
+        }
         Event event = new Event();
         sendSelectionEvent(SWT.Selection, event, true);
     }
@@ -501,7 +505,6 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setEnabled(boolean enabled) {
         dirty();
         checkWidget();
-        this.enabled = enabled;
         if (enabled) {
             if ((getApi().state & DISABLED) == 0)
                 return;
@@ -512,6 +515,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
             getApi().state |= DISABLED;
         }
         enableWidget(enabled);
+        this.enabled = enabled;
     }
 
     void enableWidget(boolean enabled) {
@@ -611,8 +615,8 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setSelection(int selection) {
         dirty();
         checkWidget();
-        this.selection = selection;
         updateBar(selection, minimum, maximum, thumb);
+        this.selection = selection;
     }
 
     /**
@@ -703,8 +707,8 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setVisible(boolean visible) {
         dirty();
         checkWidget();
-        this.visible = visible;
         ((DartScrollable) parent.getImpl()).setScrollBarVisible(this.getApi(), visible);
+        this.visible = visible;
     }
 
     void updateBar(int selection, int minimum, int maximum, int thumb) {

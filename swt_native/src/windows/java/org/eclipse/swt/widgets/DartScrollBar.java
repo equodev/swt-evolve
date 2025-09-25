@@ -523,12 +523,12 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setEnabled(boolean enabled) {
         dirty();
         checkWidget();
-        this.enabled = enabled;
         if (enabled) {
             getApi().state &= ~DISABLED;
         } else {
             getApi().state |= DISABLED;
         }
+        this.enabled = enabled;
     }
 
     /**
@@ -568,9 +568,9 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setMaximum(int value) {
         dirty();
         checkWidget();
-        this.maximum = value;
         if (value < 0)
             return;
+        this.maximum = value;
     }
 
     /**
@@ -589,9 +589,9 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setMinimum(int value) {
         dirty();
         checkWidget();
-        this.minimum = value;
         if (value < 0)
             return;
+        this.minimum = value;
     }
 
     /**
@@ -653,9 +653,9 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setThumb(int value) {
         dirty();
         checkWidget();
-        this.thumb = value;
         if (value < 1)
             return;
+        this.thumb = value;
     }
 
     /**
@@ -715,7 +715,6 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setVisible(boolean visible) {
         dirty();
         checkWidget();
-        this.visible = visible;
         if (visible == getVisible())
             return;
         /*
@@ -735,6 +734,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
 	*/
         if (!visible) {
         }
+        this.visible = visible;
     }
 
     boolean enabled = true;

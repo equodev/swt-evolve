@@ -324,6 +324,9 @@ public class DartCanvas extends DartComposite implements ICanvas {
     @Override
     void setOpenGLContext(Object value) {
         Shell shell = getShell();
+        {
+            ((SwtShell) shell.getImpl()).glContextCount--;
+        }
         ((SwtShell) shell.getImpl()).updateOpaque();
     }
 

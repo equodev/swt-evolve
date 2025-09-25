@@ -946,7 +946,6 @@ public class DartComposite extends DartScrollable implements IComposite {
     public void setLayoutDeferred(boolean defer) {
         dirty();
         checkWidget();
-        this.layoutDeferred = defer;
         if (!defer) {
             if (--layoutCount == 0) {
                 if ((getApi().state & LAYOUT_CHILD) != 0 || (getApi().state & LAYOUT_NEEDED) != 0) {
@@ -956,6 +955,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         } else {
             layoutCount++;
         }
+        this.layoutDeferred = defer;
     }
 
     @Override

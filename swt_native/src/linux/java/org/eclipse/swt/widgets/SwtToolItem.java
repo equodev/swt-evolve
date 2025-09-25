@@ -639,18 +639,12 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     long gtk_button_press_event(long widget, long event) {
-        if (parent.getImpl() instanceof SwtComposite) {
-            return ((SwtComposite) parent.getImpl()).gtk_button_press_event(widget, event);
-        } else
-            return 0;
+        return ((SwtComposite) parent.getImpl()).gtk_button_press_event(widget, event);
     }
 
     @Override
     long gtk_button_release_event(long widget, long event) {
-        if (parent.getImpl() instanceof SwtControl) {
-            return ((SwtControl) parent.getImpl()).gtk_button_release_event(widget, event);
-        } else
-            return 0;
+        return ((SwtControl) parent.getImpl()).gtk_button_release_event(widget, event);
     }
 
     @Override
@@ -789,9 +783,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     long gtk_enter_notify_event(long widget, long event) {
-        if (parent.getImpl() instanceof SwtControl) {
-            ((SwtControl) parent.getImpl()).gtk_enter_notify_event(widget, event);
-        }
+        ((SwtControl) parent.getImpl()).gtk_enter_notify_event(widget, event);
         drawHotImage = (parent.style & SWT.FLAT) != 0 && hotImage != null;
         if (drawHotImage) {
             ImageList imageList = ((SwtToolBar) parent.getImpl()).imageList;
@@ -854,9 +846,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     long gtk_leave_notify_event(long widget, long event) {
-        if (parent.getImpl() instanceof SwtControl) {
-            ((SwtControl) parent.getImpl()).gtk_leave_notify_event(widget, event);
-        }
+        ((SwtControl) parent.getImpl()).gtk_leave_notify_event(widget, event);
         if (drawHotImage) {
             drawHotImage = false;
             if (image != null) {
@@ -887,10 +877,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 
     @Override
     long gtk_mnemonic_activate(long widget, long arg1) {
-        if (parent.getImpl() instanceof SwtControl) {
-            return ((SwtControl) parent.getImpl()).gtk_mnemonic_activate(widget, arg1);
-        } else
-            return 0;
+        return ((SwtControl) parent.getImpl()).gtk_mnemonic_activate(widget, arg1);
     }
 
     @Override
@@ -1087,9 +1074,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 	* a call to gtk_widget_size_request().
 	*/
         GtkRequisition requisition = new GtkRequisition();
-        if (parent.getImpl() instanceof SwtWidget) {
-            ((SwtWidget) parent.getImpl()).gtk_widget_get_preferred_size(getApi().handle, requisition);
-        }
+        ((SwtWidget) parent.getImpl()).gtk_widget_get_preferred_size(getApi().handle, requisition);
         GtkAllocation allocation = new GtkAllocation();
         GTK.gtk_widget_get_allocation(getApi().handle, allocation);
         allocation.width = width;

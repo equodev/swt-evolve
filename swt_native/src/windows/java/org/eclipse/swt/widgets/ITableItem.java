@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 
-public interface ITableItem extends IItem {
+public interface ITableItem extends IItem, ImplTableItem {
 
     void checkSubclass();
 

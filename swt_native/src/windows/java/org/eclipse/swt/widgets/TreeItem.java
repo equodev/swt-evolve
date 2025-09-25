@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -78,7 +79,7 @@ public class TreeItem extends Item {
      */
     public TreeItem(Tree parent, int style) {
         this((ITreeItem) null);
-        setImpl(new SwtTreeItem(parent, style, this));
+        setImpl(Config.isEquo(TreeItem.class, parent) ? new DartTreeItem(parent, style, this) : new SwtTreeItem(parent, style, this));
     }
 
     /**
@@ -112,7 +113,7 @@ public class TreeItem extends Item {
      */
     public TreeItem(Tree parent, int style, int index) {
         this((ITreeItem) null);
-        setImpl(new SwtTreeItem(parent, style, index, this));
+        setImpl(Config.isEquo(TreeItem.class, parent) ? new DartTreeItem(parent, style, index, this) : new SwtTreeItem(parent, style, index, this));
     }
 
     /**
@@ -139,7 +140,7 @@ public class TreeItem extends Item {
      */
     public TreeItem(TreeItem parentItem, int style) {
         this((ITreeItem) null);
-        setImpl(new SwtTreeItem(parentItem, style, this));
+        setImpl(Config.isEquo(TreeItem.class) ? new DartTreeItem(parentItem, style, this) : new SwtTreeItem(parentItem, style, this));
     }
 
     /**
@@ -169,12 +170,12 @@ public class TreeItem extends Item {
      */
     public TreeItem(TreeItem parentItem, int style, int index) {
         this((ITreeItem) null);
-        setImpl(new SwtTreeItem(parentItem, style, index, this));
+        setImpl(Config.isEquo(TreeItem.class) ? new DartTreeItem(parentItem, style, index, this) : new SwtTreeItem(parentItem, style, index, this));
     }
 
     TreeItem(Tree parent, int style, long hParent, long hInsertAfter, long hItem) {
         this((ITreeItem) null);
-        setImpl(new SwtTreeItem(parent, style, hParent, hInsertAfter, hItem, this));
+        setImpl(Config.isEquo(TreeItem.class, parent) ? new DartTreeItem(parent, style, hParent, hInsertAfter, hItem, this) : new SwtTreeItem(parent, style, hParent, hInsertAfter, hItem, this));
     }
 
     protected void checkSubclass() {

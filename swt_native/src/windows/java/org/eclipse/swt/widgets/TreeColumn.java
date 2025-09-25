@@ -20,6 +20,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a column in a tree widget.
@@ -77,7 +78,7 @@ public class TreeColumn extends Item {
      */
     public TreeColumn(Tree parent, int style) {
         this((ITreeColumn) null);
-        setImpl(new SwtTreeColumn(parent, style, this));
+        setImpl(Config.isEquo(TreeColumn.class, parent) ? new DartTreeColumn(parent, style, this) : new SwtTreeColumn(parent, style, this));
     }
 
     /**
@@ -119,7 +120,7 @@ public class TreeColumn extends Item {
      */
     public TreeColumn(Tree parent, int style, int index) {
         this((ITreeColumn) null);
-        setImpl(new SwtTreeColumn(parent, style, index, this));
+        setImpl(Config.isEquo(TreeColumn.class, parent) ? new DartTreeColumn(parent, style, index, this) : new SwtTreeColumn(parent, style, index, this));
     }
 
     /**

@@ -311,9 +311,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
 
     @Override
     long gtk_enter_notify_event(long widget, long event) {
-        if (parent.getImpl() instanceof SwtControl) {
-            ((SwtControl) parent.getImpl()).gtk_enter_notify_event(widget, event);
-        }
+        ((SwtControl) parent.getImpl()).gtk_enter_notify_event(widget, event);
         return 0;
     }
 
@@ -499,17 +497,11 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
     }
 
     void setForegroundRGBA(GdkRGBA rgba) {
-        if (parent.getImpl() instanceof SwtControl) {
-            ((SwtControl) parent.getImpl()).setForegroundGdkRGBA(getApi().handle, rgba);
-        }
+        ((SwtControl) parent.getImpl()).setForegroundGdkRGBA(getApi().handle, rgba);
         if (labelHandle != 0)
-            if (parent.getImpl() instanceof SwtControl) {
-                ((SwtControl) parent.getImpl()).setForegroundGdkRGBA(labelHandle, rgba);
-            }
+            ((SwtControl) parent.getImpl()).setForegroundGdkRGBA(labelHandle, rgba);
         if (imageHandle != 0)
-            if (parent.getImpl() instanceof SwtControl) {
-                ((SwtControl) parent.getImpl()).setForegroundGdkRGBA(imageHandle, rgba);
-            }
+            ((SwtControl) parent.getImpl()).setForegroundGdkRGBA(imageHandle, rgba);
     }
 
     /**

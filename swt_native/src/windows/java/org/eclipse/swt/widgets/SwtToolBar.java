@@ -1030,8 +1030,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     void setBoundsInPixels(int x, int y, int width, int height, int flags) {
-        if (parent == null || parent.getImpl() instanceof SwtComposite) {
-            /*
+        /*
 	* Feature in Windows.  For some reason, when a tool bar is
 	* repositioned more than once using DeferWindowPos () into
 	* the same HDWP, the toolbar redraws more than once, defeating
@@ -1040,11 +1039,10 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 	* ensuring that only one tool bar position is deferred at
 	* any given time.
 	*/
-            if (((SwtComposite) parent.getImpl()).lpwp != null) {
-                if (getDrawing() && OS.IsWindowVisible(getApi().handle)) {
-                    ((SwtComposite) parent.getImpl()).setResizeChildren(false);
-                    ((SwtComposite) parent.getImpl()).setResizeChildren(true);
-                }
+        if (((SwtComposite) parent.getImpl()).lpwp != null) {
+            if (getDrawing() && OS.IsWindowVisible(getApi().handle)) {
+                ((SwtComposite) parent.getImpl()).setResizeChildren(false);
+                ((SwtComposite) parent.getImpl()).setResizeChildren(true);
             }
         }
         super.setBoundsInPixels(x, y, width, height, flags);
