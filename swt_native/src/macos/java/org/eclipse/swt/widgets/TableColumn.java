@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a column in a table widget.
@@ -74,7 +75,7 @@ public class TableColumn extends Item {
      */
     public TableColumn(Table parent, int style) {
         this((ITableColumn) null);
-        setImpl(new SwtTableColumn(parent, style, this));
+        setImpl(Config.isEquo(TableColumn.class, parent) ? new DartTableColumn(parent, style, this) : new SwtTableColumn(parent, style, this));
     }
 
     /**
@@ -116,7 +117,7 @@ public class TableColumn extends Item {
      */
     public TableColumn(Table parent, int style, int index) {
         this((ITableColumn) null);
-        setImpl(new SwtTableColumn(parent, style, index, this));
+        setImpl(Config.isEquo(TableColumn.class, parent) ? new DartTableColumn(parent, style, index, this) : new SwtTableColumn(parent, style, index, this));
     }
 
     /**

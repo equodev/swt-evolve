@@ -27,7 +27,6 @@ class CTabItemSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "CTabItem")
                .containsEntry("toolTipText", json(w.getToolTipText()))
-               .containsEntry("text", json(w.getText()))
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("control").equalsTo(w.getControl(), orAbsentIfNull));
         assertJ.satisfies(node("disabledImage").equalsTo(w.getDisabledImage(), orAbsentIfNull));

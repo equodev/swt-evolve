@@ -3664,10 +3664,16 @@ public class SwtTable extends SwtComposite implements ITable {
         }
         for (int i = 0; i < columnCount; i++) {
             if (((SwtTableColumn) columns[i].getImpl()).nsColumn.id == aTableColumn) {
-                return ((SwtTableItem) item.getImpl()).createString(i).id;
+                if (item.getImpl() instanceof SwtTableItem) {
+                    return ((SwtTableItem) item.getImpl()).createString(i).id;
+                } else
+                    return 0;
             }
         }
-        return ((SwtTableItem) item.getImpl()).createString(0).id;
+        if (item.getImpl() instanceof SwtTableItem) {
+            return ((SwtTableItem) item.getImpl()).createString(0).id;
+        } else
+            return 0;
     }
 
     @Override
@@ -3728,7 +3734,9 @@ public class SwtTable extends SwtComposite implements ITable {
         event.item = item;
         event.index = (int) rowIndex;
         sendSelectionEvent(SWT.Selection, event, false);
-        ((SwtTableItem) item.getImpl()).redraw(-1);
+        if (item.getImpl() instanceof SwtTableItem) {
+            ((SwtTableItem) item.getImpl()).redraw(-1);
+        }
     }
 
     @Override
@@ -3898,6 +3906,86 @@ public class SwtTable extends SwtComposite implements ITable {
         ignoreSelect = false;
         widget.tile();
         setRedraw(true);
+    }
+
+    public TableItem[] _items() {
+        return items;
+    }
+
+    public TableColumn[] _columns() {
+        return columns;
+    }
+
+    public TableColumn _sortColumn() {
+        return sortColumn;
+    }
+
+    public TableItem _currentItem() {
+        return currentItem;
+    }
+
+    public int _columnCount() {
+        return columnCount;
+    }
+
+    public int _itemCount() {
+        return itemCount;
+    }
+
+    public int _lastIndexOf() {
+        return lastIndexOf;
+    }
+
+    public int _sortDirection() {
+        return sortDirection;
+    }
+
+    public int _selectedRowIndex() {
+        return selectedRowIndex;
+    }
+
+    public boolean _ignoreSelect() {
+        return ignoreSelect;
+    }
+
+    public boolean _fixScrollWidth() {
+        return fixScrollWidth;
+    }
+
+    public boolean _drawExpansion() {
+        return drawExpansion;
+    }
+
+    public boolean _didSelect() {
+        return didSelect;
+    }
+
+    public boolean _preventSelect() {
+        return preventSelect;
+    }
+
+    public boolean _dragDetected() {
+        return dragDetected;
+    }
+
+    public Rectangle _imageBounds() {
+        return imageBounds;
+    }
+
+    public double[] _headerBackground() {
+        return headerBackground;
+    }
+
+    public double[] _headerForeground() {
+        return headerForeground;
+    }
+
+    public boolean _shouldScroll() {
+        return shouldScroll;
+    }
+
+    public boolean _keyDown() {
+        return keyDown;
     }
 
     public Table getApi() {

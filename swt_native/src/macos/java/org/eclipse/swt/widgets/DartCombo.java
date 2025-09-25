@@ -591,7 +591,7 @@ public class DartCombo extends DartComposite implements ICombo {
         if ((getApi().style & SWT.READ_ONLY) != 0) {
         } else {
         }
-        return null;
+        return this.items[index];
     }
 
     /**
@@ -609,7 +609,7 @@ public class DartCombo extends DartComposite implements ICombo {
         if ((getApi().style & SWT.READ_ONLY) != 0) {
         } else {
         }
-        return 0;
+        return this.items != null ? this.items.length : 0;
     }
 
     /**
@@ -1182,6 +1182,7 @@ public class DartCombo extends DartComposite implements ICombo {
      * </ul>
      */
     public void select(int index) {
+        dirty();
         checkWidget();
         int count = getItemCount();
         if (0 <= index && index < count) {
@@ -1194,6 +1195,7 @@ public class DartCombo extends DartComposite implements ICombo {
             }
             ignoreSelection = false;
         }
+        this.selection = new Point(selection.x, selection.y);
     }
 
     @Override
@@ -1299,6 +1301,7 @@ public class DartCombo extends DartComposite implements ICombo {
             }
         }
         ignoreSelection = false;
+        this.items = items;
     }
 
     /**
@@ -1369,11 +1372,11 @@ public class DartCombo extends DartComposite implements ICombo {
     public void setSelection(Point selection) {
         dirty();
         checkWidget();
-        this.selection = selection;
         if (selection == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if ((getApi().style & SWT.READ_ONLY) == 0) {
         }
+        this.selection = selection;
     }
 
     /**
@@ -1481,13 +1484,13 @@ public class DartCombo extends DartComposite implements ICombo {
     public void setVisibleItemCount(int count) {
         dirty();
         checkWidget();
-        this.visibleItemCount = count;
         if (count < 0)
             return;
         if ((getApi().style & SWT.READ_ONLY) != 0) {
             //TODO
         } else {
         }
+        this.visibleItemCount = count;
     }
 
     void updateItems() {

@@ -3,15 +3,9 @@ package dev.equo.swt;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.accessibility.Accessible;
 import org.eclipse.swt.accessibility.SwtAccessible;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.DartImage;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.ImageData;
-import org.eclipse.swt.widgets.Canvas;
-import org.eclipse.swt.widgets.Caret;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.widgets.*;
 import org.eclipse.swt.widgets.Mocks;
-import org.eclipse.swt.widgets.Widget;
 import org.instancio.Instancio;
 import org.instancio.InstancioObjectApi;
 import org.instancio.Select;
@@ -30,7 +24,6 @@ import java.util.Base64;
 import java.util.function.Consumer;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SerializeTestBase {
     private final Settings settings;
@@ -96,7 +89,7 @@ public class SerializeTestBase {
                 .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0)) // Always true
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, Integer.MAX_VALUE))
                 .generate(Select.all(Image.class), gen -> gen.oneOf(createTestImage()));
-        if (!(w instanceof Caret)) {
+        if (!(w instanceof Caret) && !(w instanceof TreeColumn) && !(w instanceof TableColumn)) {
             inst = inst.generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())));
         }
         if (w instanceof Canvas c)

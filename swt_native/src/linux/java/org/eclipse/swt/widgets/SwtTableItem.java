@@ -1451,6 +1451,34 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         }
     }
 
+    public Table _parent() {
+        return parent;
+    }
+
+    public Font _font() {
+        return font;
+    }
+
+    public Font[] _cellFont() {
+        return cellFont;
+    }
+
+    public String[] _strings() {
+        return strings;
+    }
+
+    public boolean _cached() {
+        return cached;
+    }
+
+    public boolean _grayed() {
+        return grayed;
+    }
+
+    public boolean _settingData() {
+        return settingData;
+    }
+
     public TableItem getApi() {
         if (api == null)
             api = TableItem.createApi(this);

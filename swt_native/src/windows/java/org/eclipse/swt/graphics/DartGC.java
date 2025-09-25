@@ -2361,7 +2361,6 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.advanced = advanced;
         if (advanced && data.gdipGraphics != 0)
             return;
         if (advanced) {
@@ -2373,6 +2372,7 @@ public final class DartGC extends DartResource implements IGC {
             if ((data.style & SWT.MIRRORED) != 0) {
             }
         }
+        this.advanced = advanced;
     }
 
     /**
@@ -2407,7 +2407,6 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.antialias = antialias;
         if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT)
             return;
         switch(antialias) {
@@ -2420,6 +2419,7 @@ public final class DartGC extends DartResource implements IGC {
             default:
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        this.antialias = antialias;
     }
 
     /**
@@ -2446,7 +2446,6 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.alpha = alpha;
         if (data.gdipGraphics == 0 && (alpha & 0xFF) == 0xFF)
             return;
         data.alpha = alpha & 0xFF;
@@ -2457,6 +2456,7 @@ public final class DartGC extends DartResource implements IGC {
         if (data.gdipBgPatternBrushAlpha != 0) {
             data.gdipBgPatternBrushAlpha = 0;
         }
+        this.alpha = alpha;
     }
 
     /**
@@ -2478,7 +2478,6 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.background = color;
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
@@ -2488,6 +2487,7 @@ public final class DartGC extends DartResource implements IGC {
         data.backgroundPattern = null;
         data.background = color.handle;
         data.state &= ~(BACKGROUND | BACKGROUND_TEXT);
+        this.background = color;
     }
 
     /**
@@ -2518,7 +2518,6 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.backgroundPattern = pattern;
         if (pattern != null && pattern.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (data.gdipGraphics == 0 && pattern == null)
@@ -2530,6 +2529,7 @@ public final class DartGC extends DartResource implements IGC {
         if (data.gdipBgPatternBrushAlpha != 0) {
             data.gdipBgPatternBrushAlpha = 0;
         }
+        this.backgroundPattern = pattern;
     }
 
     void setClipping(long clipRgn) {
@@ -2546,6 +2546,7 @@ public final class DartGC extends DartResource implements IGC {
             if (hRgn != 0) {
             }
         }
+        this.clipping = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
     }
 
     /**
@@ -2564,7 +2565,6 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setClipping(int x, int y, int width, int height) {
         int deviceZoom = getZoom();
-        this.clipping = new Rectangle(x, y, width, height);
         x = DPIUtil.scaleUp(drawable, x, deviceZoom);
         y = DPIUtil.scaleUp(drawable, y, deviceZoom);
         width = DPIUtil.scaleUp(drawable, width, deviceZoom);
@@ -2576,6 +2576,7 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.clipping = new Rectangle(x, y, width, height);
     }
 
     /**
@@ -2607,7 +2608,6 @@ public final class DartGC extends DartResource implements IGC {
     public void setClipping(Path path) {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.clipping = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
         if (path != null && path.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         setClipping(0);
@@ -2631,7 +2631,6 @@ public final class DartGC extends DartResource implements IGC {
     public void setClipping(Rectangle rect) {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.clipping = rect;
         if (rect == null) {
             setClipping(0);
         } else {
@@ -2659,7 +2658,6 @@ public final class DartGC extends DartResource implements IGC {
     public void setClipping(Region region) {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.clipping = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
         if (region != null && region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
     }
@@ -2684,7 +2682,6 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.fillRule = rule;
         switch(rule) {
             case SWT.FILL_WINDING:
                 break;
@@ -2693,6 +2690,7 @@ public final class DartGC extends DartResource implements IGC {
             default:
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        this.fillRule = rule;
     }
 
     /**
@@ -2714,10 +2712,10 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.font = font;
         if (font != null && font.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         data.state &= ~FONT;
+        this.font = font;
     }
 
     /**
@@ -2738,7 +2736,6 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.foreground = color;
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
@@ -2748,6 +2745,7 @@ public final class DartGC extends DartResource implements IGC {
         data.foregroundPattern = null;
         data.foreground = color.handle;
         data.state &= ~(FOREGROUND | FOREGROUND_TEXT);
+        this.foreground = color;
     }
 
     /**
@@ -2777,7 +2775,6 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.foregroundPattern = pattern;
         if (pattern != null && pattern.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (data.gdipGraphics == 0 && pattern == null)
@@ -2789,6 +2786,7 @@ public final class DartGC extends DartResource implements IGC {
         if (data.gdipFgPatternBrushAlpha != 0) {
             data.gdipFgPatternBrushAlpha = 0;
         }
+        this.foregroundPattern = pattern;
     }
 
     /**
@@ -2821,7 +2819,6 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.interpolation = interpolation;
         if (data.gdipGraphics == 0 && interpolation == SWT.DEFAULT)
             return;
         switch(interpolation) {
@@ -2836,6 +2833,7 @@ public final class DartGC extends DartResource implements IGC {
             default:
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        this.interpolation = interpolation;
     }
 
     /**
@@ -2865,7 +2863,6 @@ public final class DartGC extends DartResource implements IGC {
     public void setLineAttributes(LineAttributes attributes) {
         if (attributes == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.lineAttributes = attributes;
         attributes.width = DPIUtil.scaleUp(drawable, attributes.width, getZoom());
         setLineAttributesInPixels(attributes);
     }
@@ -2968,6 +2965,7 @@ public final class DartGC extends DartResource implements IGC {
         data.lineDashesOffset = dashOffset;
         data.lineMiterLimit = miterLimit;
         data.state &= ~mask;
+        this.lineAttributes = attributes;
     }
 
     /**
@@ -2990,7 +2988,6 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.lineCap = cap;
         if (data.lineCap == cap)
             return;
         switch(cap) {
@@ -3003,6 +3000,7 @@ public final class DartGC extends DartResource implements IGC {
         }
         data.lineCap = cap;
         data.state &= ~LINE_CAP;
+        this.lineCap = cap;
     }
 
     /**
@@ -3050,6 +3048,7 @@ public final class DartGC extends DartResource implements IGC {
         }
         data.state &= ~LINE_STYLE;
         this.lineDash = dashes;
+        this.lineDash = dashes;
     }
 
     /**
@@ -3072,7 +3071,6 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.lineJoin = join;
         if (data.lineJoin == join)
             return;
         switch(join) {
@@ -3085,6 +3083,7 @@ public final class DartGC extends DartResource implements IGC {
         }
         data.lineJoin = join;
         data.state &= ~LINE_JOIN;
+        this.lineJoin = join;
     }
 
     /**
@@ -3106,7 +3105,6 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.lineStyle = lineStyle;
         if (data.lineStyle == lineStyle)
             return;
         switch(lineStyle) {
@@ -3125,6 +3123,7 @@ public final class DartGC extends DartResource implements IGC {
         }
         data.lineStyle = lineStyle;
         data.state &= ~LINE_STYLE;
+        this.lineStyle = lineStyle;
     }
 
     /**
@@ -3149,7 +3148,6 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineWidth(int lineWidth) {
         lineWidth = DPIUtil.scaleUp(drawable, lineWidth, getZoom());
-        this.lineWidth = lineWidth;
         setLineWidthInPixels(lineWidth);
     }
 
@@ -3161,6 +3159,7 @@ public final class DartGC extends DartResource implements IGC {
             return;
         data.lineWidth = lineWidth;
         data.state &= ~(LINE_WIDTH | DRAW_OFFSET);
+        this.lineWidth = lineWidth;
     }
 
     /**
@@ -3216,7 +3215,6 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.textAntialias = antialias;
         if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT)
             return;
         switch(antialias) {
@@ -3229,6 +3227,7 @@ public final class DartGC extends DartResource implements IGC {
             default:
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        this.textAntialias = antialias;
     }
 
     /**
@@ -3261,7 +3260,6 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.transform = transform;
         if (transform != null && transform.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (data.gdipGraphics == 0 && transform == null)
@@ -3269,6 +3267,7 @@ public final class DartGC extends DartResource implements IGC {
         if (transform != null) {
         }
         data.state &= ~DRAW_OFFSET;
+        this.transform = transform;
     }
 
     /**

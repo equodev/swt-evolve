@@ -911,9 +911,9 @@ public class DartToolItem extends DartItem implements IToolItem {
     public void setSelection(boolean selected) {
         dirty();
         checkWidget();
-        this.selection = selected;
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
+        this.selection = selected;
     }
 
     @Override
@@ -1037,7 +1037,6 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setWidth(int width) {
         checkWidget();
-        this.width = width;
         setWidthInPixels(DPIUtil.autoScaleUp(width));
     }
 
@@ -1050,6 +1049,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         resizeHandle(width, (parent.style & SWT.VERTICAL) != 0 ? 6 : 15);
         ((DartToolBar) parent.getImpl()).relayout();
+        this.width = width;
     }
 
     void showWidget(int index) {

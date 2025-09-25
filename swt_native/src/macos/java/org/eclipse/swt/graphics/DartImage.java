@@ -610,6 +610,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             return;
         try {
             if (info.transparentPixel != -1) {
+                {
+                }
             } else if (info.alpha != -1) {
             } else {
             }
@@ -971,14 +973,20 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public void setBackground(Color color) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.background = color;
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         try {
+            final int redOffset, greenOffset, blueOffset;
+            {
+                redOffset = 1;
+                greenOffset = 2;
+                blueOffset = 3;
+            }
         } finally {
         }
+        this.background = color;
     }
 
     /**

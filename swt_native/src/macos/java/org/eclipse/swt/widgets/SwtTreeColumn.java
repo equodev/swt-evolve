@@ -251,14 +251,12 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
         NSTableHeaderCell headerCell = nsColumn.headerCell();
         if (displayText != null) {
             Font font = SwtFont.cocoa_new(display, headerCell.font());
-            /* space between image and text */
-            if (parent.getImpl() instanceof SwtControl) {
-                attrString = ((SwtControl) parent.getImpl()).createString(displayText, font, ((SwtTree) parent.getImpl()).getHeaderForegroundColor().handle, SWT.LEFT, false, (parent.state & DISABLED) == 0, false);
-            }
+            attrString = ((SwtControl) parent.getImpl()).createString(displayText, font, ((SwtTree) parent.getImpl()).getHeaderForegroundColor().handle, SWT.LEFT, false, (parent.state & DISABLED) == 0, false);
             stringSize = attrString.size();
             contentWidth += Math.ceil(stringSize.width);
             if (image != null)
                 contentWidth += MARGIN;
+            /* space between image and text */
         }
         if (((SwtTree) parent.getImpl()).headerBackground != null) {
             // fill header background
@@ -645,15 +643,17 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
             return;
         getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
-        NSOutlineView outlineView = ((NSOutlineView) parent.view);
-        NSTableHeaderView headerView = outlineView.headerView();
-        if (headerView == null)
-            return;
-        index = ((SwtTree) parent.getImpl()).indexOf(nsColumn);
-        NSRect rect = headerView.headerRectOfColumn(index);
-        headerView.setNeedsDisplayInRect(rect);
-        rect = outlineView.rectOfColumn(index);
-        parent.view.setNeedsDisplayInRect(rect);
+        if (parent == null || parent.getImpl() instanceof SwtTree) {
+            NSOutlineView outlineView = ((NSOutlineView) parent.view);
+            NSTableHeaderView headerView = outlineView.headerView();
+            if (headerView == null)
+                return;
+            index = ((SwtTree) parent.getImpl()).indexOf(nsColumn);
+            NSRect rect = headerView.headerRectOfColumn(index);
+            headerView.setNeedsDisplayInRect(rect);
+            rect = outlineView.rectOfColumn(index);
+            parent.view.setNeedsDisplayInRect(rect);
+        }
     }
 
     @Override
@@ -663,12 +663,14 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         super.setImage(image);
-        NSTableHeaderView headerView = ((NSOutlineView) parent.view).headerView();
-        if (headerView == null)
-            return;
-        int index = ((SwtTree) parent.getImpl()).indexOf(nsColumn);
-        NSRect rect = headerView.headerRectOfColumn(index);
-        headerView.setNeedsDisplayInRect(rect);
+        if (parent == null || parent.getImpl() instanceof SwtTree) {
+            NSTableHeaderView headerView = ((NSOutlineView) parent.view).headerView();
+            if (headerView == null)
+                return;
+            int index = ((SwtTree) parent.getImpl()).indexOf(nsColumn);
+            NSRect rect = headerView.headerRectOfColumn(index);
+            headerView.setNeedsDisplayInRect(rect);
+        }
     }
 
     /**
@@ -726,12 +728,14 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
         displayText = new String(buffer, 0, length);
         NSString title = NSString.stringWith(displayText);
         nsColumn.headerCell().setTitle(title);
-        NSTableHeaderView headerView = ((NSOutlineView) parent.view).headerView();
-        if (headerView == null)
-            return;
-        int index = ((SwtTree) parent.getImpl()).indexOf(nsColumn);
-        NSRect rect = headerView.headerRectOfColumn(index);
-        headerView.setNeedsDisplayInRect(rect);
+        if (parent == null || parent.getImpl() instanceof SwtTree) {
+            NSTableHeaderView headerView = ((NSOutlineView) parent.view).headerView();
+            if (headerView == null)
+                return;
+            int index = ((SwtTree) parent.getImpl()).indexOf(nsColumn);
+            NSRect rect = headerView.headerRectOfColumn(index);
+            headerView.setNeedsDisplayInRect(rect);
+        }
     }
 
     /**
@@ -789,6 +793,22 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
     @Override
     String tooltipText() {
         return toolTipText;
+    }
+
+    public Tree _parent() {
+        return parent;
+    }
+
+    public String _toolTipText() {
+        return toolTipText;
+    }
+
+    public String _displayText() {
+        return displayText;
+    }
+
+    public boolean _movable() {
+        return movable;
     }
 
     public TreeColumn getApi() {

@@ -550,17 +550,15 @@ public class SwtToolItem extends SwtItem implements IToolItem {
 	* an image and one is never assigned, this is not a problem.
 	*/
         if ((info.fsStyle & OS.BTNS_SEP) == 0 && info.iImage != OS.I_IMAGENONE) {
-            if (parent.getImpl() instanceof SwtToolBar) {
-                ImageList imageList = ((SwtToolBar) parent.getImpl()).getImageList();
-                ImageList hotImageList = ((SwtToolBar) parent.getImpl()).getHotImageList();
-                ImageList disabledImageList = ((SwtToolBar) parent.getImpl()).getDisabledImageList();
-                if (imageList != null)
-                    imageList.put(info.iImage, null);
-                if (hotImageList != null)
-                    hotImageList.put(info.iImage, null);
-                if (disabledImageList != null)
-                    disabledImageList.put(info.iImage, null);
-            }
+            ImageList imageList = ((SwtToolBar) parent.getImpl()).getImageList();
+            ImageList hotImageList = ((SwtToolBar) parent.getImpl()).getHotImageList();
+            ImageList disabledImageList = ((SwtToolBar) parent.getImpl()).getDisabledImageList();
+            if (imageList != null)
+                imageList.put(info.iImage, null);
+            if (hotImageList != null)
+                hotImageList.put(info.iImage, null);
+            if (disabledImageList != null)
+                disabledImageList.put(info.iImage, null);
         }
     }
 
@@ -1146,88 +1144,86 @@ public class SwtToolItem extends SwtItem implements IToolItem {
         OS.SendMessage(hwnd, OS.TB_GETBUTTONINFO, id, info);
         if (info.iImage == OS.I_IMAGENONE && image == null)
             return;
-        if (parent.getImpl() instanceof SwtToolBar) {
-            ImageList imageList = ((SwtToolBar) parent.getImpl()).getImageList();
-            ImageList hotImageList = ((SwtToolBar) parent.getImpl()).getHotImageList();
-            ImageList disabledImageList = ((SwtToolBar) parent.getImpl()).getDisabledImageList();
-            if (info.iImage == OS.I_IMAGENONE) {
-                Rectangle bounds = DPIUtil.scaleBounds(image.getBounds(), getParent().getImpl().getZoom(), 100);
-                int listStyle = parent.style & SWT.RIGHT_TO_LEFT;
-                if (imageList == null) {
-                    imageList = ((SwtDisplay) display.getImpl()).getImageListToolBar(listStyle, bounds.width, bounds.height, getZoom());
+        ImageList imageList = ((SwtToolBar) parent.getImpl()).getImageList();
+        ImageList hotImageList = ((SwtToolBar) parent.getImpl()).getHotImageList();
+        ImageList disabledImageList = ((SwtToolBar) parent.getImpl()).getDisabledImageList();
+        if (info.iImage == OS.I_IMAGENONE) {
+            Rectangle bounds = DPIUtil.scaleBounds(image.getBounds(), getParent().getImpl().getZoom(), 100);
+            int listStyle = parent.style & SWT.RIGHT_TO_LEFT;
+            if (imageList == null) {
+                imageList = ((SwtDisplay) display.getImpl()).getImageListToolBar(listStyle, bounds.width, bounds.height, getZoom());
+            }
+            if (disabledImageList == null) {
+                disabledImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarDisabled(listStyle, bounds.width, bounds.height, getZoom());
+            }
+            if (hotImageList == null) {
+                hotImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarHot(listStyle, bounds.width, bounds.height, getZoom());
+            }
+            Image disabled = disabledImage;
+            if (disabledImage == null) {
+                if (disabledImage2 != null)
+                    disabledImage2.dispose();
+                disabledImage2 = null;
+                disabled = image;
+                if (!enabled) {
+                    disabled = disabledImage2 = new Image(display, image, SWT.IMAGE_DISABLE);
                 }
-                if (disabledImageList == null) {
-                    disabledImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarDisabled(listStyle, bounds.width, bounds.height, getZoom());
-                }
-                if (hotImageList == null) {
-                    hotImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarHot(listStyle, bounds.width, bounds.height, getZoom());
-                }
-                Image disabled = disabledImage;
-                if (disabledImage == null) {
-                    if (disabledImage2 != null)
-                        disabledImage2.dispose();
-                    disabledImage2 = null;
-                    disabled = image;
-                    if (!enabled) {
-                        disabled = disabledImage2 = new Image(display, image, SWT.IMAGE_DISABLE);
-                    }
-                }
-                /*
+            }
+            /*
 		* Bug in Windows.  When a tool item with the style
 		* BTNS_CHECK or BTNS_CHECKGROUP is selected and then
 		* disabled, the item does not draw using the disabled
 		* image.  The fix is to assign the disabled image in
 		* all image lists.
 		*/
-                Image image2 = image, hot = hotImage;
-                if ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0) {
-                    if (!enabled)
-                        image2 = hot = disabled;
-                }
-                info.iImage = imageList.add(image2);
-                disabledImageList.add(disabled);
-                hotImageList.add(hot != null ? hot : image2);
-                ((SwtToolBar) parent.getImpl()).setImageList(imageList);
-                ((SwtToolBar) parent.getImpl()).setDisabledImageList(disabledImageList);
-                ((SwtToolBar) parent.getImpl()).setHotImageList(hotImageList);
-            } else {
-                Image disabled = null;
-                if (disabledImageList != null) {
-                    if (image != null) {
-                        if (disabledImage2 != null)
-                            disabledImage2.dispose();
-                        disabledImage2 = null;
-                        disabled = disabledImage;
-                        if (disabledImage == null) {
-                            disabled = image;
-                            if (!enabled) {
-                                disabled = disabledImage2 = new Image(display, image, SWT.IMAGE_DISABLE);
-                            }
+            Image image2 = image, hot = hotImage;
+            if ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0) {
+                if (!enabled)
+                    image2 = hot = disabled;
+            }
+            info.iImage = imageList.add(image2);
+            disabledImageList.add(disabled);
+            hotImageList.add(hot != null ? hot : image2);
+            ((SwtToolBar) parent.getImpl()).setImageList(imageList);
+            ((SwtToolBar) parent.getImpl()).setDisabledImageList(disabledImageList);
+            ((SwtToolBar) parent.getImpl()).setHotImageList(hotImageList);
+        } else {
+            Image disabled = null;
+            if (disabledImageList != null) {
+                if (image != null) {
+                    if (disabledImage2 != null)
+                        disabledImage2.dispose();
+                    disabledImage2 = null;
+                    disabled = disabledImage;
+                    if (disabledImage == null) {
+                        disabled = image;
+                        if (!enabled) {
+                            disabled = disabledImage2 = new Image(display, image, SWT.IMAGE_DISABLE);
                         }
                     }
-                    disabledImageList.put(info.iImage, disabled);
                 }
-                /*
+                disabledImageList.put(info.iImage, disabled);
+            }
+            /*
 		* Bug in Windows.  When a tool item with the style
 		* BTNS_CHECK or BTNS_CHECKGROUP is selected and then
 		* disabled, the item does not draw using the disabled
 		* image.  The fix is to use the disabled image in all
 		* image lists.
 		*/
-                Image image2 = image, hot = hotImage;
-                if ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0) {
-                    if (!enabled)
-                        image2 = hot = disabled;
-                }
-                if (imageList != null) {
-                    imageList.put(info.iImage, image2);
-                }
-                if (hotImageList != null) {
-                    hotImageList.put(info.iImage, hot != null ? hot : image2);
-                }
-                if (image == null)
-                    info.iImage = OS.I_IMAGENONE;
+            Image image2 = image, hot = hotImage;
+            if ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0) {
+                if (!enabled)
+                    image2 = hot = disabled;
             }
+            if (imageList != null) {
+                imageList.put(info.iImage, image2);
+            }
+            if (hotImageList != null) {
+                hotImageList.put(info.iImage, hot != null ? hot : image2);
+            }
+            if (image == null)
+                info.iImage = OS.I_IMAGENONE;
         }
         /*
 	* Bug in Windows.  If the width of an item has already been

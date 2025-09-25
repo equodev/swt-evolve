@@ -5,7 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 
-public interface ITable extends IComposite {
+public interface ITable extends IComposite, ImplTable {
 
     /**
      * Adds the listener to the collection of listeners who will

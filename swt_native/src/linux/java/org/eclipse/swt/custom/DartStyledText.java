@@ -8729,7 +8729,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setBlockSelectionBounds(Rectangle rect) {
         checkWidget();
-        this.blockSelectionBounds = rect;
         if (rect == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         setBlockSelectionBounds(rect.x, rect.y, rect.width, rect.height);
@@ -8778,6 +8777,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             locationX = ((locationX + avg / 2 - leftMargin + horizontalScrollOffset) / avg * avg) + leftMargin - horizontalScrollOffset;
         }
         setBlockSelectionLocation(anchorX, anchorY, locationX, locationY, false);
+        this.blockSelectionBounds = new Rectangle(x, y, width, height);
     }
 
     void setBlockSelectionLocation(int x, int y, boolean sendEvent) {
@@ -9330,7 +9330,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setHorizontalIndex(int offset) {
         dirty();
         checkWidget();
-        this.horizontalIndex = offset;
         if (getCharCount() == 0) {
             return;
         }
@@ -9352,6 +9351,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             }
         }
         scrollHorizontal(offset - horizontalScrollOffset, true);
+        this.horizontalIndex = offset;
     }
 
     /**
@@ -10114,7 +10114,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setMouseNavigatorEnabled(boolean enabled) {
         dirty();
         checkWidget();
-        this.mouseNavigatorEnabled = enabled;
         if ((enabled && mouseNavigator != null) || (!enabled && mouseNavigator == null)) {
             return;
         }
@@ -10124,6 +10123,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             mouseNavigator.dispose();
             mouseNavigator = null;
         }
+        this.mouseNavigatorEnabled = enabled;
     }
 
     /**
@@ -10574,6 +10574,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         }
         setSelection(fixedRanges, false, true);
         setCaretLocations();
+        this.selectionRange = new Point(selectionRange.x, selectionRange.y);
+        this.selectionRanges = ranges;
     }
 
     /**
@@ -11040,7 +11042,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setText(String text) {
         dirty();
         checkWidget();
-        this.text = text;
         if (text == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
@@ -11064,6 +11065,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 notifyListeners(ST.ExtendedModify, styledTextEvent);
             }
         }
+        this.text = text;
     }
 
     /**
@@ -11207,7 +11209,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setTopPixel(int pixel) {
         dirty();
         checkWidget();
-        this.topPixel = pixel;
         if (getCharCount() == 0) {
             return;
         }
@@ -11228,6 +11229,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             }
         }
         scrollVertical(pixel, true);
+        this.topPixel = pixel;
     }
 
     /**

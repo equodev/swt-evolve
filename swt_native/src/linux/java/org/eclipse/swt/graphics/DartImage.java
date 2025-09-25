@@ -232,6 +232,13 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (getApi().surface == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
         if (flag != SWT.IMAGE_COPY) {
+            int oa, or, og, ob;
+            {
+                oa = 3;
+                or = 2;
+                og = 1;
+                ob = 0;
+            }
             switch(flag) {
                 case SWT.IMAGE_DISABLE:
                     {
@@ -637,6 +644,13 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         this.getApi().type = type;
         if (getApi().surface == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
+        int oa = 0, or = 0, og = 0, ob = 0;
+        {
+            oa = 3;
+            or = 2;
+            og = 1;
+            ob = 0;
+        }
     }
 
     /**
@@ -645,9 +659,21 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     void createMask() {
         int width = this.width;
         int height = this.height;
+        int oa, or, og, ob, tr, tg, tb;
+        {
+            oa = 3;
+            or = 2;
+            og = 1;
+            ob = 0;
+            tr = (transparentPixel >> 16) & 0xFF;
+            tg = (transparentPixel >> 8) & 0xFF;
+            tb = (transparentPixel >> 0) & 0xFF;
+        }
         int offset = 0;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++, offset += 4) {
+                {
+                }
             }
         }
     }
@@ -819,6 +845,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public ImageData getImageDataAtCurrentZoom() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        int oa, or, og, ob;
+        {
+            oa = 3;
+            or = 2;
+            og = 1;
+            ob = 0;
+        }
+        {
+        }
         return this.imageDataAtCurrentZoom;
     }
 
@@ -885,6 +920,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (getApi().surface == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
         // When we create a blank image we need to set it to 100 in GTK3 as we draw using 100% scale.
+        {
+            currentDeviceZoom = DPIUtil.getDeviceZoom();
+        }
         this.width = width;
         this.height = height;
     }
@@ -907,6 +945,17 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (getApi().surface == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
         int oa = 0, or = 0, og = 0, ob = 0;
+        int redMask, greenMask, blueMask, destOrder;
+        {
+            oa = 3;
+            or = 2;
+            og = 1;
+            ob = 0;
+            redMask = 0xFF0000;
+            greenMask = 0xFF00;
+            blueMask = 0xFF;
+            destOrder = ImageData.LSB_FIRST;
+        }
         byte[] buffer = image.data;
         boolean isIcon = image.getTransparencyType() == SWT.TRANSPARENCY_MASK;
         this.getApi().type = isIcon ? SWT.ICON : SWT.BITMAP;
@@ -1090,13 +1139,13 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public void setBackground(Color color) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.background = color;
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (transparentPixel == -1)
             return;
+        this.background = color;
         //NOT DONE
     }
 

@@ -16,6 +16,7 @@ import java.lang.reflect.Method;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
 
 public class Mocks {
     public static Shell shell() {
@@ -79,6 +80,34 @@ public class Mocks {
         //when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
         return w;
+    }
+
+    public static Table table() {
+        Table w = mock(Table.class);
+        DartTable impl = mock(DartTable.class);
+        when(impl.checkData(any())).thenReturn(true);
+        when(w.getImpl()).thenReturn(impl);
+        when(impl.getBridge()).thenReturn(new MockFlutterBridge());
+        Display display = display();
+        //when(w.getDisplay()).thenReturn(display);
+        when(impl._display()).thenReturn(display);
+        return w;
+    }
+
+    public static Tree tree() {
+        Tree w = mock(Tree.class);
+        DartTree impl = mock(DartTree.class);
+        when(impl.checkData(any())).thenReturn(true);
+        when(w.getImpl()).thenReturn(impl);
+        when(impl.getBridge()).thenReturn(new MockFlutterBridge());
+        Display display = display();
+        //when(w.getDisplay()).thenReturn(display);
+        when(impl._display()).thenReturn(display);
+        return w;
+    }
+
+    public static int index() {
+        return 0;
     }
 
     public static Canvas canvas() {

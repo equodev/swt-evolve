@@ -6,7 +6,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 
-public interface ITable extends IComposite {
+public interface ITable extends IComposite, ImplTable {
 
     void checkSubclass();
 

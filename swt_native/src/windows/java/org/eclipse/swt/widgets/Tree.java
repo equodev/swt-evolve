@@ -20,6 +20,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class provide a selectable user interface object
@@ -115,7 +116,7 @@ public class Tree extends Composite {
      */
     public Tree(Composite parent, int style) {
         this((ITree) null);
-        setImpl(new SwtTree(parent, style, this));
+        setImpl(Config.isEquo(Tree.class, parent) ? new DartTree(parent, style, this) : new SwtTree(parent, style, this));
     }
 
     /**

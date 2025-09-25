@@ -1401,6 +1401,58 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         }
     }
 
+    public Table _parent() {
+        return parent;
+    }
+
+    public String[] _strings() {
+        return strings;
+    }
+
+    public Image[] _images() {
+        return images;
+    }
+
+    public Font _font() {
+        return font;
+    }
+
+    public Font[] _cellFont() {
+        return cellFont;
+    }
+
+    public boolean _checked() {
+        return checked;
+    }
+
+    public boolean _grayed() {
+        return grayed;
+    }
+
+    public boolean _cached() {
+        return cached;
+    }
+
+    public int _imageIndent() {
+        return imageIndent;
+    }
+
+    public int _background() {
+        return background;
+    }
+
+    public int _foreground() {
+        return foreground;
+    }
+
+    public int[] _cellBackground() {
+        return cellBackground;
+    }
+
+    public int[] _cellForeground() {
+        return cellForeground;
+    }
+
     public TableItem getApi() {
         if (api == null)
             api = TableItem.createApi(this);
