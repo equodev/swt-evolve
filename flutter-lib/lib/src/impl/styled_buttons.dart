@@ -543,12 +543,15 @@ class _PushButtonState extends State<PushButton> {
                       ),
                 const SizedBox(width: 6),
               ],
-              Text(
-                stripAccelerators(widget.text ?? ""),
-                style: TextStyle(
-                  color: _isPressed ? selectedTextColor : unselectedTextColor,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 10.0,
+              Transform.translate(
+                offset: const Offset(0, -1.0),
+                child: Text(
+                  stripAccelerators(widget.text ?? ""),
+                  style: TextStyle(
+                    color: _isPressed ? selectedTextColor : unselectedTextColor,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 10.0,
+                  ),
                 ),
               ),
             ],
