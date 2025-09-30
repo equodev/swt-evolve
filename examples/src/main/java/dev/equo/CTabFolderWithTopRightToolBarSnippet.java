@@ -37,6 +37,9 @@ public class CTabFolderWithTopRightToolBarSnippet {
 
         CTabFolder tabFolder = new CTabFolder(shell, SWT.BORDER);
 
+        //tabFolder.setMinimizeVisible(true);
+        //tabFolder.setMaximizeVisible(true);
+
         Composite toolbarComposite = new Composite(tabFolder, SWT.NONE);
         FillLayout toolbarLayout = new FillLayout();
         toolbarLayout.marginHeight = 2;
