@@ -400,14 +400,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    final darkTheme = ThemeData.dark().copyWith(
-      primaryColor: Color(0xFF6366F1),
-      scaffoldBackgroundColor: Color(0xFF1A1A1A),
-    );
-
-    final toolbarTheme = useDarkTheme ? darkTheme : Theme.of(context);
-    final iconColor = toolbarTheme.iconTheme.color;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -417,7 +409,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           child: Icon(
             icon,
             size: AppSizes.controlButtonSize,
-            color: iconColor,
+            color: AppColors.getColor(true),
           ),
         ),
       ),
