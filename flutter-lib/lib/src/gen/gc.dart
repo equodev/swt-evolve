@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../gen/color.dart';
+import '../gen/image.dart';
 import '../gen/rectangle.dart';
 import '../impl/gc_evolve.dart';
 import 'widget.dart';
@@ -24,15 +25,12 @@ abstract class GCState<T extends GCSwt, V extends VGC>
     _registerListeners();
   }
 
-  void _setValue(V value) {
-    state = value!;
-    extraSetState();
-  }
-
   void _registerListeners() {
     onOp("copyArea", (p) => onCopyArea(VGCCopyArea.fromJson(p)));
+    onOp("copyAreaImage", (p) => onCopyAreaImage(VGCCopyAreaImage.fromJson(p)));
     onOp("drawArc", (p) => onDrawArc(VGCDrawArc.fromJson(p)));
     onOp("drawFocus", (p) => onDrawFocus(VGCDrawFocus.fromJson(p)));
+    onOp("drawImage", (p) => onDrawImage(VGCDrawImage.fromJson(p)));
     onOp("drawLine", (p) => onDrawLine(VGCDrawLine.fromJson(p)));
     onOp("drawOval", (p) => onDrawOval(VGCDrawOval.fromJson(p)));
     onOp("drawPoint", (p) => onDrawPoint(VGCDrawPoint.fromJson(p)));
@@ -53,8 +51,10 @@ abstract class GCState<T extends GCSwt, V extends VGC>
   }
 
   void onCopyArea(VGCCopyArea opArgs);
+  void onCopyAreaImage(VGCCopyAreaImage opArgs);
   void onDrawArc(VGCDrawArc opArgs);
   void onDrawFocus(VGCDrawFocus opArgs);
+  void onDrawImage(VGCDrawImage opArgs);
   void onDrawLine(VGCDrawLine opArgs);
   void onDrawOval(VGCDrawOval opArgs);
   void onDrawPoint(VGCDrawPoint opArgs);
@@ -123,6 +123,19 @@ class VGCCopyArea {
 }
 
 @JsonSerializable()
+class VGCCopyAreaImage {
+  VImage? image;
+  int x;
+  int y;
+
+  VGCCopyAreaImage({this.x = 0, this.y = 0});
+
+  factory VGCCopyAreaImage.fromJson(Map<String, dynamic> json) =>
+      _$VGCCopyAreaImageFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCCopyAreaImageToJson(this);
+}
+
+@JsonSerializable()
 class VGCDrawArc {
   int x;
   int y;
@@ -156,6 +169,35 @@ class VGCDrawFocus {
   factory VGCDrawFocus.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawFocusFromJson(json);
   Map<String, dynamic> toJson() => _$VGCDrawFocusToJson(this);
+}
+
+@JsonSerializable()
+class VGCDrawImage {
+  VImage? srcImage;
+  int srcX;
+  int srcY;
+  int srcWidth;
+  int srcHeight;
+  int destX;
+  int destY;
+  int destWidth;
+  int destHeight;
+  bool simple;
+
+  VGCDrawImage(
+      {this.srcX = 0,
+      this.srcY = 0,
+      this.srcWidth = 0,
+      this.srcHeight = 0,
+      this.destX = 0,
+      this.destY = 0,
+      this.destWidth = 0,
+      this.destHeight = 0,
+      this.simple = false});
+
+  factory VGCDrawImage.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawImageFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawImageToJson(this);
 }
 
 @JsonSerializable()

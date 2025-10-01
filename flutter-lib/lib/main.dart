@@ -53,7 +53,10 @@ void main(List<String> args) async {
 void initSwtEvolveProperties() {
   EquoCommService.onRaw("swt.evolve.properties", (dynamic data) {
     try {
-      setConfigFlags(ConfigFlags.fromJson(jsonDecode(data)));
+      print('Flutter received raw data: $data');
+      final configFlags = ConfigFlags.fromJson(jsonDecode(data));
+      print('Flutter parsed ConfigFlags: assets_path=${configFlags.assets_path}');
+      setConfigFlags(configFlags);
     } catch (e) {
       print('Error parsing properties: $e');
     }

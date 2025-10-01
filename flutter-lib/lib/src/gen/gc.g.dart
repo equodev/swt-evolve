@@ -76,6 +76,21 @@ Map<String, dynamic> _$VGCCopyAreaToJson(VGCCopyArea instance) =>
       'paint': instance.paint,
     };
 
+VGCCopyAreaImage _$VGCCopyAreaImageFromJson(Map<String, dynamic> json) =>
+    VGCCopyAreaImage(
+      x: (json['x'] as num?)?.toInt() ?? 0,
+      y: (json['y'] as num?)?.toInt() ?? 0,
+    )..image = json['image'] == null
+        ? null
+        : VImage.fromJson(json['image'] as Map<String, dynamic>);
+
+Map<String, dynamic> _$VGCCopyAreaImageToJson(VGCCopyAreaImage instance) =>
+    <String, dynamic>{
+      'image': instance.image,
+      'x': instance.x,
+      'y': instance.y,
+    };
+
 VGCDrawArc _$VGCDrawArcFromJson(Map<String, dynamic> json) => VGCDrawArc(
       x: (json['x'] as num?)?.toInt() ?? 0,
       y: (json['y'] as num?)?.toInt() ?? 0,
@@ -108,6 +123,34 @@ Map<String, dynamic> _$VGCDrawFocusToJson(VGCDrawFocus instance) =>
       'y': instance.y,
       'width': instance.width,
       'height': instance.height,
+    };
+
+VGCDrawImage _$VGCDrawImageFromJson(Map<String, dynamic> json) => VGCDrawImage(
+      srcX: (json['srcX'] as num?)?.toInt() ?? 0,
+      srcY: (json['srcY'] as num?)?.toInt() ?? 0,
+      srcWidth: (json['srcWidth'] as num?)?.toInt() ?? 0,
+      srcHeight: (json['srcHeight'] as num?)?.toInt() ?? 0,
+      destX: (json['destX'] as num?)?.toInt() ?? 0,
+      destY: (json['destY'] as num?)?.toInt() ?? 0,
+      destWidth: (json['destWidth'] as num?)?.toInt() ?? 0,
+      destHeight: (json['destHeight'] as num?)?.toInt() ?? 0,
+      simple: json['simple'] as bool? ?? false,
+    )..srcImage = json['srcImage'] == null
+        ? null
+        : VImage.fromJson(json['srcImage'] as Map<String, dynamic>);
+
+Map<String, dynamic> _$VGCDrawImageToJson(VGCDrawImage instance) =>
+    <String, dynamic>{
+      'srcImage': instance.srcImage,
+      'srcX': instance.srcX,
+      'srcY': instance.srcY,
+      'srcWidth': instance.srcWidth,
+      'srcHeight': instance.srcHeight,
+      'destX': instance.destX,
+      'destY': instance.destY,
+      'destWidth': instance.destWidth,
+      'destHeight': instance.destHeight,
+      'simple': instance.simple,
     };
 
 VGCDrawLine _$VGCDrawLineFromJson(Map<String, dynamic> json) => VGCDrawLine(

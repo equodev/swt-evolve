@@ -24,8 +24,8 @@ public class Serializer {
 //        Settings.withAnalyzers(false, false)
 //                .with()
         DslJson.Settings<Object> settings = new DslJson.Settings<>()
-            .includeServiceLoader(Serializer.class.getClassLoader())
-            .skipDefaultValues(true);
+                .includeServiceLoader(Serializer.class.getClassLoader())
+                .skipDefaultValues(true);
         dsl = new DslJson<>(settings);
     }
 
@@ -52,7 +52,7 @@ public class Serializer {
         writer.writeByte((byte)',');
         writer.writeByte((byte)'"'); writer.writeAscii(name_swt); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
         Class<? extends Widget> aClass = api.getClass();
-        StringConverter.serialize(Config.getSwtBaseClassName(aClass), writer);
+        StringConverter.serialize(aClass.isAnonymousClass() || !aClass.getPackage().getName().startsWith("org.eclipse.swt") ? Config.getSwtBaseClassName(aClass) : aClass.getSimpleName(), writer);
         writer.writeByte((byte)',');
 //        writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
 //        NumberConverter.serialize(api.getStyle(), writer);

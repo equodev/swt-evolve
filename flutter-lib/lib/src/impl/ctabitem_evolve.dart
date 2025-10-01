@@ -15,6 +15,8 @@ import 'utils/text_utils.dart';
 class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     extends ItemImpl<T, V> {
   final bool useDarkTheme = getCurrentTheme();
+  final shouldShowImage = false;
+
 
   /// Helper method to build an image widget from VImage using ImageUtils
   Widget? _buildImageWidget(VImage? image) {
@@ -41,7 +43,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (imageWidget != null)
+          if (imageWidget != null && shouldShowImage)
             Padding(
               padding: const EdgeInsets.only(bottom: 1.0, right: 3.0),
               child: imageWidget,

@@ -104,14 +104,7 @@ public abstract class FlutterBridge {
 
     private static Display getDisplay(Object w) {
         if (w instanceof DartWidget) return ((DartWidget) w).getDisplay();
-        if (w instanceof DartResource) {
-            Drawable drawable = ((DartGC) w)._drawable();
-            DartWidget widget = null;
-            if (drawable instanceof Canvas) {
-                widget = (DartWidget) ((Canvas) drawable).getImpl();
-            }
-            return widget.getDisplay();
-        }
+        if (w instanceof DartGC) return ((DartGC) w).getDisplay();
         return null;
     }
 

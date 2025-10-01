@@ -234,9 +234,44 @@ final Map<String, IconData> iconMap = {
   'block_selection_mode': Icons.select_all_outlined,
   'run_exc': Icons.play_arrow_outlined,
   'debug_exc': Icons.bug_report_outlined,
+
+  'add_2_lib': Icons.library_add,
+  'print_edit': Icons.print_outlined,
+  'reload': Icons.refresh,
+  'external_tools': Icons.play_arrow_outlined,
+  'new_persp': Icons.view_quilt,
+  'synchronize_communication_settings': Icons.lan_outlined,
+  'virtualize_ieds': FontAwesomeIcons.fileCircleXmark,
+  'implement_ieds': FontAwesomeIcons.fileCirclePlus,
+  'overview': Icons.preview_outlined,
+  'delete_logical_nodes': Icons.delete_forever,
+  'init_connection': FontAwesomeIcons.plugCircleCheck,
+  'connection': FontAwesomeIcons.plug,
+  'remove_connection': FontAwesomeIcons.plugCircleXmark,
+  'dashboard': FontAwesomeIcons.tableColumns,
 };
 
-IconData? getIconByName(String name) => iconMap[name];
+IconData? getIconByName(String name) {
+  // First try direct lookup
+  var icon = iconMap[name];
+  if (icon != null) return icon;
+
+  // If not found, try removing _enabled or _disabled suffixes
+  String baseName = name;
+  if (name.endsWith('_enabled') || name.endsWith('_disabled')) {
+    if (name.endsWith('_enabled')) {
+      baseName = name.substring(0, name.length - '_enabled'.length);
+    } else {
+      baseName = name.substring(0, name.length - '_disabled'.length);
+    }
+
+    // Try lookup with base name
+    icon = iconMap[baseName];
+    if (icon != null) return icon;
+  }
+
+  return null;
+}
 
 /// Normalizes a key:
 /// - Converts to lower case

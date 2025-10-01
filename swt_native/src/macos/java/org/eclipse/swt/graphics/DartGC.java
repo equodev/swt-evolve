@@ -303,16 +303,11 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void copyArea(Image image, int x, int y) {
-        if (image == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (image.type != SWT.BITMAP || image.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-            if (data.image != null) {
-                return;
-            }
-        } finally {
-        }
+        VGCCopyAreaImage drawOp = new VGCCopyAreaImage();
+        drawOp.image = ImageUtils.copyImage(display, image);
+        drawOp.x = x;
+        drawOp.y = y;
+        FlutterBridge.send(this, "copyAreaImage", drawOp);
     }
 
     void copyArea(Image image, int x, int y, long srcImage) {
@@ -530,15 +525,18 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
-        if (simple) {
-        } else {
-        }
-        try {
-            if (srcImage.getImpl()._memGC() != null) {
-                srcImage.getImpl().createAlpha();
-            }
-        } finally {
-        }
+        VGCDrawImage drawOp = new VGCDrawImage();
+        drawOp.srcImage = ImageUtils.copyImage(display, srcImage);
+        drawOp.srcX = srcX;
+        drawOp.srcY = srcY;
+        drawOp.srcWidth = srcWidth;
+        drawOp.srcHeight = srcHeight;
+        drawOp.destX = destX;
+        drawOp.destY = destY;
+        drawOp.destWidth = destWidth;
+        drawOp.destHeight = destHeight;
+        drawOp.simple = simple;
+        FlutterBridge.send(this, "drawImage", drawOp);
     }
 
     /**
@@ -1734,6 +1732,9 @@ public final class DartGC extends DartResource implements IGC {
             data.state &= ~(BACKGROUND);
         if (data.font != null)
             data.state &= ~FONT;
+        else {
+            this.font = data.font = Display.getCurrent().getSystemFont();
+        }
         data.state &= ~DRAW_OFFSET;
         Image image = data.image;
         if (image != null)
@@ -1744,6 +1745,7 @@ public final class DartGC extends DartResource implements IGC {
             DartWidget widget = (DartWidget) ((Canvas) drawable).getImpl();
             if (widget != null) {
                 this.bridge = widget.getBridge();
+                this.display = widget.getDisplay();
             }
         }
     }
@@ -1997,6 +1999,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setBackground(Color color) {
         dirty();
+        this.background = color;
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
@@ -2004,7 +2007,6 @@ public final class DartGC extends DartResource implements IGC {
         data.background = color.handle;
         data.backgroundPattern = null;
         data.state &= ~BACKGROUND;
-        this.background = color;
     }
 
     /**
@@ -2223,6 +2225,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setForeground(Color color) {
         dirty();
+        this.foreground = color;
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
@@ -2230,7 +2233,6 @@ public final class DartGC extends DartResource implements IGC {
         data.foreground = color.handle;
         data.foregroundPattern = null;
         data.state &= ~(FOREGROUND | FOREGROUND_FILL);
-        this.foreground = color;
     }
 
     /**
@@ -2969,6 +2971,12 @@ public final class DartGC extends DartResource implements IGC {
 
     public boolean _xORMode() {
         return xORMode;
+    }
+
+    private Display display;
+
+    public Display getDisplay() {
+        return display;
     }
 
     public GC getApi() {

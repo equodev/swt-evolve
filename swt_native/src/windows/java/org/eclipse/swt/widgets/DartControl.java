@@ -4213,9 +4213,17 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         });
         FlutterBridge.on(this, "Paint", "Paint", e -> {
             getDisplay().asyncExec(() -> {
-                Event event = new Event();
-                event.gc = new GC(this.getApi());
-                sendEvent(SWT.Paint, event);
+                try {
+                    if (!Class.forName("org.eclipse.draw2d.FigureCanvas").isInstance(getApi())) {
+                        Event event = new Event();
+                        event.gc = new GC(this.getApi());
+                        sendEvent(SWT.Paint, event);
+                    }
+                } catch (ClassNotFoundException ex) {
+                    Event event = new Event();
+                    event.gc = new GC(this.getApi());
+                    sendEvent(SWT.Paint, event);
+                }
             });
         });
         FlutterBridge.on(this, "Touch", "Touch", e -> {

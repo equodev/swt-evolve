@@ -4,7 +4,12 @@ version = "0.2.0-SNAPSHOT"
 allprojects {
     repositories {
         mavenCentral()
-        maven(url = "https://dl.equo.dev/sdk/mvn/release")
+        maven {
+            url = uri("https://dl.equo.dev/sdk/mvn/release")
+            content {
+                excludeGroup("org.eclipse")
+            }
+        }
     }
 }
 

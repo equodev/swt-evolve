@@ -413,12 +413,11 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     void copyAreaInPixels(Image image, int x, int y) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (image == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (image.type != SWT.BITMAP || image.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        VGCCopyAreaImage drawOp = new VGCCopyAreaImage();
+        drawOp.image = ImageUtils.copyImage(display, image);
+        drawOp.x = x;
+        drawOp.y = y;
+        FlutterBridge.send(this, "copyAreaImage", drawOp);
     }
 
     /**
@@ -737,26 +736,18 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
-        if (data.gdipGraphics != 0) {
-            if (simple) {
-            } else {
-            }
-            if (data.alpha != 0xFF) {
-            }
-            if ((data.style & SWT.MIRRORED) != 0) {
-            }
-            if ((data.style & SWT.MIRRORED) != 0) {
-            }
-            return;
-        }
-        switch(srcImage.type) {
-            case SWT.BITMAP:
-                drawBitmap(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-                break;
-            case SWT.ICON:
-                drawIcon(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-                break;
-        }
+        VGCDrawImage drawOp = new VGCDrawImage();
+        drawOp.srcImage = ImageUtils.copyImage(display, srcImage);
+        drawOp.srcX = srcX;
+        drawOp.srcY = srcY;
+        drawOp.srcWidth = srcWidth;
+        drawOp.srcHeight = srcHeight;
+        drawOp.destX = destX;
+        drawOp.destY = destY;
+        drawOp.destWidth = destWidth;
+        drawOp.destHeight = destHeight;
+        drawOp.simple = simple;
+        FlutterBridge.send(this, "drawImage", drawOp);
     }
 
     void drawIcon(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
@@ -2225,13 +2216,24 @@ public final class DartGC extends DartResource implements IGC {
         int foreground = data.foreground;
         if (foreground != -1) {
             data.state &= ~(FOREGROUND | FOREGROUND_TEXT | PEN);
+        } else {
+            Color black = new Color(0, 0, 0);
+            data.foreground = black.handle;
+            this.foreground = black;
         }
         int background = data.background;
         if (background != -1) {
             data.state &= ~(BACKGROUND | BACKGROUND_TEXT | BRUSH);
+        } else {
+            Color white = new Color(255, 255, 255);
+            data.background = white.handle;
+            this.background = white;
         }
         if (data.font != null)
             data.state &= ~FONT;
+        else {
+            this.font = data.font = Display.getCurrent().getSystemFont();
+        }
         data.state &= ~DRAW_OFFSET;
         Image image = data.image;
         if (image != null)
@@ -2242,7 +2244,8 @@ public final class DartGC extends DartResource implements IGC {
             DartWidget widget = (DartWidget) ((Canvas) drawable).getImpl();
             if (widget != null) {
                 this.bridge = widget.getBridge();
-                getApi().handle = ((Canvas) drawable).handle;
+                this.display = widget.getDisplay();
+                getApi().handle = 1;
             }
         }
     }
@@ -2478,6 +2481,7 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.background = color;
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
@@ -2487,7 +2491,6 @@ public final class DartGC extends DartResource implements IGC {
         data.backgroundPattern = null;
         data.background = color.handle;
         data.state &= ~(BACKGROUND | BACKGROUND_TEXT);
-        this.background = color;
     }
 
     /**
@@ -2736,6 +2739,7 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        this.foreground = color;
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
@@ -2745,7 +2749,6 @@ public final class DartGC extends DartResource implements IGC {
         data.foregroundPattern = null;
         data.foreground = color.handle;
         data.state &= ~(FOREGROUND | FOREGROUND_TEXT);
-        this.foreground = color;
     }
 
     /**
@@ -3560,6 +3563,12 @@ public final class DartGC extends DartResource implements IGC {
 
     public boolean _xORMode() {
         return xORMode;
+    }
+
+    private Display display;
+
+    public Display getDisplay() {
+        return display;
     }
 
     public GC getApi() {

@@ -1,14 +1,30 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
+import 'dart:typed_data';
+import 'dart:convert';
 import 'package:flutter/widgets.dart';
+import 'package:flutter/services.dart';
 import '../gen/canvas.dart';
 import '../gen/color.dart';
 import '../gen/gc.dart';
+import '../gen/image.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import 'canvas_evolve.dart';
+import './utils/image_utils.dart';
+import 'assets_manager.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter_svg/flutter_svg.dart';
+
 
 class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   List<Shape> shapes = [];
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   Color get bg =>
       _colorFromVColor(state.background, defaultColor: Color(0xFFFFFFFF));
@@ -35,12 +51,19 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     return const Size(100, 100);
   }
 
+  //todo sendPaintPaint should be called everytime gc redraws and also make shapes list empty
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
       size: bounds,
       painter: ScenePainter(List.unmodifiable(shapes)),
     );
+  }
+
+  @override
+  void setValue(V value) {
+    state = value!;
+    extraSetState();
   }
 
   Color _colorFromVColor(VColor? vColor, {required Color defaultColor}) {
@@ -282,8 +305,9 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     final isTransparent = (flags & SWT.DRAW_TRANSPARENT) != 0;
 
     final textStyle = TextStyle(
-      fontSize: 14,
-      fontFamily: "Segoe UI",
+      fontFamily: 'SF Pro Display', // o 'SF Pro Text'
+      fontSize: 12,
+      fontWeight: FontWeight.w700,
       color: applyAlpha(fg),
     );
 
@@ -423,7 +447,9 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       PolygonShape s =>
         s.points.indexed.where((e) => e.$1 % 2 == 0).any((e) => area.contains(
             Offset(s.points[e.$1].toDouble(), s.points[e.$1 + 1].toDouble()))),
+      ImageShape s => s.destRect.overlaps(area),
       _ => true,
+
     };
   }
 
@@ -465,6 +491,15 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
           clipArea),
       FocusRectShape s => FocusRectShape(
           s.rect.translate(offset.dx, offset.dy), s.color, clipArea),
+      ImageShape s when s.type == ImageType.raster => ImageShape.raster(
+          s.image!,
+          s.srcRect!,
+          s.destRect.translate(offset.dx, offset.dy),
+          clipRect: clipArea),
+      ImageShape s when s.type == ImageType.svg => ImageShape.svg(
+          s.pictureInfo!,
+          s.destRect.translate(offset.dx, offset.dy),
+          clipRect: clipArea),
       _ => shape,
     };
   }
@@ -477,6 +512,54 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     }
     return result;
   }
+
+  @override
+  void onCopyAreaImage(VGCCopyAreaImage opArgs) async {
+    if (opArgs.image == null) return;
+    final ui.Image gcImage = await _renderShapesToUiImage(shapes, bounds);
+    final ui.Image? destImage = await ImageUtils.decodeVImageToUIImage(opArgs.image!);
+    if (destImage == null || !mounted) return;
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    canvas.drawImage(destImage, Offset.zero, Paint());
+    canvas.drawImage(gcImage, Offset(opArgs.x.toDouble(), opArgs.y.toDouble()), Paint());
+    final picture = recorder.endRecording();
+    final ui.Image c = await picture.toImage(destImage.width, destImage.height);
+    //todo image must be returned to java or replace the original java image with c
+  }
+
+
+  @override
+  void onDrawImage(VGCDrawImage opArgs) {
+    final capturedClipping = clipping;
+    if (opArgs.srcImage == null) return;
+    _processImageAsync(opArgs.srcImage!, opArgs, capturedClipping);
+  }
+
+  void _processImageAsync(VImage vImage, VGCDrawImage opArgs, Rect? capturedClipping) async {
+    final imageShape = await ImageShape.fromVImage(vImage, opArgs, capturedClipping);
+    if (mounted) {
+      setState(() => shapes = [...shapes, imageShape]);
+    }
+  }
+
+  Future<ui.Image> _renderShapesToUiImage(List<Shape> shapes, Size size) async {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = Color(0xFFFFFFFF),
+    );
+
+    for (final shape in shapes) {
+      shape.draw(canvas);
+    }
+
+    final picture = recorder.endRecording();
+    return picture.toImage(size.width.toInt(), size.height.toInt());
+  }
+
 }
 
 /* ─────────────── ScenePainter ─────────────── */
@@ -488,9 +571,13 @@ class ScenePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(Offset.zero & size, Paint()..color = Color(0xFFFFFFFF));
+    canvas.save();
+    
     for (final s in shapes) {
       s.draw(canvas);
     }
+    
+    canvas.restore();
   }
 
   @override
@@ -956,6 +1043,150 @@ class FocusRectShape extends Shape {
 
   @override
   String toString() => 'FocusRect $rect${clipRect != null ? " [clipped]" : ""}';
+}
+
+enum ImageType { raster, svg }
+
+class ImageShape extends Shape {
+  ImageShape._({
+    required this.type,
+    required this.destRect,
+    this.image,
+    this.srcRect,
+    this.pictureInfo,
+    this.clipRect,
+  });
+
+  factory ImageShape.raster(ui.Image image, Rect srcRect, Rect destRect, {Rect? clipRect}) {
+    return ImageShape._(
+      type: ImageType.raster,
+      image: image,
+      srcRect: srcRect,
+      destRect: destRect,
+      clipRect: clipRect,
+    );
+  }
+
+  factory ImageShape.svg(PictureInfo pictureInfo, Rect destRect, {Rect? clipRect}) {
+    return ImageShape._(
+      type: ImageType.svg,
+      pictureInfo: pictureInfo,
+      destRect: destRect,
+      clipRect: clipRect,
+    );
+  }
+
+  static Future<ImageShape> fromVImage(VImage vImage, VGCDrawImage opArgs, Rect? clipRect) async {
+    Object? replacement;
+    if (vImage.filename != null && vImage.filename!.isNotEmpty) {
+      replacement = await AssetsManager.loadReplacement(vImage.filename!);
+    }
+
+    if (replacement is String) {
+      final pictureInfo = await vg.loadPicture(SvgStringLoader(replacement), null);
+      final destRect = Rect.fromLTWH(
+        (opArgs.destX ?? 0).toDouble(),
+        (opArgs.destY ?? 0).toDouble(),
+        (opArgs.destWidth == -1) ? pictureInfo.size.width : opArgs.destWidth!.toDouble(),
+        (opArgs.destHeight == -1) ? pictureInfo.size.height : opArgs.destHeight!.toDouble(),
+      );
+      return ImageShape.svg(pictureInfo, destRect, clipRect: clipRect);
+    }
+
+    ui.Image? uiImage = replacement as ui.Image? ?? await ImageUtils.decodeVImageToUIImage(vImage);
+    if (uiImage == null) throw Exception('Failed to load image');
+
+    final destRect = Rect.fromLTWH(
+      (opArgs.destX ?? 0).toDouble(),
+      (opArgs.destY ?? 0).toDouble(),
+      (opArgs.destWidth == -1) ? uiImage.width.toDouble() : opArgs.destWidth!.toDouble(),
+      (opArgs.destHeight == -1) ? uiImage.height.toDouble() : opArgs.destHeight!.toDouble(),
+    );
+
+    final srcRect = replacement != null
+        ? Rect.fromLTWH(0, 0, uiImage.width.toDouble(), uiImage.height.toDouble())
+        : Rect.fromLTWH(
+            (opArgs.srcX ?? 0).toDouble(),
+            (opArgs.srcY ?? 0).toDouble(),
+            (opArgs.srcWidth == -1) ? uiImage.width.toDouble() : opArgs.srcWidth!.toDouble(),
+            (opArgs.srcHeight == -1) ? uiImage.height.toDouble() : opArgs.srcHeight!.toDouble(),
+          );
+
+    return ImageShape.raster(uiImage, srcRect, destRect, clipRect: clipRect);
+  }
+
+  static Future<ui.Image> _scaleImage(ui.Image image, int targetWidth, int targetHeight) async {
+    if (image.width == targetWidth && image.height == targetHeight) return image;
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final srcRect = Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
+    final destRect = Rect.fromLTWH(0, 0, targetWidth.toDouble(), targetHeight.toDouble());
+
+    canvas.drawImageRect(image, srcRect, destRect, Paint()..filterQuality = FilterQuality.high..isAntiAlias = true);
+
+    final picture = recorder.endRecording();
+    return picture.toImage(targetWidth, targetHeight);
+  }
+
+
+  final ImageType type;
+  final Rect destRect;
+  final ui.Image? image;
+  final Rect? srcRect;
+  final PictureInfo? pictureInfo;
+  @override
+  final Rect? clipRect;
+
+  @override
+  void draw(Canvas c) {
+    if (clipRect != null) {
+      c.save();
+      c.clipRect(clipRect!);
+    }
+
+    switch (type) {
+      case ImageType.raster:
+        _drawRaster(c);
+      case ImageType.svg:
+        _drawSvg(c);
+    }
+
+    if (clipRect != null) {
+      c.restore();
+    }
+  }
+
+  void _drawRaster(Canvas c) {
+    if (image == null || srcRect == null) return;
+
+    final paint = Paint()
+      ..filterQuality = FilterQuality.high
+      ..isAntiAlias = true;
+
+    c.drawImageRect(image!, srcRect!, destRect, paint);
+  }
+
+  void _drawSvg(Canvas c) {
+    if (pictureInfo == null) return;
+
+    final double scaleX = destRect.width / pictureInfo!.size.width;
+    final double scaleY = destRect.height / pictureInfo!.size.height;
+
+    c.save();
+    c.translate(destRect.left, destRect.top);
+    c.scale(scaleX, scaleY);
+    c.drawPicture(pictureInfo!.picture);
+    c.restore();
+  }
+
+  @override
+  String toString() {
+    return switch (type) {
+      ImageType.raster => 'ImageShape(raster) ${image?.width}x${image?.height} dest:$destRect${clipRect != null ? " [clipped]" : ""}',
+      ImageType.svg => 'ImageShape(svg) dest:$destRect${clipRect != null ? " [clipped]" : ""}',
+    };
+  }
 }
 
 StrokeCap getStrokeCap(int swtCap) {

@@ -45,7 +45,8 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     extraSetState();
   }
 
-  void _setValue(V value) {
+  @protected
+  void setValue(V value) {
     setState(() {
       state = value!;
       extraSetState();
@@ -54,7 +55,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
 
   void _onChange(V payload) {
     print('On Widget Change, payload: $payload');
-    _setValue(payload);
+    setValue(payload);
   }
 
   void extraSetState() {}
