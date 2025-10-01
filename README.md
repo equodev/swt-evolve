@@ -74,20 +74,11 @@ SWT Evolve is currently in an **alpha** stage. This means we are actively develo
 
 Here is the current status of major widgets:
 
-| Widget            | Status                    | Notes                               |
-|-------------------|---------------------------|-------------------------------------|
-| `StyledText`      | ✔️ Implemented            |                                     |
-| `Tree`            | ⚠️ Partially Implemented  | Key features working, more APIs to add. |
-| `CTabFolder`      | ⚠️  Partially Implemented | Basic functionality is solid.       |
-| `Button (Push)`   | ✔️ Implemented            |                                     |
-| `Button (Check)`  | ✔️ Implemented            |                                     |
-| `Button (Toggle)` | ✔️ Implemented            |                                     |
-| `Button (Radio)`  | ⚠️ Partially Implemented  |                                     |
-| `Button (Arrow)`  | ⚠️ Partially Implemented  |                                     |
 | Widget | Status | Notes |
 | --- | --- | --- |
 | `StyledText` | ✔️ Implemented |  |
 | `Tree` | ⚠️ Partially Implemented | Key features working, more APIs to add. |
+| `Table` | ⚠️ Partially Implemented | Key features working, more APIs to add. |
 | `CTabFolder` | ⚠️  Partially Implemented | Basic functionality is solid. |
 | `Button (Push)` | ✔️ Implemented |  |
 | `Button (Check)` | ✔️ Implemented |  |
