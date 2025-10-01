@@ -12,9 +12,9 @@ import org.eclipse.swt.widgets.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JFaceTreeViewerExample extends ApplicationWindow {
+public class TreeWithJFaceTreeViewerExample extends ApplicationWindow {
 
-    public JFaceTreeViewerExample() {
+    public TreeWithJFaceTreeViewerExample() {
         super(null);
     }
 
@@ -85,7 +85,7 @@ public class JFaceTreeViewerExample extends ApplicationWindow {
         Config.useEquo(Tree.class);
         Config.useEquo(TreeItem.class);
         Config.useEquo(TreeColumn.class);
-        JFaceTreeViewerExample window = new JFaceTreeViewerExample();
+        TreeWithJFaceTreeViewerExample window = new TreeWithJFaceTreeViewerExample();
         window.setBlockOnOpen(true);
         window.open();
         Display.getCurrent().dispose();
@@ -94,7 +94,7 @@ public class JFaceTreeViewerExample extends ApplicationWindow {
     @Override
     protected void configureShell(Shell shell) {
         super.configureShell(shell);
-        shell.setText("JFace TreeViewer Example");
+        shell.setText("Tree with JFace TreeViewer Example");
         shell.setSize(400, 300);
     }
 }
