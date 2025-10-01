@@ -9,11 +9,14 @@ public class ConfigFlags {
 
     public boolean image_disable_icons_replacement;
 
+    public String assets_path;
+
     @Override
     public String toString() {
         return "ConfigFlags{" +
                 "ctabfolder_visible_controls=" + ctabfolder_visible_controls +
                 ", image_disable_icons_replacement=" + image_disable_icons_replacement +
+                ", assets_path=" + assets_path +
                 '}';
     }
 }

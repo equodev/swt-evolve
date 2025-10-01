@@ -8,6 +8,7 @@ class ConfigFlags {
 
   bool? ctabfolder_visible_controls;
   bool? image_disable_icons_replacement;
+  String? assets_path;
 
   factory ConfigFlags.fromJson(Map<String, dynamic> json) =>
       _$ConfigFlagsFromJson(json);

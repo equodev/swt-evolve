@@ -10,7 +10,7 @@ import static java.util.Map.entry;
 
 public class Config {
 
-    public enum Impl { eclipse, equo, force_equo }
+    public enum Impl {eclipse, equo, force_equo}
 
     static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.equo.name()));
     static Impl toolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.toolbar", Impl.eclipse.name()));
@@ -23,20 +23,20 @@ public class Config {
     static {
         try {
             equoEnabled = Map.ofEntries(
-                entry(Button.class, Impl.equo),
-                entry(CTabFolder.class, Impl.equo),
-                entry(CTabItem.class, Impl.equo),
-                entry(CTabFolderRenderer.class, Impl.equo),
-                entry(Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo),
-                entry(StyledText.class, Impl.equo),
-                entry(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo),
-                entry(Table.class, Impl.equo),
-                entry(TableItem.class, Impl.equo),
-                entry(TableColumn.class, Impl.equo)
-                //entry(Tree.class, Impl.equo),
-                //entry(TreeItem.class, Impl.equo),
-                //entry(TreeColumn.class, Impl.equo),
-                //entry(Canvas.class, Impl.equo)
+                    entry(Button.class, Impl.equo),
+                    entry(CTabFolder.class, Impl.equo),
+                    entry(CTabItem.class, Impl.equo),
+                    entry(CTabFolderRenderer.class, Impl.equo),
+                    entry(Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo),
+                    entry(StyledText.class, Impl.equo),
+                    entry(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo),
+                    entry(Table.class, Impl.equo),
+                    entry(TableItem.class, Impl.equo),
+                    entry(TableColumn.class, Impl.equo)
+                    //entry(Tree.class, Impl.equo),
+                    //entry(TreeItem.class, Impl.equo),
+                    //entry(TreeColumn.class, Impl.equo),
+                    //entry(Canvas.class, Impl.equo)
             );
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -59,11 +59,11 @@ public class Config {
     }
 
     public static void useEquo(Class<?> clazz) {
-       System.setProperty(getKey(clazz), Impl.equo.name());
+        System.setProperty(getKey(clazz), Impl.equo.name());
     }
 
     public static void useEclipse(Class<?> clazz) {
-       System.setProperty(getKey(clazz), Impl.eclipse.name());
+        System.setProperty(getKey(clazz), Impl.eclipse.name());
     }
 
     public static boolean isEquo(Class<?> clazz) {
@@ -94,13 +94,12 @@ public class Config {
         return false;
     }
 
-    public static boolean isEquo(Class<?> clazz, Drawable parent){
+    public static boolean isEquo(Class<?> clazz, Drawable parent) {
         return parent instanceof Canvas && clazz == GC.class && ((Canvas) parent).getImpl() instanceof DartCanvas;
     }
 
     public static boolean isEquo(Class<?> clazz, Scrollable parent) {
-        if(!isLinux() && clazz == Composite.class && isMainToolbarComposite() && !isMainToolbarCreated) {
-            isMainToolbarCreated = true;
+        if (!isLinux() && clazz == Composite.class && isMainToolbarComposite(clazz, (Composite) parent)) {
             return true;
         }
         if (isEditor(clazz)) {
@@ -123,6 +122,13 @@ public class Config {
         }
         if (isCustomAncestor(parent))
             return true;
+        // Special handling for Canvas: use Equo implementation when created from FigureCanvas
+        if (clazz == Canvas.class) {
+            StackWalker.StackFrame caller = StackWalker.getInstance()
+                    .walk(stream -> stream.skip(2).findFirst().orElse(null));
+            if (caller != null && caller.getClassName().contains("FigureCanvas"))
+                return true;
+        }
         if (isEquo(clazz))
             return true;
         if (parent != null && clazz == Caret.class && parent.getImpl().getClass().getSimpleName().startsWith(DART))
@@ -131,11 +137,12 @@ public class Config {
         return parent != null && parent.getImpl().getClass().getSimpleName().startsWith(DART) && !isCTabFolderBody(clazz, parent);
     }
 
-    private static final String E4_MAIN_TOOLBAR_CLASS  = "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";
+    private static final String E4_MAIN_TOOLBAR_CLASS = "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";
     private static final String E4_MAIN_TOOLBAR_METHOD = "getTrimComposite";
 
-    private static boolean isMainToolbarComposite() {
-        return isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
+    private static boolean isMainToolbarComposite(Class<?> clazz, Composite parent) {
+        String id = getId(clazz, parent);
+        return id.equals("//Shell//-1//Composite//1") && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
     }
 
     private static boolean isCTabFolderBody(Class<?> clazz, Scrollable parent) {
@@ -166,18 +173,18 @@ public class Config {
 
     private static boolean isMainToolbar(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
-        if (id.startsWith("//Shell//-1//Composite//") && (id.endsWith("1") || id.endsWith("2"))) { // it changes on first launch
-            return isInStackTraceAtSkip("org.eclipse.e4.ui.internal.workbench.swt.PartRenderingEngine", 
-                                      "subscribeTopicToBeRendered", 11);
+        if (id.startsWith("//Shell//-1//Composite//") && (id.endsWith("0") || id.endsWith("1") || id.endsWith("2"))) { // it changes on first launch
+            return isInStackTraceAtSkip("org.eclipse.e4.ui.internal.workbench.swt.PartRenderingEngine",
+                    "subscribeTopicToBeRendered", 11);
         }
         return false;
     }
 
-    private static final String EDITOR_CLASS  = "org.eclipse.ui.texteditor.AbstractTextEditor";
+    private static final String EDITOR_CLASS = "org.eclipse.ui.texteditor.AbstractTextEditor";
 
     private static boolean isEditor(Class<?> clazz) {
-        return (clazz == StyledText.class || clazz.getSimpleName().equals("StyledTextRenderer")) && 
-               isInStackTrace(EDITOR_CLASS);
+        return (clazz == StyledText.class || clazz.getSimpleName().equals("StyledTextRenderer")) &&
+                isInStackTrace(EDITOR_CLASS);
     }
 
     private static boolean isInStackTrace(String className) {
@@ -188,22 +195,22 @@ public class Config {
         StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 
         return walker.walk(frames ->
-                frames.anyMatch(f -> className.equals(f.getClassName()) && 
+                frames.anyMatch(f -> className.equals(f.getClassName()) &&
                         (methodName == null || methodName.equals(f.getMethodName())))
         );
     }
 
     private static boolean isInStackTraceAtSkip(String className, String methodName, int skip) {
         StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-        
-        StackWalker.StackFrame frame = walker.walk(stream -> 
+
+        StackWalker.StackFrame frame = walker.walk(stream ->
                 stream.skip(skip).findFirst().orElse(null));
-        
-        return frame != null && className.equals(frame.getClassName()) && 
-               methodName.equals(frame.getMethodName());
+
+        return frame != null && className.equals(frame.getClassName()) &&
+                methodName.equals(frame.getMethodName());
     }
 
-    private static final String E4_CLASS  = "org.eclipse.e4.ui.workbench.renderers.swt.StackRenderer";
+    private static final String E4_CLASS = "org.eclipse.e4.ui.workbench.renderers.swt.StackRenderer";
     private static final String E4_METHOD = "addTopRight";
 
     private static boolean isToolBar() {
@@ -231,6 +238,7 @@ public class Config {
             configFlags = new ConfigFlags();
             configFlags.ctabfolder_visible_controls = Boolean.getBoolean("swt.evolve.ctabfolder_visible_controls");
             configFlags.image_disable_icons_replacement = Boolean.getBoolean("swt.evolve.image_disable_icons_replacement");
+            configFlags.assets_path = System.getProperty("swt.evolve.assets_path");
         }
         return configFlags;
     }
@@ -249,12 +257,12 @@ public class Config {
                 }
                 target = target.getSuperclass();
             }
-            }
+        }
 
         return target.getSimpleName();
-        }
+    }
 
-        private static boolean isLinux() {
-            return os.contains("linux");
-        }
+    private static boolean isLinux() {
+        return os.contains("linux");
+    }
 }

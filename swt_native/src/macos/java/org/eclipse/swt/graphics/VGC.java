@@ -208,6 +208,16 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
+    public static class VGCCopyAreaImage {
+
+        public Image image;
+
+        public int x;
+
+        public int y;
+    }
+
+    @CompiledJson()
     public static class VGCDrawArc {
 
         public int x;
@@ -233,6 +243,30 @@ public class VGC extends VResource {
         public int width;
 
         public int height;
+    }
+
+    @CompiledJson()
+    public static class VGCDrawImage {
+
+        public Image srcImage;
+
+        public int srcX;
+
+        public int srcY;
+
+        public int srcWidth;
+
+        public int srcHeight;
+
+        public int destX;
+
+        public int destY;
+
+        public int destWidth;
+
+        public int destHeight;
+
+        public boolean simple;
     }
 
     @CompiledJson()

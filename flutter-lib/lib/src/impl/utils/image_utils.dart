@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../../gen/image.dart';
 import '../icons_map.dart';
@@ -170,5 +171,25 @@ class ImageUtils {
 
     final bytes = Uint8List.fromList(value);
     return base64Encode(bytes);
+  }
+
+  static Future<ui.Image?> decodeVImageToUIImage(VImage? image) async {
+    if (image?.imageData?.data == null) {
+      return null;
+    }
+
+    try {
+      final data = image!.imageData!.data!;
+      final bytes = data is String
+          ? base64Decode(data as String)
+          : Uint8List.fromList((data as List).cast<int>());
+
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      return frame.image;
+    } catch (e) {
+      print('Error decoding VImage to ui.Image: $e');
+      return null;
+    }
   }
 }

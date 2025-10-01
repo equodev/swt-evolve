@@ -84,6 +84,18 @@ Here is the current status of major widgets:
 | `Button (Toggle)` | ✔️ Implemented            |                                     |
 | `Button (Radio)`  | ⚠️ Partially Implemented  |                                     |
 | `Button (Arrow)`  | ⚠️ Partially Implemented  |                                     |
+| Widget | Status | Notes |
+| --- | --- | --- |
+| `StyledText` | ✔️ Implemented |  |
+| `Tree` | ⚠️ Partially Implemented | Key features working, more APIs to add. |
+| `CTabFolder` | ⚠️  Partially Implemented | Basic functionality is solid. |
+| `Button (Push)` | ✔️ Implemented |  |
+| `Button (Check)` | ✔️ Implemented |  |
+| `Button (Toggle)` | ✔️ Implemented |  |
+| `Button (Radio)` | ⚠️ Partially Implemented |  |
+| `Button (Arrow)` | ⚠️ Partially Implemented |  |
+| `Canvas` | ✔️ Implemented |  |
+| `GC` | ✔️ Implemented | Only supports Canvas. Draw2d implemented for FigureCanvas. |
 
 ---
 
@@ -94,8 +106,11 @@ Our primary mission is the drive towards a stable `1.0` release. The vision for 
 This is an ambitious goal, and our priorities are aggressively focused on making it a reality. The key workstreams are:
 
 ### Core API & Widget Completion
-* [ ] Achieve 100% API coverage for all standard SWT widgets and layouts.
-* [ ] Full support for graphical frameworks, including GEF, GMF, and Draw2D.
+
+- [ ] Achieve 100% API coverage for all standard SWT widgets and layouts.
+- [ ] Full support for graphical frameworks, including GEF, GMF, and Draw2D.
+    - [x]  Draw2d (FigureCanvas) implemented for Windows.
+    - [x]  GC image support added for Windows, MacOS and Linux.
 
 ### Key Features & Milestones
 * [ ] A fully modernized Eclipse IDE experience running flawlessly on SWT Evolve.
@@ -129,12 +144,17 @@ This project is licensed under the [Eclipse Public License 2.0](./LICENSE).
 
 SWT Evolve is a free and open-source project, and we are committed to its growth and success.
 
-For organizations requiring dedicated assistance, Equo Tech, Inc. offers professional services to accelerate your modernization journey and ensure your project's success. Our offerings include:
+For organizations building mission-critical applications, **Equo** offers **Equo Enterprise**—a suite of commercial products and professional services designed to accelerate your modernization journey and ensure project success. Our offerings include:
 
-* **End-to-End Application Modernization:** Comprehensive services to migrate your legacy SWT/Eclipse RCP applications.
-* **Custom Widget Development:** Bespoke UI components tailored to your specific business needs.
-* **Theming & Custom Branding:** Full visual customization, including custom themes and branding, to align the application with your company's style guidelines.
-* **Cloud Migration Strategy:** Expert guidance and implementation to bring your desktop applications to the cloud.
-* **Dedicated Enterprise Support:** Priority support channels, training, and SLAs for mission-critical applications.
+- **End-to-End Application Modernization**: Let our team handle the comprehensive migration of your legacy SWT/Eclipse RCP applications.
+- **Theming & Custom Branding**: ****Full visual customization, including custom themes and branding, to align the application with your company's style guidelines.
+- **Custom Widget Development**: Bespoke UI components tailored to your specific business needs.
+- **Compliance & Accessibility**: Leverage integrated tools to ensure your application meets industry-standard compliance and accessibility (WCAG) requirements.
+- **Equo SDK**: Access powerful middleware and developer tools to build secure, efficient, and scalable Java applications.
+- **Equo Chromium**: Integrate a high-performance, modern Chromium-based browser directly into your Java app.
+- **Signed & Notarized Binaries**: Deploy with confidence using production-ready, signed binaries for all major platforms, including full support for macOS notarization.
+- **Broad Compatibility**: Maintain stability with full support for Eclipse/SWT 3.x & 4.x and guaranteed compatibility with older operating systems.
+- **Dedicated Enterprise Support**: Gain peace of mind with priority support channels, expert training, and defined SLAs for your mission-critical applications.
+- **Cloud Migration Strategy**: Bring your desktop applications to the cloud with expert guidance and an implementation strategy that requires **minimal to no changes to your existing codebase**.
 
-To learn more about how we can help your business succeed with SWT Evolve, please contact our team at **support@equo.dev**.
+Ready to take your project to the next level? Contact our team to learn more about Equo Enterprise at **support@equo.dev**.

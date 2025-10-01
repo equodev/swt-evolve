@@ -42,6 +42,7 @@ public class Mocks {
         when(swtDisplay.isValidThread()).thenReturn(true);
         swtDisplay.thread = Thread.currentThread();
         SwtDisplay.Default =  display;
+        SwtDisplay.register(display);
         when(display.getThread()).thenCallRealMethod();
         when(display.getImpl()).thenReturn(swtDisplay);
         try { // mac only
@@ -49,6 +50,7 @@ public class Mocks {
             when(getSystemColor.invoke(swtDisplay, anyInt())).thenReturn(new Color(10, 10, 10));
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {}
         when(display.getSystemColor(anyInt())).thenReturn(new Color(red(), green(), blue()));
+        when(display.getSystemFont()).thenReturn(mock(org.eclipse.swt.graphics.Font.class));
         when(swtDisplay.getThread()).thenCallRealMethod();
         org.eclipse.swt.graphics.Mocks.device(display, swtDisplay);
         return display;

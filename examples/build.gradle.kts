@@ -4,10 +4,25 @@ plugins {
 }
 
 repositories {
-    mavenCentral()
+    ivy {
+        url = uri("https://download.eclipse.org/releases/2024-12/202412041000/plugins/")
+        name = "Eclipse 2024-12 Plugins"
+        patternLayout {
+            artifact("[organisation].[artifact]_[revision].[ext]")
+        }
+        metadataSources {
+            artifact()
+        }
+        content {
+            includeModule("org.eclipse", "draw2d")
+        }
+    }
     maven {
         url = uri("https://gitlab.com/api/v4/projects/72079350/packages/maven")
         name = "SWT Evolve DEV"
+        content {
+            includeGroup("dev.equo")
+        }
     }
     mavenLocal()
 }
@@ -23,6 +38,8 @@ val currentPlatform = "$currentOs-${if (arch.contains("aarch64") || arch.contain
 tasks.compileJava {
     options.encoding = "UTF-8"
 }
+
+val draw2dVersion = "3.18.0.202411181923"
 
 dependencies {
     if (gradle.parent != null)
@@ -41,6 +58,7 @@ dependencies {
         exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
     }
     implementation("org.eclipse.platform:org.eclipse.text:3.14.0")
+    implementation("org.eclipse:draw2d:$draw2dVersion")
 }
 
 tasks.register<JavaExec>("runExample") {

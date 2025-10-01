@@ -38,7 +38,6 @@ public class StyledTextBridge {
 
         FlutterBridge.onPayload(widget, "RangeModify", payload -> {
             widget.getDisplay().asyncExec(() -> {
-                System.out.println("LLEGA RANGE MODIFY A SWTFLUTTERBRIDGEBASE");
                 StyledTextRenderer renderer = ((DartStyledText) widget)._renderer();
                 DartStyledTextRenderer rendererImpl = (DartStyledTextRenderer) renderer.getImpl();
 
@@ -69,7 +68,6 @@ public class StyledTextBridge {
         });
         FlutterBridge.onPayload(widget, "LineInfoModify", payload -> {
             widget.getDisplay().asyncExec(() -> {
-                System.out.println("LLEGA LINE MODIFY A SWTFLUTTERBRIDGEBASE");
                 StyledTextRenderer renderer = ((DartStyledText) widget)._renderer();
                 DartStyledTextRenderer rendererImpl = (DartStyledTextRenderer) renderer.getImpl();
 

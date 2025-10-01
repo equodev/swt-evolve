@@ -1284,6 +1284,18 @@ public class DartComposite extends DartScrollable implements IComposite {
         return getBridge().container(this);
     }
 
+    public void updateChildren() {
+        if (children == null)
+            return;
+        children = java.util.Arrays.stream(children).filter(child -> child != null && !child.isDisposed()).toArray(Control[]::new);
+    }
+
+    public void dispose() {
+        if (parent.getImpl() instanceof DartComposite p) {
+            p.updateChildren();
+        }
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }
