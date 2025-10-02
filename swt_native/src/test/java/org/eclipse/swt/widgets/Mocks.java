@@ -33,6 +33,7 @@ public class Mocks {
         when(shell.getBackground()).thenReturn(new Color(red(), green(), blue()));
         when(swtShell._display()).thenCallRealMethod();
         when(swtShell._getChildren()).thenReturn(new Control[0]);
+        when(swtShell._getShell()).thenReturn(shell);
         return shell;
     }
 

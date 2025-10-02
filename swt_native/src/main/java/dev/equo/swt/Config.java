@@ -18,7 +18,6 @@ public class Config {
     private static final String os = System.getProperty("os.name").toLowerCase();
     static final Map<Class<?>, Impl> equoEnabled;
     private static boolean toolBarDrawn;
-    private static boolean isMainToolbarCreated = false;
 
     static {
         try {
@@ -99,7 +98,7 @@ public class Config {
     }
 
     public static boolean isEquo(Class<?> clazz, Scrollable parent) {
-        if (!isLinux() && clazz == Composite.class && isMainToolbarComposite(clazz, (Composite) parent)) {
+        if (clazz == Composite.class && isMainToolbarComposite(clazz, (Composite) parent)) {
             return true;
         }
         if (isEditor(clazz)) {
@@ -260,9 +259,5 @@ public class Config {
         }
 
         return target.getSimpleName();
-    }
-
-    private static boolean isLinux() {
-        return os.contains("linux");
     }
 }

@@ -3149,13 +3149,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMaximizeVisible(boolean visible) {
-        dirty();
-        checkWidget();
-        if (showMax == visible)
-            return;
-        // display maximize button
-        showMax = visible;
-        updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
     }
 
     /**
@@ -3223,13 +3216,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMinimizeVisible(boolean visible) {
-        dirty();
-        checkWidget();
-        if (showMin == visible)
-            return;
-        // display minimize button
-        showMin = visible;
-        updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
     }
 
     /**

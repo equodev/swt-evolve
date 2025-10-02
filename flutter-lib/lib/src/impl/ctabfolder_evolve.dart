@@ -124,8 +124,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     final backgroundColor = AppColors.getBackgroundColor();
     final borderColor = AppColors.getBorderColor();
 
-    final showMinimizeButton = state.minimizeVisible ?? false;
-    final showMaximizeButton = state.maximizeVisible ?? false;
+    final showMinimizeButton = state.minimizeVisible ?? true;
+    final showMaximizeButton = state.maximizeVisible ?? true;
     final isMinimized = state.minimized ?? false;
     final isMaximized = state.maximized ?? false;
 
