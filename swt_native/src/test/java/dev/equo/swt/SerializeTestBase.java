@@ -220,6 +220,15 @@ public class SerializeTestBase {
                             .containsEntry("transparentPixel", value.transparentPixel);
             };
         }
+
+        public Consumer<? super Object> equalsTo(Control[] value, Object def) {
+            return n -> {
+                if (value == def || value.length == 0)
+                    assertThatJson(n).node(field).isAbsent();
+                else
+                    assertThatJson(n).node(field).isArray().hasSize(value.length);
+            };
+        }
     }
 
     static final protected Object orAbsentIfNull = null;

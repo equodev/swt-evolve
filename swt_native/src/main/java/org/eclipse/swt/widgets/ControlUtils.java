@@ -6,10 +6,10 @@ public class ControlUtils {
     static void reparent(DartControl control, Composite newParent) {
         removeFromParentChildren(control);
         control.parent = newParent;
-        addToNewParentChildren(control);
+        addToParentChildren(control);
     }
 
-    private static void addToNewParentChildren(DartControl obj) {
+    public static void addToParentChildren(DartControl obj) {
         if (obj.parent.getImpl() instanceof DartComposite p ) {
             Control[] newArray = p.children != null ? Arrays.copyOf(p.children, p.children.length + 1) : new Control[1];
             newArray[newArray.length - 1] = obj.getApi();

@@ -54,14 +54,13 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
 
     @Override
     public void setBounds(DartControl dartControl, Rectangle bounds) {
-        super.setBounds(dartControl, bounds);
-
         if (dartControl.getApi().handle != 0 && bounds != null) {
             // Resize the fixed handle within its parent using SWT's method
             long parent = GTK.gtk_widget_get_parent(dartControl.getApi().handle);
             OS.swt_fixed_move(parent, dartControl.getApi().handle, bounds.x, bounds.y);
             OS.swt_fixed_resize(parent, dartControl.getApi().handle, bounds.width, bounds.height);
         }
+        super.setBounds(dartControl, bounds);
     }
 
     @Override
