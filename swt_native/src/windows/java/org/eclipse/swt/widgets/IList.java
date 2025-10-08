@@ -5,7 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 
-public interface IList extends IScrollable {
+public interface IList extends IScrollable, ImplList {
 
     /**
      * Adds the argument to the end of the receiver's list.

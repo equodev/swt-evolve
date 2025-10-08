@@ -1810,6 +1810,34 @@ public class SwtList extends SwtScrollable implements IList {
         OS.g_free(iter);
     }
 
+    public long _modelHandle() {
+        return modelHandle;
+    }
+
+    public int _topIndex() {
+        return topIndex;
+    }
+
+    public int _selectionCountOnPress() {
+        return selectionCountOnPress;
+    }
+
+    public int _selectionCountOnRelease() {
+        return selectionCountOnRelease;
+    }
+
+    public double _cachedAdjustment() {
+        return cachedAdjustment;
+    }
+
+    public double _currentAdjustment() {
+        return currentAdjustment;
+    }
+
+    public boolean _rowActivated() {
+        return rowActivated;
+    }
+
     public List getApi() {
         if (api == null)
             api = List.createApi(this);

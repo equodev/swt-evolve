@@ -122,14 +122,14 @@ public class SerializeTestBase {
             java.io.InputStream resourceStream = getClass().getClassLoader().getResourceAsStream("collapseall.png");
             if (resourceStream != null) {
                 ImageData imageData = new ImageData(resourceStream);
-                Image image = new Image(null, imageData);
+                Image image = new Image(Mocks.device(), imageData);
                 resourceStream.close();
                 return image;
             }
         } catch (Exception e) {
             // Resource not available, create default image
         }
-        return new Image(null, 16, 16);
+        return new Image(Mocks.device(), 16, 16);
     }
 
     protected void setAll(Image i) {

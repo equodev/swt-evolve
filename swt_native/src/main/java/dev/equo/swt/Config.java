@@ -32,7 +32,8 @@ public class Config {
                     entry(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo),
                     entry(Table.class, Impl.equo),
                     entry(TableItem.class, Impl.equo),
-                    entry(TableColumn.class, Impl.equo)
+                    entry(TableColumn.class, Impl.equo),
+                    entry(List.class, Impl.equo)
                     //entry(Tree.class, Impl.equo),
                     //entry(TreeItem.class, Impl.equo),
                     //entry(TreeColumn.class, Impl.equo),

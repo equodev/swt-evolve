@@ -2008,6 +2008,10 @@ public class SwtList extends SwtScrollable implements IList {
         }
     }
 
+    public boolean _addedUCC() {
+        return addedUCC;
+    }
+
     public List getApi() {
         if (api == null)
             api = List.createApi(this);
