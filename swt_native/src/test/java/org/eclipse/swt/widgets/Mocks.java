@@ -33,7 +33,7 @@ public class Mocks {
         when(shell.getBackground()).thenReturn(new Color(red(), green(), blue()));
         when(swtShell._display()).thenCallRealMethod();
         when(swtShell._getChildren()).thenReturn(new Control[0]);
-        when(swtShell._getShell()).thenReturn(shell);
+        when(swtShell.getShell()).thenReturn(shell);
         return shell;
     }
 
@@ -88,7 +88,7 @@ public class Mocks {
     public static Table table() {
         Table w = mock(Table.class);
         DartTable impl = mock(DartTable.class);
-        when(impl.checkData(any())).thenReturn(true);
+        when(impl.checkData(any(TableItem.class), Mockito.anyBoolean())).thenReturn(true);
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
         Display display = display();
@@ -100,7 +100,7 @@ public class Mocks {
     public static Tree tree() {
         Tree w = mock(Tree.class);
         DartTree impl = mock(DartTree.class);
-        when(impl.checkData(any())).thenReturn(true);
+        when(impl.checkData(any(TreeItem.class), Mockito.anyBoolean())).thenReturn(true);
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
         Display display = display();

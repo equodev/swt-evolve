@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a selectable user interface
@@ -74,7 +75,7 @@ public class List extends Scrollable {
      */
     public List(Composite parent, int style) {
         this((IList) null);
-        setImpl(new SwtList(parent, style, this));
+        setImpl(Config.isEquo(List.class, parent) ? new DartList(parent, style, this) : new SwtList(parent, style, this));
     }
 
     /**

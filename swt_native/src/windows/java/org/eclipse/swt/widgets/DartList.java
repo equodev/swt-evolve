@@ -19,8 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.win32.*;
-import dev.equo.swt.Config;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class represent a selectable user interface
@@ -43,7 +42,12 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class List extends Scrollable {
+public class DartList extends DartScrollable implements IList {
+
+    static final int INSET = 3;
+
+    // indicates whether Bidi UCC were added; 'state & HAS_AUTO_DIRECTION' isn't a sufficient indicator
+    boolean addedUCC = false;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -74,9 +78,8 @@ public class List extends Scrollable {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public List(Composite parent, int style) {
-        this((IList) null);
-        setImpl(Config.isEquo(List.class, parent) ? new DartList(parent, style, this) : new SwtList(parent, style, this));
+    public DartList(Composite parent, int style, List api) {
+        super(parent, checkStyle(style), api);
     }
 
     /**
@@ -98,7 +101,9 @@ public class List extends Scrollable {
      * @see #add(String,int)
      */
     public void add(String string) {
-        getImpl().add(string);
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
     }
 
     /**
@@ -128,7 +133,11 @@ public class List extends Scrollable {
      * @see #add(String)
      */
     public void add(String string, int index) {
-        getImpl().add(string, index);
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (index == -1)
+            error(SWT.ERROR_INVALID_RANGE);
     }
 
     /**
@@ -156,7 +165,21 @@ public class List extends Scrollable {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getImpl().addSelectionListener(listener);
+        addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
+    }
+
+    static int checkStyle(int style) {
+        return checkBits(style, SWT.SINGLE, SWT.MULTI, 0, 0, 0, 0);
+    }
+
+    @Override
+    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+        return Sizes.compute(this);
+    }
+
+    @Override
+    int defaultBackground() {
+        return 0;
     }
 
     /**
@@ -177,7 +200,20 @@ public class List extends Scrollable {
      * </ul>
      */
     public void deselect(int[] indices) {
-        getImpl().deselect(indices);
+        checkWidget();
+        if (indices == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (indices.length == 0)
+            return;
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            for (int index : indices) {
+            }
+            return;
+        }
+        for (int index : indices) {
+            if (index != -1) {
+            }
+        }
     }
 
     /**
@@ -193,7 +229,12 @@ public class List extends Scrollable {
      * </ul>
      */
     public void deselect(int index) {
-        getImpl().deselect(index);
+        checkWidget();
+        if (index == -1)
+            return;
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            return;
+        }
     }
 
     /**
@@ -212,7 +253,14 @@ public class List extends Scrollable {
      * </ul>
      */
     public void deselect(int start, int end) {
-        getImpl().deselect(start, end);
+        checkWidget();
+        if (start > end)
+            return;
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            return;
+        }
+        if (start < 0 && end < 0)
+            return;
     }
 
     /**
@@ -224,7 +272,11 @@ public class List extends Scrollable {
      * </ul>
      */
     public void deselectAll() {
-        getImpl().deselectAll();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+        selection = new int[0];
     }
 
     /**
@@ -239,7 +291,8 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getFocusIndex() {
-        return getImpl().getFocusIndex();
+        checkWidget();
+        return 0;
     }
 
     /**
@@ -258,7 +311,11 @@ public class List extends Scrollable {
      * </ul>
      */
     public String getItem(int index) {
-        return getImpl().getItem(index);
+        checkWidget();
+        if (items == null || index < 0 || index >= items.length) {
+            error(SWT.ERROR_INVALID_RANGE);
+        }
+        return items[index];
     }
 
     /**
@@ -272,7 +329,8 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getItemCount() {
-        return getImpl().getItemCount();
+        checkWidget();
+        return this.items != null ? this.items.length : 0;
     }
 
     /**
@@ -287,7 +345,12 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getItemHeight() {
-        return getImpl().getItemHeight();
+        checkWidget();
+        return DPIUtil.scaleDown(getItemHeightInPixels(), getZoom());
+    }
+
+    int getItemHeightInPixels() {
+        return 0;
     }
 
     /**
@@ -307,7 +370,11 @@ public class List extends Scrollable {
      * </ul>
      */
     public String[] getItems() {
-        return getImpl().getItems();
+        checkWidget();
+        int count = getItemCount();
+        String[] result = new String[count];
+        for (int i = 0; i < count; i++) result[i] = getItem(i);
+        return result;
     }
 
     /**
@@ -327,7 +394,13 @@ public class List extends Scrollable {
      * </ul>
      */
     public String[] getSelection() {
-        return getImpl().getSelection();
+        checkWidget();
+        int[] indices = getSelectionIndices();
+        String[] result = new String[indices.length];
+        for (int i = 0; i < indices.length; i++) {
+            result[i] = getItem(indices[i]);
+        }
+        return result;
     }
 
     /**
@@ -341,7 +414,11 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getSelectionCount() {
-        return getImpl().getSelectionCount();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            return 1;
+        }
+        return this.selection != null ? this.selection.length : 0;
     }
 
     /**
@@ -356,7 +433,11 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getSelectionIndex() {
-        return getImpl().getSelectionIndex();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        }
+        int[] buffer = new int[1];
+        return buffer[0];
     }
 
     /**
@@ -376,7 +457,10 @@ public class List extends Scrollable {
      * </ul>
      */
     public int[] getSelectionIndices() {
-        return getImpl().getSelectionIndices();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        }
+        return this.selection;
     }
 
     /**
@@ -392,7 +476,8 @@ public class List extends Scrollable {
      * </ul>
      */
     public int getTopIndex() {
-        return getImpl().getTopIndex();
+        checkWidget();
+        return this.topIndex;
     }
 
     /**
@@ -415,7 +500,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int indexOf(String string) {
-        return getImpl().indexOf(string);
+        return indexOf(string, 0);
     }
 
     /**
@@ -438,7 +523,27 @@ public class List extends Scrollable {
      * </ul>
      */
     public int indexOf(String string, int start) {
-        return getImpl().indexOf(string, start);
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        /*
+	* Bug in Windows.  For some reason, LB_FINDSTRINGEXACT
+	* will not find empty strings even though it is legal
+	* to insert an empty string into a list.  The fix is
+	* to search the list, an item at a time.
+	*/
+        if (string.length() == 0) {
+            int count = getItemCount();
+            for (int i = start; i < count; i++) {
+                if (string.equals(getItem(i)))
+                    return i;
+            }
+            return -1;
+        }
+        int index = start - 1;
+        do {
+        } while (!string.equals(getItem(index)));
+        return index;
     }
 
     /**
@@ -455,7 +560,13 @@ public class List extends Scrollable {
      * </ul>
      */
     public boolean isSelected(int index) {
-        return getImpl().isSelected(index);
+        checkWidget();
+        return false;
+    }
+
+    @Override
+    boolean isUseWsBorder() {
+        return super.isUseWsBorder() || ((display != null) && ((SwtDisplay) display.getImpl()).useWsBorderList);
     }
 
     /**
@@ -474,7 +585,39 @@ public class List extends Scrollable {
      * </ul>
      */
     public void remove(int[] indices) {
-        getImpl().remove(indices);
+        checkWidget();
+        if (indices == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (indices.length == 0)
+            return;
+        int[] newIndices = new int[indices.length];
+        System.arraycopy(indices, 0, newIndices, 0, indices.length);
+        sort(newIndices);
+        int newWidth = 0;
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
+        }
+        int i = 0, topCount = 0, last = -1;
+        while (i < newIndices.length) {
+            int index = newIndices[i];
+            if (index != last) {
+                char[] buffer = null;
+                int length = 0;
+                if ((getApi().style & SWT.H_SCROLL) != 0) {
+                    buffer = new char[length + 1];
+                }
+                if ((getApi().style & SWT.H_SCROLL) != 0) {
+                }
+                last = index;
+            }
+            i++;
+        }
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
+            setScrollWidth(newWidth, false);
+        }
+        if (topCount > 0) {
+        }
+        if (i < newIndices.length)
+            error(SWT.ERROR_ITEM_NOT_REMOVED);
     }
 
     /**
@@ -492,7 +635,12 @@ public class List extends Scrollable {
      * </ul>
      */
     public void remove(int index) {
-        getImpl().remove(index);
+        checkWidget();
+        char[] buffer = null;
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
+        }
+        if ((getApi().style & SWT.H_SCROLL) != 0)
+            setScrollWidth(buffer, false);
     }
 
     /**
@@ -512,7 +660,28 @@ public class List extends Scrollable {
      * </ul>
      */
     public void remove(int start, int end) {
-        getImpl().remove(start, end);
+        checkWidget();
+        if (start > end)
+            return;
+        int newWidth = 0;
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
+        }
+        int index = start;
+        while (index <= end) {
+            char[] buffer = null;
+            int length = 0;
+            if ((getApi().style & SWT.H_SCROLL) != 0) {
+                buffer = new char[length + 1];
+            }
+            if ((getApi().style & SWT.H_SCROLL) != 0) {
+            }
+            index++;
+        }
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
+            setScrollWidth(newWidth, false);
+        }
+        if (index <= end)
+            error(SWT.ERROR_ITEM_NOT_REMOVED);
     }
 
     /**
@@ -532,7 +701,13 @@ public class List extends Scrollable {
      * </ul>
      */
     public void remove(String string) {
-        getImpl().remove(string);
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        int index = indexOf(string, 0);
+        if (index == -1)
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        remove(index);
     }
 
     /**
@@ -544,7 +719,9 @@ public class List extends Scrollable {
      * </ul>
      */
     public void removeAll() {
-        getImpl().removeAll();
+        checkWidget();
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
+        }
     }
 
     /**
@@ -565,7 +742,13 @@ public class List extends Scrollable {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getImpl().removeSelectionListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Selection, listener);
+        eventTable.unhook(SWT.DefaultSelection, listener);
     }
 
     /**
@@ -591,7 +774,28 @@ public class List extends Scrollable {
      * @see List#setSelection(int[])
      */
     public void select(int[] indices) {
-        getImpl().select(indices);
+        checkWidget();
+        if (indices == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        int length = indices.length;
+        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
+            return;
+        select(indices, false);
+    }
+
+    void select(int[] indices, boolean scroll) {
+        dirty();
+        int i = 0;
+        while (i < indices.length) {
+            int index = indices[i];
+            if (index != -1) {
+                select(index, false);
+            }
+            i++;
+        }
+        if (scroll)
+            showSelection();
+        this.selection = indices;
     }
 
     /**
@@ -607,7 +811,29 @@ public class List extends Scrollable {
      * </ul>
      */
     public void select(int index) {
-        getImpl().select(index);
+        checkWidget();
+        select(index, false);
+    }
+
+    void select(int index, boolean scroll) {
+        dirty();
+        if (index < 0)
+            return;
+        if (scroll) {
+            if ((getApi().style & SWT.SINGLE) != 0) {
+            } else {
+            }
+            return;
+        }
+        int focusIndex = -1;
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+        if ((getApi().style & SWT.MULTI) != 0) {
+            if (focusIndex != -1) {
+            }
+        }
+        this.selection = new int[] { index };
     }
 
     /**
@@ -633,7 +859,30 @@ public class List extends Scrollable {
      * @see List#setSelection(int,int)
      */
     public void select(int start, int end) {
-        getImpl().select(start, end);
+        checkWidget();
+        if (end < 0 || start > end || ((getApi().style & SWT.SINGLE) != 0 && start != end))
+            return;
+        start = Math.max(0, start);
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            select(start, false);
+        } else {
+            select(start, end, false);
+        }
+    }
+
+    void select(int start, int end, boolean scroll) {
+        dirty();
+        /*
+	* Note that when start = end, LB_SELITEMRANGEEX
+	* deselects the item.
+	*/
+        if (start == end) {
+            select(start, scroll);
+            return;
+        }
+        if (scroll)
+            showSelection();
+        this.selection = new int[] { start };
     }
 
     /**
@@ -647,11 +896,21 @@ public class List extends Scrollable {
      * </ul>
      */
     public void selectAll() {
-        getImpl().selectAll();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0)
+            return;
     }
 
+    void setFocusIndex(int index) {
+    }
+
+    @Override
     public void setFont(Font font) {
-        getImpl().setFont(font);
+        dirty();
+        checkWidget();
+        super.setFont(font);
+        if ((getApi().style & SWT.H_SCROLL) != 0)
+            setScrollWidth();
     }
 
     /**
@@ -671,7 +930,16 @@ public class List extends Scrollable {
      * </ul>
      */
     public void setItem(int index, String string) {
-        getImpl().setItem(index, string);
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        int topIndex = getTopIndex();
+        boolean isSelected = isSelected(index);
+        remove(index);
+        add(string, index);
+        if (isSelected)
+            select(index, false);
+        setTopIndex(topIndex);
     }
 
     /**
@@ -689,7 +957,45 @@ public class List extends Scrollable {
      * </ul>
      */
     public void setItems(String... items) {
-        getImpl().setItems(items);
+        dirty();
+        checkWidget();
+        if (items == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        for (String item : items) {
+            if (item == null)
+                error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
+        }
+        int length = items.length;
+        int index = 0;
+        while (index < length) {
+            if ((getApi().style & SWT.H_SCROLL) != 0) {
+            }
+            index++;
+        }
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
+        }
+        if (index < items.length)
+            error(SWT.ERROR_ITEM_NOT_ADDED);
+        this.items = items;
+    }
+
+    /**
+     * Calculates the scroll width depending on the item with the highest width
+     */
+    void setScrollWidth() {
+    }
+
+    void setScrollWidth(char[] buffer, boolean grow) {
+    }
+
+    void setScrollWidth(int newWidth, boolean grow) {
+        newWidth += INSET;
+        if (grow) {
+        } else {
+            setScrollWidth();
+        }
     }
 
     /**
@@ -715,7 +1021,19 @@ public class List extends Scrollable {
      * @see List#select(int[])
      */
     public void setSelection(int[] indices) {
-        getImpl().setSelection(indices);
+        checkWidget();
+        if (indices == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        deselectAll();
+        int length = indices.length;
+        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
+            return;
+        select(indices, true);
+        if ((getApi().style & SWT.MULTI) != 0) {
+            int focusIndex = indices[0];
+            if (focusIndex >= 0)
+                setFocusIndex(focusIndex);
+        }
     }
 
     /**
@@ -742,7 +1060,37 @@ public class List extends Scrollable {
      * @see List#setSelection(int[])
      */
     public void setSelection(String[] items) {
-        getImpl().setSelection(items);
+        checkWidget();
+        if (items == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        deselectAll();
+        int length = items.length;
+        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
+            return;
+        int focusIndex = -1;
+        for (int i = length - 1; i >= 0; --i) {
+            String string = items[i];
+            int index = 0;
+            if (string != null) {
+                int localFocus = -1;
+                while ((index = indexOf(string, index)) != -1) {
+                    if (localFocus == -1)
+                        localFocus = index;
+                    select(index, false);
+                    if ((getApi().style & SWT.SINGLE) != 0 && isSelected(index)) {
+                        showSelection();
+                        return;
+                    }
+                    index++;
+                }
+                if (localFocus != -1)
+                    focusIndex = localFocus;
+            }
+        }
+        if ((getApi().style & SWT.MULTI) != 0) {
+            if (focusIndex >= 0)
+                setFocusIndex(focusIndex);
+        }
     }
 
     /**
@@ -762,7 +1110,13 @@ public class List extends Scrollable {
      * @see List#select(int)
      */
     public void setSelection(int index) {
-        getImpl().setSelection(index);
+        checkWidget();
+        deselectAll();
+        select(index, true);
+        if ((getApi().style & SWT.MULTI) != 0) {
+            if (index >= 0)
+                setFocusIndex(index);
+        }
     }
 
     /**
@@ -788,7 +1142,17 @@ public class List extends Scrollable {
      * @see List#select(int,int)
      */
     public void setSelection(int start, int end) {
-        getImpl().setSelection(start, end);
+        checkWidget();
+        deselectAll();
+        if (end < 0 || start > end || ((getApi().style & SWT.SINGLE) != 0 && start != end))
+            return;
+        start = Math.max(0, start);
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            select(start, true);
+        } else {
+            select(start, end, true);
+            setFocusIndex(start);
+        }
     }
 
     /**
@@ -804,7 +1168,9 @@ public class List extends Scrollable {
      * </ul>
      */
     public void setTopIndex(int index) {
-        getImpl().setTopIndex(index);
+        dirty();
+        checkWidget();
+        this.topIndex = index;
     }
 
     /**
@@ -818,18 +1184,107 @@ public class List extends Scrollable {
      * </ul>
      */
     public void showSelection() {
-        getImpl().showSelection();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+        forceResize();
     }
 
-    protected List(IList impl) {
-        super(impl);
+    @Override
+    void updateMenuLocation(Event event) {
+        Rectangle clientArea = getClientAreaInPixels();
+        int x = clientArea.x, y = clientArea.y;
+        int focusIndex = getFocusIndex();
+        if (focusIndex != -1) {
+            x = Math.min(x, clientArea.x + clientArea.width);
+            y = Math.min(y, clientArea.y + clientArea.height);
+        }
+        Point pt = toDisplayInPixels(x, y);
+        int zoom = getZoom();
+        event.setLocation(DPIUtil.scaleDown(pt.x, zoom), DPIUtil.scaleDown(pt.y, zoom));
     }
 
-    static List createApi(IList impl) {
-        return new List(impl);
+    @Override
+    boolean updateTextDirection(int textDirection) {
+        if (textDirection == AUTO_TEXT_DIRECTION) {
+            /* If auto is already in effect, there's nothing to do. */
+            if ((getApi().state & HAS_AUTO_DIRECTION) != 0)
+                return false;
+            getApi().state |= HAS_AUTO_DIRECTION;
+        } else {
+            getApi().state &= ~HAS_AUTO_DIRECTION;
+            if (!addedUCC) /*(state & HAS_AUTO_DIRECTION) == 0*/
+            {
+                return super.updateTextDirection(textDirection);
+            }
+        }
+        addedUCC = false;
+        return textDirection == AUTO_TEXT_DIRECTION || super.updateTextDirection(textDirection);
     }
 
-    public IList getImpl() {
-        return (IList) super.getImpl();
+    @Override
+    int widgetStyle() {
+        if ((getApi().style & SWT.MULTI) != 0) {
+        }
+        return 0;
+    }
+
+    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
+        if (!(widget instanceof List list)) {
+            return;
+        }
+        if ((list.style & SWT.H_SCROLL) != 0) {
+            // Recalculate the Scroll width, as length of items has changed
+            ((DartList) list.getImpl()).setScrollWidth();
+        }
+    }
+
+    String[] items = new String[0];
+
+    int[] selection = new int[0];
+
+    int topIndex;
+
+    public boolean _addedUCC() {
+        return addedUCC;
+    }
+
+    public String[] _items() {
+        return items;
+    }
+
+    public int[] _selection() {
+        return selection;
+    }
+
+    public int _topIndex() {
+        return topIndex;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                ListHelper.sendSelection(this, e, SWT.DefaultSelection);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                ListHelper.sendSelection(this, e, SWT.Selection);
+            });
+        });
+    }
+
+    public List getApi() {
+        if (api == null)
+            api = List.createApi(this);
+        return (List) api;
+    }
+
+    public VList getValue() {
+        if (value == null)
+            value = new VList(this);
+        return (VList) value;
     }
 }

@@ -1605,6 +1605,30 @@ public class SwtList extends SwtScrollable implements IList {
         }
     }
 
+    public String[] _items() {
+        return items;
+    }
+
+    public int _itemCount() {
+        return itemCount;
+    }
+
+    public boolean _ignoreSelect() {
+        return ignoreSelect;
+    }
+
+    public boolean _didSelect() {
+        return didSelect;
+    }
+
+    public boolean _rowsChanged() {
+        return rowsChanged;
+    }
+
+    public boolean _mouseIsDown() {
+        return mouseIsDown;
+    }
+
     public List getApi() {
         if (api == null)
             api = List.createApi(this);

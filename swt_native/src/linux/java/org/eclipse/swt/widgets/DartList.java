@@ -1,11 +1,93 @@
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
+ *
+ *  SPDX-License-Identifier: EPL-2.0
+ *
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ * *****************************************************************************
+ */
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import dev.equo.swt.*;
 
-public interface IList extends IScrollable, ImplList {
+/**
+ * Instances of this class represent a selectable user interface
+ * object that displays a list of strings and issues notification
+ * when a string is selected.  A list may be single or multi select.
+ * <dl>
+ * <dt><b>Styles:</b></dt>
+ * <dd>SINGLE, MULTI</dd>
+ * <dt><b>Events:</b></dt>
+ * <dd>Selection, DefaultSelection</dd>
+ * </dl>
+ * <p>
+ * Note: Only one of SINGLE and MULTI may be specified.
+ * </p><p>
+ * IMPORTANT: This class is <em>not</em> intended to be subclassed.
+ * </p>
+ *
+ * @see <a href="http://www.eclipse.org/swt/snippets/#list">List snippets</a>
+ * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
+ * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @noextend This class is not intended to be subclassed by clients.
+ */
+public class DartList extends DartScrollable implements IList {
+
+    long modelHandle;
+
+    int topIndex;
+
+    int selectionCountOnPress, selectionCountOnRelease;
+
+    static final int TEXT_COLUMN = 0;
+
+    double cachedAdjustment, currentAdjustment;
+
+    boolean rowActivated;
+
+    /**
+     * Constructs a new instance of this class given its parent
+     * and a style value describing its behavior and appearance.
+     * <p>
+     * The style value is either one of the style constants defined in
+     * class <code>SWT</code> which is applicable to instances of this
+     * class, or must be built by <em>bitwise OR</em>'ing together
+     * (that is, using the <code>int</code> "|" operator) two or more
+     * of those <code>SWT</code> style constants. The class description
+     * lists the style constants that are applicable to the class.
+     * Style bits are also inherited from superclasses.
+     * </p>
+     *
+     * @param parent a composite control which will be the parent of the new instance (cannot be null)
+     * @param style the style of control to construct
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the parent</li>
+     *    <li>ERROR_INVALID_SUBCLASS - if this class is not an allowed subclass</li>
+     * </ul>
+     *
+     * @see SWT#SINGLE
+     * @see SWT#MULTI
+     * @see Widget#checkSubclass
+     * @see Widget#getStyle
+     */
+    public DartList(Composite parent, int style, List api) {
+        super(parent, checkStyle(style), api);
+    }
 
     /**
      * Adds the argument to the end of the receiver's list.
@@ -25,7 +107,11 @@ public interface IList extends IScrollable, ImplList {
      *
      * @see #add(String,int)
      */
-    void add(String string);
+    public void add(String string) {
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+    }
 
     /**
      * Adds the argument to the receiver's list at the given
@@ -53,7 +139,11 @@ public interface IList extends IScrollable, ImplList {
      *
      * @see #add(String)
      */
-    void add(String string, int index);
+    public void add(String string, int index) {
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+    }
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -79,7 +169,34 @@ public interface IList extends IScrollable, ImplList {
      * @see #removeSelectionListener
      * @see SelectionEvent
      */
-    void addSelectionListener(SelectionListener listener);
+    public void addSelectionListener(SelectionListener listener) {
+        addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
+    }
+
+    static int checkStyle(int style) {
+        return checkBits(style, SWT.SINGLE, SWT.MULTI, 0, 0, 0, 0);
+    }
+
+    @Override
+    void createHandle(int index) {
+        // In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
+    }
+
+    @Override
+    int applyThemeBackground() {
+        return -1;
+        /* No Change */
+    }
+
+    @Override
+    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+        return Sizes.compute(this);
+    }
+
+    @Override
+    void deregister() {
+        super.deregister();
+    }
 
     /**
      * Deselects the item at the given zero-relative index in the receiver.
@@ -93,7 +210,9 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void deselect(int index);
+    public void deselect(int index) {
+        checkWidget();
+    }
 
     /**
      * Deselects the items at the given zero-relative indices in the receiver.
@@ -110,7 +229,13 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void deselect(int start, int end);
+    public void deselect(int start, int end) {
+        checkWidget();
+        if (start < 0 && end < 0)
+            return;
+        for (int index = start; index <= end; index++) {
+        }
+    }
 
     /**
      * Deselects the items at the given zero-relative indices in the receiver.
@@ -129,7 +254,13 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void deselect(int[] indices);
+    public void deselect(int[] indices) {
+        checkWidget();
+        if (indices == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        for (int i = 0; i < indices.length; i++) {
+        }
+    }
 
     /**
      * Deselects all selected items in the receiver.
@@ -139,7 +270,20 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void deselectAll();
+    public void deselectAll() {
+        checkWidget();
+        selection = new int[0];
+    }
+
+    @Override
+    boolean dragDetect(int x, int y, boolean filter, boolean dragOnTimeout, boolean[] consume) {
+        return false;
+    }
+
+    @Override
+    long eventWindow() {
+        return paintWindow();
+    }
 
     /**
      * Returns the zero-relative index of the item which currently
@@ -152,7 +296,14 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int getFocusIndex();
+    public int getFocusIndex() {
+        checkWidget();
+        long[] path = new long[1];
+        if (path[0] == 0)
+            return -1;
+        int[] index = new int[] { -1 };
+        return index[0];
+    }
 
     /**
      * Returns the item at the given, zero-relative index in the
@@ -169,7 +320,13 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    String getItem(int index);
+    public String getItem(int index) {
+        checkWidget();
+        if (items == null || index < 0 || index >= items.length) {
+            error(SWT.ERROR_INVALID_RANGE);
+        }
+        return items[index];
+    }
 
     /**
      * Returns the number of items contained in the receiver.
@@ -181,7 +338,10 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int getItemCount();
+    public int getItemCount() {
+        checkWidget();
+        return this.items != null ? this.items.length : 0;
+    }
 
     /**
      * Returns the height of the area which would be used to
@@ -194,7 +354,22 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int getItemHeight();
+    public int getItemHeight() {
+        checkWidget();
+        return DPIUtil.autoScaleDown(getItemHeightInPixels());
+    }
+
+    int getItemHeightInPixels() {
+        checkWidget();
+        final int BASE_ITEM_PADDING = 1;
+        int[] h = new int[1];
+        // By default, the item has a base vertical padding around the text
+        int height = h[0] + BASE_ITEM_PADDING * 2;
+        int[] ypad = new int[1];
+        // Add additional top & bottom padding set by the cell renderer
+        height += ypad[0] * 2;
+        return height;
+    }
 
     /**
      * Returns a (possibly empty) array of <code>String</code>s which
@@ -212,7 +387,10 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    String[] getItems();
+    public String[] getItems() {
+        checkWidget();
+        return this.items;
+    }
 
     /**
      * Returns an array of <code>String</code>s that are currently
@@ -230,7 +408,15 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    String[] getSelection();
+    public String[] getSelection() {
+        checkWidget();
+        int[] indices = getSelectionIndices();
+        String[] result = new String[indices.length];
+        for (int i = 0; i < indices.length; i++) {
+            result[i] = getItem(indices[i]);
+        }
+        return result;
+    }
 
     /**
      * Returns the number of selected items contained in the receiver.
@@ -242,7 +428,10 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int getSelectionCount();
+    public int getSelectionCount() {
+        checkWidget();
+        return this.selection != null ? this.selection.length : 0;
+    }
 
     /**
      * Returns the zero-relative index of the item which is currently
@@ -255,7 +444,10 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int getSelectionIndex();
+    public int getSelectionIndex() {
+        checkWidget();
+        return -1;
+    }
 
     /**
      * Returns the zero-relative indices of the items which are currently
@@ -273,7 +465,15 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int[] getSelectionIndices();
+    public int[] getSelectionIndices() {
+        checkWidget();
+        return new int[0];
+    }
+
+    long getTextRenderer(long column) {
+        long textRenderer = 0;
+        return textRenderer;
+    }
 
     /**
      * Returns the zero-relative index of the item which is currently
@@ -287,7 +487,52 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int getTopIndex();
+    public int getTopIndex() {
+        checkWidget();
+        if (cachedAdjustment == currentAdjustment) {
+            if (Device.DEBUG) {
+                System.out.println("Using the cached GtkAdjustment, topIndex is " + topIndex);
+            }
+            return topIndex;
+        } else {
+            long[] path = new long[1];
+            if (path[0] == 0)
+                return 0;
+            int[] index = new int[1];
+            if (Device.DEBUG) {
+                System.out.println("Fetching the top index from GTK, topIndex is " + index[0]);
+            }
+            return index[0];
+        }
+    }
+
+    /**
+     * Used to emulate DefaultSelection event. See Bug 312568.
+     * @param event the gtk key press event that was fired.
+     */
+    void keyPressDefaultSelectionHandler(long event, int key) {
+    }
+
+    /**
+     * Used to emulate DefaultSelection event. See Bug 312568.
+     * Feature in GTK. 'row-activation' event comes before DoubleClick event.
+     * This is causing the editor not to get focus after double-click.
+     * The solution is to manually send the DefaultSelection event after a double-click,
+     * and to emulate it for Space/Return.
+     */
+    void sendTreeDefaultSelection() {
+        //Note, similar DefaultSelectionHandling in SWT List/Table/Tree
+        Event event = new Event();
+        event.index = this.getFocusIndex();
+        if (event.index >= 0)
+            event.text = this.getItem(event.index);
+        sendSelectionEvent(SWT.DefaultSelection, event, false);
+    }
+
+    @Override
+    void hookEvents() {
+        super.hookEvents();
+    }
 
     /**
      * Gets the index of an item.
@@ -308,7 +553,10 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int indexOf(String string);
+    public int indexOf(String string) {
+        checkWidget();
+        return indexOf(string, 0);
+    }
 
     /**
      * Searches the receiver's list starting at the given,
@@ -329,7 +577,17 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    int indexOf(String string, int start);
+    public int indexOf(String string, int start) {
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        String[] items = getItems();
+        for (int i = start; i < items.length; i++) {
+            if (items[i].equals(string))
+                return i;
+        }
+        return -1;
+    }
 
     /**
      * Returns <code>true</code> if the item is selected,
@@ -344,7 +602,26 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    boolean isSelected(int index);
+    public boolean isSelected(int index) {
+        checkWidget();
+        return false;
+    }
+
+    @Override
+    long paintWindow() {
+        return 0;
+    }
+
+    @Override
+    void register() {
+        super.register();
+    }
+
+    @Override
+    void releaseWidget() {
+        super.releaseWidget();
+        modelHandle = 0;
+    }
 
     /**
      * Removes the item from the receiver at the given
@@ -360,7 +637,9 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void remove(int index);
+    public void remove(int index) {
+        checkWidget();
+    }
 
     /**
      * Removes the items from the receiver which are
@@ -378,7 +657,13 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void remove(int start, int end);
+    public void remove(int start, int end) {
+        checkWidget();
+        if (start > end)
+            return;
+        for (int index = end; index >= start; index--) {
+        }
+    }
 
     /**
      * Searches the receiver's list starting at the first item
@@ -396,7 +681,15 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void remove(String string);
+    public void remove(String string) {
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        int index = indexOf(string, 0);
+        if (index == -1)
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        remove(index);
+    }
 
     /**
      * Removes the items from the receiver at the given
@@ -413,7 +706,28 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void remove(int[] indices);
+    public void remove(int[] indices) {
+        checkWidget();
+        if (indices == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (indices.length == 0)
+            return;
+        int[] newIndices = new int[indices.length];
+        System.arraycopy(indices, 0, newIndices, 0, indices.length);
+        sort(newIndices);
+        int start = newIndices[newIndices.length - 1], end = newIndices[0];
+        int count = getItemCount();
+        if (!(0 <= start && start <= end && end < count)) {
+            error(SWT.ERROR_INVALID_RANGE);
+        }
+        int last = -1;
+        for (int i = 0; i < newIndices.length; i++) {
+            int index = newIndices[i];
+            if (index != last) {
+                last = index;
+            }
+        }
+    }
 
     /**
      * Removes all of the items from the receiver.
@@ -423,7 +737,9 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void removeAll();
+    public void removeAll() {
+        checkWidget();
+    }
 
     /**
      * Removes the listener from the collection of listeners who will
@@ -442,7 +758,15 @@ public interface IList extends IScrollable, ImplList {
      * @see SelectionListener
      * @see #addSelectionListener
      */
-    void removeSelectionListener(SelectionListener listener);
+    public void removeSelectionListener(SelectionListener listener) {
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Selection, listener);
+        eventTable.unhook(SWT.DefaultSelection, listener);
+    }
 
     /**
      * Selects the item at the given zero-relative index in the receiver's
@@ -456,7 +780,13 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void select(int index);
+    public void select(int index) {
+        dirty();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        }
+        this.selection = new int[] { index };
+    }
 
     /**
      * Selects the items in the range specified by the given zero-relative
@@ -480,7 +810,18 @@ public interface IList extends IScrollable, ImplList {
      *
      * @see List#setSelection(int,int)
      */
-    void select(int start, int end);
+    public void select(int start, int end) {
+        dirty();
+        checkWidget();
+        if (end < 0 || start > end || ((getApi().style & SWT.SINGLE) != 0 && start != end))
+            return;
+        start = Math.max(0, start);
+        for (int index = start; index <= end; index++) {
+            if ((getApi().style & SWT.SINGLE) != 0) {
+            }
+        }
+        this.selection = new int[] { start };
+    }
 
     /**
      * Selects the items at the given zero-relative indices in the receiver.
@@ -504,7 +845,20 @@ public interface IList extends IScrollable, ImplList {
      *
      * @see List#setSelection(int[])
      */
-    void select(int[] indices);
+    public void select(int[] indices) {
+        dirty();
+        checkWidget();
+        if (indices == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        int length = indices.length;
+        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
+            return;
+        for (int i = 0; i < length; i++) {
+            if ((getApi().style & SWT.SINGLE) != 0) {
+            }
+        }
+        this.selection = indices;
+    }
 
     /**
      * Selects all of the items in the receiver.
@@ -516,7 +870,20 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void selectAll();
+    public void selectAll() {
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0)
+            return;
+    }
+
+    void selectFocusIndex(int index) {
+    }
+
+    @Override
+    int setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
+        int result = super.setBounds(x, y, width, height, move, resize);
+        return result;
+    }
 
     /**
      * Sets the text of the item in the receiver's list at the given
@@ -534,7 +901,11 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setItem(int index, String string);
+    public void setItem(int index, String string) {
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+    }
 
     /**
      * Sets the receiver's items to be the given array of items.
@@ -550,7 +921,19 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setItems(String... items);
+    public void setItems(String... items) {
+        dirty();
+        checkWidget();
+        if (items == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] == null)
+                error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        for (int i = 0; i < items.length; i++) {
+        }
+        this.items = items;
+    }
 
     /**
      * Selects the item at the given zero-relative index in the receiver.
@@ -568,7 +951,14 @@ public interface IList extends IScrollable, ImplList {
      * @see List#deselectAll()
      * @see List#select(int)
      */
-    void setSelection(int index);
+    public void setSelection(int index) {
+        dirty();
+        checkWidget();
+        deselectAll();
+        selectFocusIndex(index);
+        showSelection();
+        this.selection = new int[] { index };
+    }
 
     /**
      * Selects the items in the range specified by the given zero-relative
@@ -592,7 +982,18 @@ public interface IList extends IScrollable, ImplList {
      * @see List#deselectAll()
      * @see List#select(int,int)
      */
-    void setSelection(int start, int end);
+    public void setSelection(int start, int end) {
+        checkWidget();
+        deselectAll();
+        if (end < 0 || start > end || ((getApi().style & SWT.SINGLE) != 0 && start != end))
+            return;
+        start = Math.max(0, start);
+        selectFocusIndex(start);
+        if ((getApi().style & SWT.MULTI) != 0) {
+            select(start, end);
+        }
+        showSelection();
+    }
 
     /**
      * Selects the items at the given zero-relative indices in the receiver.
@@ -616,7 +1017,20 @@ public interface IList extends IScrollable, ImplList {
      * @see List#deselectAll()
      * @see List#select(int[])
      */
-    void setSelection(int[] indices);
+    public void setSelection(int[] indices) {
+        checkWidget();
+        if (indices == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        deselectAll();
+        int length = indices.length;
+        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
+            return;
+        selectFocusIndex(indices[0]);
+        if ((getApi().style & SWT.MULTI) != 0) {
+            select(indices);
+        }
+        showSelection();
+    }
 
     /**
      * Sets the receiver's selection to be the given array of items.
@@ -641,7 +1055,37 @@ public interface IList extends IScrollable, ImplList {
      * @see List#select(int[])
      * @see List#setSelection(int[])
      */
-    void setSelection(String[] items);
+    public void setSelection(String[] items) {
+        checkWidget();
+        if (items == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        deselectAll();
+        int length = items.length;
+        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
+            return;
+        boolean first = true;
+        for (int i = 0; i < length; i++) {
+            int index = 0;
+            String string = items[i];
+            if (string != null) {
+                while ((index = indexOf(string, index)) != -1) {
+                    if ((getApi().style & SWT.MULTI) != 0) {
+                        if (first) {
+                            first = false;
+                            selectFocusIndex(index);
+                        } else {
+                            select(index);
+                        }
+                    } else {
+                        selectFocusIndex(index);
+                        break;
+                    }
+                    index++;
+                }
+            }
+        }
+        showSelection();
+    }
 
     /**
      * Sets the zero-relative index of the item which is currently
@@ -655,7 +1099,11 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void setTopIndex(int index);
+    public void setTopIndex(int index) {
+        dirty();
+        checkWidget();
+        topIndex = index;
+    }
 
     /**
      * Shows the selection.  If the selection is already showing in the receiver,
@@ -667,7 +1115,76 @@ public interface IList extends IScrollable, ImplList {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
-    void showSelection();
+    public void showSelection() {
+        checkWidget();
+        int index = getSelectionIndex();
+        if (index == -1)
+            return;
+    }
 
-    List getApi();
+    String[] items = new String[0];
+
+    int[] selection = new int[0];
+
+    public long _modelHandle() {
+        return modelHandle;
+    }
+
+    public int _topIndex() {
+        return topIndex;
+    }
+
+    public int _selectionCountOnPress() {
+        return selectionCountOnPress;
+    }
+
+    public int _selectionCountOnRelease() {
+        return selectionCountOnRelease;
+    }
+
+    public double _cachedAdjustment() {
+        return cachedAdjustment;
+    }
+
+    public double _currentAdjustment() {
+        return currentAdjustment;
+    }
+
+    public boolean _rowActivated() {
+        return rowActivated;
+    }
+
+    public String[] _items() {
+        return items;
+    }
+
+    public int[] _selection() {
+        return selection;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                ListHelper.sendSelection(this, e, SWT.DefaultSelection);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                ListHelper.sendSelection(this, e, SWT.Selection);
+            });
+        });
+    }
+
+    public List getApi() {
+        if (api == null)
+            api = List.createApi(this);
+        return (List) api;
+    }
+
+    public VList getValue() {
+        if (value == null)
+            value = new VList(this);
+        return (VList) value;
+    }
 }

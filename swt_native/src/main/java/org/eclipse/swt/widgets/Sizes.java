@@ -84,4 +84,21 @@ public class Sizes {
     public static Point compute(DartTable c) {
         return new Point(c.getColumnCount() * 70, c.getItemCount() * 20);
     }
+
+    public static Point compute(DartList c) {
+        int maxLength = 0;
+        String[] items = c._items();
+        if (items != null) {
+            for (String item : items) {
+                if (item != null && item.length() > maxLength) {
+                    maxLength = item.length();
+                }
+            }
+        }
+
+        int width = maxLength > 0 ? (int)(maxLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING) : 100;
+        int height = c.getItemCount() * 24;
+
+        return new Point(width, height);
+    }
 }

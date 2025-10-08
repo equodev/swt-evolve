@@ -12,26 +12,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     extends ControlImpl<T, V> {
   final bool useDarkTheme = getCurrentTheme();
 
-  Color? getSwtBackgroundColor(BuildContext context) {
-    var swtBackground = state.background;
-    if (swtBackground != null) {
-      return Color.fromARGB(
-        swtBackground.alpha,
-        swtBackground.red,
-        swtBackground.green,
-        swtBackground.blue,
-      );
-    }
-
-    // If it has no color of its own, use the parent color
-    int? parentColor = getCurrentParentBackgroundColor();
-    if (parentColor != null) {
-      return Color(0xFF000000 | parentColor);
-    }
-
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     var text = state.text;
