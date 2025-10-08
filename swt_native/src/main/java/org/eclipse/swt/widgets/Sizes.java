@@ -22,7 +22,29 @@ public class Sizes {
     }
 
     public static Point compute(DartLabel c) {
-        return new Point(c.text.length()*15, 18);
+        int width = 0;
+        int height = 18;
+
+        // Add text width if present
+        if (c.text != null && !c.text.isEmpty()) {
+            width += c.text.length() * 15;
+        }
+
+        // Add image dimensions if present
+        if (c.image != null) {
+            int imageWidth = c.image.getImpl()._width();
+            int imageHeight = c.image.getImpl()._height();
+
+            // If we have both text and image, add some spacing
+            if (c.text != null && !c.text.isEmpty()) {
+                width += 8; // spacing between image and text
+            }
+
+            width += imageWidth;
+            height = Math.max(height, imageHeight);
+        }
+
+        return new Point(width, height);
     }
 
     public static Point compute(DartToolBar c) {

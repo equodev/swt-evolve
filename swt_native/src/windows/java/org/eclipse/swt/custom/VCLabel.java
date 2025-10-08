@@ -76,6 +76,7 @@ public class VCLabel extends VCanvas {
         ((DartCLabel) impl).gradientVertical = value;
     }
 
+    @JsonAttribute(nullable = true)
     public Image getImage() {
         Image val = ((DartCLabel) impl).image;
         if (val != null && !(val.getImpl() instanceof DartImage))

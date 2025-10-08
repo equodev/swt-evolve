@@ -14,6 +14,7 @@ public class VItem extends VWidget {
         super(impl);
     }
 
+    @JsonAttribute(nullable = true)
     public Image getImage() {
         Image val = ((DartItem) impl).image;
         if (val != null && !(val.getImpl() instanceof DartImage))

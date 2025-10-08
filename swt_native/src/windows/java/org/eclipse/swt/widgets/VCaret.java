@@ -24,6 +24,7 @@ public class VCaret extends VWidget {
         ((DartCaret) impl).font = value;
     }
 
+    @JsonAttribute(nullable = true)
     public Image getImage() {
         Image val = ((DartCaret) impl).image;
         if (val != null && !(val.getImpl() instanceof DartImage))

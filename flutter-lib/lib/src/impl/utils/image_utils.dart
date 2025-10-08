@@ -10,13 +10,12 @@ class ImageUtils {
   static final Map<String, Widget> _iconCache = {};
   static final Map<String, Widget> _imageCache = {};
 
-  /// Creates an icon widget from filename with consistent styling
   static Widget? buildIconWidget(
-    String filename, {
-    double? size,
-    Color? color,
-    bool enabled = true,
-  }) {
+      String filename, {
+        double? size,
+        Color? color,
+        bool enabled = true,
+      }) {
     final cacheKey =
         '$filename-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled';
 
@@ -27,7 +26,6 @@ class ImageUtils {
     final iconData = getIconByName(filename);
     if (iconData == null) return null;
 
-    // FontAwesome icons detection and sizing
     final isFontAwesome = (iconData.fontPackage == 'font_awesome_flutter') ||
         (iconData.fontFamily ?? '').toLowerCase().contains('fontawesome');
 
@@ -35,13 +33,8 @@ class ImageUtils {
         size ?? (isFontAwesome ? AppSizes.fontAwesomeIcon : AppSizes.icon);
     final iconColor = color ?? AppColors.getColor(enabled);
 
-    Widget iconWidget = Icon(
-      iconData,
-      size: iconSize,
-      color: iconColor,
-    );
+    Widget iconWidget = Icon(iconData, size: iconSize, color: iconColor);
 
-    // Add padding for FontAwesome icons
     if (isFontAwesome) {
       iconWidget = Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -53,68 +46,100 @@ class ImageUtils {
     return iconWidget;
   }
 
-  /// Creates an image widget from binary data
-  static Widget? buildImageWidget(
-    Uint8List bytes, {
-    double? size,
-    Color? color,
-    bool enabled = true,
-    BoxConstraints? constraints,
-  }) {
-    final cacheKey =
-        '${bytes.length}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled';
+  static Widget? _buildBinaryImage(
+      Uint8List bytes, {
+        double? size,
+        double? width,
+        double? height,
+        Color? color,
+        bool enabled = true,
+        BoxConstraints? constraints,
+        bool renderAsIcon = true,
+      }) {
+    final cacheKey = renderAsIcon
+        ? 'icon-${bytes.length}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled'
+        : 'img-${bytes.length}-${width ?? 'default'}-${height ?? 'default'}-$enabled';
 
     if (_imageCache.containsKey(cacheKey)) {
       return _imageCache[cacheKey];
     }
 
     try {
-      final imageSize = size ?? AppSizes.icon;
-      final imageColor = color ?? AppColors.getColor(enabled);
+      Widget imageWidget;
 
-      final imageWidget = ConstrainedBox(
-        constraints: constraints ??
-            BoxConstraints(
-              minWidth: AppSizes.toolbarMinSize,
-              minHeight: AppSizes.toolbarMinSize,
-            ),
-        child: Center(
-          child: SizedBox(
-            width: imageSize,
-            height: imageSize,
-            child: ImageIcon(
-              MemoryImage(bytes),
-              size: imageSize,
-              color: imageColor,
+      if (renderAsIcon) {
+        // Icon rendering (for toolbars)
+        final imageSize = size ?? AppSizes.icon;
+        final imageColor = color ?? AppColors.getColor(enabled);
+
+        imageWidget = ConstrainedBox(
+          constraints: constraints ??
+              BoxConstraints(
+                minWidth: AppSizes.toolbarMinSize,
+                minHeight: AppSizes.toolbarMinSize,
+              ),
+          child: Center(
+            child: SizedBox(
+              width: imageSize,
+              height: imageSize,
+              child: ImageIcon(
+                MemoryImage(bytes),
+                size: imageSize,
+                color: imageColor,
+              ),
             ),
           ),
-        ),
-      );
+        );
+      } else {
+        // Real image rendering (for labels)
+        imageWidget = ConstrainedBox(
+          constraints: constraints ??
+              BoxConstraints(
+                maxWidth: width ?? 64,
+                maxHeight: height ?? 64,
+              ),
+          child: Opacity(
+            opacity: enabled ? 1.0 : 0.5,
+            child: Image.memory(
+              bytes,
+              width: width,
+              height: height,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) =>
+                  Icon(Icons.broken_image, size: width ?? height ?? 32),
+            ),
+          ),
+        );
+      }
 
       _imageCache[cacheKey] = imageWidget;
       return imageWidget;
     } catch (e) {
       print('Error decoding image bytes: $e');
-      return Icon(Icons.broken_image, size: size ?? AppSizes.icon);
+      final fallbackSize =
+          renderAsIcon ? (size ?? AppSizes.icon) : (width ?? height ?? 32);
+      return Icon(Icons.broken_image, size: fallbackSize);
     }
   }
 
-  /// Main method to build widget from VImage with caching
-  static Widget? buildVImageWidget(
-    VImage? image, {
-    double? size,
-    Color? color,
-    bool enabled = true,
-    BoxConstraints? constraints,
-    bool useBinaryImage = true,
-  }) {
+  static Widget? buildVImage(
+      VImage? image, {
+        double? size,
+        double? width,
+        double? height,
+        Color? color,
+        bool enabled = true,
+        BoxConstraints? constraints,
+        bool useBinaryImage = true,
+        bool renderAsIcon = true,
+      }) {
     if (image == null) return null;
 
     // Try icon filename first
-    if (image.filename != null && image.filename!.isNotEmpty) {
+    if (image.filename?.isNotEmpty ?? false) {
       final iconWidget = buildIconWidget(
         image.filename!,
-        size: size,
+        size: size ?? width ?? height,
         color: color,
         enabled: enabled,
       );
@@ -123,46 +148,74 @@ class ImageUtils {
 
     // Try binary image data
     if (useBinaryImage && image.imageData?.data != null) {
-      final bytes = Uint8List.fromList(image.imageData!.data!);
-      return buildImageWidget(
-        bytes,
+      return _buildBinaryImage(
+        Uint8List.fromList(image.imageData!.data!),
         size: size,
+        width: width,
+        height: height,
         color: color,
         enabled: enabled,
         constraints: constraints,
+        renderAsIcon: renderAsIcon,
       );
     }
 
     return null;
   }
 
-  /// Clear caches to free memory
+  // Public APIs - Binary images
+  static Widget? buildImageWidget(Uint8List bytes,
+      {double? size,
+        Color? color,
+        bool enabled = true,
+        BoxConstraints? constraints}) =>
+      _buildBinaryImage(bytes,
+          size: size,
+          color: color,
+          enabled: enabled,
+          constraints: constraints,
+          renderAsIcon: true);
+
+  static Widget? buildRealImageWidget(Uint8List bytes,
+      {double? width,
+        double? height,
+        bool enabled = true,
+        BoxConstraints? constraints}) =>
+      _buildBinaryImage(bytes,
+          width: width,
+          height: height,
+          enabled: enabled,
+          constraints: constraints,
+          renderAsIcon: false);
+
+
+  // Cache management
   static void clearCache() {
     _iconCache.clear();
     _imageCache.clear();
   }
 
-  /// Get cache stats for debugging
-  static Map<String, int> getCacheStats() {
-    return {
-      'iconCache': _iconCache.length,
-      'imageCache': _imageCache.length,
-    };
-  }
+  static Map<String, int> getCacheStats() => {
+    'iconCache': _iconCache.length,
+    'imageCache': _imageCache.length,
+  };
 
+  // Byte array utilities
   static List<int>? parseByteArray(dynamic value) {
     if (value == null) return null;
 
     if (value is String) {
       try {
-        final decoded = base64Decode(value);
-        return decoded.toList();
+        return base64Decode(value).toList();
       } catch (e) {
         return null;
       }
-    } else if (value is List) {
+    }
+
+    if (value is List) {
       return value.map((e) => (e as num).toInt()).toList();
     }
+
     return null;
   }
 

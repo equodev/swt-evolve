@@ -20,11 +20,12 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
 
   /// Helper method to build an image widget from VImage using ImageUtils
   Widget? _buildImageWidget(VImage? image) {
-    return ImageUtils.buildVImageWidget(
+    return ImageUtils.buildVImage(
       image,
       size: AppSizes.tabIconSize,
       enabled: true,
       useBinaryImage: false,
+      renderAsIcon: true,
     );
   }
 
