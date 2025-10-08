@@ -298,7 +298,7 @@ public class DartLabel extends DartControl implements ILabel {
             return;
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        this.image = image;
+        this.image = ImageUtils.copyImage(display, image);
         isImageMode = (image != null);
         updateStyleBits(getEnabled());
     }

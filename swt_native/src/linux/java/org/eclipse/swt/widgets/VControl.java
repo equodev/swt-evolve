@@ -37,6 +37,7 @@ public class VControl extends VWidget {
         ((DartControl) impl).backgroundImage = value;
     }
 
+    @JsonAttribute(nullable = true)
     public Rectangle getBounds() {
         return ((DartControl) impl).bounds;
     }

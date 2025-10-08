@@ -17,13 +17,15 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
 
   /// Helper method to build an image widget from VImage using ImageUtils
   Widget? _buildImageWidget(VImage? image, bool enabled) {
-    return ImageUtils.buildVImageWidget(
+    return ImageUtils.buildVImage(
       image,
       enabled: enabled,
       constraints: const BoxConstraints(
         minWidth: AppSizes.toolbarMinSize,
         minHeight: AppSizes.toolbarMinSize,
       ),
+      useBinaryImage: true,
+      renderAsIcon: true,
     );
   }
 

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 
-final bool useDarkTheme = false;
-bool _useDarkTheme = false;
+bool _useDarkTheme = true;
 int? _parentBackgroundColor;
 
 void setCurrentTheme(bool isDark) {
@@ -87,19 +86,19 @@ class AppColors {
 
   static const Color toolbarBackground = Colors.transparent;
 
-  static Color getHoverColor() => useDarkTheme ? darkHover : lightHover;
+  static Color getHoverColor() => _useDarkTheme ? darkHover : lightHover;
   static Color getBackgroundColor() =>
-      useDarkTheme ? darkBackground : lightBackground;
+      _useDarkTheme ? darkBackground : lightBackground;
   static Color getSelectedColor() =>
-      useDarkTheme ? darkSelected : lightSelected;
-  static Color getBorderColor() => useDarkTheme ? darkBorder : lightBorder;
+      _useDarkTheme ? darkSelected : lightSelected;
+  static Color getBorderColor() => _useDarkTheme ? darkBorder : lightBorder;
   static Color getEnabledColor() =>
-      useDarkTheme ? darkEnabledColor : lightEnabledColor;
+      _useDarkTheme ? darkEnabledColor : lightEnabledColor;
   static Color getDisabledColor() =>
-      useDarkTheme ? darkDisabled : lightDisabled;
-  static Color getTextColor() => useDarkTheme ? darkTextColor : lightTextColor;
+      _useDarkTheme ? darkDisabled : lightDisabled;
+  static Color getTextColor() => _useDarkTheme ? darkTextColor : lightTextColor;
   static Color getColor(bool enabled) =>
       enabled ? getEnabledColor() : getDisabledColor();
   static Color getSelectedTextColor() =>
-      useDarkTheme ? darkSelectedTextColor : lightSelectedTextColor;
+      _useDarkTheme ? darkSelectedTextColor : lightSelectedTextColor;
 }
