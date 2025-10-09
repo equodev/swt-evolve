@@ -2213,31 +2213,53 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     void init(Drawable drawable, GCData data, long hDC) {
+        if (this.background == null) {
+            Color white = new Color(255, 255, 255);
+            data.background = white.handle;
+            this.background = white;
+        }
+        if (this.foreground == null) {
+            Color black = new Color(0, 0, 0);
+            data.foreground = black.handle;
+            this.foreground = black;
+        }
+        if (hDC == 0)
+            hDC = 1;
         int foreground = data.foreground;
         if (foreground != -1) {
             data.state &= ~(FOREGROUND | FOREGROUND_TEXT | PEN);
         } else {
-            Color black = new Color(0, 0, 0);
-            data.foreground = black.handle;
-            this.foreground = black;
         }
         int background = data.background;
         if (background != -1) {
             data.state &= ~(BACKGROUND | BACKGROUND_TEXT | BRUSH);
         } else {
-            Color white = new Color(255, 255, 255);
-            data.background = white.handle;
-            this.background = white;
         }
-        if (data.font != null)
+        data.state &= ~(NULL_BRUSH | NULL_PEN);
+        Font font = data.font;
+        if (font != null) {
             data.state &= ~FONT;
-        else {
-            this.font = data.font = Display.getCurrent().getSystemFont();
+        } else {
         }
-        data.state &= ~DRAW_OFFSET;
+        if (data.font == null)
+            this.font = data.font = Display.getCurrent().getSystemFont();
+        if (data.nativeZoom == 0) {
+            data.nativeZoom = extractZoom(hDC);
+        }
         Image image = data.image;
-        if (image != null)
-            ((SwtImage) image.getImpl()).memGC = this.getApi();
+        if (image != null) {
+            if (image.getImpl() instanceof DartImage) {
+                ((DartImage) image.getImpl()).memGC = this.getApi();
+            }
+            if (image.getImpl() instanceof SwtImage) {
+                ((SwtImage) image.getImpl()).memGC = this.getApi();
+            }
+        }
+        int layout = data.layout;
+        if (layout != -1) {
+            if ((data.style & SWT.RIGHT_TO_LEFT) != 0)
+                data.style |= SWT.MIRRORED;
+        }
         this.drawable = drawable;
         this.data = data;
         if (drawable instanceof Canvas) {
@@ -2248,6 +2270,7 @@ public final class DartGC extends DartResource implements IGC {
                 getApi().handle = 1;
             }
         }
+        getApi().handle = hDC;
     }
 
     private static int extractZoom(long hDC) {

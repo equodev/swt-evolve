@@ -45,6 +45,7 @@ public static void main (String [] args) {
 	tree.addListener (SWT.Collapse, e -> System.out.println ("Collapse={" + e.item + "}"));
 	tree.getItems () [0].setExpanded (true);
 	shell.pack ();
+	shell.setSize(250,  300);
 	shell.open ();
 	while (!shell.isDisposed ()) {
 		if (!display.readAndDispatch ()) display.sleep ();

@@ -1726,19 +1726,34 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     void init(Drawable drawable, GCData data, long context) {
+        if (this.background == null) {
+            Color white = new Color(255, 255, 255);
+            data.background = white.handle;
+            this.background = white;
+        }
+        if (this.foreground == null) {
+            Color black = new Color(0, 0, 0);
+            data.foreground = black.handle;
+            this.foreground = black;
+        }
         if (data.foreground != null)
             data.state &= ~(FOREGROUND | FOREGROUND_FILL);
         if (data.background != null)
-            data.state &= ~(BACKGROUND);
+            data.state &= ~BACKGROUND;
         if (data.font != null)
             data.state &= ~FONT;
-        else {
+        if (data.font == null)
             this.font = data.font = Display.getCurrent().getSystemFont();
-        }
         data.state &= ~DRAW_OFFSET;
         Image image = data.image;
-        if (image != null)
-            ((SwtImage) image.getImpl()).memGC = this.getApi();
+        if (image != null) {
+            if (image.getImpl() instanceof DartImage) {
+                ((DartImage) image.getImpl()).memGC = this.getApi();
+            }
+            if (image.getImpl() instanceof SwtImage) {
+                ((SwtImage) image.getImpl()).memGC = this.getApi();
+            }
+        }
         this.drawable = drawable;
         this.data = data;
         if (drawable instanceof Canvas) {

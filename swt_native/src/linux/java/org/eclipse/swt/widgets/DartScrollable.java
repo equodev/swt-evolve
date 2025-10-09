@@ -133,6 +133,7 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     }
 
     ScrollBar createScrollBar(int style) {
+        scrolledHandle = 1;
         if (scrolledHandle == 0)
             return null;
         ScrollBar bar = new ScrollBar();
@@ -437,13 +438,13 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     private Point hScrollbarSize() {
         if (horizontalBar == null)
             return new Point(0, 0);
-        return null;
+        return horizontalBar.getSize();
     }
 
     private Point vScrollBarSize() {
         if (verticalBar == null)
             return new Point(0, 0);
-        return null;
+        return verticalBar.getSize();
     }
 
     private Point scrollBarSize(long scrollBarHandle) {

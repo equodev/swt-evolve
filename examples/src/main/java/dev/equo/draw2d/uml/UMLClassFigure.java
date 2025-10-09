@@ -1,16 +1,3 @@
-/*******************************************************************************
- * Copyright (c) 2003, 2024 IBM Corporation and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0
- *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
-
 package dev.equo.draw2d.uml;
 
 import org.eclipse.swt.SWT;
@@ -32,8 +19,7 @@ public class UMLClassFigure extends Figure {
 
 	static final Color BG = new Color(null, 242, 240, 255);
 
-	static Image classImage = new Image(null, UMLClassFigure.class.getResourceAsStream("class_obj.gif")); //$NON-NLS-1$
-
+	static Image classImage = new Image(null, UMLClassFigure.class.getResourceAsStream("/org/eclipse/draw2d/examples/uml/class_obj.png"));
 	static Font BOLD = new Font(null, "", 10, SWT.BOLD); //$NON-NLS-1$
 
 	public UMLClassFigure() {
