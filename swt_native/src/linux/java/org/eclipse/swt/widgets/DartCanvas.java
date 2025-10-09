@@ -389,6 +389,13 @@ public class DartCanvas extends DartComposite implements ICanvas {
         return drawFlag;
     }
 
+    @Override
+    void checkBuffered() {
+        if ((getApi().state & CANVAS) == 0) {
+            getApi().style &= ~SWT.DOUBLE_BUFFERED;
+        }
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }

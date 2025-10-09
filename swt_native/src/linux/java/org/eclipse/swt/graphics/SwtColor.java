@@ -325,6 +325,8 @@ public final class SwtColor extends SwtResource implements IColor {
      */
     @Override
     public boolean equals(Object object) {
+        if (object != null && ((Color) object).getImpl() instanceof DartColor c)
+            return c.getBlue() == getBlue() && c.getRed() == getRed() && c.getGreen() == getGreen() && c.getAlpha() == getAlpha();
         if (object == this.getApi())
             return true;
         if (!(object instanceof Color))

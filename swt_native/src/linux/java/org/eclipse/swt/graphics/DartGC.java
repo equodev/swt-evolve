@@ -2151,15 +2151,30 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     void init(Drawable drawable, GCData data, long gdkGC) {
+        if (this.background == null)
+            this.background = new Color(255, 255, 255);
+        if (this.foreground == null)
+            this.foreground = new Color(0, 0, 0);
         if (data.font != null)
             data.state &= ~FONT;
-        else {
+        if (data.font == null)
             this.font = data.font = Display.getCurrent().getSystemFont();
-        }
-        data.state &= ~DRAW_OFFSET;
         Image image = data.image;
-        if (image != null)
-            ((SwtImage) image.getImpl()).memGC = this.getApi();
+        if (image != null) {
+            if (image.getImpl() instanceof DartImage) {
+                ((DartImage) image.getImpl()).memGC = this.getApi();
+            }
+            if (image.getImpl() instanceof SwtImage) {
+                ((SwtImage) image.getImpl()).memGC = this.getApi();
+            }
+            /*
+		 * The transparent pixel mask might change when drawing on
+		 * the image.  Destroy it so that it is regenerated when
+		 * necessary.
+		 */
+            if (image.getImpl()._transparentPixel() != -1)
+                ((DartImage) image.getImpl()).destroyMask();
+        }
         this.drawable = drawable;
         this.data = data;
         if (drawable instanceof Canvas) {
@@ -2170,6 +2185,17 @@ public final class DartGC extends DartResource implements IGC {
                 getApi().handle = 1;
             }
         }
+        getApi().handle = 1;
+        data.state &= ~(BACKGROUND | FOREGROUND | FONT | LINE_WIDTH | LINE_CAP | LINE_JOIN | LINE_STYLE | DRAW_OFFSET);
+        setClipping(data.clipRgn);
+        if ((data.style & SWT.MIRRORED) != 0) {
+            // Don't overwrite the Cairo transformation matrix in GTK 3.14 and above; it contains a translation relative to the parent widget.
+            int[] w = new int[1], h = new int[1];
+            getSize(w, h);
+        }
+        if (cairoTransformationMatrix == null)
+            cairoTransformationMatrix = new double[6];
+        clipping = getClipping();
     }
 
     void computeStringSize() {

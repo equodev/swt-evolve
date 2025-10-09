@@ -1,15 +1,3 @@
-/*******************************************************************************
- * Copyright (c) 2005, 2023 IBM Corporation and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0
- *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
 package dev.equo.draw2d.tree;
 
 import org.eclipse.swt.SWT;
@@ -31,7 +19,11 @@ import org.eclipse.draw2d.PositionConstants;
 import dev.equo.draw2d.AbstractExample;
 
 /**
- * @author hudsonr Created on Apr 18, 2003
+ * Demonstrates an interactive tree visualization using Draw2D with dynamic manipulation capabilities.
+ * This example creates a hierarchical tree structure with multiple nodes and branches, allowing users
+ * to expand/collapse nodes, add/remove children, change alignment (center/left), toggle between normal
+ * and hanging styles, adjust spacing, enable animation, and switch between horizontal/vertical orientations.
+ * Features interactive node selection and real-time tree layout updates.
  */
 public class Draw2DTreeExample extends AbstractExample {
 

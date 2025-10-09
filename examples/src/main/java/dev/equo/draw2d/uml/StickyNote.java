@@ -1,16 +1,3 @@
-/*******************************************************************************
- * Copyright (c) 2003, 2023 IBM Corporation and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0
- *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
-
 package dev.equo.draw2d.uml;
 
 import org.eclipse.draw2d.AbstractBorder;
@@ -22,6 +9,7 @@ import org.eclipse.draw2d.geometry.PointList;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.draw2d.text.FlowPage;
 import org.eclipse.draw2d.text.TextFlow;
+import org.eclipse.swt.graphics.Color;
 
 /**
  * since 3.0
@@ -64,8 +52,7 @@ public class StickyNote extends FlowPage {
 		setBorder(new DogEar());
 		add(text);
 		text.setText("This is a sticky note.  It wraps text based on its " + "width."); //$NON-NLS-1$ //$NON-NLS-2$
-		setBackgroundColor(ColorConstants.tooltipBackground);
-		setOpaque(true);
+		setBackgroundColor(new Color(255, 255, 255));
 	}
 
 	/**

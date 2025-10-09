@@ -1,17 +1,6 @@
-/*******************************************************************************
- * Copyright (c) 2005, 2023 IBM Corporation and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0
- *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
 package dev.equo.draw2d.uml;
 
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -31,13 +20,20 @@ import org.eclipse.draw2d.XYLayout;
 import org.eclipse.draw2d.geometry.PointList;
 import org.eclipse.draw2d.geometry.Rectangle;
 
-public class UMLClassDiagram {
+/**
+ * Demonstrates creating a UML class diagram using Draw2D with connections and decorations.
+ * This example creates two UML class figures connected by a polyline association with containment
+ * decoration, endpoint labels, a connection label, and a sticky note. Shows how to use anchors,
+ * decorations, and connection locators for creating structured diagrams.
+ */
+public class Draw2DUMLClassDiagram {
 
 	public static void main(String[] args) {
 
 		Display d = new Display();
 		Shell shell = new Shell(d);
 		shell.setLayout(new FillLayout());
+		shell.setText("UML Diagram");
 
 		FigureCanvas canvas = new FigureCanvas(shell);
 		canvas.setBackground(ColorConstants.white);
@@ -67,7 +63,7 @@ public class UMLClassDiagram {
 		Label connLabel = new Label("connection"); //$NON-NLS-1$
 		connLabel.setBorder(new LineBorder());
 		connLabel.setOpaque(true);
-		connLabel.setBackgroundColor(ColorConstants.tooltipBackground);
+		connLabel.setBackgroundColor(new Color(255, 255, 255));
 		assoc.add(connLabel, new ConnectionLocator(assoc, ConnectionLocator.MIDDLE));
 
 		diagram.add(new StickyNote(), new Rectangle(180, 10, 90, -1));
