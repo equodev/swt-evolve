@@ -19,7 +19,7 @@ public class ImageUtils {
     }
 
     static String getFilename(String path) {
-        String fileName = java.nio.file.Paths.get(path).getFileName().toString();
+        String fileName = new java.io.File(path).getName();
         int dotIndex = fileName.lastIndexOf('.');
         return (dotIndex > 0) ? fileName.substring(0, dotIndex) : fileName;
     }
