@@ -5,7 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Display.*;
 
-public interface IText extends IScrollable {
+public interface IText extends IScrollable, ImplText {
 
     /**
      * Adds the listener to the collection of listeners who will

@@ -21,6 +21,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class are selectable user interface
@@ -131,7 +132,7 @@ public class Text extends Scrollable {
      */
     public Text(Composite parent, int style) {
         this((IText) null);
-        setImpl(new SwtText(parent, style, this));
+        setImpl(Config.isEquo(Text.class, parent) ? new DartText(parent, style, this) : new SwtText(parent, style, this));
     }
 
     /**

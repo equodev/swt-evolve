@@ -15,6 +15,7 @@ import '../gen/styledtext.dart';
 import '../gen/table.dart';
 import '../gen/tablecolumn.dart';
 import '../gen/tableitem.dart';
+import '../gen/text.dart';
 import '../gen/toolbar.dart';
 import '../gen/toolitem.dart';
 import '../gen/tree.dart';
@@ -36,6 +37,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "Tree" => VTree.fromJson(child),
     "Composite" => VComposite.fromJson(child),
     "List" => VList.fromJson(child),
+    "Text" => VText.fromJson(child),
     "Button" => VButton.fromJson(child),
     "Label" => VLabel.fromJson(child),
     "CTabItem" => VCTabItem.fromJson(child),
@@ -65,6 +67,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VTree() => TreeSwt(key: ValueKey(id), value: child),
     VComposite() => CompositeSwt(key: ValueKey(id), value: child),
     VList() => ListSwt(key: ValueKey(id), value: child),
+    VText() => TextSwt(key: ValueKey(id), value: child),
     VButton() => ButtonSwt(key: ValueKey(id), value: child),
     VLabel() => LabelSwt(key: ValueKey(id), value: child),
     VCTabItem() => CTabItemSwt(key: ValueKey(id), value: child),

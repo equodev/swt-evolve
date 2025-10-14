@@ -2596,6 +2596,46 @@ public class SwtText extends SwtScrollable implements IText {
         return event.text;
     }
 
+    public int _textLimit() {
+        return textLimit;
+    }
+
+    public int _tabs() {
+        return tabs;
+    }
+
+    public char _echoCharacter() {
+        return echoCharacter;
+    }
+
+    public boolean _doubleClick() {
+        return doubleClick;
+    }
+
+    public boolean _receivingFocus() {
+        return receivingFocus;
+    }
+
+    public char[] _hiddenText() {
+        return hiddenText;
+    }
+
+    public String _message() {
+        return message;
+    }
+
+    public long _actionSearch() {
+        return actionSearch;
+    }
+
+    public long _actionCancel() {
+        return actionCancel;
+    }
+
+    public APPEARANCE _lastAppAppearance() {
+        return lastAppAppearance;
+    }
+
     public Text getApi() {
         if (api == null)
             api = Text.createApi(this);
