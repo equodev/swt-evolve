@@ -3261,6 +3261,54 @@ public class SwtText extends SwtScrollable implements IText {
         ((SwtText) text.getImpl()).setMargins();
     }
 
+    public int _tabs() {
+        return tabs;
+    }
+
+    public int _oldStart() {
+        return oldStart;
+    }
+
+    public int _oldEnd() {
+        return oldEnd;
+    }
+
+    public boolean _doubleClick() {
+        return doubleClick;
+    }
+
+    public boolean _ignoreModify() {
+        return ignoreModify;
+    }
+
+    public boolean _ignoreVerify() {
+        return ignoreVerify;
+    }
+
+    public boolean _ignoreCharacter() {
+        return ignoreCharacter;
+    }
+
+    public boolean _allowPasswordChar() {
+        return allowPasswordChar;
+    }
+
+    public String _message() {
+        return message;
+    }
+
+    public int[] _segments() {
+        return segments;
+    }
+
+    public int _clearSegmentsCount() {
+        return clearSegmentsCount;
+    }
+
+    public long _hwndActiveIcon() {
+        return hwndActiveIcon;
+    }
+
     public Text getApi() {
         if (api == null)
             api = Text.createApi(this);

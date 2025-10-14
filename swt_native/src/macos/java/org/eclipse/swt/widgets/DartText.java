@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2021 IBM Corporation and others.
+ *  Copyright (c) 2000, 2014 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -15,15 +15,11 @@
  */
 package org.eclipse.swt.widgets;
 
-import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
-import dev.equo.swt.Config;
+import org.eclipse.swt.widgets.Display.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class are selectable user interface
@@ -65,34 +61,23 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Text extends Scrollable {
+public class DartText extends DartScrollable implements IText {
 
-    /**
-     * The maximum number of characters that can be entered
-     * into a text widget.
-     * <p>
-     * Note that this value is platform dependent, based upon
-     * the native widget implementation.
-     * </p>
-     */
-    public final static int LIMIT;
+    int textLimit = Text.LIMIT, tabs = 8;
 
-    /**
-     * The delimiter used by multi-line text widgets.  When text
-     * is queried and from the widget, it will be delimited using
-     * this delimiter.
-     */
-    public final static String DELIMITER;
+    char echoCharacter;
 
-    /*
-	* These values can be different on different platforms.
-	* Therefore they are not initialized in the declaration
-	* to stop the compiler from inlining.
-	*/
-    static {
-        LIMIT = 0x7FFFFFFF;
-        DELIMITER = "\n";
-    }
+    boolean doubleClick, receivingFocus;
+
+    char[] hiddenText;
+
+    String message;
+
+    long actionSearch, actionCancel;
+
+    APPEARANCE lastAppAppearance;
+
+    static final char PASSWORD = '\u2022';
 
     /**
      * Constructs a new instance of this class given its parent
@@ -132,9 +117,18 @@ public class Text extends Scrollable {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public Text(Composite parent, int style) {
-        this((IText) null);
-        setImpl(Config.isEquo(Text.class, parent) ? new DartText(parent, style, this) : new SwtText(parent, style, this));
+    public DartText(Composite parent, int style, Text api) {
+        super(parent, checkStyle(style), api);
+        if ((style & SWT.SEARCH) != 0) {
+            if ((style & SWT.ICON_CANCEL) != 0) {
+                this.getApi().style |= SWT.ICON_CANCEL;
+            } else {
+            }
+            if ((style & SWT.ICON_SEARCH) != 0) {
+                this.getApi().style |= SWT.ICON_SEARCH;
+            } else {
+            }
+        }
     }
 
     /**
@@ -157,7 +151,7 @@ public class Text extends Scrollable {
      * @see #removeModifyListener
      */
     public void addModifyListener(ModifyListener listener) {
-        getImpl().addModifyListener(listener);
+        addTypedListener(listener, SWT.Modify);
     }
 
     /**
@@ -195,7 +189,7 @@ public class Text extends Scrollable {
      * @since 3.8
      */
     public void addSegmentListener(SegmentListener listener) {
-        getImpl().addSegmentListener(listener);
+        addTypedListener(listener, SWT.Segments);
     }
 
     /**
@@ -227,7 +221,7 @@ public class Text extends Scrollable {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getImpl().addSelectionListener(listener);
+        addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
     }
 
     /**
@@ -250,7 +244,7 @@ public class Text extends Scrollable {
      * @see #removeVerifyListener
      */
     public void addVerifyListener(VerifyListener listener) {
-        getImpl().addVerifyListener(listener);
+        addTypedListener(listener, SWT.Verify);
     }
 
     /**
@@ -271,7 +265,52 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void append(String string) {
-        getImpl().append(string);
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            if (string == null)
+                return;
+        }
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            setSelection(getCharCount());
+            insertEditText(string);
+        } else {
+            if (textLimit != Text.LIMIT) {
+            } else {
+            }
+        }
+        if (string.length() != 0)
+            sendEvent(SWT.Modify);
+    }
+
+    static int checkStyle(int style) {
+        if ((style & SWT.SEARCH) != 0) {
+            style |= SWT.SINGLE | SWT.BORDER;
+            style &= ~SWT.PASSWORD;
+            /*
+		* NOTE: ICON_CANCEL has the same value as H_SCROLL and
+		* ICON_SEARCH has the same value as V_SCROLL so they are
+		* cleared because SWT.SINGLE is set.
+		*/
+        }
+        if ((style & SWT.SINGLE) != 0 && (style & SWT.MULTI) != 0) {
+            style &= ~SWT.MULTI;
+        }
+        style = checkBits(style, SWT.LEFT, SWT.CENTER, SWT.RIGHT, 0, 0, 0);
+        if ((style & SWT.SINGLE) != 0)
+            style &= ~(SWT.H_SCROLL | SWT.V_SCROLL | SWT.WRAP);
+        if ((style & SWT.WRAP) != 0) {
+            style |= SWT.MULTI;
+            style &= ~SWT.H_SCROLL;
+        }
+        if ((style & SWT.MULTI) != 0)
+            style &= ~SWT.PASSWORD;
+        if ((style & (SWT.SINGLE | SWT.MULTI)) != 0)
+            return style;
+        if ((style & (SWT.H_SCROLL | SWT.V_SCROLL)) != 0)
+            return style | SWT.MULTI;
+        return style | SWT.SINGLE;
     }
 
     /**
@@ -283,7 +322,24 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void clearSelection() {
-        getImpl().clearSelection();
+        checkWidget();
+        Point selection = getSelection();
+        setSelection(selection.x);
+    }
+
+    @Override
+    public Point computeSize(int wHint, int hHint, boolean changed) {
+        return Sizes.compute(this);
+    }
+
+    @Override
+    public Rectangle computeTrim(int x, int y, int width, int height) {
+        Rectangle result = super.computeTrim(x, y, width, height);
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            if ((getApi().style & SWT.SEARCH) != 0) {
+            }
+        }
+        return result;
     }
 
     /**
@@ -298,7 +354,29 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void copy() {
-        getImpl().copy();
+        checkWidget();
+        if ((getApi().style & SWT.PASSWORD) != 0 || echoCharacter != '\0')
+            return;
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            Point selection = getSelection();
+            if (selection.x == selection.y)
+                return;
+            copyToClipboard(getEditText(selection.x, selection.y - 1));
+        } else {
+        }
+    }
+
+    @Override
+    void createHandle() {
+    }
+
+    @Override
+    void createWidget() {
+        super.createWidget();
+        if ((getApi().style & SWT.PASSWORD) != 0) {
+        }
+        doubleClick = true;
+        message = "";
     }
 
     /**
@@ -314,7 +392,78 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void cut() {
-        getImpl().cut();
+        checkWidget();
+        if ((getApi().style & SWT.READ_ONLY) != 0)
+            return;
+        if ((getApi().style & SWT.PASSWORD) != 0 || echoCharacter != '\0')
+            return;
+        boolean cut = true;
+        char[] oldText = null;
+        Point oldSelection = getSelection();
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            if (oldSelection.x != oldSelection.y) {
+                oldText = getEditText(oldSelection.x, oldSelection.y - 1);
+            }
+        }
+        if (cut) {
+            if ((getApi().style & SWT.SINGLE) != 0) {
+                if (oldText == null)
+                    oldText = getEditText(oldSelection.x, oldSelection.y - 1);
+                copyToClipboard(oldText);
+                insertEditText("");
+            } else {
+            }
+        }
+        Point newSelection = getSelection();
+        if (!cut || !oldSelection.equals(newSelection))
+            sendEvent(SWT.Modify);
+    }
+
+    @Override
+    Color defaultBackground() {
+        return ((SwtDisplay) display.getImpl()).getWidgetColor(SWT.COLOR_LIST_BACKGROUND);
+    }
+
+    @Override
+    Color defaultForeground() {
+        return ((SwtDisplay) display.getImpl()).getWidgetColor(SWT.COLOR_LIST_FOREGROUND);
+    }
+
+    @Override
+    void deregister() {
+        super.deregister();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        }
+    }
+
+    @Override
+    boolean dragDetect(int x, int y, boolean filter, boolean[] consume) {
+        Point selection = getSelection();
+        if (selection.x != selection.y) {
+            long position = getPosition(x, y);
+            if (selection.x <= position && position < selection.y) {
+                if (super.dragDetect(x, y, filter, consume)) {
+                    if (consume != null)
+                        consume[0] = true;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    void enableWidget(boolean enabled) {
+        super.enableWidget(enabled);
+        if ((getApi().style & SWT.MULTI) != 0) {
+            setForeground(this.foreground);
+        }
+    }
+
+    @Override
+    public Cursor findCursor() {
+        Cursor cursor = super.findCursor();
+        return cursor;
     }
 
     /**
@@ -331,7 +480,10 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getCaretLineNumber() {
-        return getImpl().getCaretLineNumber();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0)
+            return 0;
+        return (getTopPixel() + getCaretLocation().y) / getLineHeight();
     }
 
     /**
@@ -346,7 +498,13 @@ public class Text extends Scrollable {
      * </ul>
      */
     public Point getCaretLocation() {
-        return getImpl().getCaretLocation();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            if (this.hasFocus()) {
+            }
+        } else {
+        }
+        return null;
     }
 
     /**
@@ -363,7 +521,11 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getCaretPosition() {
-        return getImpl().getCaretPosition();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+        return 0;
     }
 
     /**
@@ -377,7 +539,11 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getCharCount() {
-        return getImpl().getCharCount();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+        return 0;
     }
 
     /**
@@ -396,7 +562,8 @@ public class Text extends Scrollable {
      * </ul>
      */
     public boolean getDoubleClickEnabled() {
-        return getImpl().getDoubleClickEnabled();
+        checkWidget();
+        return doubleClick;
     }
 
     /**
@@ -417,7 +584,8 @@ public class Text extends Scrollable {
      * @see #setEchoChar
      */
     public char getEchoChar() {
-        return getImpl().getEchoChar();
+        checkWidget();
+        return echoCharacter;
     }
 
     /**
@@ -431,7 +599,33 @@ public class Text extends Scrollable {
      * </ul>
      */
     public boolean getEditable() {
-        return getImpl().getEditable();
+        checkWidget();
+        return (getApi().style & SWT.READ_ONLY) == 0;
+    }
+
+    char[] getEditText() {
+        if (hiddenText != null) {
+            char[] text = new char[hiddenText.length];
+            System.arraycopy(hiddenText, 0, text, 0, text.length);
+            return text;
+        }
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+        return null;
+    }
+
+    char[] getEditText(int start, int end) {
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+        if (start > end)
+            return new char[0];
+        start = Math.max(0, start);
+        if (hiddenText != null) {
+        } else {
+        }
+        return null;
     }
 
     /**
@@ -445,7 +639,10 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getLineCount() {
-        return getImpl().getLineCount();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0)
+            return 1;
+        return 0;
     }
 
     /**
@@ -461,7 +658,8 @@ public class Text extends Scrollable {
      * @see #DELIMITER
      */
     public String getLineDelimiter() {
-        return getImpl().getLineDelimiter();
+        checkWidget();
+        return Text.DELIMITER;
     }
 
     /**
@@ -475,7 +673,30 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getLineHeight() {
-        return getImpl().getLineHeight();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+        return 0;
+    }
+
+    /**
+     * Returns the orientation of the receiver, which will be one of the
+     * constants <code>SWT.LEFT_TO_RIGHT</code> or <code>SWT.RIGHT_TO_LEFT</code>.
+     *
+     * @return the orientation style
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @since 2.1.2
+     */
+    @Override
+    public int getOrientation() {
+        checkWidget();
+        return getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
     }
 
     /**
@@ -495,24 +716,18 @@ public class Text extends Scrollable {
      * @since 3.3
      */
     public String getMessage() {
-        return getImpl().getMessage();
+        checkWidget();
+        return message;
     }
 
-    /**
-     * Returns the orientation of the receiver, which will be one of the
-     * constants <code>SWT.LEFT_TO_RIGHT</code> or <code>SWT.RIGHT_TO_LEFT</code>.
-     *
-     * @return the orientation style
-     *
-     * @exception SWTException <ul>
-     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
-     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
-     * </ul>
-     *
-     * @since 2.1.2
-     */
-    public int getOrientation() {
-        return getImpl().getOrientation();
+    long getPosition(long x, long y) {
+        //	checkWidget ();
+        if ((getApi().style & SWT.MULTI) != 0) {
+        } else {
+            //TODO
+            return 0;
+        }
+        return 0;
     }
 
     /**
@@ -534,7 +749,11 @@ public class Text extends Scrollable {
      * </ul>
      */
     public Point getSelection() {
-        return getImpl().getSelection();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+        return this.selection;
     }
 
     /**
@@ -548,7 +767,11 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getSelectionCount() {
-        return getImpl().getSelectionCount();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+        return this.selection != null ? this.selection.y - this.selection.x : 0;
     }
 
     /**
@@ -562,7 +785,15 @@ public class Text extends Scrollable {
      * </ul>
      */
     public String getSelectionText() {
-        return getImpl().getSelectionText();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            Point selection = getSelection();
+            if (selection.x == selection.y)
+                return "";
+            return new String(getEditText(selection.x, selection.y - 1));
+        } else {
+        }
+        return null;
     }
 
     /**
@@ -581,7 +812,8 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getTabs() {
-        return getImpl().getTabs();
+        checkWidget();
+        return tabs;
     }
 
     /**
@@ -599,7 +831,14 @@ public class Text extends Scrollable {
      * </ul>
      */
     public String getText() {
-        return getImpl().getText();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            char[] editText = getEditText();
+            if (editText != null) {
+                return new String(editText);
+            }
+        }
+        return this.text != null ? this.text : "";
     }
 
     /**
@@ -621,7 +860,18 @@ public class Text extends Scrollable {
      * </ul>
      */
     public String getText(int start, int end) {
-        return getImpl().getText(start, end);
+        checkWidget();
+        //$NON-NLS-1$
+        if (!(start <= end && 0 <= end))
+            return "";
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            return new String(getEditText(start, end));
+        }
+        //$NON-NLS-1$
+        if (start > end)
+            return "";
+        start = Math.max(0, start);
+        return this.text.substring(start, Math.min(end + 1, this.text.length()));
     }
 
     /**
@@ -650,7 +900,12 @@ public class Text extends Scrollable {
      * @since 3.7
      */
     public char[] getTextChars() {
-        return getImpl().getTextChars();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            return getEditText();
+        } else {
+        }
+        return this.textChars;
     }
 
     /**
@@ -670,7 +925,8 @@ public class Text extends Scrollable {
      * @see #LIMIT
      */
     public int getTextLimit() {
-        return getImpl().getTextLimit();
+        checkWidget();
+        return textLimit;
     }
 
     /**
@@ -688,7 +944,10 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getTopIndex() {
-        return getImpl().getTopIndex();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0)
+            return 0;
+        return this.topIndex;
     }
 
     /**
@@ -712,7 +971,10 @@ public class Text extends Scrollable {
      * </ul>
      */
     public int getTopPixel() {
-        return getImpl().getTopPixel();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0)
+            return 0;
+        return 0;
     }
 
     /**
@@ -732,7 +994,70 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void insert(String string) {
-        getImpl().insert(string);
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            if (string == null)
+                return;
+        }
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            insertEditText(string);
+        } else {
+            if (textLimit != Text.LIMIT) {
+            } else {
+            }
+        }
+        if (string.length() != 0)
+            sendEvent(SWT.Modify);
+    }
+
+    void insertEditText(String string) {
+        _insertEditText(string, false);
+    }
+
+    void _insertEditText(String string, boolean enableUndo) {
+        int length = string.length();
+        Point selection = getSelection();
+        if (hasFocus() && hiddenText == null) {
+            if (textLimit != Text.LIMIT) {
+                int charCount = getCharCount();
+                int selectionLength = selection.y - selection.x;
+                if (charCount - selectionLength + length > textLimit) {
+                    length = textLimit - charCount + selectionLength;
+                    length = Math.max(0, length);
+                }
+            }
+            char[] buffer = new char[length];
+            string.getChars(0, buffer.length, buffer, 0);
+        } else {
+            String oldText = getText();
+            if (textLimit != Text.LIMIT) {
+                int charCount = oldText.length();
+                if (charCount - (selection.y - selection.x) + length > textLimit) {
+                    string = string.substring(0, textLimit - charCount + (selection.y - selection.x));
+                }
+            }
+            String newText = oldText.substring(0, selection.x) + string + oldText.substring(selection.y);
+            setEditText(newText);
+            setSelection(selection.x + string.length());
+        }
+    }
+
+    @Override
+    boolean isEventView(long id) {
+        return true;
+    }
+
+    @Override
+    boolean isNeeded(ScrollBar scrollbar) {
+        boolean result = false;
+        if ((getApi().style & SWT.MULTI) != 0) {
+            if ((scrollbar.style & SWT.VERTICAL) != 0) {
+            } else {
+            }
+        }
+        return result;
     }
 
     /**
@@ -748,7 +1073,52 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void paste() {
-        getImpl().paste();
+        checkWidget();
+        _paste(false);
+    }
+
+    void _paste(boolean enableUndo) {
+        if ((getApi().style & SWT.READ_ONLY) != 0)
+            return;
+        boolean paste = true;
+        String oldText = null;
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            oldText = getClipboardText();
+            if (oldText != null) {
+            }
+        }
+        if (paste) {
+            if ((getApi().style & SWT.SINGLE) != 0) {
+                if (oldText == null)
+                    oldText = getClipboardText();
+                if (oldText == null)
+                    return;
+                _insertEditText(oldText, enableUndo);
+            } else {
+                if (textLimit != Text.LIMIT) {
+                    if (oldText == null)
+                        oldText = getClipboardText();
+                    if (oldText == null)
+                        return;
+                } else {
+                }
+            }
+        }
+        sendEvent(SWT.Modify);
+    }
+
+    @Override
+    void register() {
+        super.register();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        }
+    }
+
+    @Override
+    void releaseWidget() {
+        super.releaseWidget();
+        hiddenText = null;
+        message = null;
     }
 
     /**
@@ -769,7 +1139,12 @@ public class Text extends Scrollable {
      * @see #addModifyListener
      */
     public void removeModifyListener(ModifyListener listener) {
-        getImpl().removeModifyListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Modify, listener);
     }
 
     /**
@@ -793,7 +1168,10 @@ public class Text extends Scrollable {
      * @since 3.8
      */
     public void removeSegmentListener(SegmentListener listener) {
-        getImpl().removeSegmentListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        eventTable.unhook(SWT.Segments, listener);
     }
 
     /**
@@ -814,7 +1192,13 @@ public class Text extends Scrollable {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getImpl().removeSelectionListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Selection, listener);
+        eventTable.unhook(SWT.DefaultSelection, listener);
     }
 
     /**
@@ -835,7 +1219,12 @@ public class Text extends Scrollable {
      * @see #addVerifyListener
      */
     public void removeVerifyListener(VerifyListener listener) {
-        getImpl().removeVerifyListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Verify, listener);
     }
 
     /**
@@ -847,7 +1236,38 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void selectAll() {
-        getImpl().selectAll();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            setSelection(0, getCharCount());
+        } else {
+        }
+    }
+
+    @Override
+    boolean sendKeyEvent(int type, Event event) {
+        if ((event.stateMask & SWT.COMMAND) != 0) {
+            switch(event.keyCode) {
+                case 'z':
+                    return false;
+            }
+        }
+        if (isDisposed())
+            return false;
+        return false;
+    }
+
+    @Override
+    void sendSearchSelection() {
+        Event event = new Event();
+        event.detail = SWT.ICON_SEARCH;
+        sendSelectionEvent(SWT.DefaultSelection, event, false);
+    }
+
+    @Override
+    void sendCancelSelection() {
+        Event event = new Event();
+        event.detail = SWT.ICON_CANCEL;
+        sendSelectionEvent(SWT.DefaultSelection, event, false);
     }
 
     /**
@@ -869,7 +1289,9 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setDoubleClickEnabled(boolean doubleClick) {
-        getImpl().setDoubleClickEnabled(doubleClick);
+        dirty();
+        checkWidget();
+        this.doubleClick = doubleClick;
     }
 
     /**
@@ -894,7 +1316,18 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setEchoChar(char echo) {
-        getImpl().setEchoChar(echo);
+        dirty();
+        checkWidget();
+        if ((getApi().style & SWT.MULTI) != 0)
+            return;
+        if ((getApi().style & SWT.PASSWORD) == 0) {
+            Point selection = getSelection();
+            char[] text = getTextChars();
+            echoCharacter = echo;
+            setEditText(text);
+            setSelection(selection);
+        }
+        echoCharacter = echo;
     }
 
     /**
@@ -908,7 +1341,82 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setEditable(boolean editable) {
-        getImpl().setEditable(editable);
+        dirty();
+        checkWidget();
+        if (editable) {
+            getApi().style &= ~SWT.READ_ONLY;
+        } else {
+            getApi().style |= SWT.READ_ONLY;
+        }
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+        this.editable = editable;
+    }
+
+    void setEditText(String string) {
+        char[] text = new char[string.length()];
+        string.getChars(0, text.length, text, 0);
+        setEditText(text);
+    }
+
+    void setEditText(char[] text) {
+        char[] buffer;
+        int length = Math.min(text.length, textLimit);
+        if ((getApi().style & SWT.PASSWORD) == 0 && echoCharacter != '\0') {
+            hiddenText = new char[length];
+            buffer = new char[length];
+            for (int i = 0; i < length; i++) {
+                hiddenText[i] = text[i];
+                buffer[i] = echoCharacter;
+            }
+        } else {
+            hiddenText = null;
+            buffer = text;
+        }
+    }
+
+    @Override
+    void setForeground(double[] color) {
+        if (color == null) {
+        } else {
+            double alpha = 1;
+            if ((getApi().style & SWT.MULTI) != 0 && !isEnabled())
+                alpha = 0.5f;
+        }
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+    }
+
+    /**
+     * Sets the orientation of the receiver, which must be one
+     * of the constants <code>SWT.LEFT_TO_RIGHT</code> or <code>SWT.RIGHT_TO_LEFT</code>.
+     * <p>
+     * Note: This operation is a hint and is not supported on
+     * platforms that do not have this concept.
+     * </p>
+     *
+     * @param orientation new orientation style
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @since 2.1.2
+     */
+    @Override
+    public void setOrientation(int orientation) {
+        dirty();
+        checkWidget();
+    }
+
+    @Override
+    void setOrientation() {
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
     }
 
     /**
@@ -931,28 +1439,13 @@ public class Text extends Scrollable {
      * @since 3.3
      */
     public void setMessage(String message) {
-        getImpl().setMessage(message);
-    }
-
-    /**
-     * Sets the orientation of the receiver, which must be one
-     * of the constants <code>SWT.LEFT_TO_RIGHT</code> or <code>SWT.RIGHT_TO_LEFT</code>.
-     * <p>
-     * Note: This operation is a hint and is not supported on
-     * platforms that do not have this concept.
-     * </p>
-     *
-     * @param orientation new orientation style
-     *
-     * @exception SWTException <ul>
-     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
-     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
-     * </ul>
-     *
-     * @since 2.1.2
-     */
-    public void setOrientation(int orientation) {
-        getImpl().setOrientation(orientation);
+        dirty();
+        checkWidget();
+        if (message == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        this.message = message;
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        }
     }
 
     /**
@@ -979,7 +1472,8 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setSelection(int start) {
-        getImpl().setSelection(start);
+        checkWidget();
+        setSelection(start, start);
     }
 
     /**
@@ -1008,7 +1502,12 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setSelection(int start, int end) {
-        getImpl().setSelection(start, end);
+        dirty();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+        this.selection = new Point(start, end);
     }
 
     /**
@@ -1041,7 +1540,10 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setSelection(Point selection) {
-        getImpl().setSelection(selection);
+        checkWidget();
+        if (selection == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        setSelection(selection.x, selection.y);
     }
 
     /**
@@ -1060,7 +1562,13 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setTabs(int tabs) {
-        getImpl().setTabs(tabs);
+        dirty();
+        checkWidget();
+        if (this.tabs == tabs)
+            return;
+        this.tabs = tabs;
+        if ((getApi().style & SWT.SINGLE) != 0)
+            return;
     }
 
     /**
@@ -1082,7 +1590,22 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setText(String string) {
-        getImpl().setText(string);
+        dirty();
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            if (string == null)
+                return;
+        }
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            setEditText(string);
+        } else {
+            char[] buffer = new char[Math.min(string.length(), textLimit)];
+            string.getChars(0, buffer.length, buffer, 0);
+        }
+        sendEvent(SWT.Modify);
+        this.text = string;
     }
 
     /**
@@ -1112,7 +1635,18 @@ public class Text extends Scrollable {
      * @since 3.7
      */
     public void setTextChars(char[] text) {
-        getImpl().setTextChars(text);
+        dirty();
+        checkWidget();
+        if (text == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+        }
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            setEditText(text);
+        } else {
+        }
+        sendEvent(SWT.Modify);
+        this.textChars = text;
     }
 
     /**
@@ -1140,7 +1674,13 @@ public class Text extends Scrollable {
      * @see #LIMIT
      */
     public void setTextLimit(int limit) {
-        getImpl().setTextLimit(limit);
+        dirty();
+        checkWidget();
+        if (limit == 0)
+            error(SWT.ERROR_CANNOT_BE_ZERO);
+        if (limit < 0)
+            return;
+        textLimit = limit;
     }
 
     /**
@@ -1156,7 +1696,11 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void setTopIndex(int index) {
-        getImpl().setTopIndex(index);
+        dirty();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0)
+            return;
+        this.topIndex = index;
     }
 
     /**
@@ -1173,18 +1717,158 @@ public class Text extends Scrollable {
      * </ul>
      */
     public void showSelection() {
-        getImpl().showSelection();
+        checkWidget();
+        if ((getApi().style & SWT.SINGLE) != 0) {
+            setSelection(getSelection());
+        } else {
+        }
     }
 
-    protected Text(IText impl) {
-        super(impl);
+    @Override
+    int traversalCode(int key, Object theEvent) {
+        int bits = super.traversalCode(key, theEvent);
+        if ((getApi().style & SWT.READ_ONLY) != 0)
+            return bits;
+        if ((getApi().style & SWT.MULTI) != 0) {
+            bits &= ~SWT.TRAVERSE_RETURN;
+            if (key == 48 && /* Tab */
+            theEvent != null) {
+            }
+        }
+        return bits;
     }
 
-    static Text createApi(IText impl) {
-        return new Text(impl);
+    @Override
+    public void updateCursorRects(boolean enabled) {
+        super.updateCursorRects(enabled);
     }
 
-    public IText getImpl() {
-        return (IText) super.getImpl();
+    void updateThemeColors() {
+        // See code comment in Link.updateThemeColors() for explanation
+        // Avoid infinite loop of redraws
+        if (lastAppAppearance == ((SwtDisplay) display.getImpl()).appAppearance)
+            return;
+        lastAppAppearance = ((SwtDisplay) display.getImpl()).appAppearance;
+        // Only multi-line controls are affected
+        if ((getApi().style & SWT.MULTI) == 0)
+            return;
+        if (foreground == null) {
+            if (getEnabled()) {
+            } else {
+            }
+        }
+        if ((backgroundImage == null) && (background == null)) {
+        }
+    }
+
+    boolean editable;
+
+    Point selection;
+
+    String text = "";
+
+    char[] textChars = new char[0];
+
+    int topIndex;
+
+    public int _textLimit() {
+        return textLimit;
+    }
+
+    public int _tabs() {
+        return tabs;
+    }
+
+    public char _echoCharacter() {
+        return echoCharacter;
+    }
+
+    public boolean _doubleClick() {
+        return doubleClick;
+    }
+
+    public boolean _receivingFocus() {
+        return receivingFocus;
+    }
+
+    public char[] _hiddenText() {
+        return hiddenText;
+    }
+
+    public String _message() {
+        return message;
+    }
+
+    public long _actionSearch() {
+        return actionSearch;
+    }
+
+    public long _actionCancel() {
+        return actionCancel;
+    }
+
+    public APPEARANCE _lastAppAppearance() {
+        return lastAppAppearance;
+    }
+
+    public boolean _editable() {
+        return editable;
+    }
+
+    public Point _selection() {
+        return selection;
+    }
+
+    public String _text() {
+        return text;
+    }
+
+    public char[] _textChars() {
+        return textChars;
+    }
+
+    public int _topIndex() {
+        return topIndex;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Modify", "Modify", e -> {
+            getDisplay().asyncExec(() -> {
+                setText(e.text);
+            });
+        });
+        FlutterBridge.on(this, "Segment", "Segments", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Segments, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                setSelection(e.index);
+            });
+        });
+        FlutterBridge.on(this, "Verify", "Verify", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Verify, e);
+            });
+        });
+    }
+
+    public Text getApi() {
+        if (api == null)
+            api = Text.createApi(this);
+        return (Text) api;
+    }
+
+    public VText getValue() {
+        if (value == null)
+            value = new VText(this);
+        return (VText) value;
     }
 }

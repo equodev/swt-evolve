@@ -3068,6 +3068,58 @@ public class SwtText extends SwtScrollable implements IText {
         return super.windowProc(handle, arg0, arg1, arg2, user_data);
     }
 
+    public long _bufferHandle() {
+        return bufferHandle;
+    }
+
+    public long _imContext() {
+        return imContext;
+    }
+
+    public int _tabs() {
+        return tabs;
+    }
+
+    public int _lastEventTime() {
+        return lastEventTime;
+    }
+
+    public int _fixStart() {
+        return fixStart;
+    }
+
+    public int _fixEnd() {
+        return fixEnd;
+    }
+
+    public boolean _doubleClick() {
+        return doubleClick;
+    }
+
+    public String _message() {
+        return message;
+    }
+
+    public long _textHandle() {
+        return textHandle;
+    }
+
+    public int[] _segments() {
+        return segments;
+    }
+
+    public long _indexMark() {
+        return indexMark;
+    }
+
+    public double _cachedAdjustment() {
+        return cachedAdjustment;
+    }
+
+    public double _currentAdjustment() {
+        return currentAdjustment;
+    }
+
     public Text getApi() {
         if (api == null)
             api = Text.createApi(this);

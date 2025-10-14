@@ -101,4 +101,32 @@ public class Sizes {
 
         return new Point(width, height);
     }
+
+    public static Point compute(DartText c) {
+        String text = c._text();
+        int textLength = (text != null ? text.length() : 0);
+
+        if ((c.getApi().style & org.eclipse.swt.SWT.MULTI) != 0) {
+            int width = 200; // Default width
+            if (text != null && !text.isEmpty()) {
+                String[] lines = text.split("\n");
+                int maxLineLength = 0;
+                for (String line : lines) {
+                    if (line.length() > maxLineLength) {
+                        maxLineLength = line.length();
+                    }
+                }
+                width = (int)(maxLineLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING);
+            }
+            return new Point(Math.max(width, 200), 120);
+        }
+
+        int width = (int)(textLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING);
+
+        if ((c.getApi().style & org.eclipse.swt.SWT.SEARCH) != 0) {
+            width += 64;
+        }
+
+        return new Point(Math.max(width, 100), 32);
+    }
 }

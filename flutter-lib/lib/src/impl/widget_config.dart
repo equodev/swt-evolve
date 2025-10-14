@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 
-bool _useDarkTheme = true;
+bool _useDarkTheme = false;
 int? _parentBackgroundColor;
 
 void setCurrentTheme(bool isDark) {
