@@ -89,6 +89,7 @@ Here is the current status of major widgets:
 | `GC` | ✔️ Implemented | Only supports Canvas. Draw2d implemented for FigureCanvas. |
 | `Label` | ✔️ Implemented |  |
 | `List` | ✔️ Implemented |  |
+| `Text` | ✔️ Implemented |  |
 
 ---
 
