@@ -15,6 +15,8 @@
  */
 package org.eclipse.swt.graphics;
 
+import dev.equo.swt.Config;
+
 /**
  * Instances of this class provide measurement information
  * about fonts including ascent, descent, height, leading
@@ -29,7 +31,7 @@ public final class FontMetrics {
 
     FontMetrics() {
         this((IFontMetrics) null);
-        setImpl(new SwtFontMetrics(this));
+        setImpl(Config.isEquo(FontMetrics.class) ? new DartFontMetrics(this) : new SwtFontMetrics(this));
     }
 
     /**

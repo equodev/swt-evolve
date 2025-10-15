@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2011 IBM Corporation and others.
+ *  Copyright (c) 2000, 2018 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -15,7 +15,8 @@
  */
 package org.eclipse.swt.graphics;
 
-import dev.equo.swt.Config;
+import org.eclipse.swt.internal.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class provide measurement information
@@ -27,11 +28,15 @@ import dev.equo.swt.Config;
  * @see GC#getFontMetrics
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public final class FontMetrics {
+public final class DartFontMetrics implements IFontMetrics {
 
-    FontMetrics() {
-        this((IFontMetrics) null);
-        setImpl(Config.isEquo(FontMetrics.class) ? new DartFontMetrics(this) : new SwtFontMetrics(this));
+    private int nativeZoom;
+
+    /**
+     * Prevents instances from being created outside the package.
+     */
+    DartFontMetrics(FontMetrics api) {
+        setApi(api);
     }
 
     /**
@@ -44,8 +49,13 @@ public final class FontMetrics {
      *
      * @see #hashCode
      */
+    @Override
     public boolean equals(Object object) {
-        return getImpl().equals(object);
+        if (object == this.getApi())
+            return true;
+        if (!(object instanceof FontMetrics))
+            return false;
+        return false;
     }
 
     /**
@@ -57,7 +67,7 @@ public final class FontMetrics {
      * @return the ascent of the font
      */
     public int getAscent() {
-        return getImpl().getAscent();
+        return 0;
     }
 
     /**
@@ -68,7 +78,7 @@ public final class FontMetrics {
      * @since 3.107
      */
     public double getAverageCharacterWidth() {
-        return getImpl().getAverageCharacterWidth();
+        return getAverageCharWidth();
     }
 
     /**
@@ -80,7 +90,7 @@ public final class FontMetrics {
      */
     @Deprecated
     public int getAverageCharWidth() {
-        return getImpl().getAverageCharWidth();
+        return 0;
     }
 
     /**
@@ -92,7 +102,7 @@ public final class FontMetrics {
      * @return the descent of the font
      */
     public int getDescent() {
-        return getImpl().getDescent();
+        return 4;
     }
 
     /**
@@ -107,7 +117,7 @@ public final class FontMetrics {
      * @see #getLeading
      */
     public int getHeight() {
-        return getImpl().getHeight();
+        return 12;
     }
 
     /**
@@ -118,7 +128,24 @@ public final class FontMetrics {
      * @return the leading space of the font
      */
     public int getLeading() {
-        return getImpl().getLeading();
+        /*
+	 * HiHPI rounding problem (bug 490743 comment 17):
+	 *
+	 * API clients expect this invariant:
+	 *    getHeight() == getLeading() + getAscent() + getDescent()
+	 *
+	 * Separate rounding of each RHS term can break the invariant.
+	 *
+	 * An additional problem is that ascent and descent are more important to
+	 * be as close as possible to the real value. Any necessary rounding
+	 * adjustment should go into leading, that's why compute this as a derived
+	 * value here:
+	 */
+        return getHeight() - getAscent() - getDescent();
+    }
+
+    private int getZoom() {
+        return DPIUtil.getZoomForAutoscaleProperty(nativeZoom);
     }
 
     /**
@@ -131,31 +158,30 @@ public final class FontMetrics {
      *
      * @see #equals
      */
+    @Override
     public int hashCode() {
-        return getImpl().hashCode();
+        return 0;
     }
 
-    public String toString() {
-        return getImpl().toString();
+    public FontMetrics getApi() {
+        if (api == null)
+            api = FontMetrics.createApi(this);
+        return (FontMetrics) api;
     }
 
-    protected IFontMetrics impl;
+    protected FontMetrics api;
 
-    protected FontMetrics(IFontMetrics impl) {
-        if (impl != null)
-            impl.setApi(this);
+    public void setApi(FontMetrics api) {
+        this.api = api;
+        if (api != null)
+            api.impl = this;
     }
 
-    static FontMetrics createApi(IFontMetrics impl) {
-        return new FontMetrics(impl);
-    }
+    protected VFontMetrics value;
 
-    public IFontMetrics getImpl() {
-        return impl;
-    }
-
-    protected FontMetrics setImpl(IFontMetrics impl) {
-        this.impl = impl;
-        return this;
+    public VFontMetrics getValue() {
+        if (value == null)
+            value = new VFontMetrics(this);
+        return (VFontMetrics) value;
     }
 }

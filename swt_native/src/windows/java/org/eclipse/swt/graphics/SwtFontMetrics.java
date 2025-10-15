@@ -188,7 +188,8 @@ public final class SwtFontMetrics implements IFontMetrics {
     public static FontMetrics win32_new(TEXTMETRIC handle, int nativeZoom) {
         FontMetrics fontMetrics = new FontMetrics();
         fontMetrics.handle = handle;
-        ((SwtFontMetrics) fontMetrics.getImpl()).nativeZoom = nativeZoom;
+        //Coming soon with Font support: ((SwtFontMetrics) fontMetrics.getImpl()).nativeZoom = nativeZoom;
+        ;
         return fontMetrics;
     }
 

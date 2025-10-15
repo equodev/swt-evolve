@@ -122,9 +122,24 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 return null;
             }
             FontMetrics result = new FontMetrics();
-            ((SwtFontMetrics) result.getImpl()).ascentInPoints = DPIUtil.autoScaleDown(device, ((SwtFontMetrics) lineMetricsInPixels.getImpl()).ascentInPoints);
-            ((SwtFontMetrics) result.getImpl()).descentInPoints = DPIUtil.autoScaleDown(device, ((SwtFontMetrics) lineMetricsInPixels.getImpl()).descentInPoints);
-            ((SwtFontMetrics) result.getImpl()).averageCharWidthInPoints = DPIUtil.autoScaleDown(device, ((SwtFontMetrics) lineMetricsInPixels.getImpl()).averageCharWidthInPoints);
+            if (result.getImpl() instanceof DartFontMetrics) {
+                ((DartFontMetrics) result.getImpl()).ascentInPoints = DPIUtil.autoScaleDown(device, lineMetricsInPixels.getImpl()._ascentInPoints());
+            }
+            if (result.getImpl() instanceof SwtFontMetrics) {
+                ((SwtFontMetrics) result.getImpl()).ascentInPoints = DPIUtil.autoScaleDown(device, lineMetricsInPixels.getImpl()._ascentInPoints());
+            }
+            if (result.getImpl() instanceof DartFontMetrics) {
+                ((DartFontMetrics) result.getImpl()).descentInPoints = DPIUtil.autoScaleDown(device, lineMetricsInPixels.getImpl()._descentInPoints());
+            }
+            if (result.getImpl() instanceof SwtFontMetrics) {
+                ((SwtFontMetrics) result.getImpl()).descentInPoints = DPIUtil.autoScaleDown(device, lineMetricsInPixels.getImpl()._descentInPoints());
+            }
+            if (result.getImpl() instanceof DartFontMetrics) {
+                ((DartFontMetrics) result.getImpl()).averageCharWidthInPoints = DPIUtil.autoScaleDown(device, lineMetricsInPixels.getImpl()._averageCharWidthInPoints());
+            }
+            if (result.getImpl() instanceof SwtFontMetrics) {
+                ((SwtFontMetrics) result.getImpl()).averageCharWidthInPoints = DPIUtil.autoScaleDown(device, lineMetricsInPixels.getImpl()._averageCharWidthInPoints());
+            }
             return result;
         }
 
@@ -134,9 +149,24 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 return;
             }
             FontMetrics result = new FontMetrics();
-            ((SwtFontMetrics) result.getImpl()).ascentInPoints = DPIUtil.autoScaleUp(device, ((SwtFontMetrics) metrics.getImpl()).ascentInPoints);
-            ((SwtFontMetrics) result.getImpl()).descentInPoints = DPIUtil.autoScaleUp(device, ((SwtFontMetrics) metrics.getImpl()).descentInPoints);
-            ((SwtFontMetrics) result.getImpl()).averageCharWidthInPoints = DPIUtil.autoScaleUp(device, ((SwtFontMetrics) metrics.getImpl()).averageCharWidthInPoints);
+            if (result.getImpl() instanceof DartFontMetrics) {
+                ((DartFontMetrics) result.getImpl()).ascentInPoints = DPIUtil.autoScaleUp(device, metrics.getImpl()._ascentInPoints());
+            }
+            if (result.getImpl() instanceof SwtFontMetrics) {
+                ((SwtFontMetrics) result.getImpl()).ascentInPoints = DPIUtil.autoScaleUp(device, metrics.getImpl()._ascentInPoints());
+            }
+            if (result.getImpl() instanceof DartFontMetrics) {
+                ((DartFontMetrics) result.getImpl()).descentInPoints = DPIUtil.autoScaleUp(device, metrics.getImpl()._descentInPoints());
+            }
+            if (result.getImpl() instanceof SwtFontMetrics) {
+                ((SwtFontMetrics) result.getImpl()).descentInPoints = DPIUtil.autoScaleUp(device, metrics.getImpl()._descentInPoints());
+            }
+            if (result.getImpl() instanceof DartFontMetrics) {
+                ((DartFontMetrics) result.getImpl()).averageCharWidthInPoints = DPIUtil.autoScaleUp(device, metrics.getImpl()._averageCharWidthInPoints());
+            }
+            if (result.getImpl() instanceof SwtFontMetrics) {
+                ((SwtFontMetrics) result.getImpl()).averageCharWidthInPoints = DPIUtil.autoScaleUp(device, metrics.getImpl()._averageCharWidthInPoints());
+            }
             lineMetricsInPixels = result;
         }
 
@@ -1314,9 +1344,24 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         ascentInPoints = Math.max(this.ascentInPoints, ascentInPoints);
         int descentInPoints = heightInPoints - ascentInPoints;
         FontMetrics fm = new FontMetrics();
-        ((SwtFontMetrics) fm.getImpl()).ascentInPoints = ascentInPoints;
-        ((SwtFontMetrics) fm.getImpl()).descentInPoints = descentInPoints;
-        ((SwtFontMetrics) fm.getImpl()).averageCharWidthInPoints = 0;
+        if (fm.getImpl() instanceof DartFontMetrics) {
+            ((DartFontMetrics) fm.getImpl()).ascentInPoints = ascentInPoints;
+        }
+        if (fm.getImpl() instanceof SwtFontMetrics) {
+            ((SwtFontMetrics) fm.getImpl()).ascentInPoints = ascentInPoints;
+        }
+        if (fm.getImpl() instanceof DartFontMetrics) {
+            ((DartFontMetrics) fm.getImpl()).descentInPoints = descentInPoints;
+        }
+        if (fm.getImpl() instanceof SwtFontMetrics) {
+            ((SwtFontMetrics) fm.getImpl()).descentInPoints = descentInPoints;
+        }
+        if (fm.getImpl() instanceof DartFontMetrics) {
+            ((DartFontMetrics) fm.getImpl()).averageCharWidthInPoints = 0;
+        }
+        if (fm.getImpl() instanceof SwtFontMetrics) {
+            ((SwtFontMetrics) fm.getImpl()).averageCharWidthInPoints = 0;
+        }
         return fm;
     }
 

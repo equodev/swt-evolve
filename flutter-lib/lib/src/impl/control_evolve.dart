@@ -51,7 +51,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   Widget wrap(Widget widget) {
     // Apply intrinsic width to prevent widgets from taking full width in Wrap
-    widget = IntrinsicWidth(child: widget);
+    // widget = IntrinsicWidth(child: widget);
 
     if (state.style.has(SWT.BORDER)) {
       widget = Container(

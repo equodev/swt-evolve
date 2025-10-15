@@ -15,6 +15,8 @@
  */
 package org.eclipse.swt.graphics;
 
+import dev.equo.swt.*;
+
 /**
  * Instances of this class provide measurement information
  * about fonts including ascent, descent, height, leading
@@ -25,13 +27,13 @@ package org.eclipse.swt.graphics;
  * @see GC#getFontMetrics
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public final class SwtFontMetrics implements IFontMetrics {
+public final class DartFontMetrics implements IFontMetrics {
 
-    int ascent, descent, leading, height;
+    int ascent = 11, descent = 4, leading, height;
 
-    double averageCharWidth;
+    double averageCharWidth = 12;
 
-    SwtFontMetrics(FontMetrics api) {
+    DartFontMetrics(FontMetrics api) {
         setApi(api);
     }
 
@@ -69,88 +71,6 @@ public final class SwtFontMetrics implements IFontMetrics {
         }
         if (fontMetrics.getImpl() instanceof SwtFontMetrics) {
             ((SwtFontMetrics) fontMetrics.getImpl()).height = this.height;
-        }
-        return fontMetrics;
-    }
-
-    public static FontMetrics cocoa_new(int ascent, int descent, int averageCharWidth, int leading, int height) {
-        FontMetrics fontMetrics = new FontMetrics();
-        if (fontMetrics.getImpl() instanceof DartFontMetrics) {
-            ((DartFontMetrics) fontMetrics.getImpl()).ascent = ascent;
-        }
-        if (fontMetrics.getImpl() instanceof SwtFontMetrics) {
-            ((SwtFontMetrics) fontMetrics.getImpl()).ascent = ascent;
-        }
-        if (fontMetrics.getImpl() instanceof DartFontMetrics) {
-            ((DartFontMetrics) fontMetrics.getImpl()).descent = descent;
-        }
-        if (fontMetrics.getImpl() instanceof SwtFontMetrics) {
-            ((SwtFontMetrics) fontMetrics.getImpl()).descent = descent;
-        }
-        if (fontMetrics.getImpl() instanceof DartFontMetrics) {
-            ((DartFontMetrics) fontMetrics.getImpl()).averageCharWidth = averageCharWidth;
-        }
-        if (fontMetrics.getImpl() instanceof SwtFontMetrics) {
-            ((SwtFontMetrics) fontMetrics.getImpl()).averageCharWidth = averageCharWidth;
-        }
-        if (fontMetrics.getImpl() instanceof DartFontMetrics) {
-            ((DartFontMetrics) fontMetrics.getImpl()).leading = leading;
-        }
-        if (fontMetrics.getImpl() instanceof SwtFontMetrics) {
-            ((SwtFontMetrics) fontMetrics.getImpl()).leading = leading;
-        }
-        if (fontMetrics.getImpl() instanceof DartFontMetrics) {
-            ((DartFontMetrics) fontMetrics.getImpl()).height = height;
-        }
-        if (fontMetrics.getImpl() instanceof SwtFontMetrics) {
-            ((SwtFontMetrics) fontMetrics.getImpl()).height = height;
-        }
-        return fontMetrics;
-    }
-
-    /**
-     * Invokes platform specific functionality to allocate a new FontMetrics.
-     * <p>
-     * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
-     * API for <code>FontMetrics</code>. It is marked public only so that it
-     * can be shared within the packages provided by SWT. It is not
-     * available on all platforms, and should never be called from
-     * application code.
-     * </p>
-     *
-     * @noreference This method is not intended to be referenced by clients.
-     */
-    public static FontMetrics cocoa_new(int ascent, int descent, double averageCharWidth, int leading, int height) {
-        FontMetrics fontMetrics = new FontMetrics();
-        if (fontMetrics.getImpl() instanceof DartFontMetrics) {
-            ((DartFontMetrics) fontMetrics.getImpl()).ascent = ascent;
-        }
-        if (fontMetrics.getImpl() instanceof SwtFontMetrics) {
-            ((SwtFontMetrics) fontMetrics.getImpl()).ascent = ascent;
-        }
-        if (fontMetrics.getImpl() instanceof DartFontMetrics) {
-            ((DartFontMetrics) fontMetrics.getImpl()).descent = descent;
-        }
-        if (fontMetrics.getImpl() instanceof SwtFontMetrics) {
-            ((SwtFontMetrics) fontMetrics.getImpl()).descent = descent;
-        }
-        if (fontMetrics.getImpl() instanceof DartFontMetrics) {
-            ((DartFontMetrics) fontMetrics.getImpl()).averageCharWidth = averageCharWidth;
-        }
-        if (fontMetrics.getImpl() instanceof SwtFontMetrics) {
-            ((SwtFontMetrics) fontMetrics.getImpl()).averageCharWidth = averageCharWidth;
-        }
-        if (fontMetrics.getImpl() instanceof DartFontMetrics) {
-            ((DartFontMetrics) fontMetrics.getImpl()).leading = leading;
-        }
-        if (fontMetrics.getImpl() instanceof SwtFontMetrics) {
-            ((SwtFontMetrics) fontMetrics.getImpl()).leading = leading;
-        }
-        if (fontMetrics.getImpl() instanceof DartFontMetrics) {
-            ((DartFontMetrics) fontMetrics.getImpl()).height = height;
-        }
-        if (fontMetrics.getImpl() instanceof SwtFontMetrics) {
-            ((SwtFontMetrics) fontMetrics.getImpl()).height = height;
         }
         return fontMetrics;
     }
@@ -218,7 +138,7 @@ public final class SwtFontMetrics implements IFontMetrics {
      * @return the descent of the font
      */
     public int getDescent() {
-        return descent;
+        return 4;
     }
 
     /**
@@ -233,7 +153,7 @@ public final class SwtFontMetrics implements IFontMetrics {
      * @see #getLeading
      */
     public int getHeight() {
-        return height;
+        return 12;
     }
 
     /**
@@ -307,5 +227,13 @@ public final class SwtFontMetrics implements IFontMetrics {
         this.api = api;
         if (api != null)
             api.impl = this;
+    }
+
+    protected VFontMetrics value;
+
+    public VFontMetrics getValue() {
+        if (value == null)
+            value = new VFontMetrics(this);
+        return (VFontMetrics) value;
     }
 }

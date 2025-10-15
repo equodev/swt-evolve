@@ -50,7 +50,7 @@ public final class SwtFontMetrics implements IFontMetrics {
         if (!(object instanceof FontMetrics))
             return false;
         FontMetrics metrics = (FontMetrics) object;
-        return ascentInPoints == ((SwtFontMetrics) metrics.getImpl()).ascentInPoints && descentInPoints == ((SwtFontMetrics) metrics.getImpl()).descentInPoints && averageCharWidthInPoints == ((SwtFontMetrics) metrics.getImpl()).averageCharWidthInPoints;
+        return ascentInPoints == metrics.getImpl()._ascentInPoints() && descentInPoints == metrics.getImpl()._descentInPoints() && averageCharWidthInPoints == metrics.getImpl()._averageCharWidthInPoints();
     }
 
     /**
@@ -140,6 +140,18 @@ public final class SwtFontMetrics implements IFontMetrics {
     @Override
     public int hashCode() {
         return ascentInPoints ^ descentInPoints ^ averageCharWidthInPoints;
+    }
+
+    public int _ascentInPoints() {
+        return ascentInPoints;
+    }
+
+    public int _descentInPoints() {
+        return descentInPoints;
+    }
+
+    public int _averageCharWidthInPoints() {
+        return averageCharWidthInPoints;
     }
 
     public FontMetrics getApi() {

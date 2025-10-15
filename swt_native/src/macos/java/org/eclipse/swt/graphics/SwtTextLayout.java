@@ -390,9 +390,9 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 final double realHeight = bounds[numberOfLines].height;
                 final double realDescent = layoutManager.typesetter().baselineOffsetInLayoutManager(layoutManager, lineOffset);
                 final double realAscent = realHeight - realDescent;
-                final double wantAscent = ((SwtFontMetrics) fixedLineMetrics.getImpl()).ascent;
+                final double wantAscent = fixedLineMetrics.getImpl()._ascent();
                 fixedLineMetricsDy = wantAscent - realAscent;
-                bounds[numberOfLines].height = ((SwtFontMetrics) fixedLineMetrics.getImpl()).height;
+                bounds[numberOfLines].height = fixedLineMetrics.getImpl()._height();
             }
         }
         if (numberOfLines == 0) {
@@ -538,7 +538,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                             rect.x += pt.x;
                             rect.y += pt.y;
                             if (fixedLineMetrics != null)
-                                rect.height = ((SwtFontMetrics) fixedLineMetrics.getImpl()).height;
+                                rect.height = fixedLineMetrics.getImpl()._height();
                             rect.height = Math.max(rect.height, ascent + descent);
                             if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && (/*hasSelection ||*/
                             (flags & SWT.LAST_LINE_SELECTION) != 0)) {
@@ -838,7 +838,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 rect.height = layoutManager.defaultLineHeightForFont(nsFont);
             }
             if (fixedLineMetrics != null)
-                rect.height = ((SwtFontMetrics) fixedLineMetrics.getImpl()).height;
+                rect.height = fixedLineMetrics.getImpl()._height();
             rect.height = Math.max(rect.height, ascent + descent) + spacing;
             return new Rectangle(0, 0, (int) Math.ceil(rect.width), (int) Math.ceil(rect.height) + getVerticalIndent());
         } finally {
@@ -894,7 +894,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 bottom = Math.max(bottom, (int) Math.ceil(rect.y + rect.height));
             }
             if (fixedLineMetrics != null)
-                bottom = top + ((SwtFontMetrics) fixedLineMetrics.getImpl()).height;
+                bottom = top + fixedLineMetrics.getImpl()._height();
             return new Rectangle(left, top, right - left, bottom - top + getVerticalIndent());
         } finally {
             if (pool != null)
@@ -1952,7 +1952,9 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             fixedLineMetrics = null;
             return;
         }
-        fixedLineMetrics = ((SwtFontMetrics) metrics.getImpl()).makeCopy();
+        if (metrics.getImpl() instanceof SwtFontMetrics) {
+            fixedLineMetrics = ((SwtFontMetrics) metrics.getImpl()).makeCopy();
+        }
     }
 
     /**

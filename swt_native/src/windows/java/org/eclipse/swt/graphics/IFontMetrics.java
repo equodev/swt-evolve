@@ -2,7 +2,7 @@ package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.internal.*;
 
-public interface IFontMetrics {
+public interface IFontMetrics extends ImplFontMetrics {
 
     /**
      * Compares the argument to the receiver, and returns true
