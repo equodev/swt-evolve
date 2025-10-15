@@ -112,9 +112,11 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).editable = value;
     }
 
-    @JsonAttribute(ignore = true)
     public FontMetrics getFixedLineMetrics() {
-        return ((DartStyledText) impl).fixedLineMetrics;
+        FontMetrics val = ((DartStyledText) impl).fixedLineMetrics;
+        if (val != null && !(val.getImpl() instanceof DartFontMetrics))
+            return null;
+        return val;
     }
 
     public void setFixedLineMetrics(FontMetrics value) {

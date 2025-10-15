@@ -39,6 +39,7 @@ class StyledTextSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("caretOffset").equalsTo(w.getCaretOffset(), orAbsentIf0));
         assertJ.satisfies(node("doubleClickEnabled").equalsTo(w.getDoubleClickEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("editable").equalsTo(w.getEditable(), orAbsentIfFalse));
+        assertJ.satisfies(node("fixedLineMetrics").equalsTo(value(w).getFixedLineMetrics(), orAbsentIfNull));
         assertJ.satisfies(node("horizontalIndex").equalsTo(w.getHorizontalIndex(), orAbsentIf0));
         assertJ.satisfies(node("horizontalPixel").equalsTo(w.getHorizontalPixel(), orAbsentIf0));
         assertJ.satisfies(node("indent").equalsTo(w.getIndent(), orAbsentIf0));

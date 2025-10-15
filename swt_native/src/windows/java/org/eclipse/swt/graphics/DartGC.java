@@ -1884,7 +1884,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public FontMetrics getFontMetrics() {
-        return null;
+        return new FontMetrics();
     }
 
     /**

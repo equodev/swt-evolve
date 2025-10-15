@@ -2435,10 +2435,25 @@ public final class SwtGC extends SwtResource implements IGC {
         int ascent = OS.pango_font_metrics_get_ascent(metrics);
         int descent = OS.pango_font_metrics_get_descent(metrics);
         int ascentInPoints = DPIUtil.autoScaleDown(drawable, OS.PANGO_PIXELS(ascent));
-        ((SwtFontMetrics) fm.getImpl()).ascentInPoints = ascentInPoints;
+        if (fm.getImpl() instanceof DartFontMetrics) {
+            ((DartFontMetrics) fm.getImpl()).ascentInPoints = ascentInPoints;
+        }
+        if (fm.getImpl() instanceof SwtFontMetrics) {
+            ((SwtFontMetrics) fm.getImpl()).ascentInPoints = ascentInPoints;
+        }
         int heightInPoints = DPIUtil.autoScaleDown(drawable, OS.PANGO_PIXELS(ascent + descent));
-        ((SwtFontMetrics) fm.getImpl()).descentInPoints = heightInPoints - ascentInPoints;
-        ((SwtFontMetrics) fm.getImpl()).averageCharWidthInPoints = DPIUtil.autoScaleDown(drawable, OS.PANGO_PIXELS(OS.pango_font_metrics_get_approximate_char_width(metrics)));
+        if (fm.getImpl() instanceof DartFontMetrics) {
+            ((DartFontMetrics) fm.getImpl()).descentInPoints = heightInPoints - ascentInPoints;
+        }
+        if (fm.getImpl() instanceof SwtFontMetrics) {
+            ((SwtFontMetrics) fm.getImpl()).descentInPoints = heightInPoints - ascentInPoints;
+        }
+        if (fm.getImpl() instanceof DartFontMetrics) {
+            ((DartFontMetrics) fm.getImpl()).averageCharWidthInPoints = DPIUtil.autoScaleDown(drawable, OS.PANGO_PIXELS(OS.pango_font_metrics_get_approximate_char_width(metrics)));
+        }
+        if (fm.getImpl() instanceof SwtFontMetrics) {
+            ((SwtFontMetrics) fm.getImpl()).averageCharWidthInPoints = DPIUtil.autoScaleDown(drawable, OS.PANGO_PIXELS(OS.pango_font_metrics_get_approximate_char_width(metrics)));
+        }
         OS.pango_font_metrics_unref(metrics);
         return fm;
     }

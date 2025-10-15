@@ -56,6 +56,9 @@ VStyledText _$VStyledTextFromJson(Map<String, dynamic> json) => VStyledText()
   ..columnX = (json['columnX'] as num?)?.toInt()
   ..doubleClickEnabled = json['doubleClickEnabled'] as bool?
   ..editable = json['editable'] as bool?
+  ..fixedLineMetrics = json['fixedLineMetrics'] == null
+      ? null
+      : VFontMetrics.fromJson(json['fixedLineMetrics'] as Map<String, dynamic>)
   ..horizontalIndex = (json['horizontalIndex'] as num?)?.toInt()
   ..horizontalPixel = (json['horizontalPixel'] as num?)?.toInt()
   ..indent = (json['indent'] as num?)?.toInt()
@@ -133,6 +136,7 @@ Map<String, dynamic> _$VStyledTextToJson(VStyledText instance) =>
       'columnX': instance.columnX,
       'doubleClickEnabled': instance.doubleClickEnabled,
       'editable': instance.editable,
+      'fixedLineMetrics': instance.fixedLineMetrics,
       'horizontalIndex': instance.horizontalIndex,
       'horizontalPixel': instance.horizontalPixel,
       'indent': instance.indent,

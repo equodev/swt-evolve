@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2011 IBM Corporation and others.
+ *  Copyright (c) 2000, 2020 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -15,7 +15,7 @@
  */
 package org.eclipse.swt.graphics;
 
-import dev.equo.swt.Config;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class provide measurement information
@@ -27,11 +27,12 @@ import dev.equo.swt.Config;
  * @see GC#getFontMetrics
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public final class FontMetrics {
+public final class DartFontMetrics implements IFontMetrics {
 
-    FontMetrics() {
-        this((IFontMetrics) null);
-        setImpl(Config.isEquo(FontMetrics.class) ? new DartFontMetrics(this) : new SwtFontMetrics(this));
+    int ascentInPoints, descentInPoints, averageCharWidthInPoints;
+
+    DartFontMetrics(FontMetrics api) {
+        setApi(api);
     }
 
     /**
@@ -44,8 +45,14 @@ public final class FontMetrics {
      *
      * @see #hashCode
      */
+    @Override
     public boolean equals(Object object) {
-        return getImpl().equals(object);
+        if (object == this.getApi())
+            return true;
+        if (!(object instanceof FontMetrics))
+            return false;
+        FontMetrics metrics = (FontMetrics) object;
+        return ascentInPoints == metrics.getImpl()._ascentInPoints() && descentInPoints == metrics.getImpl()._descentInPoints() && averageCharWidthInPoints == metrics.getImpl()._averageCharWidthInPoints();
     }
 
     /**
@@ -57,7 +64,7 @@ public final class FontMetrics {
      * @return the ascent of the font
      */
     public int getAscent() {
-        return getImpl().getAscent();
+        return ascentInPoints;
     }
 
     /**
@@ -68,7 +75,7 @@ public final class FontMetrics {
      * @since 3.107
      */
     public double getAverageCharacterWidth() {
-        return getImpl().getAverageCharacterWidth();
+        return getAverageCharWidth();
     }
 
     /**
@@ -80,7 +87,7 @@ public final class FontMetrics {
      */
     @Deprecated
     public int getAverageCharWidth() {
-        return getImpl().getAverageCharWidth();
+        return averageCharWidthInPoints;
     }
 
     /**
@@ -92,7 +99,7 @@ public final class FontMetrics {
      * @return the descent of the font
      */
     public int getDescent() {
-        return getImpl().getDescent();
+        return 4;
     }
 
     /**
@@ -107,7 +114,7 @@ public final class FontMetrics {
      * @see #getLeading
      */
     public int getHeight() {
-        return getImpl().getHeight();
+        return 12;
     }
 
     /**
@@ -118,7 +125,8 @@ public final class FontMetrics {
      * @return the leading space of the font
      */
     public int getLeading() {
-        return getImpl().getLeading();
+        // Pango has no concept of "leading"
+        return 0;
     }
 
     /**
@@ -131,31 +139,42 @@ public final class FontMetrics {
      *
      * @see #equals
      */
+    @Override
     public int hashCode() {
-        return getImpl().hashCode();
+        return ascentInPoints ^ descentInPoints ^ averageCharWidthInPoints;
     }
 
-    public String toString() {
-        return getImpl().toString();
+    public int _ascentInPoints() {
+        return ascentInPoints;
     }
 
-    protected IFontMetrics impl;
-
-    protected FontMetrics(IFontMetrics impl) {
-        if (impl != null)
-            impl.setApi(this);
+    public int _descentInPoints() {
+        return descentInPoints;
     }
 
-    static FontMetrics createApi(IFontMetrics impl) {
-        return new FontMetrics(impl);
+    public int _averageCharWidthInPoints() {
+        return averageCharWidthInPoints;
     }
 
-    public IFontMetrics getImpl() {
-        return impl;
+    public FontMetrics getApi() {
+        if (api == null)
+            api = FontMetrics.createApi(this);
+        return (FontMetrics) api;
     }
 
-    protected FontMetrics setImpl(IFontMetrics impl) {
-        this.impl = impl;
-        return this;
+    protected FontMetrics api;
+
+    public void setApi(FontMetrics api) {
+        this.api = api;
+        if (api != null)
+            api.impl = this;
+    }
+
+    protected VFontMetrics value;
+
+    public VFontMetrics getValue() {
+        if (value == null)
+            value = new VFontMetrics(this);
+        return (VFontMetrics) value;
     }
 }

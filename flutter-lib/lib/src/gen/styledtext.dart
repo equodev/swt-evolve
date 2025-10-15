@@ -5,6 +5,7 @@ import '../gen/canvas.dart';
 import '../gen/caret.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
+import '../gen/fontmetrics.dart';
 import '../gen/image.dart';
 import '../gen/point.dart';
 import '../gen/rectangle.dart';
@@ -87,6 +88,7 @@ class VStyledText extends VCanvas {
   int? columnX;
   bool? doubleClickEnabled;
   bool? editable;
+  VFontMetrics? fixedLineMetrics;
   int? horizontalIndex;
   int? horizontalPixel;
   int? indent;
