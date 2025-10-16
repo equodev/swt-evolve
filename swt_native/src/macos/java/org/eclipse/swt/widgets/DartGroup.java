@@ -17,8 +17,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Config;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class provide an etched border
@@ -44,7 +43,13 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Group extends Composite {
+public class DartGroup extends DartComposite implements IGroup {
+
+    String text = "";
+
+    boolean ignoreResize;
+
+    int hMargin, vMargin;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -78,21 +83,54 @@ public class Group extends Composite {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public Group(Composite parent, int style) {
-        this((IGroup) null);
-        setImpl(Config.isEquo(Group.class, parent) ? new DartGroup(parent, style, this) : new SwtGroup(parent, style, this));
+    public DartGroup(Composite parent, int style, Group api) {
+        super(parent, checkStyle(style), api);
     }
 
-    protected void checkSubclass() {
-        getImpl().checkSubclass();
+    static int checkStyle(int style) {
+        style |= SWT.NO_FOCUS;
+        /*
+	* Even though it is legal to create this widget
+	* with scroll bars, they serve no useful purpose
+	* because they do not automatically scroll the
+	* widget's client area.  The fix is to clear
+	* the SWT style.
+	*/
+        return style & ~(SWT.H_SCROLL | SWT.V_SCROLL);
     }
 
+    @Override
+    public void checkSubclass() {
+        if (!isValidSubclass())
+            error(SWT.ERROR_INVALID_SUBCLASS);
+    }
+
+    @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getImpl().computeTrim(x, y, width, height);
+        checkWidget();
+        ignoreResize = true;
+        ignoreResize = false;
+        return super.computeTrim(x, y, width, height);
     }
 
+    @Override
+    void createHandle() {
+    }
+
+    @Override
+    void deregister() {
+        super.deregister();
+    }
+
+    @Override
     public Rectangle getClientArea() {
-        return getImpl().getClientArea();
+        checkWidget();
+        return getBounds();
+    }
+
+    @Override
+    String getNameText() {
+        return getText();
     }
 
     /**
@@ -108,7 +146,45 @@ public class Group extends Composite {
      * </ul>
      */
     public String getText() {
-        return getImpl().getText();
+        checkWidget();
+        return text;
+    }
+
+    @Override
+    public boolean isTransparent() {
+        return true;
+    }
+
+    @Override
+    public float getThemeAlpha() {
+        return (background != null ? 1 : 0.25f) * parent.getImpl().getThemeAlpha();
+    }
+
+    @Override
+    void register() {
+        super.register();
+    }
+
+    @Override
+    void releaseHandle() {
+        super.releaseHandle();
+    }
+
+    @Override
+    void resized() {
+        if (!ignoreResize)
+            super.resized();
+    }
+
+    @Override
+    void setForeground(double[] color) {
+        if (color == null) {
+        } else {
+        }
+    }
+
+    @Override
+    void setOrientation() {
     }
 
     /**
@@ -139,18 +215,44 @@ public class Group extends Composite {
      * </ul>
      */
     public void setText(String string) {
-        getImpl().setText(string);
+        dirty();
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        text = string;
+        char[] buffer = new char[text.length()];
+        text.getChars(0, buffer.length, buffer, 0);
     }
 
-    protected Group(IGroup impl) {
-        super(impl);
+    public String _text() {
+        return text;
     }
 
-    static Group createApi(IGroup impl) {
-        return new Group(impl);
+    public boolean _ignoreResize() {
+        return ignoreResize;
     }
 
-    public IGroup getImpl() {
-        return (IGroup) super.getImpl();
+    public int _hMargin() {
+        return hMargin;
+    }
+
+    public int _vMargin() {
+        return vMargin;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+    }
+
+    public Group getApi() {
+        if (api == null)
+            api = Group.createApi(this);
+        return (Group) api;
+    }
+
+    public VGroup getValue() {
+        if (value == null)
+            value = new VGroup(this);
+        return (VGroup) value;
     }
 }

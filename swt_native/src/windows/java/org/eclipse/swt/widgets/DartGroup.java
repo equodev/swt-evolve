@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2012 IBM Corporation and others.
+ *  Copyright (c) 2000, 2018 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -17,8 +17,8 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Config;
+import org.eclipse.swt.internal.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class provide an etched border
@@ -44,7 +44,11 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Group extends Composite {
+public class DartGroup extends DartComposite implements IGroup {
+
+    String text = "";
+
+    static final int CLIENT_INSET = 3;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -78,21 +82,88 @@ public class Group extends Composite {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public Group(Composite parent, int style) {
-        this((IGroup) null);
-        setImpl(Config.isEquo(Group.class, parent) ? new DartGroup(parent, style, this) : new SwtGroup(parent, style, this));
+    public DartGroup(Composite parent, int style, Group api) {
+        super(parent, checkStyle(style), api);
     }
 
-    protected void checkSubclass() {
-        getImpl().checkSubclass();
+    static int checkStyle(int style) {
+        style |= SWT.NO_FOCUS;
+        /*
+	* Even though it is legal to create this widget
+	* with scroll bars, they serve no useful purpose
+	* because they do not automatically scroll the
+	* widget's client area.  The fix is to clear
+	* the SWT style.
+	*/
+        return style & ~(SWT.H_SCROLL | SWT.V_SCROLL);
     }
 
-    public Rectangle computeTrim(int x, int y, int width, int height) {
-        return getImpl().computeTrim(x, y, width, height);
+    @Override
+    public void checkSubclass() {
+        if (!isValidSubclass())
+            error(SWT.ERROR_INVALID_SUBCLASS);
     }
 
-    public Rectangle getClientArea() {
-        return getImpl().getClientArea();
+    @Override
+    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+        return Sizes.compute(this);
+    }
+
+    @Override
+    Rectangle computeTrimInPixels(int x, int y, int width, int height) {
+        checkWidget();
+        Rectangle trim = super.computeTrimInPixels(x, y, width, height);
+        trim.x -= CLIENT_INSET;
+        trim.width += CLIENT_INSET * 2;
+        return trim;
+    }
+
+    @Override
+    void createHandle() {
+    }
+
+    @Override
+    void enableWidget(boolean enabled) {
+        super.enableWidget(enabled);
+        /*
+	* Bug in Windows.  When a group control is right-to-left and
+	* is disabled, the first pixel of the text is clipped.  The
+	* fix is to add a space to both sides of the text.
+	*/
+        String string = fixText(enabled);
+        if (string != null) {
+        }
+        if (enabled && hasCustomForeground()) {
+        }
+    }
+
+    String fixText(boolean enabled) {
+        /*
+	* Bug in Windows.  When a group control is right-to-left and
+	* is disabled, the first pixel of the text is clipped.  The
+	* fix is to add a space to both sides of the text.
+	*/
+        if (text.length() == 0)
+            return null;
+        if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0) {
+            String string = null;
+            return (getApi().style & SWT.FLIP_TEXT_DIRECTION) == 0 ? string : string != null ? LRE + string : LRE + text;
+        } else if ((getApi().style & SWT.FLIP_TEXT_DIRECTION) != 0) {
+            return RLE + text;
+        }
+        return null;
+    }
+
+    @Override
+    Rectangle getClientAreaInPixels() {
+        checkWidget();
+        forceResize();
+        return null;
+    }
+
+    @Override
+    String getNameText() {
+        return getText();
     }
 
     /**
@@ -108,7 +179,43 @@ public class Group extends Composite {
      * </ul>
      */
     public String getText() {
-        return getImpl().getText();
+        checkWidget();
+        return text;
+    }
+
+    @Override
+    boolean mnemonicHit(char key) {
+        return setFocus();
+    }
+
+    @Override
+    boolean mnemonicMatch(char key) {
+        char mnemonic = findMnemonic(getText());
+        if (mnemonic == '\0')
+            return false;
+        return Character.toUpperCase(key) == Character.toUpperCase(mnemonic);
+    }
+
+    @Override
+    void releaseWidget() {
+        super.releaseWidget();
+        text = null;
+    }
+
+    @Override
+    int resolveTextDirection() {
+        return 0;
+    }
+
+    @Override
+    public void setFont(Font font) {
+        dirty();
+        checkWidget();
+        Rectangle oldRect = getClientAreaInPixels();
+        super.setFont(font);
+        Rectangle newRect = getClientAreaInPixels();
+        if (!oldRect.equals(newRect))
+            sendResize();
     }
 
     /**
@@ -139,18 +246,45 @@ public class Group extends Composite {
      * </ul>
      */
     public void setText(String string) {
-        getImpl().setText(string);
+        dirty();
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        text = string;
+        if ((getApi().state & HAS_AUTO_DIRECTION) == 0 || !updateTextDirection(AUTO_TEXT_DIRECTION)) {
+        }
     }
 
-    protected Group(IGroup impl) {
-        super(impl);
+    @Override
+    boolean updateTextDirection(int textDirection) {
+        if (super.updateTextDirection(textDirection)) {
+            return true;
+        }
+        return false;
     }
 
-    static Group createApi(IGroup impl) {
-        return new Group(impl);
+    @Override
+    int widgetStyle() {
+        return 0;
     }
 
-    public IGroup getImpl() {
-        return (IGroup) super.getImpl();
+    public String _text() {
+        return text;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+    }
+
+    public Group getApi() {
+        if (api == null)
+            api = Group.createApi(this);
+        return (Group) api;
+    }
+
+    public VGroup getValue() {
+        if (value == null)
+            value = new VGroup(this);
+        return (VGroup) value;
     }
 }
