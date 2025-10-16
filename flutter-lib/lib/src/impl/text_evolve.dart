@@ -106,7 +106,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       fillColor: bgColor,
       filled: true,
       counterText: '',
-      prefixIcon: state.style.has(SWT.SEARCH) || state.style.has(SWT.ICON_SEARCH)
+      prefixIcon: state.style.has(SWT.SEARCH)
           ? Icon(Icons.search, size: 16, color: iconColor)
           : null,
       prefixIconConstraints: const BoxConstraints(
@@ -114,7 +114,6 @@ class TextImpl<T extends TextSwt, V extends VText>
         minWidth: 32,
       ),
       suffixIcon: (state.style.has(SWT.SEARCH) && state.text != null && state.text!.isNotEmpty)
-          || state.style.has(SWT.ICON_CANCEL)
           ? IconButton(
         icon: Icon(Icons.clear, size: 16, color: iconColor),
         padding: EdgeInsets.zero,
