@@ -42,3 +42,7 @@ Color getIconColor() {
 Color getLinkColor() {
   return getCurrentTheme() ? Colors.lightBlue : Colors.blue;
 }
+
+Color getShellBackground() {
+  return AppColors.getBackgroundColor();
+}

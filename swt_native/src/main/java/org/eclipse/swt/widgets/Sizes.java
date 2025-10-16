@@ -144,4 +144,56 @@ public class Sizes {
 
         return new Point(Math.max(width, 100), 32);
     }
+
+    public static Point compute(DartGroup c) {
+        String text = c._text();
+        int textLength = (text != null ? text.length() : 0);
+
+        // Calculate minimum width based on title text
+        // Title needs space for text plus padding on both sides
+        int titleWidth = (int)(textLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING);
+
+        // Calculate size needed for children
+        Control[] children = c.getChildren();
+        int childrenWidth = 0;
+        int childrenHeight = 0;
+
+        if (children != null && children.length > 0) {
+            // Sum the widths of all children (assuming horizontal layout)
+            for (Control child : children) {
+                Point childSize = child.computeSize(org.eclipse.swt.SWT.DEFAULT, org.eclipse.swt.SWT.DEFAULT);
+                childrenWidth += childSize.x;
+                childrenHeight = Math.max(childrenHeight, childSize.y);
+            }
+            // Add spacing between children: 12px SizedBox between each pair
+            if (children.length > 1) {
+                childrenWidth += (children.length - 1) * 12;
+            }
+        }
+
+        // Group needs CLIENT_INSET on all sides plus additional padding
+        int CLIENT_INSET = 3;
+        // Padding calculation based on Flutter implementation:
+        // Container padding: left=6, right=6 + Inner Padding: all=10
+        int horizontalPadding = (6 * 2) + (10 * 2) + (CLIENT_INSET * 2); // 12 + 20 + 6 = 38
+        int verticalPadding = (10 + 8 + 10) + (CLIENT_INSET * 2); // top=10, bottom=8, inner=10 + 6 = 34
+        int titleHeightSpace = 18; // Space for the title at the top (8 margin + 10 for text)
+
+        // Width is the maximum of title width and children width, plus horizontal padding
+        int width = Math.max(titleWidth, childrenWidth) + horizontalPadding;
+
+        // Height calculation - if children exist, be more generous
+        int height;
+        if (children != null && children.length > 0) {
+            // For groups with children, multiply height by number of children to account for vertical layouts
+            // This is a heuristic since we don't know the actual layout type
+            int estimatedHeight = childrenHeight * Math.max(1, children.length / 2);
+            height = estimatedHeight + titleHeightSpace + verticalPadding;
+        } else {
+            height = childrenHeight + titleHeightSpace + verticalPadding;
+        }
+
+        // Minimum size for a Group - increased minimum height
+        return new Point(Math.max(width, 150), Math.max(height, 100));
+    }
 }

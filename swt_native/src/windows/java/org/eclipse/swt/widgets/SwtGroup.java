@@ -653,6 +653,10 @@ public class SwtGroup extends SwtComposite implements IGroup {
         return result;
     }
 
+    public String _text() {
+        return text;
+    }
+
     public Group getApi() {
         if (api == null)
             api = Group.createApi(this);

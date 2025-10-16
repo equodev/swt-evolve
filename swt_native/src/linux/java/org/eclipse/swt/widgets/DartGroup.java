@@ -18,9 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class provide an etched border
@@ -46,14 +44,11 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtGroup extends SwtComposite implements IGroup {
+public class DartGroup extends DartComposite implements IGroup {
 
     long clientHandle, labelHandle;
 
     String text = "";
-
-    // We use this to keep track of the foreground color
-    GdkRGBA foreground;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -87,7 +82,7 @@ public class SwtGroup extends SwtComposite implements IGroup {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtGroup(Composite parent, int style, Group api) {
+    public DartGroup(Composite parent, int style, Group api) {
         super(parent, checkStyle(style), api);
     }
 
@@ -116,24 +111,13 @@ public class SwtGroup extends SwtComposite implements IGroup {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        Point size = super.computeSizeInPixels(wHint, hHint, changed);
-        int width = computeNativeSize(getApi().handle, SWT.DEFAULT, SWT.DEFAULT, false).x;
-        size.x = Math.max(size.x, width);
-        return size;
+        return Sizes.compute(this);
     }
 
     @Override
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
         checkWidget();
         forceResize();
-        GtkAllocation allocation = new GtkAllocation();
-        GTK.gtk_widget_get_allocation(clientHandle, allocation);
-        int clientX = allocation.x;
-        int clientY = allocation.y;
-        x -= clientX;
-        y -= clientY;
-        width += clientX + clientX;
-        height += clientX + clientY;
         return new Rectangle(x, y, width, height);
     }
 
@@ -159,66 +143,8 @@ public class SwtGroup extends SwtComposite implements IGroup {
     }
 
     @Override
-    GdkRGBA getContextColorGdkRGBA() {
-        if (foreground != null) {
-            return foreground;
-        } else {
-            return ((SwtDisplay) display.getImpl()).COLOR_WIDGET_FOREGROUND_RGBA;
-        }
-    }
-
-    @Override
-    GdkRGBA getContextBackgroundGdkRGBA() {
-        return super.getContextBackgroundGdkRGBA();
-    }
-
-    @Override
     void createHandle(int index) {
-        getApi().state |= HANDLE | THEME_BACKGROUND;
-        fixedHandle = OS.g_object_new(((SwtDisplay) display.getImpl()).gtk_fixed_get_type(), 0);
-        if (fixedHandle == 0)
-            error(SWT.ERROR_NO_HANDLES);
-        if (!GTK.GTK4)
-            GTK3.gtk_widget_set_has_window(fixedHandle, true);
-        getApi().handle = GTK.gtk_frame_new(null);
-        if (getApi().handle == 0)
-            error(SWT.ERROR_NO_HANDLES);
-        labelHandle = GTK.gtk_label_new(null);
-        if (labelHandle == 0)
-            error(SWT.ERROR_NO_HANDLES);
-        OS.g_object_ref_sink(labelHandle);
-        clientHandle = OS.g_object_new(((SwtDisplay) display.getImpl()).gtk_fixed_get_type(), 0);
-        if (clientHandle == 0)
-            error(SWT.ERROR_NO_HANDLES);
-        /*
-	 * Bug 453827 - clientHandle now has it's own window so that
-	 * it can listen to events (clicking/tooltip etc.) and so that
-	 * background can be drawn on it.
-	 */
-        if (!GTK.GTK4)
-            GTK3.gtk_widget_set_has_window(clientHandle, true);
-        if (GTK.GTK4) {
-            OS.swt_fixed_add(fixedHandle, getApi().handle);
-            GTK4.gtk_frame_set_child(getApi().handle, clientHandle);
-        } else {
-            GTK3.gtk_container_add(fixedHandle, getApi().handle);
-            GTK3.gtk_container_add(getApi().handle, clientHandle);
-            if ((getApi().style & SWT.SHADOW_IN) != 0) {
-                GTK3.gtk_frame_set_shadow_type(getApi().handle, GTK.GTK_SHADOW_IN);
-            }
-            if ((getApi().style & SWT.SHADOW_OUT) != 0) {
-                GTK3.gtk_frame_set_shadow_type(getApi().handle, GTK.GTK_SHADOW_OUT);
-            }
-            if ((getApi().style & SWT.SHADOW_ETCHED_IN) != 0) {
-                GTK3.gtk_frame_set_shadow_type(getApi().handle, GTK.GTK_SHADOW_ETCHED_IN);
-            }
-            if ((getApi().style & SWT.SHADOW_ETCHED_OUT) != 0) {
-                GTK3.gtk_frame_set_shadow_type(getApi().handle, GTK.GTK_SHADOW_ETCHED_OUT);
-            }
-        }
         // In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
-        // reset to default font to get the usual behavior
-        setFontDescription(defaultFont().handle);
     }
 
     @Override
@@ -235,7 +161,6 @@ public class SwtGroup extends SwtComposite implements IGroup {
 
     @Override
     void enableWidget(boolean enabled) {
-        GTK.gtk_widget_set_sensitive(labelHandle, enabled);
     }
 
     @Override
@@ -274,7 +199,6 @@ public class SwtGroup extends SwtComposite implements IGroup {
     void hookEvents() {
         super.hookEvents();
         if (labelHandle != 0) {
-            OS.g_signal_connect_closure_by_id(labelHandle, ((SwtDisplay) display.getImpl()).signalIds[MNEMONIC_ACTIVATE], 0, ((SwtDisplay) display.getImpl()).getClosure(MNEMONIC_ACTIVATE), false);
         }
     }
 
@@ -320,8 +244,6 @@ public class SwtGroup extends SwtComposite implements IGroup {
     @Override
     void releaseWidget() {
         super.releaseWidget();
-        if (labelHandle != 0)
-            OS.g_object_unref(labelHandle);
         text = null;
     }
 
@@ -332,31 +254,9 @@ public class SwtGroup extends SwtComposite implements IGroup {
     }
 
     @Override
-    void setForegroundGdkRGBA(long handle, GdkRGBA rgba) {
-        /*
-	 * When using CSS, setting the foreground color on an empty label
-	 * widget prevents the background from being set. If a user wants
-	 * to specify a foreground color before the text is set, store the
-	 * color and wait until text is specified to apply it.
-	 */
-        if (text != null && !text.isEmpty()) {
-            super.setForegroundGdkRGBA(labelHandle, rgba);
-        }
-        foreground = rgba;
-    }
-
-    @Override
-    void setForegroundGdkRGBA(GdkRGBA rgba) {
-        super.setForegroundGdkRGBA(rgba);
-        setForegroundGdkRGBA(labelHandle, rgba);
-    }
-
-    @Override
     void setOrientation(boolean create) {
         super.setOrientation(create);
         if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0 || !create) {
-            int dir = (getApi().style & SWT.RIGHT_TO_LEFT) != 0 ? GTK.GTK_TEXT_DIR_RTL : GTK.GTK_TEXT_DIR_LTR;
-            GTK.gtk_widget_set_direction(labelHandle, dir);
         }
     }
 
@@ -388,33 +288,19 @@ public class SwtGroup extends SwtComposite implements IGroup {
      * </ul>
      */
     public void setText(String string) {
+        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         text = string;
-        char[] chars = fixMnemonic(string);
-        byte[] buffer = Converter.wcsToMbcs(chars, true);
-        GTK.gtk_label_set_text_with_mnemonic(labelHandle, buffer);
         if (string.length() != 0) {
-            if (GTK.gtk_frame_get_label_widget(getApi().handle) == 0) {
-                GTK.gtk_frame_set_label_widget(getApi().handle, labelHandle);
-            }
         } else {
-            GTK.gtk_frame_set_label_widget(getApi().handle, 0);
-        }
-        // Set the foreground now that the text has been set
-        if (foreground != null) {
-            setForegroundGdkRGBA(labelHandle, foreground);
         }
     }
 
     @Override
     void showWidget() {
         super.showWidget();
-        if (clientHandle != 0)
-            GTK.gtk_widget_show(clientHandle);
-        if (labelHandle != 0)
-            GTK.gtk_widget_show(labelHandle);
     }
 
     @Override
@@ -423,46 +309,27 @@ public class SwtGroup extends SwtComposite implements IGroup {
         // See also https://bugzilla.gnome.org/show_bug.cgi?id=754976 :
         // GtkFrame: Attempt to allocate size of width 1 (or a small number) fails
         //
-        // GtkFrame does not handle well allocating less than its minimum size
-        GtkRequisition requisition = new GtkRequisition();
-        GTK.gtk_widget_get_preferred_size(getApi().handle, requisition, null);
-        /*
-	 * Feature in GTK3.20+: size calculations take into account GtkCSSNode
-	 * elements which we cannot access. If the to-be-allocated size minus
-	 * these elements is < 0, allocate the preferred size instead.
-	 */
-        width = (width - (requisition.width - width)) < 0 ? requisition.width : width;
-        height = (height - (requisition.height - height)) < 0 ? requisition.height : height;
         return super.setBounds(x, y, width, height, move, resize);
     }
 
     @Override
     long paintHandle() {
-        if (GTK.GTK4)
-            return clientHandle;
         long topHandle = topHandle();
         /* we draw all our children on the clientHandle*/
         long paintHandle = clientHandle;
         while (paintHandle != topHandle) {
-            if (GTK3.gtk_widget_get_has_window(paintHandle))
-                break;
-            paintHandle = GTK.gtk_widget_get_parent(paintHandle);
         }
         return paintHandle;
     }
 
     @Override
     long paintWindow() {
-        long paintHandle = clientHandle;
-        GTK.gtk_widget_realize(paintHandle);
-        return gtk_widget_get_window(paintHandle);
+        return 0;
     }
 
     @Override
     long paintSurface() {
-        long paintHandle = clientHandle;
-        GTK.gtk_widget_realize(paintHandle);
-        return gtk_widget_get_surface(paintHandle);
+        return 0;
     }
 
     public long _clientHandle() {
@@ -477,9 +344,19 @@ public class SwtGroup extends SwtComposite implements IGroup {
         return text;
     }
 
+    protected void _hookEvents() {
+        super._hookEvents();
+    }
+
     public Group getApi() {
         if (api == null)
             api = Group.createApi(this);
         return (Group) api;
+    }
+
+    public VGroup getValue() {
+        if (value == null)
+            value = new VGroup(this);
+        return (VGroup) value;
     }
 }

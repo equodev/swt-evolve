@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class provide an etched border
@@ -80,7 +81,7 @@ public class Group extends Composite {
      */
     public Group(Composite parent, int style) {
         this((IGroup) null);
-        setImpl(new SwtGroup(parent, style, this));
+        setImpl(Config.isEquo(Group.class, parent) ? new DartGroup(parent, style, this) : new SwtGroup(parent, style, this));
     }
 
     protected void checkSubclass() {

@@ -8,6 +8,7 @@ import '../gen/composite.dart';
 import '../gen/ctabfolder.dart';
 import '../gen/ctabitem.dart';
 import '../gen/gc.dart';
+import '../gen/group.dart';
 import '../gen/label.dart';
 import '../gen/link.dart';
 import '../gen/list.dart';
@@ -33,6 +34,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "CTabFolder" => VCTabFolder.fromJson(child),
     "Canvas" => VCanvas.fromJson(child),
     "Combo" => VCombo.fromJson(child),
+    "Group" => VGroup.fromJson(child),
     "Table" => VTable.fromJson(child),
     "ToolBar" => VToolBar.fromJson(child),
     "Tree" => VTree.fromJson(child),
@@ -64,6 +66,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VCTabFolder() => CTabFolderSwt(key: ValueKey(id), value: child),
     VCanvas() => CanvasSwt(key: ValueKey(id), value: child),
     VCombo() => ComboSwt(key: ValueKey(id), value: child),
+    VGroup() => GroupSwt(key: ValueKey(id), value: child),
     VTable() => TableSwt(key: ValueKey(id), value: child),
     VToolBar() => ToolBarSwt(key: ValueKey(id), value: child),
     VTree() => TreeSwt(key: ValueKey(id), value: child),

@@ -35,7 +35,8 @@ public class Config {
                     entry(TableColumn.class, Impl.equo),
                     entry(List.class, Impl.equo),
                     entry(Text.class, Impl.equo),
-                    entry(Link.class, Impl.equo)
+                    entry(Link.class, Impl.equo),
+                    entry(Group.class, Impl.equo)
                     //entry(Tree.class, Impl.equo),
                     //entry(TreeItem.class, Impl.equo),
                     //entry(TreeColumn.class, Impl.equo),

@@ -304,6 +304,22 @@ public class SwtGroup extends SwtComposite implements IGroup {
         box.setTitle(NSString.stringWithCharacters(buffer, length));
     }
 
+    public String _text() {
+        return text;
+    }
+
+    public boolean _ignoreResize() {
+        return ignoreResize;
+    }
+
+    public int _hMargin() {
+        return hMargin;
+    }
+
+    public int _vMargin() {
+        return vMargin;
+    }
+
     public Group getApi() {
         if (api == null)
             api = Group.createApi(this);
