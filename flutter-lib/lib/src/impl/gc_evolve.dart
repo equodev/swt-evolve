@@ -13,6 +13,7 @@ import '../gen/widget.dart';
 import 'canvas_evolve.dart';
 import './utils/image_utils.dart';
 import 'assets_manager.dart';
+import 'color_utils.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_svg/flutter_svg.dart';
@@ -27,9 +28,9 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   Color get bg =>
-      _colorFromVColor(state.background, defaultColor: Color(0xFFFFFFFF));
+      colorFromVColor(state.background, defaultColor: Color(0xFFFFFFFF));
   Color get fg =>
-      _colorFromVColor(state.foreground, defaultColor: Color(0xFF333232));
+      colorFromVColor(state.foreground, defaultColor: Color(0xFF333232));
   double get lineWidth => (state.lineWidth ?? 1).toDouble();
   int get lineCap => state.lineCap ?? 1;
   int get lineJoin => state.lineJoin ?? 1;
@@ -64,11 +65,6 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   void setValue(V value) {
     state = value!;
     extraSetState();
-  }
-
-  Color _colorFromVColor(VColor? vColor, {required Color defaultColor}) {
-    if (vColor == null) return defaultColor;
-    return Color.fromARGB(vColor.alpha, vColor.red, vColor.green, vColor.blue);
   }
 
   Map<String, dynamic> _convertSwtFontStyle(int swtFontStyle) {

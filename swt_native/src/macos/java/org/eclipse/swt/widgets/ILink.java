@@ -6,7 +6,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.widgets.Display.*;
 
-public interface ILink extends IControl {
+public interface ILink extends IControl, ImplLink {
 
     /**
      * Adds the listener to the collection of listeners who will
