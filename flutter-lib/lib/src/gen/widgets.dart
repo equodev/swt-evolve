@@ -9,6 +9,7 @@ import '../gen/ctabfolder.dart';
 import '../gen/ctabitem.dart';
 import '../gen/gc.dart';
 import '../gen/label.dart';
+import '../gen/link.dart';
 import '../gen/list.dart';
 import '../gen/scrollbar.dart';
 import '../gen/styledtext.dart';
@@ -40,6 +41,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "Text" => VText.fromJson(child),
     "Button" => VButton.fromJson(child),
     "Label" => VLabel.fromJson(child),
+    "Link" => VLink.fromJson(child),
     "CTabItem" => VCTabItem.fromJson(child),
     "TableColumn" => VTableColumn.fromJson(child),
     "TableItem" => VTableItem.fromJson(child),
@@ -70,6 +72,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VText() => TextSwt(key: ValueKey(id), value: child),
     VButton() => ButtonSwt(key: ValueKey(id), value: child),
     VLabel() => LabelSwt(key: ValueKey(id), value: child),
+    VLink() => LinkSwt(key: ValueKey(id), value: child),
     VCTabItem() => CTabItemSwt(key: ValueKey(id), value: child),
     VTableColumn() => TableColumnSwt(key: ValueKey(id), value: child),
     VTableItem() => TableItemSwt(key: ValueKey(id), value: child),

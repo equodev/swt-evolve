@@ -22,7 +22,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class represent a selectable
@@ -45,7 +45,7 @@ import org.eclipse.swt.internal.win32.*;
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtLink extends SwtControl implements ILink {
+public class DartLink extends DartControl implements ILink {
 
     String text;
 
@@ -56,37 +56,6 @@ public class SwtLink extends SwtControl implements ILink {
     char[] mnemonics;
 
     int nextFocusItem = -1;
-
-    static final long LinkProc;
-
-    static final TCHAR LinkClass = new TCHAR(0, OS.WC_LINK, true);
-
-    static {
-        WNDCLASS lpWndClass = new WNDCLASS();
-        OS.GetClassInfo(0, LinkClass, lpWndClass);
-        LinkProc = lpWndClass.lpfnWndProc;
-        /*
-		* Feature in Windows.  The SysLink window class
-		* does not include CS_DBLCLKS.  This means that these
-		* controls will not get double click messages such as
-		* WM_LBUTTONDBLCLK.  The fix is to register a new
-		* window class with CS_DBLCLKS.
-		*
-		* NOTE:  Screen readers look for the exact class name
-		* of the control in order to provide the correct kind
-		* of assistance.  Therefore, it is critical that the
-		* new window class have the same name.  It is possible
-		* to register a local window class with the same name
-		* as a global class.  Since bits that affect the class
-		* are being changed, it is possible that other native
-		* code, other than SWT, could create a control with
-		* this class name, and fail unexpectedly.
-		*/
-        lpWndClass.hInstance = OS.GetModuleHandle(null);
-        lpWndClass.style &= ~OS.CS_GLOBALCLASS;
-        lpWndClass.style |= OS.CS_DBLCLKS;
-        OS.RegisterClass(LinkClass, lpWndClass);
-    }
 
     /**
      * Constructs a new instance of this class given its parent
@@ -115,7 +84,7 @@ public class SwtLink extends SwtControl implements ILink {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtLink(Composite parent, int style, Link api) {
+    public DartLink(Composite parent, int style, Link api) {
         super(parent, style, api);
     }
 
@@ -148,66 +117,12 @@ public class SwtLink extends SwtControl implements ILink {
     }
 
     @Override
-    long callWindowProc(long hwnd, int msg, long wParam, long lParam) {
-        if (getApi().handle == 0)
-            return 0;
-        /*
-	* Feature in Windows.  By convention, native Windows controls
-	* check for a non-NULL wParam, assume that it is an HDC and
-	* paint using that device.  The SysLink control does not.
-	* The fix is to check for an HDC and use WM_PRINTCLIENT.
-	*/
-        switch(msg) {
-            case OS.WM_PAINT:
-                if (wParam != 0) {
-                    OS.SendMessage(hwnd, OS.WM_PRINTCLIENT, wParam, 0);
-                    return 0;
-                }
-                break;
-        }
-        return OS.CallWindowProc(LinkProc, hwnd, msg, wParam, lParam);
-    }
-
-    @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        int width, height;
-        /*
-	 * When the text is empty, LM_GETIDEALSIZE returns zero width and height,
-	 * but SWT convention is to return zero width and line height.
-	 */
-        if (text.isEmpty()) {
-            long hDC = OS.GetDC(getApi().handle);
-            long newFont = OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0);
-            long oldFont = OS.SelectObject(hDC, newFont);
-            TEXTMETRIC lptm = new TEXTMETRIC();
-            OS.GetTextMetrics(hDC, lptm);
-            width = 0;
-            height = lptm.tmHeight;
-            if (newFont != 0)
-                OS.SelectObject(hDC, oldFont);
-            OS.ReleaseDC(getApi().handle, hDC);
-        } else {
-            SIZE size = new SIZE();
-            int maxWidth = (wHint == SWT.DEFAULT) ? 0x7fffffff : wHint;
-            OS.SendMessage(getApi().handle, OS.LM_GETIDEALSIZE, maxWidth, size);
-            width = size.cx;
-            height = size.cy;
-        }
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
-        int border = getBorderWidthInPixels();
-        width += border * 2;
-        height += border * 2;
-        return new Point(width, height);
+        return Sizes.compute(this);
     }
 
     @Override
     void createHandle() {
-        super.createHandle();
-        getApi().state |= THEME_BACKGROUND;
     }
 
     @Override
@@ -233,23 +148,9 @@ public class SwtLink extends SwtControl implements ILink {
     @Override
     void enableWidget(boolean enabled) {
         super.enableWidget(enabled);
-        /*
-	 * Feature in Windows.  SysLink32 control doesn't natively
-	 * provide disabled state. Emulate it with custom draw.
-	 */
-        OS.InvalidateRect(getApi().handle, null, true);
     }
 
     int getFocusItem() {
-        LITEM item = new LITEM();
-        item.mask = OS.LIF_ITEMINDEX | OS.LIF_STATE;
-        item.stateMask = OS.LIS_FOCUSED;
-        while (OS.SendMessage(getApi().handle, OS.LM_GETITEM, 0, item) != 0) {
-            if ((item.state & OS.LIS_FOCUSED) != 0) {
-                return item.iLink;
-            }
-            item.iLink++;
-        }
         return -1;
     }
 
@@ -269,7 +170,7 @@ public class SwtLink extends SwtControl implements ILink {
         if (linkForeground != -1) {
             return SwtColor.win32_new(display, linkForeground);
         }
-        return SwtColor.win32_new(display, OS.GetSysColor(OS.COLOR_HOTLIGHT));
+        return this._linkForeground;
     }
 
     @Override
@@ -478,37 +379,16 @@ public class SwtLink extends SwtControl implements ILink {
     }
 
     boolean setFocusItem(int index) {
-        int bits = 0;
         if (index > 0) {
-            bits = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE);
         }
-        LITEM item = new LITEM();
-        item.mask = OS.LIF_ITEMINDEX | OS.LIF_STATE;
-        item.stateMask = OS.LIS_FOCUSED;
         int activeIndex = getFocusItem();
         if (activeIndex == index)
             return true;
         if (activeIndex >= 0) {
-            /* Feature in Windows. Unfocus any element unfocus all elements.
-		 * For example if item 2 is focused and we set unfocus (state = 0)
-		 * for item 0 Windows will remove the focus state for item 2
-		 * (getFocusItem() == -1) but fail to remove the focus border around
-		 * the link. The fix is to only unfocus the element which has focus.
-		 */
-            item.iLink = activeIndex;
-            OS.SendMessage(getApi().handle, OS.LM_SETITEM, 0, item);
         }
-        item.iLink = index;
-        item.state = OS.LIS_FOCUSED;
-        long result = OS.SendMessage(getApi().handle, OS.LM_SETITEM, 0, item);
         if (index > 0) {
-            /* Feature in Windows. For some reason, setting the focus to
-	 * any item but first causes the control to clear the WS_TABSTOP
-	 * bit. The fix is always to reset the bit.
-	 */
-            OS.SetWindowLong(getApi().handle, OS.GWL_STYLE, bits);
         }
-        return result != 0;
+        return false;
     }
 
     /**
@@ -530,6 +410,7 @@ public class SwtLink extends SwtControl implements ILink {
      * @since 3.105
      */
     public void setLinkForeground(Color color) {
+        dirty();
         checkWidget();
         int pixel = -1;
         if (color != null) {
@@ -540,7 +421,7 @@ public class SwtLink extends SwtControl implements ILink {
         if (pixel == linkForeground)
             return;
         linkForeground = pixel;
-        OS.InvalidateRect(getApi().handle, null, true);
+        this._linkForeground = color;
     }
 
     /**
@@ -582,6 +463,7 @@ public class SwtLink extends SwtControl implements ILink {
      * </ul>
      */
     public void setText(String string) {
+        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -591,14 +473,12 @@ public class SwtLink extends SwtControl implements ILink {
         if ((getApi().state & HAS_AUTO_DIRECTION) != 0) {
             updateTextDirection(AUTO_TEXT_DIRECTION);
         }
-        TCHAR buffer = new TCHAR(getCodePage(), string, true);
-        OS.SetWindowText(getApi().handle, buffer);
         parse(string);
     }
 
     @Override
     int resolveTextDirection() {
-        return BidiUtil.resolveTextDirection(text);
+        return 0;
     }
 
     @Override
@@ -617,163 +497,10 @@ public class SwtLink extends SwtControl implements ILink {
 
     @Override
     int widgetStyle() {
-        int bits = super.widgetStyle();
-        return bits | OS.WS_TABSTOP;
+        return 0;
     }
 
-    @Override
-    TCHAR windowClass() {
-        return LinkClass;
-    }
-
-    @Override
-    long windowProc() {
-        return LinkProc;
-    }
-
-    @Override
-    LRESULT WM_CHAR(long wParam, long lParam) {
-        LRESULT result = super.WM_CHAR(wParam, lParam);
-        if (result != null)
-            return result;
-        switch((int) wParam) {
-            case SWT.SPACE:
-            case SWT.CR:
-            case SWT.TAB:
-                /*
-			* NOTE: Call the window proc with WM_KEYDOWN rather than WM_CHAR
-			* so that the key that was ignored during WM_KEYDOWN is processed.
-			* This allows the application to cancel an operation that is normally
-			* performed in WM_KEYDOWN from WM_CHAR.
-			*/
-                long code = callWindowProc(getApi().handle, OS.WM_KEYDOWN, wParam, lParam);
-                return new LRESULT(code);
-        }
-        return result;
-    }
-
-    @Override
-    LRESULT WM_GETDLGCODE(long wParam, long lParam) {
-        long code = callWindowProc(getApi().handle, OS.WM_GETDLGCODE, wParam, lParam);
-        int count = ids.length;
-        if (count == 0) {
-            code |= OS.DLGC_STATIC;
-        } else if (count > 1) {
-            int limit = (OS.GetKeyState(OS.VK_SHIFT) < 0) ? 0 : count - 1;
-            if (getFocusItem() != limit) {
-                code |= OS.DLGC_WANTTAB;
-            }
-        }
-        return new LRESULT(code);
-    }
-
-    @Override
-    LRESULT WM_KEYDOWN(long wParam, long lParam) {
-        LRESULT result = super.WM_KEYDOWN(wParam, lParam);
-        if (result != null)
-            return result;
-        switch((int) wParam) {
-            case OS.VK_SPACE:
-            case OS.VK_RETURN:
-            case OS.VK_TAB:
-                /*
-			* Ensure that the window proc does not process VK_SPACE,
-			* VK_RETURN or VK_TAB so that it can be handled in WM_CHAR.
-			* This allows the application to cancel an operation that
-			* is normally performed in WM_KEYDOWN from WM_CHAR.
-			*/
-                return LRESULT.ZERO;
-        }
-        return result;
-    }
-
-    @Override
-    LRESULT WM_KILLFOCUS(long wParam, long lParam) {
-        nextFocusItem = getFocusItem();
-        return super.WM_KILLFOCUS(wParam, lParam);
-    }
-
-    @Override
-    LRESULT WM_NCHITTEST(long wParam, long lParam) {
-        LRESULT result = super.WM_NCHITTEST(wParam, lParam);
-        if (result != null)
-            return result;
-        /*
-	* Feature in Windows. For WM_NCHITTEST, the Syslink window proc
-	* returns HTTRANSPARENT when mouse is over plain text. As a result,
-	* mouse events are not delivered. The fix is to always return HTCLIENT.
-	*/
-        return new LRESULT(OS.HTCLIENT);
-    }
-
-    @Override
-    LRESULT WM_SETCURSOR(long wParam, long lParam) {
-        LRESULT result = super.WM_SETCURSOR(wParam, lParam);
-        if (result != null)
-            return result;
-        long fDone = callWindowProc(getApi().handle, OS.WM_SETCURSOR, wParam, lParam);
-        /* Take responsibility for cursor over plain text after overriding WM_NCHITTEST. */
-        if (fDone == 0)
-            OS.DefWindowProc(getApi().handle, OS.WM_SETCURSOR, wParam, lParam);
-        return LRESULT.ONE;
-    }
-
-    @Override
-    LRESULT WM_SETFOCUS(long wParam, long lParam) {
-        /*
-	* Feature in Windows. Upon receiving focus, SysLink control
-	* always activates the first link. This leads to surprising
-	* behavior in multi-link controls.
-	*/
-        if (ids.length > 1) {
-            if (OS.GetKeyState(OS.VK_TAB) < 0) {
-                if (OS.GetKeyState(OS.VK_SHIFT) < 0) {
-                    // reverse tab; focus on last item
-                    setFocusItem(ids.length - 1);
-                }
-            } else if (nextFocusItem > 0) {
-                setFocusItem(nextFocusItem);
-            }
-        }
-        return super.WM_SETFOCUS(wParam, lParam);
-    }
-
-    @Override
-    LRESULT wmNotifyChild(NMHDR hdr, long wParam, long lParam) {
-        switch(hdr.code) {
-            case OS.NM_RETURN:
-            case OS.NM_CLICK:
-                NMLINK item = new NMLINK();
-                OS.MoveMemory(item, lParam, NMLINK.sizeof);
-                Event event = new Event();
-                event.text = ids[item.iLink];
-                sendSelectionEvent(SWT.Selection, event, true);
-                break;
-            case OS.NM_CUSTOMDRAW:
-                NMCUSTOMDRAW nmcd = new NMCUSTOMDRAW();
-                OS.MoveMemory(nmcd, lParam, NMCUSTOMDRAW.sizeof);
-                switch(nmcd.dwDrawStage) {
-                    case OS.CDDS_PREPAINT:
-                        if (!OS.IsWindowEnabled(getApi().handle) || linkForeground != -1) {
-                            return new LRESULT(OS.CDRF_NOTIFYITEMDRAW);
-                        }
-                        break;
-                    case OS.CDDS_ITEMPREPAINT:
-                        /*
-					 * Feature in Windows.  SysLink32 control doesn't natively
-					 * provide disabled state. Emulate it with custom draw.
-					 */
-                        if (!OS.IsWindowEnabled(getApi().handle)) {
-                            OS.SetTextColor(nmcd.hdc, OS.GetSysColor(OS.COLOR_GRAYTEXT));
-                        } else if (linkForeground != -1 && nmcd.dwItemSpec != -1) {
-                            OS.SetTextColor(nmcd.hdc, linkForeground);
-                        }
-                        break;
-                }
-                break;
-        }
-        return super.wmNotifyChild(hdr, wParam, lParam);
-    }
+    Color _linkForeground;
 
     public String _text() {
         return text;
@@ -795,9 +522,33 @@ public class SwtLink extends SwtControl implements ILink {
         return nextFocusItem;
     }
 
+    public Color __linkForeground() {
+        return _linkForeground;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
+            });
+        });
+    }
+
     public Link getApi() {
         if (api == null)
             api = Link.createApi(this);
         return (Link) api;
+    }
+
+    public VLink getValue() {
+        if (value == null)
+            value = new VLink(this);
+        return (VLink) value;
     }
 }

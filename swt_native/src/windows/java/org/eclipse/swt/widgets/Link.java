@@ -23,6 +23,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a selectable
@@ -76,7 +77,7 @@ public class Link extends Control {
      */
     public Link(Composite parent, int style) {
         this((ILink) null);
-        setImpl(new SwtLink(parent, style, this));
+        setImpl(Config.isEquo(Link.class, parent) ? new DartLink(parent, style, this) : new SwtLink(parent, style, this));
     }
 
     /**

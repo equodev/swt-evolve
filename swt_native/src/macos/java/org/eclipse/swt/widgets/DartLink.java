@@ -20,8 +20,8 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.Display.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class represent a selectable
@@ -44,9 +44,7 @@ import org.eclipse.swt.widgets.Display.*;
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtLink extends SwtControl implements ILink {
-
-    NSScrollView scrollView;
+public class DartLink extends DartControl implements ILink {
 
     String text;
 
@@ -57,8 +55,6 @@ public class SwtLink extends SwtControl implements ILink {
     int[] mnemonics;
 
     double[] linkForeground;
-
-    NSColor defaultLinkColor;
 
     int focusIndex;
 
@@ -93,7 +89,7 @@ public class SwtLink extends SwtControl implements ILink {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtLink(Composite parent, int style, Link api) {
+    public DartLink(Composite parent, int style, Link api) {
         super(parent, style, api);
     }
 
@@ -127,92 +123,17 @@ public class SwtLink extends SwtControl implements ILink {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        if (wHint != SWT.DEFAULT && wHint < 0)
-            wHint = 0;
-        if (hHint != SWT.DEFAULT && hHint < 0)
-            hHint = 0;
-        int width = 0, height = 0;
-        NSLayoutManager layoutManager = (NSLayoutManager) new NSLayoutManager().alloc().init();
-        NSTextContainer textContainer = (NSTextContainer) new NSTextContainer().alloc();
-        NSSize size = new NSSize();
-        size.width = size.height = OS.MAX_TEXT_CONTAINER_SIZE;
-        if (wHint != SWT.DEFAULT)
-            size.width = wHint;
-        if (hHint != SWT.DEFAULT)
-            size.height = hHint;
-        textContainer.initWithContainerSize(size);
-        textContainer.setLineFragmentPadding(2);
-        layoutManager.addTextContainer(textContainer);
-        NSTextStorage textStorage = (NSTextStorage) new NSTextStorage().alloc().init();
-        textStorage.setAttributedString(((NSTextView) getApi().view).textStorage());
-        layoutManager.setTextStorage(textStorage);
-        layoutManager.glyphRangeForTextContainer(textContainer);
-        NSRect rect = layoutManager.usedRectForTextContainer(textContainer);
-        width = layoutManager.numberOfGlyphs() == 0 ? DEFAULT_WIDTH : (int) Math.ceil(rect.width);
-        height = (int) Math.ceil(rect.height);
-        textStorage.release();
-        textContainer.release();
-        layoutManager.release();
-        if (width <= 0)
-            width = DEFAULT_WIDTH;
-        if (height <= 0)
-            height = DEFAULT_HEIGHT;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
-        // Accommodate any border.
-        size.width = width;
-        size.height = height;
-        int border = hasBorder() ? OS.NSBezelBorder : OS.NSNoBorder;
-        size = NSScrollView.frameSizeForContentSize(size, false, false, border);
-        width = (int) size.width;
-        height = (int) size.height;
-        if (!hasBorder()) {
-            width += 2;
-            height += 2;
-        }
-        return new Point(width, height);
+        return Sizes.compute(this);
     }
 
     @Override
     void createHandle() {
-        getApi().state |= THEME_BACKGROUND;
-        NSScrollView scrollWidget = (NSScrollView) new SWTScrollView().alloc();
-        scrollWidget.init();
-        scrollWidget.setDrawsBackground(false);
-        scrollWidget.setAutoresizesSubviews(true);
-        scrollWidget.setBorderType(hasBorder() ? OS.NSBezelBorder : OS.NSNoBorder);
-        scrollWidget.setVerticalScrollElasticity(OS.NSScrollElasticityNone);
-        NSTextView widget = (NSTextView) new SWTTextView().alloc();
-        widget.init();
-        widget.setEditable(false);
-        NSSize size = new NSSize();
-        size.width = size.height = Float.MAX_VALUE;
-        widget.setMaxSize(size);
-        widget.setDisplaysLinkToolTips(false);
-        widget.setDrawsBackground(false);
-        widget.setDelegate(widget);
-        widget.setAutoresizingMask(OS.NSViewWidthSizable | OS.NSViewHeightSizable);
-        widget.textContainer().setLineFragmentPadding(2);
-        widget.setFont(getFont().handle);
-        widget.setAlignment(OS.NSTextAlignmentLeft);
-        NSMutableDictionary dict = NSMutableDictionary.dictionaryWithCapacity(4);
-        dict.setDictionary(widget.selectedTextAttributes());
-        dict.removeObjectForKey(OS.NSBackgroundColorAttributeName);
-        dict.setObject(NSCursor.arrowCursor(), OS.NSCursorAttributeName);
-        widget.setSelectedTextAttributes(dict);
-        scrollView = scrollWidget;
-        getApi().view = widget;
     }
 
     @Override
     void createWidget() {
         super.createWidget();
         text = "";
-        NSDictionary dict = ((NSTextView) getApi().view).linkTextAttributes();
-        defaultLinkColor = new NSColor(dict.valueForKey(OS.NSForegroundColorAttributeName));
         offsets = new Point[0];
         ids = new String[0];
         mnemonics = new int[0];
@@ -220,55 +141,14 @@ public class SwtLink extends SwtControl implements ILink {
     }
 
     @Override
-    NSFont defaultNSFont() {
-        return ((SwtDisplay) display.getImpl()).textFieldFont;
-    }
-
-    @Override
     void deregister() {
         super.deregister();
-        if (scrollView != null)
-            ((SwtDisplay) display.getImpl()).removeWidget(scrollView);
-    }
-
-    @Override
-    void drawBackground(long id, NSGraphicsContext context, NSRect rectangle) {
-        fillBackground(getApi().view, context, rectangle, -1);
-        if (!hasFocus() || focusIndex == -1)
-            return;
-        int[] outMetric = new int[1];
-        OS.GetThemeMetric(OS.kThemeMetricFocusRectOutset, outMetric);
-        outMetric[0]--;
-        CGRect r = new CGRect();
-        NSRect[] rect = getRectangles(focusIndex);
-        if (rect == null)
-            return;
-        for (int i = 0; i < rect.length && rect[i] != null; i++) {
-            r.origin.x = rect[i].x + outMetric[0];
-            r.origin.y = rect[i].y + outMetric[0];
-            /*
-		 * sometimes the rect[i].width is smaller than 2 * outMetric and subtracting
-		 * it makes r.size.width < 0
-		 */
-            r.size.width = rect[i].width - outMetric[0];
-            r.size.height = rect[i].height - (2 * outMetric[0]);
-            OS.HIThemeDrawFocusRect(r, true, context.graphicsPort(), OS.kHIThemeOrientationNormal);
-        }
-    }
-
-    @Override
-    void drawRect(long id, long sel, NSRect rect) {
-        updateThemeColors();
-        super.drawRect(id, sel, rect);
     }
 
     @Override
     void enableWidget(boolean enabled) {
         super.enableWidget(enabled);
-        NSTextView widget = (NSTextView) getApi().view;
-        widget.setTextColor(getTextColor(enabled));
         setLinkColor(enabled);
-        redrawWidget(getApi().view, false);
     }
 
     @Override
@@ -276,12 +156,6 @@ public class SwtLink extends SwtControl implements ILink {
         Cursor cursor = super.findCursor();
         if (cursor != null)
             return cursor;
-        NSWindow window = getApi().view.window();
-        NSTextView widget = (NSTextView) getApi().view;
-        NSPoint point = getApi().view.convertPoint_fromView_(window.convertScreenToBase(NSEvent.mouseLocation()), null);
-        if (widget.characterIndexForInsertionAtPoint(point) == widget.textStorage().length()) {
-            return display.getSystemCursor(SWT.CURSOR_ARROW);
-        }
         return null;
     }
 
@@ -298,65 +172,12 @@ public class SwtLink extends SwtControl implements ILink {
      */
     public Color getLinkForeground() {
         checkWidget();
-        return SwtColor.cocoa_new(display, ((SwtDisplay) display.getImpl()).getNSColorRGB(getLinkForegroundColor()));
-    }
-
-    NSColor getLinkForegroundColor() {
-        if (linkForeground != null) {
-            return NSColor.colorWithDeviceRed(linkForeground[0], linkForeground[1], linkForeground[2], linkForeground[3]);
-        }
-        return defaultLinkColor;
+        return this._linkForeground;
     }
 
     @Override
     String getNameText() {
         return getText();
-    }
-
-    NSRect[] getRectangles(int linkIndex) {
-        /*
-	 * Returns the focus rectangles to be drawn for a link. Number of
-	 * rectangles is > 1 when the link has multiple lines.
-	 */
-        if (linkIndex == -1)
-            return null;
-        NSTextView widget = ((NSTextView) getApi().view);
-        NSLayoutManager layoutManager = widget.layoutManager();
-        NSRange range = new NSRange();
-        range.location = offsets[linkIndex].x;
-        range.length = offsets[linkIndex].y - offsets[linkIndex].x + 1;
-        NSRange glyphRange = layoutManager.glyphRangeForCharacterRange(range, 0);
-        long rangePtr = C.malloc(NSRange.sizeof);
-        NSRange lineRange = new NSRange();
-        /* compute number of lines in the link */
-        int numberOfLines = 0;
-        long index = glyphRange.location;
-        long glyphEndIndex = glyphRange.location + glyphRange.length;
-        while (index < glyphEndIndex) {
-            numberOfLines++;
-            layoutManager.lineFragmentUsedRectForGlyphAtIndex(index, rangePtr, true);
-            OS.memmove(lineRange, rangePtr, NSRange.sizeof);
-            index = lineRange.location + lineRange.length;
-        }
-        /* compute the enclosing rectangle(s) for the link*/
-        NSRect[] result = new NSRect[numberOfLines];
-        index = glyphRange.location;
-        for (int i = 0; index < glyphEndIndex && i < numberOfLines; i++) {
-            NSRect usedRect = layoutManager.lineFragmentUsedRectForGlyphAtIndex(index, rangePtr, true);
-            OS.memmove(lineRange, rangePtr, NSRange.sizeof);
-            index = lineRange.location + lineRange.length;
-            if (lineRange.location < glyphRange.location) {
-                lineRange.length = index - glyphRange.location;
-                lineRange.location = glyphRange.location;
-            }
-            if (index > glyphEndIndex)
-                lineRange.length = glyphEndIndex - lineRange.location;
-            NSRect boundsRect = layoutManager.boundingRectForGlyphRange(lineRange, widget.textContainer());
-            result[i] = new NSRect();
-            OS.NSIntersectionRect(result[i], usedRect, boundsRect);
-        }
-        C.free(rangePtr);
-        return result;
     }
 
     /**
@@ -373,31 +194,6 @@ public class SwtLink extends SwtControl implements ILink {
     public String getText() {
         checkWidget();
         return text;
-    }
-
-    NSColor getTextColor(boolean enabled) {
-        if (enabled) {
-            if (foreground == null) {
-                return NSColor.textColor();
-            }
-            return NSColor.colorWithDeviceRed(foreground[0], foreground[1], foreground[2], foreground[3]);
-        } else {
-            return NSColor.disabledControlTextColor();
-        }
-    }
-
-    @Override
-    void mouseUp(long id, long sel, long theEvent) {
-        /*
-	 * Feature in Cocoa: Link click notices are sent on mouseDown, but for some reason, Cocoa
-	 * re-sends the mouseUp that follows the click on a link. Fix is to ignore the next mouseUp
-	 * fired after a link selection.
-	 */
-        if (ignoreNextMouseUp) {
-            ignoreNextMouseUp = false;
-            return;
-        }
-        super.mouseUp(id, sel, theEvent);
     }
 
     String parse(String string) {
@@ -557,15 +353,11 @@ public class SwtLink extends SwtControl implements ILink {
     @Override
     void register() {
         super.register();
-        ((SwtDisplay) display.getImpl()).addWidget(scrollView, this.getApi());
     }
 
     @Override
     void releaseHandle() {
         super.releaseHandle();
-        if (scrollView != null)
-            scrollView.release();
-        scrollView = null;
     }
 
     @Override
@@ -575,7 +367,6 @@ public class SwtLink extends SwtControl implements ILink {
         ids = null;
         mnemonics = null;
         text = null;
-        defaultLinkColor = null;
         linkForeground = null;
     }
 
@@ -607,17 +398,7 @@ public class SwtLink extends SwtControl implements ILink {
     }
 
     @Override
-    void scrollWheel(long id, long sel, long theEvent) {
-        super.scrollWheel(id, sel, theEvent);
-        if (parent == null || parent.getImpl() instanceof SwtComposite) {
-            ((SwtComposite) parent.getImpl()).scrollWheel(parent.view.id, sel, theEvent);
-        }
-    }
-
-    @Override
     public void sendFocusEvent(int type) {
-        if (focusIndex != -1)
-            redrawWidget(getApi().view, false);
         super.sendFocusEvent(type);
     }
 
@@ -662,55 +443,12 @@ public class SwtLink extends SwtControl implements ILink {
     }
 
     @Override
-    boolean sendMouseEvent(NSEvent nsEvent, int type, boolean send) {
-        if (type == SWT.MouseMove) {
-            if (getApi().view.window().firstResponder().id != getApi().view.id) {
-                mouseMoved(getApi().view.id, OS.sel_mouseMoved_, nsEvent.id);
-            }
-        }
-        return super.sendMouseEvent(nsEvent, type, send);
-    }
-
-    void setBackground(NSColor nsColor) {
-        NSTextView widget = (NSTextView) getApi().view;
-        if (nsColor == null) {
-            widget.setDrawsBackground(false);
-        } else {
-            widget.setDrawsBackground(true);
-            widget.setBackgroundColor(nsColor);
-        }
-    }
-
-    @Override
-    void setBackgroundColor(NSColor nsColor) {
-        setBackground(nsColor);
-    }
-
-    @Override
-    void setBackgroundImage(NSImage image) {
-        ((NSTextView) getApi().view).setDrawsBackground(image == null);
-    }
-
-    @Override
-    void setFont(NSFont font) {
-        ((NSTextView) getApi().view).setFont(font);
-    }
-
-    @Override
     void setForeground(double[] color) {
         if (!getEnabled())
             return;
-        ((NSTextView) getApi().view).setTextColor(getTextColor(true));
     }
 
     void setLinkColor(boolean enabled) {
-        NSTextView widget = (NSTextView) getApi().view;
-        NSDictionary linkTextAttributes = widget.linkTextAttributes();
-        int count = (int) linkTextAttributes.count();
-        NSMutableDictionary dict = NSMutableDictionary.dictionaryWithCapacity(count);
-        dict.setDictionary(linkTextAttributes);
-        dict.setValue(enabled ? getLinkForegroundColor() : getTextColor(false), OS.NSForegroundColorAttributeName);
-        widget.setLinkTextAttributes(dict);
     }
 
     /**
@@ -732,6 +470,7 @@ public class SwtLink extends SwtControl implements ILink {
      * @since 3.105
      */
     public void setLinkForeground(Color color) {
+        dirty();
         checkWidget();
         if (color != null) {
             if (color.isDisposed())
@@ -744,14 +483,11 @@ public class SwtLink extends SwtControl implements ILink {
         if (getEnabled()) {
             setLinkColor(true);
         }
-        redrawWidget(getApi().view, false);
+        this._linkForeground = color;
     }
 
     @Override
     void setOrientation() {
-        NSTextView widget = (NSTextView) getApi().view;
-        int direction = (getApi().style & SWT.RIGHT_TO_LEFT) != 0 ? OS.NSWritingDirectionRightToLeft : OS.NSWritingDirectionLeftToRight;
-        widget.setBaseWritingDirection(direction);
     }
 
     /**
@@ -793,79 +529,30 @@ public class SwtLink extends SwtControl implements ILink {
      * </ul>
      */
     public void setText(String string) {
+        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (string.equals(text))
             return;
         text = string;
-        NSTextView widget = (NSTextView) getApi().view;
-        widget.setString(NSString.stringWith(parse(string)));
         focusIndex = offsets.length > 0 ? 0 : -1;
-        NSTextStorage textStorage = widget.textStorage();
-        NSRange range = new NSRange();
-        range.length = textStorage.length();
-        textStorage.removeAttribute(OS.NSLinkAttributeName, range);
-        textStorage.addAttribute(OS.NSCursorAttributeName, NSCursor.arrowCursor(), range);
         for (int i = 0; i < offsets.length; i++) {
-            range.location = offsets[i].x;
-            range.length = offsets[i].y - offsets[i].x + 1;
-            textStorage.addAttribute(OS.NSLinkAttributeName, NSString.stringWith(ids[i]), range);
         }
     }
 
     @Override
     void setZOrder() {
         super.setZOrder();
-        if (scrollView != null)
-            scrollView.setDocumentView(getApi().view);
     }
 
     @Override
-    boolean shouldDrawInsertionPoint(long id, long sel) {
-        return false;
-    }
-
-    @Override
-    boolean textView_clickOnLink_atIndex(long id, long sel, long textView, long link, long charIndex) {
-        NSString str = new NSString(link);
-        Event event = new Event();
-        event.text = str.getString();
-        sendSelectionEvent(SWT.Selection, event, true);
-        // Widget may be disposed at this point.
-        if (isDisposed())
-            return true;
-        for (int i = 0; i < offsets.length; i++) {
-            if ((charIndex >= offsets[i].x) && (charIndex <= offsets[i].y)) {
-                focusIndex = i;
-                break;
-            }
-        }
-        redrawWidget(getApi().view, false);
-        ignoreNextMouseUp = true;
-        return true;
-    }
-
-    @Override
-    NSView topView() {
-        return scrollView;
-    }
-
-    @Override
-    int traversalCode(int key, NSEvent theEvent) {
+    int traversalCode(int key, Object theEvent) {
         if (offsets.length == 0)
             return 0;
         int bits = super.traversalCode(key, theEvent);
         if (key == 48 && /* Tab */
         theEvent != null) {
-            long modifierFlags = theEvent.modifierFlags();
-            boolean next = (modifierFlags & OS.NSShiftKeyMask) == 0;
-            if (next && focusIndex < offsets.length - 1) {
-                return bits & ~SWT.TRAVERSE_TAB_NEXT;
-            }
-            if (!next && focusIndex > 0) {
-                return bits & ~SWT.TRAVERSE_TAB_PREVIOUS;
-            }
         }
         return bits;
     }
@@ -873,12 +560,6 @@ public class SwtLink extends SwtControl implements ILink {
     @Override
     public void updateCursorRects(boolean enabled) {
         super.updateCursorRects(enabled);
-        if (scrollView == null)
-            return;
-        updateCursorRects(enabled, scrollView);
-        NSClipView contentView = scrollView.contentView();
-        updateCursorRects(enabled, contentView);
-        contentView.setDocumentCursor(enabled ? NSCursor.arrowCursor() : null);
     }
 
     void updateThemeColors() {
@@ -899,8 +580,9 @@ public class SwtLink extends SwtControl implements ILink {
         // Only default colors are affected
         if (foreground != null)
             return;
-        ((NSTextView) getApi().view).setTextColor(getTextColor(getEnabled()));
     }
+
+    Color _linkForeground;
 
     public String _text() {
         return text;
@@ -934,9 +616,33 @@ public class SwtLink extends SwtControl implements ILink {
         return lastAppAppearance;
     }
 
+    public Color __linkForeground() {
+        return _linkForeground;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
+            });
+        });
+    }
+
     public Link getApi() {
         if (api == null)
             api = Link.createApi(this);
         return (Link) api;
+    }
+
+    public VLink getValue() {
+        if (value == null)
+            value = new VLink(this);
+        return (VLink) value;
     }
 }

@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import '../gen/color.dart';
 import 'widget_config.dart';
+
+Color colorFromVColor(VColor? vColor, {required Color defaultColor}) {
+  if (vColor == null) return defaultColor;
+  return Color.fromARGB(vColor.alpha, vColor.red, vColor.green, vColor.blue);
+}
 
 Color getBackground() {
   return getCurrentTheme() ? const Color(0xFF1E1E1E) : Colors.white;
@@ -31,4 +37,8 @@ Color getHintColor() {
 
 Color getIconColor() {
   return getCurrentTheme() ? Colors.white70 : Colors.black54;
+}
+
+Color getLinkColor() {
+  return getCurrentTheme() ? Colors.lightBlue : Colors.blue;
 }

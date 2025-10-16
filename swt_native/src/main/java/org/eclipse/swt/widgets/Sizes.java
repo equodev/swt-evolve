@@ -129,4 +129,19 @@ public class Sizes {
 
         return new Point(Math.max(width, 100), 32);
     }
+
+    public static Point compute(DartLink c) {
+        String text = c._text();
+        if (text == null || text.isEmpty()) {
+            return new Point(100, 32);
+        }
+
+        // Remove HTML tags to calculate actual visible text length
+        String plainText = text.replaceAll("<a[^>]*>", "").replaceAll("</a>", "");
+        int textLength = plainText.length();
+
+        int width = (int)(textLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING);
+
+        return new Point(Math.max(width, 100), 32);
+    }
 }

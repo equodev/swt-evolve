@@ -5,6 +5,7 @@ import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../gen/image.dart';
 import '../impl/control_evolve.dart';
+import '../impl/color_utils.dart';
 import '../styles.dart';
 import './utils/image_utils.dart';
 

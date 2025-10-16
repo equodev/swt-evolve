@@ -1,0 +1,58 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'link.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+VLink _$VLinkFromJson(Map<String, dynamic> json) => VLink()
+  ..swt = json['swt'] as String
+  ..id = (json['id'] as num).toInt()
+  ..style = (json['style'] as num).toInt()
+  ..background = json['background'] == null
+      ? null
+      : VColor.fromJson(json['background'] as Map<String, dynamic>)
+  ..backgroundImage = json['backgroundImage'] == null
+      ? null
+      : VImage.fromJson(json['backgroundImage'] as Map<String, dynamic>)
+  ..bounds = json['bounds'] == null
+      ? null
+      : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>)
+  ..capture = json['capture'] as bool?
+  ..dragDetect = json['dragDetect'] as bool?
+  ..enabled = json['enabled'] as bool?
+  ..foreground = json['foreground'] == null
+      ? null
+      : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
+  ..orientation = (json['orientation'] as num?)?.toInt()
+  ..redraw = json['redraw'] as bool?
+  ..textDirection = (json['textDirection'] as num?)?.toInt()
+  ..toolTipText = json['toolTipText'] as String?
+  ..touchEnabled = json['touchEnabled'] as bool?
+  ..visible = json['visible'] as bool?
+  ..linkForeground = json['linkForeground'] == null
+      ? null
+      : VColor.fromJson(json['linkForeground'] as Map<String, dynamic>)
+  ..text = json['text'] as String?;
+
+Map<String, dynamic> _$VLinkToJson(VLink instance) => <String, dynamic>{
+      'swt': instance.swt,
+      'id': instance.id,
+      'style': instance.style,
+      'background': instance.background,
+      'backgroundImage': instance.backgroundImage,
+      'bounds': instance.bounds,
+      'capture': instance.capture,
+      'dragDetect': instance.dragDetect,
+      'enabled': instance.enabled,
+      'foreground': instance.foreground,
+      'orientation': instance.orientation,
+      'redraw': instance.redraw,
+      'textDirection': instance.textDirection,
+      'toolTipText': instance.toolTipText,
+      'touchEnabled': instance.touchEnabled,
+      'visible': instance.visible,
+      'linkForeground': instance.linkForeground,
+      'text': instance.text,
+    };

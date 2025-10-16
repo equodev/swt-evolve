@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/swt/tablecolumn.dart';
 import '../impl/composite_evolve.dart';
+import '../impl/color_utils.dart';
 import '../styles.dart';
 import '../gen/event.dart';
 import '../gen/table.dart';
@@ -138,17 +139,15 @@ class TableImpl<T extends TableSwt, V extends VTable>
     List<String?> cellTexts = item.texts ?? [];
     bool isSelected = index == _selectedRowIndex || isItemSelected(item);
 
-    Color rowBackgroundColor = item.background != null
-        ? Color.fromARGB(item.background!.alpha, item.background!.red,
-            item.background!.green, item.background!.blue)
-        : index % 2 == 1
-            ? alternateRowColor
-            : defaultBackgroundColor;
+    Color rowBackgroundColor = colorFromVColor(
+      item.background,
+      defaultColor: index % 2 == 1 ? alternateRowColor : defaultBackgroundColor,
+    );
 
-    Color rowTextColor = item.foreground != null
-        ? Color.fromARGB(item.foreground!.alpha, item.foreground!.red,
-            item.foreground!.green, item.foreground!.blue)
-        : defaultTextColor;
+    Color rowTextColor = colorFromVColor(
+      item.foreground,
+      defaultColor: defaultTextColor,
+    );
 
     List<Widget> rowCells = [];
 

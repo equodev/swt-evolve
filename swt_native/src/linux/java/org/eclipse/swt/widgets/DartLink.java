@@ -21,9 +21,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class represent a selectable
@@ -46,7 +44,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtLink extends SwtControl implements ILink {
+public class DartLink extends DartControl implements ILink {
 
     String text;
 
@@ -97,7 +95,7 @@ public class SwtLink extends SwtControl implements ILink {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtLink(Composite parent, int style, Link api) {
+    public DartLink(Composite parent, int style, Link api) {
         super(parent, style, api);
     }
 
@@ -131,62 +129,20 @@ public class SwtLink extends SwtControl implements ILink {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        if (wHint != SWT.DEFAULT && wHint < 0)
-            wHint = 0;
-        if (hHint != SWT.DEFAULT && hHint < 0)
-            hHint = 0;
-        int width, height;
-        int layoutWidth = layout.getWidth();
-        //TEMPORARY CODE
-        if (wHint == 0) {
-            layout.setWidth(1);
-            Rectangle rect = DPIUtil.autoScaleUp(layout.getBounds());
-            width = 0;
-            height = rect.height;
-        } else {
-            layout.setWidth(DPIUtil.autoScaleDown(wHint));
-            Rectangle rect = DPIUtil.autoScaleUp(layout.getBounds());
-            width = rect.width;
-            height = rect.height;
-        }
-        layout.setWidth(layoutWidth);
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
-        int border = getBorderWidthInPixels();
-        width += border * 2;
-        height += border * 2;
-        return new Point(width, height);
+        return Sizes.compute(this);
     }
 
     @Override
     void createHandle(int index) {
-        getApi().state |= HANDLE | THEME_BACKGROUND;
-        getApi().handle = OS.g_object_new(((SwtDisplay) display.getImpl()).gtk_fixed_get_type(), 0);
-        if (getApi().handle == 0)
-            error(SWT.ERROR_NO_HANDLES);
-        if (GTK.GTK4) {
-            GTK4.gtk_widget_set_focusable(getApi().handle, true);
-        } else {
-            GTK3.gtk_widget_set_has_window(getApi().handle, true);
-        }
-        GTK.gtk_widget_set_can_focus(getApi().handle, true);
-        layout = new TextLayout(display);
-        disabledColor = new Color(LINK_DISABLED_FOREGROUND);
-        offsets = new Point[0];
-        ids = new String[0];
-        mnemonics = new int[0];
-        selection = new Point(-1, -1);
-        focusIndex = -1;
     }
 
     @Override
     void createWidget(int index) {
+        layout = new TextLayout(display);
         super.createWidget(index);
         layout.setFont(getFont());
         text = "";
+        selection = new Point(-1, -1);
         initAccessible();
     }
 
@@ -227,8 +183,6 @@ public class SwtLink extends SwtControl implements ILink {
     }
 
     void initAccessible() {
-        if (GTK.GTK4)
-            return;
         Accessible accessible = getAccessible();
         accessible.addAccessibleListener(new AccessibleAdapter() {
 
@@ -354,236 +308,6 @@ public class SwtLink extends SwtControl implements ILink {
     public String getText() {
         checkWidget();
         return text;
-    }
-
-    @Override
-    long gtk_button_press_event(long widget, long event) {
-        long result = super.gtk_button_press_event(widget, event);
-        if (result != 0)
-            return result;
-        int eventType = GDK.gdk_event_get_event_type(event);
-        eventType = fixGdkEventTypeValues(eventType);
-        int[] eventButton = new int[1];
-        if (GTK.GTK4) {
-            eventButton[0] = GDK.gdk_button_event_get_button(event);
-        } else {
-            GDK.gdk_event_get_button(event, eventButton);
-        }
-        double[] eventX = new double[1];
-        double[] eventY = new double[1];
-        if (GTK.GTK4) {
-            GDK.gdk_event_get_position(event, eventX, eventY);
-        } else {
-            GDK.gdk_event_get_coords(event, eventX, eventY);
-        }
-        if (eventButton[0] == 1 && eventType == GDK.GDK_BUTTON_PRESS) {
-            if (focusIndex != -1)
-                setFocus();
-            int x = (int) eventX[0];
-            int y = (int) eventY[0];
-            if ((getApi().style & SWT.MIRRORED) != 0)
-                x = getClientWidth() - x;
-            int offset = DPIUtil.autoScaleUp(layout.getOffset(x, y, null));
-            int oldSelectionX = selection.x;
-            int oldSelectionY = selection.y;
-            selection.x = offset;
-            selection.y = -1;
-            if (oldSelectionX != -1 && oldSelectionY != -1) {
-                if (oldSelectionX > oldSelectionY) {
-                    int temp = oldSelectionX;
-                    oldSelectionX = oldSelectionY;
-                    oldSelectionY = temp;
-                }
-                Rectangle rect = DPIUtil.autoScaleUp(layout.getBounds(oldSelectionX, oldSelectionY));
-                redrawInPixels(rect.x, rect.y, rect.width, rect.height, false);
-            }
-            for (int j = 0; j < offsets.length; j++) {
-                Rectangle[] rects = getRectanglesInPixels(j);
-                for (int i = 0; i < rects.length; i++) {
-                    Rectangle rect = rects[i];
-                    if (rect.contains(x, y)) {
-                        focusIndex = j;
-                        redraw();
-                        return result;
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
-    @Override
-    long gtk_button_release_event(long widget, long event) {
-        long result = super.gtk_button_release_event(widget, event);
-        if (result != 0)
-            return result;
-        if (focusIndex == -1)
-            return result;
-        int[] eventButton = new int[1];
-        if (GTK.GTK4) {
-            eventButton[0] = GDK.gdk_button_event_get_button(event);
-        } else {
-            GDK.gdk_event_get_button(event, eventButton);
-        }
-        double[] eventX = new double[1];
-        double[] eventY = new double[1];
-        if (GTK.GTK4) {
-            GDK.gdk_event_get_position(event, eventX, eventY);
-        } else {
-            GDK.gdk_event_get_coords(event, eventX, eventY);
-        }
-        if (eventButton[0] == 1) {
-            int x = (int) eventX[0];
-            int y = (int) eventY[0];
-            if ((getApi().style & SWT.MIRRORED) != 0)
-                x = getClientWidth() - x;
-            Rectangle[] rects = getRectanglesInPixels(focusIndex);
-            for (int i = 0; i < rects.length; i++) {
-                Rectangle rect = rects[i];
-                if (rect.contains(x, y)) {
-                    Event ev = new Event();
-                    ev.text = ids[focusIndex];
-                    sendSelectionEvent(SWT.Selection, ev, true);
-                    return result;
-                }
-            }
-        }
-        return result;
-    }
-
-    @Override
-    long gtk_draw(long widget, long cairo) {
-        long context = GTK.gtk_widget_get_style_context(widget);
-        GtkAllocation allocation = new GtkAllocation();
-        GTK.gtk_widget_get_allocation(widget, allocation);
-        int width = (getApi().state & ZERO_WIDTH) != 0 ? 0 : allocation.width;
-        int height = (getApi().state & ZERO_HEIGHT) != 0 ? 0 : allocation.height;
-        // We specify a 0 value for x & y as we want the whole widget to be
-        // colored, not some portion of it.
-        GTK.gtk_render_background(context, cairo, 0, 0, width, height);
-        return super.gtk_draw(widget, cairo);
-    }
-
-    @Override
-    long gtk_event_after(long widget, long gdkEvent) {
-        long result = super.gtk_event_after(widget, gdkEvent);
-        int eventType = GDK.gdk_event_get_event_type(gdkEvent);
-        switch(eventType) {
-            case GDK.GDK_FOCUS_CHANGE:
-                redraw();
-                break;
-        }
-        return result;
-    }
-
-    @Override
-    boolean gtk4_key_press_event(long controller, int keyval, int keycode, int state, long event) {
-        boolean handled = super.gtk4_key_press_event(controller, keyval, keycode, state, event);
-        if (!handled && focusIndex != -1) {
-            switch(keyval) {
-                case GDK.GDK_Return:
-                case GDK.GDK_KP_Enter:
-                case GDK.GDK_space:
-                    Event jEvent = new Event();
-                    jEvent.text = ids[focusIndex];
-                    sendSelectionEvent(SWT.Selection, jEvent, true);
-                    break;
-                case GDK.GDK_Tab:
-                    if (focusIndex < offsets.length - 1) {
-                        focusIndex++;
-                        redraw();
-                    }
-                    break;
-                case GDK.GDK_ISO_Left_Tab:
-                    if (focusIndex > 0) {
-                        focusIndex--;
-                        redraw();
-                    }
-                    break;
-            }
-        }
-        return handled;
-    }
-
-    @Override
-    long gtk_key_press_event(long widget, long eventPtr) {
-        long result = super.gtk_key_press_event(widget, eventPtr);
-        if (result != 0)
-            return result;
-        if (focusIndex == -1)
-            return result;
-        int[] key = new int[1];
-        GDK.gdk_event_get_keyval(eventPtr, key);
-        switch(key[0]) {
-            case GDK.GDK_Return:
-            case GDK.GDK_KP_Enter:
-            case GDK.GDK_space:
-                Event event = new Event();
-                event.text = ids[focusIndex];
-                sendSelectionEvent(SWT.Selection, event, true);
-                break;
-            case GDK.GDK_Tab:
-                if (focusIndex < offsets.length - 1) {
-                    focusIndex++;
-                    redraw();
-                }
-                break;
-            case GDK.GDK_ISO_Left_Tab:
-                if (focusIndex > 0) {
-                    focusIndex--;
-                    redraw();
-                }
-                break;
-        }
-        return result;
-    }
-
-    @Override
-    long gtk_motion_notify_event(long widget, long event) {
-        long result = super.gtk_motion_notify_event(widget, event);
-        if (result != 0)
-            return result;
-        double[] eventX = new double[1];
-        double[] eventY = new double[1];
-        int[] state = new int[1];
-        if (GTK.GTK4) {
-            GDK.gdk_event_get_position(event, eventX, eventY);
-            state[0] = GDK.gdk_event_get_modifier_state(event);
-        } else {
-            GDK.gdk_event_get_coords(event, eventX, eventY);
-            GDK.gdk_event_get_state(event, state);
-        }
-        int x = (int) eventX[0];
-        int y = (int) eventY[0];
-        if ((getApi().style & SWT.MIRRORED) != 0)
-            x = getClientWidth() - x;
-        if ((state[0] & GDK.GDK_BUTTON1_MASK) != 0) {
-            int oldSelection = selection.y;
-            selection.y = DPIUtil.autoScaleUp(layout.getOffset(x, y, null));
-            if (selection.y != oldSelection) {
-                int newSelection = selection.y;
-                if (oldSelection > newSelection) {
-                    int temp = oldSelection;
-                    oldSelection = newSelection;
-                    newSelection = temp;
-                }
-                Rectangle rect = layout.getBounds(oldSelection, newSelection);
-                redrawInPixels(rect.x, rect.y, rect.width, rect.height, false);
-            }
-        } else {
-            for (int j = 0; j < offsets.length; j++) {
-                Rectangle[] rects = getRectanglesInPixels(j);
-                for (int i = 0; i < rects.length; i++) {
-                    Rectangle rect = rects[i];
-                    if (rect.contains(x, y)) {
-                        setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
-                        return result;
-                    }
-                }
-            }
-            setCursor(null);
-        }
-        return result;
     }
 
     @Override
@@ -840,7 +564,6 @@ public class SwtLink extends SwtControl implements ILink {
     @Override
     void setFontDescription(long font) {
         super.setFontDescription(font);
-        layout.setFont(SwtFont.gtk_new(display, font));
     }
 
     /**
@@ -862,6 +585,7 @@ public class SwtLink extends SwtControl implements ILink {
      * @since 3.105
      */
     public void setLinkForeground(Color color) {
+        dirty();
         checkWidget();
         if (color != null) {
             if (color.isDisposed())
@@ -924,6 +648,7 @@ public class SwtLink extends SwtControl implements ILink {
      * </ul>
      */
     public void setText(String string) {
+        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -969,16 +694,10 @@ public class SwtLink extends SwtControl implements ILink {
     }
 
     @Override
-    int traversalCode(int key, long event) {
+    int traversalCode(int key, Object event) {
         if (offsets.length == 0)
             return 0;
         int bits = super.traversalCode(key, event);
-        if (key == GDK.GDK_Tab && focusIndex < offsets.length - 1) {
-            return bits & ~SWT.TRAVERSE_TAB_NEXT;
-        }
-        if (key == GDK.GDK_ISO_Left_Tab && focusIndex > 0) {
-            return bits & ~SWT.TRAVERSE_TAB_PREVIOUS;
-        }
         return bits;
     }
 
@@ -1018,9 +737,29 @@ public class SwtLink extends SwtControl implements ILink {
         return focusIndex;
     }
 
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
+            });
+        });
+    }
+
     public Link getApi() {
         if (api == null)
             api = Link.createApi(this);
         return (Link) api;
+    }
+
+    public VLink getValue() {
+        if (value == null)
+            value = new VLink(this);
+        return (VLink) value;
     }
 }
