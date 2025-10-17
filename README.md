@@ -90,6 +90,8 @@ Here is the current status of major widgets:
 | `Label` | ✔️ Implemented |  |
 | `List` | ✔️ Implemented |  |
 | `Text` | ✔️ Implemented |  |
+| `Group` | ✔️ Implemented |  |
+| `Link` | ✔️ Implemented |  |
 
 ---
 
