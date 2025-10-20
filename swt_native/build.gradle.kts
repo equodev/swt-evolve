@@ -164,7 +164,7 @@ platforms.forEach { platform ->
                 commandLine = listOf("bash", "-c", "./set-arch.sh $arch && flutter build macos")
             }
             else -> {
-                val flutterCmd = if (System.getProperty("os.name").toLowerCase().contains("windows")) "flutter.bat" else "flutter"
+                val flutterCmd = if (System.getProperty("os.name").lowercase().contains("windows")) "flutter.bat" else "flutter"
                 commandLine = listOf(flutterCmd, "build", osArch[0])
             }
         }
@@ -245,6 +245,7 @@ platforms.forEach { platform ->
                 "SWT-OS" to swtOs,
                 "SWT-Arch" to osArch[1],
                 "Automatic-Module-Name" to "org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}",
+                "Evolve-Version" to (gradle.parent?.rootProject?.version ?: project.version),
             )
         }
         dependsOn("${platform}ExtractNatives")
