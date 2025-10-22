@@ -74,24 +74,25 @@ SWT Evolve is currently in an **alpha** stage. This means we are actively develo
 
 Here is the current status of major widgets:
 
-| Widget | Status | Notes |
-| --- | --- | --- |
-| `StyledText` | ✔️ Implemented |  |
-| `Tree` | ⚠️ Partially Implemented | Key features working, more APIs to add. |
-| `Table` | ⚠️ Partially Implemented | Key features working, more APIs to add. |
-| `CTabFolder` | ⚠️  Partially Implemented | Basic functionality is solid. |
-| `Button (Push)` | ✔️ Implemented |  |
-| `Button (Check)` | ✔️ Implemented |  |
-| `Button (Toggle)` | ✔️ Implemented |  |
-| `Button (Radio)` | ⚠️ Partially Implemented |  |
-| `Button (Arrow)` | ⚠️ Partially Implemented |  |
-| `Canvas` | ✔️ Implemented |  |
-| `GC` | ✔️ Implemented | Only supports Canvas. Draw2d implemented for FigureCanvas. |
-| `Label` | ✔️ Implemented |  |
-| `List` | ✔️ Implemented |  |
-| `Text` | ✔️ Implemented |  |
-| `Group` | ✔️ Implemented |  |
-| `Link` | ✔️ Implemented |  |
+| Widget            | Status | Notes                                                               |
+|-------------------| -- |---------------------------------------------------------------------|
+| `StyledText`      | ✔️ Implemented |                                                                     |
+| `Tree`            | ⚠️ Partially Implemented | Key features working, more APIs to add.                             |
+| `Table`           | ⚠️ Partially Implemented | Key features working, more APIs to add.                             |
+| `CTabFolder`      | ⚠️  Partially Implemented | Basic functionality is solid.                                       |
+| `Button (Push)`   | ✔️ Implemented |                                                                     |
+| `Button (Check)`  | ✔️ Implemented |                                                                     |
+| `Button (Toggle)` | ✔️ Implemented |                                                                     |
+| `Button (Radio)`  | ⚠️ Partially Implemented |                                                                     |
+| `Button (Arrow)`  | ⚠️ Partially Implemented |                                                                     |
+| `Canvas`          | ✔️ Implemented |                                                                     |
+| `GC`              | ✔️ Implemented | Only supports Canvas. Draw2d implemented for FigureCanvas.          |
+| `Label`           | ✔️ Implemented |                                                                     |
+| `List`            | ✔️ Implemented |                                                                     |
+| `Text`            | ✔️ Implemented |                                                                     |
+| `Group`           | ✔️ Implemented |                                                                     |
+| `Link`            | ✔️ Implemented |                                                                     |
+| `Combo`           | ⚠️ Partially Implemented | SWT.READ_ONLY Combo implemented for Windows and Linux, SWT.SIMPLE and SWT.DROP_DOWN to add. |
 
 ---
 

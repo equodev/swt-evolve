@@ -18,7 +18,39 @@ public class Sizes {
     }
 
     public static Point compute(DartCombo c) {
-        return new Point(c.text.length()*15+20, 25);
+        // Find the longest item in the combo
+        int maxLength = 0;
+        String[] items = c._items();
+        if (items != null) {
+            for (String item : items) {
+                if (item != null && item.length() > maxLength) {
+                    maxLength = item.length();
+                }
+            }
+        }
+
+        // Also consider the current text
+        String text = c._text();
+        int textLength = (text != null ? text.length() : 0);
+        maxLength = Math.max(maxLength, textLength);
+
+        // Calculate width based on the longest text
+        int width = maxLength > 0 ? (int)(maxLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING) : 100;
+        // Add space for dropdown arrow
+        width += 30;
+
+        // For SIMPLE style, calculate height based on number of visible items
+        int height = 25; // Default height for DROP_DOWN and READ_ONLY
+        if ((c.getApi().style & org.eclipse.swt.SWT.SIMPLE) != 0) {
+            int visibleCount = c.getApi().getVisibleItemCount();
+            int itemCount = items != null ? items.length : 0;
+            // Height should accommodate visible items
+            height = Math.min(visibleCount, itemCount) * 24 + 32; // 24px per item + padding
+        }
+
+        Point result = new Point(Math.max(width, 120), height);
+        System.out.println("Combo size calculated: width=" + result.x + ", height=" + result.y + ", items=" + (items != null ? items.length : 0) + ", maxLength=" + maxLength);
+        return result;
     }
 
     public static Point compute(DartLabel c) {
@@ -157,6 +189,8 @@ public class Sizes {
         Control[] children = c.getChildren();
         int childrenWidth = 0;
         int childrenHeight = 0;
+        boolean hasCombo = false;
+        int comboCount = 0;
 
         if (children != null && children.length > 0) {
             // Sum the widths of all children (assuming horizontal layout)
@@ -164,6 +198,12 @@ public class Sizes {
                 Point childSize = child.computeSize(org.eclipse.swt.SWT.DEFAULT, org.eclipse.swt.SWT.DEFAULT);
                 childrenWidth += childSize.x;
                 childrenHeight = Math.max(childrenHeight, childSize.y);
+
+                // Check if this child is a Combo
+                if (child instanceof Combo) {
+                    hasCombo = true;
+                    comboCount++;
+                }
             }
             // Add spacing between children: 12px SizedBox between each pair
             if (children.length > 1) {
@@ -189,11 +229,23 @@ public class Sizes {
             // This is a heuristic since we don't know the actual layout type
             int estimatedHeight = childrenHeight * Math.max(1, children.length / 2);
             height = estimatedHeight + titleHeightSpace + verticalPadding;
+
+            // If the group contains Combos, add extra space for dropdown menus
+            // Each combo needs approximately 150px to show ~5-6 dropdown items
+            if (hasCombo) {
+                int dropdownSpace = 150 * comboCount;
+                height += dropdownSpace;
+                System.out.println("Group contains " + comboCount + " Combo(s), adding " + dropdownSpace + "px for dropdowns");
+            }
         } else {
             height = childrenHeight + titleHeightSpace + verticalPadding;
         }
 
-        // Minimum size for a Group - increased minimum height
-        return new Point(Math.max(width, 150), Math.max(height, 100));
+        // Minimum size for a Group - ensure enough space for combo dropdowns
+        // Use a more generous minimum width to accommodate dropdown menus
+        int minHeight = hasCombo ? 200 : 100;
+        Point result = new Point(Math.max(width, 300), Math.max(height, minHeight));
+        System.out.println("Group size calculated: width=" + result.x + ", height=" + result.y + ", text='" + text + "', childrenWidth=" + childrenWidth + ", childrenCount=" + (children != null ? children.length : 0) + ", hasCombo=" + hasCombo);
+        return result;
     }
 }

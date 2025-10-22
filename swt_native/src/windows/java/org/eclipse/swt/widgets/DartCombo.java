@@ -158,6 +158,7 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        add(string, items.length);
     }
 
     /**
@@ -190,6 +191,14 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        if (index < 0 || index > items.length)
+            error(SWT.ERROR_INVALID_RANGE);
+        dirty();
+        String[] newItems = new String[items.length + 1];
+        System.arraycopy(items, 0, newItems, 0, index);
+        newItems[index] = string;
+        System.arraycopy(items, index, newItems, index + 1, items.length - index);
+        items = newItems;
     }
 
     /**
@@ -453,6 +462,7 @@ public class DartCombo extends DartComposite implements ICombo {
 
     @Override
     void createWidget() {
+        selection = new Point(0, 0);
         super.createWidget();
         visibleCount = VISIBLE_COUNT;
         if ((getApi().style & SWT.SIMPLE) == 0) {
@@ -605,8 +615,9 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public String getItem(int index) {
         checkWidget();
-        error(SWT.ERROR_INVALID_RANGE);
-        return "";
+        if (index < 0 || index >= items.length)
+            error(SWT.ERROR_INVALID_RANGE);
+        return items[index];
     }
 
     /**
@@ -985,24 +996,14 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        /*
-	* Bug in Windows.  For some reason, CB_FINDSTRINGEXACT
-	* will not find empty strings even though it is legal
-	* to insert an empty string into a combo.  The fix is
-	* to search the combo, an item at a time.
-	*/
-        if (string.length() == 0) {
-            int count = getItemCount();
-            for (int i = start; i < count; i++) {
-                if (string.equals(getItem(i)))
-                    return i;
-            }
+        int count = getItemCount();
+        if (!(0 <= start && start < count))
             return -1;
+        for (int i = start; i < count; i++) {
+            if (string.equals(getItem(i)))
+                return i;
         }
-        int index = start - 1;
-        do {
-        } while (!string.equals(getItem(index)));
-        return index;
+        return -1;
     }
 
     /**
@@ -1283,7 +1284,11 @@ public class DartCombo extends DartComposite implements ICombo {
     public void select(int index) {
         dirty();
         checkWidget();
-        this.selection = new Point(selection.x, selection.y);
+        if (index < 0 || index >= items.length)
+            return;
+        noSelection = false;
+        this.text = items[index];
+        this.selection = new Point(0, 0);
     }
 
     @Override

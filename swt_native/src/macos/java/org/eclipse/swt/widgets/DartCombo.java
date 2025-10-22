@@ -130,9 +130,7 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-        } else {
-        }
+        add(string, items.length);
     }
 
     /**
@@ -165,12 +163,14 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        int count = getItemCount();
-        if (0 > index || index > count)
+        if (index < 0 || index > items.length)
             error(SWT.ERROR_INVALID_RANGE);
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-        } else {
-        }
+        dirty();
+        String[] newItems = new String[items.length + 1];
+        System.arraycopy(items, 0, newItems, 0, index);
+        newItems[index] = string;
+        System.arraycopy(items, index, newItems, index + 1, items.length - index);
+        items = newItems;
     }
 
     /**
@@ -349,27 +349,7 @@ public class DartCombo extends DartComposite implements ICombo {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        int width = 0, height = 0;
-        if ((getApi().style & SWT.READ_ONLY) == 0) {
-            ignoreSetObject = true;
-            ignoreSetObject = false;
-        } else {
-        }
-        /*
-	* Feature in Cocoa.  Attempting to create an NSComboBox with a
-	* height > 27 spews a very long warning message to stdout and
-	* often draws the combo incorrectly.  The workaround is to limit
-	* the returned height of editable Combos to the height that is
-	* required to display their text, even if a larger hHint is specified.
-	*/
-        if (hHint != SWT.DEFAULT) {
-            if ((getApi().style & SWT.READ_ONLY) != 0 || hHint < height)
-                height = hHint;
-        }
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        return new Point(width, height);
+        return Sizes.compute(this);
     }
 
     /**
@@ -400,6 +380,7 @@ public class DartCombo extends DartComposite implements ICombo {
     @Override
     void createWidget() {
         text = "";
+        selection = new Point(0, 0);
         super.createWidget();
         if ((getApi().style & SWT.READ_ONLY) == 0) {
         }
@@ -585,13 +566,9 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public String getItem(int index) {
         checkWidget();
-        int count = getItemCount();
-        if (0 > index || index >= count)
+        if (index < 0 || index >= items.length)
             error(SWT.ERROR_INVALID_RANGE);
-        if ((getApi().style & SWT.READ_ONLY) != 0) {
-        } else {
-        }
-        return this.items[index];
+        return items[index];
     }
 
     /**
@@ -891,9 +868,8 @@ public class DartCombo extends DartComposite implements ICombo {
         if (!(0 <= start && start < count))
             return -1;
         for (int i = start; i < count; i++) {
-            if (string.equals(getItem(i))) {
+            if (string.equals(getItem(i)))
                 return i;
-            }
         }
         return -1;
     }
