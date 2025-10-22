@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'color_utils.dart';
 
 class StyledDropdownButton extends StatelessWidget {
   final List<String> items;
@@ -24,11 +25,10 @@ class StyledDropdownButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor =
-        useDarkTheme ? Color(0xFF1E1E1E) : Colors.white;
-    final Color textColor = useDarkTheme ? Colors.white : Color(0xFF595858);
-    final Color borderColor =
-        useDarkTheme ? Color(0xFF3C3C3C) : Color(0xFFD1D5DB);
+    final Color backgroundColor = getBackground();
+    final Color textColor = getForeground();
+    final Color borderColor = getBorderColor();
+    final Color iconColor = getIconColor();
 
     return MouseRegion(
       onEnter: (_) => onMouseEnter?.call(),
@@ -42,7 +42,7 @@ class StyledDropdownButton extends StatelessWidget {
           }
         },
         child: Container(
-          height: 30,
+          height: 32,
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(4),
@@ -54,13 +54,19 @@ class StyledDropdownButton extends StatelessWidget {
               items: items.map((String item) {
                 return DropdownMenuItem<String>(
                   value: item,
-                  child: Text(item, style: TextStyle(color: textColor)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(item, style: TextStyle(color: textColor, fontSize: 12)),
+                  ),
                 );
               }).toList(),
               onChanged: onChanged,
-              style: TextStyle(color: textColor),
+              style: TextStyle(color: textColor, fontSize: 12),
               dropdownColor: backgroundColor,
-              icon: Icon(Icons.arrow_drop_down, color: textColor),
+              icon: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Icon(Icons.arrow_drop_down, color: iconColor, size: 20),
+              ),
             ),
           ),
         ),
@@ -70,12 +76,15 @@ class StyledDropdownButton extends StatelessWidget {
 }
 
 class StyledSimpleCombo extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode? focusNode;
   final List<String> items;
   final String? value;
   final ValueChanged<String?>? onChanged;
   final ValueChanged<String>? onTextChanged;
-  final String Function(String)? onTextSubmitted;
+  final ValueChanged<String>? onTextSubmitted;
   final bool useDarkTheme;
+  final int? textLimit;
   final VoidCallback? onMouseEnter;
   final VoidCallback? onMouseExit;
   final VoidCallback? onFocusIn;
@@ -83,12 +92,15 @@ class StyledSimpleCombo extends StatelessWidget {
 
   const StyledSimpleCombo({
     Key? key,
+    required this.controller,
+    this.focusNode,
     required this.items,
     this.value,
     this.onChanged,
     this.onTextChanged,
     this.onTextSubmitted,
     required this.useDarkTheme,
+    this.textLimit,
     this.onMouseEnter,
     this.onMouseExit,
     this.onFocusIn,
@@ -97,11 +109,10 @@ class StyledSimpleCombo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor =
-        useDarkTheme ? Color(0xFF1E1E1E) : Colors.white;
-    final Color textColor = useDarkTheme ? Colors.white : Color(0xFF595858);
-    final Color borderColor =
-        useDarkTheme ? Color(0xFF3C3C3C) : Color(0xFFD1D5DB);
+    final Color backgroundColor = getBackground();
+    final Color textColor = getForeground();
+    final Color borderColor = getBorderColor();
+    final Color iconColor = getIconColor();
 
     return MouseRegion(
       onEnter: (_) => onMouseEnter?.call(),
@@ -115,7 +126,7 @@ class StyledSimpleCombo extends StatelessWidget {
           }
         },
         child: Container(
-          height: 30,
+          height: 32,
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(4),
@@ -125,27 +136,31 @@ class StyledSimpleCombo extends StatelessWidget {
             children: [
               Expanded(
                 child: TextField(
-                  controller: TextEditingController(text: value),
-                  style: TextStyle(color: textColor),
+                  controller: controller,
+                  focusNode: focusNode,
+                  style: TextStyle(color: textColor, fontSize: 12),
                   decoration: InputDecoration(
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    isDense: true,
                   ),
+                  maxLength: textLimit,
                   onChanged: onTextChanged,
                   onSubmitted: onTextSubmitted,
                 ),
               ),
               PopupMenuButton<String>(
-                icon: Icon(Icons.arrow_drop_down, color: textColor),
+                icon: Icon(Icons.arrow_drop_down, color: iconColor, size: 20),
                 itemBuilder: (context) {
                   return items.map((String item) {
                     return PopupMenuItem<String>(
                       value: item,
-                      child: Text(item, style: TextStyle(color: textColor)),
+                      child: Text(item, style: TextStyle(color: textColor, fontSize: 12)),
                     );
                   }).toList();
                 },
                 onSelected: onChanged,
+                color: backgroundColor,
               ),
             ],
           ),
@@ -156,12 +171,15 @@ class StyledSimpleCombo extends StatelessWidget {
 }
 
 class StyledEditableCombo extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode? focusNode;
   final List<String> items;
   final String? value;
   final ValueChanged<String?>? onChanged;
   final ValueChanged<String>? onTextChanged;
-  final String Function(String)? onTextSubmitted;
+  final ValueChanged<String>? onTextSubmitted;
   final bool useDarkTheme;
+  final int? textLimit;
   final VoidCallback? onMouseEnter;
   final VoidCallback? onMouseExit;
   final VoidCallback? onFocusIn;
@@ -169,12 +187,15 @@ class StyledEditableCombo extends StatelessWidget {
 
   const StyledEditableCombo({
     Key? key,
+    required this.controller,
+    this.focusNode,
     required this.items,
     this.value,
     this.onChanged,
     this.onTextChanged,
     this.onTextSubmitted,
     required this.useDarkTheme,
+    this.textLimit,
     this.onMouseEnter,
     this.onMouseExit,
     this.onFocusIn,
@@ -183,11 +204,10 @@ class StyledEditableCombo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor =
-        useDarkTheme ? Color(0xFF1E1E1E) : Colors.white;
-    final Color textColor = useDarkTheme ? Colors.white : Color(0xFF595858);
-    final Color borderColor =
-        useDarkTheme ? Color(0xFF3C3C3C) : Color(0xFFD1D5DB);
+    final Color backgroundColor = getBackground();
+    final Color textColor = getForeground();
+    final Color borderColor = getBorderColor();
+    final Color iconColor = getIconColor();
 
     return MouseRegion(
       onEnter: (_) => onMouseEnter?.call(),
@@ -201,7 +221,7 @@ class StyledEditableCombo extends StatelessWidget {
           }
         },
         child: Container(
-          height: 30,
+          height: 32,
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(4),
@@ -211,12 +231,16 @@ class StyledEditableCombo extends StatelessWidget {
             children: [
               Expanded(
                 child: TextField(
-                  controller: TextEditingController(text: value),
-                  style: TextStyle(color: textColor),
+                  controller: controller,
+                  focusNode: focusNode,
+                  style: TextStyle(color: textColor, fontSize: 12),
                   decoration: InputDecoration(
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    isDense: true,
+                    counterText: '',
                   ),
+                  maxLength: textLimit,
                   onChanged: onTextChanged,
                   onSubmitted: onTextSubmitted,
                 ),
@@ -227,13 +251,19 @@ class StyledEditableCombo extends StatelessWidget {
                   items: items.map((String item) {
                     return DropdownMenuItem<String>(
                       value: item,
-                      child: Text(item, style: TextStyle(color: textColor)),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(item, style: TextStyle(color: textColor, fontSize: 12)),
+                      ),
                     );
                   }).toList(),
                   onChanged: onChanged,
-                  style: TextStyle(color: textColor),
+                  style: TextStyle(color: textColor, fontSize: 12),
                   dropdownColor: backgroundColor,
-                  icon: Icon(Icons.arrow_drop_down, color: textColor),
+                  icon: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Icon(Icons.arrow_drop_down, color: iconColor, size: 20),
+                  ),
                 ),
               ),
             ],

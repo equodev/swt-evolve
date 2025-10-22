@@ -175,16 +175,14 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (!(0 <= index && index <= items.length)) {
+        if (index < 0 || index > items.length)
             error(SWT.ERROR_INVALID_RANGE);
-        }
+        dirty();
         String[] newItems = new String[items.length + 1];
         System.arraycopy(items, 0, newItems, 0, index);
         newItems[index] = string;
         System.arraycopy(items, index, newItems, index + 1, items.length - index);
         items = newItems;
-        if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0 && popupHandle != 0) {
-        }
     }
 
     /**
@@ -688,9 +686,8 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public String getItem(int index) {
         checkWidget();
-        if (!(0 <= index && index < items.length)) {
+        if (index < 0 || index >= items.length)
             error(SWT.ERROR_INVALID_RANGE);
-        }
         return items[index];
     }
 
@@ -1010,10 +1007,11 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (!(0 <= start && start < items.length))
+        int count = getItemCount();
+        if (!(0 <= start && start < count))
             return -1;
-        for (int i = start; i < items.length; i++) {
-            if (string.equals(items[i]))
+        for (int i = start; i < count; i++) {
+            if (string.equals(getItem(i)))
                 return i;
         }
         return -1;
@@ -1329,7 +1327,8 @@ public class DartCombo extends DartComposite implements ICombo {
         if (index < 0 || index >= items.length)
             return;
         unselected = false;
-        this.selection = new Point(selection.x, selection.y);
+        this.text = items[index];
+        this.selection = new Point(0, 0);
     }
 
     @Override

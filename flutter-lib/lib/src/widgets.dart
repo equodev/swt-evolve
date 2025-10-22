@@ -14,7 +14,6 @@ import 'swt/label.dart';
 import 'swt/list.dart';
 import 'swt/text.dart';
 import 'swt/button.dart';
-import 'swt/combo.dart';
 import 'swt/slider.dart';
 import 'swt/item.dart';
 import 'swt/progressbar.dart';
@@ -69,7 +68,7 @@ WidgetValue mapWidgetValue(Map<String, dynamic> child) {
     "List" => ListValue.fromJson(child),
     "Text" => TextValue.fromJson(child),
     "Button" => ButtonValue.fromJson(child),
-    "Combo" => ComboValue.fromJson(child),
+   // "Combo" => ComboValue.fromJson(child),
     "Slider" => SliderValue.fromJson(child),
     "ProgressBar" => ProgressBarValue.fromJson(child),
     "Link" => LinkValue.fromJson(child),
@@ -118,7 +117,7 @@ Widget mapWidgetFromValue(WidgetValue child) {
     "List" => ListSwt(key: ValueKey(id), value: (child as ListValue)),
     "Text" => TextSwt(key: ValueKey(id), value: (child as TextValue)),
     "Button" => ButtonSwt(key: ValueKey(id), value: (child as ButtonValue)),
-    "Combo" => ComboSwt(key: ValueKey(id), value: (child as ComboValue)),
+   // "Combo" => ComboSwt(key: ValueKey(id), value: (child as ComboValue)),
     "Slider" => SliderSwt(key: ValueKey(id), value: (child as SliderValue)),
     "ProgressBar" =>
       ProgressBarSwt(key: ValueKey(id), value: (child as ProgressBarValue)),
