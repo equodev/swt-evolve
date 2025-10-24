@@ -28,7 +28,6 @@ class ImageSerializeTest extends SerializeTestBase {
         assertJ.isNotEmpty();
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("imageData").equalsTo(w.getImageData(), orAbsentIfNull));
-        assertJ.satisfies(node("imageDataAtCurrentZoom").equalsTo(w.getImageDataAtCurrentZoom(), orAbsentIfNull));
     }
 
     VImage value(Image w) {

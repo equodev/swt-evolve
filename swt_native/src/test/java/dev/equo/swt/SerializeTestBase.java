@@ -87,7 +87,7 @@ public class SerializeTestBase {
         inst = inst
                 .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
                 .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0)) // Always true
-                .generate(Select.all(int.class), gen -> gen.ints().range(1, Integer.MAX_VALUE))
+                .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000))
                 .generate(Select.all(Image.class), gen -> gen.oneOf(createTestImage()));
         if (!(w instanceof Caret) && !(w instanceof TreeColumn) && !(w instanceof TableColumn)) {
             inst = inst.generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())));

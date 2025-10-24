@@ -11,11 +11,11 @@ class ImageUtils {
   static final Map<String, Widget> _imageCache = {};
 
   static Widget? buildIconWidget(
-      String filename, {
-        double? size,
-        Color? color,
-        bool enabled = true,
-      }) {
+    String filename, {
+    double? size,
+    Color? color,
+    bool enabled = true,
+  }) {
     final cacheKey =
         '$filename-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled';
 
@@ -47,15 +47,15 @@ class ImageUtils {
   }
 
   static Widget? _buildBinaryImage(
-      Uint8List bytes, {
-        double? size,
-        double? width,
-        double? height,
-        Color? color,
-        bool enabled = true,
-        BoxConstraints? constraints,
-        bool renderAsIcon = true,
-      }) {
+    Uint8List bytes, {
+    double? size,
+    double? width,
+    double? height,
+    Color? color,
+    bool enabled = true,
+    BoxConstraints? constraints,
+    bool renderAsIcon = true,
+  }) {
     final cacheKey = renderAsIcon
         ? 'icon-${bytes.length}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled'
         : 'img-${bytes.length}-${width ?? 'default'}-${height ?? 'default'}-$enabled';
@@ -123,16 +123,16 @@ class ImageUtils {
   }
 
   static Widget? buildVImage(
-      VImage? image, {
-        double? size,
-        double? width,
-        double? height,
-        Color? color,
-        bool enabled = true,
-        BoxConstraints? constraints,
-        bool useBinaryImage = true,
-        bool renderAsIcon = true,
-      }) {
+    VImage? image, {
+    double? size,
+    double? width,
+    double? height,
+    Color? color,
+    bool enabled = true,
+    BoxConstraints? constraints,
+    bool useBinaryImage = true,
+    bool renderAsIcon = true,
+  }) {
     if (image == null) return null;
 
     // Try icon filename first
@@ -165,10 +165,10 @@ class ImageUtils {
 
   // Public APIs - Binary images
   static Widget? buildImageWidget(Uint8List bytes,
-      {double? size,
-        Color? color,
-        bool enabled = true,
-        BoxConstraints? constraints}) =>
+          {double? size,
+          Color? color,
+          bool enabled = true,
+          BoxConstraints? constraints}) =>
       _buildBinaryImage(bytes,
           size: size,
           color: color,
@@ -177,17 +177,16 @@ class ImageUtils {
           renderAsIcon: true);
 
   static Widget? buildRealImageWidget(Uint8List bytes,
-      {double? width,
-        double? height,
-        bool enabled = true,
-        BoxConstraints? constraints}) =>
+          {double? width,
+          double? height,
+          bool enabled = true,
+          BoxConstraints? constraints}) =>
       _buildBinaryImage(bytes,
           width: width,
           height: height,
           enabled: enabled,
           constraints: constraints,
           renderAsIcon: false);
-
 
   // Cache management
   static void clearCache() {
@@ -196,9 +195,9 @@ class ImageUtils {
   }
 
   static Map<String, int> getCacheStats() => {
-    'iconCache': _iconCache.length,
-    'imageCache': _imageCache.length,
-  };
+        'iconCache': _iconCache.length,
+        'imageCache': _imageCache.length,
+      };
 
   // Byte array utilities
   static List<int>? parseByteArray(dynamic value) {

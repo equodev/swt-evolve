@@ -986,10 +986,6 @@ public class SwtLink extends SwtControl implements ILink {
         return text;
     }
 
-    public TextLayout _layout() {
-        return layout;
-    }
-
     public Color _linkColor() {
         return linkColor;
     }

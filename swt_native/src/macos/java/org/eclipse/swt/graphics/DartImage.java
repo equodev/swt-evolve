@@ -1008,8 +1008,6 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     ImageData imageData;
 
-    ImageData imageDataAtCurrentZoom;
-
     public GC _memGC() {
         return memGC;
     }
@@ -1032,10 +1030,6 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     public ImageData _imageData() {
         return imageData;
-    }
-
-    public ImageData _imageDataAtCurrentZoom() {
-        return imageDataAtCurrentZoom;
     }
 
     public Image getApi() {

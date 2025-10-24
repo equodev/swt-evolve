@@ -5,18 +5,16 @@ import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.DartCTabFolder;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Device;
+import org.eclipse.swt.graphics.RGB;
 import org.instancio.Instancio;
 import org.instancio.InstancioObjectApi;
 import org.instancio.Select;
-import org.mockito.Mockito;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.*;
 
 public class Mocks {
     public static Shell shell() {
@@ -33,7 +31,14 @@ public class Mocks {
         when(shell.getBackground()).thenReturn(new Color(red(), green(), blue()));
         when(swtShell._display()).thenCallRealMethod();
         when(swtShell._getChildren()).thenReturn(new Control[0]);
-        when(swtShell.getShell()).thenReturn(shell);
+        try { // Windows and macOS
+            Method getShell = SwtShell.class.getDeclaredMethod("getShell");
+            when(getShell.invoke(swtShell)).thenReturn(shell);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
+        try { // Linux
+            Method getShell = SwtShell.class.getDeclaredMethod("_getShell");
+            when(getShell.invoke(swtShell)).thenReturn(shell);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
         return shell;
     }
 
@@ -49,7 +54,7 @@ public class Mocks {
         try { // mac only
             Method getSystemColor = SwtDisplay.class.getDeclaredMethod("getWidgetColor", int.class);
             when(getSystemColor.invoke(swtDisplay, anyInt())).thenReturn(new Color(10, 10, 10));
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {}
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
         when(display.getSystemColor(anyInt())).thenReturn(new Color(red(), green(), blue()));
         when(display.getSystemFont()).thenReturn(mock(org.eclipse.swt.graphics.Font.class));
         when(swtDisplay.getThread()).thenCallRealMethod();
@@ -88,7 +93,14 @@ public class Mocks {
     public static Table table() {
         Table w = mock(Table.class);
         DartTable impl = mock(DartTable.class);
-        when(impl.checkData(any(TableItem.class), Mockito.anyBoolean())).thenReturn(true);
+        try { // Windows only
+            Method checkData = DartTable.class.getDeclaredMethod("checkData", TableItem.class, boolean.class);
+            when(checkData.invoke(impl, any(TableItem.class), anyBoolean())).thenReturn(true);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
+        try { // Linux and macOS
+            Method checkData = DartTable.class.getDeclaredMethod("checkData", TableItem.class);
+            when(checkData.invoke(impl, any(TableItem.class))).thenReturn(true);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
         Display display = display();
@@ -100,7 +112,14 @@ public class Mocks {
     public static Tree tree() {
         Tree w = mock(Tree.class);
         DartTree impl = mock(DartTree.class);
-        when(impl.checkData(any(TreeItem.class), Mockito.anyBoolean())).thenReturn(true);
+        try { // Windows only
+            Method checkData = DartTree.class.getDeclaredMethod("checkData", TreeItem.class, boolean.class);
+            when(checkData.invoke(impl, any(TreeItem.class), anyBoolean())).thenReturn(true);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
+        try { // Linux and macOS
+            Method checkData = DartTree.class.getDeclaredMethod("checkData", TreeItem.class);
+            when(checkData.invoke(impl, any(TreeItem.class))).thenReturn(true);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
         Display display = display();
@@ -131,6 +150,10 @@ public class Mocks {
 
     public static int aInt() {
         return Instancio.gen().ints().get();
+    }
+
+    public static RGB rGB() {
+        return new RGB(red(), green(), blue());
     }
 
     public static int red() {
