@@ -41,14 +41,6 @@ public class VImage extends VResource {
         ((DartImage) impl).imageData = value;
     }
 
-    public ImageData getImageDataAtCurrentZoom() {
-        return ((DartImage) impl).imageDataAtCurrentZoom;
-    }
-
-    public void setImageDataAtCurrentZoom(ImageData value) {
-        ((DartImage) impl).imageDataAtCurrentZoom = value;
-    }
-
     @JsonConverter(target = Image.class)
     public static class ImageJson implements Configuration {
 

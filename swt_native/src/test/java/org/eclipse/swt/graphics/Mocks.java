@@ -12,12 +12,14 @@ public class Mocks {
         Font font = mock(Font.class);
         when(display.getSystemFont()).thenReturn(font);
         swtDisplay.systemFont = font;
-        try {
-            java.lang.reflect.Field field = SwtDevice.class.getDeclaredField("resourcesWithZoomSupport");
-            field.setAccessible(true);
-            field.set(swtDisplay, ConcurrentHashMap.newKeySet());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize resourcesWithZoomSupport", e);
+        if ("win32".equals(org.eclipse.swt.SWT.getPlatform())) {
+            try {
+                java.lang.reflect.Field field = SwtDevice.class.getDeclaredField("resourcesWithZoomSupport");
+                field.setAccessible(true);
+                field.set(swtDisplay, ConcurrentHashMap.newKeySet());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to initialize resourcesWithZoomSupport", e);
+            }
         }
     }
 }

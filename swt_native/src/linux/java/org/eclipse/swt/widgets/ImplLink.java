@@ -9,8 +9,6 @@ public interface ImplLink extends ImplControl {
 
     String _text();
 
-    TextLayout _layout();
-
     Color _linkColor();
 
     Color _disabledColor();

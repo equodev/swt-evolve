@@ -707,7 +707,7 @@ public class DartText extends DartScrollable implements IText {
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0) {
         }
-        return '\0';
+        return echoChar;
     }
 
     /**

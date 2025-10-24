@@ -11,7 +11,7 @@ class ColorSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Color() {
-        Color w = new Color(device(), red(), green(), blue());
+        Color w = new Color(rGB());
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.isNotEmpty();
@@ -19,7 +19,7 @@ class ColorSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Color() {
-        Color w = new Color(device(), red(), green(), blue());
+        Color w = new Color(rGB());
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

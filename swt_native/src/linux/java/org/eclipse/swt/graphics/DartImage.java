@@ -854,7 +854,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         }
         {
         }
-        return this.imageDataAtCurrentZoom;
+        return null;
     }
 
     /**
@@ -1171,8 +1171,6 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     ImageData imageData;
 
-    ImageData imageDataAtCurrentZoom;
-
     public int _transparentPixel() {
         return transparentPixel;
     }
@@ -1199,10 +1197,6 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     public ImageData _imageData() {
         return imageData;
-    }
-
-    public ImageData _imageDataAtCurrentZoom() {
-        return imageDataAtCurrentZoom;
     }
 
     public Image getApi() {

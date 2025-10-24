@@ -48,8 +48,6 @@ public class DartLink extends DartControl implements ILink {
 
     String text;
 
-    TextLayout layout;
-
     Color linkColor, disabledColor;
 
     Point[] offsets;
@@ -138,9 +136,7 @@ public class DartLink extends DartControl implements ILink {
 
     @Override
     void createWidget(int index) {
-        layout = new TextLayout(display);
         super.createWidget(index);
-        layout.setFont(getFont());
         text = "";
         selection = new Point(-1, -1);
         initAccessible();
@@ -158,7 +154,6 @@ public class DartLink extends DartControl implements ILink {
         selStart = selEnd = -1;
         if ((getApi().state & DISABLED) != 0)
             gc.setForeground(disabledColor);
-        layout.draw(gc, 0, 0, selStart, selEnd, null, null);
         if (hasFocus() && focusIndex != -1) {
             Rectangle[] rects = getRectanglesInPixels(focusIndex);
             for (int i = 0; i < rects.length; i++) {
@@ -266,32 +261,16 @@ public class DartLink extends DartControl implements ILink {
     }
 
     Rectangle[] getRectanglesInPixels(int linkIndex) {
-        int lineCount = layout.getLineCount();
-        Rectangle[] rects = new Rectangle[lineCount];
-        int[] lineOffsets = layout.getLineOffsets();
-        Point point = offsets[linkIndex];
         int lineStart = 1;
-        while (point.x > lineOffsets[lineStart]) lineStart++;
         int lineEnd = 1;
-        while (point.y > lineOffsets[lineEnd]) lineEnd++;
-        int index = 0;
         if (lineStart == lineEnd) {
-            rects[index++] = DPIUtil.autoScaleUp(layout.getBounds(point.x, point.y));
         } else {
-            rects[index++] = DPIUtil.autoScaleUp(layout.getBounds(point.x, lineOffsets[lineStart] - 1));
-            rects[index++] = DPIUtil.autoScaleUp(layout.getBounds(lineOffsets[lineEnd - 1], point.y));
             if (lineEnd - lineStart > 1) {
                 for (int i = lineStart; i < lineEnd - 1; i++) {
-                    rects[index++] = DPIUtil.autoScaleUp(layout.getLineBounds(i));
                 }
             }
         }
-        if (rects.length != index) {
-            Rectangle[] tmp = new Rectangle[index];
-            System.arraycopy(rects, 0, tmp, 0, index);
-            rects = tmp;
-        }
-        return rects;
+        return null;
     }
 
     /**
@@ -317,18 +296,8 @@ public class DartLink extends DartControl implements ILink {
 
     @Override
     boolean mnemonicHit(char key) {
-        char uckey = Character.toUpperCase(key);
-        String parsedText = layout.getText();
         for (int i = 0; i < mnemonics.length - 1; i++) {
             if (mnemonics[i] != -1) {
-                char mnemonic = parsedText.charAt(mnemonics[i]);
-                if (uckey == Character.toUpperCase(mnemonic)) {
-                    if (!setFocus())
-                        return false;
-                    focusIndex = i;
-                    redraw();
-                    return true;
-                }
             }
         }
         return false;
@@ -336,14 +305,8 @@ public class DartLink extends DartControl implements ILink {
 
     @Override
     boolean mnemonicMatch(char key) {
-        char uckey = Character.toUpperCase(key);
-        String parsedText = layout.getText();
         for (int i = 0; i < mnemonics.length - 1; i++) {
             if (mnemonics[i] != -1) {
-                char mnemonic = parsedText.charAt(mnemonics[i]);
-                if (uckey == Character.toUpperCase(mnemonic)) {
-                    return true;
-                }
             }
         }
         return false;
@@ -352,9 +315,6 @@ public class DartLink extends DartControl implements ILink {
     @Override
     void releaseWidget() {
         super.releaseWidget();
-        if (layout != null)
-            layout.dispose();
-        layout = null;
         linkColor = null;
         disabledColor = null;
         offsets = null;
@@ -555,7 +515,6 @@ public class DartLink extends DartControl implements ILink {
     int setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
         int result = super.setBounds(x, y, width, height, move, resize);
         if ((result & RESIZED) != 0) {
-            layout.setWidth(DPIUtil.autoScaleDown((width > 0 ? width : -1)));
             redraw();
         }
         return result;
@@ -604,7 +563,6 @@ public class DartLink extends DartControl implements ILink {
     @Override
     void setOrientation(boolean create) {
         super.setOrientation(create);
-        layout.setOrientation(getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT));
         if (!create)
             redraw(true);
     }
@@ -655,7 +613,7 @@ public class DartLink extends DartControl implements ILink {
         if (string.equals(text))
             return;
         text = string;
-        layout.setText(parse(string));
+        parse(text);
         focusIndex = offsets.length > 0 ? 0 : -1;
         selection.x = selection.y = -1;
         styleLinkParts();
@@ -665,13 +623,11 @@ public class DartLink extends DartControl implements ILink {
             bidiSegments[i * 2] = point.x;
             bidiSegments[i * 2 + 1] = point.y + 1;
         }
-        layout.setSegments(bidiSegments);
         TextStyle mnemonicStyle = new TextStyle(null, null, null);
         mnemonicStyle.underline = true;
         for (int i = 0; i < mnemonics.length; i++) {
             int mnemonic = mnemonics[i];
             if (mnemonic != -1) {
-                layout.setStyle(mnemonicStyle, mnemonic, mnemonic);
             }
         }
         redraw();
@@ -688,8 +644,6 @@ public class DartLink extends DartControl implements ILink {
         TextStyle linkStyle = new TextStyle(null, enabled ? getLinkForeground() : disabledColor, null);
         linkStyle.underline = true;
         for (int i = 0; i < offsets.length; i++) {
-            Point point = offsets[i];
-            layout.setStyle(linkStyle, point.x, point.y);
         }
     }
 
@@ -703,10 +657,6 @@ public class DartLink extends DartControl implements ILink {
 
     public String _text() {
         return text;
-    }
-
-    public TextLayout _layout() {
-        return layout;
     }
 
     public Color _linkColor() {
