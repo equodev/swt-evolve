@@ -128,6 +128,20 @@ public class Mocks {
         return w;
     }
 
+    public static ExpandBar expandBar() {
+        ExpandBar w = mock(ExpandBar.class);
+        DartExpandBar impl = mock(DartExpandBar.class);
+        when(w.getImpl()).thenReturn(impl);
+        when(impl.getBridge()).thenReturn(new MockFlutterBridge());
+        Display display = display();
+        //when(w.getDisplay()).thenReturn(display);
+        when(impl._display()).thenReturn(display);
+        // Mock methods needed for ExpandItem creation
+        when(impl.getClientAreaInPixels()).thenReturn(new org.eclipse.swt.graphics.Rectangle(0, 0, 200, 100));
+        doNothing().when(impl).layoutItems();
+        return w;
+    }
+
     public static int index() {
         return 0;
     }

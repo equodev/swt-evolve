@@ -17,6 +17,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -37,7 +38,7 @@ import org.eclipse.swt.graphics.*;
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtExpandItem extends SwtItem implements IExpandItem {
+public class DartExpandItem extends DartItem implements IExpandItem {
 
     ExpandBar parent;
 
@@ -82,7 +83,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtExpandItem(ExpandBar parent, int style, ExpandItem api) {
+    public DartExpandItem(ExpandBar parent, int style, ExpandItem api) {
         this(parent, style, checkNull(parent).getItemCount(), api);
     }
 
@@ -116,10 +117,10 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtExpandItem(ExpandBar parent, int style, int index, ExpandItem api) {
+    public DartExpandItem(ExpandBar parent, int style, int index, ExpandItem api) {
         super(parent, style, api);
         this.parent = parent;
-        ((SwtExpandBar) parent.getImpl()).createItem(this.getApi(), style, index);
+        ((DartExpandBar) parent.getImpl()).createItem(this.getApi(), style, index);
     }
 
     static ExpandBar checkNull(ExpandBar control) {
@@ -133,7 +134,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
         if (isDisposed())
             return;
         //if (!isValidThread ()) error (SWT.ERROR_THREAD_INVALID_ACCESS);
-        ((SwtExpandBar) parent.getImpl()).destroyItem(this.getApi());
+        ((DartExpandBar) parent.getImpl()).destroyItem(this.getApi());
         super.dispose();
         parent = null;
         control = null;
@@ -160,7 +161,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
     }
 
     void drawItem(GC gc, boolean drawFocus) {
-        int headerHeight = ((SwtExpandBar) parent.getImpl()).getBandHeight();
+        int headerHeight = ((DartExpandBar) parent.getImpl()).getBandHeight();
         Display display = getDisplay();
         gc.setForeground(display.getSystemColor(SWT.COLOR_TITLE_BACKGROUND));
         gc.setBackground(display.getSystemColor(SWT.COLOR_TITLE_BACKGROUND_GRADIENT));
@@ -173,7 +174,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
         }
         int drawX = x;
         if (image != null) {
-            drawX += SwtExpandItem.TEXT_INSET;
+            drawX += DartExpandItem.TEXT_INSET;
             if (imageHeight > headerHeight) {
                 gc.drawImage(image, drawX, y + headerHeight - imageHeight);
             } else {
@@ -182,12 +183,12 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
             drawX += imageWidth;
         }
         if (text.length() > 0) {
-            drawX += SwtExpandItem.TEXT_INSET;
+            drawX += DartExpandItem.TEXT_INSET;
             Point size = gc.stringExtent(text);
             gc.setForeground(parent.getForeground());
             gc.drawString(text, drawX, y + (headerHeight - size.y) / 2, true);
         }
-        int chevronSize = SwtExpandItem.CHEVRON_SIZE;
+        int chevronSize = DartExpandItem.CHEVRON_SIZE;
         drawChevron(gc, x + width - chevronSize, y + (headerHeight - chevronSize) / 2);
         if (drawFocus) {
             gc.drawFocus(x + 1, y + 1, width - 2, headerHeight - 2);
@@ -238,7 +239,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      */
     public int getHeaderHeight() {
         checkWidget();
-        return Math.max(((SwtExpandBar) parent.getImpl()).getBandHeight(), imageHeight);
+        return Math.max(((DartExpandBar) parent.getImpl()).getBandHeight(), imageHeight);
     }
 
     /**
@@ -272,9 +273,9 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
     }
 
     int getPreferredWidth(GC gc) {
-        int width = SwtExpandItem.TEXT_INSET * 2 + SwtExpandItem.CHEVRON_SIZE;
+        int width = DartExpandItem.TEXT_INSET * 2 + DartExpandItem.CHEVRON_SIZE;
         if (image != null) {
-            width += SwtExpandItem.TEXT_INSET + imageWidth;
+            width += DartExpandItem.TEXT_INSET + imageWidth;
         }
         if (text.length() > 0) {
             width += gc.stringExtent(text).x;
@@ -283,16 +284,16 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
     }
 
     void redraw() {
-        int headerHeight = ((SwtExpandBar) parent.getImpl()).getBandHeight();
+        int headerHeight = ((DartExpandBar) parent.getImpl()).getBandHeight();
         if (imageHeight > headerHeight) {
-            parent.redraw(x + SwtExpandItem.TEXT_INSET, y + headerHeight - imageHeight, imageWidth, imageHeight, false);
+            parent.redraw(x + DartExpandItem.TEXT_INSET, y + headerHeight - imageHeight, imageWidth, imageHeight, false);
         }
         parent.redraw(x, y, width, headerHeight + height, false);
     }
 
     void setBounds(int x, int y, int width, int height, boolean move, boolean size) {
         redraw();
-        int headerHeight = ((SwtExpandBar) parent.getImpl()).getBandHeight();
+        int headerHeight = ((DartExpandBar) parent.getImpl()).getBandHeight();
         if (move) {
             if (imageHeight > headerHeight) {
                 y += (imageHeight - headerHeight);
@@ -329,17 +330,18 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      * </ul>
      */
     public void setControl(Control control) {
+        dirty();
         checkWidget();
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if (((SwtControl) control.getImpl()).parent != parent)
+            if (((DartControl) control.getImpl()).parent != parent)
                 error(SWT.ERROR_INVALID_PARENT);
         }
         this.control = control;
         if (control != null) {
             control.setVisible(expanded);
-            int headerHeight = ((SwtExpandBar) parent.getImpl()).getBandHeight();
+            int headerHeight = ((DartExpandBar) parent.getImpl()).getBandHeight();
             control.setBounds(x + BORDER, y + headerHeight, Math.max(0, width - 2 * BORDER), Math.max(0, height - BORDER));
         }
     }
@@ -355,13 +357,15 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      * </ul>
      */
     public void setExpanded(boolean expanded) {
+        dirty();
         checkWidget();
         this.expanded = expanded;
-        ((SwtExpandBar) parent.getImpl()).showItem(this.getApi());
+        ((DartExpandBar) parent.getImpl()).showItem(this.getApi());
     }
 
     @Override
     public void setImage(Image image) {
+        dirty();
         super.setImage(image);
         int oldImageHeight = imageHeight;
         if (image != null) {
@@ -372,7 +376,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
             imageHeight = imageWidth = 0;
         }
         if (oldImageHeight != imageHeight) {
-            ((SwtExpandBar) parent.getImpl()).layoutItems(parent.indexOf(this.getApi()), true);
+            ((DartExpandBar) parent.getImpl()).layoutItems(parent.indexOf(this.getApi()), true);
         } else {
             redraw();
         }
@@ -390,16 +394,18 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      * </ul>
      */
     public void setHeight(int height) {
+        dirty();
         checkWidget();
         if (height < 0)
             return;
         setBounds(0, 0, width, height, false, true);
         if (expanded)
-            ((SwtExpandBar) parent.getImpl()).layoutItems(parent.indexOf(this.getApi()) + 1, true);
+            ((DartExpandBar) parent.getImpl()).layoutItems(parent.indexOf(this.getApi()) + 1, true);
     }
 
     @Override
     public void setText(String string) {
+        dirty();
         super.setText(string);
         redraw();
     }
@@ -440,9 +446,27 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
         return imageWidth;
     }
 
+    public FlutterBridge getBridge() {
+        if (bridge != null)
+            return bridge;
+        Composite p = parent;
+        while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+    }
+
     public ExpandItem getApi() {
         if (api == null)
             api = ExpandItem.createApi(this);
         return (ExpandItem) api;
+    }
+
+    public VExpandItem getValue() {
+        if (value == null)
+            value = new VExpandItem(this);
+        return (VExpandItem) value;
     }
 }

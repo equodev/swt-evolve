@@ -7,6 +7,8 @@ import '../gen/combo.dart';
 import '../gen/composite.dart';
 import '../gen/ctabfolder.dart';
 import '../gen/ctabitem.dart';
+import '../gen/expandbar.dart';
+import '../gen/expanditem.dart';
 import '../gen/gc.dart';
 import '../gen/group.dart';
 import '../gen/label.dart';
@@ -34,6 +36,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "CTabFolder" => VCTabFolder.fromJson(child),
     "Canvas" => VCanvas.fromJson(child),
     "Combo" => VCombo.fromJson(child),
+    "ExpandBar" => VExpandBar.fromJson(child),
     "Group" => VGroup.fromJson(child),
     "Table" => VTable.fromJson(child),
     "ToolBar" => VToolBar.fromJson(child),
@@ -45,6 +48,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "Label" => VLabel.fromJson(child),
     "Link" => VLink.fromJson(child),
     "CTabItem" => VCTabItem.fromJson(child),
+    "ExpandItem" => VExpandItem.fromJson(child),
     "TableColumn" => VTableColumn.fromJson(child),
     "TableItem" => VTableItem.fromJson(child),
     "ToolItem" => VToolItem.fromJson(child),
@@ -66,6 +70,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VCTabFolder() => CTabFolderSwt(key: ValueKey(id), value: child),
     VCanvas() => CanvasSwt(key: ValueKey(id), value: child),
     VCombo() => ComboSwt(key: ValueKey(id), value: child),
+    VExpandBar() => ExpandBarSwt(key: ValueKey(id), value: child),
     VGroup() => GroupSwt(key: ValueKey(id), value: child),
     VTable() => TableSwt(key: ValueKey(id), value: child),
     VToolBar() => ToolBarSwt(key: ValueKey(id), value: child),
@@ -77,6 +82,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VLabel() => LabelSwt(key: ValueKey(id), value: child),
     VLink() => LinkSwt(key: ValueKey(id), value: child),
     VCTabItem() => CTabItemSwt(key: ValueKey(id), value: child),
+    VExpandItem() => ExpandItemSwt(key: ValueKey(id), value: child),
     VTableColumn() => TableColumnSwt(key: ValueKey(id), value: child),
     VTableItem() => TableItemSwt(key: ValueKey(id), value: child),
     VToolItem() => ToolItemSwt(key: ValueKey(id), value: child),

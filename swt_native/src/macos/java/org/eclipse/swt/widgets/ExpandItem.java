@@ -17,6 +17,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -68,7 +69,7 @@ public class ExpandItem extends Item {
      */
     public ExpandItem(ExpandBar parent, int style) {
         this((IExpandItem) null);
-        setImpl(new SwtExpandItem(parent, style, this));
+        setImpl(Config.isEquo(ExpandItem.class, parent) ? new DartExpandItem(parent, style, this) : new SwtExpandItem(parent, style, this));
     }
 
     /**
@@ -103,7 +104,7 @@ public class ExpandItem extends Item {
      */
     public ExpandItem(ExpandBar parent, int style, int index) {
         this((IExpandItem) null);
-        setImpl(new SwtExpandItem(parent, style, index, this));
+        setImpl(Config.isEquo(ExpandItem.class, parent) ? new DartExpandItem(parent, style, index, this) : new SwtExpandItem(parent, style, index, this));
     }
 
     public void dispose() {

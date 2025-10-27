@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 
-public interface IExpandItem extends IItem {
+public interface IExpandItem extends IItem, ImplExpandItem {
 
     void checkSubclass();
 

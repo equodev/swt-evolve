@@ -612,6 +612,38 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
         return 0;
     }
 
+    public ExpandBar _parent() {
+        return parent;
+    }
+
+    public Control _control() {
+        return control;
+    }
+
+    public long _clientHandle() {
+        return clientHandle;
+    }
+
+    public long _boxHandle() {
+        return boxHandle;
+    }
+
+    public long _labelHandle() {
+        return labelHandle;
+    }
+
+    public long _imageHandle() {
+        return imageHandle;
+    }
+
+    public int _width() {
+        return width;
+    }
+
+    public int _height() {
+        return height;
+    }
+
     public ExpandItem getApi() {
         if (api == null)
             api = ExpandItem.createApi(this);

@@ -22,6 +22,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class support the layout of selectable
@@ -83,7 +84,7 @@ public class ExpandBar extends Composite {
      */
     public ExpandBar(Composite parent, int style) {
         this((IExpandBar) null);
-        setImpl(new SwtExpandBar(parent, style, this));
+        setImpl(Config.isEquo(ExpandBar.class, parent) ? new DartExpandBar(parent, style, this) : new SwtExpandBar(parent, style, this));
     }
 
     /**

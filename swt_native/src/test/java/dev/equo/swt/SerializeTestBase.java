@@ -97,6 +97,19 @@ public class SerializeTestBase {
         inst.fill();
     }
 
+    protected void setAll(ExpandItem w) {
+        InstancioObjectApi<ExpandItem> inst = Instancio.ofObject(w)
+                .withSettings(settings)
+                .ignore(Select.setter(Widget.class, "setImpl"))
+                .ignore(Select.setter(ExpandItem.class, "setControl"));
+        inst = inst
+                .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
+                .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0)) // Always true
+                .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000))
+                .generate(Select.all(Image.class), gen -> gen.oneOf(createTestImage()));
+        inst.fill();
+    }
+
     protected void setAll(Color w) {
         // no setters
     }

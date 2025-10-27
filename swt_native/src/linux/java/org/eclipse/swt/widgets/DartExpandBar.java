@@ -18,7 +18,8 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import dev.equo.swt.Config;
+import org.eclipse.swt.internal.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class support the layout of selectable
@@ -48,7 +49,15 @@ import dev.equo.swt.Config;
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ExpandBar extends Composite {
+public class DartExpandBar extends DartComposite implements IExpandBar {
+
+    ExpandItem[] items;
+
+    ExpandItem lastFocus;
+
+    int itemCount;
+
+    int spacing;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -78,9 +87,8 @@ public class ExpandBar extends Composite {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public ExpandBar(Composite parent, int style) {
-        this((IExpandBar) null);
-        setImpl(Config.isEquo(ExpandBar.class, parent) ? new DartExpandBar(parent, style, this) : new SwtExpandBar(parent, style, this));
+    public DartExpandBar(Composite parent, int style, ExpandBar api) {
+        super(parent, style, api);
     }
 
     /**
@@ -103,19 +111,78 @@ public class ExpandBar extends Composite {
      * @see #removeExpandListener
      */
     public void addExpandListener(ExpandListener listener) {
-        getImpl().addExpandListener(listener);
+        addTypedListener(listener, SWT.Expand, SWT.Collapse);
     }
 
-    protected void checkSubclass() {
-        getImpl().checkSubclass();
+    @Override
+    public void checkSubclass() {
+        if (!isValidSubclass())
+            error(SWT.ERROR_INVALID_SUBCLASS);
     }
 
-    public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getImpl().computeSize(wHint, hHint, changed);
+    @Override
+    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+        return Sizes.compute(this);
     }
 
-    public Color getForeground() {
-        return getImpl().getForeground();
+    @Override
+    void createHandle(int index) {
+        // In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
+    }
+
+    void createItem(ExpandItem item, int style, int index) {
+        if (!(0 <= index && index <= itemCount))
+            error(SWT.ERROR_INVALID_RANGE);
+        if (itemCount == items.length) {
+            ExpandItem[] newItems = new ExpandItem[itemCount + 4];
+            System.arraycopy(items, 0, newItems, 0, items.length);
+            items = newItems;
+        }
+        System.arraycopy(items, index, items, index + 1, itemCount - index);
+        items[index] = item;
+        itemCount++;
+        ((DartExpandItem) item.getImpl()).width = Math.max(0, getClientAreaInPixels().width - spacing * 2);
+        layoutItems();
+    }
+
+    @Override
+    void createWidget(int index) {
+        super.createWidget(index);
+        items = new ExpandItem[4];
+    }
+
+    void destroyItem(ExpandItem item) {
+        int index = 0;
+        while (index < itemCount) {
+            if (items[index] == item)
+                break;
+            index++;
+        }
+        if (index == itemCount)
+            return;
+        System.arraycopy(items, index + 1, items, index, --itemCount - index);
+        items[itemCount] = null;
+        layoutItems();
+    }
+
+    @Override
+    long eventHandle() {
+        return fixedHandle;
+    }
+
+    @Override
+    boolean hasFocus() {
+        for (int i = 0; i < itemCount; i++) {
+            ExpandItem item = items[i];
+            if (((DartExpandItem) item.getImpl()).hasFocus())
+                return true;
+        }
+        return super.hasFocus();
+    }
+
+    @Override
+    void hookEvents() {
+        super.hookEvents();
     }
 
     /**
@@ -134,7 +201,10 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public ExpandItem getItem(int index) {
-        return getImpl().getItem(index);
+        checkWidget();
+        if (!(0 <= index && index < itemCount))
+            error(SWT.ERROR_INVALID_RANGE);
+        return items[index];
     }
 
     /**
@@ -148,7 +218,8 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public int getItemCount() {
-        return getImpl().getItemCount();
+        checkWidget();
+        return itemCount;
     }
 
     /**
@@ -168,7 +239,10 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public ExpandItem[] getItems() {
-        return getImpl().getItems();
+        checkWidget();
+        ExpandItem[] result = new ExpandItem[itemCount];
+        System.arraycopy(items, 0, result, 0, itemCount);
+        return result;
     }
 
     /**
@@ -182,7 +256,8 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public int getSpacing() {
-        return getImpl().getSpacing();
+        checkWidget();
+        return DPIUtil.autoScaleDown(spacing);
     }
 
     /**
@@ -204,7 +279,38 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public int indexOf(ExpandItem item) {
-        return getImpl().indexOf(item);
+        checkWidget();
+        if (item == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        for (int i = 0; i < itemCount; i++) {
+            if (items[i] == item)
+                return i;
+        }
+        return -1;
+    }
+
+    void layoutItems() {
+        for (int i = 0; i < itemCount; i++) {
+            ExpandItem item = items[i];
+            if (item != null)
+                ((DartExpandItem) item.getImpl()).resizeControl();
+        }
+    }
+
+    @Override
+    public long parentingHandle() {
+        return fixedHandle;
+    }
+
+    @Override
+    void releaseChildren(boolean destroy) {
+        for (int i = 0; i < itemCount; i++) {
+            ExpandItem item = items[i];
+            if (item != null && !item.isDisposed()) {
+                item.getImpl().release(false);
+            }
+        }
+        super.releaseChildren(destroy);
     }
 
     /**
@@ -225,15 +331,49 @@ public class ExpandBar extends Composite {
      * @see #addExpandListener
      */
     public void removeExpandListener(ExpandListener listener) {
-        getImpl().removeExpandListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Expand, listener);
+        eventTable.unhook(SWT.Collapse, listener);
     }
 
-    public void setFont(Font font) {
-        getImpl().setFont(font);
+    @Override
+    void reskinChildren(int flags) {
+        if (items != null) {
+            for (int i = 0; i < items.length; i++) {
+                ExpandItem item = items[i];
+                if (item != null)
+                    item.reskin(flags);
+            }
+        }
+        super.reskinChildren(flags);
     }
 
-    public void setForeground(Color color) {
-        getImpl().setForeground(color);
+    @Override
+    void setWidgetBackground() {
+    }
+
+    @Override
+    void setFontDescription(long font) {
+        super.setFontDescription(font);
+        for (int i = 0; i < itemCount; i++) {
+            ((DartExpandItem) items[i].getImpl()).setFontDescription(font);
+        }
+        layoutItems();
+    }
+
+    @Override
+    void setOrientation(boolean create) {
+        super.setOrientation(create);
+        if (items != null) {
+            for (int i = 0; i < items.length; i++) {
+                if (items[i] != null)
+                    ((DartExpandItem) items[i].getImpl()).setOrientation(create);
+            }
+        }
     }
 
     /**
@@ -248,18 +388,64 @@ public class ExpandBar extends Composite {
      * </ul>
      */
     public void setSpacing(int spacing) {
-        getImpl().setSpacing(spacing);
+        checkWidget();
+        setSpacingInPixels(DPIUtil.autoScaleUp(spacing));
     }
 
-    protected ExpandBar(IExpandBar impl) {
-        super(impl);
+    void setSpacingInPixels(int spacing) {
+        dirty();
+        checkWidget();
+        if (spacing < 0)
+            return;
+        if (spacing == this.spacing)
+            return;
+        this.spacing = spacing;
     }
 
-    static ExpandBar createApi(IExpandBar impl) {
-        return new ExpandBar(impl);
+    @Override
+    void updateScrollBarValue(ScrollBar bar) {
+        layoutItems();
     }
 
-    public IExpandBar getImpl() {
-        return (IExpandBar) super.getImpl();
+    public ExpandItem[] _items() {
+        return items;
+    }
+
+    public ExpandItem _lastFocus() {
+        return lastFocus;
+    }
+
+    public int _itemCount() {
+        return itemCount;
+    }
+
+    public int _spacing() {
+        return spacing;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Expand", "Collapse", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Collapse, e);
+            });
+        });
+        FlutterBridge.on(this, "Expand", "Expand", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Expand, e);
+            });
+        });
+    }
+
+    public ExpandBar getApi() {
+        if (api == null)
+            api = ExpandBar.createApi(this);
+        return (ExpandBar) api;
+    }
+
+    public VExpandBar getValue() {
+        if (value == null)
+            value = new VExpandBar(this);
+        return (VExpandBar) value;
     }
 }

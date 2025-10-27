@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class support the layout of selectable
@@ -47,7 +48,7 @@ import org.eclipse.swt.graphics.*;
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtExpandBar extends SwtComposite implements IExpandBar {
+public class DartExpandBar extends DartComposite implements IExpandBar {
 
     ExpandItem[] items;
 
@@ -95,7 +96,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtExpandBar(Composite parent, int style, ExpandBar api) {
+    public DartExpandBar(Composite parent, int style, ExpandBar api) {
         super(parent, checkStyle(style), api);
         items = new ExpandItem[4];
         listener = event -> {
@@ -188,10 +189,10 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
                 for (int i = 0; i < itemCount; i++) {
                     ExpandItem item = items[i];
                     height += item.getHeaderHeight();
-                    if (((SwtExpandItem) item.getImpl()).expanded)
-                        height += ((SwtExpandItem) item.getImpl()).height;
+                    if (((DartExpandItem) item.getImpl()).expanded)
+                        height += ((DartExpandItem) item.getImpl()).height;
                     height += spacing;
-                    width = Math.max(width, ((SwtExpandItem) item.getImpl()).getPreferredWidth(gc));
+                    width = Math.max(width, ((DartExpandItem) item.getImpl()).getPreferredWidth(gc));
                 }
                 gc.dispose();
             }
@@ -221,7 +222,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
         itemCount++;
         if (focusItem == null)
             focusItem = item;
-        ((SwtExpandItem) item.getImpl()).width = Math.max(0, getClientArea().width - spacing * 2);
+        ((DartExpandItem) item.getImpl()).width = Math.max(0, getClientArea().width - spacing * 2);
         layoutItems(index, true);
     }
 
@@ -240,26 +241,24 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
             int focusIndex = index > 0 ? index - 1 : 1;
             if (focusIndex < itemCount) {
                 focusItem = items[focusIndex];
-                ((SwtExpandItem) focusItem.getImpl()).redraw();
+                ((DartExpandItem) focusItem.getImpl()).redraw();
             } else {
                 focusItem = null;
             }
         }
         System.arraycopy(items, index + 1, items, index, --itemCount - index);
         items[itemCount] = null;
-        if (item.getImpl() instanceof SwtExpandItem) {
-            ((SwtExpandItem) item.getImpl()).redraw();
-        }
+        ((DartExpandItem) item.getImpl()).redraw();
         layoutItems(index, true);
     }
 
     int getBandHeight() {
         if (font == null)
-            return SwtExpandItem.CHEVRON_SIZE;
+            return DartExpandItem.CHEVRON_SIZE;
         GC gc = new GC(this.getApi());
         FontMetrics metrics = gc.getFontMetrics();
         gc.dispose();
-        return Math.max(SwtExpandItem.CHEVRON_SIZE, metrics.getHeight());
+        return Math.max(DartExpandItem.CHEVRON_SIZE, metrics.getHeight());
     }
 
     @Override
@@ -381,15 +380,15 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
             int y = spacing - yCurrentScroll;
             for (int i = 0; i < index; i++) {
                 ExpandItem item = items[i];
-                if (((SwtExpandItem) item.getImpl()).expanded)
-                    y += ((SwtExpandItem) item.getImpl()).height;
+                if (((DartExpandItem) item.getImpl()).expanded)
+                    y += ((DartExpandItem) item.getImpl()).height;
                 y += item.getHeaderHeight() + spacing;
             }
             for (int i = index; i < itemCount; i++) {
                 ExpandItem item = items[i];
-                ((SwtExpandItem) item.getImpl()).setBounds(spacing, y, 0, 0, true, false);
-                if (((SwtExpandItem) item.getImpl()).expanded)
-                    y += ((SwtExpandItem) item.getImpl()).height;
+                ((DartExpandItem) item.getImpl()).setBounds(spacing, y, 0, 0, true, false);
+                if (((DartExpandItem) item.getImpl()).expanded)
+                    y += ((DartExpandItem) item.getImpl()).height;
                 y += item.getHeaderHeight() + spacing;
             }
         }
@@ -438,6 +437,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
 
     @Override
     public void setFont(Font font) {
+        dirty();
         super.setFont(font);
         this.font = font;
         layoutItems(0, true);
@@ -445,6 +445,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
 
     @Override
     public void setForeground(Color color) {
+        dirty();
         super.setForeground(color);
         foreground = color;
     }
@@ -457,9 +458,9 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
             return;
         int height = getClientArea().height;
         ExpandItem item = items[itemCount - 1];
-        int maxHeight = ((SwtExpandItem) item.getImpl()).y + getBandHeight() + spacing;
-        if (((SwtExpandItem) item.getImpl()).expanded)
-            maxHeight += ((SwtExpandItem) item.getImpl()).height;
+        int maxHeight = ((DartExpandItem) item.getImpl()).y + getBandHeight() + spacing;
+        if (((DartExpandItem) item.getImpl()).expanded)
+            maxHeight += ((DartExpandItem) item.getImpl()).height;
         //claim bottom free space
         if (yCurrentScroll > 0 && height > maxHeight) {
             yCurrentScroll = Math.max(0, yCurrentScroll + maxHeight - height);
@@ -485,6 +486,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
      * </ul>
      */
     public void setSpacing(int spacing) {
+        dirty();
         checkWidget();
         if (spacing < 0)
             return;
@@ -494,21 +496,19 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
         int width = Math.max(0, getClientArea().width - spacing * 2);
         for (int i = 0; i < itemCount; i++) {
             ExpandItem item = items[i];
-            if (((SwtExpandItem) item.getImpl()).width != width)
-                ((SwtExpandItem) item.getImpl()).setBounds(0, 0, width, ((SwtExpandItem) item.getImpl()).height, false, true);
+            if (((DartExpandItem) item.getImpl()).width != width)
+                ((DartExpandItem) item.getImpl()).setBounds(0, 0, width, ((DartExpandItem) item.getImpl()).height, false, true);
         }
         layoutItems(0, true);
         redraw();
     }
 
     void showItem(ExpandItem item) {
-        Control control = ((SwtExpandItem) item.getImpl()).control;
+        Control control = ((DartExpandItem) item.getImpl()).control;
         if (control != null && !control.isDisposed()) {
-            control.setVisible(((SwtExpandItem) item.getImpl()).expanded);
+            control.setVisible(((DartExpandItem) item.getImpl()).expanded);
         }
-        if (item.getImpl() instanceof SwtExpandItem) {
-            ((SwtExpandItem) item.getImpl()).redraw();
-        }
+        ((DartExpandItem) item.getImpl()).redraw();
         int index = indexOf(item);
         layoutItems(index + 1, true);
     }
@@ -535,7 +535,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
 
     void onFocus() {
         if (focusItem != null)
-            ((SwtExpandItem) focusItem.getImpl()).redraw();
+            ((DartExpandItem) focusItem.getImpl()).redraw();
     }
 
     void onKeyDown(Event event) {
@@ -548,17 +548,17 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
                 /* Space */
                 Event ev = new Event();
                 ev.item = focusItem;
-                sendEvent(((SwtExpandItem) focusItem.getImpl()).expanded ? SWT.Collapse : SWT.Expand, ev);
-                ((SwtExpandItem) focusItem.getImpl()).expanded = !((SwtExpandItem) focusItem.getImpl()).expanded;
+                sendEvent(((DartExpandItem) focusItem.getImpl()).expanded ? SWT.Collapse : SWT.Expand, ev);
+                ((DartExpandItem) focusItem.getImpl()).expanded = !((DartExpandItem) focusItem.getImpl()).expanded;
                 showItem(focusItem);
                 break;
             case SWT.ARROW_UP:
                 {
                     int focusIndex = indexOf(focusItem);
                     if (focusIndex > 0) {
-                        ((SwtExpandItem) focusItem.getImpl()).redraw();
+                        ((DartExpandItem) focusItem.getImpl()).redraw();
                         focusItem = items[focusIndex - 1];
-                        ((SwtExpandItem) focusItem.getImpl()).redraw();
+                        ((DartExpandItem) focusItem.getImpl()).redraw();
                     }
                     break;
                 }
@@ -566,9 +566,9 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
                 {
                     int focusIndex = indexOf(focusItem);
                     if (focusIndex < itemCount - 1) {
-                        ((SwtExpandItem) focusItem.getImpl()).redraw();
+                        ((DartExpandItem) focusItem.getImpl()).redraw();
                         focusItem = items[focusIndex + 1];
-                        ((SwtExpandItem) focusItem.getImpl()).redraw();
+                        ((DartExpandItem) focusItem.getImpl()).redraw();
                     }
                     break;
                 }
@@ -582,11 +582,11 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
         int y = event.y;
         for (int i = 0; i < itemCount; i++) {
             ExpandItem item = items[i];
-            boolean hover = ((SwtExpandItem) item.getImpl()).x <= x && x < (((SwtExpandItem) item.getImpl()).x + ((SwtExpandItem) item.getImpl()).width) && ((SwtExpandItem) item.getImpl()).y <= y && y < (((SwtExpandItem) item.getImpl()).y + getBandHeight());
+            boolean hover = ((DartExpandItem) item.getImpl()).x <= x && x < (((DartExpandItem) item.getImpl()).x + ((DartExpandItem) item.getImpl()).width) && ((DartExpandItem) item.getImpl()).y <= y && y < (((DartExpandItem) item.getImpl()).y + getBandHeight());
             if (hover && item != focusItem) {
-                ((SwtExpandItem) focusItem.getImpl()).redraw();
+                ((DartExpandItem) focusItem.getImpl()).redraw();
                 focusItem = item;
-                ((SwtExpandItem) focusItem.getImpl()).redraw();
+                ((DartExpandItem) focusItem.getImpl()).redraw();
                 forceFocus();
                 break;
             }
@@ -600,12 +600,12 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
             return;
         int x = event.x;
         int y = event.y;
-        boolean hover = ((SwtExpandItem) focusItem.getImpl()).x <= x && x < (((SwtExpandItem) focusItem.getImpl()).x + ((SwtExpandItem) focusItem.getImpl()).width) && ((SwtExpandItem) focusItem.getImpl()).y <= y && y < (((SwtExpandItem) focusItem.getImpl()).y + getBandHeight());
+        boolean hover = ((DartExpandItem) focusItem.getImpl()).x <= x && x < (((DartExpandItem) focusItem.getImpl()).x + ((DartExpandItem) focusItem.getImpl()).width) && ((DartExpandItem) focusItem.getImpl()).y <= y && y < (((DartExpandItem) focusItem.getImpl()).y + getBandHeight());
         if (hover) {
             Event ev = new Event();
             ev.item = focusItem;
-            notifyListeners(((SwtExpandItem) focusItem.getImpl()).expanded ? SWT.Collapse : SWT.Expand, ev);
-            ((SwtExpandItem) focusItem.getImpl()).expanded = !((SwtExpandItem) focusItem.getImpl()).expanded;
+            notifyListeners(((DartExpandItem) focusItem.getImpl()).expanded ? SWT.Collapse : SWT.Expand, ev);
+            ((DartExpandItem) focusItem.getImpl()).expanded = !((DartExpandItem) focusItem.getImpl()).expanded;
             showItem(focusItem);
         }
     }
@@ -614,7 +614,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
         boolean hasFocus = isFocusControl();
         for (int i = 0; i < itemCount; i++) {
             ExpandItem item = items[i];
-            ((SwtExpandItem) item.getImpl()).drawItem(event.gc, hasFocus && item == focusItem);
+            ((DartExpandItem) item.getImpl()).drawItem(event.gc, hasFocus && item == focusItem);
         }
     }
 
@@ -623,7 +623,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
         int width = Math.max(0, rect.width - spacing * 2);
         for (int i = 0; i < itemCount; i++) {
             ExpandItem item = items[i];
-            ((SwtExpandItem) item.getImpl()).setBounds(0, 0, width, ((SwtExpandItem) item.getImpl()).height, false, true);
+            ((DartExpandItem) item.getImpl()).setBounds(0, 0, width, ((DartExpandItem) item.getImpl()).height, false, true);
         }
         setScrollbar();
     }
@@ -677,9 +677,29 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
         return inDispose;
     }
 
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Expand", "Collapse", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Collapse, e);
+            });
+        });
+        FlutterBridge.on(this, "Expand", "Expand", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Expand, e);
+            });
+        });
+    }
+
     public ExpandBar getApi() {
         if (api == null)
             api = ExpandBar.createApi(this);
         return (ExpandBar) api;
+    }
+
+    public VExpandBar getValue() {
+        if (value == null)
+            value = new VExpandBar(this);
+        return (VExpandBar) value;
     }
 }

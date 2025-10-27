@@ -3145,7 +3145,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void setSizeInPixels(int width, int height) {
+        if (this.bounds == null) {
+            this.bounds = new Rectangle(0, 0, width, height);
+        } else {
+            this.bounds = new Rectangle(this.bounds.x, this.bounds.y, width, height);
+        }
         dirty();
+        getBridge().setBounds(this, bounds);
     }
 
     /**

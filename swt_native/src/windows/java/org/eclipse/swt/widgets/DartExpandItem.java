@@ -18,7 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -39,7 +39,7 @@ import org.eclipse.swt.internal.win32.*;
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtExpandItem extends SwtItem implements IExpandItem {
+public class DartExpandItem extends DartItem implements IExpandItem {
 
     ExpandBar parent;
 
@@ -58,10 +58,6 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
     static final int BORDER = 1;
 
     static final int CHEVRON_SIZE = 24;
-
-    static {
-        DPIZoomChangeRegistry.registerHandler(SwtExpandItem::handleDPIChange, ExpandItem.class);
-    }
 
     /**
      * Constructs a new instance of this class given its parent
@@ -90,7 +86,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtExpandItem(ExpandBar parent, int style, ExpandItem api) {
+    public DartExpandItem(ExpandBar parent, int style, ExpandItem api) {
         this(parent, style, checkNull(parent).getItemCount(), api);
     }
 
@@ -124,10 +120,10 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtExpandItem(ExpandBar parent, int style, int index, ExpandItem api) {
+    public DartExpandItem(ExpandBar parent, int style, int index, ExpandItem api) {
         super(parent, style, api);
         this.parent = parent;
-        ((SwtExpandBar) parent.getImpl()).createItem(this.getApi(), style, index);
+        ((DartExpandBar) parent.getImpl()).createItem(this.getApi(), style, index);
     }
 
     static ExpandBar checkNull(ExpandBar control) {
@@ -136,122 +132,9 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
         return control;
     }
 
-    private void drawChevron(long hDC, RECT rect) {
-        long oldBrush = OS.SelectObject(hDC, OS.GetSysColorBrush(OS.COLOR_BTNFACE));
-        OS.PatBlt(hDC, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, OS.PATCOPY);
-        OS.SelectObject(hDC, oldBrush);
-        rect.left += 4;
-        rect.top += 4;
-        rect.right -= 4;
-        rect.bottom -= 4;
-        long hPen = OS.CreatePen(OS.PS_SOLID, 1, ((SwtControl) parent.getImpl()).getForegroundPixel());
-        long oldPen = OS.SelectObject(hDC, hPen);
-        int[] polyline1, polyline2;
-        if (expanded) {
-            int px = rect.left + 5;
-            int py = rect.top + 7;
-            polyline1 = new int[] { px, py, px + 1, py, px + 1, py - 1, px + 2, py - 1, px + 2, py - 2, px + 3, py - 2, px + 3, py - 3, px + 3, py - 2, px + 4, py - 2, px + 4, py - 1, px + 5, py - 1, px + 5, py, px + 7, py };
-            py += 4;
-            polyline2 = new int[] { px, py, px + 1, py, px + 1, py - 1, px + 2, py - 1, px + 2, py - 2, px + 3, py - 2, px + 3, py - 3, px + 3, py - 2, px + 4, py - 2, px + 4, py - 1, px + 5, py - 1, px + 5, py, px + 7, py };
-        } else {
-            int px = rect.left + 5;
-            int py = rect.top + 4;
-            polyline1 = new int[] { px, py, px + 1, py, px + 1, py + 1, px + 2, py + 1, px + 2, py + 2, px + 3, py + 2, px + 3, py + 3, px + 3, py + 2, px + 4, py + 2, px + 4, py + 1, px + 5, py + 1, px + 5, py, px + 7, py };
-            py += 4;
-            polyline2 = new int[] { px, py, px + 1, py, px + 1, py + 1, px + 2, py + 1, px + 2, py + 2, px + 3, py + 2, px + 3, py + 3, px + 3, py + 2, px + 4, py + 2, px + 4, py + 1, px + 5, py + 1, px + 5, py, px + 7, py };
-        }
-        OS.Polyline(hDC, polyline1, polyline1.length / 2);
-        OS.Polyline(hDC, polyline2, polyline2.length / 2);
-        if (hover) {
-            long whitePen = OS.CreatePen(OS.PS_SOLID, 1, OS.GetSysColor(OS.COLOR_3DHILIGHT));
-            long darkGrayPen = OS.CreatePen(OS.PS_SOLID, 1, OS.GetSysColor(OS.COLOR_3DSHADOW));
-            OS.SelectObject(hDC, whitePen);
-            int[] points1 = { rect.left, rect.bottom, rect.left, rect.top, rect.right, rect.top };
-            OS.Polyline(hDC, points1, points1.length / 2);
-            OS.SelectObject(hDC, darkGrayPen);
-            int[] points2 = { rect.right, rect.top, rect.right, rect.bottom, rect.left, rect.bottom };
-            OS.Polyline(hDC, points2, points2.length / 2);
-            OS.SelectObject(hDC, oldPen);
-            OS.DeleteObject(whitePen);
-            OS.DeleteObject(darkGrayPen);
-        } else {
-            OS.SelectObject(hDC, oldPen);
-        }
-        OS.DeleteObject(hPen);
-    }
-
-    void drawItem(GC gc, long hTheme, RECT clipRect, boolean drawFocus) {
-        long hDC = gc.handle;
-        int headerHeightinPixels = getHeaderHeightInPixels();
-        int zoom = getZoom();
-        int imageHeightInPixels = DPIUtil.scaleUp(imageHeight, zoom);
-        int imageWidthInPixels = DPIUtil.scaleUp(imageWidth, zoom);
-        RECT rect = new RECT();
-        OS.SetRect(rect, x, y, x + width, y + headerHeightinPixels);
-        if (hTheme != 0) {
-            OS.DrawThemeBackground(hTheme, hDC, OS.EBP_NORMALGROUPHEAD, 0, rect, clipRect);
-        } else {
-            long oldBrush = OS.SelectObject(hDC, OS.GetSysColorBrush(OS.COLOR_BTNFACE));
-            OS.PatBlt(hDC, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, OS.PATCOPY);
-            OS.SelectObject(hDC, oldBrush);
-        }
-        if (image != null) {
-            rect.left += SwtExpandItem.TEXT_INSET;
-            int yInPoints = DPIUtil.scaleDown(rect.top + ((headerHeightinPixels - imageHeightInPixels) / 2), zoom);
-            gc.drawImage(image, DPIUtil.scaleDown(rect.left, zoom), yInPoints);
-            rect.left += imageWidthInPixels;
-        }
-        if (text.length() > 0) {
-            rect.left += SwtExpandItem.TEXT_INSET;
-            char[] buffer;
-            if ((getApi().style & SWT.FLIP_TEXT_DIRECTION) != 0) {
-                int bits = OS.GetWindowLong(parent.handle, OS.GWL_EXSTYLE);
-                if ((bits & OS.WS_EX_LAYOUTRTL) != 0) {
-                    buffer = (LRE + text).toCharArray();
-                } else {
-                    buffer = (RLE + text).toCharArray();
-                }
-            } else {
-                buffer = text.toCharArray();
-            }
-            if (hTheme != 0) {
-                OS.DrawThemeText(hTheme, hDC, OS.EBP_NORMALGROUPHEAD, 0, buffer, buffer.length, OS.DT_VCENTER | OS.DT_SINGLELINE, 0, rect);
-            } else {
-                int oldBkMode = OS.SetBkMode(hDC, OS.TRANSPARENT);
-                OS.DrawText(hDC, buffer, buffer.length, rect, OS.DT_VCENTER | OS.DT_SINGLELINE);
-                OS.SetBkMode(hDC, oldBkMode);
-            }
-        }
-        int chevronSize = SwtExpandItem.CHEVRON_SIZE;
-        rect.left = rect.right - chevronSize;
-        rect.top = y;
-        rect.bottom = rect.top + chevronSize;
-        if (hTheme != 0) {
-            int partID = expanded ? OS.EBP_NORMALGROUPCOLLAPSE : OS.EBP_NORMALGROUPEXPAND;
-            int stateID = hover ? OS.EBNGC_HOT : OS.EBNGC_NORMAL;
-            OS.DrawThemeBackground(hTheme, hDC, partID, stateID, rect, clipRect);
-        } else {
-            drawChevron(hDC, rect);
-        }
-        if (drawFocus) {
-            OS.SetRect(rect, x + 1, y + 1, x + width - 2, y + headerHeightinPixels - 2);
-            OS.DrawFocusRect(hDC, rect);
-        }
-        if (expanded) {
-            if (!((SwtExpandBar) parent.getImpl()).isAppThemed()) {
-                long pen = OS.CreatePen(OS.PS_SOLID, 1, OS.GetSysColor(OS.COLOR_BTNFACE));
-                long oldPen = OS.SelectObject(hDC, pen);
-                int[] points = { x, y + headerHeightinPixels, x, y + headerHeightinPixels + height, x + width - 1, y + headerHeightinPixels + height, x + width - 1, y + headerHeightinPixels - 1 };
-                OS.Polyline(hDC, points, points.length / 2);
-                OS.SelectObject(hDC, oldPen);
-                OS.DeleteObject(pen);
-            }
-        }
-    }
-
     @Override
     void destroyWidget() {
-        ((SwtExpandBar) parent.getImpl()).destroyItem(this.getApi());
+        ((DartExpandBar) parent.getImpl()).destroyItem(this.getApi());
         releaseHandle();
     }
 
@@ -303,7 +186,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
     }
 
     int getHeaderHeightInPixels() {
-        int headerHeightInPixels = ((SwtExpandBar) parent.getImpl()).getBandHeight();
+        int headerHeightInPixels = ((DartExpandBar) parent.getImpl()).getBandHeight();
         int imageHeightInPixels = DPIUtil.scaleUp(imageHeight, getZoom());
         int imageHeaderDiff = headerHeightInPixels - imageHeightInPixels;
         if (imageHeaderDiff < IMAGE_MARGIN) {
@@ -347,45 +230,30 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
     }
 
     int getPreferredWidth(long hTheme, long hDC) {
-        int width = SwtExpandItem.TEXT_INSET * 2 + SwtExpandItem.CHEVRON_SIZE;
+        int width = DartExpandItem.TEXT_INSET * 2 + DartExpandItem.CHEVRON_SIZE;
         if (image != null) {
-            width += SwtExpandItem.TEXT_INSET + imageWidth;
+            width += DartExpandItem.TEXT_INSET + imageWidth;
         }
         if (text.length() > 0) {
-            RECT rect = new RECT();
-            char[] buffer = text.toCharArray();
             if (hTheme != 0) {
-                OS.GetThemeTextExtent(hTheme, hDC, OS.EBP_NORMALGROUPHEAD, 0, buffer, buffer.length, OS.DT_SINGLELINE, null, rect);
             } else {
-                OS.DrawText(hDC, buffer, buffer.length, rect, OS.DT_CALCRECT);
             }
-            width += (rect.right - rect.left);
         }
         return width;
     }
 
     boolean isHover(int x, int y) {
-        int bandHeight = ((SwtExpandBar) parent.getImpl()).getBandHeight();
+        int bandHeight = ((DartExpandBar) parent.getImpl()).getBandHeight();
         return this.x < x && x < (this.x + width) && this.y < y && y < (this.y + bandHeight);
     }
 
     void redraw(boolean all) {
-        long parentHandle = parent.handle;
         int headerHeightInPixels = getHeaderHeightInPixels();
         int zoom = getZoom();
         int imageHeightInPixels = DPIUtil.scaleUp(imageHeight, zoom);
-        int imageWidthInPixels = DPIUtil.scaleUp(imageWidth, zoom);
-        RECT rect = new RECT();
-        int left = all ? x : x + width - headerHeightInPixels;
-        OS.SetRect(rect, left, y, x + width, y + headerHeightInPixels);
-        OS.InvalidateRect(parentHandle, rect, true);
         if (imageHeightInPixels > headerHeightInPixels) {
-            OS.SetRect(rect, x + SwtExpandItem.TEXT_INSET, y + headerHeightInPixels - imageHeightInPixels, x + SwtExpandItem.TEXT_INSET + imageWidthInPixels, y);
-            OS.InvalidateRect(parentHandle, rect, true);
         }
-        if (!((SwtExpandBar) parent.getImpl()).isAppThemed()) {
-            OS.SetRect(rect, x, y + headerHeightInPixels, x + width, y + headerHeightInPixels + height + 1);
-            OS.InvalidateRect(parentHandle, rect, true);
+        if (!((DartExpandBar) parent.getImpl()).isAppThemed()) {
         }
     }
 
@@ -415,17 +283,17 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
             redraw(true);
         }
         if (control != null && !control.isDisposed()) {
-            if (!((SwtExpandBar) parent.getImpl()).isAppThemed()) {
+            if (!((DartExpandBar) parent.getImpl()).isAppThemed()) {
                 x += BORDER;
                 width = Math.max(0, width - BORDER * 2);
                 height = Math.max(0, height - BORDER);
             }
             if (move && size)
-                ((SwtControl) control.getImpl()).setBoundsInPixels(x, y + headerHeightInPixels, width, height);
+                ((DartControl) control.getImpl()).setBoundsInPixels(x, y + headerHeightInPixels, width, height);
             if (move && !size)
-                ((SwtControl) control.getImpl()).setLocationInPixels(x, y + headerHeightInPixels);
+                ((DartControl) control.getImpl()).setLocationInPixels(x, y + headerHeightInPixels);
             if (!move && size)
-                ((SwtControl) control.getImpl()).setSizeInPixels(width, height);
+                ((DartControl) control.getImpl()).setSizeInPixels(width, height);
         }
     }
 
@@ -444,27 +312,28 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      * </ul>
      */
     public void setControl(Control control) {
+        dirty();
         checkWidget();
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if (((SwtControl) control.getImpl()).parent != parent)
+            if (((DartControl) control.getImpl()).parent != parent)
                 error(SWT.ERROR_INVALID_PARENT);
         }
         this.control = control;
         if (control != null) {
-            int headerHeight = ((SwtExpandBar) parent.getImpl()).getBandHeight();
+            int headerHeight = ((DartExpandBar) parent.getImpl()).getBandHeight();
             control.setVisible(expanded);
-            if (!((SwtExpandBar) parent.getImpl()).isAppThemed()) {
-                int width = Math.max(0, this.width - BORDER * 2);
-                int height = Math.max(0, this.height - BORDER);
-                if (control.getImpl() instanceof SwtControl) {
-                    ((SwtControl) control.getImpl()).setBoundsInPixels(x + BORDER, y + headerHeight, width, height);
-                }
+            if (!((DartExpandBar) parent.getImpl()).isAppThemed()) {
+                Rectangle controlBounds = control.getBounds();
+                int width = (controlBounds != null && controlBounds.width > 0) ? controlBounds.width : Math.max(0, this.width - BORDER * 2);
+                int height = (controlBounds != null && controlBounds.height > 0) ? controlBounds.height : Math.max(0, this.height - BORDER);
+                ((DartControl) control.getImpl()).setBoundsInPixels(x + BORDER, y + headerHeight, width, height);
             } else {
-                if (control.getImpl() instanceof SwtControl) {
-                    ((SwtControl) control.getImpl()).setBoundsInPixels(x, y + headerHeight, width, height);
-                }
+                Rectangle controlBounds = control.getBounds();
+                int width = (controlBounds != null && controlBounds.width > 0) ? controlBounds.width : this.width;
+                int height = (controlBounds != null && controlBounds.height > 0) ? controlBounds.height : this.height;
+                ((DartControl) control.getImpl()).setBoundsInPixels(x, y + headerHeight, width, height);
             }
         }
     }
@@ -480,9 +349,10 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      * </ul>
      */
     public void setExpanded(boolean expanded) {
+        dirty();
         checkWidget();
         this.expanded = expanded;
-        ((SwtExpandBar) parent.getImpl()).showItem(this.getApi());
+        ((DartExpandBar) parent.getImpl()).showItem(this.getApi());
     }
 
     /**
@@ -502,15 +372,17 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
     }
 
     void setHeightInPixels(int height) {
+        dirty();
         if (height < 0)
             return;
         setBoundsInPixels(0, 0, width, height, false, true);
         if (expanded)
-            ((SwtExpandBar) parent.getImpl()).layoutItems(parent.indexOf(this.getApi()) + 1, true);
+            ((DartExpandBar) parent.getImpl()).layoutItems(parent.indexOf(this.getApi()) + 1, true);
     }
 
     @Override
     public void setImage(Image image) {
+        dirty();
         super.setImage(image);
         int oldImageHeight = imageHeight;
         if (image != null) {
@@ -521,7 +393,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
             imageHeight = imageWidth = 0;
         }
         if (oldImageHeight != imageHeight) {
-            ((SwtExpandBar) parent.getImpl()).layoutItems(parent.indexOf(this.getApi()), true);
+            ((DartExpandBar) parent.getImpl()).layoutItems(parent.indexOf(this.getApi()), true);
         } else {
             redraw(true);
         }
@@ -529,6 +401,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
 
     @Override
     public void setText(String string) {
+        dirty();
         super.setText(string);
         if ((getApi().state & HAS_AUTO_DIRECTION) != 0) {
             updateTextDirection(AUTO_TEXT_DIRECTION);
@@ -540,10 +413,10 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
         if (!(widget instanceof ExpandItem item)) {
             return;
         }
-        if (((SwtExpandItem) item.getImpl()).height != 0 || ((SwtExpandItem) item.getImpl()).width != 0) {
-            int newWidth = Math.round(((SwtExpandItem) item.getImpl()).width * scalingFactor);
-            int newHeight = Math.round(((SwtExpandItem) item.getImpl()).height * scalingFactor);
-            ((SwtExpandItem) item.getImpl()).setBoundsInPixels(((SwtExpandItem) item.getImpl()).x, ((SwtExpandItem) item.getImpl()).y, newWidth, newHeight, true, true);
+        if (((DartExpandItem) item.getImpl()).height != 0 || ((DartExpandItem) item.getImpl()).width != 0) {
+            int newWidth = Math.round(((DartExpandItem) item.getImpl()).width * scalingFactor);
+            int newHeight = Math.round(((DartExpandItem) item.getImpl()).height * scalingFactor);
+            ((DartExpandItem) item.getImpl()).setBoundsInPixels(((DartExpandItem) item.getImpl()).x, ((DartExpandItem) item.getImpl()).y, newWidth, newHeight, true, true);
         }
     }
 
@@ -587,9 +460,27 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
         return imageWidth;
     }
 
+    public FlutterBridge getBridge() {
+        if (bridge != null)
+            return bridge;
+        Composite p = parent;
+        while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+    }
+
     public ExpandItem getApi() {
         if (api == null)
             api = ExpandItem.createApi(this);
         return (ExpandItem) api;
+    }
+
+    public VExpandItem getValue() {
+        if (value == null)
+            value = new VExpandItem(this);
+        return (VExpandItem) value;
     }
 }

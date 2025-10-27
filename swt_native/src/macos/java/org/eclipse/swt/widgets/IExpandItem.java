@@ -3,7 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
-public interface IExpandItem extends IItem {
+public interface IExpandItem extends IItem, ImplExpandItem {
 
     void dispose();
 
