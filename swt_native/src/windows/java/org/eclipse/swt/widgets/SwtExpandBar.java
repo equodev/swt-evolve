@@ -258,7 +258,9 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
         }
         System.arraycopy(items, index + 1, items, index, --itemCount - index);
         items[itemCount] = null;
-        ((SwtExpandItem) item.getImpl()).redraw(true);
+        if (item.getImpl() instanceof SwtExpandItem) {
+            ((SwtExpandItem) item.getImpl()).redraw(true);
+        }
         layoutItems(index, true);
     }
 
@@ -308,7 +310,9 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
         }
         for (int i = 0; i < itemCount; i++) {
             ExpandItem item = items[i];
-            ((SwtExpandItem) item.getImpl()).drawItem(gc, hTheme, clipRect, item == focusItem && drawFocus);
+            if (item.getImpl() instanceof SwtExpandItem) {
+                ((SwtExpandItem) item.getImpl()).drawItem(gc, hTheme, clipRect, item == focusItem && drawFocus);
+            }
         }
         if (hCurrentFont != 0) {
             OS.SelectObject(gc.handle, oldFont);
@@ -636,7 +640,9 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
         if (control != null && !control.isDisposed()) {
             control.setVisible(((SwtExpandItem) item.getImpl()).expanded);
         }
-        ((SwtExpandItem) item.getImpl()).redraw(true);
+        if (item.getImpl() instanceof SwtExpandItem) {
+            ((SwtExpandItem) item.getImpl()).redraw(true);
+        }
         int index = indexOf(item);
         layoutItems(index + 1, true);
     }
@@ -932,6 +938,30 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
         }
         ((SwtExpandBar) expandBar.getImpl()).layoutItems(0, true);
         expandBar.redraw();
+    }
+
+    public ExpandItem[] _items() {
+        return items;
+    }
+
+    public int _itemCount() {
+        return itemCount;
+    }
+
+    public ExpandItem _focusItem() {
+        return focusItem;
+    }
+
+    public int _spacing() {
+        return spacing;
+    }
+
+    public int _yCurrentScroll() {
+        return yCurrentScroll;
+    }
+
+    public long _hFont() {
+        return hFont;
     }
 
     public ExpandBar getApi() {

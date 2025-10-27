@@ -16,7 +16,7 @@ Color getForeground() {
 }
 
 Color getBackgroundSelected() {
-  return getCurrentTheme() ? const Color(0xFF094771) : const Color(0xFFE5F3FF);
+  return getCurrentTheme() ? const Color(0xFF2F2F4C) : const Color(0xFFDDDCF9);
 }
 
 Color getForegroundDisabled() {

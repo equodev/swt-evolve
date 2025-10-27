@@ -18,10 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
-import dev.equo.swt.Config;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -42,7 +39,15 @@ import dev.equo.swt.Config;
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ExpandItem extends Item {
+public class DartExpandItem extends DartItem implements IExpandItem {
+
+    ExpandBar parent;
+
+    Control control;
+
+    long clientHandle, boxHandle, labelHandle, imageHandle;
+
+    int width, height;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -71,9 +76,10 @@ public class ExpandItem extends Item {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public ExpandItem(ExpandBar parent, int style) {
-        this((IExpandItem) null);
-        setImpl(Config.isEquo(ExpandItem.class, parent) ? new DartExpandItem(parent, style, this) : new SwtExpandItem(parent, style, this));
+    public DartExpandItem(ExpandBar parent, int style, ExpandItem api) {
+        super(parent, style, api);
+        this.parent = parent;
+        createWidget(parent.getItemCount());
     }
 
     /**
@@ -106,13 +112,53 @@ public class ExpandItem extends Item {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public ExpandItem(ExpandBar parent, int style, int index) {
-        this((IExpandItem) null);
-        setImpl(Config.isEquo(ExpandItem.class, parent) ? new DartExpandItem(parent, style, index, this) : new SwtExpandItem(parent, style, index, this));
+    public DartExpandItem(ExpandBar parent, int style, int index, ExpandItem api) {
+        super(parent, style, api);
+        this.parent = parent;
+        createWidget(index);
     }
 
-    protected void checkSubclass() {
-        getImpl().checkSubclass();
+    @Override
+    public void checkSubclass() {
+        if (!isValidSubclass())
+            error(SWT.ERROR_INVALID_SUBCLASS);
+    }
+
+    @Override
+    void createHandle(int index) {
+    }
+
+    @Override
+    void createWidget(int index) {
+        super.createWidget(index);
+        showWidget(index);
+        ((DartExpandBar) parent.getImpl()).createItem(this.getApi(), getApi().style, index);
+    }
+
+    @Override
+    void deregister() {
+        super.deregister();
+        ((SwtDisplay) display.getImpl()).removeWidget(clientHandle);
+        ((SwtDisplay) display.getImpl()).removeWidget(boxHandle);
+        ((SwtDisplay) display.getImpl()).removeWidget(labelHandle);
+        ((SwtDisplay) display.getImpl()).removeWidget(imageHandle);
+    }
+
+    @Override
+    public void release(boolean destroy) {
+        //454940 ExpandBar DND fix.
+        //Since controls are now nested under the Item,
+        //Item is responsible for it's release.
+        if (control != null && !control.isDisposed()) {
+            control.getImpl().release(destroy);
+        }
+        super.release(destroy);
+    }
+
+    @Override
+    void destroyWidget() {
+        ((DartExpandBar) parent.getImpl()).destroyItem(this.getApi());
+        super.destroyWidget();
     }
 
     /**
@@ -127,7 +173,8 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        return getImpl().getControl();
+        checkWidget();
+        return control;
     }
 
     /**
@@ -142,7 +189,8 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public boolean getExpanded() {
-        return getImpl().getExpanded();
+        checkWidget();
+        return this.expanded;
     }
 
     /**
@@ -156,7 +204,13 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public int getHeaderHeight() {
-        return getImpl().getHeaderHeight();
+        checkWidget();
+        return DPIUtil.autoScaleDown(getHeaderHeightInPixels());
+    }
+
+    int getHeaderHeightInPixels() {
+        checkWidget();
+        return 0;
     }
 
     /**
@@ -170,7 +224,8 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public int getHeight() {
-        return getImpl().getHeight();
+        checkWidget();
+        return DPIUtil.autoScaleDown(height);
     }
 
     /**
@@ -184,7 +239,59 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public ExpandBar getParent() {
-        return getImpl().getParent();
+        checkWidget();
+        return parent;
+    }
+
+    boolean hasFocus() {
+        return false;
+    }
+
+    @Override
+    void hookEvents() {
+        super.hookEvents();
+    }
+
+    @Override
+    void register() {
+        super.register();
+        ((SwtDisplay) display.getImpl()).addWidget(clientHandle, this.getApi());
+        ((SwtDisplay) display.getImpl()).addWidget(boxHandle, this.getApi());
+        ((SwtDisplay) display.getImpl()).addWidget(labelHandle, this.getApi());
+        ((SwtDisplay) display.getImpl()).addWidget(imageHandle, this.getApi());
+    }
+
+    @Override
+    void releaseHandle() {
+        super.releaseHandle();
+        clientHandle = boxHandle = labelHandle = imageHandle = 0;
+        parent = null;
+    }
+
+    @Override
+    void releaseWidget() {
+        super.releaseWidget();
+        if (((DartExpandBar) parent.getImpl()).lastFocus == this.getApi())
+            ((DartExpandBar) parent.getImpl()).lastFocus = null;
+        control = null;
+    }
+
+    void resizeControl() {
+        if (control != null && !control.isDisposed()) {
+            //454940 change in hierarchy
+            /*
+		* Feature in GTK. When the ExpandBar is resize too small the control
+		* shows up on top of the vertical scrollbar. This happen because the
+		* GtkExpander does not set the size of child smaller than the request
+		* size of its parent and because the control is not parented in the
+		* hierarchy of the GtkScrolledWindow.
+		* The fix is calculate the width ourselves when the scrollbar is visible.
+		*/
+            ScrollBar vBar = ((DartScrollable) parent.getImpl()).verticalBar;
+            if (vBar != null) {
+            }
+            // Bug 479242: Bound calculation is correct without needing to use yScroll in GTK3
+        }
     }
 
     /**
@@ -202,7 +309,25 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        getImpl().setControl(control);
+        dirty();
+        checkWidget();
+        if (control != null) {
+            if (control.isDisposed())
+                error(SWT.ERROR_INVALID_ARGUMENT);
+            if (((DartControl) control.getImpl()).parent != parent)
+                error(SWT.ERROR_INVALID_PARENT);
+        }
+        if (this.control == control)
+            return;
+        this.control = control;
+        if (control != null) {
+            //454940 ExpandBar DND fix.
+            //Reparenting on the GTK side.
+            //Proper hierachy on gtk side is required for DND to function properly.
+            //As ExpandItem's child can be created before the ExpandItem, our only
+            //option is to reparent the child upon the setControl(..) call.
+        }
+        ((DartExpandBar) parent.getImpl()).layoutItems();
     }
 
     /**
@@ -216,7 +341,23 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public void setExpanded(boolean expanded) {
-        getImpl().setExpanded(expanded);
+        dirty();
+        checkWidget();
+        ((DartExpandBar) parent.getImpl()).layoutItems();
+        this.expanded = expanded;
+    }
+
+    boolean setFocus() {
+        // widget could be disposed at this point
+        if (isDisposed())
+            return false;
+        return false;
+    }
+
+    void setFontDescription(long font) {
+        setFontDescription(getApi().handle, font);
+        if (labelHandle != 0)
+            setFontDescription(labelHandle, font);
     }
 
     /**
@@ -231,26 +372,114 @@ public class ExpandItem extends Item {
      * </ul>
      */
     public void setHeight(int height) {
-        getImpl().setHeight(height);
+        checkWidget();
+        setHeightInPixels(DPIUtil.autoScaleUp(height));
     }
 
+    void setHeightInPixels(int height) {
+        dirty();
+        checkWidget();
+        if (height < 0)
+            return;
+        this.height = height;
+        ((DartExpandBar) parent.getImpl()).layoutItems();
+    }
+
+    @Override
     public void setImage(Image image) {
-        getImpl().setImage(image);
+        dirty();
+        super.setImage(image);
+        if (image != null) {
+            if (image.isDisposed())
+                error(SWT.ERROR_INVALID_ARGUMENT);
+        } else {
+        }
     }
 
+    @Override
+    void setOrientation(boolean create) {
+        super.setOrientation(create);
+        if ((parent.style & SWT.RIGHT_TO_LEFT) != 0 || !create) {
+        }
+    }
+
+    @Override
     public void setText(String string) {
-        getImpl().setText(string);
+        dirty();
+        super.setText(string);
     }
 
-    protected ExpandItem(IExpandItem impl) {
-        super(impl);
+    void showWidget(int index) {
     }
 
-    static ExpandItem createApi(IExpandItem impl) {
-        return new ExpandItem(impl);
+    @Override
+    long dpiChanged(long object, long arg0) {
+        super.dpiChanged(object, arg0);
+        if (image != null) {
+            setImage(image);
+        }
+        return 0;
     }
 
-    public IExpandItem getImpl() {
-        return (IExpandItem) super.getImpl();
+    boolean expanded;
+
+    public ExpandBar _parent() {
+        return parent;
+    }
+
+    public Control _control() {
+        return control;
+    }
+
+    public long _clientHandle() {
+        return clientHandle;
+    }
+
+    public long _boxHandle() {
+        return boxHandle;
+    }
+
+    public long _labelHandle() {
+        return labelHandle;
+    }
+
+    public long _imageHandle() {
+        return imageHandle;
+    }
+
+    public int _width() {
+        return width;
+    }
+
+    public int _height() {
+        return height;
+    }
+
+    public boolean _expanded() {
+        return expanded;
+    }
+
+    public FlutterBridge getBridge() {
+        if (bridge != null)
+            return bridge;
+        Composite p = parent;
+        while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+    }
+
+    public ExpandItem getApi() {
+        if (api == null)
+            api = ExpandItem.createApi(this);
+        return (ExpandItem) api;
+    }
+
+    public VExpandItem getValue() {
+        if (value == null)
+            value = new VExpandItem(this);
+        return (VExpandItem) value;
     }
 }

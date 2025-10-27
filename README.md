@@ -93,7 +93,7 @@ Here is the current status of major widgets:
 | `Group`           | ✔️ Implemented |                                                                     |
 | `Link`            | ✔️ Implemented |                                                                     |
 | `Combo`           | ⚠️ Partially Implemented | SWT.READ_ONLY Combo implemented for Windows and Linux, SWT.SIMPLE and SWT.DROP_DOWN to add. |
-
+| `ExpandBar`       | ⚠️ Implemented for Windows |  |
 ---
 
 ## 🗺️ Roadmap

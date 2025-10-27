@@ -835,13 +835,15 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     Point minimumSize(int wHint, int hHint, boolean changed) {
         /*
-	 * Since getClientArea can be overridden by subclasses, we cannot
-	 * call getClientAreaInPixels directly.
-	 */
+                     * Since getClientArea can be overridden by subclasses, we cannot
+                     * call getClientAreaInPixels directly.
+                     */
         int zoom = getZoom();
         Rectangle clientArea = DPIUtil.scaleUp(getClientArea(), zoom);
         int width = 0, height = 0;
-        for (Control element : _getChildren()) {
+        Control[] children = _getChildren();
+        for (int i = 0; i < children.length; i++) {
+            Control element = children[i];
             Rectangle rect = DPIUtil.scaleUp(element.getBounds(), zoom);
             width = Math.max(width, rect.x - clientArea.x + rect.width);
             height = Math.max(height, rect.y - clientArea.y + rect.height);

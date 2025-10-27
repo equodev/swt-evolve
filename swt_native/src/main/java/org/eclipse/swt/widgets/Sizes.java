@@ -181,11 +181,8 @@ public class Sizes {
         String text = c._text();
         int textLength = (text != null ? text.length() : 0);
 
-        // Calculate minimum width based on title text
-        // Title needs space for text plus padding on both sides
         int titleWidth = (int)(textLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING);
 
-        // Calculate size needed for children
         Control[] children = c.getChildren();
         int childrenWidth = 0;
         int childrenHeight = 0;
@@ -193,7 +190,6 @@ public class Sizes {
         int comboCount = 0;
 
         if (children != null && children.length > 0) {
-            // Sum the widths of all children (assuming horizontal layout)
             for (Control child : children) {
                 Point childSize = child.computeSize(org.eclipse.swt.SWT.DEFAULT, org.eclipse.swt.SWT.DEFAULT);
                 childrenWidth += childSize.x;
@@ -205,28 +201,21 @@ public class Sizes {
                     comboCount++;
                 }
             }
-            // Add spacing between children: 12px SizedBox between each pair
             if (children.length > 1) {
                 childrenWidth += (children.length - 1) * 12;
             }
         }
 
-        // Group needs CLIENT_INSET on all sides plus additional padding
         int CLIENT_INSET = 3;
-        // Padding calculation based on Flutter implementation:
-        // Container padding: left=6, right=6 + Inner Padding: all=10
-        int horizontalPadding = (6 * 2) + (10 * 2) + (CLIENT_INSET * 2); // 12 + 20 + 6 = 38
-        int verticalPadding = (10 + 8 + 10) + (CLIENT_INSET * 2); // top=10, bottom=8, inner=10 + 6 = 34
-        int titleHeightSpace = 18; // Space for the title at the top (8 margin + 10 for text)
 
-        // Width is the maximum of title width and children width, plus horizontal padding
+        int horizontalPadding = (6 * 2) + (10 * 2) + (CLIENT_INSET * 2);
+        int verticalPadding = (10 + 8 + 10) + (CLIENT_INSET * 2);
+        int titleHeightSpace = 18;
+
         int width = Math.max(titleWidth, childrenWidth) + horizontalPadding;
 
-        // Height calculation - if children exist, be more generous
         int height;
         if (children != null && children.length > 0) {
-            // For groups with children, multiply height by number of children to account for vertical layouts
-            // This is a heuristic since we don't know the actual layout type
             int estimatedHeight = childrenHeight * Math.max(1, children.length / 2);
             height = estimatedHeight + titleHeightSpace + verticalPadding;
 
@@ -248,4 +237,45 @@ public class Sizes {
         System.out.println("Group size calculated: width=" + result.x + ", height=" + result.y + ", text='" + text + "', childrenWidth=" + childrenWidth + ", childrenCount=" + (children != null ? children.length : 0) + ", hasCombo=" + hasCombo);
         return result;
     }
+
+    public static Point compute(DartExpandBar dartExpandBar) {
+        ExpandItem[] items = dartExpandBar.getItems();
+        int spacing = dartExpandBar._spacing();
+
+        if (items == null || items.length == 0) {
+            return new Point(200, 100);
+        }
+
+        int totalHeight = spacing;
+        int maxWidth = 0;
+        int headerHeight = 56;
+
+        for (ExpandItem item : items) {
+            DartExpandItem dartItem = (DartExpandItem) item.getImpl();
+            totalHeight += headerHeight;
+
+            String text = dartItem._text();
+            int textLength = (text != null ? text.length() : 0);
+            int itemWidth = (int)(textLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING) + 40;
+            maxWidth = Math.max(maxWidth, itemWidth);
+
+            Control control = dartItem._control();
+            if (control != null) {
+                Rectangle controlBounds = ((DartControl)control.getImpl()).getBounds();
+                int controlHeight = controlBounds.height > 0 ? controlBounds.height :
+                                   control.computeSize(org.eclipse.swt.SWT.DEFAULT, org.eclipse.swt.SWT.DEFAULT).y;
+                int controlWidth = controlBounds.width > 0 ? controlBounds.width :
+                                  control.computeSize(org.eclipse.swt.SWT.DEFAULT, org.eclipse.swt.SWT.DEFAULT).x;
+
+                totalHeight += controlHeight;
+                maxWidth = Math.max(maxWidth, controlWidth + 32);
+            }
+
+            totalHeight += spacing;
+        }
+
+        maxWidth = Math.max(maxWidth, 200);
+        return new Point(maxWidth, totalHeight);
+    }
+
 }

@@ -424,7 +424,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
         for (int i = 0; i < itemCount; i++) {
             ExpandItem item = items[i];
             if (item != null && !item.isDisposed()) {
-                ((SwtExpandItem) item.getImpl()).release(false);
+                item.getImpl().release(false);
             }
         }
         super.releaseChildren(destroy);
@@ -533,6 +533,22 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
     @Override
     void updateScrollBarValue(ScrollBar bar) {
         layoutItems();
+    }
+
+    public ExpandItem[] _items() {
+        return items;
+    }
+
+    public ExpandItem _lastFocus() {
+        return lastFocus;
+    }
+
+    public int _itemCount() {
+        return itemCount;
+    }
+
+    public int _spacing() {
+        return spacing;
     }
 
     public ExpandBar getApi() {
