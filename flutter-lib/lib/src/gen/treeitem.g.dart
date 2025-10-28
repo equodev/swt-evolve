@@ -19,6 +19,9 @@ VTreeItem _$VTreeItemFromJson(Map<String, dynamic> json) => VTreeItem()
       : VColor.fromJson(json['background'] as Map<String, dynamic>)
   ..checked = json['checked'] as bool?
   ..expanded = json['expanded'] as bool?
+  ..font = json['font'] == null
+      ? null
+      : VFont.fromJson(json['font'] as Map<String, dynamic>)
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
@@ -37,6 +40,7 @@ Map<String, dynamic> _$VTreeItemToJson(VTreeItem instance) => <String, dynamic>{
       'background': instance.background,
       'checked': instance.checked,
       'expanded': instance.expanded,
+      'font': instance.font,
       'foreground': instance.foreground,
       'grayed': instance.grayed,
       'items': instance.items,

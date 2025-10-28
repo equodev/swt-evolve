@@ -38,7 +38,7 @@ public class VLabel extends VControl {
 
     @JsonAttribute(nullable = false)
     public String getText() {
-        return ((DartLabel) impl).text;
+        return ((DartLabel) impl).getText();
     }
 
     public void setText(String value) {

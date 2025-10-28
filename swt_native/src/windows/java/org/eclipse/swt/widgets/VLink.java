@@ -28,7 +28,7 @@ public class VLink extends VControl {
 
     @JsonAttribute(nullable = false)
     public String getText() {
-        return ((DartLink) impl).text;
+        return ((DartLink) impl).getText();
     }
 
     public void setText(String value) {

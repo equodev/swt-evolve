@@ -49,7 +49,7 @@ public class VCombo extends VComposite {
 
     @JsonAttribute(nullable = false)
     public String getText() {
-        return ((DartCombo) impl).text;
+        return ((DartCombo) impl).getText();
     }
 
     public void setText(String value) {

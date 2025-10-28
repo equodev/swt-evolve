@@ -71,9 +71,11 @@ public class VGC extends VResource {
         ((DartGC) impl).fillRule = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Font getFont() {
-        return ((DartGC) impl).font;
+        Font val = ((DartGC) impl).font;
+        if (val != null && !(val.getImpl() instanceof DartFont))
+            return null;
+        return val;
     }
 
     public void setFont(Font value) {

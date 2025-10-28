@@ -7,6 +7,7 @@ import '../styles.dart';
 import 'styled_buttons.dart';
 import 'widget_config.dart';
 import 'utils/text_utils.dart';
+import 'utils/font_utils.dart';
 
 class ButtonImpl<T extends ButtonSwt, V extends VButton>
     extends ControlImpl<T, V> {
@@ -17,7 +18,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     var text = state.text;
     // var image = state.image;
     String? image;
-    var enabled = state.enabled?? true;
+    var enabled = state.enabled ?? true;
     var backgroundColor = getSwtBackgroundColor(context);
 
     if (state.style.has(SWT.TOGGLE)) {
@@ -27,6 +28,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         enabled: enabled,
         useDarkTheme: useDarkTheme,
         backgroundColor: backgroundColor,
+        vFont: state.font,
+        textColor: state.foreground,
         onPressed: () {
           if (enabled) {
             onPressed();
@@ -44,6 +47,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         checked: state.selection ?? false,
         useDarkTheme: useDarkTheme,
         backgroundColor: backgroundColor,
+        vFont: state.font,
+        textColor: state.foreground,
         onChanged: !enabled
             ? null
             : (checked) {
@@ -61,6 +66,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         checked: state.selection ?? false,
         useDarkTheme: useDarkTheme,
         backgroundColor: backgroundColor,
+        vFont: state.font,
+        textColor: state.foreground,
         onChanged: !enabled
             ? null
             : (checked) {
@@ -78,6 +85,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         height: 50.0,
         enabled: enabled,
         useDarkTheme: useDarkTheme,
+        vFont: state.font,
+        textColor: state.foreground,
         onPressed: () {
           if (enabled) {
             onPressed();
@@ -90,6 +99,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         image: image,
         enabled: enabled,
         useDarkTheme: useDarkTheme,
+        vFont: state.font,
+        textColor: state.foreground,
         onPressed: () {
           onPressed();
           setState(() => state.selection = !(state.selection ?? false));

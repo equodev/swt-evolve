@@ -32,9 +32,11 @@ public class VTableItem extends VItem {
         ((DartTableItem) impl).checked = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Font getFont() {
-        return ((DartTableItem) impl).font;
+        Font val = ((DartTableItem) impl).font;
+        if (val != null && !(val.getImpl() instanceof DartFont))
+            return null;
+        return val;
     }
 
     public void setFont(Font value) {

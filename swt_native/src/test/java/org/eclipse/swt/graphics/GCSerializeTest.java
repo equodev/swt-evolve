@@ -30,6 +30,7 @@ class GCSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("clipping").equalsTo(w.getClipping(), orAbsentIfNull));
         assertJ.satisfies(node("fillRule").equalsTo(w.getFillRule(), orAbsentIf0));
+        assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("interpolation").equalsTo(w.getInterpolation(), orAbsentIf0));
         assertJ.satisfies(node("lineCap").equalsTo(w.getLineCap(), orAbsentIf0));

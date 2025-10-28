@@ -17,6 +17,7 @@ package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class manage operating system resources that
@@ -66,7 +67,7 @@ public final class Font extends Resource {
 
     Font(Device device) {
         this((IFont) null);
-        setImpl(new SwtFont(device, this));
+        setImpl(Config.isEquo(Font.class) ? new DartFont(device, this) : new SwtFont(device, this));
     }
 
     /**
@@ -91,7 +92,7 @@ public final class Font extends Resource {
      */
     public Font(Device device, FontData fd) {
         this((IFont) null);
-        setImpl(new SwtFont(device, fd, this));
+        setImpl(Config.isEquo(Font.class) ? new DartFont(device, fd, this) : new SwtFont(device, fd, this));
     }
 
     /**
@@ -121,7 +122,7 @@ public final class Font extends Resource {
      */
     public Font(Device device, FontData[] fds) {
         this((IFont) null);
-        setImpl(new SwtFont(device, fds, this));
+        setImpl(Config.isEquo(Font.class) ? new DartFont(device, fds, this) : new SwtFont(device, fds, this));
     }
 
     /**
@@ -150,13 +151,13 @@ public final class Font extends Resource {
      */
     public Font(Device device, String name, int height, int style) {
         this((IFont) null);
-        setImpl(new SwtFont(device, name, height, style, this));
+        setImpl(Config.isEquo(Font.class) ? new DartFont(device, name, height, style, this) : new SwtFont(device, name, height, style, this));
     }
 
     /*public*/
     Font(Device device, String name, float height, int style) {
         this((IFont) null);
-        setImpl(new SwtFont(device, name, height, style, this));
+        setImpl(Config.isEquo(Font.class) ? new DartFont(device, name, height, style, this) : new SwtFont(device, name, height, style, this));
     }
 
     /**

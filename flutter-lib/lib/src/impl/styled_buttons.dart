@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:swtflutter/src/gen/font.dart';
 import 'dart:io';
+import 'color_utils.dart';
 import 'icons_map.dart';
 import 'utils/text_utils.dart';
+import 'utils/font_utils.dart';
+import '../gen/color.dart';
 
 // DROP DOWN BUTTON
 class MaterialDropdownButton extends StatelessWidget {
@@ -14,6 +18,8 @@ class MaterialDropdownButton extends StatelessWidget {
   final double height;
   final double minWidth;
   final bool useDarkTheme;
+  final VFont? vFont;
+  final VColor? textColor;
   final VoidCallback? onMouseEnter;
   final VoidCallback? onMouseExit;
   final VoidCallback? onFocusIn;
@@ -29,6 +35,8 @@ class MaterialDropdownButton extends StatelessWidget {
     this.height = 30.0,
     this.minWidth = 70.0,
     this.useDarkTheme = false,
+    this.vFont,
+    this.textColor,
     this.onMouseEnter,
     this.onMouseExit,
     this.onFocusIn,
@@ -50,7 +58,18 @@ class MaterialDropdownButton extends StatelessWidget {
         ? Colors.transparent
         : (useDarkTheme ? darkButtonColor : lightButtonColor);
 
-    final Color textColor = useDarkTheme ? darkTextColor : lightTextColor;
+    // Get text color from VColor or use default
+    final Color defaultTextColor =
+        useDarkTheme ? darkTextColor : lightTextColor;
+    final Color finalTextColor =
+        colorFromVColor(textColor, defaultColor: defaultTextColor);
+
+    // Create TextStyle from VFont
+    final textStyle = FontUtils.textStyleFromVFont(
+      vFont,
+      context,
+      color: finalTextColor.withOpacity(enabled ? 1.0 : 0.5),
+    );
 
     const double iconSize = 24.0;
 
@@ -80,33 +99,29 @@ class MaterialDropdownButton extends StatelessWidget {
                     children: [
                       !iconMap.containsKey(image)
                           ? (image!.toLowerCase().endsWith('.svg')
-                          ? SvgPicture.file(
-                        File(image!),
-                        width: iconSize * 1.3,
-                        height: iconSize * 1.3,
-                      )
-                          : Image.file(
-                        File(image!),
-                        width: iconSize * 1.3,
-                        height: iconSize * 1.3,
-                      ))
+                              ? SvgPicture.file(
+                                  File(image!),
+                                  width: iconSize * 1.3,
+                                  height: iconSize * 1.3,
+                                )
+                              : Image.file(
+                                  File(image!),
+                                  width: iconSize * 1.3,
+                                  height: iconSize * 1.3,
+                                ))
                           : Icon(
-                        getIconByName(image!),
-                        size: iconSize * 1.3,
-                        color: textColor.withOpacity(enabled ? 1.0 : 0.5),
-                      ),
+                              getIconByName(image!),
+                              size: iconSize * 1.3,
+                              color: finalTextColor,
+                            ),
                       const SizedBox(width: 2),
                       Text(
                         stripAccelerators(text),
-                        style: TextStyle(
-                          color: textColor.withOpacity(enabled ? 1.0 : 0.5),
-                          fontWeight: FontWeight.w500,
-                          fontSize: 10.0,
-                        ),
+                        style: textStyle,
                       ),
                       Icon(
                         Icons.keyboard_arrow_down,
-                        color: textColor.withOpacity(enabled ? 1.0 : 0.5),
+                        color: finalTextColor,
                         size: 18,
                       ),
                     ],
@@ -148,15 +163,11 @@ class MaterialDropdownButton extends StatelessWidget {
             children: [
               Text(
                 stripAccelerators(text),
-                style: TextStyle(
-                  color: textColor.withOpacity(enabled ? 1.0 : 0.5),
-                  fontWeight: FontWeight.w500,
-                  fontSize: 10.0,
-                ),
+                style: textStyle,
               ),
               Icon(
                 Icons.keyboard_arrow_down,
-                color: textColor.withOpacity(enabled ? 1.0 : 0.5),
+                color: finalTextColor,
                 size: 18,
               ),
             ],
@@ -179,6 +190,8 @@ class SelectableButton extends StatelessWidget {
   final double minWidth;
   final bool useDarkTheme;
   final Color? backgroundColor;
+  final VFont? vFont;
+  final VColor? textColor;
   final VoidCallback? onMouseEnter;
   final VoidCallback? onMouseExit;
   final VoidCallback? onFocusIn;
@@ -196,6 +209,8 @@ class SelectableButton extends StatelessWidget {
     this.minWidth = 70.0,
     this.useDarkTheme = false,
     this.backgroundColor,
+    this.vFont,
+    this.textColor,
     this.onMouseEnter,
     this.onMouseExit,
     this.onFocusIn,
@@ -223,6 +238,19 @@ class SelectableButton extends StatelessWidget {
     final Color unselectedTextColor =
         useDarkTheme ? darkUnselectedTextColor : lightUnselectedTextColor;
 
+    // Get text color from VColor or use default
+    final Color defaultTextColor =
+        isSelected ? selectedTextColor : unselectedTextColor;
+    final Color finalTextColor =
+        colorFromVColor(textColor, defaultColor: defaultTextColor);
+
+    // Create TextStyle from VFont
+    final textStyle = FontUtils.textStyleFromVFont(
+      vFont,
+      context,
+      color: finalTextColor,
+    );
+
     final Color iconColor =
         isSelected ? selectedTextColor : unselectedTextColor;
 
@@ -249,26 +277,28 @@ class SelectableButton extends StatelessWidget {
                 child: Container(
                     width: iconSize + 8,
                     height: iconSize + 8,
-                    decoration: isSelected ? BoxDecoration(
-                      color: selectedColor.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ) : null,
+                    decoration: isSelected
+                        ? BoxDecoration(
+                            color: selectedColor.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          )
+                        : null,
                     child: Center(
                       child: !iconMap.containsKey(image)
                           ? (image!.toLowerCase().endsWith('.svg')
-                          ? SvgPicture.file(
-                        File(image!),
-                      )
-                          : Image.file(
-                        File(image!),
-                        width: iconSize,
-                        height: iconSize,
-                      ))
+                              ? SvgPicture.file(
+                                  File(image!),
+                                )
+                              : Image.file(
+                                  File(image!),
+                                  width: iconSize,
+                                  height: iconSize,
+                                ))
                           : Icon(
-                        getIconByName(image!),
-                        size: iconSize,
-                        color: iconColor,
-                      ),
+                              getIconByName(image!),
+                              size: iconSize,
+                              color: iconColor,
+                            ),
                     )),
               ),
             ),
@@ -328,11 +358,7 @@ class SelectableButton extends StatelessWidget {
               // Display text
               Text(
                 stripAccelerators(text ?? ""),
-                style: TextStyle(
-                  color: isSelected ? selectedTextColor : unselectedTextColor,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 10.0,
-                ),
+                style: textStyle,
               ),
             ],
           ),
@@ -361,6 +387,8 @@ class PushButton extends StatefulWidget {
   final double height;
   final double minWidth;
   final bool useDarkTheme;
+  final VFont? vFont;
+  final VColor? textColor;
   final VoidCallback? onMouseEnter;
   final VoidCallback? onMouseExit;
   final VoidCallback? onFocusIn;
@@ -376,6 +404,8 @@ class PushButton extends StatefulWidget {
     this.height = 30.0,
     this.minWidth = 70.0,
     this.useDarkTheme = false,
+    this.vFont,
+    this.textColor,
     this.onMouseEnter,
     this.onMouseExit,
     this.onFocusIn,
@@ -411,6 +441,19 @@ class _PushButtonState extends State<PushButton> {
         ? darkUnselectedTextColor
         : lightUnselectedTextColor;
 
+    // Get text color from VColor or use default
+    final Color defaultTextColor =
+        _isPressed ? selectedTextColor : unselectedTextColor;
+    final Color finalTextColor =
+        colorFromVColor(widget.textColor, defaultColor: defaultTextColor);
+
+    // Create TextStyle from VFont
+    final textStyle = FontUtils.textStyleFromVFont(
+      widget.vFont,
+      context,
+      color: finalTextColor,
+    );
+
     final Color iconColor =
         _isPressed ? selectedTextColor : unselectedTextColor;
 
@@ -432,43 +475,47 @@ class _PushButtonState extends State<PushButton> {
             },
             child: Material(
               child: InkWell(
-                onTap: widget.enabled ? () {
-                  setState(() {
-                    _isPressed = true;
-                  });
-                  widget.onPressed();
-                  Future.delayed(const Duration(milliseconds: 200), () {
-                    if (mounted) {
-                      setState(() {
-                        _isPressed = false;
-                      });
-                    }
-                  });
-                } : null,
+                onTap: widget.enabled
+                    ? () {
+                        setState(() {
+                          _isPressed = true;
+                        });
+                        widget.onPressed();
+                        Future.delayed(const Duration(milliseconds: 200), () {
+                          if (mounted) {
+                            setState(() {
+                              _isPressed = false;
+                            });
+                          }
+                        });
+                      }
+                    : null,
                 borderRadius: BorderRadius.circular(iconSize),
                 child: Container(
                   width: iconSize + 8,
                   height: iconSize + 8,
-                  decoration: _isPressed ? BoxDecoration(
-                    color: selectedColor.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ) : null,
+                  decoration: _isPressed
+                      ? BoxDecoration(
+                          color: selectedColor.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        )
+                      : null,
                   child: Center(
                     child: !iconMap.containsKey(widget.image)
                         ? (widget.image!.toLowerCase().endsWith('.svg')
-                        ? SvgPicture.file(
-                      File(widget.image!),
-                    )
-                        : Image.file(
-                      File(widget.image!),
-                      width: iconSize,
-                      height: iconSize,
-                    ))
+                            ? SvgPicture.file(
+                                File(widget.image!),
+                              )
+                            : Image.file(
+                                File(widget.image!),
+                                width: iconSize,
+                                height: iconSize,
+                              ))
                         : Icon(
-                      getIconByName(widget.image!),
-                      size: iconSize,
-                      color: iconColor,
-                    ),
+                            getIconByName(widget.image!),
+                            size: iconSize,
+                            color: iconColor,
+                          ),
                   ),
                 ),
               ),
@@ -547,11 +594,7 @@ class _PushButtonState extends State<PushButton> {
                 offset: const Offset(0, -1.0),
                 child: Text(
                   stripAccelerators(widget.text ?? ""),
-                  style: TextStyle(
-                    color: _isPressed ? selectedTextColor : unselectedTextColor,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 10.0,
-                  ),
+                  style: textStyle,
                 ),
               ),
             ],
@@ -569,6 +612,8 @@ class MaterialRadioButton extends StatelessWidget {
   final ValueChanged<bool>? onChanged;
   final bool useDarkTheme;
   final Color? backgroundColor;
+  final VFont? vFont;
+  final VColor? textColor;
   final VoidCallback? onMouseEnter;
   final VoidCallback? onMouseExit;
   final VoidCallback? onFocusIn;
@@ -581,6 +626,8 @@ class MaterialRadioButton extends StatelessWidget {
     this.onChanged,
     this.useDarkTheme = false,
     this.backgroundColor,
+    this.vFont,
+    this.textColor,
     this.onMouseEnter,
     this.onMouseExit,
     this.onFocusIn,
@@ -592,69 +639,76 @@ class MaterialRadioButton extends StatelessWidget {
     final Color activeColor = const Color(0xFF6366F1);
     final Color inactiveColor =
         useDarkTheme ? Colors.white70 : const Color(0xFF757575);
-    final Color textColor = useDarkTheme ? Colors.white : Colors.black87;
+
+    // Get text color from VColor or use default
+    final Color defaultTextColor = useDarkTheme ? Colors.white : Colors.black87;
+    final Color finalTextColor =
+        colorFromVColor(textColor, defaultColor: defaultTextColor);
+
+    // Create TextStyle from VFont
+    final textStyle = FontUtils.textStyleFromVFont(
+      vFont,
+      context,
+      color: finalTextColor,
+    );
 
     Widget child = Material(
         child: MouseRegion(
-          onEnter: (_) => onMouseEnter?.call(),
-          onExit: (_) => onMouseExit?.call(),
-          child: Focus(
-            onFocusChange: (hasFocus) {
-              if (hasFocus) {
-                onFocusIn?.call();
-              } else {
-                onFocusOut?.call();
-              }
-            },
-            child: InkWell(
-              onTap: onChanged != null ? () => onChanged!(!checked) : null,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 0.0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: checked ? activeColor : inactiveColor,
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
-                        child: checked
-                            ? Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: activeColor,
-                          ),
-                        )
-                            : null,
-                      ),
+      onEnter: (_) => onMouseEnter?.call(),
+      onExit: (_) => onMouseExit?.call(),
+      child: Focus(
+        onFocusChange: (hasFocus) {
+          if (hasFocus) {
+            onFocusIn?.call();
+          } else {
+            onFocusOut?.call();
+          }
+        },
+        child: InkWell(
+          onTap: onChanged != null ? () => onChanged!(!checked) : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 0.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: checked ? activeColor : inactiveColor,
+                      width: 2,
                     ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        stripAccelerators(text ?? ''),
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 10.0,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                  ),
+                  child: Center(
+                    child: checked
+                        ? Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: activeColor,
+                            ),
+                          )
+                        : null,
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    stripAccelerators(text ?? ''),
+                    style: textStyle,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
-        ));
+        ),
+      ),
+    ));
 
     if (backgroundColor != null) {
       return Container(
@@ -674,6 +728,8 @@ class MaterialCheckBox extends StatelessWidget {
   final ValueChanged<bool>? onChanged;
   final bool useDarkTheme;
   final Color? backgroundColor;
+  final VFont? vFont;
+  final VColor? textColor;
   final VoidCallback? onMouseEnter;
   final VoidCallback? onMouseExit;
   final VoidCallback? onFocusIn;
@@ -686,6 +742,8 @@ class MaterialCheckBox extends StatelessWidget {
     this.onChanged,
     this.useDarkTheme = false,
     this.backgroundColor,
+    this.vFont,
+    this.textColor,
     this.onMouseEnter,
     this.onMouseExit,
     this.onFocusIn,
@@ -697,7 +755,18 @@ class MaterialCheckBox extends StatelessWidget {
     final Color activeColor = const Color(0xFF6366F1);
     final Color inactiveColor =
         useDarkTheme ? Colors.white70 : const Color(0xFF757575);
-    final Color textColor = useDarkTheme ? Colors.white : Colors.black87;
+
+    // Get text color from VColor or use default
+    final Color defaultTextColor = useDarkTheme ? Colors.white : Colors.black87;
+    final Color finalTextColor =
+        colorFromVColor(textColor, defaultColor: defaultTextColor);
+
+    // Create TextStyle from VFont
+    final textStyle = FontUtils.textStyleFromVFont(
+      vFont,
+      context,
+      color: finalTextColor,
+    );
 
     Widget child = MouseRegion(
         onEnter: (_) => onMouseEnter?.call(),
@@ -715,7 +784,8 @@ class MaterialCheckBox extends StatelessWidget {
             child: InkWell(
               onTap: onChanged != null ? () => onChanged!(!checked) : null,
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 0.0),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 4.0, horizontal: 0.0),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -733,21 +803,17 @@ class MaterialCheckBox extends StatelessWidget {
                       ),
                       child: checked
                           ? const Icon(
-                        Icons.check,
-                        size: 14,
-                        color: Colors.white,
-                      )
+                              Icons.check,
+                              size: 14,
+                              color: Colors.white,
+                            )
                           : null,
                     ),
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
                         stripAccelerators(text ?? ''),
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 10.0,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: textStyle,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),

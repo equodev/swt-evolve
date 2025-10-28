@@ -54,7 +54,7 @@ public class VButton extends VControl {
 
     @JsonAttribute(nullable = false)
     public String getText() {
-        return ((DartButton) impl).text;
+        return ((DartButton) impl).getText();
     }
 
     public void setText(String value) {

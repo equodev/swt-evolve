@@ -18,6 +18,9 @@ VTableItem _$VTableItemFromJson(Map<String, dynamic> json) => VTableItem()
       ? null
       : VColor.fromJson(json['background'] as Map<String, dynamic>)
   ..checked = json['checked'] as bool?
+  ..font = json['font'] == null
+      ? null
+      : VFont.fromJson(json['font'] as Map<String, dynamic>)
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
@@ -34,6 +37,7 @@ Map<String, dynamic> _$VTableItemToJson(VTableItem instance) =>
       'text': instance.text,
       'background': instance.background,
       'checked': instance.checked,
+      'font': instance.font,
       'foreground': instance.foreground,
       'grayed': instance.grayed,
       'imageIndent': instance.imageIndent,

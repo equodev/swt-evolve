@@ -958,7 +958,9 @@ public final class SwtGC extends SwtResource implements IGC {
         NSMutableDictionary dict = ((NSMutableDictionary) new NSMutableDictionary().alloc()).initWithCapacity(5);
         Font font = data.font;
         dict.setObject(font.handle, OS.NSFontAttributeName);
-        ((SwtFont) font.getImpl()).addTraits(dict);
+        if (font.getImpl() instanceof SwtFont) {
+            ((SwtFont) font.getImpl()).addTraits(dict);
+        }
         if (draw) {
             Pattern pattern = data.foregroundPattern;
             if (pattern != null) {
@@ -2913,7 +2915,7 @@ public final class SwtGC extends SwtResource implements IGC {
         try {
             if (data.textStorage == null)
                 createLayout();
-            if (((SwtFont) data.font.getImpl()).metrics == null) {
+            if (data.font.getImpl()._metrics() == null) {
                 //$NON-NLS-1$
                 String s = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
                 NSMutableDictionary dict = ((NSMutableDictionary) new NSMutableDictionary().alloc()).initWithCapacity(3);
@@ -2929,9 +2931,14 @@ public final class SwtGC extends SwtResource implements IGC {
                 double avgWidth = Math.ceil(rect.width) / s.length();
                 int ascent = (int) layoutManager.defaultBaselineOffsetForFont(data.font.handle);
                 int height = (int) layoutManager.defaultLineHeightForFont(data.font.handle);
-                ((SwtFont) data.font.getImpl()).metrics = SwtFontMetrics.cocoa_new(ascent, height - ascent, avgWidth, 0, height);
+                if (data.font.getImpl() instanceof DartFont) {
+                    ((DartFont) data.font.getImpl()).metrics = SwtFontMetrics.cocoa_new(ascent, height - ascent, avgWidth, 0, height);
+                }
+                if (data.font.getImpl() instanceof SwtFont) {
+                    ((SwtFont) data.font.getImpl()).metrics = SwtFontMetrics.cocoa_new(ascent, height - ascent, avgWidth, 0, height);
+                }
             }
-            return ((SwtFont) data.font.getImpl()).metrics;
+            return data.font.getImpl()._metrics();
         } finally {
             uncheckGC(pool);
         }

@@ -3,13 +3,12 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.MockFlutterBridge;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.DartCTabFolder;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Device;
-import org.eclipse.swt.graphics.RGB;
+import org.eclipse.swt.graphics.*;
 import org.instancio.Instancio;
 import org.instancio.InstancioObjectApi;
 import org.instancio.Select;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -59,6 +58,19 @@ public class Mocks {
         when(display.getSystemFont()).thenReturn(mock(org.eclipse.swt.graphics.Font.class));
         when(swtDisplay.getThread()).thenCallRealMethod();
         org.eclipse.swt.graphics.Mocks.device(display, swtDisplay);
+
+        Field field = null;
+        try {
+            field = SwtDevice.class.getDeclaredField("dpi");
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+        field.setAccessible(true);
+        try {
+            field.set(swtDisplay, mock(Point.class));
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
         return display;
     }
 
@@ -137,8 +149,8 @@ public class Mocks {
         //when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
         // Mock methods needed for ExpandItem creation
-        when(impl.getClientAreaInPixels()).thenReturn(new org.eclipse.swt.graphics.Rectangle(0, 0, 200, 100));
-        doNothing().when(impl).layoutItems();
+        //when(impl.getClientAreaInPixels()).thenReturn(new org.eclipse.swt.graphics.Rectangle(0, 0, 200, 100));
+        //doNothing().when(impl).layoutItems();
         return w;
     }
 
@@ -192,5 +204,9 @@ public class Mocks {
 
     public static Canvas drawable() {
         return canvas();
+    }
+
+    public static org.eclipse.swt.graphics.FontData fontData() {
+        return new org.eclipse.swt.graphics.FontData("Arial", 12, org.eclipse.swt.SWT.NORMAL);
     }
 }

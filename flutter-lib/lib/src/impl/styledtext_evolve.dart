@@ -8,6 +8,7 @@ import '../gen/styledtext.dart';
 import '../gen/widget.dart';
 import '../impl/canvas_evolve.dart';
 import 'widget_config.dart';
+import 'utils/font_utils.dart';
 
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     extends CanvasImpl<T, V> {
@@ -876,11 +877,20 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   TextStyle _getDefaultTextStyle(
       double fontSize, String fontName, int fontStyle) {
-    final styleMap = _convertSwtFontStyle(fontStyle);
-    final weight = styleMap['weight'] as FontWeight;
-    final style = styleMap['style'] as FontStyle;
-
     final defaultTextColor = useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
+
+    // Try to use state.font first, fall back to server defaults
+    if (state.font != null) {
+      final textStyle = FontUtils.textStyleFromVFont(
+        state.font,
+        context,
+        color: defaultTextColor,
+      );
+      return textStyle;
+    }
+
+    // Fall back to server-provided font data
+    final (weight, style) = FontUtils.convertSwtFontStyle(fontStyle);
 
     return TextStyle(
       fontSize: fontSize,

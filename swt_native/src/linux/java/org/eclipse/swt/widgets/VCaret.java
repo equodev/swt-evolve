@@ -15,9 +15,11 @@ public class VCaret extends VWidget {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public Font getFont() {
-        return ((DartCaret) impl).font;
+        Font val = ((DartCaret) impl).font;
+        if (val != null && !(val.getImpl() instanceof DartFont))
+            return null;
+        return val;
     }
 
     public void setFont(Font value) {

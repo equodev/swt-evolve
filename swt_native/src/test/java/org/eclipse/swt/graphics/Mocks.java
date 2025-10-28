@@ -17,6 +17,8 @@ public class Mocks {
                 java.lang.reflect.Field field = SwtDevice.class.getDeclaredField("resourcesWithZoomSupport");
                 field.setAccessible(true);
                 field.set(swtDisplay, ConcurrentHashMap.newKeySet());
+            } catch (NoSuchFieldException e) {
+                // Field doesn't exist, ignore
             } catch (Exception e) {
                 throw new RuntimeException("Failed to initialize resourcesWithZoomSupport", e);
             }

@@ -20,6 +20,9 @@ VCTabItem _$VCTabItemFromJson(Map<String, dynamic> json) => VCTabItem()
   ..disabledImage = json['disabledImage'] == null
       ? null
       : VImage.fromJson(json['disabledImage'] as Map<String, dynamic>)
+  ..font = json['font'] == null
+      ? null
+      : VFont.fromJson(json['font'] as Map<String, dynamic>)
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
@@ -37,6 +40,7 @@ Map<String, dynamic> _$VCTabItemToJson(VCTabItem instance) => <String, dynamic>{
       'text': instance.text,
       'control': instance.control,
       'disabledImage': instance.disabledImage,
+      'font': instance.font,
       'foreground': instance.foreground,
       'selectionForeground': instance.selectionForeground,
       'showClose': instance.showClose,

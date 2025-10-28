@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../gen/color.dart';
+import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/item.dart';
 import '../gen/treeitem.dart';
@@ -26,6 +27,7 @@ class VTreeItem extends VItem {
   VColor? background;
   bool? checked;
   bool? expanded;
+  VFont? font;
   VColor? foreground;
   bool? grayed;
   List<VTreeItem>? items;

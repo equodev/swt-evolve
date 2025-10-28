@@ -284,7 +284,7 @@ public class VStyledText extends VCanvas {
 
     @JsonAttribute(nullable = false)
     public String getText() {
-        return ((DartStyledText) impl).text;
+        return ((DartStyledText) impl).getText();
     }
 
     public void setText(String value) {

@@ -193,7 +193,9 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         range.length = attrStr.length();
         attrStr.addAttribute(OS.NSFontAttributeName, defaultFont.handle, range);
         attrStr.addAttribute(OS.NSLigatureAttributeName, NSNumber.numberWithInt(0), range);
-        ((SwtFont) defaultFont.getImpl()).addTraits(attrStr, range);
+        if (defaultFont.getImpl() instanceof SwtFont) {
+            ((SwtFont) defaultFont.getImpl()).addTraits(attrStr, range);
+        }
         //TODO ascend descent wrap
         NSMutableParagraphStyle paragraph = (NSMutableParagraphStyle) new NSMutableParagraphStyle().alloc().init();
         int align = OS.NSTextAlignmentLeft;
@@ -268,7 +270,9 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             Font font = style.font;
             if (font != null) {
                 attrStr.addAttribute(OS.NSFontAttributeName, font.handle, range);
-                ((SwtFont) font.getImpl()).addTraits(attrStr, range);
+                if (font.getImpl() instanceof SwtFont) {
+                    ((SwtFont) font.getImpl()).addTraits(attrStr, range);
+                }
             }
             Color foreground = style.foreground;
             if (foreground != null && !foreground.isDisposed()) {

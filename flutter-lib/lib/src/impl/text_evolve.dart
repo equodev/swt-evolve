@@ -6,6 +6,7 @@ import '../gen/widget.dart';
 import '../impl/scrollable_evolve.dart';
 import '../styles.dart';
 import 'color_utils.dart';
+import 'utils/font_utils.dart';
 
 class TextImpl<T extends TextSwt, V extends VText>
     extends ScrollableImpl<T, V> {
@@ -84,16 +85,23 @@ class TextImpl<T extends TextSwt, V extends VText>
   }
 
   TextStyle _getTextStyle() {
-    return TextStyle(
-      color: getForeground(),
-      fontSize: 12,
+    // Get text color from VColor or use default
+    final finalTextColor =
+        colorFromVColor(state.foreground, defaultColor: getForeground());
+
+    // Create TextStyle from VFont
+    return FontUtils.textStyleFromVFont(
+      state.font,
+      context,
+      color: finalTextColor,
     );
   }
 
   InputDecoration _getInputDecoration() {
     final iconColor = getIconColor();
     final hintColor = getHintColor();
-    final bgColor = getBackground();
+    final bgColor =
+        colorFromVColor(state.background, defaultColor: getBackground());
 
     return InputDecoration(
       hintText: state.message,
@@ -113,20 +121,22 @@ class TextImpl<T extends TextSwt, V extends VText>
         minHeight: 32,
         minWidth: 32,
       ),
-      suffixIcon: (state.style.has(SWT.SEARCH) && state.text != null && state.text!.isNotEmpty)
+      suffixIcon: (state.style.has(SWT.SEARCH) &&
+              state.text != null &&
+              state.text!.isNotEmpty)
           ? IconButton(
-        icon: Icon(Icons.clear, size: 16, color: iconColor),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(
-          minHeight: 32,
-          minWidth: 32,
-        ),
-        onPressed: () {
-          _controller.clear();
-          var e = VEvent()..detail = SWT.ICON_CANCEL;
-          widget.sendSelectionDefaultSelection(state, e);
-        },
-      )
+              icon: Icon(Icons.clear, size: 16, color: iconColor),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(
+                minHeight: 32,
+                minWidth: 32,
+              ),
+              onPressed: () {
+                _controller.clear();
+                var e = VEvent()..detail = SWT.ICON_CANCEL;
+                widget.sendSelectionDefaultSelection(state, e);
+              },
+            )
           : null,
       suffixIconConstraints: const BoxConstraints(
         minHeight: 32,

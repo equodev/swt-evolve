@@ -20,6 +20,9 @@ VGC _$VGCFromJson(Map<String, dynamic> json) => VGC()
       ? null
       : VRectangle.fromJson(json['clipping'] as Map<String, dynamic>)
   ..fillRule = (json['fillRule'] as num?)?.toInt()
+  ..font = json['font'] == null
+      ? null
+      : VFont.fromJson(json['font'] as Map<String, dynamic>)
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
@@ -44,6 +47,7 @@ Map<String, dynamic> _$VGCToJson(VGC instance) => <String, dynamic>{
       'background': instance.background,
       'clipping': instance.clipping,
       'fillRule': instance.fillRule,
+      'font': instance.font,
       'foreground': instance.foreground,
       'interpolation': instance.interpolation,
       'lineCap': instance.lineCap,

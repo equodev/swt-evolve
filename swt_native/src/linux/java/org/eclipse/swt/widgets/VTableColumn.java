@@ -41,7 +41,7 @@ public class VTableColumn extends VItem {
     }
 
     public String getToolTipText() {
-        return ((DartTableColumn) impl).toolTipText;
+        return ((DartTableColumn) impl).getToolTipText();
     }
 
     public void setToolTipText(String value) {

@@ -300,14 +300,15 @@ public final class SwtFont extends SwtResource implements IFont {
      */
     public static Font win32_new(Device device, long handle) {
         Font font = new Font(device);
-        ((SwtFont) font.getImpl()).zoom = extractZoom(font.getImpl()._device());
+        if (font.getImpl() instanceof DartFont) {
+            ((DartFont) font.getImpl()).zoom = extractZoom(font.getImpl()._device());
+        }
+        if (font.getImpl() instanceof SwtFont) {
+            ((SwtFont) font.getImpl()).zoom = extractZoom(font.getImpl()._device());
+        }
         font.handle = handle;
-        /*
-	 * When created this way, Font doesn't own its .handle, and
-	 * for this reason it can't be disposed. Tell leak detector
-	 * to just ignore it.
-	 */
-        ((SwtResource) font.getImpl()).ignoreNonDisposed();
+        ///*	 * When created this way, Font doesn't own its .handle, and	 * for this reason it can't be disposed. Tell leak detector	 * to just ignore it.	 */font.ignoreNonDisposed();
+        ;
         return font;
     }
 
@@ -331,7 +332,12 @@ public final class SwtFont extends SwtResource implements IFont {
      */
     public static Font win32_new(Device device, long handle, int zoom) {
         Font font = win32_new(device, handle);
-        ((SwtFont) font.getImpl()).zoom = zoom;
+        if (font.getImpl() instanceof DartFont) {
+            ((DartFont) font.getImpl()).zoom = zoom;
+        }
+        if (font.getImpl() instanceof SwtFont) {
+            ((SwtFont) font.getImpl()).zoom = zoom;
+        }
         return font;
     }
 
@@ -377,10 +383,14 @@ public final class SwtFont extends SwtResource implements IFont {
      * @since 3.126
      */
     public static Font win32_new(Font font, int targetZoom) {
-        if (targetZoom == ((SwtFont) font.getImpl()).zoom) {
+        if (targetZoom == font.getImpl()._zoom()) {
             return font;
         }
         return SWTFontProvider.getFont(font.getDevice(), font.getFontData()[0], targetZoom);
+    }
+
+    public int _zoom() {
+        return zoom;
     }
 
     public Font getApi() {

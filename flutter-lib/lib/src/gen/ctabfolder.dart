@@ -5,6 +5,7 @@ import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/ctabitem.dart';
+import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/rectangle.dart';
 import '../impl/ctabfolder_evolve.dart';

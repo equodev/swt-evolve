@@ -17,7 +17,6 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
   final bool useDarkTheme = getCurrentTheme();
   final shouldShowImage = false;
 
-
   /// Helper method to build an image widget from VImage using ImageUtils
   Widget? _buildImageWidget(VImage? image) {
     return ImageUtils.buildVImage(

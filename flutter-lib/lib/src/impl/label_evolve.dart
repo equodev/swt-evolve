@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../gen/color.dart';
+import '../gen/font.dart';
 import '../gen/label.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
@@ -8,10 +9,10 @@ import '../impl/control_evolve.dart';
 import '../impl/color_utils.dart';
 import '../styles.dart';
 import './utils/image_utils.dart';
+import './utils/font_utils.dart';
 
 class LabelImpl<T extends LabelSwt, V extends VLabel>
     extends ControlImpl<T, V> {
-
   /// Helper method to build an image widget from VImage using ImageUtils
   Widget? _buildImageWidget(VImage? image, bool enabled) {
     return ImageUtils.buildVImage(
@@ -24,6 +25,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
       renderAsIcon: false,
     );
   }
+
   @override
   Widget build(BuildContext context) {
     final text = state.text ?? '';
@@ -35,7 +37,8 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
 
     if (state.style.has(SWT.SEPARATOR)) {
       child = SeparatorLabel(
-        direction: state.style.has(SWT.VERTICAL) ? Axis.vertical : Axis.horizontal,
+        direction:
+            state.style.has(SWT.VERTICAL) ? Axis.vertical : Axis.horizontal,
         backgroundColor: backgroundColor,
       );
     } else {
@@ -48,6 +51,8 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
         backgroundColor: backgroundColor,
         enabled: enabled,
         buildImageWidget: _buildImageWidget,
+        vFont: state.font,
+        textColor: state.foreground,
       );
     }
 
@@ -85,18 +90,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
 
   Color? _getBackgroundColor(BuildContext context) {
     // If there's a background color configured from Java, use it
-    if (state.background != null) {
-      final vColor = state.background!;
-      return Color.fromARGB(
-        vColor.alpha == 0 ? 255 : vColor.alpha, // If alpha is 0, use full opacity
-        vColor.red,
-        vColor.green,
-        vColor.blue,
-      );
-    }
-
-    // If no color is configured, use transparent to inherit from shell/parent
-    return Colors.transparent;
+    return colorFromVColor(state.background, defaultColor: Colors.transparent);
   }
 
   void _handleMouseEnter() {
@@ -155,10 +149,12 @@ class TextLabel extends StatelessWidget {
   final TextAlign alignment;
   final bool wrap;
   final bool vertical;
-  final dynamic image;
+  final VImage? image;
   final Color? backgroundColor;
   final bool enabled;
   final Widget? Function(VImage?, bool)? buildImageWidget;
+  final VFont? vFont;
+  final VColor? textColor;
 
   const TextLabel({
     super.key,
@@ -170,20 +166,34 @@ class TextLabel extends StatelessWidget {
     this.backgroundColor,
     this.enabled = true,
     this.buildImageWidget,
+    this.vFont,
+    this.textColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Get text color from VColor or use theme default
+    final color = colorFromVColor(textColor,
+        defaultColor: Theme.of(context).textTheme.bodyMedium?.color);
+
+    // Create TextStyle from VFont using FontUtils or use defaults
+    final textStyle = FontUtils.textStyleFromVFont(
+      vFont,
+      context,
+      color: color,
+    );
+
+    // Print font data for debugging (optional)
+    if (vFont != null) {
+      FontUtils.printFontData(vFont, context: 'Label');
+    }
+
     Widget textWidget = Text(
       text,
       textAlign: alignment,
       softWrap: wrap,
       overflow: wrap ? TextOverflow.visible : TextOverflow.ellipsis,
-      style: TextStyle(
-        color: Theme.of(context).textTheme.bodyMedium?.color,
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-      ),
+      style: textStyle,
     );
 
     if (vertical) {

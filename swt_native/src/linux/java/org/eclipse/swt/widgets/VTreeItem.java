@@ -40,9 +40,11 @@ public class VTreeItem extends VItem {
         ((DartTreeItem) impl).isExpanded = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Font getFont() {
-        return ((DartTreeItem) impl).font;
+        Font val = ((DartTreeItem) impl).font;
+        if (val != null && !(val.getImpl() instanceof DartFont))
+            return null;
+        return val;
     }
 
     public void setFont(Font value) {

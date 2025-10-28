@@ -3619,6 +3619,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         boolean set = false;
+        this.foreground = color;
         set = !getForeground().equals(color);
         if (set) {
             if (color == null) {

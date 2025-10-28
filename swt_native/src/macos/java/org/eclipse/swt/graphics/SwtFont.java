@@ -285,12 +285,8 @@ public final class SwtFont extends SwtResource implements IFont {
     public static Font cocoa_new(Device device, NSFont handle) {
         Font font = new Font(device);
         font.handle = handle;
-        /*
-	 * When created this way, Font doesn't own its .handle, and
-	 * for this reason it can't be disposed. Tell leak detector
-	 * to just ignore it.
-	 */
-        ((SwtResource) font.getImpl()).ignoreNonDisposed();
+        ///*	 * When created this way, Font doesn't own its .handle, and	 * for this reason it can't be disposed. Tell leak detector	 * to just ignore it.	 */font.ignoreNonDisposed();
+        ;
         return font;
     }
 
@@ -378,6 +374,10 @@ public final class SwtFont extends SwtResource implements IFont {
         if (isDisposed())
             return "Font {*DISPOSED*}";
         return "Font {" + getApi().handle + "}";
+    }
+
+    public FontMetrics _metrics() {
+        return metrics;
     }
 
     public Font getApi() {

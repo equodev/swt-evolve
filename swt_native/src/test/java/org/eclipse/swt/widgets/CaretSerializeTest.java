@@ -27,6 +27,7 @@ class CaretSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Caret")
                .containsEntry("style", w.getStyle());
+        assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
         assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }

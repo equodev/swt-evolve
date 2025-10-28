@@ -105,7 +105,7 @@ public class VCLabel extends VCanvas {
     }
 
     public String getText() {
-        return ((DartCLabel) impl).text;
+        return ((DartCLabel) impl).getText();
     }
 
     public void setText(String value) {

@@ -407,7 +407,9 @@ public class SwtPath extends SwtResource implements IPath {
             attrStr.id = attrStr.initWithString(str).id;
             attrStr.beginEditing();
             attrStr.addAttribute(OS.NSFontAttributeName, font.handle, range);
-            ((SwtFont) font.getImpl()).addTraits(attrStr, range);
+            if (font.getImpl() instanceof SwtFont) {
+                ((SwtFont) font.getImpl()).addTraits(attrStr, range);
+            }
             attrStr.endEditing();
             textStorage.setAttributedString(attrStr);
             attrStr.release();
