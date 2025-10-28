@@ -31,6 +31,7 @@ class TableItemSerializeTest extends SerializeTestBase {
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("checked").equalsTo(w.getChecked(), orAbsentIfFalse));
+        assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("grayed").equalsTo(w.getGrayed(), orAbsentIfFalse));
         assertJ.satisfies(node("imageIndent").equalsTo(w.getImageIndent(), orAbsentIf0));

@@ -28,7 +28,7 @@ public class VItem extends VWidget {
 
     @JsonAttribute(nullable = false)
     public String getText() {
-        return ((DartItem) impl).text;
+        return ((DartItem) impl).getText();
     }
 
     public void setText(String value) {

@@ -2,7 +2,7 @@ package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
 
-public interface IFontData {
+public interface IFontData extends ImplFontData {
 
     /**
      * Compares the argument to the receiver, and returns true

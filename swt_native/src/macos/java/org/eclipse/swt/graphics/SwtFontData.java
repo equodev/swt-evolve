@@ -421,6 +421,18 @@ public final class SwtFontData implements IFontData {
         return buffer.toString();
     }
 
+    public String _lang() {
+        return lang;
+    }
+
+    public String _country() {
+        return country;
+    }
+
+    public String _variant() {
+        return variant;
+    }
+
     public FontData getApi() {
         if (api == null)
             api = FontData.createApi(this);

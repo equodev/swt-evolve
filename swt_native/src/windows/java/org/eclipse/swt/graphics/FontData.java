@@ -18,6 +18,7 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class describe operating system fonts.
@@ -79,7 +80,7 @@ public final class FontData {
      */
     public FontData() {
         this((IFontData) null);
-        setImpl(new SwtFontData(this));
+        setImpl(Config.isEquo(FontData.class) ? new DartFontData(this) : new SwtFontData(this));
     }
 
     /**
@@ -114,7 +115,7 @@ public final class FontData {
      */
     public FontData(String string) {
         this((IFontData) null);
-        setImpl(new SwtFontData(string, this));
+        setImpl(Config.isEquo(FontData.class) ? new DartFontData(string, this) : new SwtFontData(string, this));
     }
 
     /**
@@ -133,13 +134,13 @@ public final class FontData {
      */
     public FontData(String name, int height, int style) {
         this((IFontData) null);
-        setImpl(new SwtFontData(name, height, style, this));
+        setImpl(Config.isEquo(FontData.class) ? new DartFontData(name, height, style, this) : new SwtFontData(name, height, style, this));
     }
 
     /*public*/
     FontData(String name, float height, int style) {
         this((IFontData) null);
-        setImpl(new SwtFontData(name, height, style, this));
+        setImpl(Config.isEquo(FontData.class) ? new DartFontData(name, height, style, this) : new SwtFontData(name, height, style, this));
     }
 
     /**

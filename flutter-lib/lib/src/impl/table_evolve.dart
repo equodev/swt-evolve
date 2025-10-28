@@ -8,6 +8,7 @@ import '../gen/event.dart';
 import '../gen/table.dart';
 import '../gen/tableitem.dart';
 import '../gen/tablecolumn.dart';
+import 'utils/font_utils.dart';
 
 class TableImpl<T extends TableSwt, V extends VTable>
     extends CompositeImpl<T, V> {
@@ -30,7 +31,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
     Color defaultBackgroundColor =
         useDarkTheme ? const Color(0xFF1D1D1D) : Colors.white;
     Color defaultRowTextColor = useDarkTheme ? Colors.white : Colors.black;
-
     Color borderColor =
         useDarkTheme ? const Color(0xFF333333) : Colors.grey.shade300;
     Color headerBackgroundColor =
@@ -38,6 +38,17 @@ class TableImpl<T extends TableSwt, V extends VTable>
     Color headerTextColor = useDarkTheme ? Colors.white : Colors.black;
     Color alternateRowColor =
         useDarkTheme ? const Color(0xFF121212) : const Color(0xFFF5F5F5);
+
+    // Get text color from Table foreground or use default
+    final finalHeaderTextColor =
+        colorFromVColor(state.foreground, defaultColor: headerTextColor);
+
+    // Create TextStyle from Table VFont
+    final headerTextStyle = FontUtils.textStyleFromVFont(
+      state.font,
+      context,
+      color: finalHeaderTextColor,
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -69,11 +80,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
                               alignment: Alignment.centerLeft,
                               child: Text(
                                 column.text ?? "",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  color: headerTextColor,
-                                ),
+                                style: headerTextStyle,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ))
@@ -144,9 +151,14 @@ class TableImpl<T extends TableSwt, V extends VTable>
       defaultColor: index % 2 == 1 ? alternateRowColor : defaultBackgroundColor,
     );
 
-    Color rowTextColor = colorFromVColor(
-      item.foreground,
-      defaultColor: defaultTextColor,
+    Color rowTextColor =
+        colorFromVColor(item.foreground, defaultColor: defaultTextColor);
+
+    // Create TextStyle from item font or use table font as fallback
+    final rowTextStyle = FontUtils.textStyleFromVFont(
+      item.font ?? state.font,
+      context,
+      color: rowTextColor,
     );
 
     List<Widget> rowCells = [];
@@ -161,10 +173,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
           alignment: Alignment.centerLeft,
           child: Text(
             i < cellTexts.length ? (cellTexts[i] ?? "") : "",
-            style: TextStyle(
-              fontSize: 13,
-              color: rowTextColor,
-            ),
+            style: rowTextStyle,
             overflow: TextOverflow.ellipsis,
           ),
         ),

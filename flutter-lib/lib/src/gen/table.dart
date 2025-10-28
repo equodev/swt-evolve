@@ -4,6 +4,7 @@ import '../comm/comm.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
+import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/rectangle.dart';
 import '../gen/tablecolumn.dart';

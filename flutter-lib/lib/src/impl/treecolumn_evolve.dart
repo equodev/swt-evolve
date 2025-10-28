@@ -53,33 +53,40 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
           e.height = 20;
           widget.sendSelectionSelection(state, e);
         },
-        onLongPressStart: moveable ? (details) {
-          setState(() {
-            _isDragging = true;
-            _startDragOffset = details.localPosition.dx;
-          });
-        } : null,
-        onLongPressMoveUpdate: moveable ? (details) {
-          if (_isDragging) {
-            // Track drag movement for column reordering
-            final dragDistance = details.localPosition.dx - _startDragOffset;
-            if (dragDistance.abs() > 10) {
-              // Trigger column move event when significant movement detected
-              var e = VEvent();
-              e.x = details.localPosition.dx.round();
-              e.y = details.localPosition.dy.round();
-              e.width = width;
-              e.height = 20;
-              widget.sendControlMove(state, e);
-            }
-          }
-        } : null,
-        onLongPressEnd: moveable ? (details) {
-          setState(() {
-            _isDragging = false;
-            _startDragOffset = 0.0;
-          });
-        } : null,
+        onLongPressStart: moveable
+            ? (details) {
+                setState(() {
+                  _isDragging = true;
+                  _startDragOffset = details.localPosition.dx;
+                });
+              }
+            : null,
+        onLongPressMoveUpdate: moveable
+            ? (details) {
+                if (_isDragging) {
+                  // Track drag movement for column reordering
+                  final dragDistance =
+                      details.localPosition.dx - _startDragOffset;
+                  if (dragDistance.abs() > 10) {
+                    // Trigger column move event when significant movement detected
+                    var e = VEvent();
+                    e.x = details.localPosition.dx.round();
+                    e.y = details.localPosition.dy.round();
+                    e.width = width;
+                    e.height = 20;
+                    widget.sendControlMove(state, e);
+                  }
+                }
+              }
+            : null,
+        onLongPressEnd: moveable
+            ? (details) {
+                setState(() {
+                  _isDragging = false;
+                  _startDragOffset = 0.0;
+                });
+              }
+            : null,
         child: Container(
           width: width.toDouble(),
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
@@ -122,8 +129,10 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
                       _startDragOffset = details.localPosition.dx;
                     },
                     onHorizontalDragUpdate: (details) {
-                      final double delta = details.localPosition.dx - _startDragOffset;
-                      final int newWidth = (width + delta.round()).clamp(50, 500);
+                      final double delta =
+                          details.localPosition.dx - _startDragOffset;
+                      final int newWidth =
+                          (width + delta.round()).clamp(50, 500);
 
                       if (newWidth != width) {
                         setState(() {
@@ -146,7 +155,9 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
                         color: Colors.transparent,
                         border: Border(
                           right: BorderSide(
-                            color: useDarkTheme ? Colors.white24 : Colors.grey.shade500,
+                            color: useDarkTheme
+                                ? Colors.white24
+                                : Colors.grey.shade500,
                             width: 1.0,
                           ),
                         ),

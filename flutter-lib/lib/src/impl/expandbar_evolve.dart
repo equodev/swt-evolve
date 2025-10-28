@@ -11,7 +11,6 @@ import '../gen/composite.dart';
 
 class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
     extends CompositeImpl<T, V> {
-
   @override
   Widget buildComposite() {
     final children = state.children;
@@ -23,9 +22,7 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: children
-          .map((child) => mapWidgetFromValue(child))
-          .toList(),
+      children: children.map((child) => mapWidgetFromValue(child)).toList(),
     );
   }
 
@@ -51,12 +48,12 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
     } else {
       expandBar = SingleChildScrollView(
         child: Column(
-          children: expandItems.map((item) =>
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 2),
-                child: item,
-              )
-          ).toList(),
+          children: expandItems
+              .map((item) => Padding(
+                    padding: EdgeInsets.symmetric(vertical: 2),
+                    child: item,
+                  ))
+              .toList(),
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
         ),
@@ -186,11 +183,17 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     width: double.infinity,
-                    height: (expandItem.height != null && expandItem.height! > 0)
-                        ? expandItem.height!.toDouble()
-                        : (expandItem.control is VComposite && (expandItem.control as VComposite).bounds != null)
-                            ? (expandItem.control as VComposite).bounds!.height.toDouble()
-                            : null,
+                    height:
+                        (expandItem.height != null && expandItem.height! > 0)
+                            ? expandItem.height!.toDouble()
+                            : (expandItem.control is VComposite &&
+                                    (expandItem.control as VComposite).bounds !=
+                                        null)
+                                ? (expandItem.control as VComposite)
+                                    .bounds!
+                                    .height
+                                    .toDouble()
+                                : null,
                     child: Container(
                       alignment: Alignment.topLeft,
                       child: contentWidget,
@@ -204,4 +207,3 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
     );
   }
 }
-

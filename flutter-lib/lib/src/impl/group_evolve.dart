@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:swtflutter/src/gen/font.dart';
+import 'package:swtflutter/src/gen/color.dart';
 import '../gen/control.dart';
 import '../gen/group.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
 import 'color_utils.dart';
+import 'utils/font_utils.dart';
 
 class GroupImpl<T extends GroupSwt, V extends VGroup>
     extends CompositeImpl<T, V> {
@@ -32,6 +35,8 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
           width: state.bounds?.width.toDouble(),
           height: state.bounds?.height.toDouble(),
           children: children,
+          vFont: state.font,
+          textColor: state.foreground,
         ),
       ),
     );
@@ -58,6 +63,8 @@ class _StyledGroup extends StatelessWidget {
   final double? width;
   final double? height;
   final List<VControl>? children;
+  final VFont? vFont;
+  final VColor? textColor;
 
   const _StyledGroup({
     Key? key,
@@ -65,12 +72,24 @@ class _StyledGroup extends StatelessWidget {
     this.width,
     this.height,
     this.children,
+    this.vFont,
+    this.textColor,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final borderColor = getBorderColorFocused();
-    final foregroundColor = getForeground();
+
+    // Get text color from VColor or use default
+    final finalTextColor =
+        colorFromVColor(textColor, defaultColor: getForeground());
+
+    // Create TextStyle from VFont
+    final textStyle = FontUtils.textStyleFromVFont(
+      vFont,
+      context,
+      color: finalTextColor,
+    );
 
     // Build children widgets with horizontal layout
     List<Widget> spacedChildren = [];
@@ -95,12 +114,7 @@ class _StyledGroup extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 4),
               child: Text(
                 text,
-                style: TextStyle(
-                  color: foregroundColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.1,
-                ),
+                style: textStyle,
               ),
             ),
           // Border container

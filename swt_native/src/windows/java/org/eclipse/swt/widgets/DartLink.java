@@ -167,9 +167,6 @@ public class DartLink extends DartControl implements ILink {
      */
     public Color getLinkForeground() {
         checkWidget();
-        if (linkForeground != -1) {
-            return SwtColor.win32_new(display, linkForeground);
-        }
         return this._linkForeground;
     }
 

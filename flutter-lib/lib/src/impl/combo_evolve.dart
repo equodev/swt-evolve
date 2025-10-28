@@ -200,7 +200,10 @@ class StyledDropdownButton extends StatelessWidget {
     final Color borderColor = getBorderColor();
     final Color iconColor = getIconColor();
 
-    final String? dropdownValue = (value != null && items.isNotEmpty && items.contains(value)) ? value : null;
+    final String? dropdownValue =
+        (value != null && items.isNotEmpty && items.contains(value))
+            ? value
+            : null;
 
     if (items.isEmpty) {
       return Container(
@@ -212,7 +215,8 @@ class StyledDropdownButton extends StatelessWidget {
         ),
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Text(value ?? '', style: TextStyle(color: textColor, fontSize: 12)),
+        child:
+            Text(value ?? '', style: TextStyle(color: textColor, fontSize: 12)),
       );
     }
 
@@ -246,10 +250,14 @@ class StyledDropdownButton extends StatelessWidget {
                   return DropdownMenuItem<String>(
                     value: item,
                     child: ColoredBox(
-                      color: isSelected ? getBackgroundSelected() : Colors.transparent,
+                      color: isSelected
+                          ? getBackgroundSelected()
+                          : Colors.transparent,
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        child: Text(item, style: TextStyle(color: textColor, fontSize: 12)),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        child: Text(item,
+                            style: TextStyle(color: textColor, fontSize: 12)),
                       ),
                     ),
                   );
@@ -356,8 +364,11 @@ class StyledSimpleCombo extends StatelessWidget {
                       onTap: () => onChanged?.call(item),
                       child: Container(
                         height: 32,
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        color: isSelected ? getBackgroundSelected() : Colors.transparent,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        color: isSelected
+                            ? getBackgroundSelected()
+                            : Colors.transparent,
                         alignment: Alignment.centerLeft,
                         child: Text(
                           item,
@@ -413,7 +424,10 @@ class StyledEditableCombo extends StatelessWidget {
     final Color iconColor = getIconColor();
 
     // Only use value if it exists in items, otherwise use null
-    final String? dropdownValue = (value != null && items.isNotEmpty && items.contains(value)) ? value : null;
+    final String? dropdownValue =
+        (value != null && items.isNotEmpty && items.contains(value))
+            ? value
+            : null;
 
     return MouseRegion(
       onEnter: (_) => onMouseEnter?.call(),
@@ -444,7 +458,8 @@ class StyledEditableCombo extends StatelessWidget {
                     style: TextStyle(color: textColor, fontSize: 12),
                     decoration: InputDecoration(
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       isDense: true,
                       counterText: '',
                     ),
@@ -462,10 +477,15 @@ class StyledEditableCombo extends StatelessWidget {
                         return DropdownMenuItem<String>(
                           value: item,
                           child: ColoredBox(
-                            color: isSelected ? getBackgroundSelected() : Colors.transparent,
+                            color: isSelected
+                                ? getBackgroundSelected()
+                                : Colors.transparent,
                             child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                              child: Text(item, style: TextStyle(color: textColor, fontSize: 12)),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4),
+                              child: Text(item,
+                                  style: TextStyle(
+                                      color: textColor, fontSize: 12)),
                             ),
                           ),
                         );
@@ -477,7 +497,8 @@ class StyledEditableCombo extends StatelessWidget {
                       dropdownColor: backgroundColor,
                       icon: Padding(
                         padding: const EdgeInsets.only(right: 8),
-                        child: Icon(Icons.arrow_drop_down, color: iconColor, size: 20),
+                        child: Icon(Icons.arrow_drop_down,
+                            color: iconColor, size: 20),
                       ),
                     ),
                   ),

@@ -83,7 +83,7 @@ public class VToolItem extends VItem {
     }
 
     public String getToolTipText() {
-        return ((DartToolItem) impl).toolTipText;
+        return ((DartToolItem) impl).getToolTipText();
     }
 
     public void setToolTipText(String value) {

@@ -3,7 +3,7 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 
-public interface IFont extends IResource {
+public interface IFont extends IResource, ImplFont {
 
     /**
      * Compares the argument to the receiver, and returns true

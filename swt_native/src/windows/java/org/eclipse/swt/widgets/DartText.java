@@ -908,9 +908,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public String getText() {
         checkWidget();
-        if (segments != null) {
-        }
-        return this.text;
+        return this.text != null ? this.text : "";
     }
 
     /**

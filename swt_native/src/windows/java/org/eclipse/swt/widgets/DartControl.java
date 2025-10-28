@@ -1130,7 +1130,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Color getForeground() {
         checkWidget();
-        return SwtColor.win32_new(display, getForegroundPixel());
+        return this._foreground;
     }
 
     int getForegroundPixel() {
@@ -2848,7 +2848,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (newFont != null) {
             if (newFont.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            newFont = SwtFont.win32_new(newFont, getShell().nativeZoom);
+            newFont = DartFont.win32_new(newFont, getShell().nativeZoom);
         }
         long hFont = 0;
         if (newFont != null) {
@@ -3998,7 +3998,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Font font = control.getImpl()._font();
         if (font == null) {
         } else {
-            control.setFont(SwtFont.win32_new(font, newZoom));
+            control.setFont(DartFont.win32_new(font, newZoom));
         }
     }
 

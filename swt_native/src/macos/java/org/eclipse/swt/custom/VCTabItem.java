@@ -38,9 +38,11 @@ public class VCTabItem extends VItem {
         ((DartCTabItem) impl).disabledImage = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Font getFont() {
-        return ((DartCTabItem) impl).font;
+        Font val = ((DartCTabItem) impl).font;
+        if (val != null && !(val.getImpl() instanceof DartFont))
+            return null;
+        return val;
     }
 
     public void setFont(Font value) {
@@ -72,7 +74,7 @@ public class VCTabItem extends VItem {
     }
 
     public String getToolTipText() {
-        return ((DartCTabItem) impl).toolTipText;
+        return ((DartCTabItem) impl).getToolTipText();
     }
 
     public void setToolTipText(String value) {

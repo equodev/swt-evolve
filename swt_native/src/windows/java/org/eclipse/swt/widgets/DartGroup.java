@@ -214,6 +214,8 @@ public class DartGroup extends DartComposite implements IGroup {
         Rectangle oldRect = getClientAreaInPixels();
         super.setFont(font);
         Rectangle newRect = getClientAreaInPixels();
+        if (newRect == null)
+            return;
         if (!oldRect.equals(newRect))
             sendResize();
     }

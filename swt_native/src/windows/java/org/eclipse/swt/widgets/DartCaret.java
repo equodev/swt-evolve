@@ -145,10 +145,6 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public Font getFont() {
         checkWidget();
-        if (font == null) {
-            long hFont = defaultFont();
-            return SwtFont.win32_new(display, hFont, getZoom());
-        }
         return font;
     }
 
@@ -431,7 +427,7 @@ public class DartCaret extends DartWidget implements ICaret {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Shell shell = parent.getShell();
-        this.font = font == null ? null : SwtFont.win32_new(font, shell.nativeZoom);
+        this.font = font == null ? null : DartFont.win32_new(font, shell.nativeZoom);
         if (hasFocus())
             setIMEFont();
     }

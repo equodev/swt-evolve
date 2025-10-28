@@ -22,6 +22,9 @@ VText _$VTextFromJson(Map<String, dynamic> json) => VText()
   ..capture = json['capture'] as bool?
   ..dragDetect = json['dragDetect'] as bool?
   ..enabled = json['enabled'] as bool?
+  ..font = json['font'] == null
+      ? null
+      : VFont.fromJson(json['font'] as Map<String, dynamic>)
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
@@ -57,6 +60,7 @@ Map<String, dynamic> _$VTextToJson(VText instance) => <String, dynamic>{
       'capture': instance.capture,
       'dragDetect': instance.dragDetect,
       'enabled': instance.enabled,
+      'font': instance.font,
       'foreground': instance.foreground,
       'orientation': instance.orientation,
       'redraw': instance.redraw,

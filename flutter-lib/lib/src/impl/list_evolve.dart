@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:swtflutter/src/gen/color.dart';
+import 'package:swtflutter/src/gen/font.dart';
 import '../gen/event.dart';
 import '../gen/list.dart';
 import '../gen/swt.dart';
@@ -6,6 +8,7 @@ import '../gen/widget.dart';
 import '../impl/scrollable_evolve.dart';
 import '../styles.dart';
 import 'color_utils.dart';
+import 'utils/font_utils.dart';
 
 class ListImpl<T extends ListSwt, V extends VList>
     extends ScrollableImpl<T, V> {
@@ -21,6 +24,8 @@ class ListImpl<T extends ListSwt, V extends VList>
       isMultiSelect: state.style.has(SWT.MULTI),
       width: state.bounds?.width.toDouble(),
       height: state.bounds?.height.toDouble(),
+      vFont: state.font,
+      textColor: state.foreground,
       onSelectionChanged: (selectedItems) {
         setState(() {
           state.selection = _convertItemsToIndices(state.items!, selectedItems);
@@ -46,7 +51,8 @@ class ListImpl<T extends ListSwt, V extends VList>
         .toList();
   }
 
-  List<int> _convertItemsToIndices(List<String> items, List<String> selectedItems) {
+  List<int> _convertItemsToIndices(
+      List<String> items, List<String> selectedItems) {
     return selectedItems
         .map((item) => items.indexOf(item))
         .where((index) => index != -1)
@@ -67,6 +73,8 @@ class _StyledList extends StatefulWidget {
   final VoidCallback onFocusOut;
   final double? width;
   final double? height;
+  final VFont? vFont;
+  final VColor? textColor;
 
   const _StyledList({
     Key? key,
@@ -82,6 +90,8 @@ class _StyledList extends StatefulWidget {
     required this.onFocusOut,
     this.width,
     this.height,
+    this.vFont,
+    this.textColor,
   }) : super(key: key);
 
   @override
@@ -126,6 +136,8 @@ class _StyledListState extends State<_StyledList> {
                   item: item,
                   isSelected: isSelected,
                   enabled: widget.enabled,
+                  vFont: widget.vFont,
+                  textColor: widget.textColor,
                   onTap: () => _handleItemTap(item),
                   onDoubleTap: () => widget.onItemDoubleClick(item),
                 );
@@ -159,6 +171,8 @@ class _ListItem extends StatelessWidget {
   final String item;
   final bool isSelected;
   final bool enabled;
+  final VFont? vFont;
+  final VColor? textColor;
   final VoidCallback onTap;
   final VoidCallback onDoubleTap;
 
@@ -167,19 +181,27 @@ class _ListItem extends StatelessWidget {
     required this.item,
     required this.isSelected,
     required this.enabled,
+    this.vFont,
+    this.textColor,
     required this.onTap,
     required this.onDoubleTap,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = isSelected
-        ? getBackgroundSelected()
-        : getBackground();
+    final backgroundColor =
+        isSelected ? getBackgroundSelected() : getBackground();
 
-    final textColor = enabled
-        ? getForeground()
-        : getForegroundDisabled();
+    // Get text color - if textColor (VColor) is provided, use it, otherwise use default
+    final finalTextColor = colorFromVColor(textColor,
+        defaultColor: (enabled ? getForeground() : getForegroundDisabled()));
+
+    // Create TextStyle from VFont
+    final textStyle = FontUtils.textStyleFromVFont(
+      vFont,
+      context,
+      color: finalTextColor,
+    );
 
     return GestureDetector(
       onTap: onTap,
@@ -191,11 +213,7 @@ class _ListItem extends StatelessWidget {
         alignment: Alignment.centerLeft,
         child: Text(
           item,
-          style: TextStyle(
-            color: textColor,
-            fontSize: 14,
-            fontWeight: FontWeight.normal,
-          ),
+          style: textStyle,
           overflow: TextOverflow.ellipsis,
         ),
       ),

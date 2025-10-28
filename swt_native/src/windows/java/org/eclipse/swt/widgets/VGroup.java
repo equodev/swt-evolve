@@ -17,7 +17,7 @@ public class VGroup extends VComposite {
 
     @JsonAttribute(nullable = false)
     public String getText() {
-        return ((DartGroup) impl).text;
+        return ((DartGroup) impl).getText();
     }
 
     public void setText(String value) {

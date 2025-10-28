@@ -832,12 +832,6 @@ public class DartText extends DartScrollable implements IText {
      */
     public String getText() {
         checkWidget();
-        if ((getApi().style & SWT.SINGLE) != 0) {
-            char[] editText = getEditText();
-            if (editText != null) {
-                return new String(editText);
-            }
-        }
         return this.text != null ? this.text : "";
     }
 

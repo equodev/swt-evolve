@@ -743,7 +743,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         }
         Font oldFont = this.font;
         Shell shell = parent.getShell();
-        Font newFont = (font == null ? font : SwtFont.win32_new(font, shell.nativeZoom));
+        Font newFont = (font == null ? font : DartFont.win32_new(font, shell.nativeZoom));
         if (oldFont == newFont)
             return;
         this.font = newFont;
@@ -810,7 +810,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         Font oldFont = cellFont[index];
         if (oldFont == font)
             return;
-        cellFont[index] = font == null ? font : SwtFont.win32_new(font, getApi().nativeZoom);
+        cellFont[index] = font == null ? font : DartFont.win32_new(font, getApi().nativeZoom);
         if (oldFont != null && oldFont.equals(font))
             return;
         if (font != null)
@@ -1113,13 +1113,11 @@ public class DartTableItem extends DartItem implements ITableItem {
         if (index == 0) {
             if (string.equals(text))
                 return;
-            {
-                int count = Math.max(1, parent.getColumnCount());
-                if (strings == null) {
-                    strings = new String[count];
-                }
-                strings[0] = string;
+            int count = Math.max(1, parent.getColumnCount());
+            if (strings == null) {
+                strings = new String[count];
             }
+            strings[0] = string;
             super.setText(string);
         }
         int count = Math.max(1, parent.getColumnCount());
@@ -1178,7 +1176,7 @@ public class DartTableItem extends DartItem implements ITableItem {
             Shell shell = ((DartTableItem) tableItem.getImpl()).parent.getShell();
             for (int index = 0; index < cellFonts.length; index++) {
                 Font cellFont = cellFonts[index];
-                cellFonts[index] = cellFont == null ? null : SwtFont.win32_new(cellFont, shell.nativeZoom);
+                cellFonts[index] = cellFont == null ? null : DartFont.win32_new(cellFont, shell.nativeZoom);
             }
         }
     }

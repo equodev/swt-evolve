@@ -38,7 +38,8 @@ class AssetsManager {
     return null;
   }
 
-  static Future<Object?> _loadFromExternalPath(String filename, String assetsPath) async {
+  static Future<Object?> _loadFromExternalPath(
+      String filename, String assetsPath) async {
     final base = filename.split('.').first;
     final formats = ['svg', 'png', 'jpg', 'jpeg'];
 
@@ -59,5 +60,4 @@ class AssetsManager {
     }
     return null;
   }
-
 }

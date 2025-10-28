@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
+import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/widget.dart';
 import '../impl/caret_evolve.dart';
@@ -21,6 +22,7 @@ class VCaret extends VWidget {
     swt = "Caret";
   }
 
+  VFont? font;
   VImage? image;
   bool? visible;
 

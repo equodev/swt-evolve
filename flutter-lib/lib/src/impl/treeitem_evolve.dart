@@ -8,7 +8,9 @@ import '../impl/item_evolve.dart';
 import '../impl/widget_config.dart';
 import '../gen/event.dart';
 import '../gen/swt.dart';
+import 'color_utils.dart';
 import 'icons_map.dart';
+import 'utils/font_utils.dart';
 
 class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     extends ItemImpl<T, V> {
@@ -48,14 +50,15 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final Color textColor = selected
         ? (useDarkTheme ? Colors.white : Colors.white)
         : (useDarkTheme ? Colors.white : Colors.black87);
-    final Color bgColor = selected
-        ? const Color(0xFF2196F3)
-        : Colors.transparent;
+    final Color bgColor =
+        selected ? const Color(0xFF2196F3) : Colors.transparent;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      onEnter: (_) => _context?.parentTree.sendMouseTrackMouseEnter(_context!.parentTreeValue, null),
-      onExit: (_) => _context?.parentTree.sendMouseTrackMouseExit(_context!.parentTreeValue, null),
+      onEnter: (_) => _context?.parentTree
+          .sendMouseTrackMouseEnter(_context!.parentTreeValue, null),
+      onExit: (_) => _context?.parentTree
+          .sendMouseTrackMouseExit(_context!.parentTreeValue, null),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -74,11 +77,12 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                 // Set bounds information to prevent NPE in JFace
                 e.x = 0;
                 e.y = 0;
-                e.width = 100;  // Default width
-                e.height = 20;  // Default height for tree item
+                e.width = 100; // Default width
+                e.height = 20; // Default height for tree item
               }
 
-              _context?.parentTree.sendSelectionSelection(_context!.parentTreeValue, e);
+              _context?.parentTree
+                  .sendSelectionSelection(_context!.parentTreeValue, e);
             },
             onDoubleTap: () {
               // Create a proper Event object for double-click selection
@@ -90,11 +94,12 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                 // Set bounds information to prevent NPE in JFace
                 e.x = 0;
                 e.y = 0;
-                e.width = 100;  // Default width
-                e.height = 20;  // Default height for tree item
+                e.width = 100; // Default width
+                e.height = 20; // Default height for tree item
               }
 
-              _context?.parentTree.sendSelectionDefaultSelection(_context!.parentTreeValue, e);
+              _context?.parentTree
+                  .sendSelectionDefaultSelection(_context!.parentTreeValue, e);
             },
             child: Container(
               decoration: BoxDecoration(
@@ -108,64 +113,66 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                   // Expand/collapse icon
                   hasChildren
                       ? MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: () {
-                        if (expanded) {
-                          setState(() {
-                            state.expanded = false;
-                          });
+                          cursor: SystemMouseCursors.click,
+                          child: GestureDetector(
+                            onTap: () {
+                              if (expanded) {
+                                setState(() {
+                                  state.expanded = false;
+                                });
 
-                          // Create event with flat index
-                          var e = VEvent();
-                          if (_context?.treeImpl != null) {
-                            // Use flat index only
-                            e.index = _context!.treeImpl!.findItemIndex(state.id);
-                            e.detail = 0; // Remove level detail
-                            // Set bounds information to prevent NPE in JFace
-                            e.x = 0;
-                            e.y = 0;
-                            e.width = 100;  // Default width
-                            e.height = 20;  // Default height for tree item
-                          }
+                                // Create event with flat index
+                                var e = VEvent();
+                                if (_context?.treeImpl != null) {
+                                  // Use flat index only
+                                  e.index = _context!.treeImpl!
+                                      .findItemIndex(state.id);
+                                  e.detail = 0; // Remove level detail
+                                  // Set bounds information to prevent NPE in JFace
+                                  e.x = 0;
+                                  e.y = 0;
+                                  e.width = 100; // Default width
+                                  e.height = 20; // Default height for tree item
+                                }
 
-                          _context?.parentTree.sendTreeCollapse(
-                              _context!.parentTreeValue,
-                              e
-                          );
-                        } else {
-                          // Don't set expanded state immediately - wait for Java response
-                          // setState(() {
-                          //   state.expanded = true;
-                          // });
-                          // Expanding item at level $level, id=${state.id}
+                                _context?.parentTree.sendTreeCollapse(
+                                    _context!.parentTreeValue, e);
+                              } else {
+                                // Don't set expanded state immediately - wait for Java response
+                                // setState(() {
+                                //   state.expanded = true;
+                                // });
+                                // Expanding item at level $level, id=${state.id}
 
-                          // Create event with flat index and always send expand event
-                          var e = VEvent();
-                          if (_context?.treeImpl != null) {
-                            // Use flat index only
-                            e.index = _context!.treeImpl!.findItemIndex(state.id);
-                            e.detail = 0; // Remove level detail
-                            // Set bounds information to prevent NPE in JFace
-                            e.x = 0;
-                            e.y = 0;
-                            e.width = 100;  // Default width
-                            e.height = 20;  // Default height for tree item
-                          }
+                                // Create event with flat index and always send expand event
+                                var e = VEvent();
+                                if (_context?.treeImpl != null) {
+                                  // Use flat index only
+                                  e.index = _context!.treeImpl!
+                                      .findItemIndex(state.id);
+                                  e.detail = 0; // Remove level detail
+                                  // Set bounds information to prevent NPE in JFace
+                                  e.x = 0;
+                                  e.y = 0;
+                                  e.width = 100; // Default width
+                                  e.height = 20; // Default height for tree item
+                                }
 
-                          _context?.parentTree.sendTreeExpand(
-                              _context!.parentTreeValue,
-                              e
-                          );
-                        }
-                      },
-                      child: Icon(
-                        expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                        size: 16,
-                        color: useDarkTheme ? Colors.white70 : Colors.black54,
-                      ),
-                    ),
-                  )
+                                _context?.parentTree.sendTreeExpand(
+                                    _context!.parentTreeValue, e);
+                              }
+                            },
+                            child: Icon(
+                              expanded
+                                  ? Icons.keyboard_arrow_down
+                                  : Icons.keyboard_arrow_right,
+                              size: 16,
+                              color: useDarkTheme
+                                  ? Colors.white70
+                                  : Colors.black54,
+                            ),
+                          ),
+                        )
                       : const SizedBox(width: 16),
 
                   // Checkbox (if in check mode)
@@ -180,10 +187,13 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                           tristate: true,
                           activeColor: const Color(0xFF6366F1),
                           side: BorderSide(
-                            color: useDarkTheme ? Colors.white70 : Colors.grey.shade600,
+                            color: useDarkTheme
+                                ? Colors.white70
+                                : Colors.grey.shade600,
                             width: 1.5,
                           ),
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
                           onChanged: (value) {
                             setState(() {
                               if (value == null) {
@@ -197,25 +207,26 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                               }
                             });
                             // Use centralized selection management for checkbox too
-                            _context?.treeImpl?.handleTreeItemSelection(state.id);
+                            _context?.treeImpl
+                                ?.handleTreeItemSelection(state.id);
 
                             // Create a proper Event object for checkbox selection
                             var e = VEvent();
                             if (_context?.treeImpl != null) {
                               // Use flat index only
-                              e.index = _context!.treeImpl!.findItemIndex(state.id);
-                              e.detail = SWT.CHECK; // Indicate this is a checkbox event
+                              e.index =
+                                  _context!.treeImpl!.findItemIndex(state.id);
+                              e.detail = SWT
+                                  .CHECK; // Indicate this is a checkbox event
                               // Set bounds information to prevent NPE in JFace
                               e.x = 0;
                               e.y = 0;
-                              e.width = 100;  // Default width
-                              e.height = 20;  // Default height for tree item
+                              e.width = 100; // Default width
+                              e.height = 20; // Default height for tree item
                             }
 
                             _context?.parentTree.sendSelectionSelection(
-                                _context!.parentTreeValue,
-                                e
-                            );
+                                _context!.parentTreeValue, e);
                           },
                         ),
                       ),
@@ -226,30 +237,36 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                     margin: const EdgeInsets.only(right: 4),
                     child: (image != null)
                         ? (getEclipseIcon(image) != null
-                        ? Icon(
-                      getEclipseIcon(image)!,
-                      size: 16,
-                      color: useDarkTheme ? Colors.white70 : Colors.grey.shade700,
-                    )
-                        : (image.toLowerCase().endsWith('.svg')
-                        ? SvgPicture.file(
-                      File(image),
-                      width: 16,
-                      height: 16,
-                      color: useDarkTheme ? Colors.white70 : Colors.grey.shade700,
-                    )
-                        : Image.file(
-                      File(image),
-                      width: 16,
-                      height: 16,
-                    )))
+                            ? Icon(
+                                getEclipseIcon(image)!,
+                                size: 16,
+                                color: useDarkTheme
+                                    ? Colors.white70
+                                    : Colors.grey.shade700,
+                              )
+                            : (image.toLowerCase().endsWith('.svg')
+                                ? SvgPicture.file(
+                                    File(image),
+                                    width: 16,
+                                    height: 16,
+                                    color: useDarkTheme
+                                        ? Colors.white70
+                                        : Colors.grey.shade700,
+                                  )
+                                : Image.file(
+                                    File(image),
+                                    width: 16,
+                                    height: 16,
+                                  )))
                         : Icon(
-                      hasChildren
-                          ? (expanded ? Icons.folder_open : Icons.folder)
-                          : Icons.insert_drive_file,
-                      size: 16,
-                      color: useDarkTheme ? Colors.white70 : Colors.grey.shade700,
-                    ),
+                            hasChildren
+                                ? (expanded ? Icons.folder_open : Icons.folder)
+                                : Icons.insert_drive_file,
+                            size: 16,
+                            color: useDarkTheme
+                                ? Colors.white70
+                                : Colors.grey.shade700,
+                          ),
                   ),
 
                   // Text content - support multi-column layout
@@ -262,8 +279,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           ),
 
           // Child items (if expanded)
-          if (expanded && hasChildren)
-            ...buildChildItems(),
+          if (expanded && hasChildren) ...buildChildItems(),
         ],
       ),
     );
@@ -271,15 +287,16 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
   List<Widget> buildChildItems() {
     final List<VTreeItem> childItems = state.items
-        ?.whereType<VTreeItem>()
-        // Filter out completely empty child items
-        .where((childItem) => 
-            (childItem.text != null && childItem.text!.isNotEmpty) ||
-            (childItem.texts != null && childItem.texts!.any((text) => text.isNotEmpty)) ||
-            // Keep items that might have children even if text is empty
-            (childItem.items != null && childItem.items!.isNotEmpty)
-        )
-        .toList() ?? [];
+            ?.whereType<VTreeItem>()
+            // Filter out completely empty child items
+            .where((childItem) =>
+                (childItem.text != null && childItem.text!.isNotEmpty) ||
+                (childItem.texts != null &&
+                    childItem.texts!.any((text) => text.isNotEmpty)) ||
+                // Keep items that might have children even if text is empty
+                (childItem.items != null && childItem.items!.isNotEmpty))
+            .toList() ??
+        [];
 
     return childItems.map((childItem) {
       return TreeItemContextProvider(
@@ -288,6 +305,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         parentTree: _context!.parentTree,
         parentTreeValue: _context!.parentTreeValue,
         treeImpl: _context?.treeImpl, // Pass tree implementation to children
+        treeFont: _context?.treeFont, // Pass tree font to children
         child: TreeItemSwt(
           value: childItem,
           key: ValueKey('tree_child_item_${childItem.id}'),
@@ -302,11 +320,19 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
     // If no columns defined, show single text (backward compatibility)
     if (columns.isEmpty) {
-      final displayText = text.isNotEmpty ? text : (texts?.isNotEmpty == true ? texts![0] : '');
+      final displayText =
+          text.isNotEmpty ? text : (texts?.isNotEmpty == true ? texts![0] : '');
 
       // Apply custom styling for single column
       final cellTextColor = _getCellTextColor(0, textColor);
       final cellBackgroundColor = _getCellBackgroundColor(0);
+
+      // Create TextStyle from VFont
+      final cellTextStyle = FontUtils.textStyleFromVFont(
+        state.font ?? _context?.treeFont,
+        context,
+        color: cellTextColor,
+      );
 
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -315,11 +341,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             : null,
         child: Text(
           displayText,
-          style: TextStyle(
-            color: cellTextColor,
-            fontSize: 14,
-            fontWeight: _getCellFontWeight(0),
-          ),
+          style: cellTextStyle,
           overflow: TextOverflow.ellipsis,
         ),
       );
@@ -336,7 +358,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         String columnText = '';
         if (columnIndex == 0) {
           // First column: use primary text or first item in texts array
-          columnText = text.isNotEmpty ? text : (texts?.isNotEmpty == true ? texts![0] : '');
+          columnText = text.isNotEmpty
+              ? text
+              : (texts?.isNotEmpty == true ? texts![0] : '');
         } else if (texts != null && columnIndex < texts.length) {
           // Other columns: use corresponding item from texts array
           columnText = texts[columnIndex];
@@ -345,6 +369,13 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         // Apply custom styling for this cell
         final cellTextColor = _getCellTextColor(columnIndex, textColor);
         final cellBackgroundColor = _getCellBackgroundColor(columnIndex);
+
+        // Create TextStyle from VFont
+        final cellTextStyle = FontUtils.textStyleFromVFont(
+          state.font ?? _context?.treeFont,
+          context,
+          color: cellTextColor,
+        );
 
         return SizedBox(
           width: columnWidth,
@@ -355,11 +386,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                 : null,
             child: Text(
               columnText,
-              style: TextStyle(
-                color: cellTextColor,
-                fontSize: 14,
-                fontWeight: _getCellFontWeight(columnIndex),
-              ),
+              style: cellTextStyle,
               textAlign: _getTextAlignForColumn(column.alignment),
               overflow: TextOverflow.ellipsis,
             ),
@@ -394,14 +421,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     //   return _convertSwtColorToFlutter(cellForegroundColors[columnIndex]);
     // }
 
-    // TODO: When foreground property is added to TreeItemValue, implement:
-    // final generalForeground = state.foreground;
-    // if (generalForeground != null) {
-    //   return _convertSwtColorToFlutter(generalForeground);
-    // }
-
-    // For now, use default color
-    return defaultColor;
+    // Use foreground property from TreeItem if available
+    return colorFromVColor(state.foreground, defaultColor: defaultColor);
   }
 
   Color? _getCellBackgroundColor(int columnIndex) {

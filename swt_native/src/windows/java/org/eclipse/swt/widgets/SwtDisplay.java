@@ -2678,7 +2678,8 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             // fill the deprecated fields for backwards compatibility
             this.systemFont = systemFont;
             if (systemFont != null) {
-                this.lfSystemFont = systemFont.getFontData()[0].data;
+                if (systemFont.getImpl() instanceof SwtFont)
+                    this.lfSystemFont = systemFont.getFontData()[0].data;
             }
         }
         return systemFont;

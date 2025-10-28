@@ -2267,7 +2267,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         device.internal_dispose_GC(hDC, null);
         int ascentInPoints = this.ascent;
         int descentInPoints = this.descent;
-        int leadingInPoints = DPIUtil.scaleDown(getDevice(), lptm.tmInternalLeading, ((SwtFont) availableFont.getImpl()).zoom);
+        int leadingInPoints = DPIUtil.scaleDown(getDevice(), lptm.tmInternalLeading, availableFont.getImpl()._zoom());
         if (text.length() != 0) {
             for (StyleItem run : runs[lineIndex]) {
                 if (run.ascentInPoints > ascentInPoints) {
@@ -3420,7 +3420,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         if (oldFont == font)
             return;
         this.font = font;
-        this.nativeZoom = this.font == null ? nativeZoom : ((SwtFont) this.font.getImpl()).zoom;
+        this.nativeZoom = this.font == null ? nativeZoom : this.font.getImpl()._zoom();
         if (oldFont != null && oldFont.equals(font))
             return;
         freeRuns();

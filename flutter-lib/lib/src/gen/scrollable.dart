@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
+import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/rectangle.dart';
 import 'widgets.dart';

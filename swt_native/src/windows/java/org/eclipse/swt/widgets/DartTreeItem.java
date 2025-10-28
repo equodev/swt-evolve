@@ -299,11 +299,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Color getBackground() {
         checkWidget();
-        if (!((DartTree) parent.getImpl()).checkData(this.getApi(), true))
-            error(SWT.ERROR_WIDGET_DISPOSED);
-        if (background == -1)
-            return parent.getBackground();
-        return SwtColor.win32_new(display, background);
+        return this._background;
     }
 
     /**
@@ -473,11 +469,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Color getForeground() {
         checkWidget();
-        if (!((DartTree) parent.getImpl()).checkData(this.getApi(), true))
-            error(SWT.ERROR_WIDGET_DISPOSED);
-        if (foreground == -1)
-            return parent.getForeground();
-        return SwtColor.win32_new(display, foreground);
+        return this._foreground;
     }
 
     /**
@@ -1029,7 +1021,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         }
         Font oldFont = this.font;
         Shell shell = parent.getShell();
-        Font newFont = (font == null ? font : SwtFont.win32_new(font, shell.nativeZoom));
+        Font newFont = (font == null ? font : DartFont.win32_new(font, shell.nativeZoom));
         if (oldFont == newFont)
             return;
         this.font = newFont;
@@ -1087,7 +1079,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         if (oldFont == font)
             return;
         Shell shell = parent.getShell();
-        cellFont[index] = font == null ? font : SwtFont.win32_new(font, shell.nativeZoom);
+        cellFont[index] = font == null ? font : DartFont.win32_new(font, shell.nativeZoom);
         if (oldFont != null && oldFont.equals(font))
             return;
         if (font != null)
@@ -1456,7 +1448,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             Shell shell = ((DartTreeItem) treeItem.getImpl()).parent.getShell();
             for (int index = 0; index < cellFonts.length; index++) {
                 Font cellFont = cellFonts[index];
-                cellFonts[index] = cellFont == null ? null : SwtFont.win32_new(cellFont, shell.nativeZoom);
+                cellFonts[index] = cellFont == null ? null : DartFont.win32_new(cellFont, shell.nativeZoom);
             }
         }
     }

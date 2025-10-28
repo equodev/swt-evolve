@@ -78,9 +78,11 @@ public class VControl extends VWidget {
         ((DartControl) impl).enabled = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Font getFont() {
-        return ((DartControl) impl).font;
+        Font val = ((DartControl) impl).font;
+        if (val != null && !(val.getImpl() instanceof DartFont))
+            return null;
+        return val;
     }
 
     public void setFont(Font value) {
@@ -138,7 +140,7 @@ public class VControl extends VWidget {
     }
 
     public String getToolTipText() {
-        return ((DartControl) impl).toolTipText;
+        return ((DartControl) impl).getToolTipText();
     }
 
     public void setToolTipText(String value) {

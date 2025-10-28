@@ -477,8 +477,8 @@ public class DartLink extends DartControl implements ILink {
                 error(SWT.ERROR_INVALID_ARGUMENT);
         }
         double[] linkForeground = color != null ? color.handle : null;
-        if (equals(linkForeground, this.linkForeground))
-            return;
+        //if (equals(linkForeground, this.linkForeground))    return;
+        ;
         this.linkForeground = linkForeground;
         if (getEnabled()) {
             setLinkColor(true);

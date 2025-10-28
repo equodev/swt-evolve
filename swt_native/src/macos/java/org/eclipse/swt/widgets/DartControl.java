@@ -1132,7 +1132,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     Color getForegroundColor() {
-        return foreground != null ? SwtColor.cocoa_new(display, foreground) : defaultForeground();
+        return this._foreground != null ? this._foreground : defaultForeground();
     }
 
     /**
@@ -2490,8 +2490,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         }
         double[] background = color != null ? color.handle : null;
         int alpha = color != null ? color.getAlpha() : 255;
-        if (equals(background, this.background) && alpha == this.backgroundAlpha)
-            return;
+        //if (equals(background, this.background) && alpha == this.backgroundAlpha)    return;
+        ;
         this.background = background;
         this.backgroundAlpha = alpha;
         updateBackgroundColor();
@@ -2801,8 +2801,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 error(SWT.ERROR_INVALID_ARGUMENT);
         }
         double[] foreground = color != null ? color.handle : null;
-        if (equals(foreground, this.foreground))
-            return;
+        //if (equals(foreground, this.foreground))    return;
+        ;
         this.foreground = foreground;
         setForeground(foreground);
         this._foreground = color;

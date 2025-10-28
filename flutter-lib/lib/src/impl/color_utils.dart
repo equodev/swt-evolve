@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../gen/color.dart';
 import 'widget_config.dart';
 
-Color colorFromVColor(VColor? vColor, {required Color defaultColor}) {
-  if (vColor == null) return defaultColor;
+Color colorFromVColor(VColor? vColor, {Color? defaultColor}) {
+  if (vColor == null) return defaultColor ?? Colors.transparent;
   return Color.fromARGB(vColor.alpha, vColor.red, vColor.green, vColor.blue);
 }
 

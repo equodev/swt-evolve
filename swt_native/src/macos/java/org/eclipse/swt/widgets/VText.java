@@ -42,7 +42,7 @@ public class VText extends VScrollable {
     }
 
     public String getMessage() {
-        return ((DartText) impl).message;
+        return ((DartText) impl).getMessage();
     }
 
     public void setMessage(String value) {
@@ -67,7 +67,7 @@ public class VText extends VScrollable {
 
     @JsonAttribute(nullable = false)
     public String getText() {
-        return ((DartText) impl).text;
+        return ((DartText) impl).getText();
     }
 
     public void setText(String value) {
