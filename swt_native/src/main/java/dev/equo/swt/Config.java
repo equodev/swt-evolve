@@ -38,8 +38,6 @@ public class Config {
                     entry(Link.class, Impl.equo),
                     entry(Combo.class, Impl.equo),
                     entry(Group.class, Impl.equo),
-                    entry(ExpandBar.class, Impl.equo),
-                    entry(ExpandItem.class, Impl.equo),
                     //entry(Tree.class, Impl.equo),
                     //entry(TreeItem.class, Impl.equo),
                     //entry(TreeColumn.class, Impl.equo),
