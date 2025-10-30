@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 
-public interface ISpinner extends IComposite {
+public interface ISpinner extends IComposite, ImplSpinner {
 
     /**
      * Adds the listener to the collection of listeners who will

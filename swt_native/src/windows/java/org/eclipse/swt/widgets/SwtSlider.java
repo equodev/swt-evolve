@@ -838,6 +838,18 @@ public class SwtSlider extends SwtControl implements ISlider {
         return null;
     }
 
+    public int _increment() {
+        return increment;
+    }
+
+    public int _pageIncrement() {
+        return pageIncrement;
+    }
+
+    public boolean _ignoreFocus() {
+        return ignoreFocus;
+    }
+
     public Slider getApi() {
         if (api == null)
             api = Slider.createApi(this);

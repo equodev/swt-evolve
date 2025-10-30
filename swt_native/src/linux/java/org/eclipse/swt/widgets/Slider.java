@@ -21,6 +21,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class are selectable user interface
@@ -109,7 +110,7 @@ public class Slider extends Control {
      */
     public Slider(Composite parent, int style) {
         this((ISlider) null);
-        setImpl(new SwtSlider(parent, style, this));
+        setImpl(Config.isEquo(Slider.class, parent) ? new DartSlider(parent, style, this) : new SwtSlider(parent, style, this));
     }
 
     /**

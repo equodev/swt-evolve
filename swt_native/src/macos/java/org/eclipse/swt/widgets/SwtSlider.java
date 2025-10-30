@@ -565,6 +565,30 @@ public class SwtSlider extends SwtControl implements ISlider {
         updateBar(selection, minimum, maximum, thumb);
     }
 
+    public boolean _dragging() {
+        return dragging;
+    }
+
+    public int _minimum() {
+        return minimum;
+    }
+
+    public int _maximum() {
+        return maximum;
+    }
+
+    public int _thumb() {
+        return thumb;
+    }
+
+    public int _increment() {
+        return increment;
+    }
+
+    public int _pageIncrement() {
+        return pageIncrement;
+    }
+
     public Slider getApi() {
         if (api == null)
             api = Slider.createApi(this);

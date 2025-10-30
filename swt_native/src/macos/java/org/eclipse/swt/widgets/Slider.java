@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class are selectable user interface
@@ -107,7 +108,7 @@ public class Slider extends Control {
      */
     public Slider(Composite parent, int style) {
         this((ISlider) null);
-        setImpl(new SwtSlider(parent, style, this));
+        setImpl(Config.isEquo(Slider.class, parent) ? new DartSlider(parent, style, this) : new SwtSlider(parent, style, this));
     }
 
     /**

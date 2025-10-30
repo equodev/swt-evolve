@@ -3,7 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.*;
 
-public interface IProgressBar extends IControl {
+public interface IProgressBar extends IControl, ImplProgressBar {
 
     Point computeSize(int wHint, int hHint, boolean changed);
 

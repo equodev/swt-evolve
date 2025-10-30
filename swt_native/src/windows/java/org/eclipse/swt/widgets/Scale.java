@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of the receiver represent a selectable user
@@ -75,7 +76,7 @@ public class Scale extends Control {
      */
     public Scale(Composite parent, int style) {
         this((IScale) null);
-        setImpl(new SwtScale(parent, style, this));
+        setImpl(Config.isEquo(Scale.class, parent) ? new DartScale(parent, style, this) : new SwtScale(parent, style, this));
     }
 
     /**
