@@ -1365,6 +1365,30 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
         return event.text;
     }
 
+    public int _lastEventTime() {
+        return lastEventTime;
+    }
+
+    public long _imContext() {
+        return imContext;
+    }
+
+    public long _entryHandle() {
+        return entryHandle;
+    }
+
+    public int _fixStart() {
+        return fixStart;
+    }
+
+    public int _fixEnd() {
+        return fixEnd;
+    }
+
+    public double _climbRate() {
+        return climbRate;
+    }
+
     public Spinner getApi() {
         if (api == null)
             api = Spinner.createApi(this);

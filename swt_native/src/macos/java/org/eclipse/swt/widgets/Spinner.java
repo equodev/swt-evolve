@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class are selectable user interface
@@ -95,7 +96,7 @@ public class Spinner extends Composite {
      */
     public Spinner(Composite parent, int style) {
         this((ISpinner) null);
-        setImpl(new SwtSpinner(parent, style, this));
+        setImpl(Config.isEquo(Spinner.class, parent) ? new DartSpinner(parent, style, this) : new SwtSpinner(parent, style, this));
     }
 
     /**

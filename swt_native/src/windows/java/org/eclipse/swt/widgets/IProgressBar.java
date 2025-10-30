@@ -3,7 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
-public interface IProgressBar extends IControl {
+public interface IProgressBar extends IControl, ImplProgressBar {
 
     /**
      * Returns the maximum value which the receiver will allow.

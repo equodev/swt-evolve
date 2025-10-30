@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of the receiver represent an unselectable
@@ -75,7 +76,7 @@ public class ProgressBar extends Control {
      */
     public ProgressBar(Composite parent, int style) {
         this((IProgressBar) null);
-        setImpl(new SwtProgressBar(parent, style, this));
+        setImpl(Config.isEquo(ProgressBar.class, parent) ? new DartProgressBar(parent, style, this) : new SwtProgressBar(parent, style, this));
     }
 
     public Point computeSize(int wHint, int hHint, boolean changed) {

@@ -1195,6 +1195,18 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
         return event.text;
     }
 
+    public int _pageIncrement() {
+        return pageIncrement;
+    }
+
+    public int _digits() {
+        return digits;
+    }
+
+    public int _textLimit() {
+        return textLimit;
+    }
+
     public Spinner getApi() {
         if (api == null)
             api = Spinner.createApi(this);

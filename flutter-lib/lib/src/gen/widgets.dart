@@ -14,7 +14,11 @@ import '../gen/group.dart';
 import '../gen/label.dart';
 import '../gen/link.dart';
 import '../gen/list.dart';
+import '../gen/progressbar.dart';
+import '../gen/scale.dart';
 import '../gen/scrollbar.dart';
+import '../gen/slider.dart';
+import '../gen/spinner.dart';
 import '../gen/styledtext.dart';
 import '../gen/table.dart';
 import '../gen/tablecolumn.dart';
@@ -38,6 +42,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "Combo" => VCombo.fromJson(child),
     "ExpandBar" => VExpandBar.fromJson(child),
     "Group" => VGroup.fromJson(child),
+    "Spinner" => VSpinner.fromJson(child),
     "Table" => VTable.fromJson(child),
     "ToolBar" => VToolBar.fromJson(child),
     "Tree" => VTree.fromJson(child),
@@ -47,6 +52,9 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "Button" => VButton.fromJson(child),
     "Label" => VLabel.fromJson(child),
     "Link" => VLink.fromJson(child),
+    "ProgressBar" => VProgressBar.fromJson(child),
+    "Scale" => VScale.fromJson(child),
+    "Slider" => VSlider.fromJson(child),
     "CTabItem" => VCTabItem.fromJson(child),
     "ExpandItem" => VExpandItem.fromJson(child),
     "TableColumn" => VTableColumn.fromJson(child),
@@ -72,6 +80,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VCombo() => ComboSwt(key: ValueKey(id), value: child),
     VExpandBar() => ExpandBarSwt(key: ValueKey(id), value: child),
     VGroup() => GroupSwt(key: ValueKey(id), value: child),
+    VSpinner() => SpinnerSwt(key: ValueKey(id), value: child),
     VTable() => TableSwt(key: ValueKey(id), value: child),
     VToolBar() => ToolBarSwt(key: ValueKey(id), value: child),
     VTree() => TreeSwt(key: ValueKey(id), value: child),
@@ -81,6 +90,9 @@ Widget mapWidgetFromValue(VWidget child) {
     VButton() => ButtonSwt(key: ValueKey(id), value: child),
     VLabel() => LabelSwt(key: ValueKey(id), value: child),
     VLink() => LinkSwt(key: ValueKey(id), value: child),
+    VProgressBar() => ProgressBarSwt(key: ValueKey(id), value: child),
+    VScale() => ScaleSwt(key: ValueKey(id), value: child),
+    VSlider() => SliderSwt(key: ValueKey(id), value: child),
     VCTabItem() => CTabItemSwt(key: ValueKey(id), value: child),
     VExpandItem() => ExpandItemSwt(key: ValueKey(id), value: child),
     VTableColumn() => TableColumnSwt(key: ValueKey(id), value: child),

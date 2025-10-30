@@ -278,4 +278,51 @@ public class Sizes {
         return new Point(maxWidth, totalHeight);
     }
 
+    public static Point compute(DartSlider c) {
+        int style = c.getApi().style;
+        boolean isVertical = (style & org.eclipse.swt.SWT.VERTICAL) != 0;
+
+        // Same track length (250px), just different orientation
+        if (isVertical) {
+            // Vertical slider: width is thickness, height is track length
+            return new Point(48, 250);
+        } else {
+            // Horizontal slider: width is track length, height is thickness
+            return new Point(250, 48);
+        }
+    }
+
+    public static Point compute(DartSpinner c) {
+        // Spinner: text field + up/down buttons
+        return new Point(120, 32);
+    }
+
+    public static Point compute(DartScale c) {
+        int style = c.getApi().style;
+        boolean isVertical = (style & org.eclipse.swt.SWT.VERTICAL) != 0;
+
+        // Similar to Slider but can be slightly smaller since Scale is simpler
+        if (isVertical) {
+            // Vertical scale: width is thickness, height is track length
+            return new Point(40, 200);
+        } else {
+            // Horizontal scale: width is track length, height is thickness
+            return new Point(200, 40);
+        }
+    }
+
+    public static Point compute(DartProgressBar c) {
+        int style = c.getApi().style;
+        boolean isVertical = (style & org.eclipse.swt.SWT.VERTICAL) != 0;
+
+        // ProgressBar is thinner than Scale/Slider
+        if (isVertical) {
+            // Vertical progress bar: width is thickness, height is bar length
+            return new Point(20, 200);
+        } else {
+            // Horizontal progress bar: width is bar length, height is thickness
+            return new Point(200, 20);
+        }
+    }
+
 }

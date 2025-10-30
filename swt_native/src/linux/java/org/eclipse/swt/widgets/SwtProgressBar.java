@@ -344,6 +344,22 @@ public class SwtProgressBar extends SwtControl implements IProgressBar {
         GTK.gtk_progress_bar_set_fraction(getApi().handle, fraction);
     }
 
+    public int _timerId() {
+        return timerId;
+    }
+
+    public int _minimum() {
+        return minimum;
+    }
+
+    public int _maximum() {
+        return maximum;
+    }
+
+    public int _selection() {
+        return selection;
+    }
+
     public ProgressBar getApi() {
         if (api == null)
             api = ProgressBar.createApi(this);

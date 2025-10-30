@@ -148,9 +148,7 @@ public class Mocks {
         Display display = display();
         //when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
-        // Mock methods needed for ExpandItem creation
-        //when(impl.getClientAreaInPixels()).thenReturn(new org.eclipse.swt.graphics.Rectangle(0, 0, 200, 100));
-        //doNothing().when(impl).layoutItems();
+        doNothing().when(impl).createItem(any(ExpandItem.class), anyInt(), anyInt());
         return w;
     }
 

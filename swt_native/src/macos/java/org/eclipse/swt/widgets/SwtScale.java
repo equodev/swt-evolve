@@ -373,6 +373,14 @@ public class SwtScale extends SwtControl implements IScale {
         ((NSSlider) getApi().view).setDoubleValue(value);
     }
 
+    public int _increment() {
+        return increment;
+    }
+
+    public int _pageIncrement() {
+        return pageIncrement;
+    }
+
     public Scale getApi() {
         if (api == null)
             api = Scale.createApi(this);

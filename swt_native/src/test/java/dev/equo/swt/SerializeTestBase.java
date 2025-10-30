@@ -101,13 +101,17 @@ public class SerializeTestBase {
     }
 
     protected void setAll(ExpandItem w) {
-        // Manually set properties to avoid issues with Instancio and mock lifecycle
-        w.setText("Test ExpandItem");
-        try {
-            w.setImage(createTestImage());
-        } catch (Exception e) {
-            // Ignore image setting errors
-        }
+        InstancioObjectApi<ExpandItem> inst = Instancio.ofObject(w)
+                .withSettings(settings)
+                .ignore(Select.setter(Widget.class, "setImpl"))
+                .ignore(Select.field(Widget.class, "state"))
+                .ignore(Select.setter(ExpandItem.class, "setControl"));
+        inst = inst
+                .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
+                .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0)) // Always true
+                .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000))
+                .generate(Select.all(Image.class), gen -> gen.oneOf(createTestImage()));
+        inst.fill();
     }
 
     protected void setAll(Color w) {

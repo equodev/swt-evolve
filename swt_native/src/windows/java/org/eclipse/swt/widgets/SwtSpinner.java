@@ -1572,6 +1572,30 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
         return super.wmScrollChild(wParam, lParam);
     }
 
+    public long _hwndText() {
+        return hwndText;
+    }
+
+    public long _hwndUpDown() {
+        return hwndUpDown;
+    }
+
+    public boolean _ignoreModify() {
+        return ignoreModify;
+    }
+
+    public boolean _ignoreCharacter() {
+        return ignoreCharacter;
+    }
+
+    public int _pageIncrement() {
+        return pageIncrement;
+    }
+
+    public int _digits() {
+        return digits;
+    }
+
     public Spinner getApi() {
         if (api == null)
             api = Spinner.createApi(this);

@@ -608,6 +608,18 @@ public class SwtScale extends SwtControl implements IScale {
         return null;
     }
 
+    public boolean _ignoreResize() {
+        return ignoreResize;
+    }
+
+    public boolean _ignoreSelection() {
+        return ignoreSelection;
+    }
+
+    public boolean _createdAsRTL() {
+        return createdAsRTL;
+    }
+
     public Scale getApi() {
         if (api == null)
             api = Scale.createApi(this);
