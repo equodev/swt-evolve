@@ -18,6 +18,7 @@ public class Config {
     private static final String os = System.getProperty("os.name").toLowerCase();
     static final Map<Class<?>, Impl> equoEnabled;
     private static boolean toolBarDrawn;
+    private static boolean forceEclipse = false;
 
     static {
         try {
@@ -62,6 +63,10 @@ public class Config {
         defaultImpl = Impl.force_equo;
     }
 
+    public static void forceEclipse() {
+        forceEclipse = true;
+    }
+
     public static void defaultToEclipse() {
         defaultImpl = Impl.eclipse;
     }
@@ -75,6 +80,7 @@ public class Config {
     }
 
     public static boolean isEquo(Class<?> clazz) {
+        if (forceEclipse) return false;
         String forcedImpl = System.getProperty(getKey(clazz));
         if (forcedImpl != null) {
             return Impl.equo.name().equals(forcedImpl);
@@ -103,10 +109,12 @@ public class Config {
     }
 
     public static boolean isEquo(Class<?> clazz, Drawable parent) {
+        if (forceEclipse) return false;
         return parent instanceof Canvas && clazz == GC.class && ((Canvas) parent).getImpl() instanceof DartCanvas;
     }
 
     public static boolean isEquo(Class<?> clazz, Scrollable parent) {
+        if (forceEclipse) return false;
         if (clazz == Composite.class && isMainToolbarComposite(clazz, (Composite) parent)) {
             return true;
         }
