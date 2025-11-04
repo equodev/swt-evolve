@@ -7,6 +7,19 @@ plugins {
 
 repositories {
     mavenCentral()
+    ivy {
+        url = uri("https://download.eclipse.org/releases/2024-12/202412041000/plugins/")
+        name = "Eclipse 2024-12 Plugins"
+        patternLayout {
+            artifact("[organisation].[artifact]_[revision].[ext]")
+        }
+        metadataSources {
+            artifact()
+        }
+        content {
+            includeModule("org.eclipse", "draw2d")
+        }
+    }
 }
 
 val arch = System.getProperty("os.arch")
@@ -27,6 +40,7 @@ val currentOs = when {
 val currentPlatform = "$currentOs-${if (arch.contains("aarch64") || arch.contains("arm")) "aarch64" else "x86_64"}"
 
 val swtVersion = "3.128.0.v20241113-2009"
+val draw2dVersion = "3.18.0.202411181923"
 
 val swtVersionConfig by configurations.creating {
     isCanBeConsumed = false
@@ -44,6 +58,8 @@ dependencies {
     implementation(libs.equo.comm.ws) {
         exclude(group = "dev.equo", module = "com.equo.comm.common")
     }
+
+    implementation("org.eclipse:draw2d:${draw2dVersion}")
 
     implementation(libs.auto.value.annotations)
     annotationProcessor(libs.auto.value.annotations)
