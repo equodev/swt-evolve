@@ -158,7 +158,15 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     public Control[] _getChildren() {
-        return (children != null) ? java.util.Arrays.copyOf(children, children.length) : new Control[0];
+        if (children == null)
+            return new Control[0];
+        java.util.ArrayList<Control> validChildren = new java.util.ArrayList<Control>();
+        for (int i = 0; i < children.length; i++) {
+            if (children[i] != null && !children[i].isDisposed()) {
+                validChildren.add(children[i]);
+            }
+        }
+        return validChildren.toArray(new Control[validChildren.size()]);
     }
 
     public Control[] _getTabList() {

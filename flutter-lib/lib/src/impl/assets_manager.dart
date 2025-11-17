@@ -40,13 +40,19 @@ class AssetsManager {
 
   static Future<Object?> _loadFromExternalPath(
       String filename, String assetsPath) async {
-    final base = filename.split('.').first;
+    // Extract just the filename without path (e.g., "toolbar/new_24.png" -> "new_24")
+    String filenameOnly = filename;
+    if (filename.contains('/')) {
+      filenameOnly = filename.split('/').last;
+    }
+    final base = filenameOnly.split('.').first;
     final formats = ['svg', 'png', 'jpg', 'jpeg'];
 
     for (final format in formats) {
       try {
         final file = File('$assetsPath/$base.$format');
         if (await file.exists()) {
+          print('AssetsManager: Found replacement file: ${file.path}');
           if (format == 'svg') {
             return await file.readAsString();
           } else {
@@ -56,8 +62,11 @@ class AssetsManager {
             return frame.image;
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        print('AssetsManager: Error loading $base.$format: $e');
+      }
     }
+    print('AssetsManager: No replacement found for $filename (searched as $base.[svg|png|jpg|jpeg])');
     return null;
   }
 }

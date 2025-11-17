@@ -69,12 +69,6 @@ public class ConfigTest {
     class EquoWidgetDefaults {
 
         @Test
-        void button_should_default_to_equo_with_equo() {
-            Config.defaultToEquo();
-            assertThat(Config.isEquo(Button.class)).isTrue();
-        }
-
-        @Test
         void button_should_default_to_swt_with_config() {
             Config.useEclipse(Button.class);
             assertThat(Config.isEquo(Button.class)).isFalse();
@@ -96,6 +90,51 @@ public class ConfigTest {
         void button_should_default_to_eclipse_with_property_as_eclipse() {
             System.setProperty("dev.equo.swt.Button", "eclipse");
             assertThat(Config.isEquo(Button.class)).isFalse();
+        }
+
+    }
+
+    @Nested
+    class GlobalDefaultRespect {
+
+        @AfterEach
+        void cleanup() {
+            System.clearProperty("dev.equo.swt.Button");
+            System.clearProperty("dev.equo.swt.CTabItem");
+            Config.defaultToEclipse();
+        }
+
+        @Test
+        void should_respect_global_eclipse_default_for_button() {
+            Config.defaultToEclipse();
+            assertThat(Config.isEquo(Button.class)).isFalse();
+        }
+
+        @Test
+        void should_respect_global_eclipse_default_for_ctabitem() {
+            Config.defaultToEclipse();
+            assertThat(Config.isEquo(CTabItem.class)).isFalse();
+        }
+
+        @Test
+        void should_allow_per_widget_override_with_global_eclipse() {
+            Config.defaultToEclipse();
+            Config.useEquo(Button.class);
+            assertThat(Config.isEquo(Button.class)).isTrue();
+        }
+
+        @Test
+        void should_respect_force_equo_for_all_widgets() {
+            Config.forceEquo();
+            assertThat(Config.isEquo(Button.class)).isTrue();
+            assertThat(Config.isEquo(Point.class)).isTrue();
+        }
+
+        @Test
+        void per_widget_property_should_override_global_default() {
+            Config.defaultToEclipse();
+            Config.useEquo(CTabItem.class);
+            assertThat(Config.isEquo(CTabItem.class)).isTrue();
         }
 
     }

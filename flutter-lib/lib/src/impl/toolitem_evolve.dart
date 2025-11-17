@@ -16,16 +16,36 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
   bool _isHovered = false;
 
   /// Helper method to build an image widget from VImage using ImageUtils
-  Widget? _buildImageWidget(VImage? image, bool enabled) {
-    return ImageUtils.buildVImage(
-      image,
-      enabled: enabled,
-      constraints: const BoxConstraints(
-        minWidth: AppSizes.toolbarMinSize,
-        minHeight: AppSizes.toolbarMinSize,
+  /// Uses FutureBuilder to support async AssetsManager replacement
+  Widget _buildImageWidget(VImage? image, bool enabled) {
+    return FutureBuilder<Widget?>(
+      future: ImageUtils.buildVImageAsync(
+        image,
+        enabled: enabled,
+        constraints: const BoxConstraints(
+          minWidth: AppSizes.toolbarMinSize,
+          minHeight: AppSizes.toolbarMinSize,
+        ),
+        useBinaryImage: true,
+        renderAsIcon: true,
       ),
-      useBinaryImage: true,
-      renderAsIcon: true,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return snapshot.data ?? const SizedBox.shrink();
+        }
+        // Show placeholder while loading
+        return const SizedBox(
+          width: AppSizes.toolbarMinSize,
+          height: AppSizes.toolbarMinSize,
+          child: Center(
+            child: SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -57,8 +77,8 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       color: backgroundColor ?? Colors.transparent,
       borderRadius: BorderRadius.circular(AppSizes.borderRadius),
       child: InkWell(
-        onTap: enabled ? (onTap ?? onPressed) : null,
-        onHover: (h) => setState(() => _isHovered = h),
+          onTap: enabled ? (onTap ?? onPressed) : null,
+          onHover: (h) => setState(() => _isHovered = h),
         hoverColor: AppColors.getHoverColor(),
         borderRadius: BorderRadius.circular(AppSizes.borderRadius),
         child: ConstrainedBox(
@@ -71,19 +91,19 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
             waitDuration: const Duration(seconds: 1),
             child: isDropdown
                 ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      child,
-                      GestureDetector(
-                        onTap: enabled ? openMenu : null,
-                        child: Icon(
-                          Icons.arrow_drop_down,
-                          size: 12,
-                          color: AppColors.getColor(enabled),
-                        ),
-                      ),
-                    ],
-                  )
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                child,
+                GestureDetector(
+                  onTap: enabled ? openMenu : null,
+                  child: Icon(
+                    Icons.arrow_drop_down,
+                    size: 12,
+                    color: AppColors.getColor(enabled),
+                  ),
+                ),
+              ],
+            )
                 : child,
           ),
         ),
@@ -101,147 +121,154 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     return Container(
       child: switch (state.style & bits) {
         SWT.CHECK => () {
-            final image = _getImageForState(enabled);
-            final imageWidget = _buildImageWidget(image, enabled);
-            final isChecked = state.selection ?? false;
+          final image = _getImageForState(enabled);
+          final isChecked = state.selection ?? false;
 
-            return _buildToolbarButton(
-              enabled: enabled,
-              backgroundColor:
-                  isChecked ? AppColors.getHoverColor() : Colors.transparent,
-              onTap: () {
-                onPressed();
-                setState(() => state.selection = !isChecked);
-              },
-              child: imageWidget ??
-                  Icon(
-                    isChecked ? Icons.check_box : Icons.check_box_outline_blank,
-                    size: AppSizes.toolbarIconLarge,
-                    color: AppColors.getColor(enabled),
-                  ),
+          Widget child;
+          if (image != null) {
+            child = _buildImageWidget(image, enabled);
+          } else {
+            child = Icon(
+              isChecked ? Icons.check_box : Icons.check_box_outline_blank,
+              size: AppSizes.toolbarIconLarge,
+              color: AppColors.getColor(enabled),
             );
-          }(),
+          }
+
+          return _buildToolbarButton(
+            enabled: enabled,
+            backgroundColor:
+            isChecked ? AppColors.getHoverColor() : Colors.transparent,
+            onTap: () {
+              onPressed();
+              setState(() => state.selection = !isChecked);
+            },
+            child: child,
+          );
+        }(),
         SWT.RADIO => () {
-            final image = _getImageForState(enabled);
-            final imageWidget = _buildImageWidget(image, enabled);
-            final isSelected = state.selection ?? false;
+          final image = _getImageForState(enabled);
+          final isSelected = state.selection ?? false;
 
+          Widget child;
+          if (image != null) {
+            child = _buildImageWidget(image, enabled);
+          } else {
+            child = Icon(
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              size: AppSizes.toolbarIconLarge,
+              color: AppColors.getColor(enabled),
+            );
+          }
+
+          return _buildToolbarButton(
+            enabled: enabled,
+            onTap: () {
+              onPressed();
+              setState(() => state.selection = !isSelected);
+            },
+            child: child,
+          );
+        }(),
+        SWT.DROP_DOWN => () {
+          final image = _getImageForState(enabled);
+
+          if (image != null) {
             return _buildToolbarButton(
               enabled: enabled,
-              onTap: () {
-                onPressed();
-                setState(() => state.selection = !isSelected);
-              },
-              child: imageWidget ??
-                  Icon(
-                    isSelected
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked,
-                    size: AppSizes.toolbarIconLarge,
-                    color: AppColors.getColor(enabled),
-                  ),
+              tooltip: state.toolTipText ?? text ?? '',
+              child: _buildImageWidget(image, enabled),
+              isDropdown: true,
             );
-          }(),
-        SWT.DROP_DOWN => () {
-            final image = _getImageForState(enabled);
-            final imageWidget = _buildImageWidget(image, enabled);
-
-            if (imageWidget != null) {
-              return _buildToolbarButton(
-                enabled: enabled,
-                tooltip: state.toolTipText ?? text ?? '',
-                child: imageWidget,
-                isDropdown: true,
-              );
-            } else if (text != null && text.isNotEmpty) {
-              return _buildToolbarButton(
-                enabled: enabled,
-                tooltip: state.toolTipText ?? text ?? '',
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Center(
-                    child: Text(
-                      text!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: AppSizes.toolbarTextSize,
-                        color: AppColors.getColor(enabled),
-                      ),
+          } else if (text != null && text.isNotEmpty) {
+            return _buildToolbarButton(
+              enabled: enabled,
+              tooltip: state.toolTipText ?? text ?? '',
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Center(
+                  child: Text(
+                    text!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: AppSizes.toolbarTextSize,
+                      color: AppColors.getColor(enabled),
                     ),
                   ),
                 ),
-                isDropdown: true,
-              );
-            }
-          }(),
+              ),
+              isDropdown: true,
+            );
+          }
+        }(),
         SWT.PUSH => () {
-            final image = _getImageForState(enabled);
-            final imageWidget = _buildImageWidget(image, enabled);
+          final image = _getImageForState(enabled);
 
-            if (imageWidget != null) {
-              return _buildToolbarButton(
-                enabled: enabled,
-                tooltip: state.toolTipText ?? text ?? '',
-                child: imageWidget,
-              );
-            } else if (text != null && text.isNotEmpty) {
-              return _buildToolbarButton(
-                enabled: enabled,
-                tooltip: state.toolTipText ?? text ?? '',
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Center(
-                    child: Text(
-                      text!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: AppSizes.toolbarTextSize,
-                        color: AppColors.getColor(enabled),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }
-          }(),
-        SWT.SEPARATOR => () {
-            return const VerticalDivider(
-              width: AppSizes.separatorWidth,
-              thickness: AppSizes.separatorThickness,
-              indent: AppSizes.separatorIndent,
-              endIndent: AppSizes.separatorIndent,
+          if (image != null) {
+            return _buildToolbarButton(
+              enabled: enabled,
+              tooltip: state.toolTipText ?? text ?? '',
+              child: _buildImageWidget(image, enabled),
             );
-          }(),
-        _ => () {
-            final image = _getImageForState(enabled);
-            final imageWidget = _buildImageWidget(image, enabled);
-
-            if (imageWidget != null) {
-              return _buildToolbarButton(
-                enabled: enabled,
-                tooltip: state.toolTipText ?? text ?? '',
-                child: imageWidget,
-              );
-            } else if (text != null && text.isNotEmpty) {
-              return _buildToolbarButton(
-                enabled: enabled,
-                tooltip: state.toolTipText ?? text ?? '',
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Center(
-                    child: Text(
-                      text,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: AppSizes.toolbarTextSize,
-                        color: AppColors.getColor(enabled),
-                      ),
+          } else if (text != null && text.isNotEmpty) {
+            return _buildToolbarButton(
+              enabled: enabled,
+              tooltip: state.toolTipText ?? text ?? '',
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Center(
+                  child: Text(
+                    text!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: AppSizes.toolbarTextSize,
+                      color: AppColors.getColor(enabled),
                     ),
                   ),
                 ),
-              );
-            }
-          }(),
+              ),
+            );
+          }
+        }(),
+        SWT.SEPARATOR => () {
+          return const VerticalDivider(
+            width: AppSizes.separatorWidth,
+            thickness: AppSizes.separatorThickness,
+            indent: AppSizes.separatorIndent,
+            endIndent: AppSizes.separatorIndent,
+          );
+        }(),
+        _ => () {
+          final image = _getImageForState(enabled);
+
+          if (image != null) {
+            return _buildToolbarButton(
+              enabled: enabled,
+              tooltip: state.toolTipText ?? text ?? '',
+              child: _buildImageWidget(image, enabled),
+            );
+          } else if (text != null && text.isNotEmpty) {
+            return _buildToolbarButton(
+              enabled: enabled,
+              tooltip: state.toolTipText ?? text ?? '',
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Center(
+                  child: Text(
+                    text,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: AppSizes.toolbarTextSize,
+                      color: AppColors.getColor(enabled),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+        }(),
       },
     );
   }
