@@ -23,27 +23,27 @@ public class Config {
     static {
         try {
             equoEnabled = Map.ofEntries(
-                    entry(Button.class, Impl.equo),
+                    //entry(Button.class, Impl.equo),
                     // entry(Label.class, Impl.equo),
                     entry(CTabFolder.class, Impl.equo),
                     entry(CTabItem.class, Impl.equo),
                     entry(CTabFolderRenderer.class, Impl.equo),
                     entry(Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo),
-                    entry(StyledText.class, Impl.equo),
-                    entry(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo),
-                    entry(Table.class, Impl.equo),
-                    entry(TableItem.class, Impl.equo),
-                    entry(TableColumn.class, Impl.equo),
+                    //entry(StyledText.class, Impl.equo),
+                    //entry(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo),
+                    //entry(Table.class, Impl.equo),
+                    //entry(TableItem.class, Impl.equo),
+                    //entry(TableColumn.class, Impl.equo),
                     entry(List.class, Impl.equo),
-                    entry(Text.class, Impl.equo),
+                    //entry(Text.class, Impl.equo),
                     entry(Link.class, Impl.equo),
                     //entry(Combo.class, Impl.equo),
-                    entry(Group.class, Impl.equo),
+                    entry(Group.class, Impl.equo)
                     //entry(Tree.class, Impl.equo),
                     //entry(TreeItem.class, Impl.equo),
                     //entry(TreeColumn.class, Impl.equo),
                     //entry(Canvas.class, Impl.equo)
-                    entry(FontMetrics.class, Impl.equo)
+                    //entry(FontMetrics.class, Impl.equo)
                     //entry(Font.class, Impl.equo),
                     //entry(FontData.class, Impl.equo)
             );
@@ -81,16 +81,23 @@ public class Config {
 
     public static boolean isEquo(Class<?> clazz) {
         if (forceEclipse) return false;
+        // Per-widget override
         String forcedImpl = System.getProperty(getKey(clazz));
         if (forcedImpl != null) {
             return Impl.equo.name().equals(forcedImpl);
         }
 
+        if (defaultImpl == Impl.eclipse) {
+            return false;
+        }
+
         if (isEditor(clazz)) {
             return false;
         }
+
         if (defaultImpl == Impl.force_equo)
             return true;
+
         if ((defaultImpl == Impl.equo && equoEnabled.containsKey(clazz)))
             return true;
         return isCreatedInsideDart();
@@ -110,16 +117,49 @@ public class Config {
 
     public static boolean isEquo(Class<?> clazz, Drawable parent) {
         if (forceEclipse) return false;
+        // Per-widget override
+        String forcedImpl = System.getProperty(getKey(clazz));
+        if (forcedImpl != null) {
+            return Impl.equo.name().equals(forcedImpl);
+        }
+
+        if (defaultImpl == Impl.eclipse) {
+            return false;
+        }
+
+        if (defaultImpl == Impl.force_equo)
+            return true;
+
         return parent instanceof Canvas && clazz == GC.class && ((Canvas) parent).getImpl() instanceof DartCanvas;
     }
 
     public static boolean isEquo(Class<?> clazz, Scrollable parent) {
         if (forceEclipse) return false;
-        if (clazz == Composite.class && isMainToolbarComposite(clazz, (Composite) parent)) {
-            return true;
+        // Per-widget override
+        String forcedImpl = System.getProperty(getKey(clazz));
+        if (forcedImpl != null) {
+            return Impl.equo.name().equals(forcedImpl);
         }
+
+        // Check parent data for per-widget override
+        Object data = parent != null ? parent.getData(getKey(clazz)) : null;
+        if (data != null) {
+            if (Impl.equo.equals(data)) return true;
+            else if (Impl.eclipse.equals(data)) return false;
+            else if (data instanceof String) return Impl.equo.name().equals(data);
+        }
+
         if (isEditor(clazz)) {
             return false;
+        }
+        if (defaultImpl == Impl.force_equo)
+            return true;
+        if (defaultImpl == Impl.eclipse) {
+            return false;
+        }
+
+        if (clazz == Composite.class && isMainToolbarComposite(clazz, (Composite) parent)) {
+            return true;
         }
         /// This is used because Eclipse creates "hidden" toolbars as children of the shell
         if (clazz == ToolBar.class && parent instanceof Shell) {
@@ -130,12 +170,6 @@ public class Config {
             return true;
         }
 
-        Object data = parent != null ? parent.getData(getKey(clazz)) : null;
-        if (data != null) {
-            if (Impl.equo.equals(data)) return true;
-            else if (Impl.eclipse.equals(data)) return false;
-            else if (data instanceof String) return Impl.equo.name().equals(data);
-        }
         if (isCustomAncestor(parent))
             return true;
         // Special handling for Canvas: use Equo implementation when created from FigureCanvas
@@ -180,10 +214,17 @@ public class Config {
     }
 
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
+        // Check toolbar-specific property first - it has priority over global default
         if (!toolBarDrawn && toolbarImpl == Impl.equo && isMainToolbar(Composite.class, parent)) {
             toolBarDrawn = true;
             return new DartMainToolbar(parent, style, composite);
         }
+
+        // Respect global default - if set to eclipse, use Eclipse implementation
+        if (defaultImpl == Impl.eclipse) {
+            return new SwtComposite(parent, style, composite);
+        }
+
         return Config.isEquo(Composite.class, parent) ? new DartComposite(parent, style, composite) : new SwtComposite(parent, style, composite);
     }
 

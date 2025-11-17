@@ -313,8 +313,10 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         GC gc = new GC(this.getApi());
         if (text != null && text.length() > 0) {
             Point e = gc.textExtent(text, DRAW_FLAGS);
-            size.x += e.x;
-            size.y = Math.max(size.y, e.y);
+            if (e != null) {
+                size.x += e.x;
+                size.y = Math.max(size.y, e.y);
+            }
             if (image != null)
                 size.x += GAP;
         } else {

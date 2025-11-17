@@ -117,7 +117,7 @@ class EquoComm {
       : ws = WebSocket.connect("ws://$host:$port") {
     ws.then((websocket) {
       websocket.listen((event) {
-        print("WS onData $event");
+        //print("WS onData $event");
         _receiveMessage(event);
       }, onDone: () {
         print("WS onDone");
@@ -181,10 +181,10 @@ class EquoComm {
               'An event handler does not exist for the user event \'${message.actionId}\'';
           final error =
               SDKCommError(code: 255, message: ERROR_CALLBACK_DOES_NOT_EXIST);
-          sendToJava(UserEvent(
+          /*sendToJava(UserEvent(
               actionId: message.callbackId!,
               payload: error,
-              error: SDKCommError(code: 1, message: '')));
+              error: SDKCommError(code: 1, message: '')));*/
         }
       }
     }

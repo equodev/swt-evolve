@@ -1,5 +1,6 @@
 package dev.equo;
 
+import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
@@ -11,6 +12,10 @@ import org.eclipse.swt.widgets.TableItem;
 public class TableSnippet {
 
     public static void main(String[] args) {
+        Config.useEquo(Table.class);
+        Config.useEquo(TableItem.class);
+        Config.useEquo(TableColumn.class);
+
         Display display = new Display();
         Shell shell = new Shell(display);
         shell.setLayout(new FillLayout());

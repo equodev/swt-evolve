@@ -118,7 +118,10 @@ public abstract class FlutterBridge {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         serializer.to(args, out);
         String serialized = out.toString(StandardCharsets.UTF_8);
-        System.out.println("send: " + eventName + ": " + serialized);
+        String cleaned = serialized
+                .replaceAll("\"data\"\\s*:\\s*\"[^\"]*\"", "\"data\": \"-ignore-\"")
+                .replaceAll("\"alphaData\"\\s*:\\s*\"[^\"]*\"", "\"alphaData\": \"-ignore-\"");
+        System.out.println("send: " + eventName + ": " + cleaned);
         client.getComm().send(eventName, serialized);
     }
 

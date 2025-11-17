@@ -29,7 +29,10 @@ public class StyledTextSnippet3 {
                     "This paragraph is center aligned and has red foreground color.\n\n" +
                     "This paragraph is justified and has blue background color.";
 
-    public static void main(String [] args) {
+    public static void main(String [] args) throws ClassNotFoundException {
+        Config.useEquo(StyledText.class);
+        Config.useEquo(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"));
+
         Config.useEclipse(Font.class);
         Config.useEclipse(FontData.class);
         Display display = new Display();

@@ -1,9 +1,11 @@
 package dev.equo;
 
+import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
@@ -17,7 +19,10 @@ import org.eclipse.swt.widgets.Shell;
  */
 public class StyledTextSnippet1 {
 
-public static void main(String[] args) {
+public static void main(String[] args) throws ClassNotFoundException {
+	Config.useEquo(StyledText.class);
+	Config.useEquo(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"));
+
 	Display display = new Display();
 	Shell shell = new Shell(display);
 	shell.setText("StyledText Snippet 1");

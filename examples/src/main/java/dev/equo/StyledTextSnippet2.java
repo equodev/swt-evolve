@@ -1,5 +1,6 @@
 package dev.equo;
 
+import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.layout.FillLayout;
@@ -21,7 +22,10 @@ public class StyledTextSnippet2 {
 		"The second paragraph is center aligned. Alignment, as with all other line attributes, can be set for the whole widget or just for a set of lines.\n\n" +
 		"The third paragraph is justified, which means the text is aligned to both the left and right margins. This creates a uniform appearance by evenly distributing spaces between words.";
 
-	public static void main(String [] args) {
+	public static void main(String [] args) throws ClassNotFoundException {
+		Config.useEquo(StyledText.class);
+		Config.useEquo(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"));
+
 		Display display = new Display();
 		Shell shell = new Shell(display);
 		shell.setText("StyledText Snippet 2");

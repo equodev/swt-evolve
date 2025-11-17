@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../gen/image.dart';
+import '../assets_manager.dart';
 import '../icons_map.dart';
 import '../widget_config.dart';
 
@@ -42,6 +44,12 @@ class ImageUtils {
       );
     }
 
+    // Apply opacity for disabled icons
+    iconWidget = Opacity(
+      opacity: enabled ? 1.0 : 0.5,
+      child: iconWidget,
+    );
+
     _iconCache[cacheKey] = iconWidget;
     return iconWidget;
   }
@@ -78,14 +86,17 @@ class ImageUtils {
                 minWidth: AppSizes.toolbarMinSize,
                 minHeight: AppSizes.toolbarMinSize,
               ),
-          child: Center(
-            child: SizedBox(
-              width: imageSize,
-              height: imageSize,
-              child: ImageIcon(
-                MemoryImage(bytes),
-                size: imageSize,
-                color: imageColor,
+          child: Opacity(
+            opacity: enabled ? 1.0 : 0.5,
+            child: Center(
+              child: SizedBox(
+                width: imageSize,
+                height: imageSize,
+                child: ImageIcon(
+                  MemoryImage(bytes),
+                  size: imageSize,
+                  color: imageColor,
+                ),
               ),
             ),
           ),
@@ -122,6 +133,192 @@ class ImageUtils {
     }
   }
 
+  /// Helper to build widget from replacement object (SVG string or ui.Image)
+  static Widget? _buildReplacementWidget(
+    Object replacement, {
+    required String filename,
+    double? size,
+    double? width,
+    double? height,
+    Color? color,
+    bool enabled = true,
+    BoxConstraints? constraints,
+    bool renderAsIcon = true,
+  }) {
+    final cacheKey =
+        'replacement-$filename-${size ?? width ?? height ?? 'default'}-${color?.value ?? 'default'}-$enabled-$renderAsIcon';
+
+    if (_imageCache.containsKey(cacheKey)) {
+      return _imageCache[cacheKey];
+    }
+
+    Widget? widget;
+
+    if (replacement is String) {
+      // SVG replacement
+      final svgSize = size ?? width ?? height ?? AppSizes.icon;
+      final svgColor = color ?? AppColors.getColor(enabled);
+
+      if (renderAsIcon) {
+        widget = ConstrainedBox(
+          constraints: constraints ??
+              BoxConstraints(
+                minWidth: AppSizes.toolbarMinSize,
+                minHeight: AppSizes.toolbarMinSize,
+              ),
+          child: Opacity(
+            opacity: enabled ? 1.0 : 0.5,
+            child: Center(
+              child: SizedBox(
+                width: svgSize,
+                height: svgSize,
+                child: SvgPicture.string(
+                  replacement,
+                  width: svgSize,
+                  height: svgSize,
+                  colorFilter: ColorFilter.mode(svgColor, BlendMode.srcIn),
+                ),
+              ),
+            ),
+          ),
+        );
+      } else {
+        widget = ConstrainedBox(
+          constraints: constraints ??
+              BoxConstraints(
+                maxWidth: width ?? 64,
+                maxHeight: height ?? 64,
+              ),
+          child: Opacity(
+            opacity: enabled ? 1.0 : 0.5,
+            child: SvgPicture.string(
+              replacement,
+              width: width,
+              height: height,
+              fit: BoxFit.contain,
+            ),
+          ),
+        );
+      }
+    } else if (replacement is ui.Image) {
+      // PNG/JPG replacement - show colors as-is (no color filter)
+      final imageSize = size ?? width ?? height ?? AppSizes.icon;
+
+      if (renderAsIcon) {
+        widget = ConstrainedBox(
+          constraints: constraints ??
+              BoxConstraints(
+                minWidth: AppSizes.toolbarMinSize,
+                minHeight: AppSizes.toolbarMinSize,
+              ),
+          child: Opacity(
+            opacity: enabled ? 1.0 : 0.5,
+            child: Center(
+              child: SizedBox(
+                width: imageSize,
+                height: imageSize,
+                child: RawImage(
+                  image: replacement,
+                  width: imageSize,
+                  height: imageSize,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+        );
+      } else {
+        widget = ConstrainedBox(
+          constraints: constraints ??
+              BoxConstraints(
+                maxWidth: width ?? 64,
+                maxHeight: height ?? 64,
+              ),
+          child: Opacity(
+            opacity: enabled ? 1.0 : 0.5,
+            child: RawImage(
+              image: replacement,
+              width: width,
+              height: height,
+              fit: BoxFit.contain,
+            ),
+          ),
+        );
+      }
+    }
+
+    if (widget != null) {
+      _imageCache[cacheKey] = widget;
+    }
+    return widget;
+  }
+
+  /// Async version that supports AssetsManager replacement
+  static Future<Widget?> buildVImageAsync(
+    VImage? image, {
+    double? size,
+    double? width,
+    double? height,
+    Color? color,
+    bool enabled = true,
+    BoxConstraints? constraints,
+    bool useBinaryImage = true,
+    bool renderAsIcon = true,
+  }) async {
+    if (image == null) return null;
+
+    // Try AssetsManager replacement first (if filename exists)
+    if (image.filename?.isNotEmpty ?? false) {
+      try {
+        final replacement = await AssetsManager.loadReplacement(image.filename!);
+        if (replacement != null) {
+          print('AssetsManager: Using replacement for ${image.filename}');
+          return _buildReplacementWidget(
+            replacement,
+            filename: image.filename!,
+            size: size,
+            width: width,
+            height: height,
+            color: color,
+            enabled: enabled,
+            constraints: constraints,
+            renderAsIcon: renderAsIcon,
+          );
+        }
+      } catch (e) {
+        print('AssetsManager: Error loading replacement for ${image.filename}: $e');
+      }
+    }
+
+    // Try icon filename (from iconMap)
+    if (image.filename?.isNotEmpty ?? false) {
+      final iconWidget = buildIconWidget(
+        image.filename!,
+        size: size ?? width ?? height,
+        color: color,
+        enabled: enabled,
+      );
+      if (iconWidget != null) return iconWidget;
+    }
+
+    // Try binary image data
+    if (useBinaryImage && image.imageData?.data != null) {
+      return _buildBinaryImage(
+        Uint8List.fromList(image.imageData!.data!),
+        size: size,
+        width: width,
+        height: height,
+        color: color,
+        enabled: enabled,
+        constraints: constraints,
+        renderAsIcon: renderAsIcon,
+      );
+    }
+
+    return null;
+  }
+
+  /// Synchronous version (backwards compatibility) - without AssetsManager support
   static Widget? buildVImage(
     VImage? image, {
     double? size,

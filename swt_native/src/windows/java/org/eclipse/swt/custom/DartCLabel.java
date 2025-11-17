@@ -153,6 +153,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         if ((style & SWT.LEFT) != 0)
             align = SWT.LEFT;
         addPaintListener(this::onPaint);
+        this.background = new Color(0, 0, 0, 0);
         addTraverseListener(event -> {
             if (event.detail == SWT.TRAVERSE_MNEMONIC) {
                 onMnemonic(event);
@@ -313,8 +314,10 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         GC gc = new GC(this.getApi());
         if (text != null && text.length() > 0) {
             Point e = gc.textExtent(text, DRAW_FLAGS);
-            size.x += e.x;
-            size.y = Math.max(size.y, e.y);
+            if (e != null) {
+                size.x += e.x;
+                size.y = Math.max(size.y, e.y);
+            }
             if (image != null)
                 size.x += GAP;
         } else {
