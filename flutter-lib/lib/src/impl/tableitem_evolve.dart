@@ -3,8 +3,11 @@ import '../gen/tableitem.dart';
 import '../gen/widget.dart';
 import '../impl/item_evolve.dart';
 
-class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
-    extends ItemImpl<T, V> {
+
+class TableItemImpl<T extends TableItemSwt, V extends VTableItem> 
+extends ItemImpl<T,V> {
+
+
   @override
   Widget build(BuildContext context) {
     // TODO: implement the widget, remove this line to stop regenerating

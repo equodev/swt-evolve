@@ -1376,6 +1376,34 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         }
     }
 
+    public Menu _parent() {
+        return parent;
+    }
+
+    public Menu _menu() {
+        return menu;
+    }
+
+    public long _hBitmap() {
+        return hBitmap;
+    }
+
+    public int _id() {
+        return id;
+    }
+
+    public int _accelerator() {
+        return accelerator;
+    }
+
+    public int _userId() {
+        return userId;
+    }
+
+    public ToolTip _itemToolTip() {
+        return itemToolTip;
+    }
+
     public MenuItem getApi() {
         if (api == null)
             api = MenuItem.createApi(this);

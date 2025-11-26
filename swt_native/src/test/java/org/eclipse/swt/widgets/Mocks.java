@@ -30,6 +30,7 @@ public class Mocks {
         when(shell.getBackground()).thenReturn(new Color(red(), green(), blue()));
         when(swtShell._display()).thenCallRealMethod();
         when(swtShell._getChildren()).thenReturn(new Control[0]);
+        when(swtShell.menuShell()).thenReturn((Decorations) shell);
         try { // Windows and macOS
             Method getShell = SwtShell.class.getDeclaredMethod("getShell");
             when(getShell.invoke(swtShell)).thenReturn(shell);
@@ -59,15 +60,12 @@ public class Mocks {
         when(swtDisplay.getThread()).thenCallRealMethod();
         org.eclipse.swt.graphics.Mocks.device(display, swtDisplay);
 
-        Field field = null;
         try {
-            field = SwtDevice.class.getDeclaredField("dpi");
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }
-        field.setAccessible(true);
-        try {
+            Field field = SwtDevice.class.getDeclaredField("dpi");
+            field.setAccessible(true);
             field.set(swtDisplay, mock(Point.class));
+        } catch (NoSuchFieldException e) {
+            // Field doesn't exist on Windows, only on Linux and macOS
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -150,6 +148,14 @@ public class Mocks {
         when(impl._display()).thenReturn(display);
         doNothing().when(impl).createItem(any(ExpandItem.class), anyInt(), anyInt());
         return w;
+    }
+
+    public static Control control() {
+        return shell();
+    }
+
+    public static Menu menu() {
+        return new Menu(shell());
     }
 
     public static int index() {

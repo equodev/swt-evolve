@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -77,7 +78,7 @@ public class MenuItem extends Item {
      */
     public MenuItem(Menu parent, int style) {
         this((IMenuItem) null);
-        setImpl(new SwtMenuItem(parent, style, this));
+        setImpl(Config.isEquo(MenuItem.class, parent) ? new DartMenuItem(parent, style, this) : new SwtMenuItem(parent, style, this));
     }
 
     /**
@@ -118,12 +119,12 @@ public class MenuItem extends Item {
      */
     public MenuItem(Menu parent, int style, int index) {
         this((IMenuItem) null);
-        setImpl(new SwtMenuItem(parent, style, index, this));
+        setImpl(Config.isEquo(MenuItem.class, parent) ? new DartMenuItem(parent, style, index, this) : new SwtMenuItem(parent, style, index, this));
     }
 
     MenuItem(Menu parent, NSMenuItem nsMenuItem) {
         this((IMenuItem) null);
-        setImpl(new SwtMenuItem(parent, nsMenuItem, this));
+        setImpl(Config.isEquo(MenuItem.class, parent) ? new DartMenuItem(parent, 0, this) : new SwtMenuItem(parent, nsMenuItem, this));
     }
 
     /**

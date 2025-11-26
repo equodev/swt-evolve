@@ -48,6 +48,7 @@ class TableSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
+        assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
         assertJ.satisfies(node("orientation").equalsTo(w.getOrientation(), orAbsentIf0));
         assertJ.satisfies(node("redraw").equalsTo(value(w).getRedraw(), orAbsentIfFalse));
         assertJ.satisfies(node("textDirection").equalsTo(w.getTextDirection(), orAbsentIf0));

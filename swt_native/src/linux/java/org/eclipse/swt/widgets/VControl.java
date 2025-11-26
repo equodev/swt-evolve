@@ -98,9 +98,11 @@ public class VControl extends VWidget {
         ((DartControl) impl).foreground = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Menu getMenu() {
-        return ((DartControl) impl).menu;
+        Menu val = ((DartControl) impl).menu;
+        if (val != null && !(val.getImpl() instanceof DartMenu))
+            return null;
+        return val;
     }
 
     public void setMenu(Menu value) {

@@ -657,7 +657,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
                 error(SWT.ERROR_INVALID_ARGUMENT);
             if ((menu.style & SWT.BAR) == 0)
                 error(SWT.ERROR_MENU_NOT_BAR);
-            if (((SwtMenu) menu.getImpl()).parent != this.getApi())
+            if (menu.getImpl()._parent() != this.getApi())
                 error(SWT.ERROR_INVALID_PARENT);
         }
         menuBar = menu;

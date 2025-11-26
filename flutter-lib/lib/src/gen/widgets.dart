@@ -14,6 +14,8 @@ import '../gen/group.dart';
 import '../gen/label.dart';
 import '../gen/link.dart';
 import '../gen/list.dart';
+import '../gen/menu.dart';
+import '../gen/menuitem.dart';
 import '../gen/progressbar.dart';
 import '../gen/scale.dart';
 import '../gen/scrollbar.dart';
@@ -31,10 +33,12 @@ import '../gen/treecolumn.dart';
 import '../gen/treeitem.dart';
 import '../gen/widget.dart';
 
+
 VWidget mapWidgetValue(Map<String, dynamic> child) {
   var type = child['swt'];
   // print("value: $type");
-  return switch (type) {
+  return switch(type) {
+    
     "CLabel" => VCLabel.fromJson(child),
     "StyledText" => VStyledText.fromJson(child),
     "CTabFolder" => VCTabFolder.fromJson(child),
@@ -57,6 +61,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "Slider" => VSlider.fromJson(child),
     "CTabItem" => VCTabItem.fromJson(child),
     "ExpandItem" => VExpandItem.fromJson(child),
+    "MenuItem" => VMenuItem.fromJson(child),
     "TableColumn" => VTableColumn.fromJson(child),
     "TableItem" => VTableItem.fromJson(child),
     "ToolItem" => VToolItem.fromJson(child),
@@ -64,6 +69,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "TreeItem" => VTreeItem.fromJson(child),
     "Caret" => VCaret.fromJson(child),
     "GC" => VGC.fromJson(child),
+    "Menu" => VMenu.fromJson(child),
     "ScrollBar" => VScrollBar.fromJson(child),
     _ => throw "Unknown Widget Value $type"
   };
@@ -72,7 +78,8 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
 Widget mapWidgetFromValue(VWidget child) {
   var type = child.swt;
   var id = child.id;
-  return switch (child) {
+  return switch(child) {
+    
     VCLabel() => CLabelSwt(key: ValueKey(id), value: child),
     VStyledText() => StyledTextSwt(key: ValueKey(id), value: child),
     VCTabFolder() => CTabFolderSwt(key: ValueKey(id), value: child),
@@ -95,6 +102,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VSlider() => SliderSwt(key: ValueKey(id), value: child),
     VCTabItem() => CTabItemSwt(key: ValueKey(id), value: child),
     VExpandItem() => ExpandItemSwt(key: ValueKey(id), value: child),
+    VMenuItem() => MenuItemSwt(key: ValueKey(id), value: child),
     VTableColumn() => TableColumnSwt(key: ValueKey(id), value: child),
     VTableItem() => TableItemSwt(key: ValueKey(id), value: child),
     VToolItem() => ToolItemSwt(key: ValueKey(id), value: child),
@@ -102,6 +110,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VTreeItem() => TreeItemSwt(key: ValueKey(id), value: child),
     VCaret() => CaretSwt(key: ValueKey(id), value: child),
     VGC() => GCSwt(key: ValueKey(id), value: child),
+    VMenu() => MenuSwt(key: ValueKey(id), value: child),
     VScrollBar() => ScrollBarSwt(key: ValueKey(id), value: child),
     _ => throw "No widget for Value $type"
   };

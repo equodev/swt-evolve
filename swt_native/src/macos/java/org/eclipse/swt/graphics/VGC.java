@@ -15,6 +15,15 @@ public class VGC extends VResource {
         super(impl);
     }
 
+    @JsonAttribute(name = "XORMode")
+    public boolean getXORMode() {
+        return ((DartGC) impl).getXORMode();
+    }
+
+    public void setXORMode(boolean value) {
+        ((DartGC) impl).XORMode = value;
+    }
+
     public boolean getAdvanced() {
         return ((DartGC) impl).getAdvanced();
     }
@@ -181,14 +190,6 @@ public class VGC extends VResource {
 
     public void setTransform(Transform value) {
         ((DartGC) impl).transform = value;
-    }
-
-    public boolean getXORMode() {
-        return ((DartGC) impl).getXORMode();
-    }
-
-    public void setXORMode(boolean value) {
-        ((DartGC) impl).xORMode = value;
     }
 
     @CompiledJson()

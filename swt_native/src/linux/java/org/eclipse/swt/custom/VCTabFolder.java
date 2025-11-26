@@ -19,6 +19,15 @@ public class VCTabFolder extends VComposite {
         super(impl);
     }
 
+    @JsonAttribute(name = "MRUVisible")
+    public boolean getMRUVisible() {
+        return ((DartCTabFolder) impl).getMRUVisible();
+    }
+
+    public void setMRUVisible(boolean value) {
+        ((DartCTabFolder) impl).mru = value;
+    }
+
     public boolean getBorderVisible() {
         return ((DartCTabFolder) impl).getBorderVisible();
     }
@@ -77,14 +86,6 @@ public class VCTabFolder extends VComposite {
 
     public void setItems(CTabItem[] value) {
         ((DartCTabFolder) impl).items = value;
-    }
-
-    public boolean getMRUVisible() {
-        return ((DartCTabFolder) impl).getMRUVisible();
-    }
-
-    public void setMRUVisible(boolean value) {
-        ((DartCTabFolder) impl).mru = value;
     }
 
     public boolean getMaximizeVisible() {

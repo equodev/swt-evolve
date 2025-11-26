@@ -811,7 +811,9 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
             }
         } else {
             ((SwtMenu) menu.getImpl()).cascade = this.getApi();
-            nsItem.setSubmenu(((SwtMenu) menu.getImpl()).nsMenu);
+            if (menu == null || menu.getImpl() instanceof SwtMenu) {
+                nsItem.setSubmenu(((SwtMenu) menu.getImpl()).nsMenu);
+            }
         }
         if (menu != null) {
             nsItem.setTarget(null);
@@ -1118,6 +1120,26 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         nsItem.setKeyEquivalent(nsstring.lowercaseString());
         nsstring.release();
         return key != 0;
+    }
+
+    public Menu _parent() {
+        return parent;
+    }
+
+    public Menu _menu() {
+        return menu;
+    }
+
+    public int _accelerator() {
+        return accelerator;
+    }
+
+    public long _nsItemAction() {
+        return nsItemAction;
+    }
+
+    public String _toolTipText() {
+        return toolTipText;
     }
 
     public MenuItem getApi() {

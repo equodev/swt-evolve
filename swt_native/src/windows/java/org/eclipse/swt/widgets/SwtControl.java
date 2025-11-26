@@ -3698,7 +3698,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             if ((menu.style & SWT.POP_UP) == 0) {
                 error(SWT.ERROR_MENU_NOT_POP_UP);
             }
-            if (((SwtMenu) menu.getImpl()).parent != menuShell()) {
+            if (menu.getImpl()._parent() != menuShell()) {
                 error(SWT.ERROR_INVALID_PARENT);
             }
         }
@@ -5272,7 +5272,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 int id = OS.LOWORD(wParam);
                 MenuItem item = ((SwtDisplay) display.getImpl()).getMenuItem(id);
                 if (item != null && item.isEnabled()) {
-                    return ((SwtMenuItem) item.getImpl()).wmCommandChild(wParam, lParam);
+                    if (item.getImpl() instanceof SwtMenuItem) {
+                        return ((SwtMenuItem) item.getImpl()).wmCommandChild(wParam, lParam);
+                    } else
+                        return null;
                 }
             }
             return null;
@@ -5348,7 +5351,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             MenuItem item = ((SwtDisplay) display.getImpl()).getMenuItem(struct.itemID);
             if (item == null)
                 return null;
-            return ((SwtMenuItem) item.getImpl()).wmDrawChild(wParam, lParam);
+            if (item.getImpl() instanceof SwtMenuItem) {
+                return ((SwtMenuItem) item.getImpl()).wmDrawChild(wParam, lParam);
+            } else
+                return null;
         }
         Control control = ((SwtDisplay) display.getImpl()).getControl(struct.hwndItem);
         if (control == null)
@@ -5623,7 +5629,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             MenuItem item = ((SwtDisplay) display.getImpl()).getMenuItem(struct.itemID);
             if (item == null)
                 return null;
-            return ((SwtMenuItem) item.getImpl()).wmMeasureChild(wParam, lParam);
+            if (item.getImpl() instanceof SwtMenuItem) {
+                return ((SwtMenuItem) item.getImpl()).wmMeasureChild(wParam, lParam);
+            } else
+                return null;
         }
         long hwnd = OS.GetDlgItem(getApi().handle, struct.CtlID);
         Control control = ((SwtDisplay) display.getImpl()).getControl(hwnd);
@@ -5704,9 +5713,14 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 if (OS.GetMenuItemInfo(lParam, index, true, info)) {
                     Menu newMenu = ((SwtDecorations) menuShell.getImpl()).findMenu(info.hSubMenu);
                     if (newMenu != null) {
-                        item = ((SwtMenu) newMenu.getImpl()).cascade;
+                        item = newMenu.getImpl()._cascade();
                         activeMenu = newMenu;
-                        ((SwtMenu) activeMenu.getImpl()).selectedMenuItem = ((SwtMenu) newMenu.getImpl()).cascade;
+                        if (activeMenu.getImpl() instanceof DartMenu) {
+                            ((DartMenu) activeMenu.getImpl()).selectedMenuItem = newMenu.getImpl()._cascade();
+                        }
+                        if (activeMenu.getImpl() instanceof SwtMenu) {
+                            ((SwtMenu) activeMenu.getImpl()).selectedMenuItem = newMenu.getImpl()._cascade();
+                        }
                         OS.SetTimer(this.getApi().handle, SwtMenu.ID_TOOLTIP_TIMER, OS.TTM_GETDELAYTIME, 0);
                     }
                 }
@@ -5718,7 +5732,12 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 }
                 activeMenu = (newMenu == null) ? menu : newMenu;
                 if (item != null && activeMenu != null) {
-                    ((SwtMenu) activeMenu.getImpl()).selectedMenuItem = item;
+                    if (activeMenu.getImpl() instanceof DartMenu) {
+                        ((DartMenu) activeMenu.getImpl()).selectedMenuItem = item;
+                    }
+                    if (activeMenu.getImpl() instanceof SwtMenu) {
+                        ((SwtMenu) activeMenu.getImpl()).selectedMenuItem = item;
+                    }
                     OS.SetTimer(this.getApi().handle, SwtMenu.ID_TOOLTIP_TIMER, OS.TTM_GETDELAYTIME, 0);
                 }
             }
@@ -5911,7 +5930,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             if (shell.isEnabled()) {
                 MenuItem item = ((SwtDisplay) display.getImpl()).getMenuItem(OS.LOWORD(wParam));
                 if (item != null)
-                    ((SwtMenuItem) item.getImpl()).wmCommandChild(wParam, lParam);
+                    if (item == null || item.getImpl() instanceof SwtMenuItem) {
+                        ((SwtMenuItem) item.getImpl()).wmCommandChild(wParam, lParam);
+                    }
             }
             return LRESULT.ZERO;
         }
@@ -6093,7 +6114,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     LRESULT WM_TIMER(long wParam, long lParam) {
         if (wParam == SwtMenu.ID_TOOLTIP_TIMER && activeMenu != null) {
             OS.KillTimer(this.getApi().handle, SwtMenu.ID_TOOLTIP_TIMER);
-            ((SwtMenu) activeMenu.getImpl()).wmTimer(wParam, lParam);
+            if (activeMenu.getImpl() instanceof SwtMenu) {
+                ((SwtMenu) activeMenu.getImpl()).wmTimer(wParam, lParam);
+            }
         }
         return null;
     }

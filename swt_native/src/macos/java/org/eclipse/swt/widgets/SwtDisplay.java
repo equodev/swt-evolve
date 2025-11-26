@@ -1811,14 +1811,14 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         int count = 0;
         for (int i = 0; i < menus.length; i++) {
             Menu menu = menus[i];
-            if (menu != null && ((SwtMenu) menu.getImpl()).parent == shell)
+            if (menu != null && menu.getImpl()._parent() == shell)
                 count++;
         }
         int index = 0;
         Menu[] result = new Menu[count];
         for (int i = 0; i < menus.length; i++) {
             Menu menu = menus[i];
-            if (menu != null && ((SwtMenu) menu.getImpl()).parent == shell) {
+            if (menu != null && menu.getImpl()._parent() == shell) {
                 result[index++] = menu;
             }
         }
@@ -4587,7 +4587,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             popups[length] = null;
             runDeferredEvents();
             if (!menu.isDisposed())
-                ((SwtMenu) menu.getImpl())._setVisible(true);
+                menu.getImpl()._setVisible(true);
             result = true;
         }
         popups = null;
@@ -6038,7 +6038,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                         if (item != null) {
                             Menu menu = item.getMenu();
                             if (menu != null && !menu.isDisposed()) {
-                                return ((SwtMenu) menu.getImpl()).nsMenu.id;
+                                if (menu == null || menu.getImpl() instanceof SwtMenu) {
+                                    return ((SwtMenu) menu.getImpl()).nsMenu.id;
+                                } else
+                                    return 0;
                             }
                         }
                     }

@@ -12,31 +12,32 @@ import 'widgets.dart';
 part 'toolitem.g.dart';
 
 class ToolItemSwt<V extends VToolItem> extends ItemSwt<V> {
+  
   const ToolItemSwt({super.key, required super.value});
 
+  
   @override
   State createState() => ToolItemImpl<ToolItemSwt<VToolItem>, VToolItem>();
 
+  
+
+  
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/DefaultSelection", payload);
   }
-
   void sendSelectionOpenMenu(V val, VEvent? payload) {
     sendEvent(val, "Selection/OpenMenu", payload);
   }
-
   void sendSelectionSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/Selection", payload);
   }
 }
 
-@JsonSerializable()
-class VToolItem extends VItem {
-  VToolItem() : this.empty();
-  VToolItem.empty() {
-    swt = "ToolItem";
-  }
 
+@JsonSerializable() class VToolItem extends VItem {
+  VToolItem() : this.empty();
+  VToolItem.empty()  { swt = "ToolItem"; }
+  
   VColor? background;
   VControl? control;
   VImage? disabledImage;
@@ -46,8 +47,8 @@ class VToolItem extends VItem {
   bool? selection;
   String? toolTipText;
   int? width;
-
-  factory VToolItem.fromJson(Map<String, dynamic> json) =>
-      _$VToolItemFromJson(json);
+  
+  factory VToolItem.fromJson(Map<String, dynamic> json) => _$VToolItemFromJson(json);
   Map<String, dynamic> toJson() => _$VToolItemToJson(this);
+  
 }

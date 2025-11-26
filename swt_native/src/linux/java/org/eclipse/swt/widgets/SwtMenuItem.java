@@ -1514,6 +1514,66 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         }
     }
 
+    public Menu _parent() {
+        return parent;
+    }
+
+    public Menu _menu() {
+        return menu;
+    }
+
+    public long _groupHandle() {
+        return groupHandle;
+    }
+
+    public long _labelHandle() {
+        return labelHandle;
+    }
+
+    public long _imageHandle() {
+        return imageHandle;
+    }
+
+    public long _boxHandle() {
+        return boxHandle;
+    }
+
+    public int _accelerator() {
+        return accelerator;
+    }
+
+    public int _userId() {
+        return userId;
+    }
+
+    public String _toolTipText() {
+        return toolTipText;
+    }
+
+    public Image _defaultDisableImage() {
+        return defaultDisableImage;
+    }
+
+    public boolean _enabled() {
+        return enabled;
+    }
+
+    public long _modelHandle() {
+        return modelHandle;
+    }
+
+    public long _actionHandle() {
+        return actionHandle;
+    }
+
+    public long _shortcutHandle() {
+        return shortcutHandle;
+    }
+
+    public String _actionName() {
+        return actionName;
+    }
+
     public MenuItem getApi() {
         if (api == null)
             api = MenuItem.createApi(this);

@@ -2653,7 +2653,7 @@ public final class DartGC extends DartResource implements IGC {
     public void setXORMode(boolean xor) {
         dirty();
         data.xorMode = xor;
-        this.xORMode = xor;
+        this.XORMode = xor;
     }
 
     /**
@@ -2834,6 +2834,8 @@ public final class DartGC extends DartResource implements IGC {
         return null;
     }
 
+    boolean XORMode;
+
     boolean advanced;
 
     int alpha;
@@ -2874,8 +2876,6 @@ public final class DartGC extends DartResource implements IGC {
 
     Transform transform;
 
-    boolean xORMode;
-
     public Drawable _drawable() {
         return drawable;
     }
@@ -2902,6 +2902,10 @@ public final class DartGC extends DartResource implements IGC {
 
     public double[] _point() {
         return point;
+    }
+
+    public boolean _XORMode() {
+        return XORMode;
     }
 
     public boolean _advanced() {
@@ -2982,10 +2986,6 @@ public final class DartGC extends DartResource implements IGC {
 
     public Transform _transform() {
         return transform;
-    }
-
-    public boolean _xORMode() {
-        return xORMode;
     }
 
     private Display display;

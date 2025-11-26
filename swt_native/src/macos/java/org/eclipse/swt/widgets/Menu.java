@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class are user interface objects that contain
@@ -70,7 +71,7 @@ public class Menu extends Widget {
      */
     public Menu(Control parent) {
         this((IMenu) null);
-        setImpl(new SwtMenu(parent, this));
+        setImpl(Config.isEquo(Menu.class, parent) ? new DartMenu(parent, this) : new SwtMenu(parent, this));
     }
 
     /**
@@ -112,7 +113,7 @@ public class Menu extends Widget {
      */
     public Menu(Decorations parent, int style) {
         this((IMenu) null);
-        setImpl(new SwtMenu(parent, style, this));
+        setImpl(Config.isEquo(Menu.class, parent) ? new DartMenu(parent, style, this) : new SwtMenu(parent, style, this));
     }
 
     /**
@@ -141,7 +142,7 @@ public class Menu extends Widget {
      */
     public Menu(Menu parentMenu) {
         this((IMenu) null);
-        setImpl(new SwtMenu(parentMenu, this));
+        setImpl(Config.isEquo(Menu.class) ? new DartMenu(parentMenu, this) : new SwtMenu(parentMenu, this));
     }
 
     /**
@@ -170,17 +171,17 @@ public class Menu extends Widget {
      */
     public Menu(MenuItem parentItem) {
         this((IMenu) null);
-        setImpl(new SwtMenu(parentItem, this));
+        setImpl(Config.isEquo(Menu.class) ? new DartMenu(parentItem, this) : new SwtMenu(parentItem, this));
     }
 
     Menu(Display display) {
         this((IMenu) null);
-        setImpl(new SwtMenu(display, this));
+        setImpl(Config.isEquo(Menu.class) ? new DartMenu(display, this) : new SwtMenu(display, this));
     }
 
     Menu(Display display, NSMenu nativeMenu) {
         this((IMenu) null);
-        setImpl(new SwtMenu(display, nativeMenu, this));
+        setImpl(Config.isEquo(Menu.class) ? new DartMenu(display, this) : new SwtMenu(display, nativeMenu, this));
     }
 
     /**

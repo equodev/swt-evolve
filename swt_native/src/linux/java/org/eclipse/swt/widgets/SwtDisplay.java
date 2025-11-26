@@ -899,13 +899,15 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         for (int i = 0; i < length; i++) {
             if (popups[i] == menu)
                 return;
-            /* Bug 530577, 528998: Clicking on button that triggers popup menus causes
+            if (menu.getImpl() instanceof SwtMenu) {
+                /* Bug 530577, 528998: Clicking on button that triggers popup menus causes
 		 * menu.setVisible to be called twice, once due to MouseDown, and once due to ButtonClicked.
 		 * This causes two duplicate menus (with different handles) to popup at the same time.
 		 * The fix is to avoid having two identical popup menus in the queue.
 		 */
-            if (popups[i] != null && ((SwtMenu) popups[i].getImpl()).getNameText().equals(((SwtMenu) menu.getImpl()).getNameText()))
-                return;
+                if (popups[i] != null && ((SwtMenu) popups[i].getImpl()).getNameText().equals(((SwtMenu) menu.getImpl()).getNameText()))
+                    return;
+            }
         }
         int index = 0;
         while (index < length) {
@@ -5243,7 +5245,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             popups[length] = null;
             runDeferredEvents();
             if (!menu.isDisposed())
-                ((SwtMenu) menu.getImpl())._setVisible(true);
+                menu.getImpl()._setVisible(true);
             result = true;
         }
         popups = null;
