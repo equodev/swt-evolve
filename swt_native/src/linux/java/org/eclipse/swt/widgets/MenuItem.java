@@ -23,6 +23,7 @@ import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
 import org.eclipse.swt.widgets.Menu.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -81,7 +82,7 @@ public class MenuItem extends Item {
      */
     public MenuItem(Menu parent, int style) {
         this((IMenuItem) null);
-        setImpl(new SwtMenuItem(parent, style, this));
+        setImpl(Config.isEquo(MenuItem.class, parent) ? new DartMenuItem(parent, style, this) : new SwtMenuItem(parent, style, this));
     }
 
     /**
@@ -122,7 +123,7 @@ public class MenuItem extends Item {
      */
     public MenuItem(Menu parent, int style, int index) {
         this((IMenuItem) null);
-        setImpl(new SwtMenuItem(parent, style, index, this));
+        setImpl(Config.isEquo(MenuItem.class, parent) ? new DartMenuItem(parent, style, index, this) : new SwtMenuItem(parent, style, index, this));
     }
 
     /**

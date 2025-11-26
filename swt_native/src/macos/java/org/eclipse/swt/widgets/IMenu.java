@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 
-public interface IMenu extends IWidget {
+public interface IMenu extends IWidget, ImplMenu {
 
     /**
      * Adds the listener to the collection of listeners who will

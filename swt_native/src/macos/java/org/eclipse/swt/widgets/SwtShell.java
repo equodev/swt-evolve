@@ -2608,9 +2608,11 @@ public class SwtShell extends SwtDecorations implements IShell {
                     if (escMenuItem != null) {
                         Menu parentMenu = escMenuItem.getParent();
                         if (parentMenu != null) {
-                            NSMenu escNSMenu = ((SwtMenu) parentMenu.getImpl()).nsMenu;
-                            if (escNSMenu != null) {
-                                escNSMenu.performKeyEquivalent(nsEvent);
+                            if (parentMenu == null || parentMenu.getImpl() instanceof SwtMenu) {
+                                NSMenu escNSMenu = ((SwtMenu) parentMenu.getImpl()).nsMenu;
+                                if (escNSMenu != null) {
+                                    escNSMenu.performKeyEquivalent(nsEvent);
+                                }
                             }
                         }
                     }

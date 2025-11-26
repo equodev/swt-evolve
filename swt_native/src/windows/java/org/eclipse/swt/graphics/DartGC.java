@@ -2203,7 +2203,7 @@ public final class DartGC extends DartResource implements IGC {
     public boolean getXORMode() {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return this.xORMode;
+        return this.XORMode;
     }
 
     long identity() {
@@ -3206,7 +3206,7 @@ public final class DartGC extends DartResource implements IGC {
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.xORMode = xor;
+        this.XORMode = xor;
     }
 
     /**
@@ -3454,6 +3454,8 @@ public final class DartGC extends DartResource implements IGC {
         return DPIUtil.getZoomForAutoscaleProperty(data.nativeZoom);
     }
 
+    boolean XORMode;
+
     boolean advanced;
 
     int alpha;
@@ -3494,14 +3496,16 @@ public final class DartGC extends DartResource implements IGC {
 
     Transform transform;
 
-    boolean xORMode;
-
     public Drawable _drawable() {
         return drawable;
     }
 
     public GCData _data() {
         return data;
+    }
+
+    public boolean _XORMode() {
+        return XORMode;
     }
 
     public boolean _advanced() {
@@ -3582,10 +3586,6 @@ public final class DartGC extends DartResource implements IGC {
 
     public Transform _transform() {
         return transform;
-    }
-
-    public boolean _xORMode() {
-        return xORMode;
     }
 
     private Display display;

@@ -10,19 +10,23 @@ import 'widgets.dart';
 part 'tableitem.g.dart';
 
 class TableItemSwt<V extends VTableItem> extends ItemSwt<V> {
+  
   const TableItemSwt({super.key, required super.value});
 
+  
   @override
   State createState() => TableItemImpl<TableItemSwt<VTableItem>, VTableItem>();
+
+  
+
+  
 }
 
-@JsonSerializable()
-class VTableItem extends VItem {
-  VTableItem() : this.empty();
-  VTableItem.empty() {
-    swt = "TableItem";
-  }
 
+@JsonSerializable() class VTableItem extends VItem {
+  VTableItem() : this.empty();
+  VTableItem.empty()  { swt = "TableItem"; }
+  
   VColor? background;
   bool? checked;
   VFont? font;
@@ -30,8 +34,8 @@ class VTableItem extends VItem {
   bool? grayed;
   int? imageIndent;
   List<String>? texts;
-
-  factory VTableItem.fromJson(Map<String, dynamic> json) =>
-      _$VTableItemFromJson(json);
+  
+  factory VTableItem.fromJson(Map<String, dynamic> json) => _$VTableItemFromJson(json);
   Map<String, dynamic> toJson() => _$VTableItemToJson(this);
+  
 }

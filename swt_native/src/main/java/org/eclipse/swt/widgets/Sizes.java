@@ -8,17 +8,16 @@ import org.eclipse.swt.graphics.Rectangle;
 public class Sizes {
     private static final double AVERAGE_CHAR_WIDTH = 7.974;
     private static final double HORIZONTAL_PADDING = 12.0;
-    
+
     public static Point compute(DartButton c) {
         double textWidth = (c.text != null ? c.text.length() : 0) * AVERAGE_CHAR_WIDTH;
 
         double totalWidth = textWidth + (2 * HORIZONTAL_PADDING);
-        
+
         return new Point((int) totalWidth, 25);
     }
 
     public static Point compute(DartCombo c) {
-        // Find the longest item in the combo
         int maxLength = 0;
         String[] items = c._items();
         if (items != null) {
@@ -29,47 +28,37 @@ public class Sizes {
             }
         }
 
-        // Also consider the current text
         String text = c._text();
         int textLength = (text != null ? text.length() : 0);
         maxLength = Math.max(maxLength, textLength);
 
-        // Calculate width based on the longest text
         int width = maxLength > 0 ? (int)(maxLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING) : 100;
-        // Add space for dropdown arrow
         width += 30;
 
-        // For SIMPLE style, calculate height based on number of visible items
-        int height = 25; // Default height for DROP_DOWN and READ_ONLY
+        int height = 25;
         if ((c.getApi().style & org.eclipse.swt.SWT.SIMPLE) != 0) {
             int visibleCount = c.getApi().getVisibleItemCount();
             int itemCount = items != null ? items.length : 0;
-            // Height should accommodate visible items
-            height = Math.min(visibleCount, itemCount) * 24 + 32; // 24px per item + padding
+            height = Math.min(visibleCount, itemCount) * 24 + 32;
         }
 
-        Point result = new Point(Math.max(width, 120), height);
-        System.out.println("Combo size calculated: width=" + result.x + ", height=" + result.y + ", items=" + (items != null ? items.length : 0) + ", maxLength=" + maxLength);
-        return result;
+        return new Point(Math.max(width, 120), height);
     }
 
     public static Point compute(DartLabel c) {
         int width = 0;
         int height = 18;
 
-        // Add text width if present
         if (c.text != null && !c.text.isEmpty()) {
             width += c.text.length() * 15;
         }
 
-        // Add image dimensions if present
         if (c.image != null) {
             int imageWidth = c.image.getImpl()._width();
             int imageHeight = c.image.getImpl()._height();
 
-            // If we have both text and image, add some spacing
             if (c.text != null && !c.text.isEmpty()) {
-                width += 8; // spacing between image and text
+                width += 8;
             }
 
             width += imageWidth;
@@ -110,7 +99,7 @@ public class Sizes {
     }
 
     public static Point computeSizeInPixels(DartComposite composite) {
-        return new Point(10, 10); // TODO
+        return new Point(10, 10);
     }
 
     public static Point compute(DartTable c) {
@@ -139,7 +128,7 @@ public class Sizes {
         int textLength = (text != null ? text.length() : 0);
 
         if ((c.getApi().style & org.eclipse.swt.SWT.MULTI) != 0) {
-            int width = 200; // Default width
+            int width = 200;
             if (text != null && !text.isEmpty()) {
                 String[] lines = text.split("\n");
                 int maxLineLength = 0;
@@ -168,7 +157,6 @@ public class Sizes {
             return new Point(100, 32);
         }
 
-        // Remove HTML tags to calculate actual visible text length
         String plainText = text.replaceAll("<a[^>]*>", "").replaceAll("</a>", "");
         int textLength = plainText.length();
 
@@ -188,6 +176,8 @@ public class Sizes {
         int childrenHeight = 0;
         boolean hasCombo = false;
         int comboCount = 0;
+        boolean hasMenu = false;
+        int maxMenuHeight = 0;
 
         if (children != null && children.length > 0) {
             for (Control child : children) {
@@ -195,10 +185,16 @@ public class Sizes {
                 childrenWidth += childSize.x;
                 childrenHeight = Math.max(childrenHeight, childSize.y);
 
-                // Check if this child is a Combo
                 if (child instanceof Combo) {
                     hasCombo = true;
                     comboCount++;
+                }
+
+                Menu menu = child.getMenu();
+                if (menu != null && menu.getImpl() instanceof DartMenu) {
+                    hasMenu = true;
+                    Point menuSize = compute((DartMenu) menu.getImpl());
+                    maxMenuHeight = Math.max(maxMenuHeight, menuSize.y);
                 }
             }
             if (children.length > 1) {
@@ -215,27 +211,29 @@ public class Sizes {
         int width = Math.max(titleWidth, childrenWidth) + horizontalPadding;
 
         int height;
+        int extraSpace = 0;
+
         if (children != null && children.length > 0) {
             int estimatedHeight = childrenHeight * Math.max(1, children.length / 2);
             height = estimatedHeight + titleHeightSpace + verticalPadding;
 
-            // If the group contains Combos, add extra space for dropdown menus
-            // Each combo needs approximately 150px to show ~5-6 dropdown items
             if (hasCombo) {
                 int dropdownSpace = 150 * comboCount;
-                height += dropdownSpace;
-                System.out.println("Group contains " + comboCount + " Combo(s), adding " + dropdownSpace + "px for dropdowns");
+                extraSpace += dropdownSpace;
             }
+
+            if (hasMenu) {
+                extraSpace += maxMenuHeight;
+            }
+
+            height += extraSpace;
         } else {
             height = childrenHeight + titleHeightSpace + verticalPadding;
         }
 
-        // Minimum size for a Group - ensure enough space for combo dropdowns
-        // Use a more generous minimum width to accommodate dropdown menus
-        int minHeight = hasCombo ? 200 : 100;
-        Point result = new Point(Math.max(width, 300), Math.max(height, minHeight));
-        System.out.println("Group size calculated: width=" + result.x + ", height=" + result.y + ", text='" + text + "', childrenWidth=" + childrenWidth + ", childrenCount=" + (children != null ? children.length : 0) + ", hasCombo=" + hasCombo);
-        return result;
+        int baseMinHeight = 100;
+        int minHeight = baseMinHeight + extraSpace;
+        return new Point(Math.max(width, 300), Math.max(height, minHeight));
     }
 
     public static Point compute(DartExpandBar dartExpandBar) {
@@ -282,18 +280,14 @@ public class Sizes {
         int style = c.getApi().style;
         boolean isVertical = (style & org.eclipse.swt.SWT.VERTICAL) != 0;
 
-        // Same track length (250px), just different orientation
         if (isVertical) {
-            // Vertical slider: width is thickness, height is track length
             return new Point(48, 250);
         } else {
-            // Horizontal slider: width is track length, height is thickness
             return new Point(250, 48);
         }
     }
 
     public static Point compute(DartSpinner c) {
-        // Spinner: text field + up/down buttons
         return new Point(120, 32);
     }
 
@@ -301,12 +295,9 @@ public class Sizes {
         int style = c.getApi().style;
         boolean isVertical = (style & org.eclipse.swt.SWT.VERTICAL) != 0;
 
-        // Similar to Slider but can be slightly smaller since Scale is simpler
         if (isVertical) {
-            // Vertical scale: width is thickness, height is track length
             return new Point(40, 200);
         } else {
-            // Horizontal scale: width is track length, height is thickness
             return new Point(200, 40);
         }
     }
@@ -315,14 +306,45 @@ public class Sizes {
         int style = c.getApi().style;
         boolean isVertical = (style & org.eclipse.swt.SWT.VERTICAL) != 0;
 
-        // ProgressBar is thinner than Scale/Slider
         if (isVertical) {
-            // Vertical progress bar: width is thickness, height is bar length
             return new Point(20, 200);
         } else {
-            // Horizontal progress bar: width is bar length, height is thickness
             return new Point(200, 20);
         }
+    }
+
+    public static Point compute(DartMenu c) {
+        int style = c.getApi().style;
+        boolean isBar = (style & org.eclipse.swt.SWT.BAR) != 0;
+        boolean isDropDown = (style & org.eclipse.swt.SWT.DROP_DOWN) != 0;
+        boolean isPopUp = (style & org.eclipse.swt.SWT.POP_UP) != 0;
+
+        if (isBar) {
+            return new Point(300, 28);
+        } else if (isDropDown || isPopUp) {
+            MenuItem[] items = c._items();
+            int itemCount = items != null ? items.length : 1;
+
+            int maxWidth = 150;
+            if (items != null) {
+                for (MenuItem item : items) {
+                    if (item != null) {
+                        String text = item.getText();
+                        if (text != null && !text.isEmpty()) {
+                            int textWidth = (int)(text.length() * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING);
+                            maxWidth = Math.max(maxWidth, textWidth + 40);
+                        }
+                    }
+                }
+            }
+
+            int itemHeight = 24;
+            int height = Math.max(50, itemCount * itemHeight + 16);
+
+            return new Point(maxWidth, height);
+        }
+
+        return new Point(150, 50);
     }
 
 }

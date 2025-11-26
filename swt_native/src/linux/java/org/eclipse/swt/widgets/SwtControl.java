@@ -5904,7 +5904,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             if ((menu.style & SWT.POP_UP) == 0) {
                 error(SWT.ERROR_MENU_NOT_POP_UP);
             }
-            if (((SwtMenu) menu.getImpl()).parent != menuShell()) {
+            if (menu.getImpl()._parent() != menuShell()) {
                 error(SWT.ERROR_INVALID_PARENT);
             }
         }

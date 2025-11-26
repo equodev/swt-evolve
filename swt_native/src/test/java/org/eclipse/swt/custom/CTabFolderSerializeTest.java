@@ -28,9 +28,9 @@ class CTabFolderSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "CTabFolder")
                .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("style", w.getStyle());
+        assertJ.satisfies(node("MRUVisible").equalsTo(w.getMRUVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("borderVisible").equalsTo(w.getBorderVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("highlightEnabled").equalsTo(w.getHighlightEnabled(), orAbsentIfFalse));
-        assertJ.satisfies(node("mRUVisible").equalsTo(w.getMRUVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("maximizeVisible").equalsTo(w.getMaximizeVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("maximized").equalsTo(w.getMaximized(), orAbsentIfFalse));
         assertJ.satisfies(node("minimizeVisible").equalsTo(w.getMinimizeVisible(), orAbsentIfFalse));
@@ -60,6 +60,7 @@ class CTabFolderSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
+        assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
         assertJ.satisfies(node("orientation").equalsTo(w.getOrientation(), orAbsentIf0));
         assertJ.satisfies(node("redraw").equalsTo(value(w).getRedraw(), orAbsentIfFalse));
         assertJ.satisfies(node("textDirection").equalsTo(w.getTextDirection(), orAbsentIf0));

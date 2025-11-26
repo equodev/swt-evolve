@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import '../gen/control.dart';
+import '../gen/menu.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../styles.dart';
+import '../impl/menu_evolve.dart';
 import 'widget_config.dart';
 
 abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     extends WidgetSwtState<T, V> {
+
   @override
   Widget build(BuildContext context) {
     return const Text("Control");
   }
 
-  /// Get the SWT background color, with fallback to parent background color
   Color? getSwtBackgroundColor(BuildContext context) {
     var swtBackground = state.background;
     if (swtBackground != null) {
@@ -34,7 +36,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     return null;
   }
 
-  /// Get the SWT foreground color (no parent fallback)
   Color? getSwtForegroundColor(BuildContext context) {
     var swtForeground = state.foreground;
     if (swtForeground != null) {
@@ -50,9 +51,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   }
 
   Widget wrap(Widget widget) {
-    // Apply intrinsic width to prevent widgets from taking full width in Wrap
-    // widget = IntrinsicWidth(child: widget);
-
     if (state.style.has(SWT.BORDER)) {
       widget = Container(
           decoration:
@@ -70,10 +68,46 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       return Opacity(opacity: 0.35, child: widget);
     }
 
-    // if (state.menu != null) {
-    //   return applyMenu(widget);
-    // }
+    if (state.menu != null) {
+      return applyMenu(widget);
+    }
 
     return widget;
+  }
+
+  Widget applyMenu(Widget child) {
+    final menu = state.menu;
+    if (menu == null) {
+      return child;
+    }
+
+    final menuKey = GlobalKey<State<MenuSwt>>();
+    final widgetKey = GlobalKey();
+
+    return Stack(
+      children: [
+        GestureDetector(
+          key: widgetKey,
+          onSecondaryTapUp: (details) {
+            final RenderBox? renderBox = widgetKey.currentContext?.findRenderObject() as RenderBox?;
+            if (renderBox != null) {
+              final position = renderBox.localToGlobal(Offset.zero);
+              final size = renderBox.size;
+              final menuPosition = Offset(
+                position.dx + size.width / 2 + 10,
+                position.dy + size.height / 2 + 10
+              );
+
+              final menuState = menuKey.currentState;
+              if (menuState != null && menuState is MenuImpl) {
+                menuState.openContextMenuAt(context, menuPosition);
+              }
+            }
+          },
+          child: child,
+        ),
+        MenuSwt(key: menuKey, value: menu),
+      ],
+    );
   }
 }

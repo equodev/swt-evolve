@@ -3726,11 +3726,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             if ((menu.style & SWT.POP_UP) == 0) {
                 error(SWT.ERROR_MENU_NOT_POP_UP);
             }
-            if (((SwtMenu) menu.getImpl()).parent != menuShell()) {
+            if (menu.getImpl()._parent() != menuShell()) {
                 error(SWT.ERROR_INVALID_PARENT);
             }
         }
         this.menu = menu;
+        if (menu != null && menu.getImpl() instanceof DartMenu) {
+            ((DartMenu) menu.getImpl()).ownerControl = this.getApi();
+        }
     }
 
     @Override
@@ -4135,7 +4138,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 {
                     Rectangle rect = DPIUtil.autoScaleUp(event.getBounds());
                     if (rect.x != x || rect.y != y) {
-                        ((SwtMenu) menu.getImpl()).setLocationInPixels(rect.x, rect.y);
+                        ((DartMenu) menu.getImpl()).setLocationInPixels(rect.x, rect.y);
                     }
                     menu.setVisible(true);
                     return true;

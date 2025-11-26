@@ -28,6 +28,9 @@ VScrollable _$VScrollableFromJson(Map<String, dynamic> json) => VScrollable()
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
+  ..menu = json['menu'] == null
+      ? null
+      : VMenu.fromJson(json['menu'] as Map<String, dynamic>)
   ..orientation = (json['orientation'] as num?)?.toInt()
   ..redraw = json['redraw'] as bool?
   ..textDirection = (json['textDirection'] as num?)?.toInt()
@@ -49,6 +52,7 @@ Map<String, dynamic> _$VScrollableToJson(VScrollable instance) =>
       'enabled': instance.enabled,
       'font': instance.font,
       'foreground': instance.foreground,
+      'menu': instance.menu,
       'orientation': instance.orientation,
       'redraw': instance.redraw,
       'textDirection': instance.textDirection,

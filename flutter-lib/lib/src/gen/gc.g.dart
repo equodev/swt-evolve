@@ -10,6 +10,7 @@ VGC _$VGCFromJson(Map<String, dynamic> json) => VGC()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
   ..style = (json['style'] as num).toInt()
+  ..XORMode = json['XORMode'] as bool?
   ..advanced = json['advanced'] as bool?
   ..alpha = (json['alpha'] as num?)?.toInt()
   ..antialias = (json['antialias'] as num?)?.toInt()
@@ -34,13 +35,13 @@ VGC _$VGCFromJson(Map<String, dynamic> json) => VGC()
   ..lineJoin = (json['lineJoin'] as num?)?.toInt()
   ..lineStyle = (json['lineStyle'] as num?)?.toInt()
   ..lineWidth = (json['lineWidth'] as num?)?.toInt()
-  ..textAntialias = (json['textAntialias'] as num?)?.toInt()
-  ..xORMode = json['xORMode'] as bool?;
+  ..textAntialias = (json['textAntialias'] as num?)?.toInt();
 
 Map<String, dynamic> _$VGCToJson(VGC instance) => <String, dynamic>{
       'swt': instance.swt,
       'id': instance.id,
       'style': instance.style,
+      'XORMode': instance.XORMode,
       'advanced': instance.advanced,
       'alpha': instance.alpha,
       'antialias': instance.antialias,
@@ -56,7 +57,6 @@ Map<String, dynamic> _$VGCToJson(VGC instance) => <String, dynamic>{
       'lineStyle': instance.lineStyle,
       'lineWidth': instance.lineWidth,
       'textAntialias': instance.textAntialias,
-      'xORMode': instance.xORMode,
     };
 
 VGCCopyArea _$VGCCopyAreaFromJson(Map<String, dynamic> json) => VGCCopyArea(

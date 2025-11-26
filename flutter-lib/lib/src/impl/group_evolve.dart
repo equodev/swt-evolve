@@ -105,41 +105,36 @@ class _StyledGroup extends StatelessWidget {
     return SizedBox(
       width: width,
       height: height,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Title
-          if (text.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                text,
-                style: textStyle,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: borderColor, width: 1.5),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Title
+            if (text.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 4),
+                child: Text(
+                  text,
+                  style: textStyle,
+                ),
+              ),
+            // Children container
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: spacedChildren,
+                ),
               ),
             ),
-          // Border container
-          Expanded(
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: borderColor, width: 1.5),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: spacedChildren,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -4483,7 +4483,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             popups[length] = null;
             runDeferredEvents();
             if (!menu.isDisposed())
-                ((SwtMenu) menu.getImpl())._setVisible(true);
+                menu.getImpl()._setVisible(true);
             result = true;
         }
         popups = null;

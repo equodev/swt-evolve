@@ -24,6 +24,7 @@ class GCSerializeTest extends SerializeTestBase {
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("style", w.getStyle());
+        assertJ.satisfies(node("XORMode").equalsTo(w.getXORMode(), orAbsentIfFalse));
         assertJ.satisfies(node("advanced").equalsTo(w.getAdvanced(), orAbsentIfFalse));
         assertJ.satisfies(node("alpha").equalsTo(w.getAlpha(), orAbsentIf0));
         assertJ.satisfies(node("antialias").equalsTo(w.getAntialias(), orAbsentIf0));
@@ -39,7 +40,6 @@ class GCSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("lineStyle").equalsTo(w.getLineStyle(), orAbsentIf0));
         assertJ.satisfies(node("lineWidth").equalsTo(w.getLineWidth(), orAbsentIf0));
         assertJ.satisfies(node("textAntialias").equalsTo(w.getTextAntialias(), orAbsentIf0));
-        assertJ.satisfies(node("xORMode").equalsTo(w.getXORMode(), orAbsentIfFalse));
     }
 
     VGC value(GC w) {

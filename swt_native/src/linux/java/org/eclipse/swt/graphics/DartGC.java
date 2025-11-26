@@ -3313,7 +3313,7 @@ public final class DartGC extends DartResource implements IGC {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         data.xorMode = xor;
-        this.xORMode = xor;
+        this.XORMode = xor;
     }
 
     /**
@@ -3431,6 +3431,8 @@ public final class DartGC extends DartResource implements IGC {
         return "GC {" + getApi().handle + "}";
     }
 
+    boolean XORMode;
+
     boolean advanced;
 
     int alpha;
@@ -3469,14 +3471,16 @@ public final class DartGC extends DartResource implements IGC {
 
     Transform transform;
 
-    boolean xORMode;
-
     public Drawable _drawable() {
         return drawable;
     }
 
     public GCData _data() {
         return data;
+    }
+
+    public boolean _XORMode() {
+        return XORMode;
     }
 
     public boolean _advanced() {
@@ -3553,10 +3557,6 @@ public final class DartGC extends DartResource implements IGC {
 
     public Transform _transform() {
         return transform;
-    }
-
-    public boolean _xORMode() {
-        return xORMode;
     }
 
     private Display display;

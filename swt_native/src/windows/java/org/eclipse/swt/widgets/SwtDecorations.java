@@ -376,14 +376,16 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
         for (MenuItem item : items) {
             if (item != null && ((SwtMenuItem) item.getImpl()).accelerator != 0) {
                 Menu menu = ((SwtMenuItem) item.getImpl()).parent;
-                if (((SwtMenu) menu.getImpl()).parent == this.getApi()) {
+                if (menu.getImpl()._parent() == this.getApi()) {
                     while (menu != null && menu != menuBar) {
                         menu = menu.getParentMenu();
                     }
-                    if (menu == menuBar && ((SwtMenuItem) item.getImpl()).fillAccel(accel)) {
-                        OS.MoveMemory(buffer1, accel, ACCEL.sizeof);
-                        System.arraycopy(buffer1, 0, buffer2, nAccel * ACCEL.sizeof, ACCEL.sizeof);
-                        nAccel++;
+                    if (item.getImpl() instanceof SwtMenuItem) {
+                        if (menu == menuBar && ((SwtMenuItem) item.getImpl()).fillAccel(accel)) {
+                            OS.MoveMemory(buffer1, accel, ACCEL.sizeof);
+                            System.arraycopy(buffer1, 0, buffer2, nAccel * ACCEL.sizeof, ACCEL.sizeof);
+                            nAccel++;
+                        }
                     }
                 }
             }
@@ -1114,7 +1116,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
                 error(SWT.ERROR_INVALID_ARGUMENT);
             if ((menu.style & SWT.BAR) == 0)
                 error(SWT.ERROR_MENU_NOT_BAR);
-            if (((SwtMenu) menu.getImpl()).parent != this.getApi())
+            if (menu.getImpl()._parent() != this.getApi())
                 error(SWT.ERROR_INVALID_PARENT);
         }
         if (menu != null)

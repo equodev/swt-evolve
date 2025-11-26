@@ -16,6 +16,15 @@ public class VCanvas extends VComposite {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
+    public IME getIME() {
+        return ((DartCanvas) impl).ime;
+    }
+
+    public void setIME(IME value) {
+        ((DartCanvas) impl).ime = value;
+    }
+
     public Caret getCaret() {
         Caret val = ((DartCanvas) impl).caret;
         if (val != null && !(val.getImpl() instanceof DartCaret))
@@ -25,15 +34,6 @@ public class VCanvas extends VComposite {
 
     public void setCaret(Caret value) {
         ((DartCanvas) impl).caret = value;
-    }
-
-    @JsonAttribute(ignore = true)
-    public IME getIME() {
-        return ((DartCanvas) impl).ime;
-    }
-
-    public void setIME(IME value) {
-        ((DartCanvas) impl).ime = value;
     }
 
     @JsonConverter(target = Canvas.class)

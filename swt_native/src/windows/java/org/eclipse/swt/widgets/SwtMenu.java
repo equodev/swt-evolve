@@ -162,7 +162,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
      * @see Widget#getStyle
      */
     public SwtMenu(Menu parentMenu, Menu api) {
-        this(((SwtMenu) checkNull(parentMenu).getImpl()).parent, SWT.DROP_DOWN, api);
+        this(checkNull(parentMenu).getImpl()._parent(), SWT.DROP_DOWN, api);
     }
 
     /**
@@ -200,7 +200,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
         createWidget();
     }
 
-    void _setVisible(boolean visible) {
+    public void _setVisible(boolean visible) {
         if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
             return;
         long hwndParent = parent.handle;
@@ -363,7 +363,9 @@ public class SwtMenu extends SwtWidget implements IMenu {
         info.fMask = OS.MIIM_ID | OS.MIIM_TYPE | OS.MIIM_DATA;
         info.wID = ((SwtMenuItem) item.getImpl()).id;
         info.dwItemData = ((SwtMenuItem) item.getImpl()).id;
-        info.fType = (getApi().style & SWT.BAR) != 0 && needsMenuCallback() ? OS.MFT_OWNERDRAW : ((SwtMenuItem) item.getImpl()).widgetStyle();
+        if (item.getImpl() instanceof SwtMenuItem) {
+            info.fType = (getApi().style & SWT.BAR) != 0 && needsMenuCallback() ? OS.MFT_OWNERDRAW : ((SwtMenuItem) item.getImpl()).widgetStyle();
+        }
         info.dwTypeData = pszText;
         boolean success = OS.InsertMenuItem(getApi().handle, index, true, info);
         if (pszText != 0)
@@ -1416,6 +1418,46 @@ public class SwtMenu extends SwtWidget implements IMenu {
         for (MenuItem item : menu.getItems()) {
             DPIZoomChangeRegistry.applyChange(item, newZoom, scalingFactor);
         }
+    }
+
+    public int _x() {
+        return x;
+    }
+
+    public int _y() {
+        return y;
+    }
+
+    public long _hBrush() {
+        return hBrush;
+    }
+
+    public int _foreground() {
+        return foreground;
+    }
+
+    public int _background() {
+        return background;
+    }
+
+    public Image _backgroundImage() {
+        return backgroundImage;
+    }
+
+    public boolean _hasLocation() {
+        return hasLocation;
+    }
+
+    public MenuItem _cascade() {
+        return cascade;
+    }
+
+    public Decorations _parent() {
+        return parent;
+    }
+
+    public MenuItem _selectedMenuItem() {
+        return selectedMenuItem;
     }
 
     public Menu getApi() {

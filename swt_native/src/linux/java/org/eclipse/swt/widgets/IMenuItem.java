@@ -6,7 +6,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.widgets.Menu.*;
 
-public interface IMenuItem extends IItem {
+public interface IMenuItem extends IItem, ImplMenuItem {
 
     /**
      * Adds the listener to the collection of listeners who will

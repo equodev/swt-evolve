@@ -133,6 +133,12 @@ public class Config {
         return parent instanceof Canvas && clazz == GC.class && ((Canvas) parent).getImpl() instanceof DartCanvas;
     }
 
+    public static boolean isEquo(Class<?> clazz, org.eclipse.swt.widgets.Menu parent) {
+        if (forceEclipse) return false;
+        // MenuItem should use the same implementation as its parent Menu
+        return parent != null && parent.getImpl() instanceof org.eclipse.swt.widgets.DartMenu;
+    }
+
     public static boolean isEquo(Class<?> clazz, Scrollable parent) {
         if (forceEclipse) return false;
         // Per-widget override

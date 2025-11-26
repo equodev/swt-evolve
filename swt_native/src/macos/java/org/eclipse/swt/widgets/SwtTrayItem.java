@@ -500,7 +500,9 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
 
     void showMenu(Menu menu) {
         ((SwtDisplay) display.getImpl()).trayItemMenu = menu;
-        item.popUpStatusItemMenu(((SwtMenu) menu.getImpl()).nsMenu);
+        if (menu == null || menu.getImpl() instanceof SwtMenu) {
+            item.popUpStatusItemMenu(((SwtMenu) menu.getImpl()).nsMenu);
+        }
     }
 
     void showMenu() {

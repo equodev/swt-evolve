@@ -158,6 +158,43 @@ public class SerializeTestBase {
         // Font is immutable, no setters to populate
     }
 
+    protected void setAll(org.eclipse.swt.widgets.Menu m) {
+        // Menu doesn't have Font/Color setters like other widgets
+        InstancioObjectApi<org.eclipse.swt.widgets.Menu> inst = Instancio.ofObject(m)
+                .withSettings(settings)
+                .ignore(Select.setter(org.eclipse.swt.widgets.Widget.class, "setImpl"))
+                .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "state"))
+                .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "style"));
+        try {
+            inst.ignore(Select.types().of(Class.forName("org.eclipse.swt.internal.cocoa.NSObject")));
+        } catch (ClassNotFoundException e) {}
+        inst = inst
+                .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
+                .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0))
+                .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000));
+        inst.fill();
+    }
+
+    protected void setAll(org.eclipse.swt.widgets.MenuItem mi) {
+        // MenuItem has Image but not Font/Color setters
+        InstancioObjectApi<org.eclipse.swt.widgets.MenuItem> inst = Instancio.ofObject(mi)
+                .withSettings(settings)
+                .ignore(Select.setter(org.eclipse.swt.widgets.Widget.class, "setImpl"))
+                .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "state"))
+                .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "style"));
+        try {
+            inst.ignore(Select.types().of(Class.forName("org.eclipse.swt.internal.cocoa.NSObject")));
+        } catch (ClassNotFoundException e) {}
+        inst = inst
+                .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
+                .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0))
+                .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000))
+                .generate(Select.all(Image.class), gen -> gen.oneOf(createTestImage()));
+        inst.fill();
+        // setID needs to be set via getValue() to bypass checkWidget() in tests
+        ((DartMenuItem) mi.getImpl()).getValue().setID(Instancio.gen().ints().range(1, 1000).get());
+    }
+
     protected void setAll(FontData fd) {
         InstancioObjectApi<FontData> inst = Instancio.ofObject(fd)
                 .withSettings(settings)

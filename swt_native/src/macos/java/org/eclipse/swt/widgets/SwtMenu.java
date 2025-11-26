@@ -168,7 +168,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
      * @see Widget#getStyle
      */
     public SwtMenu(Menu parentMenu, Menu api) {
-        this(((SwtMenu) checkNull(parentMenu).getImpl()).parent, SWT.DROP_DOWN, api);
+        this(checkNull(parentMenu).getImpl()._parent(), SWT.DROP_DOWN, api);
     }
 
     /**
@@ -258,7 +258,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
         return checkBits(style, SWT.POP_UP, SWT.BAR, SWT.DROP_DOWN, 0, 0, 0);
     }
 
-    void _setVisible(boolean visible) {
+    public void _setVisible(boolean visible) {
         if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
             return;
         TrayItem trayItem = ((SwtDisplay) display.getImpl()).currentTrayItem;
@@ -418,7 +418,9 @@ public class SwtMenu extends SwtWidget implements IMenu {
         if (item.getImpl() instanceof SwtWidget) {
             ((SwtWidget) item.getImpl()).createJNIRef();
         }
-        ((SwtMenuItem) item.getImpl()).register();
+        if (item.getImpl() instanceof SwtMenuItem) {
+            ((SwtMenuItem) item.getImpl()).register();
+        }
         if (add) {
             nsMenu.insertItem(nsItem, index);
         }
@@ -430,10 +432,12 @@ public class SwtMenu extends SwtWidget implements IMenu {
         System.arraycopy(items, index, items, index + 1, itemCount++ - index);
         items[index] = item;
         if (add) {
-            NSMenu emptyMenu = ((SwtMenuItem) item.getImpl()).createEmptyMenu();
-            if (emptyMenu != null) {
-                nsItem.setSubmenu(emptyMenu);
-                emptyMenu.release();
+            if (item.getImpl() instanceof SwtMenuItem) {
+                NSMenu emptyMenu = ((SwtMenuItem) item.getImpl()).createEmptyMenu();
+                if (emptyMenu != null) {
+                    nsItem.setSubmenu(emptyMenu);
+                    emptyMenu.release();
+                }
             }
             if (((SwtDisplay) display.getImpl()).menuBar == this.getApi()) {
                 NSApplication application = ((SwtDisplay) display.getImpl()).application;
@@ -1185,6 +1189,42 @@ public class SwtMenu extends SwtWidget implements IMenu {
             ((SwtDisplay) display.getImpl()).removePopup(this.getApi());
             _setVisible(false);
         }
+    }
+
+    public int _x() {
+        return x;
+    }
+
+    public int _y() {
+        return y;
+    }
+
+    public int _itemCount() {
+        return itemCount;
+    }
+
+    public boolean _hasLocation() {
+        return hasLocation;
+    }
+
+    public boolean _visible() {
+        return visible;
+    }
+
+    public MenuItem[] _items() {
+        return items;
+    }
+
+    public MenuItem _cascade() {
+        return cascade;
+    }
+
+    public MenuItem _defaultItem() {
+        return defaultItem;
+    }
+
+    public Decorations _parent() {
+        return parent;
     }
 
     public Menu getApi() {

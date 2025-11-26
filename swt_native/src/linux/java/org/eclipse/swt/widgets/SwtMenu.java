@@ -206,7 +206,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
      * @see Widget#getStyle
      */
     public SwtMenu(Menu parentMenu, Menu api) {
-        this(((SwtMenu) checkNull(parentMenu).getImpl()).parent, SWT.DROP_DOWN, api);
+        this(checkNull(parentMenu).getImpl()._parent(), SWT.DROP_DOWN, api);
     }
 
     /**
@@ -277,7 +277,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
         return hasLocation;
     }
 
-    void _setVisible(boolean visible) {
+    public void _setVisible(boolean visible) {
         if (visible == GTK.gtk_widget_get_mapped(getApi().handle))
             return;
         if (visible) {
@@ -1421,6 +1421,54 @@ public class SwtMenu extends SwtWidget implements IMenu {
             ((SwtDisplay) display.getImpl()).removePopup(this.getApi());
             _setVisible(false);
         }
+    }
+
+    public int _x() {
+        return x;
+    }
+
+    public int _y() {
+        return y;
+    }
+
+    public boolean _hasLocation() {
+        return hasLocation;
+    }
+
+    public MenuItem _cascade() {
+        return cascade;
+    }
+
+    public MenuItem _selectedItem() {
+        return selectedItem;
+    }
+
+    public Decorations _parent() {
+        return parent;
+    }
+
+    public int _poppedUpCount() {
+        return poppedUpCount;
+    }
+
+    public long _menuHandle() {
+        return menuHandle;
+    }
+
+    public long _modelHandle() {
+        return modelHandle;
+    }
+
+    public long _actionGroup() {
+        return actionGroup;
+    }
+
+    public long _shortcutController() {
+        return shortcutController;
+    }
+
+    public LinkedList<MenuItem> _items() {
+        return items;
     }
 
     public Menu getApi() {

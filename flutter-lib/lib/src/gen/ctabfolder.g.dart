@@ -28,6 +28,9 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
+  ..menu = json['menu'] == null
+      ? null
+      : VMenu.fromJson(json['menu'] as Map<String, dynamic>)
   ..orientation = (json['orientation'] as num?)?.toInt()
   ..redraw = json['redraw'] as bool?
   ..textDirection = (json['textDirection'] as num?)?.toInt()
@@ -43,6 +46,7 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
   ..tabList = (json['tabList'] as List<dynamic>?)
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
       .toList()
+  ..MRUVisible = json['MRUVisible'] as bool?
   ..borderVisible = json['borderVisible'] as bool?
   ..gradientColors = (json['gradientColors'] as List<dynamic>?)
       ?.map((e) => VColor.fromJson(e as Map<String, dynamic>))
@@ -55,7 +59,6 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
   ..items = (json['items'] as List<dynamic>?)
       ?.map((e) => VCTabItem.fromJson(e as Map<String, dynamic>))
       .toList()
-  ..mRUVisible = json['mRUVisible'] as bool?
   ..maximizeVisible = json['maximizeVisible'] as bool?
   ..maximized = json['maximized'] as bool?
   ..minimizeVisible = json['minimizeVisible'] as bool?
@@ -106,6 +109,7 @@ Map<String, dynamic> _$VCTabFolderToJson(VCTabFolder instance) =>
       'enabled': instance.enabled,
       'font': instance.font,
       'foreground': instance.foreground,
+      'menu': instance.menu,
       'orientation': instance.orientation,
       'redraw': instance.redraw,
       'textDirection': instance.textDirection,
@@ -117,13 +121,13 @@ Map<String, dynamic> _$VCTabFolderToJson(VCTabFolder instance) =>
       'children': instance.children,
       'layoutDeferred': instance.layoutDeferred,
       'tabList': instance.tabList,
+      'MRUVisible': instance.MRUVisible,
       'borderVisible': instance.borderVisible,
       'gradientColors': instance.gradientColors,
       'gradientPercents': instance.gradientPercents,
       'gradientVertical': instance.gradientVertical,
       'highlightEnabled': instance.highlightEnabled,
       'items': instance.items,
-      'mRUVisible': instance.mRUVisible,
       'maximizeVisible': instance.maximizeVisible,
       'maximized': instance.maximized,
       'minimizeVisible': instance.minimizeVisible,

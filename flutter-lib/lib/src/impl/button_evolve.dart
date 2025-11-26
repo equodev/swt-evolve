@@ -16,13 +16,12 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   @override
   Widget build(BuildContext context) {
     var text = state.text;
-    // var image = state.image;
     String? image;
     var enabled = state.enabled ?? true;
     var backgroundColor = getSwtBackgroundColor(context);
 
     if (state.style.has(SWT.TOGGLE)) {
-      return SelectableButton(
+      return wrap(SelectableButton(
         text: stripAccelerators(state.text),
         isSelected: state.selection ?? false,
         enabled: enabled,
@@ -40,9 +39,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         onMouseExit: () => handleMouseExit(),
         onFocusIn: () => handleFocusIn(),
         onFocusOut: () => handleFocusOut(),
-      );
+      ));
     } else if (state.style.has(SWT.CHECK)) {
-      return MaterialCheckBox(
+      return wrap(MaterialCheckBox(
         text: stripAccelerators(state.text),
         checked: state.selection ?? false,
         useDarkTheme: useDarkTheme,
@@ -59,9 +58,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         onMouseExit: () => handleMouseExit(),
         onFocusIn: () => handleFocusIn(),
         onFocusOut: () => handleFocusOut(),
-      );
+      ));
     } else if (state.style.has(SWT.RADIO) || state.style.has(SWT.NONE)) {
-      return MaterialRadioButton(
+      return wrap(MaterialRadioButton(
         text: stripAccelerators(state.text),
         checked: state.selection ?? false,
         useDarkTheme: useDarkTheme,
@@ -78,9 +77,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         onMouseExit: () => handleMouseExit(),
         onFocusIn: () => handleFocusIn(),
         onFocusOut: () => handleFocusOut(),
-      );
+      ));
     } else if (state.style.has(SWT.DROP_DOWN)) {
-      return MaterialDropdownButton(
+      return wrap(MaterialDropdownButton(
         text: stripAccelerators(text) ?? "",
         height: 50.0,
         enabled: enabled,
@@ -92,9 +91,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
             onPressed();
           }
         },
-      );
+      ));
     } else if (state.style.has(SWT.PUSH)) {
-      return PushButton(
+      return wrap(PushButton(
         text: stripAccelerators(state.text),
         image: image,
         enabled: enabled,
@@ -109,15 +108,14 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         onMouseExit: () => handleMouseExit(),
         onFocusIn: () => handleFocusIn(),
         onFocusOut: () => handleFocusOut(),
-      );
+      ));
     } else {
-      // Default case - Wrap with Material to provide Material context
-      return Material(
+      return wrap(Material(
         child: ElevatedButton(
           onPressed: enabled ? onPressed : null,
           child: Text(stripAccelerators(state.text) ?? ""),
         ),
-      );
+      ));
     }
   }
 
