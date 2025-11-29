@@ -48,7 +48,7 @@ public abstract class FlutterBridge {
         }
         
         List<CompletableFuture<Void>> futures = new ArrayList<>();
-        for (Object widget : dirty) {
+        for (Object widget : new HashSet<>(dirty)) {
             if (isDisposed(widget)) break;
             CompletableFuture<Void> future = getBridge(widget).clientReady.thenRun(() -> {
                 try {
@@ -65,6 +65,9 @@ public abstract class FlutterBridge {
 
                     }
                     if (!isNew(widget)) { // send with the parent
+                        synchronized (dirty) { // undirty if it was dirtied while waiting foe clientReady
+                            dirty.remove(widget);
+                        }
                         String event = event(widget);
                         try {
                             serializeAndSend(event, getApi(widget));
@@ -80,7 +83,9 @@ public abstract class FlutterBridge {
             });
             futures.add(future);
         }
-        dirty.clear();
+        synchronized (dirty) {
+            dirty.clear();
+        }
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 

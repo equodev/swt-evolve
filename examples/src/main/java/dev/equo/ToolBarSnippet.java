@@ -1,5 +1,6 @@
 package dev.equo;
 
+import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
@@ -15,6 +16,8 @@ import org.eclipse.swt.widgets.ToolItem;
 public class ToolBarSnippet {
 
 public static void main (String [] args) {
+	Config.useEquo(ToolBar.class);
+
 	Display display = new Display();
 	Shell shell = new Shell (display);
 	shell.setLayout (new FillLayout());

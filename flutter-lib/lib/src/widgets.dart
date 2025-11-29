@@ -186,7 +186,7 @@ Widget mapLayout(
     CompositeValue composite, LayoutValue? layout, List<WidgetValue> children) {
   if (layout == null || layout.swt == "Layout") {
     // print("no layout");
-    return NoLayout(children: children, composite: composite);
+    return Text("No Layout");
   }
   var type = layout.swt;
   // print("layout: $type");

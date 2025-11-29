@@ -12,7 +12,6 @@ import org.eclipse.swt.widgets.*;
 public class ExpandBarSnippet {
     public static void main(String[] args) {
         Config.useEquo(ExpandBar.class);
-        Config.useEquo(TableItem.class);
 
         Display display = new Display();
 

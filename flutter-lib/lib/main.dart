@@ -3,8 +3,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart' as mat;
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
+import 'package:swtflutter/src/custom/toolbar_composite.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
-import 'src/custom/maintoolbar_impl.dart';
 import 'src/swt/composite.dart';
 import 'src/styles.dart';
 import 'dart:convert';
@@ -77,7 +77,7 @@ Widget? customWidget(Map<String, dynamic> child) {
   var id = child['id'];
   return switch (type) {
     "MainToolbar" =>
-      MainToolbarSwt(key: ValueKey(id), value: VComposite.fromJson(child)),
+    ToolbarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
     _ => null
   };
 }

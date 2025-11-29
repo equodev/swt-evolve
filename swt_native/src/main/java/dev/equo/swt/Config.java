@@ -13,7 +13,7 @@ public class Config {
     public enum Impl {eclipse, equo, force_equo}
 
     static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.equo.name()));
-    static Impl toolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.toolbar", Impl.eclipse.name()));
+    static Impl toolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.toolbar", Impl.equo.name()));
 
     private static final String os = System.getProperty("os.name").toLowerCase();
     static final Map<Class<?>, Impl> equoEnabled;
@@ -36,9 +36,9 @@ public class Config {
                     //entry(TableColumn.class, Impl.equo),
                     entry(List.class, Impl.equo),
                     //entry(Text.class, Impl.equo),
-                    entry(Link.class, Impl.equo),
+                    entry(Link.class, Impl.equo)
                     //entry(Combo.class, Impl.equo),
-                    entry(Group.class, Impl.equo)
+                    //entry(Group.class, Impl.equo)
                     //entry(Tree.class, Impl.equo),
                     //entry(TreeItem.class, Impl.equo),
                     //entry(TreeColumn.class, Impl.equo),
@@ -47,7 +47,7 @@ public class Config {
                     //entry(Font.class, Impl.equo),
                     //entry(FontData.class, Impl.equo)
             );
-        } catch (ClassNotFoundException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -164,9 +164,6 @@ public class Config {
             return false;
         }
 
-        if (clazz == Composite.class && isMainToolbarComposite(clazz, (Composite) parent)) {
-            return true;
-        }
         /// This is used because Eclipse creates "hidden" toolbars as children of the shell
         if (clazz == ToolBar.class && parent instanceof Shell) {
             return true;
@@ -220,27 +217,11 @@ public class Config {
     }
 
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
-        // Check toolbar-specific property first - it has priority over global default
-        if (!toolBarDrawn && toolbarImpl == Impl.equo && isMainToolbar(Composite.class, parent)) {
-            toolBarDrawn = true;
+        if (toolbarImpl == Impl.equo && isMainToolbarComposite(Composite.class, parent))
             return new DartMainToolbar(parent, style, composite);
-        }
-
-        // Respect global default - if set to eclipse, use Eclipse implementation
-        if (defaultImpl == Impl.eclipse) {
-            return new SwtComposite(parent, style, composite);
-        }
-
-        return Config.isEquo(Composite.class, parent) ? new DartComposite(parent, style, composite) : new SwtComposite(parent, style, composite);
-    }
-
-    private static boolean isMainToolbar(Class<?> clazz, Composite parent) {
-        String id = getId(clazz, parent);
-        if (id.startsWith("//Shell//-1//Composite//") && (id.endsWith("0") || id.endsWith("1") || id.endsWith("2"))) { // it changes on first launch
-            return isInStackTraceAtSkip("org.eclipse.e4.ui.internal.workbench.swt.PartRenderingEngine",
-                    "subscribeTopicToBeRendered", 11);
-        }
-        return false;
+        if (Config.isEquo(Composite.class, parent))
+            return new DartComposite(parent, style, composite);
+        return new SwtComposite(parent, style, composite);
     }
 
     private static final String EDITOR_CLASS = "org.eclipse.ui.texteditor.AbstractTextEditor";

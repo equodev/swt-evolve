@@ -113,6 +113,7 @@ public class FlutterLibraryLoader {
             loadLibrary(flutFile.getAbsolutePath());
             loadLibrary(libFile.getAbsolutePath());
         } else {
+            loadOSLibraries(LINUX_X64_RELEASE, LINUX_BUNDLE_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP + "libflutter_linux_gtk.so");
             loadOSLibraries(LINUX_X64_RELEASE, RUNNER_DIR_NAME + SEP + LINUX_LIB_NAME);
         }
     }

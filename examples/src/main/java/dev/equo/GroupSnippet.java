@@ -1,5 +1,6 @@
 package dev.equo;
 
+import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -18,6 +19,8 @@ import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
  */
 public class GroupSnippet {
     public static void main(String[] args) {
+        Config.useEquo(Group.class);
+
         Display display = new Display();
         Shell shell = new Shell(display);
         shell.setText("Group Widget Example");
