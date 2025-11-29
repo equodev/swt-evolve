@@ -2,6 +2,7 @@ package dev.equo;
 
 import static org.eclipse.swt.events.SelectionListener.*;
 
+import dev.equo.swt.Config;
 import org.eclipse.swt.*;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
@@ -13,6 +14,8 @@ import org.eclipse.swt.widgets.*;
 
 public class ComboReadOnlySnippet {
 	public static void main(String[] args) {
+		Config.useEquo(Group.class);
+
 		Display display = new Display();
 		Shell shell = new Shell(display);
 		shell.setText("ComboReadOnlySnippet - Selection Test");

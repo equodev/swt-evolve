@@ -1,4 +1,5 @@
 package dev.equo;
+import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabFolder2Adapter;
@@ -19,6 +20,7 @@ import org.eclipse.swt.widgets.*;
  */
 public class CTabFolderSnippet {
     public static void main (String [] args) {
+        Config.forceEquo();
         Display display = new Display ();
 
         final Shell shell = new Shell (display);

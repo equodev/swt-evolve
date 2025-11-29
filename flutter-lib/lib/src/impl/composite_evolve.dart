@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import '../nolayout.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/toolbar.dart';
@@ -20,17 +21,10 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     final children = state.children;
 
     if (children == null || children.isEmpty) {
-      return wrap(const Spacer());
+      return wrap(const SizedBox.shrink());
+      // return wrap(const Spacer());
     }
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: children
-          .map((child) => mapWidgetFromValue(child))
-          .toList()
-          //.reversed
-          //.toList()
-    );
-
+    return NoLayout(children: children, composite: state);
   }
 }

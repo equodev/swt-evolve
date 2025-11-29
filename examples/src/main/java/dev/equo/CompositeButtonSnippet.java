@@ -1,5 +1,6 @@
 package dev.equo;
 
+import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.FillLayout;
@@ -11,6 +12,9 @@ import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
 
 public class CompositeButtonSnippet {
     public static void main(String[] args) {
+        Config.useEquo(Button.class);
+        Config.useEquo(Label.class);
+
         Display display = new Display();
         Shell shell = new Shell(display);
         shell.setText("Shell with Composite and Checkbox Example");

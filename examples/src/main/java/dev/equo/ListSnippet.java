@@ -1,14 +1,18 @@
 package dev.equo;
 
+import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 
 public class ListSnippet {
 
 public static void main (String [] args) {
+	Config.useEquo(List.class);
+
 	Display display = new Display ();
 	Shell shell = new Shell (display);
 	shell.setText("ListSnippet");

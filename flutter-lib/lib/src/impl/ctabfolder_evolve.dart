@@ -10,10 +10,10 @@ import '../gen/ctabfolder.dart';
 import '../gen/ctabitem.dart';
 import '../gen/event.dart';
 import '../gen/swt.dart';
-import '../gen/toolbar.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
-import '../impl/composite_evolve.dart';
+import '../custom/toolbar_composite.dart';
+import 'composite_evolve.dart';
 import 'icons_map.dart';
 import 'widget_config.dart';
 
@@ -380,10 +380,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   }
 
   Widget _buildTopRightComposite(VComposite composite) {
-    return CompositeSwt<VComposite>(
-      key: ValueKey(composite.id),
-      value: composite,
-    );
+    return ToolbarComposite(value: composite);
   }
 
   VComposite? getTopRightComposite() {

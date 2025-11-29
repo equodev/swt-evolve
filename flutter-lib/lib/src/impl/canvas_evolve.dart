@@ -1,9 +1,11 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/gc.dart';
 import '../gen/canvas.dart';
 import '../gen/widgets.dart';
 import 'composite_evolve.dart';
+import '../custom/toolbar_composite.dart';
 
 abstract class Shape {
   void draw(Canvas c);
@@ -43,23 +45,8 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   Widget build(BuildContext context) {
     final children = state.children;
 
-    if (children == null || children.isEmpty) {
-      VGC gc = VGC.empty()..id = state.id;
-      return GCSwt<VGC>(value: gc);
-    }
-
-    return buildCanvas(children);
-  }
-
-  Widget buildCanvas(List<VControl>? children) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: children!
-          .map((child) => mapWidgetFromValue(child))
-          .toList()
-          .reversed
-          .toList(),
-    );
+    VGC gc = VGC.empty()..id = state.id;
+    return GCSwt<VGC>(value: gc);
   }
 
   Size getBounds() {

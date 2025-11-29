@@ -1,18 +1,16 @@
-import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/widgets.dart';
-import 'package:swtflutter/src/swt/caret.dart';
-import 'package:swtflutter/src/swt/composite.dart';
-import 'package:swtflutter/src/swt/control.dart';
-import 'package:swtflutter/src/swt/widget.dart';
-import 'package:swtflutter/src/widgets.dart';
+import 'gen/composite.dart';
+import 'gen/control.dart';
+import 'gen/widget.dart';
+import 'gen/widgets.dart';
 
 class NoLayout extends StatelessWidget {
-  final CompositeValue composite;
-  final List<WidgetValue> children;
+  final VComposite composite;
+  final List<VControl> children;
 
-  NoLayout({super.key, required this.children, required this.composite});
+  const NoLayout({super.key, required this.children, required this.composite});
 
-  final List<ControlValue> sizes = [];
+  // final List<VControl> sizes = [];
 
   @override
   Widget build(BuildContext context) {
@@ -26,15 +24,15 @@ class NoLayout extends StatelessWidget {
 }
 
 class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
-  List<WidgetValue> children;
-  CompositeValue composite;
+  List<VControl> children;
+  VComposite composite;
 
   _AbsoluteLayoutDelegate(this.children, this.composite);
 
   @override
   Size getSize(BoxConstraints constraints) {
     final bounds = composite.bounds;
-    if (bounds != null) {
+    if (bounds != null && bounds.width != 0 && bounds.height != 0) {
       return Size(bounds.width.toDouble(), bounds.height.toDouble());
     }
     return super.getSize(constraints);
@@ -42,23 +40,13 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
 
   @override
   void performLayout(Size size) {
-    for (var child in children.whereType<ControlValue>()) {
+    for (var child in children.whereType<VControl>()) {
       var w = child.bounds?.width.toDouble();
       var h = child.bounds?.height.toDouble();
       var x = child.bounds?.x ?? 0;
       var y = child.bounds?.y ?? 0;
       layoutChild(child.id, BoxConstraints.tightFor(width: w, height: h));
       positionChild(child.id, Offset(x.toDouble(), y.toDouble()));
-    }
-    for (var child in children.whereType<CaretValue>()) {
-      var bounds = child.bounds;
-      double x = bounds?.x.toDouble() ?? 0;
-      double y = bounds?.y.toDouble() ?? 0;
-      double width = bounds?.width.toDouble() ?? 2;
-      double height = bounds?.height.toDouble() ?? 20;
-      layoutChild(
-          child.id, BoxConstraints.tightFor(width: width, height: height));
-      positionChild(child.id, Offset(x, y));
     }
   }
 
@@ -72,9 +60,7 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
       final currentChild = children[i];
       final oldChild = oldDelegate.children[i];
 
-      if (currentChild.id != oldChild.id ||
-          currentChild is! ControlValue ||
-          oldChild is! ControlValue) {
+      if (currentChild.id != oldChild.id) {
         return true;
       }
 
