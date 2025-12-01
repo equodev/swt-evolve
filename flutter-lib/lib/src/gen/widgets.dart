@@ -17,6 +17,7 @@ import '../gen/list.dart';
 import '../gen/menu.dart';
 import '../gen/menuitem.dart';
 import '../gen/progressbar.dart';
+import '../gen/sashform.dart';
 import '../gen/scale.dart';
 import '../gen/scrollbar.dart';
 import '../gen/slider.dart';
@@ -46,6 +47,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "Combo" => VCombo.fromJson(child),
     "ExpandBar" => VExpandBar.fromJson(child),
     "Group" => VGroup.fromJson(child),
+    "SashForm" => VSashForm.fromJson(child),
     "Spinner" => VSpinner.fromJson(child),
     "Table" => VTable.fromJson(child),
     "ToolBar" => VToolBar.fromJson(child),
@@ -87,6 +89,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VCombo() => ComboSwt(key: ValueKey(id), value: child),
     VExpandBar() => ExpandBarSwt(key: ValueKey(id), value: child),
     VGroup() => GroupSwt(key: ValueKey(id), value: child),
+    VSashForm() => SashFormSwt(key: ValueKey(id), value: child),
     VSpinner() => SpinnerSwt(key: ValueKey(id), value: child),
     VTable() => TableSwt(key: ValueKey(id), value: child),
     VToolBar() => ToolBarSwt(key: ValueKey(id), value: child),

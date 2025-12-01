@@ -18,6 +18,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * The SashForm is a composite control that lays out its children in a
@@ -73,7 +74,7 @@ public class SashForm extends Composite {
      */
     public SashForm(Composite parent, int style) {
         this((ISashForm) null);
-        setImpl(new SwtSashForm(parent, style, this));
+        setImpl(Config.isEquo(SashForm.class, parent) ? new DartSashForm(parent, style, this) : new SwtSashForm(parent, style, this));
     }
 
     /**

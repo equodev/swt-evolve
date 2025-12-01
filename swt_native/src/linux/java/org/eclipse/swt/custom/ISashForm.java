@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface ISashForm extends IComposite {
+public interface ISashForm extends IComposite, ImplSashForm {
 
     /**
      * Returns SWT.HORIZONTAL if the controls in the SashForm are laid out side by side
