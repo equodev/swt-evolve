@@ -29,7 +29,7 @@ class SashFormLayout extends Layout {
     @Override
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         SashForm sashForm = (SashForm) composite;
-        Control[] cArray = ((SwtSashForm) sashForm.getImpl()).getControls(true);
+        Control[] cArray = sashForm.getImpl().getControls(true);
         int width = 0;
         int height = 0;
         if (cArray.length == 0) {
@@ -75,7 +75,7 @@ class SashFormLayout extends Layout {
             total += ratios[i];
         }
         if (ratios[maxIndex] > 0) {
-            int sashwidth = ((SwtSashForm) sashForm.getImpl()).sashes.length > 0 ? sashForm.SASH_WIDTH + ((SwtSashForm) sashForm.getImpl()).sashes[0].getBorderWidth() * 2 : sashForm.SASH_WIDTH;
+            int sashwidth = sashForm.getImpl()._sashes().length > 0 ? sashForm.SASH_WIDTH + sashForm.getImpl()._sashes()[0].getBorderWidth() * 2 : sashForm.SASH_WIDTH;
             if (vertical) {
                 height += (int) (total * maxValue / ratios[maxIndex]) + (cArray.length - 1) * sashwidth;
             } else {
@@ -102,14 +102,19 @@ class SashFormLayout extends Layout {
         Rectangle area = sashForm.getClientArea();
         if (area.width <= 1 || area.height <= 1)
             return;
-        Control[] newControls = ((SwtSashForm) sashForm.getImpl()).getControls(true);
-        if (((SwtSashForm) sashForm.getImpl()).controls.length == 0 && newControls.length == 0)
+        Control[] newControls = sashForm.getImpl().getControls(true);
+        if (sashForm.getImpl()._controls().length == 0 && newControls.length == 0)
             return;
-        ((SwtSashForm) sashForm.getImpl()).controls = newControls;
-        Control[] controls = ((SwtSashForm) sashForm.getImpl()).controls;
-        if (((SwtSashForm) sashForm.getImpl()).maxControl != null && !((SwtSashForm) sashForm.getImpl()).maxControl.isDisposed()) {
+        if (sashForm.getImpl() instanceof DartSashForm) {
+            ((DartSashForm) sashForm.getImpl()).controls = newControls;
+        }
+        if (sashForm.getImpl() instanceof SwtSashForm) {
+            ((SwtSashForm) sashForm.getImpl()).controls = newControls;
+        }
+        Control[] controls = sashForm.getImpl()._controls();
+        if (sashForm.getImpl()._maxControl() != null && !sashForm.getImpl()._maxControl().isDisposed()) {
             for (Control control : controls) {
-                if (control != ((SwtSashForm) sashForm.getImpl()).maxControl) {
+                if (control != sashForm.getImpl()._maxControl()) {
                     control.setBounds(-200, -200, 0, 0);
                 } else {
                     control.setBounds(area);
@@ -118,32 +123,47 @@ class SashFormLayout extends Layout {
             return;
         }
         // keep just the right number of sashes
-        if (((SwtSashForm) sashForm.getImpl()).sashes.length < controls.length - 1) {
+        if (sashForm.getImpl()._sashes().length < controls.length - 1) {
             Sash[] newSashes = new Sash[controls.length - 1];
-            System.arraycopy(((SwtSashForm) sashForm.getImpl()).sashes, 0, newSashes, 0, ((SwtSashForm) sashForm.getImpl()).sashes.length);
-            for (int i = ((SwtSashForm) sashForm.getImpl()).sashes.length; i < newSashes.length; i++) {
-                newSashes[i] = ((SwtSashForm) sashForm.getImpl()).createSash();
+            System.arraycopy(sashForm.getImpl()._sashes(), 0, newSashes, 0, sashForm.getImpl()._sashes().length);
+            for (int i = sashForm.getImpl()._sashes().length; i < newSashes.length; i++) {
+                newSashes[i] = sashForm.getImpl().createSash();
             }
-            ((SwtSashForm) sashForm.getImpl()).sashes = newSashes;
+            if (sashForm.getImpl() instanceof DartSashForm) {
+                ((DartSashForm) sashForm.getImpl()).sashes = newSashes;
+            }
+            if (sashForm.getImpl() instanceof SwtSashForm) {
+                ((SwtSashForm) sashForm.getImpl()).sashes = newSashes;
+            }
         }
-        if (((SwtSashForm) sashForm.getImpl()).sashes.length > controls.length - 1) {
+        if (sashForm.getImpl()._sashes().length > controls.length - 1) {
             if (controls.length == 0) {
-                for (Sash sash : ((SwtSashForm) sashForm.getImpl()).sashes) {
+                for (Sash sash : sashForm.getImpl()._sashes()) {
                     sash.dispose();
                 }
-                ((SwtSashForm) sashForm.getImpl()).sashes = new Sash[0];
+                if (sashForm.getImpl() instanceof DartSashForm) {
+                    ((DartSashForm) sashForm.getImpl()).sashes = new Sash[0];
+                }
+                if (sashForm.getImpl() instanceof SwtSashForm) {
+                    ((SwtSashForm) sashForm.getImpl()).sashes = new Sash[0];
+                }
             } else {
                 Sash[] newSashes = new Sash[controls.length - 1];
-                System.arraycopy(((SwtSashForm) sashForm.getImpl()).sashes, 0, newSashes, 0, newSashes.length);
-                for (int i = controls.length - 1; i < ((SwtSashForm) sashForm.getImpl()).sashes.length; i++) {
-                    ((SwtSashForm) sashForm.getImpl()).sashes[i].dispose();
+                System.arraycopy(sashForm.getImpl()._sashes(), 0, newSashes, 0, newSashes.length);
+                for (int i = controls.length - 1; i < sashForm.getImpl()._sashes().length; i++) {
+                    sashForm.getImpl()._sashes()[i].dispose();
                 }
-                ((SwtSashForm) sashForm.getImpl()).sashes = newSashes;
+                if (sashForm.getImpl() instanceof DartSashForm) {
+                    ((DartSashForm) sashForm.getImpl()).sashes = newSashes;
+                }
+                if (sashForm.getImpl() instanceof SwtSashForm) {
+                    ((SwtSashForm) sashForm.getImpl()).sashes = newSashes;
+                }
             }
         }
         if (controls.length == 0)
             return;
-        Sash[] sashes = ((SwtSashForm) sashForm.getImpl()).sashes;
+        Sash[] sashes = sashForm.getImpl()._sashes();
         // get the ratios
         long[] ratios = new long[controls.length];
         long total = 0;

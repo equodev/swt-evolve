@@ -18,6 +18,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.*;
 
 /**
  * The SashForm is a composite control that lays out its children in a
@@ -34,7 +35,7 @@ import org.eclipse.swt.widgets.*;
  * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: CustomControlExample</a>
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public class SwtSashForm extends SwtComposite implements ISashForm {
+public class DartSashForm extends DartComposite implements ISashForm {
 
     int sashStyle;
 
@@ -83,7 +84,7 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
      * @see SWT#VERTICAL
      * @see #getStyle()
      */
-    public SwtSashForm(Composite parent, int style, SashForm api) {
+    public DartSashForm(Composite parent, int style, SashForm api) {
         super(parent, checkStyle(style), api);
         super.setLayout(new SashFormLayout());
         sashStyle = ((style & SWT.VERTICAL) != 0) ? SWT.HORIZONTAL : SWT.VERTICAL;
@@ -329,6 +330,7 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
      */
     @Override
     public void setOrientation(int orientation) {
+        dirty();
         checkWidget();
         if (orientation == SWT.RIGHT_TO_LEFT || orientation == SWT.LEFT_TO_RIGHT) {
             super.setOrientation(orientation);
@@ -350,6 +352,7 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
 
     @Override
     public void setBackground(Color color) {
+        dirty();
         super.setBackground(color);
         background = color;
         for (Sash sash : sashes) {
@@ -359,6 +362,7 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
 
     @Override
     public void setForeground(Color color) {
+        dirty();
         super.setForeground(color);
         foreground = color;
         for (Sash sash : sashes) {
@@ -402,6 +406,7 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
      * </ul>
      */
     public void setMaximizedControl(Control control) {
+        dirty();
         checkWidget();
         if (control == null) {
             if (maxControl != null) {
@@ -434,6 +439,7 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
      * @since 3.4
      */
     public void setSashWidth(int width) {
+        dirty();
         checkWidget();
         if (getApi().SASH_WIDTH == width)
             return;
@@ -443,6 +449,7 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
 
     @Override
     public void setToolTipText(String string) {
+        dirty();
         super.setToolTipText(string);
         for (Sash sash : sashes) {
             sash.setToolTipText(string);
@@ -465,6 +472,7 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
      * </ul>
      */
     public void setWeights(int... weights) {
+        dirty();
         checkWidget();
         Control[] cArray = getControls(false);
         if (weights == null || weights.length != cArray.length) {
@@ -489,7 +497,10 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
             ((SashFormData) data).weight = (((long) weights[i] << 16) + total - 1) / total;
         }
         layout(false);
+        this.weights = weights;
     }
+
+    int[] weights = new int[0];
 
     public int _sashStyle() {
         return sashStyle;
@@ -511,9 +522,23 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
         return sashListener;
     }
 
+    public int[] _weights() {
+        return weights;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+    }
+
     public SashForm getApi() {
         if (api == null)
             api = SashForm.createApi(this);
         return (SashForm) api;
+    }
+
+    public VSashForm getValue() {
+        if (value == null)
+            value = new VSashForm(this);
+        return (VSashForm) value;
     }
 }

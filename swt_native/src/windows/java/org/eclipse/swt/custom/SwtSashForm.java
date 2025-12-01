@@ -99,7 +99,7 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
         return style & mask;
     }
 
-    Sash createSash() {
+    public Sash createSash() {
         Sash sash = new Sash(this.getApi(), sashStyle);
         sash.setBackground(background);
         sash.setForeground(foreground);
@@ -200,7 +200,7 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
         return ratios;
     }
 
-    Control[] getControls(boolean onlyVisible) {
+    public Control[] getControls(boolean onlyVisible) {
         Control[] result = new Control[0];
         for (Control element : getChildren()) {
             if (element instanceof Sash)
@@ -489,6 +489,26 @@ public class SwtSashForm extends SwtComposite implements ISashForm {
             ((SashFormData) data).weight = (((long) weights[i] << 16) + total - 1) / total;
         }
         layout(false);
+    }
+
+    public int _sashStyle() {
+        return sashStyle;
+    }
+
+    public Sash[] _sashes() {
+        return sashes;
+    }
+
+    public Control[] _controls() {
+        return controls;
+    }
+
+    public Control _maxControl() {
+        return maxControl;
+    }
+
+    public Listener _sashListener() {
+        return sashListener;
     }
 
     public SashForm getApi() {
