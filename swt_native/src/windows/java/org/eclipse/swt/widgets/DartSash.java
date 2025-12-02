@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2021 IBM Corporation and others.
+ *  Copyright (c) 2000, 2012 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -19,10 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
-import dev.equo.swt.Config;
+import dev.equo.swt.*;
 
 /**
  * Instances of the receiver represent a selectable user interface object
@@ -45,7 +42,15 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class Sash extends Control {
+public class DartSash extends DartControl implements ISash {
+
+    boolean dragging;
+
+    int startX, startY, lastX, lastY;
+
+    final static int INCREMENT = 1;
+
+    final static int PAGE_INCREMENT = 9;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -77,9 +82,8 @@ public class Sash extends Control {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public Sash(Composite parent, int style) {
-        this((ISash) null);
-        setImpl(Config.isEquo(Sash.class, parent) ? new DartSash(parent, style, this) : new SwtSash(parent, style, this));
+    public DartSash(Composite parent, int style, Sash api) {
+        super(parent, checkStyle(style), api);
     }
 
     /**
@@ -108,7 +112,45 @@ public class Sash extends Control {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getImpl().addSelectionListener(listener);
+        addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
+    }
+
+    @Override
+    void createHandle() {
+    }
+
+    static int checkStyle(int style) {
+        return checkBits(style, SWT.HORIZONTAL, SWT.VERTICAL, 0, 0, 0, 0);
+    }
+
+    @Override
+    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+        checkWidget();
+        if (wHint != SWT.DEFAULT && wHint < 0)
+            wHint = 0;
+        if (hHint != SWT.DEFAULT && hHint < 0)
+            hHint = 0;
+        int DEFAULT_CROSS_AXIS_SIZE = 3;
+        int border = getBorderWidthInPixels();
+        int width = border * 2;
+        int height = border * 2;
+        if ((getApi().style & SWT.HORIZONTAL) != 0) {
+            width += 64;
+            height += DEFAULT_CROSS_AXIS_SIZE;
+        } else {
+            width += DEFAULT_CROSS_AXIS_SIZE;
+            height += 64;
+        }
+        if (wHint != SWT.DEFAULT)
+            width = wHint + (border * 2);
+        if (hHint != SWT.DEFAULT)
+            height = hHint + (border * 2);
+        return new Point(width, height);
+    }
+
+    void drawBand(int x, int y, int width, int height) {
+        if ((getApi().style & SWT.SMOOTH) != 0)
+            return;
     }
 
     /**
@@ -129,18 +171,58 @@ public class Sash extends Control {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getImpl().removeSelectionListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Selection, listener);
+        eventTable.unhook(SWT.DefaultSelection, listener);
     }
 
-    protected Sash(ISash impl) {
-        super(impl);
+    public boolean _dragging() {
+        return dragging;
     }
 
-    static Sash createApi(ISash impl) {
-        return new Sash(impl);
+    public int _startX() {
+        return startX;
     }
 
-    public ISash getImpl() {
-        return (ISash) super.getImpl();
+    public int _startY() {
+        return startY;
+    }
+
+    public int _lastX() {
+        return lastX;
+    }
+
+    public int _lastY() {
+        return lastY;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
+            });
+        });
+    }
+
+    public Sash getApi() {
+        if (api == null)
+            api = Sash.createApi(this);
+        return (Sash) api;
+    }
+
+    public VSash getValue() {
+        if (value == null)
+            value = new VSash(this);
+        return (VSash) value;
     }
 }

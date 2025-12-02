@@ -5,7 +5,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 
-public interface ISash extends IControl {
+public interface ISash extends IControl, ImplSash {
 
     /**
      * Adds the listener to the collection of listeners who will

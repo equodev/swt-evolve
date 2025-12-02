@@ -17,6 +17,7 @@ import '../gen/list.dart';
 import '../gen/menu.dart';
 import '../gen/menuitem.dart';
 import '../gen/progressbar.dart';
+import '../gen/sash.dart';
 import '../gen/sashform.dart';
 import '../gen/scale.dart';
 import '../gen/scrollbar.dart';
@@ -34,12 +35,10 @@ import '../gen/treecolumn.dart';
 import '../gen/treeitem.dart';
 import '../gen/widget.dart';
 
-
 VWidget mapWidgetValue(Map<String, dynamic> child) {
   var type = child['swt'];
   // print("value: $type");
-  return switch(type) {
-    
+  return switch (type) {
     "CLabel" => VCLabel.fromJson(child),
     "StyledText" => VStyledText.fromJson(child),
     "CTabFolder" => VCTabFolder.fromJson(child),
@@ -59,6 +58,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "Label" => VLabel.fromJson(child),
     "Link" => VLink.fromJson(child),
     "ProgressBar" => VProgressBar.fromJson(child),
+    "Sash" => VSash.fromJson(child),
     "Scale" => VScale.fromJson(child),
     "Slider" => VSlider.fromJson(child),
     "CTabItem" => VCTabItem.fromJson(child),
@@ -80,8 +80,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
 Widget mapWidgetFromValue(VWidget child) {
   var type = child.swt;
   var id = child.id;
-  return switch(child) {
-    
+  return switch (child) {
     VCLabel() => CLabelSwt(key: ValueKey(id), value: child),
     VStyledText() => StyledTextSwt(key: ValueKey(id), value: child),
     VCTabFolder() => CTabFolderSwt(key: ValueKey(id), value: child),
@@ -101,6 +100,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VLabel() => LabelSwt(key: ValueKey(id), value: child),
     VLink() => LinkSwt(key: ValueKey(id), value: child),
     VProgressBar() => ProgressBarSwt(key: ValueKey(id), value: child),
+    VSash() => SashSwt(key: ValueKey(id), value: child),
     VScale() => ScaleSwt(key: ValueKey(id), value: child),
     VSlider() => SliderSwt(key: ValueKey(id), value: child),
     VCTabItem() => CTabItemSwt(key: ValueKey(id), value: child),

@@ -20,6 +20,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of the receiver represent a selectable user interface object
@@ -76,7 +77,7 @@ public class Sash extends Control {
      */
     public Sash(Composite parent, int style) {
         this((ISash) null);
-        setImpl(new SwtSash(parent, style, this));
+        setImpl(Config.isEquo(Sash.class, parent) ? new DartSash(parent, style, this) : new SwtSash(parent, style, this));
     }
 
     /**
