@@ -203,7 +203,7 @@ public class DartSashForm extends DartComposite implements ISashForm {
 
     public Control[] getControls(boolean onlyVisible) {
         Control[] result = new Control[0];
-        for (Control element : getChildren()) {
+        for (Control element : super._getChildren()) {
             if (element instanceof Sash)
                 continue;
             if (onlyVisible && !element.getVisible())
@@ -524,6 +524,11 @@ public class DartSashForm extends DartComposite implements ISashForm {
 
     public int[] _weights() {
         return weights;
+    }
+
+    @Override
+    public Control[] _getChildren() {
+        return getControls(false);
     }
 
     protected void _hookEvents() {

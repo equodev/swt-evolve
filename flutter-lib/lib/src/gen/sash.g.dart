@@ -1,12 +1,12 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'sashform.dart';
+part of 'sash.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-VSashForm _$VSashFormFromJson(Map<String, dynamic> json) => VSashForm()
+VSash _$VSashFromJson(Map<String, dynamic> json) => VSash()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
   ..style = (json['style'] as num).toInt()
@@ -36,25 +36,9 @@ VSashForm _$VSashFormFromJson(Map<String, dynamic> json) => VSashForm()
   ..textDirection = (json['textDirection'] as num?)?.toInt()
   ..toolTipText = json['toolTipText'] as String?
   ..touchEnabled = json['touchEnabled'] as bool?
-  ..visible = json['visible'] as bool?
-  ..scrollbarsMode = (json['scrollbarsMode'] as num?)?.toInt()
-  ..backgroundMode = (json['backgroundMode'] as num?)?.toInt()
-  ..children = (json['children'] as List<dynamic>?)
-      ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
-      .toList()
-  ..layoutDeferred = json['layoutDeferred'] as bool?
-  ..tabList = (json['tabList'] as List<dynamic>?)
-      ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
-      .toList()
-  ..maximizedControl = json['maximizedControl'] == null
-      ? null
-      : VControl.fromJson(json['maximizedControl'] as Map<String, dynamic>)
-  ..sashWidth = (json['sashWidth'] as num?)?.toInt()
-  ..weights = (json['weights'] as List<dynamic>?)
-      ?.map((e) => (e as num).toInt())
-      .toList();
+  ..visible = json['visible'] as bool?;
 
-Map<String, dynamic> _$VSashFormToJson(VSashForm instance) => <String, dynamic>{
+Map<String, dynamic> _$VSashToJson(VSash instance) => <String, dynamic>{
       'swt': instance.swt,
       'id': instance.id,
       'style': instance.style,
@@ -73,12 +57,4 @@ Map<String, dynamic> _$VSashFormToJson(VSashForm instance) => <String, dynamic>{
       'toolTipText': instance.toolTipText,
       'touchEnabled': instance.touchEnabled,
       'visible': instance.visible,
-      'scrollbarsMode': instance.scrollbarsMode,
-      'backgroundMode': instance.backgroundMode,
-      'children': instance.children,
-      'layoutDeferred': instance.layoutDeferred,
-      'tabList': instance.tabList,
-      'maximizedControl': instance.maximizedControl,
-      'sashWidth': instance.sashWidth,
-      'weights': instance.weights,
     };

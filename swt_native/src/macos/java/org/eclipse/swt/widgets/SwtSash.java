@@ -523,6 +523,30 @@ public class SwtSash extends SwtControl implements ISash {
         return 0;
     }
 
+    public Cursor _sizeCursor() {
+        return sizeCursor;
+    }
+
+    public boolean _dragging() {
+        return dragging;
+    }
+
+    public int _lastX() {
+        return lastX;
+    }
+
+    public int _lastY() {
+        return lastY;
+    }
+
+    public int _startX() {
+        return startX;
+    }
+
+    public int _startY() {
+        return startY;
+    }
+
     public Sash getApi() {
         if (api == null)
             api = Sash.createApi(this);

@@ -1,4 +1,4 @@
-package org.eclipse.swt.custom;
+package org.eclipse.swt.widgets;
 
 import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
@@ -7,33 +7,27 @@ import org.junit.jupiter.api.*;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
 import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
 
-class SashFormSerializeTest extends SerializeTestBase {
+class SashSerializeTest extends SerializeTestBase {
 
     @Test
-    void should_serialize_empty_SashForm() {
-        SashForm w = new SashForm(composite(), SWT.NONE);
+    void should_serialize_empty_Sash() {
+        Sash w = new Sash(composite(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
-               .containsEntry("swt", "SashForm");
+               .containsEntry("swt", "Sash");
     }
 
     @Test
-    void should_serialize_filled_SashForm() {
-        SashForm w = new SashForm(composite(), SWT.NONE);
+    void should_serialize_filled_Sash() {
+        Sash w = new Sash(composite(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
-               .containsEntry("swt", "SashForm")
+               .containsEntry("swt", "Sash")
                .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("style", w.getStyle());
-        assertJ.satisfies(node("maximizedControl").equalsTo(w.getMaximizedControl(), orAbsentIfNull));
-        assertJ.satisfies(node("sashWidth").equalsTo(w.getSashWidth(), orAbsentIf0));
-        assertJ.satisfies(node("weights").equalsTo(w.getWeights(), orAbsentIfNull));
-        assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
-        assertJ.satisfies(node("layoutDeferred").equalsTo(w.getLayoutDeferred(), orAbsentIfFalse));
-        assertJ.satisfies(node("scrollbarsMode").equalsTo(w.getScrollbarsMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
         assertJ.satisfies(node("bounds").equalsTo(w.getBounds(), orAbsentIfNull));
@@ -50,7 +44,7 @@ class SashFormSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
     }
 
-    VSashForm value(SashForm w) {
-        return ((DartSashForm) w.getImpl()).getValue();
+    VSash value(Sash w) {
+        return ((DartSash) w.getImpl()).getValue();
     }
 }
