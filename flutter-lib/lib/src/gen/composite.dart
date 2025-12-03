@@ -13,29 +13,25 @@ import 'widgets.dart';
 part 'composite.g.dart';
 
 class CompositeSwt<V extends VComposite> extends ScrollableSwt<V> {
-  
   const CompositeSwt({super.key, required super.value});
 
-  
   @override
   State createState() => CompositeImpl<CompositeSwt<VComposite>, VComposite>();
-
-  
-
-  
 }
 
-
-@JsonSerializable() class VComposite extends VScrollable {
+@JsonSerializable()
+class VComposite extends VScrollable {
   VComposite() : this.empty();
-  VComposite.empty()  { swt = "Composite"; }
-  
+  VComposite.empty() {
+    swt = "Composite";
+  }
+
   int? backgroundMode;
   List<VControl>? children;
   bool? layoutDeferred;
   List<VControl>? tabList;
-  
-  factory VComposite.fromJson(Map<String, dynamic> json) => _$VCompositeFromJson(json);
+
+  factory VComposite.fromJson(Map<String, dynamic> json) =>
+      _$VCompositeFromJson(json);
   Map<String, dynamic> toJson() => _$VCompositeToJson(this);
-  
 }

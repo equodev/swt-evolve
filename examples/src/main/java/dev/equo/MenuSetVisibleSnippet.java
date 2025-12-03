@@ -11,10 +11,11 @@ import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
 /**
  * Snippet with two buttons: one has a menu, the other triggers setVisible(true).
  */
-public class SetVisibleMenuSnippet {
+public class MenuSetVisibleSnippet {
     public static void main(String[] args) {
         Config.useEquo(Menu.class);
         Config.useEquo(MenuItem.class);
+        Config.useEquo(Group.class);
         Display display = new Display();
         Shell shell = new Shell(display);
         shell.setText("Set Visible Button Menu Test");

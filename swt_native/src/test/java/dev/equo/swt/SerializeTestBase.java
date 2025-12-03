@@ -3,6 +3,7 @@ package dev.equo.swt;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.accessibility.Accessible;
 import org.eclipse.swt.accessibility.SwtAccessible;
+import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 import org.eclipse.swt.widgets.Mocks;
@@ -132,6 +133,34 @@ public class SerializeTestBase {
                 .generate(Select.all(int[].class), gen -> gen.array().length(2))
                 .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())))
                 .generate(Select.all(Font.class), gen -> gen.oneOf(new Font(Mocks.device(), Mocks.fontData())));
+        inst.fill();
+    }
+
+    protected void setAll(CCombo w) {
+        InstancioObjectApi<CCombo> inst = Instancio.ofObject(w)
+                .withSettings(settings)
+                .ignore(Select.setter(Widget.class, "setImpl"))
+                .ignore(Select.field(Widget.class, "state"))
+                .ignore(Select.field(Widget.class, "style"))
+                .ignore(Select.setter(CCombo.class, "setAlignment"))
+                .ignore(Select.setter(Control.class, "setBounds"))
+                .ignore(Select.setter(Control.class, "setLayoutData"))
+                .ignore(Select.setter(Control.class, "setBackgroundImage"))
+                .ignore(Select.setter(Control.class, "setVisible"))
+                .ignore(Select.setter(Control.class, "setEnabled"))
+                .ignore(Select.setter(Composite.class, "setLayout"))
+                .ignore(Select.setter(Control.class, "setTouchEnabled"));
+        try {
+            inst.ignore(Select.types().of(Class.forName("org.eclipse.swt.internal.cocoa.NSObject")));
+        } catch (ClassNotFoundException e) {}
+        inst = inst
+                .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
+                .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0))
+                .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000))
+                .generate(Select.all(String.class), gen -> gen.oneOf("one", "two", "three"))
+                .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())))
+                .generate(Select.all(Font.class), gen -> gen.oneOf(new Font(Mocks.device(), Mocks.fontData())))
+                .generate(Select.all(Image.class), gen -> gen.oneOf(createTestImage()));
         inst.fill();
     }
 

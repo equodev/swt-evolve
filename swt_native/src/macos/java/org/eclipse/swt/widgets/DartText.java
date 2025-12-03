@@ -324,7 +324,9 @@ public class DartText extends DartScrollable implements IText {
     public void clearSelection() {
         checkWidget();
         Point selection = getSelection();
-        setSelection(selection.x);
+        if (selection != null) {
+            setSelection(selection.x);
+        }
     }
 
     @Override

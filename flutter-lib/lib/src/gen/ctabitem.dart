@@ -11,23 +11,19 @@ import 'widgets.dart';
 part 'ctabitem.g.dart';
 
 class CTabItemSwt<V extends VCTabItem> extends ItemSwt<V> {
-  
   const CTabItemSwt({super.key, required super.value});
 
-  
   @override
   State createState() => CTabItemImpl<CTabItemSwt<VCTabItem>, VCTabItem>();
-
-  
-
-  
 }
 
-
-@JsonSerializable() class VCTabItem extends VItem {
+@JsonSerializable()
+class VCTabItem extends VItem {
   VCTabItem() : this.empty();
-  VCTabItem.empty()  { swt = "CTabItem"; }
-  
+  VCTabItem.empty() {
+    swt = "CTabItem";
+  }
+
   VControl? control;
   VImage? disabledImage;
   VFont? font;
@@ -35,8 +31,8 @@ class CTabItemSwt<V extends VCTabItem> extends ItemSwt<V> {
   VColor? selectionForeground;
   bool? showClose;
   String? toolTipText;
-  
-  factory VCTabItem.fromJson(Map<String, dynamic> json) => _$VCTabItemFromJson(json);
+
+  factory VCTabItem.fromJson(Map<String, dynamic> json) =>
+      _$VCTabItemFromJson(json);
   Map<String, dynamic> toJson() => _$VCTabItemToJson(this);
-  
 }

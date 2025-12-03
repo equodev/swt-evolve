@@ -14,23 +14,19 @@ import 'widgets.dart';
 part 'clabel.g.dart';
 
 class CLabelSwt<V extends VCLabel> extends CanvasSwt<V> {
-  
   const CLabelSwt({super.key, required super.value});
 
-  
   @override
   State createState() => CLabelImpl<CLabelSwt<VCLabel>, VCLabel>();
-
-  
-
-  
 }
 
-
-@JsonSerializable() class VCLabel extends VCanvas {
+@JsonSerializable()
+class VCLabel extends VCanvas {
   VCLabel() : this.empty();
-  VCLabel.empty()  { swt = "CLabel"; }
-  
+  VCLabel.empty() {
+    swt = "CLabel";
+  }
+
   int? alignment;
   VImage? backgroundImage;
   int? bottomMargin;
@@ -42,8 +38,8 @@ class CLabelSwt<V extends VCLabel> extends CanvasSwt<V> {
   int? rightMargin;
   String? text;
   int? topMargin;
-  
-  factory VCLabel.fromJson(Map<String, dynamic> json) => _$VCLabelFromJson(json);
+
+  factory VCLabel.fromJson(Map<String, dynamic> json) =>
+      _$VCLabelFromJson(json);
   Map<String, dynamic> toJson() => _$VCLabelToJson(this);
-  
 }

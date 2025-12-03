@@ -22,6 +22,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * The CCombo class represents a selectable user interface object
@@ -88,7 +89,7 @@ public class CCombo extends Composite {
      */
     public CCombo(Composite parent, int style) {
         this((ICCombo) null);
-        setImpl(new SwtCCombo(parent, style, this));
+        setImpl(Config.isEquo(CCombo.class, parent) ? new DartCCombo(parent, style, this) : new SwtCCombo(parent, style, this));
     }
 
     /**

@@ -5,6 +5,7 @@ import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/font.dart';
 import '../gen/image.dart';
+import '../gen/menu.dart';
 import '../gen/point.dart';
 import '../gen/rectangle.dart';
 import '../impl/scrolledcomposite_evolve.dart';

@@ -18,59 +18,68 @@ import 'widgets.dart';
 part 'styledtext.g.dart';
 
 class StyledTextSwt<V extends VStyledText> extends CanvasSwt<V> {
-  
   const StyledTextSwt({super.key, required super.value});
 
-  
   @override
-  State createState() => StyledTextImpl<StyledTextSwt<VStyledText>, VStyledText>();
+  State createState() =>
+      StyledTextImpl<StyledTextSwt<VStyledText>, VStyledText>();
 
-  
-
-  
   void sendBidiSegmentlineGetSegments(V val, VEvent? payload) {
     sendEvent(val, "BidiSegment/lineGetSegments", payload);
   }
+
   void sendCaretcaretMoved(V val, VEvent? payload) {
     sendEvent(val, "Caret/caretMoved", payload);
   }
+
   void sendExtendedModifymodifyText(V val, VEvent? payload) {
     sendEvent(val, "ExtendedModify/modifyText", payload);
   }
+
   void sendLineBackgroundlineGetBackground(V val, VEvent? payload) {
     sendEvent(val, "LineBackground/lineGetBackground", payload);
   }
+
   void sendLineStylelineGetStyle(V val, VEvent? payload) {
     sendEvent(val, "LineStyle/lineGetStyle", payload);
   }
+
   void sendModifyModify(V val, VEvent? payload) {
     sendEvent(val, "Modify/Modify", payload);
   }
+
   void sendPaintObjectpaintObject(V val, VEvent? payload) {
     sendEvent(val, "PaintObject/paintObject", payload);
   }
+
   void sendSelectionSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/Selection", payload);
   }
+
   void sendVerifyVerify(V val, VEvent? payload) {
     sendEvent(val, "Verify/Verify", payload);
   }
+
   void sendVerifyKeyverifyKey(V val, VEvent? payload) {
     sendEvent(val, "VerifyKey/verifyKey", payload);
   }
+
   void sendWordMovementgetNextOffset(V val, VEvent? payload) {
     sendEvent(val, "WordMovement/getNextOffset", payload);
   }
+
   void sendWordMovementgetPreviousOffset(V val, VEvent? payload) {
     sendEvent(val, "WordMovement/getPreviousOffset", payload);
   }
 }
 
-
-@JsonSerializable() class VStyledText extends VCanvas {
+@JsonSerializable()
+class VStyledText extends VCanvas {
   VStyledText() : this.empty();
-  VStyledText.empty()  { swt = "StyledText"; }
-  
+  VStyledText.empty() {
+    swt = "StyledText";
+  }
+
   int? alignment;
   bool? alwaysShowScrollBars;
   bool? bidiColoring;
@@ -108,8 +117,8 @@ class StyledTextSwt<V extends VStyledText> extends CanvasSwt<V> {
   int? verticalScrollOffset;
   bool? wordWrap;
   int? wrapIndent;
-  
-  factory VStyledText.fromJson(Map<String, dynamic> json) => _$VStyledTextFromJson(json);
+
+  factory VStyledText.fromJson(Map<String, dynamic> json) =>
+      _$VStyledTextFromJson(json);
   Map<String, dynamic> toJson() => _$VStyledTextToJson(this);
-  
 }
