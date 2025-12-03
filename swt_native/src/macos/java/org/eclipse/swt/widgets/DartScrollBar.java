@@ -20,7 +20,6 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.DPIUtil;
 import dev.equo.swt.*;
-import org.eclipse.swt.internal.DPIUtil;
 
 /**
  * Instances of this class are selectable user interface
@@ -769,10 +768,6 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         Composite p = parent.getParent();
         while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
         return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
-    }
-
-    public Point getSizeInPixels() {
-        return new Point(20, 20);
     }
 
     protected void _hookEvents() {

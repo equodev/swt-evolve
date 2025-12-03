@@ -138,6 +138,18 @@ public class Mocks {
         return w;
     }
 
+    public static Text text() {
+        Text w = mock(Text.class);
+        DartControl impl = mock(DartControl.class);
+
+        when(w.getImpl()).thenReturn((IText) impl);
+        when(impl._display()).thenReturn(display());
+        when(impl.getBridge()).thenReturn(new MockFlutterBridge());
+        when(impl.getTouchEnabled()).thenReturn(false);
+
+        return w;
+    }
+
     public static ExpandBar expandBar() {
         ExpandBar w = mock(ExpandBar.class);
         DartExpandBar impl = mock(DartExpandBar.class);

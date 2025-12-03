@@ -4,11 +4,11 @@ import '../gen/widget.dart';
 
 part 'event.g.dart';
 
-
-@JsonSerializable() class VEvent {
+@JsonSerializable()
+class VEvent {
   VEvent() : this.empty();
-  VEvent.empty() ;
-  
+  VEvent.empty();
+
   int? button;
   int? character;
   int? count;
@@ -36,8 +36,7 @@ part 'event.g.dart';
   int? xDirection;
   int? y;
   int? yDirection;
-  
+
   factory VEvent.fromJson(Map<String, dynamic> json) => _$VEventFromJson(json);
   Map<String, dynamic> toJson() => _$VEventToJson(this);
-  
 }

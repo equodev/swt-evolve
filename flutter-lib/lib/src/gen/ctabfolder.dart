@@ -16,47 +16,52 @@ import 'widgets.dart';
 part 'ctabfolder.g.dart';
 
 class CTabFolderSwt<V extends VCTabFolder> extends CompositeSwt<V> {
-  
   const CTabFolderSwt({super.key, required super.value});
 
-  
   @override
-  State createState() => CTabFolderImpl<CTabFolderSwt<VCTabFolder>, VCTabFolder>();
+  State createState() =>
+      CTabFolderImpl<CTabFolderSwt<VCTabFolder>, VCTabFolder>();
 
-  
-
-  
   void sendCTabFolderitemClosed(V val, VEvent? payload) {
     sendEvent(val, "CTabFolder/itemClosed", payload);
   }
+
   void sendCTabFolder2close(V val, VEvent? payload) {
     sendEvent(val, "CTabFolder2/close", payload);
   }
+
   void sendCTabFolder2maximize(V val, VEvent? payload) {
     sendEvent(val, "CTabFolder2/maximize", payload);
   }
+
   void sendCTabFolder2minimize(V val, VEvent? payload) {
     sendEvent(val, "CTabFolder2/minimize", payload);
   }
+
   void sendCTabFolder2restore(V val, VEvent? payload) {
     sendEvent(val, "CTabFolder2/restore", payload);
   }
+
   void sendCTabFolder2showList(V val, VEvent? payload) {
     sendEvent(val, "CTabFolder2/showList", payload);
   }
+
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/DefaultSelection", payload);
   }
+
   void sendSelectionSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/Selection", payload);
   }
 }
 
-
-@JsonSerializable() class VCTabFolder extends VComposite {
+@JsonSerializable()
+class VCTabFolder extends VComposite {
   VCTabFolder() : this.empty();
-  VCTabFolder.empty()  { swt = "CTabFolder"; }
-  
+  VCTabFolder.empty() {
+    swt = "CTabFolder";
+  }
+
   bool? MRUVisible;
   bool? borderVisible;
   List<VColor>? gradientColors;
@@ -86,8 +91,8 @@ class CTabFolderSwt<V extends VCTabFolder> extends CompositeSwt<V> {
   int? topRightAlignment;
   bool? unselectedCloseVisible;
   bool? unselectedImageVisible;
-  
-  factory VCTabFolder.fromJson(Map<String, dynamic> json) => _$VCTabFolderFromJson(json);
+
+  factory VCTabFolder.fromJson(Map<String, dynamic> json) =>
+      _$VCTabFolderFromJson(json);
   Map<String, dynamic> toJson() => _$VCTabFolderToJson(this);
-  
 }

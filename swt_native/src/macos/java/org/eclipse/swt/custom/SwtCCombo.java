@@ -2231,10 +2231,50 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
      * @param childUpdater the callback which works with the child widgets
      */
     public static void updateAndRefreshChildren(CCombo combo, Consumer<Widget> childUpdater) {
-        childUpdater.accept(((SwtCCombo) combo.getImpl()).text);
-        childUpdater.accept(((SwtCCombo) combo.getImpl()).list);
-        childUpdater.accept(((SwtCCombo) combo.getImpl()).arrow);
-        childUpdater.accept(((SwtCCombo) combo.getImpl()).popup);
+        childUpdater.accept(combo.getImpl()._text());
+        childUpdater.accept(combo.getImpl()._list());
+        childUpdater.accept(combo.getImpl()._arrow());
+        childUpdater.accept(combo.getImpl()._popup());
+    }
+
+    public Text _text() {
+        return text;
+    }
+
+    public List _list() {
+        return list;
+    }
+
+    public int _visibleItemCount() {
+        return visibleItemCount;
+    }
+
+    public Shell _popup() {
+        return popup;
+    }
+
+    public Button _arrow() {
+        return arrow;
+    }
+
+    public boolean _hasFocus() {
+        return hasFocus;
+    }
+
+    public Listener _listener() {
+        return listener;
+    }
+
+    public Listener _filter() {
+        return filter;
+    }
+
+    public Font _font() {
+        return font;
+    }
+
+    public Shell __shell() {
+        return _shell;
     }
 
     public CCombo getApi() {

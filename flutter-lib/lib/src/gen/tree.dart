@@ -17,35 +17,35 @@ import 'widgets.dart';
 part 'tree.g.dart';
 
 class TreeSwt<V extends VTree> extends CompositeSwt<V> {
-  
   const TreeSwt({super.key, required super.value});
 
-  
   @override
   State createState() => TreeImpl<TreeSwt<VTree>, VTree>();
 
-  
-
-  
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/DefaultSelection", payload);
   }
+
   void sendSelectionSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/Selection", payload);
   }
+
   void sendTreeCollapse(V val, VEvent? payload) {
     sendEvent(val, "Tree/Collapse", payload);
   }
+
   void sendTreeExpand(V val, VEvent? payload) {
     sendEvent(val, "Tree/Expand", payload);
   }
 }
 
-
-@JsonSerializable() class VTree extends VComposite {
+@JsonSerializable()
+class VTree extends VComposite {
   VTree() : this.empty();
-  VTree.empty()  { swt = "Tree"; }
-  
+  VTree.empty() {
+    swt = "Tree";
+  }
+
   List<int>? columnOrder;
   List<VTreeColumn>? columns;
   VColor? headerBackground;
@@ -57,8 +57,7 @@ class TreeSwt<V extends VTree> extends CompositeSwt<V> {
   VTreeColumn? sortColumn;
   int? sortDirection;
   VTreeItem? topItem;
-  
+
   factory VTree.fromJson(Map<String, dynamic> json) => _$VTreeFromJson(json);
   Map<String, dynamic> toJson() => _$VTreeToJson(this);
-  
 }

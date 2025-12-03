@@ -9,28 +9,25 @@ import 'widgets.dart';
 part 'expanditem.g.dart';
 
 class ExpandItemSwt<V extends VExpandItem> extends ItemSwt<V> {
-  
   const ExpandItemSwt({super.key, required super.value});
 
-  
   @override
-  State createState() => ExpandItemImpl<ExpandItemSwt<VExpandItem>, VExpandItem>();
-
-  
-
-  
+  State createState() =>
+      ExpandItemImpl<ExpandItemSwt<VExpandItem>, VExpandItem>();
 }
 
-
-@JsonSerializable() class VExpandItem extends VItem {
+@JsonSerializable()
+class VExpandItem extends VItem {
   VExpandItem() : this.empty();
-  VExpandItem.empty()  { swt = "ExpandItem"; }
-  
+  VExpandItem.empty() {
+    swt = "ExpandItem";
+  }
+
   VControl? control;
   bool? expanded;
   int? height;
-  
-  factory VExpandItem.fromJson(Map<String, dynamic> json) => _$VExpandItemFromJson(json);
+
+  factory VExpandItem.fromJson(Map<String, dynamic> json) =>
+      _$VExpandItemFromJson(json);
   Map<String, dynamic> toJson() => _$VExpandItemToJson(this);
-  
 }

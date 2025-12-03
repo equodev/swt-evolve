@@ -16,33 +16,31 @@ import 'widgets.dart';
 part 'expandbar.g.dart';
 
 class ExpandBarSwt<V extends VExpandBar> extends CompositeSwt<V> {
-  
   const ExpandBarSwt({super.key, required super.value});
 
-  
   @override
   State createState() => ExpandBarImpl<ExpandBarSwt<VExpandBar>, VExpandBar>();
 
-  
-
-  
   void sendExpandCollapse(V val, VEvent? payload) {
     sendEvent(val, "Expand/Collapse", payload);
   }
+
   void sendExpandExpand(V val, VEvent? payload) {
     sendEvent(val, "Expand/Expand", payload);
   }
 }
 
-
-@JsonSerializable() class VExpandBar extends VComposite {
+@JsonSerializable()
+class VExpandBar extends VComposite {
   VExpandBar() : this.empty();
-  VExpandBar.empty()  { swt = "ExpandBar"; }
-  
+  VExpandBar.empty() {
+    swt = "ExpandBar";
+  }
+
   List<VExpandItem>? items;
   int? spacing;
-  
-  factory VExpandBar.fromJson(Map<String, dynamic> json) => _$VExpandBarFromJson(json);
+
+  factory VExpandBar.fromJson(Map<String, dynamic> json) =>
+      _$VExpandBarFromJson(json);
   Map<String, dynamic> toJson() => _$VExpandBarToJson(this);
-  
 }

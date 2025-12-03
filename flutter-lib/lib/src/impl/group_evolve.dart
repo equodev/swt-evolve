@@ -95,7 +95,26 @@ class _StyledGroup extends StatelessWidget {
     List<Widget> spacedChildren = [];
     if (children != null && children!.isNotEmpty) {
       for (int i = 0; i < children!.length; i++) {
-        spacedChildren.add(mapWidgetFromValue(children![i] as VWidget));
+        final child = children![i] as VWidget;
+        final childWidget = mapWidgetFromValue(child);
+
+        // Only wrap CCombo and similar widgets that need bounded constraints
+        // Keep Labels and Buttons at their natural size
+        final needsFlexible = child.swt == 'CCombo' || child.swt == 'Combo' ||
+                              child.swt == 'Text' || child.swt == 'List';
+
+        if (needsFlexible) {
+          spacedChildren.add(
+            Flexible(
+              flex: 1,
+              fit: FlexFit.loose,
+              child: childWidget,
+            ),
+          );
+        } else {
+          spacedChildren.add(childWidget);
+        }
+
         if (i < children!.length - 1) {
           spacedChildren.add(const SizedBox(width: 8));
         }

@@ -13,7 +13,7 @@ import org.eclipse.swt.widgets.*;
  * - Text modification events
  * - Enter key handling
  */
-public class PasswordSnippet {
+public class TextPasswordSnippet {
     public static void main(String[] args) {
         Config.useEquo(Text.class);
         Config.useEquo(Label.class);

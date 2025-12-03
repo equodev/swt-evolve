@@ -13,26 +13,21 @@ import 'widgets.dart';
 part 'group.g.dart';
 
 class GroupSwt<V extends VGroup> extends CompositeSwt<V> {
-  
   const GroupSwt({super.key, required super.value});
 
-  
   @override
   State createState() => GroupImpl<GroupSwt<VGroup>, VGroup>();
-
-  
-
-  
 }
 
-
-@JsonSerializable() class VGroup extends VComposite {
+@JsonSerializable()
+class VGroup extends VComposite {
   VGroup() : this.empty();
-  VGroup.empty()  { swt = "Group"; }
-  
+  VGroup.empty() {
+    swt = "Group";
+  }
+
   String? text;
-  
+
   factory VGroup.fromJson(Map<String, dynamic> json) => _$VGroupFromJson(json);
   Map<String, dynamic> toJson() => _$VGroupToJson(this);
-  
 }

@@ -12,32 +12,31 @@ import 'widgets.dart';
 part 'menu.g.dart';
 
 class MenuSwt<V extends VMenu> extends WidgetSwt<V> {
-  
   const MenuSwt({super.key, required super.value});
 
-  
   @override
   State createState() => MenuImpl<MenuSwt<VMenu>, VMenu>();
 
-  
-
-  
   void sendHelpHelp(V val, VEvent? payload) {
     sendEvent(val, "Help/Help", payload);
   }
+
   void sendMenuHide(V val, VEvent? payload) {
     sendEvent(val, "Menu/Hide", payload);
   }
+
   void sendMenuShow(V val, VEvent? payload) {
     sendEvent(val, "Menu/Show", payload);
   }
 }
 
-
-@JsonSerializable() class VMenu extends VWidget {
+@JsonSerializable()
+class VMenu extends VWidget {
   VMenu() : this.empty();
-  VMenu.empty()  { swt = "Menu"; }
-  
+  VMenu.empty() {
+    swt = "Menu";
+  }
+
   VMenuItem? defaultItem;
   bool? enabled;
   List<VMenuItem>? items;
@@ -45,8 +44,7 @@ class MenuSwt<V extends VMenu> extends WidgetSwt<V> {
   int? orientation;
   VMenu? parentMenu;
   bool? visible;
-  
+
   factory VMenu.fromJson(Map<String, dynamic> json) => _$VMenuFromJson(json);
   Map<String, dynamic> toJson() => _$VMenuToJson(this);
-  
 }

@@ -12,28 +12,25 @@ import 'widgets.dart';
 part 'progressbar.g.dart';
 
 class ProgressBarSwt<V extends VProgressBar> extends ControlSwt<V> {
-  
   const ProgressBarSwt({super.key, required super.value});
 
-  
   @override
-  State createState() => ProgressBarImpl<ProgressBarSwt<VProgressBar>, VProgressBar>();
-
-  
-
-  
+  State createState() =>
+      ProgressBarImpl<ProgressBarSwt<VProgressBar>, VProgressBar>();
 }
 
-
-@JsonSerializable() class VProgressBar extends VControl {
+@JsonSerializable()
+class VProgressBar extends VControl {
   VProgressBar() : this.empty();
-  VProgressBar.empty()  { swt = "ProgressBar"; }
-  
+  VProgressBar.empty() {
+    swt = "ProgressBar";
+  }
+
   int? maximum;
   int? minimum;
   int? selection;
-  
-  factory VProgressBar.fromJson(Map<String, dynamic> json) => _$VProgressBarFromJson(json);
+
+  factory VProgressBar.fromJson(Map<String, dynamic> json) =>
+      _$VProgressBarFromJson(json);
   Map<String, dynamic> toJson() => _$VProgressBarToJson(this);
-  
 }
