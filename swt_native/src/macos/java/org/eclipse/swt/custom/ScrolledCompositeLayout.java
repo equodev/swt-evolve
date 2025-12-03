@@ -36,14 +36,14 @@ class ScrolledCompositeLayout extends Layout {
     protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
         ScrolledComposite sc = (ScrolledComposite) composite;
         Point size = new Point(DEFAULT_WIDTH, DEFAULT_HEIGHT);
-        if (((SwtScrolledComposite) sc.getImpl()).content != null) {
-            Point preferredSize = ((SwtScrolledComposite) sc.getImpl()).content.computeSize(wHint, hHint, flushCache);
-            Point currentSize = ((SwtScrolledComposite) sc.getImpl()).content.getSize();
+        if (sc.getImpl()._content() != null) {
+            Point preferredSize = sc.getImpl()._content().computeSize(wHint, hHint, flushCache);
+            Point currentSize = sc.getImpl()._content().getSize();
             size.x = sc.getExpandHorizontal() ? preferredSize.x : currentSize.x;
             size.y = sc.getExpandVertical() ? preferredSize.y : currentSize.y;
         }
-        size.x = Math.max(size.x, ((SwtScrolledComposite) sc.getImpl()).minWidth);
-        size.y = Math.max(size.y, ((SwtScrolledComposite) sc.getImpl()).minHeight);
+        size.x = Math.max(size.x, sc.getImpl()._minWidth());
+        size.y = Math.max(size.y, sc.getImpl()._minHeight());
         if (wHint != SWT.DEFAULT)
             size.x = wHint;
         if (hHint != SWT.DEFAULT)
@@ -61,7 +61,7 @@ class ScrolledCompositeLayout extends Layout {
         if (inLayout)
             return;
         ScrolledComposite sc = (ScrolledComposite) composite;
-        if (((SwtScrolledComposite) sc.getImpl()).content == null)
+        if (sc.getImpl()._content() == null)
             return;
         ScrollBar hBar = sc.getHorizontalBar();
         ScrollBar vBar = sc.getVerticalBar();
@@ -76,29 +76,31 @@ class ScrolledCompositeLayout extends Layout {
             }
         }
         inLayout = true;
-        Rectangle contentRect = ((SwtScrolledComposite) sc.getImpl()).content.getBounds();
-        if (!((SwtScrolledComposite) sc.getImpl()).alwaysShowScroll) {
-            boolean hVisible = ((SwtScrolledComposite) sc.getImpl()).needHScroll(contentRect, false);
-            boolean vVisible = ((SwtScrolledComposite) sc.getImpl()).needVScroll(contentRect, hVisible);
+        Rectangle contentRect = sc.getImpl()._content().getBounds();
+        if (!sc.getImpl()._alwaysShowScroll()) {
+            boolean hVisible = sc.getImpl().needHScroll(contentRect, false);
+            boolean vVisible = sc.getImpl().needVScroll(contentRect, hVisible);
             if (!hVisible && vVisible)
-                hVisible = ((SwtScrolledComposite) sc.getImpl()).needHScroll(contentRect, vVisible);
+                hVisible = sc.getImpl().needHScroll(contentRect, vVisible);
             if (hBar != null)
                 hBar.setVisible(hVisible);
             if (vBar != null)
                 vBar.setVisible(vVisible);
         }
         Rectangle hostRect = sc.getClientArea();
-        if (((SwtScrolledComposite) sc.getImpl()).expandHorizontal) {
-            contentRect.width = Math.max(((SwtScrolledComposite) sc.getImpl()).minWidth, hostRect.width);
+        if (sc.getImpl()._expandHorizontal()) {
+            contentRect.width = Math.max(sc.getImpl()._minWidth(), hostRect.width);
         }
-        if (((SwtScrolledComposite) sc.getImpl()).expandVertical) {
-            contentRect.height = Math.max(((SwtScrolledComposite) sc.getImpl()).minHeight, hostRect.height);
+        if (sc.getImpl()._expandVertical()) {
+            contentRect.height = Math.max(sc.getImpl()._minHeight(), hostRect.height);
         }
-        GC gc = new GC(sc);
+        //GC gc = new GC(sc);
+        ;
         if (hBar != null) {
             hBar.setMaximum(contentRect.width);
             hBar.setThumb(Math.min(contentRect.width, hostRect.width));
-            hBar.setIncrement((int) gc.getFontMetrics().getAverageCharacterWidth());
+            //hBar.setIncrement((int) gc.getFontMetrics().getAverageCharacterWidth());
+            ;
             hBar.setPageIncrement(hostRect.width);
             int hPage = contentRect.width - hostRect.width;
             int hSelection = hBar.getSelection();
@@ -113,7 +115,8 @@ class ScrolledCompositeLayout extends Layout {
         if (vBar != null) {
             vBar.setMaximum(contentRect.height);
             vBar.setThumb(Math.min(contentRect.height, hostRect.height));
-            vBar.setIncrement(gc.getFontMetrics().getHeight());
+            //vBar.setIncrement(gc.getFontMetrics().getHeight());
+            ;
             vBar.setPageIncrement(hostRect.height);
             int vPage = contentRect.height - hostRect.height;
             int vSelection = vBar.getSelection();
@@ -125,8 +128,9 @@ class ScrolledCompositeLayout extends Layout {
                 contentRect.y = -vSelection;
             }
         }
-        gc.dispose();
-        ((SwtScrolledComposite) sc.getImpl()).content.setBounds(contentRect);
+        //gc.dispose();
+        ;
+        sc.getImpl()._content().setBounds(contentRect);
         inLayout = false;
     }
 }

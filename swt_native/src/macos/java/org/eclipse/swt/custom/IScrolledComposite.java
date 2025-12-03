@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface IScrolledComposite extends IComposite {
+public interface IScrolledComposite extends IComposite, ImplScrolledComposite {
 
     /**
      * Returns the Always Show Scrollbars flag.  True if the scrollbars are

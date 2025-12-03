@@ -18,6 +18,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * A ScrolledComposite provides scrollbars and will scroll its content when the user
@@ -137,7 +138,7 @@ public class ScrolledComposite extends Composite {
      */
     public ScrolledComposite(Composite parent, int style) {
         this((IScrolledComposite) null);
-        setImpl(new SwtScrolledComposite(parent, style, this));
+        setImpl(Config.isEquo(ScrolledComposite.class, parent) ? new DartScrolledComposite(parent, style, this) : new SwtScrolledComposite(parent, style, this));
     }
 
     /**

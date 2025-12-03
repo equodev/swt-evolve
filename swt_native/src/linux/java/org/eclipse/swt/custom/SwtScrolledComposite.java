@@ -340,7 +340,7 @@ public class SwtScrolledComposite extends SwtComposite implements IScrolledCompo
         content.setLocation(-hSelection, location.y);
     }
 
-    boolean needHScroll(Rectangle contentRect, boolean vVisible) {
+    public boolean needHScroll(Rectangle contentRect, boolean vVisible) {
         ScrollBar hBar = getHorizontalBar();
         if (hBar == null)
             return false;
@@ -357,7 +357,7 @@ public class SwtScrolledComposite extends SwtComposite implements IScrolledCompo
         return false;
     }
 
-    boolean needVScroll(Rectangle contentRect, boolean hVisible) {
+    public boolean needVScroll(Rectangle contentRect, boolean hVisible) {
         ScrollBar vBar = getVerticalBar();
         if (vBar == null)
             return false;
@@ -748,6 +748,46 @@ public class SwtScrolledComposite extends SwtComposite implements IScrolledCompo
         ScrollBar vBar = getVerticalBar();
         int vSelection = vBar.getSelection();
         content.setLocation(location.x, -vSelection);
+    }
+
+    public Control _content() {
+        return content;
+    }
+
+    public Listener _contentListener() {
+        return contentListener;
+    }
+
+    public Listener _filter() {
+        return filter;
+    }
+
+    public int _minHeight() {
+        return minHeight;
+    }
+
+    public int _minWidth() {
+        return minWidth;
+    }
+
+    public boolean _expandHorizontal() {
+        return expandHorizontal;
+    }
+
+    public boolean _expandVertical() {
+        return expandVertical;
+    }
+
+    public boolean _alwaysShowScroll() {
+        return alwaysShowScroll;
+    }
+
+    public boolean _showFocusedControl() {
+        return showFocusedControl;
+    }
+
+    public boolean _showNextFocusedControl() {
+        return showNextFocusedControl;
     }
 
     public ScrolledComposite getApi() {
