@@ -3,14 +3,13 @@ import '../gen/fontdata.dart';
 
 part 'font.g.dart';
 
-
-@JsonSerializable() class VFont {
+@JsonSerializable()
+class VFont {
   VFont() : this.empty();
-  VFont.empty() ;
-  
+  VFont.empty();
+
   List<VFontData>? fontData;
-  
+
   factory VFont.fromJson(Map<String, dynamic> json) => _$VFontFromJson(json);
   Map<String, dynamic> toJson() => _$VFontToJson(this);
-  
 }

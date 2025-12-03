@@ -240,6 +240,12 @@ public class DartGroup extends DartComposite implements IGroup {
         return vMargin;
     }
 
+    @Override
+    public Point computeSize(int wHint, int hHint, boolean changed) {
+        checkWidget();
+        return Sizes.compute(this);
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }

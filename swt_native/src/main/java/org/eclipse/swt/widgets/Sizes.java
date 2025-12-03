@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import org.eclipse.swt.custom.DartCCombo;
 import org.eclipse.swt.custom.DartCTabFolder;
 import org.eclipse.swt.custom.DartStyledText;
 import org.eclipse.swt.graphics.Point;
@@ -41,6 +42,29 @@ public class Sizes {
             int itemCount = items != null ? items.length : 0;
             height = Math.min(visibleCount, itemCount) * 24 + 32;
         }
+
+        return new Point(Math.max(width, 120), height);
+    }
+
+    public static Point compute(DartCCombo c) {
+        int maxLength = 0;
+        String[] items = c._items();
+        if (items != null) {
+            for (String item : items) {
+                if (item != null && item.length() > maxLength) {
+                    maxLength = item.length();
+                }
+            }
+        }
+
+        String text = c.__text();
+        int textLength = (text != null ? text.length() : 0);
+        maxLength = Math.max(maxLength, textLength);
+
+        int width = maxLength > 0 ? (int)(maxLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING) : 100;
+        width += 30;
+
+        int height = 25;
 
         return new Point(Math.max(width, 120), height);
     }
@@ -185,7 +209,7 @@ public class Sizes {
                 childrenWidth += childSize.x;
                 childrenHeight = Math.max(childrenHeight, childSize.y);
 
-                if (child instanceof Combo) {
+                if (child instanceof Combo || child instanceof org.eclipse.swt.custom.CCombo) {
                     hasCombo = true;
                     comboCount++;
                 }
@@ -218,21 +242,19 @@ public class Sizes {
             height = estimatedHeight + titleHeightSpace + verticalPadding;
 
             if (hasCombo) {
-                int dropdownSpace = 150 * comboCount;
-                extraSpace += dropdownSpace;
+                int dropdownSpace = 150;
+                height += dropdownSpace;
             }
 
             if (hasMenu) {
                 extraSpace += maxMenuHeight;
+                height += extraSpace;
             }
-
-            height += extraSpace;
         } else {
             height = childrenHeight + titleHeightSpace + verticalPadding;
         }
 
-        int baseMinHeight = 100;
-        int minHeight = baseMinHeight + extraSpace;
+        int minHeight = hasCombo ? 200 : 100;
         return new Point(Math.max(width, 300), Math.max(height, minHeight));
     }
 

@@ -17,29 +17,27 @@ import 'widgets.dart';
 part 'table.g.dart';
 
 class TableSwt<V extends VTable> extends CompositeSwt<V> {
-  
   const TableSwt({super.key, required super.value});
 
-  
   @override
   State createState() => TableImpl<TableSwt<VTable>, VTable>();
 
-  
-
-  
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/DefaultSelection", payload);
   }
+
   void sendSelectionSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/Selection", payload);
   }
 }
 
-
-@JsonSerializable() class VTable extends VComposite {
+@JsonSerializable()
+class VTable extends VComposite {
   VTable() : this.empty();
-  VTable.empty()  { swt = "Table"; }
-  
+  VTable.empty() {
+    swt = "Table";
+  }
+
   List<int>? columnOrder;
   List<VTableColumn>? columns;
   VColor? headerBackground;
@@ -51,8 +49,7 @@ class TableSwt<V extends VTable> extends CompositeSwt<V> {
   VTableColumn? sortColumn;
   int? sortDirection;
   int? topIndex;
-  
+
   factory VTable.fromJson(Map<String, dynamic> json) => _$VTableFromJson(json);
   Map<String, dynamic> toJson() => _$VTableToJson(this);
-  
 }

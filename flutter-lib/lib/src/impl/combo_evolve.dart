@@ -455,6 +455,7 @@ class StyledEditableCombo extends StatelessWidget {
                   child: TextField(
                     controller: controller,
                     focusNode: focusNode,
+                    textAlignVertical: TextAlignVertical.center,
                     style: TextStyle(color: textColor, fontSize: 12),
                     decoration: InputDecoration(
                       border: InputBorder.none,
@@ -463,6 +464,7 @@ class StyledEditableCombo extends StatelessWidget {
                       isDense: true,
                       counterText: '',
                     ),
+                    maxLines: 1,
                     maxLength: textLimit,
                     onChanged: onTextChanged,
                     onSubmitted: onTextSubmitted,

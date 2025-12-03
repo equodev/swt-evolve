@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import '../gen/button.dart';
 import '../gen/canvas.dart';
 import '../gen/caret.dart';
+import '../gen/ccombo.dart';
 import '../gen/clabel.dart';
 import '../gen/combo.dart';
 import '../gen/composite.dart';
@@ -42,6 +43,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
   return switch (type) {
     "CLabel" => VCLabel.fromJson(child),
     "StyledText" => VStyledText.fromJson(child),
+    "CCombo" => VCCombo.fromJson(child),
     "CTabFolder" => VCTabFolder.fromJson(child),
     "Canvas" => VCanvas.fromJson(child),
     "Combo" => VCombo.fromJson(child),
@@ -85,13 +87,15 @@ Widget mapWidgetFromValue(VWidget child) {
   return switch (child) {
     VCLabel() => CLabelSwt(key: ValueKey(id), value: child),
     VStyledText() => StyledTextSwt(key: ValueKey(id), value: child),
+    VCCombo() => CComboSwt(key: ValueKey(id), value: child),
     VCTabFolder() => CTabFolderSwt(key: ValueKey(id), value: child),
     VCanvas() => CanvasSwt(key: ValueKey(id), value: child),
     VCombo() => ComboSwt(key: ValueKey(id), value: child),
     VExpandBar() => ExpandBarSwt(key: ValueKey(id), value: child),
     VGroup() => GroupSwt(key: ValueKey(id), value: child),
     VSashForm() => SashFormSwt(key: ValueKey(id), value: child),
-    VScrolledComposite() => ScrolledCompositeSwt(key: ValueKey(id), value: child),
+    VScrolledComposite() =>
+      ScrolledCompositeSwt(key: ValueKey(id), value: child),
     VSpinner() => SpinnerSwt(key: ValueKey(id), value: child),
     VTable() => TableSwt(key: ValueKey(id), value: child),
     VToolBar() => ToolBarSwt(key: ValueKey(id), value: child),

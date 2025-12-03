@@ -12,10 +12,11 @@ import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
  * Simple snippet to test context menu functionality.
  * Right-click on the button to see the context menu.
  */
-public class PopUpMenuSnippet {
+public class MenuPopUpSnippet {
     public static void main(String[] args) {
         Config.useEquo(Menu.class);
         Config.useEquo(MenuItem.class);
+        Config.useEquo(Group.class);
         Display display = new Display();
         Shell shell = new Shell(display);
         shell.setText("PopUp Context Menu Example");

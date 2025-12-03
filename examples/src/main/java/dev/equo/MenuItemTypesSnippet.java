@@ -16,6 +16,7 @@ public class MenuItemTypesSnippet {
     public static void main(String[] args) {
         Config.useEquo(Menu.class);
         Config.useEquo(MenuItem.class);
+        Config.useEquo(Group.class);
         Display display = new Display();
         Shell shell = new Shell(display);
         shell.setText("MenuItem Types Example");
