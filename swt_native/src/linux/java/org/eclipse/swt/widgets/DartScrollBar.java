@@ -293,11 +293,11 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public Point getSize() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getSizeInPixels());
+        return DPIUtil.autoScaleDown(new Point(20, 20));
     }
 
     public Point getSizeInPixels() {
-        return new Point(20, 20);
+        return null;
     }
 
     /**
