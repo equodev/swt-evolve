@@ -215,7 +215,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         elevation: MaterialStateProperty.all(8.0),
       ),
       alignmentOffset: const Offset(0, 0),
-      anchorTapClosesMenu: true,
+      anchorTapClosesMenu: false,
       onOpen: () {
         widget.sendMenuShow(state, null);
       },
@@ -223,6 +223,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         _sendPendingChanges();
         if (state.visible == true) {
           state.visible = false;
+          widget.sendMenuHide(state, null);
         }
       },
       menuChildren: [
