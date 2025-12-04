@@ -169,6 +169,20 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     }
   }
 
+  void _addPolylineShape(
+      {required List<int> points, required bool isFilled, int minPoints = 2}) {
+    if (points.length >= minPoints && points.length % 2 == 0) {
+      final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
+      final strokeWidth = isFilled ? 0.0 : lineWidth;
+
+      setState(() => shapes = [
+        ...shapes,
+        PolylineShape(points, color, strokeWidth, lineCap, lineJoin,
+            isFilled: isFilled, clipRect: clipping)
+      ]);
+    }
+  }
+
   void _addArcShape(
       {required int x,
       required int y,
@@ -259,10 +273,10 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   @override
   void onDrawPolyline(VGCDrawPolyline opArgs) {
-    _addPolygonShape(
+    _addPolylineShape(
       points: opArgs.pointArray ?? [],
       isFilled: false,
-      minPoints: 4,
+      minPoints: 2,
     );
   }
 
@@ -831,6 +845,55 @@ class PolygonShape extends Shape {
   @override
   String toString() =>
       '${isFilled ? "Fill" : ""}Polygon ${points.length ~/ 2} points${clipRect != null ? " [clipped]" : ""}';
+}
+
+class PolylineShape extends Shape {
+  PolylineShape(
+      this.points, this.color, this.strokeWidth, this.lineCap, this.lineJoin,
+      {this.isFilled = false, this.clipRect});
+
+  final List<int> points;
+  final Color color;
+  final double strokeWidth;
+  final int lineCap;
+  final int lineJoin;
+  final bool isFilled;
+  @override
+  final Rect? clipRect;
+
+  @override
+  void draw(Canvas c) {
+    if (points.length < 4) return;
+
+    if (clipRect != null) {
+      c.save();
+      c.clipRect(clipRect!);
+    }
+
+    final paint = Paint()
+      ..color = color
+      ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = getStrokeCap(lineCap)
+      ..strokeJoin = getStrokeJoin(lineJoin);
+
+    final path = Path();
+    path.moveTo(points[0].toDouble(), points[1].toDouble());
+
+    for (int i = 2; i < points.length; i += 2) {
+      path.lineTo(points[i].toDouble(), points[i + 1].toDouble());
+    }
+
+    c.drawPath(path, paint);
+
+    if (clipRect != null) {
+      c.restore();
+    }
+  }
+
+  @override
+  String toString() =>
+      '${isFilled ? "Fill" : ""}Polyline ${points.length ~/ 2} points${clipRect != null ? " [clipped]" : ""}';
 }
 
 class ArcShape extends Shape {
