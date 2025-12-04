@@ -465,9 +465,22 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public MenuItem[] getItems() {
         checkWidget();
-        if (items == null)
-            return new MenuItem[0];
-        return items;
+        MenuItem[] result = new MenuItem[itemCount];
+        int index = 0;
+        if (items != null) {
+            for (int i = 0; i < itemCount; i++) {
+                MenuItem item = items[i];
+                if (item != null && !item.isDisposed()) {
+                    result[index++] = item;
+                }
+            }
+        }
+        if (index != result.length) {
+            MenuItem[] newItems = new MenuItem[index];
+            System.arraycopy(result, 0, newItems, 0, index);
+            result = newItems;
+        }
+        return result;
     }
 
     @Override
@@ -1059,9 +1072,6 @@ public class DartMenu extends DartWidget implements IMenu {
         });
         FlutterBridge.on(this, "Menu", "Show", e -> {
             getDisplay().asyncExec(() -> {
-                if (ownerControl != null && ownerControl.getImpl() instanceof DartControl) {
-                    ((DartControl) ownerControl.getImpl()).dirty();
-                }
                 sendEvent(SWT.Show, e);
             });
         });

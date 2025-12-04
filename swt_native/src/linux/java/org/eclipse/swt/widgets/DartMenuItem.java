@@ -115,7 +115,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public DartMenuItem(Menu parent, int style, MenuItem api) {
         super(parent, checkStyle(style), api);
         this.parent = parent;
-        createWidget(parent.getItemCount());
+        ((DartMenu) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
     }
 
     /**
@@ -161,7 +161,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
         if (!(0 <= index && index <= count)) {
             error(SWT.ERROR_INVALID_RANGE);
         }
-        createWidget(index);
+        ((DartMenu) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
     }
 
     void addAccelerator(long accelGroup) {
@@ -774,6 +774,12 @@ public class DartMenuItem extends DartItem implements IMenuItem {
         Menu oldMenu = this.menu;
         if (oldMenu == menu)
             return;
+        if (oldMenu != null)
+            ((DartMenu) oldMenu.getImpl()).cascade = null;
+        this.menu = menu;
+        if (menu != null) {
+            ((DartMenu) menu.getImpl()).cascade = this.getApi();
+        }
     }
 
     @Override

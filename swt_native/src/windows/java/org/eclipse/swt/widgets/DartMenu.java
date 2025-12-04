@@ -285,14 +285,14 @@ public class DartMenu extends DartWidget implements IMenu {
     }
 
     void createItem(MenuItem item, int index) {
-        if (items == null)
-            items = new MenuItem[0];
-        MenuItem[] newItems = new MenuItem[items.length + 1];
-        System.arraycopy(items, 0, newItems, 0, index);
-        newItems[index] = item;
-        System.arraycopy(items, index, newItems, index + 1, items.length - index);
-        items = newItems;
-        ((DartWidget) item.getImpl()).register();
+        ((SwtDisplay) display.getImpl()).addMenuItem(item);
+        if (needsMenuCallback()) {
+            /*
+		 * Bug in Windows: when MIIM_BITMAP is used together with MFT_STRING,
+		 * InsertMenuItem() fails. The workaround is to set MIIM_BITMAP with
+		 * a separate SetMenuItemInfo().
+		 */
+        }
         redraw();
     }
 
@@ -1321,9 +1321,6 @@ public class DartMenu extends DartWidget implements IMenu {
         });
         FlutterBridge.on(this, "Menu", "Show", e -> {
             getDisplay().asyncExec(() -> {
-                if (ownerControl != null && ownerControl.getImpl() instanceof DartControl) {
-                    ((DartControl) ownerControl.getImpl()).dirty();
-                }
                 sendEvent(SWT.Show, e);
             });
         });
