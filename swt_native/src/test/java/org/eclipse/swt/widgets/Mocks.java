@@ -57,6 +57,7 @@ public class Mocks {
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
         when(display.getSystemColor(anyInt())).thenReturn(new Color(red(), green(), blue()));
         when(display.getSystemFont()).thenReturn(mock(org.eclipse.swt.graphics.Font.class));
+        when(display.getSystemCursor(anyInt())).thenReturn(mock(Cursor.class));
         when(swtDisplay.getThread()).thenCallRealMethod();
         org.eclipse.swt.graphics.Mocks.device(display, swtDisplay);
 
@@ -97,6 +98,28 @@ public class Mocks {
         Display display = display();
         //when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
+        return w;
+    }
+
+    public static CoolBar coolBar() {
+        CoolBar w = mock(CoolBar.class);
+        DartCoolBar impl = mock(DartCoolBar.class);
+        when(w.getImpl()).thenReturn(impl);
+        when(impl.getBridge()).thenReturn(new MockFlutterBridge());
+        Display display = display();
+        //when(w.getDisplay()).thenReturn(display);
+        when(impl._display()).thenReturn(display);
+        when(impl._getChildren()).thenReturn(new Control[0]);
+        doNothing().when(impl).createItem(any(CoolItem.class), anyInt());
+        try { // fixPoint method exists in Linux and macOS
+            Method fixPoint = DartCoolBar.class.getDeclaredMethod("fixPoint", int.class, int.class);
+            fixPoint.setAccessible(true);
+            when(fixPoint.invoke(impl, anyInt(), anyInt())).thenAnswer(invocation -> {
+                int x = invocation.getArgument(0);
+                int y = invocation.getArgument(1);
+                return new Point(x, y);
+            });
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
         return w;
     }
 

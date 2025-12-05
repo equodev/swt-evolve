@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 
-public interface ICoolBar extends IComposite {
+public interface ICoolBar extends IComposite, ImplCoolBar {
 
     void checkSubclass();
 

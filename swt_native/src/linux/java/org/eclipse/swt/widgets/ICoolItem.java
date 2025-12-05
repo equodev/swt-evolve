@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 
-public interface ICoolItem extends IItem {
+public interface ICoolItem extends IItem, ImplCoolItem {
 
     /**
      * Adds the listener to the collection of listeners that will

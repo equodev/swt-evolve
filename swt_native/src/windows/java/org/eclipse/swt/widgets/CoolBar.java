@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class provide an area for dynamically
@@ -83,7 +84,7 @@ public class CoolBar extends Composite {
      */
     public CoolBar(Composite parent, int style) {
         this((ICoolBar) null);
-        setImpl(new SwtCoolBar(parent, style, this));
+        setImpl(Config.isEquo(CoolBar.class, parent) ? new DartCoolBar(parent, style, this) : new SwtCoolBar(parent, style, this));
     }
 
     protected void checkSubclass() {

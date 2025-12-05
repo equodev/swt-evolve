@@ -700,6 +700,54 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
         }
     }
 
+    public Control _control() {
+        return control;
+    }
+
+    public CoolBar _parent() {
+        return parent;
+    }
+
+    public boolean _ideal() {
+        return ideal;
+    }
+
+    public int _preferredWidth() {
+        return preferredWidth;
+    }
+
+    public int _preferredHeight() {
+        return preferredHeight;
+    }
+
+    public int _minimumWidth() {
+        return minimumWidth;
+    }
+
+    public int _minimumHeight() {
+        return minimumHeight;
+    }
+
+    public int _requestedWidth() {
+        return requestedWidth;
+    }
+
+    public Rectangle _itemBounds() {
+        return itemBounds;
+    }
+
+    public ToolBar _chevron() {
+        return chevron;
+    }
+
+    public boolean _wrap() {
+        return wrap;
+    }
+
+    public Image _arrowImage() {
+        return arrowImage;
+    }
+
     public CoolItem getApi() {
         if (api == null)
             api = CoolItem.createApi(this);

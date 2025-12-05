@@ -6,6 +6,8 @@ import '../gen/ccombo.dart';
 import '../gen/clabel.dart';
 import '../gen/combo.dart';
 import '../gen/composite.dart';
+import '../gen/coolbar.dart';
+import '../gen/coolitem.dart';
 import '../gen/ctabfolder.dart';
 import '../gen/ctabitem.dart';
 import '../gen/expandbar.dart';
@@ -47,6 +49,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "CTabFolder" => VCTabFolder.fromJson(child),
     "Canvas" => VCanvas.fromJson(child),
     "Combo" => VCombo.fromJson(child),
+    "CoolBar" => VCoolBar.fromJson(child),
     "ExpandBar" => VExpandBar.fromJson(child),
     "Group" => VGroup.fromJson(child),
     "SashForm" => VSashForm.fromJson(child),
@@ -66,6 +69,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "Scale" => VScale.fromJson(child),
     "Slider" => VSlider.fromJson(child),
     "CTabItem" => VCTabItem.fromJson(child),
+    "CoolItem" => VCoolItem.fromJson(child),
     "ExpandItem" => VExpandItem.fromJson(child),
     "MenuItem" => VMenuItem.fromJson(child),
     "TableColumn" => VTableColumn.fromJson(child),
@@ -91,6 +95,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VCTabFolder() => CTabFolderSwt(key: ValueKey(id), value: child),
     VCanvas() => CanvasSwt(key: ValueKey(id), value: child),
     VCombo() => ComboSwt(key: ValueKey(id), value: child),
+    VCoolBar() => CoolBarSwt(key: ValueKey(id), value: child),
     VExpandBar() => ExpandBarSwt(key: ValueKey(id), value: child),
     VGroup() => GroupSwt(key: ValueKey(id), value: child),
     VSashForm() => SashFormSwt(key: ValueKey(id), value: child),
@@ -111,6 +116,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VScale() => ScaleSwt(key: ValueKey(id), value: child),
     VSlider() => SliderSwt(key: ValueKey(id), value: child),
     VCTabItem() => CTabItemSwt(key: ValueKey(id), value: child),
+    VCoolItem() => CoolItemSwt(key: ValueKey(id), value: child),
     VExpandItem() => ExpandItemSwt(key: ValueKey(id), value: child),
     VMenuItem() => MenuItemSwt(key: ValueKey(id), value: child),
     VTableColumn() => TableColumnSwt(key: ValueKey(id), value: child),

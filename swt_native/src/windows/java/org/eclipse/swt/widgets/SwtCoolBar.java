@@ -340,10 +340,12 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
 	* row will be deleted and the WM_SIZE is necessary.
 	*/
         CoolItem nextItem = null;
-        if (((SwtCoolItem) item.getImpl()).getWrap()) {
-            if (index + 1 < count) {
-                nextItem = getItem(index + 1);
-                ignoreResize = !((SwtCoolItem) nextItem.getImpl()).getWrap();
+        if (item.getImpl() instanceof SwtCoolItem) {
+            if (((SwtCoolItem) item.getImpl()).getWrap()) {
+                if (index + 1 < count) {
+                    nextItem = getItem(index + 1);
+                    ignoreResize = !((SwtCoolItem) nextItem.getImpl()).getWrap();
+                }
             }
         }
         if (OS.SendMessage(getApi().handle, OS.RB_DELETEBAND, index, 0) == 0) {
@@ -1280,6 +1282,22 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         }
         ((SwtCoolBar) coolBar.getImpl()).setItemLayoutInPixels(itemOrder, indices, scaledSizes);
         coolBar.getImpl().updateLayout(true);
+    }
+
+    public CoolItem[] _items() {
+        return items;
+    }
+
+    public CoolItem[] _originalItems() {
+        return originalItems;
+    }
+
+    public boolean _locked() {
+        return locked;
+    }
+
+    public boolean _ignoreResize() {
+        return ignoreResize;
     }
 
     public CoolBar getApi() {

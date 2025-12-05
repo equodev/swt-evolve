@@ -774,6 +774,26 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
         eventTable.unhook(SWT.DefaultSelection, listener);
     }
 
+    public CoolBar _parent() {
+        return parent;
+    }
+
+    public Control _control() {
+        return control;
+    }
+
+    public int _id() {
+        return id;
+    }
+
+    public boolean _ideal() {
+        return ideal;
+    }
+
+    public boolean _minimum() {
+        return minimum;
+    }
+
     public CoolItem getApi() {
         if (api == null)
             api = CoolItem.createApi(this);

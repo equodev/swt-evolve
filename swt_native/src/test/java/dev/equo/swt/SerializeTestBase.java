@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -30,6 +31,7 @@ public class SerializeTestBase {
     private final Settings settings;
     Serializer serializer = new Serializer();
     private MockedStatic<SwtAccessible> mockedStatic;
+    private MockedConstruction<SwtCursor> mockedCursor;
 
     protected  SerializeTestBase() {
         settings = Settings.defaults()
@@ -57,11 +59,15 @@ public class SerializeTestBase {
         Accessible mockAcc = Mockito.mock(Accessible.class);
         mockedStatic = Mockito.mockStatic(SwtAccessible.class);
         mockedStatic.when(() -> SwtAccessible.internal_new_Accessible(Mockito.any())).thenReturn(mockAcc);
+
+        // Mock SwtCursor construction to avoid "No more handles" error in tests
+        mockedCursor = Mockito.mockConstruction(SwtCursor.class);
     }
 
     @AfterEach
     void resetStatic() {
         mockedStatic.close();
+        mockedCursor.close();
     }
 
     protected <T> String serialize(Object p) {
@@ -87,13 +93,15 @@ public class SerializeTestBase {
         } catch (ClassNotFoundException e) {}
         inst = inst
                 .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
-                .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0)) // Always true
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000))
                 .generate(Select.all(Image.class), gen -> gen.oneOf(createTestImage()));
-        if (!(w instanceof Caret) && !(w instanceof TreeColumn) && !(w instanceof TableColumn) && !(w instanceof ToolItem)) {
+        if (!(w instanceof CoolItem)) {
+            inst = inst.generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0)); // Always true
+        }
+        if (!(w instanceof Caret) && !(w instanceof TreeColumn) && !(w instanceof TableColumn) && !(w instanceof ToolItem) && !(w instanceof CoolItem)) {
             inst = inst.generate(Select.all(Font.class), gen -> gen.oneOf(new Font(Mocks.device(), Mocks.fontData())));
         }
-        if (!(w instanceof Caret) && !(w instanceof TreeColumn) && !(w instanceof TableColumn)) {
+        if (!(w instanceof Caret) && !(w instanceof TreeColumn) && !(w instanceof TableColumn) && !(w instanceof CoolItem)) {
             inst = inst.generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())));
         }
         if (w instanceof Canvas c)

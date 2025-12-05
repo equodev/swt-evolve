@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class are selectable user interface
@@ -70,7 +71,7 @@ public class CoolItem extends Item {
      */
     public CoolItem(CoolBar parent, int style) {
         this((ICoolItem) null);
-        setImpl(new SwtCoolItem(parent, style, this));
+        setImpl(Config.isEquo(CoolItem.class, parent) ? new DartCoolItem(parent, style, this) : new SwtCoolItem(parent, style, this));
     }
 
     /**
@@ -107,7 +108,7 @@ public class CoolItem extends Item {
      */
     public CoolItem(CoolBar parent, int style, int index) {
         this((ICoolItem) null);
-        setImpl(new SwtCoolItem(parent, style, index, this));
+        setImpl(Config.isEquo(CoolItem.class, parent) ? new DartCoolItem(parent, style, index, this) : new SwtCoolItem(parent, style, index, this));
     }
 
     /**

@@ -71,7 +71,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       return textField;
     }
     return Align(
-      alignment: alignment,
+      alignment: Alignment.center,
       child: IntrinsicWidth(
         child: textField,
       ),
@@ -222,8 +222,9 @@ class _StyledTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       height: height ?? 32,
+      alignment: Alignment.center,
       child: TextField(
         controller: controller,
         focusNode: focusNode,

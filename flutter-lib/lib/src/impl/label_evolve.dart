@@ -72,7 +72,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
           child: wrap(Container(
             padding: EdgeInsets.zero,
             margin: EdgeInsets.zero,
-            alignment: Alignment.topLeft,
+            alignment: Alignment.centerLeft,
             // Don't set background color on the container for separators
             color: state.style.has(SWT.SEPARATOR) ? null : backgroundColor,
             child: child,
