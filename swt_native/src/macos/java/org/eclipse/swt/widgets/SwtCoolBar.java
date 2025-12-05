@@ -493,20 +493,22 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         int row = findItem(item).y;
         if (row == -1)
             return;
-        Rectangle bounds = ((SwtCoolItem) item.getImpl()).internalGetBounds();
-        removeItemFromRow(item, row, true);
-        int index = 0;
-        while (index < originalItems.length) {
-            if (originalItems[index] == item)
-                break;
-            index++;
+        if (item.getImpl() instanceof SwtCoolItem) {
+            Rectangle bounds = ((SwtCoolItem) item.getImpl()).internalGetBounds();
+            removeItemFromRow(item, row, true);
+            int index = 0;
+            while (index < originalItems.length) {
+                if (originalItems[index] == item)
+                    break;
+                index++;
+            }
+            int length = originalItems.length - 1;
+            CoolItem[] newOriginals = new CoolItem[length];
+            System.arraycopy(originalItems, 0, newOriginals, 0, index);
+            System.arraycopy(originalItems, index + 1, newOriginals, index, length - index);
+            originalItems = newOriginals;
+            internalRedraw(bounds.x, bounds.y, SwtCoolItem.MINIMUM_WIDTH, bounds.height);
         }
-        int length = originalItems.length - 1;
-        CoolItem[] newOriginals = new CoolItem[length];
-        System.arraycopy(originalItems, 0, newOriginals, 0, index);
-        System.arraycopy(originalItems, index + 1, newOriginals, index, length - index);
-        originalItems = newOriginals;
-        internalRedraw(bounds.x, bounds.y, SwtCoolItem.MINIMUM_WIDTH, bounds.height);
         relayout();
     }
 
@@ -519,8 +521,10 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         }
         int newRowIndex = (items[oldRowIndex].length == 1) ? oldRowIndex : oldRowIndex + 1;
         boolean resize = removeItemFromRow(item, oldRowIndex, false);
-        Rectangle old = ((SwtCoolItem) item.getImpl()).internalGetBounds();
-        internalRedraw(old.x, old.y, SwtCoolItem.MINIMUM_WIDTH, old.height);
+        if (item.getImpl() instanceof SwtCoolItem) {
+            Rectangle old = ((SwtCoolItem) item.getImpl()).internalGetBounds();
+            internalRedraw(old.x, old.y, SwtCoolItem.MINIMUM_WIDTH, old.height);
+        }
         resize |= insertItemIntoRow(item, newRowIndex, x_root);
         if (resize) {
             relayout();
@@ -535,28 +539,30 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         int index = point.x;
         if (index == 0)
             return;
-        Rectangle bounds = ((SwtCoolItem) item.getImpl()).internalGetBounds();
-        int minSpaceOnLeft = 0;
-        for (int i = 0; i < index; i++) {
-            minSpaceOnLeft += ((SwtCoolItem) items[row][i].getImpl()).internalGetMinimumWidth();
-        }
-        int x = Math.max(minSpaceOnLeft, bounds.x - pixels);
-        CoolItem left = items[row][index - 1];
-        Rectangle leftBounds = ((SwtCoolItem) left.getImpl()).internalGetBounds();
-        if (leftBounds.x + ((SwtCoolItem) left.getImpl()).internalGetMinimumWidth() > x) {
-            int shift = leftBounds.x + ((SwtCoolItem) left.getImpl()).internalGetMinimumWidth() - x;
-            moveLeft(left, shift);
-            leftBounds = ((SwtCoolItem) left.getImpl()).internalGetBounds();
-        }
-        int leftWidth = Math.max(((SwtCoolItem) left.getImpl()).internalGetMinimumWidth(), leftBounds.width - pixels);
-        ((SwtCoolItem) left.getImpl()).setBounds(leftBounds.x, leftBounds.y, leftWidth, leftBounds.height);
-        ((SwtCoolItem) left.getImpl()).requestedWidth = leftWidth;
-        int width = bounds.width + (bounds.x - x);
-        ((SwtCoolItem) item.getImpl()).setBounds(x, bounds.y, width, bounds.height);
-        ((SwtCoolItem) item.getImpl()).requestedWidth = width;
-        int damagedWidth = bounds.x - x + SwtCoolItem.MINIMUM_WIDTH;
-        if (damagedWidth > SwtCoolItem.MINIMUM_WIDTH) {
-            internalRedraw(x, bounds.y, damagedWidth, bounds.height);
+        if (item.getImpl() instanceof SwtCoolItem) {
+            Rectangle bounds = ((SwtCoolItem) item.getImpl()).internalGetBounds();
+            int minSpaceOnLeft = 0;
+            for (int i = 0; i < index; i++) {
+                minSpaceOnLeft += ((SwtCoolItem) items[row][i].getImpl()).internalGetMinimumWidth();
+            }
+            int x = Math.max(minSpaceOnLeft, bounds.x - pixels);
+            CoolItem left = items[row][index - 1];
+            Rectangle leftBounds = ((SwtCoolItem) left.getImpl()).internalGetBounds();
+            if (leftBounds.x + ((SwtCoolItem) left.getImpl()).internalGetMinimumWidth() > x) {
+                int shift = leftBounds.x + ((SwtCoolItem) left.getImpl()).internalGetMinimumWidth() - x;
+                moveLeft(left, shift);
+                leftBounds = ((SwtCoolItem) left.getImpl()).internalGetBounds();
+            }
+            int leftWidth = Math.max(((SwtCoolItem) left.getImpl()).internalGetMinimumWidth(), leftBounds.width - pixels);
+            ((SwtCoolItem) left.getImpl()).setBounds(leftBounds.x, leftBounds.y, leftWidth, leftBounds.height);
+            ((SwtCoolItem) left.getImpl()).requestedWidth = leftWidth;
+            int width = bounds.width + (bounds.x - x);
+            ((SwtCoolItem) item.getImpl()).setBounds(x, bounds.y, width, bounds.height);
+            ((SwtCoolItem) item.getImpl()).requestedWidth = width;
+            int damagedWidth = bounds.x - x + SwtCoolItem.MINIMUM_WIDTH;
+            if (damagedWidth > SwtCoolItem.MINIMUM_WIDTH) {
+                internalRedraw(x, bounds.y, damagedWidth, bounds.height);
+            }
         }
     }
 
@@ -566,36 +572,38 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         int index = point.x;
         if (index == 0)
             return;
-        Rectangle bounds = ((SwtCoolItem) item.getImpl()).internalGetBounds();
-        int minSpaceOnRight = 0;
-        for (int i = index; i < items[row].length; i++) {
-            minSpaceOnRight += ((SwtCoolItem) items[row][i].getImpl()).internalGetMinimumWidth();
-        }
-        int max = getWidth() - minSpaceOnRight;
-        int x = Math.min(max, bounds.x + pixels);
-        int width = 0;
-        if (index + 1 == items[row].length) {
-            width = getWidth() - x;
-        } else {
-            CoolItem right = items[row][index + 1];
-            Rectangle rightBounds = ((SwtCoolItem) right.getImpl()).internalGetBounds();
-            if (x + ((SwtCoolItem) item.getImpl()).internalGetMinimumWidth() > rightBounds.x) {
-                int shift = x + ((SwtCoolItem) item.getImpl()).internalGetMinimumWidth() - rightBounds.x;
-                moveRight(right, shift);
-                rightBounds = ((SwtCoolItem) right.getImpl()).internalGetBounds();
+        if (item.getImpl() instanceof SwtCoolItem) {
+            Rectangle bounds = ((SwtCoolItem) item.getImpl()).internalGetBounds();
+            int minSpaceOnRight = 0;
+            for (int i = index; i < items[row].length; i++) {
+                minSpaceOnRight += ((SwtCoolItem) items[row][i].getImpl()).internalGetMinimumWidth();
             }
-            width = rightBounds.x - x;
-        }
-        ((SwtCoolItem) item.getImpl()).setBounds(x, bounds.y, width, bounds.height);
-        ((SwtCoolItem) item.getImpl()).requestedWidth = width;
-        CoolItem left = items[row][index - 1];
-        Rectangle leftBounds = ((SwtCoolItem) left.getImpl()).internalGetBounds();
-        int leftWidth = x - leftBounds.x;
-        ((SwtCoolItem) left.getImpl()).setBounds(leftBounds.x, leftBounds.y, leftWidth, leftBounds.height);
-        ((SwtCoolItem) left.getImpl()).requestedWidth = leftWidth;
-        int damagedWidth = x - bounds.x + SwtCoolItem.MINIMUM_WIDTH + SwtCoolItem.MARGIN_WIDTH;
-        if (x - bounds.x > 0) {
-            internalRedraw(bounds.x - SwtCoolItem.MARGIN_WIDTH, bounds.y, damagedWidth, bounds.height);
+            int max = getWidth() - minSpaceOnRight;
+            int x = Math.min(max, bounds.x + pixels);
+            int width = 0;
+            if (index + 1 == items[row].length) {
+                width = getWidth() - x;
+            } else {
+                CoolItem right = items[row][index + 1];
+                Rectangle rightBounds = ((SwtCoolItem) right.getImpl()).internalGetBounds();
+                if (x + ((SwtCoolItem) item.getImpl()).internalGetMinimumWidth() > rightBounds.x) {
+                    int shift = x + ((SwtCoolItem) item.getImpl()).internalGetMinimumWidth() - rightBounds.x;
+                    moveRight(right, shift);
+                    rightBounds = ((SwtCoolItem) right.getImpl()).internalGetBounds();
+                }
+                width = rightBounds.x - x;
+            }
+            ((SwtCoolItem) item.getImpl()).setBounds(x, bounds.y, width, bounds.height);
+            ((SwtCoolItem) item.getImpl()).requestedWidth = width;
+            CoolItem left = items[row][index - 1];
+            Rectangle leftBounds = ((SwtCoolItem) left.getImpl()).internalGetBounds();
+            int leftWidth = x - leftBounds.x;
+            ((SwtCoolItem) left.getImpl()).setBounds(leftBounds.x, leftBounds.y, leftWidth, leftBounds.height);
+            ((SwtCoolItem) left.getImpl()).requestedWidth = leftWidth;
+            int damagedWidth = x - bounds.x + SwtCoolItem.MINIMUM_WIDTH + SwtCoolItem.MARGIN_WIDTH;
+            if (x - bounds.x > 0) {
+                internalRedraw(bounds.x - SwtCoolItem.MARGIN_WIDTH, bounds.y, damagedWidth, bounds.height);
+            }
         }
     }
 
@@ -608,8 +616,10 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
                 return;
         }
         boolean resize = removeItemFromRow(item, oldRowIndex, false);
-        Rectangle old = ((SwtCoolItem) item.getImpl()).internalGetBounds();
-        internalRedraw(old.x, old.y, SwtCoolItem.MINIMUM_WIDTH, old.height);
+        if (item.getImpl() instanceof SwtCoolItem) {
+            Rectangle old = ((SwtCoolItem) item.getImpl()).internalGetBounds();
+            internalRedraw(old.x, old.y, SwtCoolItem.MINIMUM_WIDTH, old.height);
+        }
         int newRowIndex = oldRowIndex - 1;
         resize |= insertItemIntoRow(item, newRowIndex, x_root);
         if (resize) {
@@ -1319,6 +1329,46 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         } else {
             items = newItems;
         }
+    }
+
+    public CoolItem[][] _items() {
+        return items;
+    }
+
+    public CoolItem[] _originalItems() {
+        return originalItems;
+    }
+
+    public Cursor _hoverCursor() {
+        return hoverCursor;
+    }
+
+    public Cursor _dragCursor() {
+        return dragCursor;
+    }
+
+    public Cursor _cursor() {
+        return cursor;
+    }
+
+    public CoolItem _dragging() {
+        return dragging;
+    }
+
+    public int _mouseXOffset() {
+        return mouseXOffset;
+    }
+
+    public int _itemXOffset() {
+        return itemXOffset;
+    }
+
+    public boolean _isLocked() {
+        return isLocked;
+    }
+
+    public boolean _inDispose() {
+        return inDispose;
     }
 
     public CoolBar getApi() {

@@ -3,7 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
-public interface ICoolBar extends IComposite {
+public interface ICoolBar extends IComposite, ImplCoolBar {
 
     void checkSubclass();
 

@@ -369,4 +369,41 @@ public class Sizes {
         return new Point(150, 50);
     }
 
+    public static Point compute(DartCoolBar dartCoolBar) {
+        return new Point(0,0);
+    }
+
+    public static Point compute(DartCoolItem dartCoolItem) {
+        int defaultHeight = 25;
+
+        // Try to get the preferred size first
+        Point preferredSize = dartCoolItem.getApi().getPreferredSize();
+        if (preferredSize != null && (preferredSize.x > 0 || preferredSize.y > 0)) {
+            return new Point(
+                preferredSize.x > 0 ? preferredSize.x : 50,
+                preferredSize.y > 0 ? preferredSize.y : defaultHeight
+            );
+        }
+
+        // Fall back to computing from control size
+        Control control = dartCoolItem.getApi().getControl();
+        if (control != null && !control.isDisposed()) {
+            Point controlSize = control.getSize();
+            if (controlSize.x > 0 && controlSize.y > 0) {
+                int gripperWidth = 12;
+                int padding = 8;
+
+                CoolBar parent = dartCoolItem.getApi().getParent();
+                boolean isVertical = parent != null && (parent.style & org.eclipse.swt.SWT.VERTICAL) != 0;
+
+                if (isVertical) {
+                    return new Point(controlSize.x + padding, controlSize.y + gripperWidth);
+                } else {
+                    return new Point(controlSize.x + gripperWidth + padding, controlSize.y + padding);
+                }
+            }
+        }
+
+        return new Point(50, defaultHeight);
+    }
 }

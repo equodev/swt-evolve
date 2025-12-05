@@ -18,7 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import dev.equo.swt.Config;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class are selectable user interface
@@ -37,7 +37,39 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CoolItem extends Item {
+public class DartCoolItem extends DartItem implements ICoolItem {
+
+    Control control;
+
+    CoolBar parent;
+
+    boolean ideal;
+
+    int preferredWidth, preferredHeight, minimumWidth, minimumHeight, requestedWidth;
+
+    Rectangle itemBounds = new Rectangle(0, 0, 0, 0);
+
+    static final int MARGIN_WIDTH = 4;
+
+    static final int GRABBER_WIDTH = 2;
+
+    static final int MINIMUM_WIDTH = (2 * MARGIN_WIDTH) + GRABBER_WIDTH;
+
+    //platform dependent values
+    private int CHEVRON_HORIZONTAL_TRIM = -1;
+
+    private int CHEVRON_VERTICAL_TRIM = -1;
+
+    private static final int CHEVRON_LEFT_MARGIN = 2;
+
+    //Width to draw the double arrow
+    private static final int CHEVRON_IMAGE_WIDTH = 8;
+
+    ToolBar chevron;
+
+    boolean wrap;
+
+    Image arrowImage = null;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -69,9 +101,11 @@ public class CoolItem extends Item {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public CoolItem(CoolBar parent, int style) {
-        this((ICoolItem) null);
-        setImpl(Config.isEquo(CoolItem.class, parent) ? new DartCoolItem(parent, style, this) : new SwtCoolItem(parent, style, this));
+    public DartCoolItem(CoolBar parent, int style, CoolItem api) {
+        super(parent, style, api);
+        this.parent = parent;
+        ((DartCoolBar) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
+        calculateChevronTrim();
     }
 
     /**
@@ -106,9 +140,11 @@ public class CoolItem extends Item {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public CoolItem(CoolBar parent, int style, int index) {
-        this((ICoolItem) null);
-        setImpl(Config.isEquo(CoolItem.class, parent) ? new DartCoolItem(parent, style, index, this) : new SwtCoolItem(parent, style, index, this));
+    public DartCoolItem(CoolBar parent, int style, int index, CoolItem api) {
+        super(parent, style, api);
+        this.parent = parent;
+        ((DartCoolBar) parent.getImpl()).createItem(this.getApi(), index);
+        calculateChevronTrim();
     }
 
     /**
@@ -142,11 +178,30 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void addSelectionListener(SelectionListener listener) {
-        getImpl().addSelectionListener(listener);
+        addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
     }
 
-    protected void checkSubclass() {
-        getImpl().checkSubclass();
+    @Override
+    public void checkSubclass() {
+        if (!isValidSubclass())
+            error(SWT.ERROR_INVALID_SUBCLASS);
+    }
+
+    /*
+ * Find the trim size of the Toolbar widget in the current platform.
+ */
+    void calculateChevronTrim() {
+        ToolBar tb = new ToolBar(parent, SWT.FLAT);
+        ToolItem ti = new ToolItem(tb, SWT.PUSH);
+        Image image = new Image(display, 1, 1);
+        ti.setImage(image);
+        Point size = tb.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+        size = ((DartCoolBar) parent.getImpl()).fixPoint(size.x, size.y);
+        CHEVRON_HORIZONTAL_TRIM = size.x - 1;
+        CHEVRON_VERTICAL_TRIM = size.y - 1;
+        tb.dispose();
+        ti.dispose();
+        image.dispose();
     }
 
     /**
@@ -177,11 +232,78 @@ public class CoolItem extends Item {
      * @see Scrollable#getClientArea
      */
     public Point computeSize(int wHint, int hHint) {
-        return getImpl().computeSize(wHint, hHint);
+        checkWidget();
+        int width = wHint, height = hHint;
+        if (wHint == SWT.DEFAULT)
+            width = 32;
+        if (hHint == SWT.DEFAULT)
+            height = 32;
+        if ((parent.style & SWT.VERTICAL) != 0) {
+            height += MINIMUM_WIDTH;
+        } else {
+            width += MINIMUM_WIDTH;
+        }
+        return new Point(width, height);
     }
 
+    @Override
     public void dispose() {
-        getImpl().dispose();
+        if (isDisposed())
+            return;
+        /*
+	 * Must call parent.destroyItem() before super.dispose(), since it needs to
+	 * query the bounds to properly remove the item.
+	 */
+        ((DartCoolBar) parent.getImpl()).destroyItem(this.getApi());
+        super.dispose();
+        parent = null;
+        control = null;
+        /*
+	 * Although the parent for the chevron is the CoolBar (CoolItem can not be the parent)
+	 * it has to be disposed with the item
+	 */
+        if (chevron != null && !chevron.isDisposed())
+            chevron.dispose();
+        chevron = null;
+        if (arrowImage != null && !arrowImage.isDisposed())
+            arrowImage.dispose();
+        arrowImage = null;
+    }
+
+    Image createArrowImage(int width, int height) {
+        Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);
+        width = point.x;
+        height = point.y;
+        Color foreground = parent.getForeground();
+        Color black = display.getSystemColor(SWT.COLOR_BLACK);
+        Color background = parent.getBackground();
+        PaletteData palette = new PaletteData(foreground.getRGB(), background.getRGB(), black.getRGB());
+        ImageData imageData = new ImageData(width, height, 4, palette);
+        imageData.transparentPixel = 1;
+        Image image = new Image(display, imageData);
+        GC gc = new GC(image, parent.getStyle() & SWT.RIGHT_TO_LEFT);
+        gc.setBackground(background);
+        gc.fillRectangle(0, 0, width, height);
+        gc.setForeground(black);
+        int startX = 0;
+        if ((parent.style & SWT.VERTICAL) != 0) {
+            startX = width - CHEVRON_IMAGE_WIDTH;
+        }
+        int startY = height / 6;
+        int step = 2;
+        gc.drawLine(startX, startY, startX + step, startY + step);
+        gc.drawLine(startX, startY + (2 * step), startX + step, startY + step);
+        startX++;
+        gc.drawLine(startX, startY, startX + step, startY + step);
+        gc.drawLine(startX, startY + (2 * step), startX + step, startY + step);
+        startX += 3;
+        gc.drawLine(startX, startY, startX + step, startY + step);
+        gc.drawLine(startX, startY + (2 * step), startX + step, startY + step);
+        startX++;
+        gc.drawLine(startX, startY, startX + step, startY + step);
+        gc.drawLine(startX, startY + (2 * step), startX + step, startY + step);
+        gc.dispose();
+        return image;
     }
 
     /**
@@ -196,7 +318,12 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getImpl().getBounds();
+        checkWidget();
+        return ((DartCoolBar) parent.getImpl()).fixRectangle(itemBounds.x, itemBounds.y, itemBounds.width, itemBounds.height);
+    }
+
+    Rectangle internalGetBounds() {
+        return new Rectangle(itemBounds.x, itemBounds.y, itemBounds.width, itemBounds.height);
     }
 
     /**
@@ -210,7 +337,8 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        return getImpl().getControl();
+        checkWidget();
+        return control;
     }
 
     /**
@@ -227,7 +355,8 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public Point getMinimumSize() {
-        return getImpl().getMinimumSize();
+        checkWidget();
+        return ((DartCoolBar) parent.getImpl()).fixPoint(minimumWidth, minimumHeight);
     }
 
     /**
@@ -241,7 +370,8 @@ public class CoolItem extends Item {
      * </ul>
      */
     public CoolBar getParent() {
-        return getImpl().getParent();
+        checkWidget();
+        return parent;
     }
 
     /**
@@ -257,7 +387,8 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Point getPreferredSize() {
-        return getImpl().getPreferredSize();
+        checkWidget();
+        return ((DartCoolBar) parent.getImpl()).fixPoint(preferredWidth, preferredHeight);
     }
 
     /**
@@ -274,7 +405,34 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Point getSize() {
-        return getImpl().getSize();
+        checkWidget();
+        return ((DartCoolBar) parent.getImpl()).fixPoint(itemBounds.width, itemBounds.height);
+    }
+
+    int internalGetMinimumWidth() {
+        int width = minimumWidth + MINIMUM_WIDTH;
+        if ((getApi().style & SWT.DROP_DOWN) != 0 && width < preferredWidth) {
+            width += CHEVRON_IMAGE_WIDTH + CHEVRON_HORIZONTAL_TRIM + CHEVRON_LEFT_MARGIN;
+        }
+        return width;
+    }
+
+    /*
+ *  Called when the chevron is selected.
+ */
+    void onSelection(Event ev) {
+        Rectangle bounds = chevron.getBounds();
+        Event event = new Event();
+        event.detail = SWT.ARROW;
+        if ((parent.style & SWT.VERTICAL) != 0) {
+            event.x = bounds.x + bounds.width;
+            event.y = bounds.y;
+        } else {
+            event.x = bounds.x;
+            event.y = bounds.y + bounds.height;
+        }
+        event.stateMask = ev.stateMask;
+        sendSelectionEvent(SWT.Selection, event, false);
     }
 
     /**
@@ -297,7 +455,32 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getImpl().removeSelectionListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Selection, listener);
+        eventTable.unhook(SWT.DefaultSelection, listener);
+    }
+
+    void setBounds(int x, int y, int width, int height) {
+        itemBounds.x = x;
+        itemBounds.y = y;
+        itemBounds.width = width;
+        itemBounds.height = height;
+        if (control != null) {
+            int controlWidth = width - MINIMUM_WIDTH;
+            if ((getApi().style & SWT.DROP_DOWN) != 0 && width < preferredWidth) {
+                controlWidth -= CHEVRON_IMAGE_WIDTH + CHEVRON_HORIZONTAL_TRIM + CHEVRON_LEFT_MARGIN;
+            }
+            if (height > preferredHeight) {
+                y += (height - preferredHeight) / 2;
+                height = preferredHeight;
+            }
+            control.setBounds(((DartCoolBar) parent.getImpl()).fixRectangle(x + MINIMUM_WIDTH, y, controlWidth, height));
+        }
+        updateChevron();
     }
 
     /**
@@ -316,7 +499,22 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        getImpl().setControl(control);
+        dirty();
+        checkWidget();
+        if (control != null) {
+            if (control.isDisposed())
+                error(SWT.ERROR_INVALID_ARGUMENT);
+            if (((DartControl) control.getImpl()).parent != parent)
+                error(SWT.ERROR_INVALID_PARENT);
+        }
+        this.control = control;
+        if (control != null) {
+            int controlWidth = itemBounds.width - MINIMUM_WIDTH;
+            if ((getApi().style & SWT.DROP_DOWN) != 0 && itemBounds.width < preferredWidth) {
+                controlWidth -= CHEVRON_IMAGE_WIDTH + CHEVRON_HORIZONTAL_TRIM + CHEVRON_LEFT_MARGIN;
+            }
+            control.setBounds(((DartCoolBar) parent.getImpl()).fixRectangle(itemBounds.x + MINIMUM_WIDTH, itemBounds.y, controlWidth, itemBounds.height));
+        }
     }
 
     /**
@@ -334,7 +532,12 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void setMinimumSize(int width, int height) {
-        getImpl().setMinimumSize(width, height);
+        dirty();
+        checkWidget();
+        Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);
+        minimumWidth = point.x;
+        minimumHeight = point.y;
+        this._minimumSize = new Point(_minimumSize.x, _minimumSize.y);
     }
 
     /**
@@ -354,7 +557,10 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void setMinimumSize(Point size) {
-        getImpl().setMinimumSize(size);
+        checkWidget();
+        if (size == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        setMinimumSize(size.x, size.y);
     }
 
     /**
@@ -369,7 +575,13 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setPreferredSize(int width, int height) {
-        getImpl().setPreferredSize(width, height);
+        dirty();
+        checkWidget();
+        ideal = true;
+        Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);
+        preferredWidth = Math.max(point.x, MINIMUM_WIDTH);
+        preferredHeight = point.y;
+        this._preferredSize = new Point(_preferredSize.x, _preferredSize.y);
     }
 
     /**
@@ -386,7 +598,10 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setPreferredSize(Point size) {
-        getImpl().setPreferredSize(size);
+        checkWidget();
+        if (size == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        setPreferredSize(size.x, size.y);
     }
 
     /**
@@ -406,7 +621,26 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setSize(int width, int height) {
-        getImpl().setSize(width, height);
+        dirty();
+        checkWidget();
+        Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);
+        width = Math.max(point.x, minimumWidth + MINIMUM_WIDTH);
+        height = point.y;
+        if (!ideal) {
+            preferredWidth = width;
+            preferredHeight = height;
+        }
+        itemBounds.width = requestedWidth = width;
+        itemBounds.height = height;
+        if (control != null) {
+            int controlWidth = width - MINIMUM_WIDTH;
+            if ((getApi().style & SWT.DROP_DOWN) != 0 && width < preferredWidth) {
+                controlWidth -= CHEVRON_IMAGE_WIDTH + CHEVRON_HORIZONTAL_TRIM + CHEVRON_LEFT_MARGIN;
+            }
+            control.setSize(((DartCoolBar) parent.getImpl()).fixPoint(controlWidth, height));
+        }
+        ((DartCoolBar) parent.getImpl()).relayout();
+        updateChevron();
     }
 
     /**
@@ -428,18 +662,144 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setSize(Point size) {
-        getImpl().setSize(size);
+        checkWidget();
+        if (size == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        setSize(size.x, size.y);
     }
 
-    protected CoolItem(ICoolItem impl) {
-        super(impl);
+    void updateChevron() {
+        if (control != null) {
+            int width = itemBounds.width;
+            if ((getApi().style & SWT.DROP_DOWN) != 0 && width < preferredWidth) {
+                if (chevron == null) {
+                    chevron = new ToolBar(parent, SWT.FLAT | SWT.NO_FOCUS);
+                    ToolItem toolItem = new ToolItem(chevron, SWT.PUSH);
+                    toolItem.addListener(SWT.Selection, event -> DartCoolItem.this.onSelection(event));
+                }
+                int controlHeight, currentImageHeight = 0;
+                if ((parent.style & SWT.VERTICAL) != 0) {
+                    controlHeight = control.getSize().x;
+                    if (arrowImage != null)
+                        currentImageHeight = arrowImage.getBounds().width;
+                } else {
+                    controlHeight = control.getSize().y;
+                    if (arrowImage != null)
+                        currentImageHeight = arrowImage.getBounds().height;
+                }
+                int height = Math.min(controlHeight, itemBounds.height);
+                int imageHeight = Math.max(1, height - CHEVRON_VERTICAL_TRIM);
+                if (currentImageHeight != imageHeight) {
+                    Image image = createArrowImage(CHEVRON_IMAGE_WIDTH, imageHeight);
+                    chevron.getItem(0).setImage(image);
+                    if (arrowImage != null)
+                        arrowImage.dispose();
+                    arrowImage = image;
+                }
+                chevron.setBackground(parent.getBackground());
+                chevron.setBounds(((DartCoolBar) parent.getImpl()).fixRectangle(itemBounds.x + width - CHEVRON_LEFT_MARGIN - CHEVRON_IMAGE_WIDTH - CHEVRON_HORIZONTAL_TRIM, itemBounds.y, CHEVRON_IMAGE_WIDTH + CHEVRON_HORIZONTAL_TRIM, height));
+                chevron.setVisible(true);
+            } else {
+                if (chevron != null) {
+                    chevron.setVisible(false);
+                }
+            }
+        }
     }
 
-    static CoolItem createApi(ICoolItem impl) {
-        return new CoolItem(impl);
+    Point _minimumSize;
+
+    Point _preferredSize;
+
+    public Control _control() {
+        return control;
     }
 
-    public ICoolItem getImpl() {
-        return (ICoolItem) super.getImpl();
+    public CoolBar _parent() {
+        return parent;
+    }
+
+    public boolean _ideal() {
+        return ideal;
+    }
+
+    public int _preferredWidth() {
+        return preferredWidth;
+    }
+
+    public int _preferredHeight() {
+        return preferredHeight;
+    }
+
+    public int _minimumWidth() {
+        return minimumWidth;
+    }
+
+    public int _minimumHeight() {
+        return minimumHeight;
+    }
+
+    public int _requestedWidth() {
+        return requestedWidth;
+    }
+
+    public Rectangle _itemBounds() {
+        return itemBounds;
+    }
+
+    public ToolBar _chevron() {
+        return chevron;
+    }
+
+    public boolean _wrap() {
+        return wrap;
+    }
+
+    public Image _arrowImage() {
+        return arrowImage;
+    }
+
+    public Point __minimumSize() {
+        return _minimumSize;
+    }
+
+    public Point __preferredSize() {
+        return _preferredSize;
+    }
+
+    Point size;
+
+    public FlutterBridge getBridge() {
+        if (bridge != null)
+            return bridge;
+        Composite p = parent;
+        while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
+            });
+        });
+    }
+
+    public CoolItem getApi() {
+        if (api == null)
+            api = CoolItem.createApi(this);
+        return (CoolItem) api;
+    }
+
+    public VCoolItem getValue() {
+        if (value == null)
+            value = new VCoolItem(this);
+        return (VCoolItem) value;
     }
 }

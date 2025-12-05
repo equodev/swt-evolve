@@ -17,6 +17,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class provide an area for dynamically
@@ -46,7 +47,7 @@ import org.eclipse.swt.graphics.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtCoolBar extends SwtComposite implements ICoolBar {
+public class DartCoolBar extends DartComposite implements ICoolBar {
 
     CoolItem[][] items = new CoolItem[0][0];
 
@@ -101,7 +102,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtCoolBar(Composite parent, int style, CoolBar api) {
+    public DartCoolBar(Composite parent, int style, CoolBar api) {
         super(parent, checkStyle(style), api);
         if ((style & SWT.VERTICAL) != 0) {
             this.getApi().style |= SWT.VERTICAL;
@@ -172,8 +173,8 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             int rowWidth = 0, rowHeight = 0;
             for (int i = 0; i < items[row].length; i++) {
                 CoolItem item = items[row][i];
-                rowWidth += ((SwtCoolItem) item.getImpl()).preferredWidth;
-                rowHeight = Math.max(rowHeight, ((SwtCoolItem) item.getImpl()).preferredHeight);
+                rowWidth += ((DartCoolItem) item.getImpl()).preferredWidth;
+                rowHeight = Math.max(rowHeight, ((DartCoolItem) item.getImpl()).preferredHeight);
             }
             height += rowHeight;
             if (!flat && row > 0)
@@ -198,8 +199,8 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         for (int row = 0; row < items.length; row++) {
             for (int i = 0; i < items[row].length; i++) {
                 CoolItem item = items[row][i];
-                Rectangle bounds = ((SwtCoolItem) item.getImpl()).internalGetBounds();
-                bounds.width = SwtCoolItem.MINIMUM_WIDTH;
+                Rectangle bounds = ((DartCoolItem) item.getImpl()).internalGetBounds();
+                bounds.width = DartCoolItem.MINIMUM_WIDTH;
                 if (bounds.x > x)
                     break;
                 if (bounds.y > y)
@@ -368,23 +369,23 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             newRows[row] = new CoolItem[1];
             newRows[row][0] = item;
             items = newRows;
-            ((SwtCoolItem) item.getImpl()).wrap = true;
+            ((DartCoolItem) item.getImpl()).wrap = true;
             return true;
         }
         int barWidth = getWidth();
-        Rectangle bounds = ((SwtCoolItem) items[rowIndex][0].getImpl()).internalGetBounds();
+        Rectangle bounds = ((DartCoolItem) items[rowIndex][0].getImpl()).internalGetBounds();
         int rowY = bounds.y;
         int oldRowHeight = bounds.height;
         int x = Math.max(0, Math.abs(x_root - toDisplay(new Point(0, 0)).x));
         /* Find the insertion index and add the item. */
         int index;
         for (index = 0; index < items[rowIndex].length; index++) {
-            if (x < ((SwtCoolItem) items[rowIndex][index].getImpl()).internalGetBounds().x)
+            if (x < ((DartCoolItem) items[rowIndex][index].getImpl()).internalGetBounds().x)
                 break;
         }
         if (index == 0) {
-            ((SwtCoolItem) item.getImpl()).wrap = true;
-            ((SwtCoolItem) items[rowIndex][0].getImpl()).wrap = false;
+            ((DartCoolItem) item.getImpl()).wrap = true;
+            ((DartCoolItem) items[rowIndex][0].getImpl()).wrap = false;
         }
         int oldLength = items[rowIndex].length;
         CoolItem[] newRow = new CoolItem[oldLength + 1];
@@ -395,36 +396,36 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         /* Adjust the width of the item to the left. */
         if (index > 0) {
             CoolItem left = items[rowIndex][index - 1];
-            Rectangle leftBounds = ((SwtCoolItem) left.getImpl()).internalGetBounds();
+            Rectangle leftBounds = ((DartCoolItem) left.getImpl()).internalGetBounds();
             int newWidth = x - leftBounds.x;
-            if (newWidth < ((SwtCoolItem) left.getImpl()).internalGetMinimumWidth()) {
-                x += ((SwtCoolItem) left.getImpl()).internalGetMinimumWidth() - newWidth;
-                newWidth = ((SwtCoolItem) left.getImpl()).internalGetMinimumWidth();
+            if (newWidth < ((DartCoolItem) left.getImpl()).internalGetMinimumWidth()) {
+                x += ((DartCoolItem) left.getImpl()).internalGetMinimumWidth() - newWidth;
+                newWidth = ((DartCoolItem) left.getImpl()).internalGetMinimumWidth();
             }
-            ((SwtCoolItem) left.getImpl()).setBounds(leftBounds.x, leftBounds.y, newWidth, leftBounds.height);
-            ((SwtCoolItem) left.getImpl()).requestedWidth = newWidth;
+            ((DartCoolItem) left.getImpl()).setBounds(leftBounds.x, leftBounds.y, newWidth, leftBounds.height);
+            ((DartCoolItem) left.getImpl()).requestedWidth = newWidth;
         }
         /* Set the item's bounds. */
-        int width = 0, height = ((SwtCoolItem) item.getImpl()).preferredHeight;
+        int width = 0, height = ((DartCoolItem) item.getImpl()).preferredHeight;
         if (index < items[rowIndex].length - 1) {
             CoolItem right = items[rowIndex][index + 1];
-            width = ((SwtCoolItem) right.getImpl()).internalGetBounds().x - x;
-            if (width < ((SwtCoolItem) right.getImpl()).internalGetMinimumWidth()) {
-                moveRight(right, ((SwtCoolItem) right.getImpl()).internalGetMinimumWidth() - width);
-                width = ((SwtCoolItem) right.getImpl()).internalGetBounds().x - x;
+            width = ((DartCoolItem) right.getImpl()).internalGetBounds().x - x;
+            if (width < ((DartCoolItem) right.getImpl()).internalGetMinimumWidth()) {
+                moveRight(right, ((DartCoolItem) right.getImpl()).internalGetMinimumWidth() - width);
+                width = ((DartCoolItem) right.getImpl()).internalGetBounds().x - x;
             }
-            ((SwtCoolItem) item.getImpl()).setBounds(x, rowY, width, height);
-            if (width < ((SwtCoolItem) item.getImpl()).internalGetMinimumWidth())
-                moveLeft(item, ((SwtCoolItem) item.getImpl()).internalGetMinimumWidth() - width);
+            ((DartCoolItem) item.getImpl()).setBounds(x, rowY, width, height);
+            if (width < ((DartCoolItem) item.getImpl()).internalGetMinimumWidth())
+                moveLeft(item, ((DartCoolItem) item.getImpl()).internalGetMinimumWidth() - width);
         } else {
-            width = Math.max(((SwtCoolItem) item.getImpl()).internalGetMinimumWidth(), barWidth - x);
-            ((SwtCoolItem) item.getImpl()).setBounds(x, rowY, width, height);
+            width = Math.max(((DartCoolItem) item.getImpl()).internalGetMinimumWidth(), barWidth - x);
+            ((DartCoolItem) item.getImpl()).setBounds(x, rowY, width, height);
             if (x + width > barWidth)
                 moveLeft(item, x + width - barWidth);
         }
-        bounds = ((SwtCoolItem) item.getImpl()).internalGetBounds();
-        ((SwtCoolItem) item.getImpl()).requestedWidth = bounds.width;
-        internalRedraw(bounds.x, bounds.y, ((SwtCoolItem) item.getImpl()).internalGetMinimumWidth(), bounds.height);
+        bounds = ((DartCoolItem) item.getImpl()).internalGetBounds();
+        ((DartCoolItem) item.getImpl()).requestedWidth = bounds.width;
+        internalRedraw(bounds.x, bounds.y, ((DartCoolItem) item.getImpl()).internalGetMinimumWidth(), bounds.height);
         return height > oldRowHeight;
     }
 
@@ -459,16 +460,16 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             // and add the new one just to it's right
             int lastIndex = items[row].length - 1;
             CoolItem lastItem = items[row][lastIndex];
-            if (((SwtCoolItem) lastItem.getImpl()).ideal) {
-                Rectangle bounds = ((SwtCoolItem) lastItem.getImpl()).internalGetBounds();
-                bounds.width = ((SwtCoolItem) lastItem.getImpl()).preferredWidth;
-                bounds.height = ((SwtCoolItem) lastItem.getImpl()).preferredHeight;
-                ((SwtCoolItem) lastItem.getImpl()).requestedWidth = ((SwtCoolItem) lastItem.getImpl()).preferredWidth;
-                ((SwtCoolItem) lastItem.getImpl()).setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
+            if (((DartCoolItem) lastItem.getImpl()).ideal) {
+                Rectangle bounds = ((DartCoolItem) lastItem.getImpl()).internalGetBounds();
+                bounds.width = ((DartCoolItem) lastItem.getImpl()).preferredWidth;
+                bounds.height = ((DartCoolItem) lastItem.getImpl()).preferredHeight;
+                ((DartCoolItem) lastItem.getImpl()).requestedWidth = ((DartCoolItem) lastItem.getImpl()).preferredWidth;
+                ((DartCoolItem) lastItem.getImpl()).setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
             }
             if (i == 0) {
-                ((SwtCoolItem) item.getImpl()).wrap = true;
-                ((SwtCoolItem) items[row][0].getImpl()).wrap = false;
+                ((DartCoolItem) item.getImpl()).wrap = true;
+                ((DartCoolItem) items[row][0].getImpl()).wrap = false;
             }
             int oldLength = items[row].length;
             CoolItem[] newRow = new CoolItem[oldLength + 1];
@@ -477,12 +478,13 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             System.arraycopy(items[row], i, newRow, i + 1, oldLength - i);
             items[row] = newRow;
         }
-        ((SwtCoolItem) item.getImpl()).requestedWidth = SwtCoolItem.MINIMUM_WIDTH;
+        ((DartCoolItem) item.getImpl()).requestedWidth = DartCoolItem.MINIMUM_WIDTH;
         int length = originalItems.length;
+        int insertIndex = Math.min(index, length);
         CoolItem[] newOriginals = new CoolItem[length + 1];
-        System.arraycopy(originalItems, 0, newOriginals, 0, index);
-        System.arraycopy(originalItems, index, newOriginals, index + 1, length - index);
-        newOriginals[index] = item;
+        System.arraycopy(originalItems, 0, newOriginals, 0, insertIndex);
+        System.arraycopy(originalItems, insertIndex, newOriginals, insertIndex + 1, length - insertIndex);
+        newOriginals[insertIndex] = item;
         originalItems = newOriginals;
         layoutItems();
     }
@@ -493,22 +495,20 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         int row = findItem(item).y;
         if (row == -1)
             return;
-        if (item.getImpl() instanceof SwtCoolItem) {
-            Rectangle bounds = ((SwtCoolItem) item.getImpl()).internalGetBounds();
-            removeItemFromRow(item, row, true);
-            int index = 0;
-            while (index < originalItems.length) {
-                if (originalItems[index] == item)
-                    break;
-                index++;
-            }
-            int length = originalItems.length - 1;
-            CoolItem[] newOriginals = new CoolItem[length];
-            System.arraycopy(originalItems, 0, newOriginals, 0, index);
-            System.arraycopy(originalItems, index + 1, newOriginals, index, length - index);
-            originalItems = newOriginals;
-            internalRedraw(bounds.x, bounds.y, SwtCoolItem.MINIMUM_WIDTH, bounds.height);
+        Rectangle bounds = ((DartCoolItem) item.getImpl()).internalGetBounds();
+        removeItemFromRow(item, row, true);
+        int index = 0;
+        while (index < originalItems.length) {
+            if (originalItems[index] == item)
+                break;
+            index++;
         }
+        int length = originalItems.length - 1;
+        CoolItem[] newOriginals = new CoolItem[length];
+        System.arraycopy(originalItems, 0, newOriginals, 0, index);
+        System.arraycopy(originalItems, index + 1, newOriginals, index, length - index);
+        originalItems = newOriginals;
+        internalRedraw(bounds.x, bounds.y, DartCoolItem.MINIMUM_WIDTH, bounds.height);
         relayout();
     }
 
@@ -521,10 +521,8 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         }
         int newRowIndex = (items[oldRowIndex].length == 1) ? oldRowIndex : oldRowIndex + 1;
         boolean resize = removeItemFromRow(item, oldRowIndex, false);
-        if (item.getImpl() instanceof SwtCoolItem) {
-            Rectangle old = ((SwtCoolItem) item.getImpl()).internalGetBounds();
-            internalRedraw(old.x, old.y, SwtCoolItem.MINIMUM_WIDTH, old.height);
-        }
+        Rectangle old = ((DartCoolItem) item.getImpl()).internalGetBounds();
+        internalRedraw(old.x, old.y, DartCoolItem.MINIMUM_WIDTH, old.height);
         resize |= insertItemIntoRow(item, newRowIndex, x_root);
         if (resize) {
             relayout();
@@ -539,30 +537,28 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         int index = point.x;
         if (index == 0)
             return;
-        if (item.getImpl() instanceof SwtCoolItem) {
-            Rectangle bounds = ((SwtCoolItem) item.getImpl()).internalGetBounds();
-            int minSpaceOnLeft = 0;
-            for (int i = 0; i < index; i++) {
-                minSpaceOnLeft += ((SwtCoolItem) items[row][i].getImpl()).internalGetMinimumWidth();
-            }
-            int x = Math.max(minSpaceOnLeft, bounds.x - pixels);
-            CoolItem left = items[row][index - 1];
-            Rectangle leftBounds = ((SwtCoolItem) left.getImpl()).internalGetBounds();
-            if (leftBounds.x + ((SwtCoolItem) left.getImpl()).internalGetMinimumWidth() > x) {
-                int shift = leftBounds.x + ((SwtCoolItem) left.getImpl()).internalGetMinimumWidth() - x;
-                moveLeft(left, shift);
-                leftBounds = ((SwtCoolItem) left.getImpl()).internalGetBounds();
-            }
-            int leftWidth = Math.max(((SwtCoolItem) left.getImpl()).internalGetMinimumWidth(), leftBounds.width - pixels);
-            ((SwtCoolItem) left.getImpl()).setBounds(leftBounds.x, leftBounds.y, leftWidth, leftBounds.height);
-            ((SwtCoolItem) left.getImpl()).requestedWidth = leftWidth;
-            int width = bounds.width + (bounds.x - x);
-            ((SwtCoolItem) item.getImpl()).setBounds(x, bounds.y, width, bounds.height);
-            ((SwtCoolItem) item.getImpl()).requestedWidth = width;
-            int damagedWidth = bounds.x - x + SwtCoolItem.MINIMUM_WIDTH;
-            if (damagedWidth > SwtCoolItem.MINIMUM_WIDTH) {
-                internalRedraw(x, bounds.y, damagedWidth, bounds.height);
-            }
+        Rectangle bounds = ((DartCoolItem) item.getImpl()).internalGetBounds();
+        int minSpaceOnLeft = 0;
+        for (int i = 0; i < index; i++) {
+            minSpaceOnLeft += ((DartCoolItem) items[row][i].getImpl()).internalGetMinimumWidth();
+        }
+        int x = Math.max(minSpaceOnLeft, bounds.x - pixels);
+        CoolItem left = items[row][index - 1];
+        Rectangle leftBounds = ((DartCoolItem) left.getImpl()).internalGetBounds();
+        if (leftBounds.x + ((DartCoolItem) left.getImpl()).internalGetMinimumWidth() > x) {
+            int shift = leftBounds.x + ((DartCoolItem) left.getImpl()).internalGetMinimumWidth() - x;
+            moveLeft(left, shift);
+            leftBounds = ((DartCoolItem) left.getImpl()).internalGetBounds();
+        }
+        int leftWidth = Math.max(((DartCoolItem) left.getImpl()).internalGetMinimumWidth(), leftBounds.width - pixels);
+        ((DartCoolItem) left.getImpl()).setBounds(leftBounds.x, leftBounds.y, leftWidth, leftBounds.height);
+        ((DartCoolItem) left.getImpl()).requestedWidth = leftWidth;
+        int width = bounds.width + (bounds.x - x);
+        ((DartCoolItem) item.getImpl()).setBounds(x, bounds.y, width, bounds.height);
+        ((DartCoolItem) item.getImpl()).requestedWidth = width;
+        int damagedWidth = bounds.x - x + DartCoolItem.MINIMUM_WIDTH;
+        if (damagedWidth > DartCoolItem.MINIMUM_WIDTH) {
+            internalRedraw(x, bounds.y, damagedWidth, bounds.height);
         }
     }
 
@@ -572,38 +568,36 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         int index = point.x;
         if (index == 0)
             return;
-        if (item.getImpl() instanceof SwtCoolItem) {
-            Rectangle bounds = ((SwtCoolItem) item.getImpl()).internalGetBounds();
-            int minSpaceOnRight = 0;
-            for (int i = index; i < items[row].length; i++) {
-                minSpaceOnRight += ((SwtCoolItem) items[row][i].getImpl()).internalGetMinimumWidth();
+        Rectangle bounds = ((DartCoolItem) item.getImpl()).internalGetBounds();
+        int minSpaceOnRight = 0;
+        for (int i = index; i < items[row].length; i++) {
+            minSpaceOnRight += ((DartCoolItem) items[row][i].getImpl()).internalGetMinimumWidth();
+        }
+        int max = getWidth() - minSpaceOnRight;
+        int x = Math.min(max, bounds.x + pixels);
+        int width = 0;
+        if (index + 1 == items[row].length) {
+            width = getWidth() - x;
+        } else {
+            CoolItem right = items[row][index + 1];
+            Rectangle rightBounds = ((DartCoolItem) right.getImpl()).internalGetBounds();
+            if (x + ((DartCoolItem) item.getImpl()).internalGetMinimumWidth() > rightBounds.x) {
+                int shift = x + ((DartCoolItem) item.getImpl()).internalGetMinimumWidth() - rightBounds.x;
+                moveRight(right, shift);
+                rightBounds = ((DartCoolItem) right.getImpl()).internalGetBounds();
             }
-            int max = getWidth() - minSpaceOnRight;
-            int x = Math.min(max, bounds.x + pixels);
-            int width = 0;
-            if (index + 1 == items[row].length) {
-                width = getWidth() - x;
-            } else {
-                CoolItem right = items[row][index + 1];
-                Rectangle rightBounds = ((SwtCoolItem) right.getImpl()).internalGetBounds();
-                if (x + ((SwtCoolItem) item.getImpl()).internalGetMinimumWidth() > rightBounds.x) {
-                    int shift = x + ((SwtCoolItem) item.getImpl()).internalGetMinimumWidth() - rightBounds.x;
-                    moveRight(right, shift);
-                    rightBounds = ((SwtCoolItem) right.getImpl()).internalGetBounds();
-                }
-                width = rightBounds.x - x;
-            }
-            ((SwtCoolItem) item.getImpl()).setBounds(x, bounds.y, width, bounds.height);
-            ((SwtCoolItem) item.getImpl()).requestedWidth = width;
-            CoolItem left = items[row][index - 1];
-            Rectangle leftBounds = ((SwtCoolItem) left.getImpl()).internalGetBounds();
-            int leftWidth = x - leftBounds.x;
-            ((SwtCoolItem) left.getImpl()).setBounds(leftBounds.x, leftBounds.y, leftWidth, leftBounds.height);
-            ((SwtCoolItem) left.getImpl()).requestedWidth = leftWidth;
-            int damagedWidth = x - bounds.x + SwtCoolItem.MINIMUM_WIDTH + SwtCoolItem.MARGIN_WIDTH;
-            if (x - bounds.x > 0) {
-                internalRedraw(bounds.x - SwtCoolItem.MARGIN_WIDTH, bounds.y, damagedWidth, bounds.height);
-            }
+            width = rightBounds.x - x;
+        }
+        ((DartCoolItem) item.getImpl()).setBounds(x, bounds.y, width, bounds.height);
+        ((DartCoolItem) item.getImpl()).requestedWidth = width;
+        CoolItem left = items[row][index - 1];
+        Rectangle leftBounds = ((DartCoolItem) left.getImpl()).internalGetBounds();
+        int leftWidth = x - leftBounds.x;
+        ((DartCoolItem) left.getImpl()).setBounds(leftBounds.x, leftBounds.y, leftWidth, leftBounds.height);
+        ((DartCoolItem) left.getImpl()).requestedWidth = leftWidth;
+        int damagedWidth = x - bounds.x + DartCoolItem.MINIMUM_WIDTH + DartCoolItem.MARGIN_WIDTH;
+        if (x - bounds.x > 0) {
+            internalRedraw(bounds.x - DartCoolItem.MARGIN_WIDTH, bounds.y, damagedWidth, bounds.height);
         }
     }
 
@@ -616,10 +610,8 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
                 return;
         }
         boolean resize = removeItemFromRow(item, oldRowIndex, false);
-        if (item.getImpl() instanceof SwtCoolItem) {
-            Rectangle old = ((SwtCoolItem) item.getImpl()).internalGetBounds();
-            internalRedraw(old.x, old.y, SwtCoolItem.MINIMUM_WIDTH, old.height);
-        }
+        Rectangle old = ((DartCoolItem) item.getImpl()).internalGetBounds();
+        internalRedraw(old.x, old.y, DartCoolItem.MINIMUM_WIDTH, old.height);
         int newRowIndex = oldRowIndex - 1;
         resize |= insertItemIntoRow(item, newRowIndex, x_root);
         if (resize) {
@@ -658,7 +650,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         dragging = getGrabbedItem(event.x, event.y);
         if (dragging != null) {
             mouseXOffset = event.x;
-            itemXOffset = mouseXOffset - ((SwtCoolItem) dragging.getImpl()).internalGetBounds().x;
+            itemXOffset = mouseXOffset - ((DartCoolItem) dragging.getImpl()).internalGetBounds().x;
             _setCursor(dragCursor);
         }
         fixEvent(event);
@@ -676,7 +668,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         CoolItem grabbed = getGrabbedItem(event.x, event.y);
         if (dragging != null) {
             int left_root = toDisplay(new Point(event.x - itemXOffset, event.y)).x;
-            Rectangle bounds = ((SwtCoolItem) dragging.getImpl()).internalGetBounds();
+            Rectangle bounds = ((DartCoolItem) dragging.getImpl()).internalGetBounds();
             if (event.y < bounds.y) {
                 moveUp(dragging, left_root);
             } else if (event.y > bounds.y + bounds.height) {
@@ -724,16 +716,16 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             int row = location.y;
             int index = location.x;
             if (items[row].length > 1) {
-                Rectangle bounds = ((SwtCoolItem) target.getImpl()).internalGetBounds();
+                Rectangle bounds = ((DartCoolItem) target.getImpl()).internalGetBounds();
                 int maxSize = getWidth();
                 for (int i = 0; i < items[row].length; i++) {
                     if (i != index) {
-                        maxSize -= ((SwtCoolItem) items[row][i].getImpl()).internalGetMinimumWidth();
+                        maxSize -= ((DartCoolItem) items[row][i].getImpl()).internalGetMinimumWidth();
                     }
                 }
                 if (bounds.width == maxSize) {
                     /* The item is at its maximum width. It should be resized to its minimum width. */
-                    int distance = bounds.width - ((SwtCoolItem) target.getImpl()).internalGetMinimumWidth();
+                    int distance = bounds.width - ((DartCoolItem) target.getImpl()).internalGetMinimumWidth();
                     if (index + 1 < items[row].length) {
                         /* There is an item to the right. Maximize it. */
                         CoolItem right = items[row][index + 1];
@@ -742,13 +734,13 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
                         /* There is no item to the right. Move the item all the way right. */
                         moveRight(target, distance);
                     }
-                } else if (bounds.width < ((SwtCoolItem) target.getImpl()).preferredWidth) {
+                } else if (bounds.width < ((DartCoolItem) target.getImpl()).preferredWidth) {
                     /* The item is less than its preferredWidth. Resize to preferredWidth. */
-                    int distance = ((SwtCoolItem) target.getImpl()).preferredWidth - bounds.width;
+                    int distance = ((DartCoolItem) target.getImpl()).preferredWidth - bounds.width;
                     if (index + 1 < items[row].length) {
                         CoolItem right = items[row][index + 1];
                         moveRight(right, distance);
-                        distance = ((SwtCoolItem) target.getImpl()).preferredWidth - ((SwtCoolItem) target.getImpl()).internalGetBounds().width;
+                        distance = ((DartCoolItem) target.getImpl()).preferredWidth - ((DartCoolItem) target.getImpl()).internalGetBounds().width;
                     }
                     if (distance > 0) {
                         moveLeft(target, distance);
@@ -758,10 +750,10 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
                     for (int i = 0; i < items[row].length; i++) {
                         if (i != index) {
                             CoolItem item = items[row][i];
-                            ((SwtCoolItem) item.getImpl()).requestedWidth = Math.max(((SwtCoolItem) item.getImpl()).internalGetMinimumWidth(), SwtCoolItem.MINIMUM_WIDTH);
+                            ((DartCoolItem) item.getImpl()).requestedWidth = Math.max(((DartCoolItem) item.getImpl()).internalGetMinimumWidth(), DartCoolItem.MINIMUM_WIDTH);
                         }
                     }
-                    ((SwtCoolItem) target.getImpl()).requestedWidth = maxSize;
+                    ((DartCoolItem) target.getImpl()).requestedWidth = maxSize;
                     layoutItems();
                 }
                 _setCursor(hoverCursor);
@@ -784,26 +776,26 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         for (int row = 0; row < items.length; row++) {
             Rectangle bounds = new Rectangle(0, 0, 0, 0);
             for (int i = 0; i < items[row].length; i++) {
-                bounds = ((SwtCoolItem) items[row][i].getImpl()).internalGetBounds();
+                bounds = ((DartCoolItem) items[row][i].getImpl()).internalGetBounds();
                 rect = fixRectangle(bounds.x, bounds.y, bounds.width, bounds.height);
                 if (!clipping.intersects(rect))
                     continue;
                 boolean nativeGripper = false;
                 /* Draw gripper. */
                 if (!isLocked) {
-                    rect = fixRectangle(bounds.x, bounds.y, SwtCoolItem.MINIMUM_WIDTH, bounds.height);
+                    rect = fixRectangle(bounds.x, bounds.y, DartCoolItem.MINIMUM_WIDTH, bounds.height);
                     if (!flat)
                         nativeGripper = drawGripper(gc, rect.x, rect.y, rect.width, rect.height, vertical);
                     if (!nativeGripper) {
                         int grabberTrim = 2;
                         int grabberHeight = bounds.height - (2 * grabberTrim) - 1;
                         gc.setForeground(shadowColor);
-                        rect = fixRectangle(bounds.x + SwtCoolItem.MARGIN_WIDTH, bounds.y + grabberTrim, 2, grabberHeight);
+                        rect = fixRectangle(bounds.x + DartCoolItem.MARGIN_WIDTH, bounds.y + grabberTrim, 2, grabberHeight);
                         gc.drawRectangle(rect);
                         gc.setForeground(highlightColor);
-                        rect = fixRectangle(bounds.x + SwtCoolItem.MARGIN_WIDTH, bounds.y + grabberTrim + 1, bounds.x + SwtCoolItem.MARGIN_WIDTH, bounds.y + grabberTrim + grabberHeight - 1);
+                        rect = fixRectangle(bounds.x + DartCoolItem.MARGIN_WIDTH, bounds.y + grabberTrim + 1, bounds.x + DartCoolItem.MARGIN_WIDTH, bounds.y + grabberTrim + grabberHeight - 1);
                         gc.drawLine(rect.x, rect.y, rect.width, rect.height);
-                        rect = fixRectangle(bounds.x + SwtCoolItem.MARGIN_WIDTH, bounds.y + grabberTrim, bounds.x + SwtCoolItem.MARGIN_WIDTH + 1, bounds.y + grabberTrim);
+                        rect = fixRectangle(bounds.x + DartCoolItem.MARGIN_WIDTH, bounds.y + grabberTrim, bounds.x + DartCoolItem.MARGIN_WIDTH + 1, bounds.y + grabberTrim);
                         gc.drawLine(rect.x, rect.y, rect.width, rect.height);
                     }
                 }
@@ -840,7 +832,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         CoolItem[] items = getItems();
         for (int i = 0; i < items.length; i++) {
             CoolItem item = items[i];
-            if (((SwtCoolItem) item.getImpl()).control == control)
+            if (((DartCoolItem) item.getImpl()).control == control)
                 item.setControl(null);
         }
     }
@@ -852,15 +844,15 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     boolean removeItemFromRow(CoolItem item, int rowIndex, boolean disposed) {
         int index = findItem(item).x;
         int newLength = items[rowIndex].length - 1;
-        Rectangle itemBounds = ((SwtCoolItem) item.getImpl()).internalGetBounds();
+        Rectangle itemBounds = ((DartCoolItem) item.getImpl()).internalGetBounds();
         int oldRowHeight = itemBounds.height;
-        ((SwtCoolItem) item.getImpl()).wrap = false;
+        ((DartCoolItem) item.getImpl()).wrap = false;
         if (newLength > 0) {
             CoolItem[] newRow = new CoolItem[newLength];
             System.arraycopy(items[rowIndex], 0, newRow, 0, index);
             System.arraycopy(items[rowIndex], index + 1, newRow, index, newRow.length - index);
             items[rowIndex] = newRow;
-            ((SwtCoolItem) items[rowIndex][0].getImpl()).wrap = true;
+            ((DartCoolItem) items[rowIndex][0].getImpl()).wrap = true;
         } else {
             CoolItem[][] newRows = new CoolItem[items.length - 1][];
             System.arraycopy(items, 0, newRows, 0, rowIndex);
@@ -871,22 +863,22 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         if (!disposed) {
             if (index == 0) {
                 CoolItem first = items[rowIndex][0];
-                Rectangle bounds = ((SwtCoolItem) first.getImpl()).internalGetBounds();
+                Rectangle bounds = ((DartCoolItem) first.getImpl()).internalGetBounds();
                 int width = bounds.x + bounds.width;
-                ((SwtCoolItem) first.getImpl()).setBounds(0, bounds.y, width, bounds.height);
-                ((SwtCoolItem) first.getImpl()).requestedWidth = width;
-                internalRedraw(bounds.x, bounds.y, SwtCoolItem.MINIMUM_WIDTH, bounds.height);
+                ((DartCoolItem) first.getImpl()).setBounds(0, bounds.y, width, bounds.height);
+                ((DartCoolItem) first.getImpl()).requestedWidth = width;
+                internalRedraw(bounds.x, bounds.y, DartCoolItem.MINIMUM_WIDTH, bounds.height);
             } else {
                 CoolItem previous = items[rowIndex][index - 1];
-                Rectangle bounds = ((SwtCoolItem) previous.getImpl()).internalGetBounds();
+                Rectangle bounds = ((DartCoolItem) previous.getImpl()).internalGetBounds();
                 int width = bounds.width + itemBounds.width;
-                ((SwtCoolItem) previous.getImpl()).setBounds(bounds.x, bounds.y, width, bounds.height);
-                ((SwtCoolItem) previous.getImpl()).requestedWidth = width;
+                ((DartCoolItem) previous.getImpl()).setBounds(bounds.x, bounds.y, width, bounds.height);
+                ((DartCoolItem) previous.getImpl()).requestedWidth = width;
             }
         }
         int newRowHeight = 0;
         for (int i = 0; i < newLength; i++) {
-            newRowHeight = Math.max(newRowHeight, ((SwtCoolItem) items[rowIndex][i].getImpl()).preferredHeight);
+            newRowHeight = Math.max(newRowHeight, ((DartCoolItem) items[rowIndex][i].getImpl()).preferredHeight);
         }
         return newRowHeight != oldRowHeight;
     }
@@ -912,23 +904,23 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             int available = width;
             for (int i = 0; i < count; i++) {
                 CoolItem item = items[row][i];
-                rowHeight = Math.max(rowHeight, ((SwtCoolItem) item.getImpl()).preferredHeight);
-                available -= ((SwtCoolItem) item.getImpl()).internalGetMinimumWidth();
+                rowHeight = Math.max(rowHeight, ((DartCoolItem) item.getImpl()).preferredHeight);
+                available -= ((DartCoolItem) item.getImpl()).internalGetMinimumWidth();
             }
             if (row > 0)
                 y += rowSpacing;
             /* lay the items out */
             for (int i = 0; i < count; i++) {
                 CoolItem child = items[row][i];
-                int newWidth = available + ((SwtCoolItem) child.getImpl()).internalGetMinimumWidth();
+                int newWidth = available + ((DartCoolItem) child.getImpl()).internalGetMinimumWidth();
                 if (i + 1 < count) {
-                    newWidth = Math.min(newWidth, ((SwtCoolItem) child.getImpl()).requestedWidth);
-                    available -= (newWidth - ((SwtCoolItem) child.getImpl()).internalGetMinimumWidth());
+                    newWidth = Math.min(newWidth, ((DartCoolItem) child.getImpl()).requestedWidth);
+                    available -= (newWidth - ((DartCoolItem) child.getImpl()).internalGetMinimumWidth());
                 }
-                Rectangle oldBounds = ((SwtCoolItem) child.getImpl()).internalGetBounds();
+                Rectangle oldBounds = ((DartCoolItem) child.getImpl()).internalGetBounds();
                 Rectangle newBounds = new Rectangle(x, y, newWidth, rowHeight);
                 if (!oldBounds.equals(newBounds)) {
-                    ((SwtCoolItem) child.getImpl()).setBounds(newBounds.x, newBounds.y, newBounds.width, newBounds.height);
+                    ((DartCoolItem) child.getImpl()).setBounds(newBounds.x, newBounds.y, newBounds.width, newBounds.height);
                     Rectangle damage = new Rectangle(0, 0, 0, 0);
                     /* Cases are in descending order from most area to redraw to least. */
                     if (oldBounds.y != newBounds.y) {
@@ -944,12 +936,12 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
 					 */
                         damage.y = newBounds.y + Math.min(oldBounds.height, newBounds.height) - 3;
                         damage.height = newBounds.y + newBounds.height + rowSpacing;
-                        damage.x = oldBounds.x - SwtCoolItem.MARGIN_WIDTH;
-                        damage.width = oldBounds.width + SwtCoolItem.MARGIN_WIDTH;
+                        damage.x = oldBounds.x - DartCoolItem.MARGIN_WIDTH;
+                        damage.width = oldBounds.width + DartCoolItem.MARGIN_WIDTH;
                     } else if (oldBounds.x != newBounds.x) {
                         /* Redraw only the difference between the separators. */
                         damage.x = Math.min(oldBounds.x, newBounds.x);
-                        damage.width = Math.abs(oldBounds.x - newBounds.x) + SwtCoolItem.MINIMUM_WIDTH;
+                        damage.width = Math.abs(oldBounds.x - newBounds.x) + DartCoolItem.MINIMUM_WIDTH;
                         damage.y = oldBounds.y;
                         damage.height = oldBounds.height;
                     }
@@ -1021,6 +1013,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
 
     @Override
     public void setBackground(Color color) {
+        dirty();
         for (CoolItem ci : originalItems) {
             Control ctrl = ci.getControl();
             if (ctrl != null) {
@@ -1031,6 +1024,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     void setItemOrder(int[] itemOrder) {
+        dirty();
         if (itemOrder == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int count = originalItems.length;
@@ -1052,6 +1046,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         }
         items = new CoolItem[1][count];
         items[0] = row;
+        this.itemOrder = itemOrder;
     }
 
     /**
@@ -1077,6 +1072,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     void setItemSizes(Point[] sizes) {
+        dirty();
         if (sizes == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         CoolItem[] items = getItems();
@@ -1085,6 +1081,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         for (int i = 0; i < items.length; i++) {
             items[i].setSize(sizes[i]);
         }
+        this.itemSizes = sizes;
     }
 
     /**
@@ -1131,7 +1128,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         int[] wrapIndices = new int[items.length - 1];
         int i = 0, nextWrap = items[0].length;
         for (int row = 1; row < items.length; row++) {
-            if (((SwtCoolItem) items[row][0].getImpl()).wrap)
+            if (((DartCoolItem) items[row][0].getImpl()).wrap)
                 wrapIndices[i++] = nextWrap;
             nextWrap += items[row].length;
         }
@@ -1157,6 +1154,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
      * @since 2.0
      */
     public void setLocked(boolean locked) {
+        dirty();
         checkWidget();
         if (isLocked != locked) {
             redraw();
@@ -1180,6 +1178,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
      * </ul>
      */
     public void setWrapIndices(int[] indices) {
+        dirty();
         checkWidget();
         if (indices == null)
             indices = new int[0];
@@ -1190,13 +1189,13 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             }
         }
         for (int i = 0; i < originalItems.length; i++) {
-            ((SwtCoolItem) originalItems[i].getImpl()).wrap = false;
+            ((DartCoolItem) originalItems[i].getImpl()).wrap = false;
         }
         for (int i = 0; i < indices.length; i++) {
             int index = indices[i];
             for (int row = 0; row < items.length; row++) {
                 if (items[row].length > index) {
-                    ((SwtCoolItem) items[row][index].getImpl()).wrap = true;
+                    ((DartCoolItem) items[row][index].getImpl()).wrap = true;
                     break;
                 } else {
                     index -= items[row].length;
@@ -1204,6 +1203,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             }
         }
         relayout();
+        this.wrapIndices = indices;
     }
 
     @Override
@@ -1222,6 +1222,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
 
     @Override
     public void setCursor(Cursor cursor) {
+        dirty();
         checkWidget();
         super.setCursor(this.cursor = cursor);
     }
@@ -1269,15 +1270,16 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
 
     @Override
     public void setOrientation(int orientation) {
+        dirty();
         super.setOrientation(orientation);
         for (int row = 0; row < items.length; row++) {
             for (int column = 0; column < items[row].length; column++) {
                 CoolItem item = items[row][column];
-                if (((SwtCoolItem) item.getImpl()).arrowImage != null) {
-                    ((SwtCoolItem) item.getImpl()).arrowImage.dispose();
-                    ((SwtCoolItem) item.getImpl()).arrowImage = null;
+                if (((DartCoolItem) item.getImpl()).arrowImage != null) {
+                    ((DartCoolItem) item.getImpl()).arrowImage.dispose();
+                    ((DartCoolItem) item.getImpl()).arrowImage = null;
                 }
-                ((SwtCoolItem) item.getImpl()).updateChevron();
+                ((DartCoolItem) item.getImpl()).updateChevron();
             }
         }
     }
@@ -1297,8 +1299,8 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         start = 0;
         for (int i = 0; i < itemCount; i++) {
             CoolItem item = itemsVisual[i];
-            int itemWidth = ((SwtCoolItem) item.getImpl()).internalGetMinimumWidth();
-            if ((i > 0 && ((SwtCoolItem) item.getImpl()).wrap) || (maxWidth != SWT.DEFAULT && rowWidth + itemWidth > maxWidth)) {
+            int itemWidth = ((DartCoolItem) item.getImpl()).internalGetMinimumWidth();
+            if ((i > 0 && ((DartCoolItem) item.getImpl()).wrap) || (maxWidth != SWT.DEFAULT && rowWidth + itemWidth > maxWidth)) {
                 if (i == start) {
                     newItems[rowCount] = new CoolItem[1];
                     newItems[rowCount][0] = item;
@@ -1330,6 +1332,12 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             items = newItems;
         }
     }
+
+    int[] itemOrder = new int[0];
+
+    Point[] itemSizes = new Point[0];
+
+    int[] wrapIndices = new int[0];
 
     public CoolItem[][] _items() {
         return items;
@@ -1371,9 +1379,31 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         return inDispose;
     }
 
+    public int[] _itemOrder() {
+        return itemOrder;
+    }
+
+    public Point[] _itemSizes() {
+        return itemSizes;
+    }
+
+    public int[] _wrapIndices() {
+        return wrapIndices;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+    }
+
     public CoolBar getApi() {
         if (api == null)
             api = CoolBar.createApi(this);
         return (CoolBar) api;
+    }
+
+    public VCoolBar getValue() {
+        if (value == null)
+            value = new VCoolBar(this);
+        return (VCoolBar) value;
     }
 }

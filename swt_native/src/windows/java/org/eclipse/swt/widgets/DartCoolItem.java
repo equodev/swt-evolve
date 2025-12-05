@@ -19,8 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.win32.*;
-import dev.equo.swt.Config;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class are selectable user interface
@@ -39,7 +38,15 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class CoolItem extends Item {
+public class DartCoolItem extends DartItem implements ICoolItem {
+
+    CoolBar parent;
+
+    Control control;
+
+    int id;
+
+    boolean ideal, minimum;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -71,9 +78,10 @@ public class CoolItem extends Item {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public CoolItem(CoolBar parent, int style) {
-        this((ICoolItem) null);
-        setImpl(Config.isEquo(CoolItem.class, parent) ? new DartCoolItem(parent, style, this) : new SwtCoolItem(parent, style, this));
+    public DartCoolItem(CoolBar parent, int style, CoolItem api) {
+        super(parent, style, api);
+        this.parent = parent;
+        ((DartCoolBar) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
     }
 
     /**
@@ -108,9 +116,10 @@ public class CoolItem extends Item {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public CoolItem(CoolBar parent, int style, int index) {
-        this((ICoolItem) null);
-        setImpl(Config.isEquo(CoolItem.class, parent) ? new DartCoolItem(parent, style, index, this) : new SwtCoolItem(parent, style, index, this));
+    public DartCoolItem(CoolBar parent, int style, int index, CoolItem api) {
+        super(parent, style, api);
+        this.parent = parent;
+        ((DartCoolBar) parent.getImpl()).createItem(this.getApi(), index);
     }
 
     /**
@@ -144,11 +153,13 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void addSelectionListener(SelectionListener listener) {
-        getImpl().addSelectionListener(listener);
+        addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
     }
 
-    protected void checkSubclass() {
-        getImpl().checkSubclass();
+    @Override
+    public void checkSubclass() {
+        if (!isValidSubclass())
+            error(SWT.ERROR_INVALID_SUBCLASS);
     }
 
     /**
@@ -179,7 +190,21 @@ public class CoolItem extends Item {
      * @see Scrollable#getClientArea
      */
     public Point computeSize(int wHint, int hHint) {
-        return getImpl().computeSize(wHint, hHint);
+        checkWidget();
+        int zoom = getZoom();
+        wHint = (wHint != SWT.DEFAULT ? DPIUtil.scaleUp(wHint, zoom) : wHint);
+        hHint = (hHint != SWT.DEFAULT ? DPIUtil.scaleUp(hHint, zoom) : hHint);
+        return DPIUtil.scaleDown(computeSizeInPixels(wHint, hHint), zoom);
+    }
+
+    Point computeSizeInPixels(int wHint, int hHint) {
+        return Sizes.compute(this);
+    }
+
+    @Override
+    void destroyWidget() {
+        ((DartCoolBar) parent.getImpl()).destroyItem(this.getApi());
+        releaseHandle();
     }
 
     /**
@@ -194,7 +219,33 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Rectangle getBounds() {
-        return getImpl().getBounds();
+        checkWidget();
+        return DPIUtil.scaleDown(getBoundsInPixels(), getZoom());
+    }
+
+    Rectangle getBoundsInPixels() {
+        int index = parent.indexOf(this.getApi());
+        if (index == -1)
+            return new Rectangle(0, 0, 0, 0);
+        // Get the position and size from parent CoolBar
+        Point position = ((DartCoolBar) parent.getImpl()).getItemPosition(index);
+        Point itemSize = getSizeInPixels();
+        if (position == null || itemSize == null) {
+            return new Rectangle(0, 0, 0, 0);
+        }
+        return new Rectangle(position.x, position.y, itemSize.x, itemSize.y);
+    }
+
+    Rectangle getClientArea() {
+        checkWidget();
+        int index = parent.indexOf(this.getApi());
+        if (index == -1)
+            return new Rectangle(0, 0, 0, 0);
+        if ((parent.style & SWT.FLAT) == 0) {
+        }
+        if (index == 0) {
+        }
+        return getBounds();
     }
 
     /**
@@ -208,7 +259,8 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Control getControl() {
-        return getImpl().getControl();
+        checkWidget();
+        return control;
     }
 
     /**
@@ -222,7 +274,16 @@ public class CoolItem extends Item {
      * </ul>
      */
     public CoolBar getParent() {
-        return getImpl().getParent();
+        checkWidget();
+        return parent;
+    }
+
+    @Override
+    void releaseHandle() {
+        super.releaseHandle();
+        parent = null;
+        id = -1;
+        control = null;
     }
 
     /**
@@ -241,7 +302,40 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setControl(Control control) {
-        getImpl().setControl(control);
+        dirty();
+        checkWidget();
+        if (control != null) {
+            if (control.isDisposed())
+                error(SWT.ERROR_INVALID_ARGUMENT);
+            if (((DartControl) control.getImpl()).parent != parent)
+                error(SWT.ERROR_INVALID_PARENT);
+        }
+        int index = parent.indexOf(this.getApi());
+        if (index == -1)
+            return;
+        if (this.control != null && this.control.isDisposed()) {
+            this.control = null;
+        }
+        Control oldControl = this.control, newControl = control;
+        long hwndChild = newControl != null ? control.getImpl().topHandle() : 0;
+        this.control = newControl;
+        /*
+	* Feature in Windows.  When Windows sets the rebar band child,
+	* it makes the new child visible and hides the old child and
+	* moves the new child to the top of the Z-order.  The fix is
+	* to save and restore the visibility and Z-order.
+	*/
+        long hwndAbove = 0;
+        if (newControl != null) {
+        }
+        boolean hideNew = newControl != null && !newControl.getVisible();
+        boolean showOld = oldControl != null && oldControl.getVisible();
+        if (hideNew)
+            newControl.setVisible(false);
+        if (showOld)
+            oldControl.setVisible(true);
+        if (hwndAbove != 0 && hwndAbove != hwndChild) {
+        }
     }
 
     /**
@@ -257,7 +351,20 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Point getPreferredSize() {
-        return getImpl().getPreferredSize();
+        checkWidget();
+        return DPIUtil.scaleDown(getPreferredSizeInPixels(), getZoom());
+    }
+
+    Point getPreferredSizeInPixels() {
+        int index = parent.indexOf(this.getApi());
+        if (index == -1)
+            return new Point(0, 0);
+        if ((parent.style & SWT.VERTICAL) != 0) {
+        }
+        if (this.preferredSize == null) {
+            return new Point(0, 0);
+        }
+        return this.preferredSize;
     }
 
     /**
@@ -272,7 +379,28 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setPreferredSize(int width, int height) {
-        getImpl().setPreferredSize(width, height);
+        checkWidget();
+        int zoom = getZoom();
+        setPreferredSizeInPixels(DPIUtil.scaleUp(width, zoom), DPIUtil.scaleUp(height, zoom));
+    }
+
+    void setPreferredSizeInPixels(int width, int height) {
+        dirty();
+        int index = parent.indexOf(this.getApi());
+        if (index == -1)
+            return;
+        width = Math.max(0, width);
+        height = Math.max(0, height);
+        ideal = true;
+        int cxIdeal, cyMaxChild;
+        if ((parent.style & SWT.VERTICAL) != 0) {
+            cxIdeal = Math.max(0, height - ((DartCoolBar) parent.getImpl()).getMargin(index));
+            cyMaxChild = width;
+        } else {
+            cxIdeal = Math.max(0, width - ((DartCoolBar) parent.getImpl()).getMargin(index));
+            cyMaxChild = height;
+        }
+        this.preferredSize = new Point(cxIdeal, cyMaxChild);
     }
 
     /**
@@ -289,7 +417,11 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setPreferredSize(Point size) {
-        getImpl().setPreferredSize(size);
+        checkWidget();
+        if (size == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        size = DPIUtil.scaleUp(size, getZoom());
+        setPreferredSizeInPixels(size.x, size.y);
     }
 
     /**
@@ -306,7 +438,22 @@ public class CoolItem extends Item {
      * </ul>
      */
     public Point getSize() {
-        return getImpl().getSize();
+        checkWidget();
+        return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
+    }
+
+    public Point getSizeInPixels() {
+        int index = parent.indexOf(this.getApi());
+        if (index == -1)
+            return new Point(0, 0);
+        if (!((DartCoolBar) parent.getImpl()).isLastItemOfRow(index)) {
+        }
+        if ((parent.style & SWT.VERTICAL) != 0) {
+        }
+        if (this.size == null) {
+            return new Point(0, 0);
+        }
+        return this.size;
     }
 
     /**
@@ -326,7 +473,31 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setSize(int width, int height) {
-        getImpl().setSize(width, height);
+        checkWidget();
+        int zoom = getZoom();
+        setSizeInPixels(DPIUtil.scaleUp(width, zoom), DPIUtil.scaleUp(height, zoom));
+    }
+
+    void setSizeInPixels(int width, int height) {
+        dirty();
+        int index = parent.indexOf(this.getApi());
+        if (index == -1)
+            return;
+        width = Math.max(0, width);
+        height = Math.max(0, height);
+        int cyChild, cxIdeal;
+        if ((parent.style & SWT.VERTICAL) != 0) {
+            cyChild = width;
+            cxIdeal = Math.max(0, height - ((DartCoolBar) parent.getImpl()).getMargin(index));
+        } else {
+            cyChild = height;
+            cxIdeal = Math.max(0, width - ((DartCoolBar) parent.getImpl()).getMargin(index));
+        }
+        /*
+	* Do not set the size for the last item on the row.
+	*/
+        if (!((DartCoolBar) parent.getImpl()).isLastItemOfRow(index)) {
+        }
     }
 
     /**
@@ -348,7 +519,11 @@ public class CoolItem extends Item {
      * </ul>
      */
     public void setSize(Point size) {
-        getImpl().setSize(size);
+        checkWidget();
+        if (size == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        size = DPIUtil.scaleUp(size, getZoom());
+        setSizeInPixels(size.x, size.y);
     }
 
     /**
@@ -365,7 +540,20 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public Point getMinimumSize() {
-        return getImpl().getMinimumSize();
+        checkWidget();
+        return DPIUtil.scaleDown(getMinimumSizeInPixels(), getZoom());
+    }
+
+    Point getMinimumSizeInPixels() {
+        int index = parent.indexOf(this.getApi());
+        if (index == -1)
+            return new Point(0, 0);
+        if ((parent.style & SWT.VERTICAL) != 0) {
+        }
+        if (this.minimumSize == null) {
+            return new Point(0, 0);
+        }
+        return this.minimumSize;
     }
 
     /**
@@ -383,7 +571,28 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void setMinimumSize(int width, int height) {
-        getImpl().setMinimumSize(width, height);
+        checkWidget();
+        int zoom = getZoom();
+        setMinimumSizeInPixels(DPIUtil.scaleUp(width, zoom), DPIUtil.scaleUp(height, zoom));
+    }
+
+    void setMinimumSizeInPixels(int width, int height) {
+        dirty();
+        int index = parent.indexOf(this.getApi());
+        if (index == -1)
+            return;
+        width = Math.max(0, width);
+        height = Math.max(0, height);
+        minimum = true;
+        int cxMinChild, cyMinChild;
+        if ((parent.style & SWT.VERTICAL) != 0) {
+            cxMinChild = height;
+            cyMinChild = width;
+        } else {
+            cxMinChild = width;
+            cyMinChild = height;
+        }
+        this.minimumSize = new Point(cxMinChild, cyMinChild);
     }
 
     /**
@@ -403,7 +612,21 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void setMinimumSize(Point size) {
-        getImpl().setMinimumSize(size);
+        checkWidget();
+        if (size == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        size = DPIUtil.scaleUp(size, getZoom());
+        setMinimumSizeInPixels(size.x, size.y);
+    }
+
+    boolean getWrap() {
+        return false;
+    }
+
+    void setWrap(boolean wrap) {
+        if (wrap) {
+        } else {
+        }
     }
 
     /**
@@ -426,18 +649,80 @@ public class CoolItem extends Item {
      * @since 2.0
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getImpl().removeSelectionListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Selection, listener);
+        eventTable.unhook(SWT.DefaultSelection, listener);
     }
 
-    protected CoolItem(ICoolItem impl) {
-        super(impl);
+    Point minimumSize;
+
+    Point preferredSize;
+
+    public CoolBar _parent() {
+        return parent;
     }
 
-    static CoolItem createApi(ICoolItem impl) {
-        return new CoolItem(impl);
+    public Control _control() {
+        return control;
     }
 
-    public ICoolItem getImpl() {
-        return (ICoolItem) super.getImpl();
+    public int _id() {
+        return id;
+    }
+
+    public boolean _ideal() {
+        return ideal;
+    }
+
+    public boolean _minimum() {
+        return minimum;
+    }
+
+    public Point _minimumSize() {
+        return minimumSize;
+    }
+
+    public Point _preferredSize() {
+        return preferredSize;
+    }
+
+    Point size;
+
+    public FlutterBridge getBridge() {
+        if (bridge != null)
+            return bridge;
+        Composite p = parent;
+        while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
+            });
+        });
+    }
+
+    public CoolItem getApi() {
+        if (api == null)
+            api = CoolItem.createApi(this);
+        return (CoolItem) api;
+    }
+
+    public VCoolItem getValue() {
+        if (value == null)
+            value = new VCoolItem(this);
+        return (VCoolItem) value;
     }
 }
