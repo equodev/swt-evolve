@@ -71,18 +71,11 @@ public class SashHorizontalSnippet {
 
         // Add listener to resize composites when sash moves
         sash.addListener(SWT.Selection, e -> {
-            // Actualizar posición del sash
             sash.setBounds(e.x, e.y, e.width, e.height);
-
-            // Redimensionar composite superior
             topComposite.setBounds(0, 0, compositeWidth, e.y);
-
-            // Redimensionar composite inferior
             int bottomY = e.y + e.height;
             int bottomHeight = compositeHeight - bottomY;
             bottomComposite.setBounds(0, bottomY, compositeWidth, bottomHeight);
-
-            // NO ES NECESARIO: container.requestLayout();
         });
 
 

@@ -323,11 +323,10 @@ public class DartMenu extends DartWidget implements IMenu {
     void createItem(MenuItem item, int index) {
         if (!(0 <= index && index <= itemCount))
             error(SWT.ERROR_INVALID_RANGE);
-        boolean add = true;
+        ;
         ((DartWidget) item.getImpl()).createJNIRef();
         ((DartMenuItem) item.getImpl()).register();
-        if (add) {
-        }
+        ;
         if (itemCount == items.length) {
             MenuItem[] newItems = new MenuItem[items.length + 4];
             System.arraycopy(items, 0, newItems, 0, items.length);
@@ -335,10 +334,7 @@ public class DartMenu extends DartWidget implements IMenu {
         }
         System.arraycopy(items, index, items, index + 1, itemCount++ - index);
         items[index] = item;
-        if (add) {
-            if (((SwtDisplay) display.getImpl()).menuBar == this.getApi()) {
-            }
-        }
+        ;
     }
 
     @Override
@@ -613,11 +609,11 @@ public class DartMenu extends DartWidget implements IMenu {
         }
         if ((getApi().style & SWT.POP_UP) != 0) {
             Menu[] popups = ((SwtDisplay) display.getImpl()).popups;
-            if (popups == null)
-                return false;
-            for (int i = 0; i < popups.length; i++) {
-                if (popups[i] == this.getApi())
-                    return true;
+            if (popups != null) {
+                for (int i = 0; i < popups.length; i++) {
+                    if (popups[i] == this.getApi())
+                        return true;
+                }
             }
         }
         return visible;
