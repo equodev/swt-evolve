@@ -6,7 +6,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 
-public interface IToolTip extends IWidget {
+public interface IToolTip extends IWidget, ImplToolTip {
 
     /**
      * Adds the listener to the collection of listeners who will

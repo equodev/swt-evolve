@@ -241,6 +241,22 @@ public class SerializeTestBase {
         inst.fill();
     }
 
+    protected void setAll(org.eclipse.swt.widgets.ToolTip tt) {
+        InstancioObjectApi<org.eclipse.swt.widgets.ToolTip> inst = Instancio.ofObject(tt)
+                .withSettings(settings)
+                .ignore(Select.setter(org.eclipse.swt.widgets.Widget.class, "setImpl"))
+                .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "state"))
+                .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "style"));
+        try {
+            inst.ignore(Select.types().of(Class.forName("org.eclipse.swt.internal.cocoa.NSObject")));
+        } catch (ClassNotFoundException e) {}
+        inst = inst
+                .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
+                .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0))
+                .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000));
+        inst.fill();
+    }
+
     protected AssertConsumer node(String field) {
         return new AssertConsumer(field);
     }

@@ -34,6 +34,7 @@ import '../gen/tableitem.dart';
 import '../gen/text.dart';
 import '../gen/toolbar.dart';
 import '../gen/toolitem.dart';
+import '../gen/tooltip.dart';
 import '../gen/tree.dart';
 import '../gen/treecolumn.dart';
 import '../gen/treeitem.dart';
@@ -81,6 +82,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "GC" => VGC.fromJson(child),
     "Menu" => VMenu.fromJson(child),
     "ScrollBar" => VScrollBar.fromJson(child),
+    "ToolTip" => VToolTip.fromJson(child),
     _ => throw "Unknown Widget Value $type"
   };
 }
@@ -128,6 +130,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VGC() => GCSwt(key: ValueKey(id), value: child),
     VMenu() => MenuSwt(key: ValueKey(id), value: child),
     VScrollBar() => ScrollBarSwt(key: ValueKey(id), value: child),
+    VToolTip() => ToolTipSwt(key: ValueKey(id), value: child),
     _ => throw "No widget for Value $type"
   };
 }

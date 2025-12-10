@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 
-public interface IToolTip extends IWidget {
+public interface IToolTip extends IWidget, ImplToolTip {
 
     /**
      * Adds the listener to the collection of listeners who will

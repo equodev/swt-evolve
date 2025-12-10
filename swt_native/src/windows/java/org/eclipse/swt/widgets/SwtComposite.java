@@ -1293,7 +1293,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             String string = null;
             ToolTip toolTip = ((SwtShell) shell.getImpl()).findToolTip((int) hdr.idFrom);
             if (toolTip != null) {
-                string = ((SwtToolTip) toolTip.getImpl()).message;
+                string = toolTip.getImpl()._message();
                 if (string == null || string.length() == 0)
                     string = " ";
                 /*

@@ -19,8 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.win32.*;
-import dev.equo.swt.Config;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class represent popup windows that are used
@@ -45,7 +44,19 @@ import dev.equo.swt.Config;
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class ToolTip extends Widget {
+public class DartToolTip extends DartWidget implements IToolTip {
+
+    Shell parent;
+
+    TrayItem item;
+
+    String text = "", message = "";
+
+    int id, x, y;
+
+    boolean autoHide = true, hasLocation, visible;
+
+    static final int TIMER_ID = 100;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -78,9 +89,18 @@ public class ToolTip extends Widget {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public ToolTip(Shell parent, int style) {
-        this((IToolTip) null);
-        setImpl(Config.isEquo(ToolTip.class, parent) ? new DartToolTip(parent, style, this) : new SwtToolTip(parent, style, this));
+    public DartToolTip(Shell parent, int style, ToolTip api) {
+        super(parent, checkStyle(style), api);
+        this.parent = parent;
+        checkOrientation(parent);
+        ((SwtShell) parent.getImpl()).createToolTip(this.getApi());
+    }
+
+    static int checkStyle(int style) {
+        int mask = SWT.ICON_ERROR | SWT.ICON_INFORMATION | SWT.ICON_WARNING;
+        if ((style & mask) == 0)
+            return style;
+        return checkBits(style, SWT.ICON_INFORMATION, SWT.ICON_WARNING, SWT.ICON_ERROR, 0, 0, 0);
     }
 
     /**
@@ -108,7 +128,14 @@ public class ToolTip extends Widget {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getImpl().addSelectionListener(listener);
+        addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
+    }
+
+    @Override
+    void destroyWidget() {
+        if (parent != null)
+            ((SwtShell) parent.getImpl()).destroyToolTip(this.getApi());
+        releaseHandle();
     }
 
     /**
@@ -123,7 +150,8 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public boolean getAutoHide() {
-        return getImpl().getAutoHide();
+        checkWidget();
+        return autoHide;
     }
 
     /**
@@ -138,7 +166,8 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public String getMessage() {
-        return getImpl().getMessage();
+        checkWidget();
+        return message;
     }
 
     /**
@@ -152,7 +181,8 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public Shell getParent() {
-        return getImpl().getParent();
+        checkWidget();
+        return parent;
     }
 
     /**
@@ -167,7 +197,8 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public String getText() {
-        return getImpl().getText();
+        checkWidget();
+        return text;
     }
 
     /**
@@ -188,7 +219,18 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public boolean getVisible() {
-        return getImpl().getVisible();
+        checkWidget();
+        if (item != null)
+            return visible;
+        return false;
+    }
+
+    int getWidth() {
+        return 0;
+    }
+
+    long hwndToolTip() {
+        return (getApi().style & SWT.BALLOON) != 0 ? ((SwtShell) parent.getImpl()).balloonTipHandle() : ((SwtShell) parent.getImpl()).toolTipHandle();
     }
 
     /**
@@ -206,7 +248,32 @@ public class ToolTip extends Widget {
      * @see #getVisible
      */
     public boolean isVisible() {
-        return getImpl().isVisible();
+        checkWidget();
+        if (item != null)
+            return getVisible() && item.getVisible();
+        return getVisible();
+    }
+
+    @Override
+    void releaseHandle() {
+        super.releaseHandle();
+        parent = null;
+        item = null;
+        id = -1;
+    }
+
+    @Override
+    void releaseWidget() {
+        super.releaseWidget();
+        if (item == null) {
+            if (autoHide) {
+            }
+        }
+        if (item != null && ((SwtTrayItem) item.getImpl()).toolTip == this.getApi()) {
+            ((SwtTrayItem) item.getImpl()).toolTip = null;
+        }
+        item = null;
+        text = message = null;
     }
 
     /**
@@ -227,7 +294,13 @@ public class ToolTip extends Widget {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getImpl().removeSelectionListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Selection, listener);
+        eventTable.unhook(SWT.DefaultSelection, listener);
     }
 
     /**
@@ -245,7 +318,10 @@ public class ToolTip extends Widget {
      * @see #setVisible
      */
     public void setAutoHide(boolean autoHide) {
-        getImpl().setAutoHide(autoHide);
+        dirty();
+        checkWidget();
+        this.autoHide = autoHide;
+        //TODO - update when visible
     }
 
     /**
@@ -266,7 +342,16 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public void setLocation(int x, int y) {
-        getImpl().setLocation(x, y);
+        checkWidget();
+        int zoom = getZoom();
+        setLocationInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom));
+    }
+
+    void setLocationInPixels(int x, int y) {
+        this.x = x;
+        this.y = y;
+        hasLocation = true;
+        //TODO - update when visible
     }
 
     /**
@@ -292,7 +377,11 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public void setLocation(Point location) {
-        getImpl().setLocation(location);
+        checkWidget();
+        if (location == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        location = DPIUtil.scaleUp(location, getZoom());
+        setLocationInPixels(location.x, location.y);
     }
 
     /**
@@ -309,7 +398,13 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public void setMessage(String string) {
-        getImpl().setMessage(string);
+        dirty();
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        message = string;
+        if (getVisible()) {
+        }
     }
 
     /**
@@ -326,7 +421,13 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public void setText(String string) {
-        getImpl().setText(string);
+        dirty();
+        checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        text = string;
+        //TODO - update when visible
+        //TODO - support text direction (?)
     }
 
     /**
@@ -346,18 +447,106 @@ public class ToolTip extends Widget {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        getImpl().setVisible(visible);
+        dirty();
+        checkWidget();
+        if (visible == getVisible())
+            return;
+        if (item == null) {
+            long hwndToolTip = hwndToolTip();
+            Shell shell = parent.getShell();
+            if (text.length() != 0) {
+            } else {
+                ((SwtShell) shell.getImpl()).setToolTipTitle(hwndToolTip, null, 0);
+            }
+            if (visible) {
+                if (!hasLocation) {
+                }
+                // Feature in Windows. If another tooltip is already active, sending
+                // `TTM_TRACKACTIVATE` is ignored and OLD tooltip remains active.
+            } else {
+            }
+            return;
+        }
+        if (item != null) {
+            if (visible) {
+                sendEvent(SWT.Show);
+            } else {
+                //TODO - hide the tray item
+            }
+        }
     }
 
-    protected ToolTip(IToolTip impl) {
-        super(impl);
+    public Shell _parent() {
+        return parent;
     }
 
-    static ToolTip createApi(IToolTip impl) {
-        return new ToolTip(impl);
+    public TrayItem _item() {
+        return item;
     }
 
-    public IToolTip getImpl() {
-        return (IToolTip) super.getImpl();
+    public String _text() {
+        return text;
+    }
+
+    public String _message() {
+        return message;
+    }
+
+    public int _id() {
+        return id;
+    }
+
+    public int _x() {
+        return x;
+    }
+
+    public int _y() {
+        return y;
+    }
+
+    public boolean _autoHide() {
+        return autoHide;
+    }
+
+    public boolean _hasLocation() {
+        return hasLocation;
+    }
+
+    public boolean _visible() {
+        return visible;
+    }
+
+    public FlutterBridge getBridge() {
+        if (bridge != null)
+            return bridge;
+        Composite p = parent;
+        while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
+            });
+        });
+    }
+
+    public ToolTip getApi() {
+        if (api == null)
+            api = ToolTip.createApi(this);
+        return (ToolTip) api;
+    }
+
+    public VToolTip getValue() {
+        if (value == null)
+            value = new VToolTip(this);
+        return (VToolTip) value;
     }
 }
