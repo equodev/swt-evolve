@@ -69,7 +69,16 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     }
 
     if (state.menu != null) {
-      return applyMenu(widget);
+      widget = applyMenu(widget);
+    }
+
+    // Wrap with Tooltip if toolTipText is set
+    if (state.toolTipText != null && state.toolTipText!.isNotEmpty) {
+      widget = Tooltip(
+        message: state.toolTipText!,
+        waitDuration: const Duration(milliseconds: 500),
+        child: widget,
+      );
     }
 
     return widget;

@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent popup windows that are used
@@ -77,7 +78,7 @@ public class ToolTip extends Widget {
      */
     public ToolTip(Shell parent, int style) {
         this((IToolTip) null);
-        setImpl(new SwtToolTip(parent, style, this));
+        setImpl(Config.isEquo(ToolTip.class, parent) ? new DartToolTip(parent, style, this) : new SwtToolTip(parent, style, this));
     }
 
     /**

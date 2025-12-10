@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class represent popup windows that are used
@@ -42,7 +43,7 @@ import org.eclipse.swt.graphics.*;
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtToolTip extends SwtWidget implements IToolTip {
+public class DartToolTip extends DartWidget implements IToolTip {
 
     Shell parent, tip;
 
@@ -107,7 +108,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtToolTip(Shell parent, int style, ToolTip api) {
+    public DartToolTip(Shell parent, int style, ToolTip api) {
         super(parent, checkStyle(style), api);
         this.parent = parent;
         this.autohide = true;
@@ -404,14 +405,6 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
             gc.drawRectangle(rect.x, rect.y, rect.width - 1, rect.height - 1);
         }
         if (layoutText != null) {
-            int id = getApi().style & (SWT.ICON_ERROR | SWT.ICON_INFORMATION | SWT.ICON_WARNING);
-            if ((getApi().style & SWT.BALLOON) != 0 && id != 0) {
-                Display display = getDisplay();
-                Image image = display.getSystemImage(id);
-                Rectangle rect = image.getBounds();
-                gc.drawImage(image, 0, 0, rect.width, rect.height, x, y, IMAGE_SIZE, IMAGE_SIZE);
-                x += IMAGE_SIZE;
-            }
             x += INSET;
             layoutText.draw(gc, x, y);
             y += 2 * PADDING + Math.max(IMAGE_SIZE, layoutText.getBounds().height);
@@ -464,6 +457,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
      * @see #setVisible
      */
     public void setAutoHide(boolean autoHide) {
+        dirty();
         checkWidget();
         this.autohide = autoHide;
         //TODO - update when visible
@@ -539,6 +533,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
      * </ul>
      */
     public void setMessage(String string) {
+        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -552,6 +547,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
         }
         if (tip.getVisible())
             configure();
+        this.message = string;
     }
 
     /**
@@ -568,6 +564,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
      * </ul>
      */
     public void setText(String string) {
+        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -589,6 +586,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
         }
         if (tip.getVisible())
             configure();
+        this.text = string;
     }
 
     /**
@@ -608,6 +606,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
      * </ul>
      */
     public void setVisible(boolean visible) {
+        dirty();
         checkWidget();
         if (visible)
             configure();
@@ -623,7 +622,14 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
             };
             display.timerExec(DELAY, runnable);
         }
+        this.visible = visible;
     }
+
+    String message;
+
+    String text = "";
+
+    boolean visible;
 
     public Shell _parent() {
         return parent;
@@ -685,9 +691,49 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
         return runnable;
     }
 
+    public String _message() {
+        return message;
+    }
+
+    public String _text() {
+        return text;
+    }
+
+    public boolean _visible() {
+        return visible;
+    }
+
+    public FlutterBridge getBridge() {
+        if (bridge != null)
+            return bridge;
+        Composite p = parent;
+        while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.Selection, e);
+            });
+        });
+    }
+
     public ToolTip getApi() {
         if (api == null)
             api = ToolTip.createApi(this);
         return (ToolTip) api;
+    }
+
+    public VToolTip getValue() {
+        if (value == null)
+            value = new VToolTip(this);
+        return (VToolTip) value;
     }
 }

@@ -675,14 +675,21 @@ public class SwtShell extends SwtDecorations implements IShell {
             toolTips = newToolTips;
         }
         toolTips[id] = toolTip;
-        ((SwtToolTip) toolTip.getImpl()).id = id + SwtDisplay.ID_START;
+        if (toolTip.getImpl() instanceof DartToolTip) {
+            ((DartToolTip) toolTip.getImpl()).id = id + SwtDisplay.ID_START;
+        }
+        if (toolTip.getImpl() instanceof SwtToolTip) {
+            ((SwtToolTip) toolTip.getImpl()).id = id + SwtDisplay.ID_START;
+        }
         TOOLINFO lpti = new TOOLINFO();
         lpti.cbSize = TOOLINFO.sizeof;
         lpti.hwnd = getApi().handle;
-        lpti.uId = ((SwtToolTip) toolTip.getImpl()).id;
+        lpti.uId = toolTip.getImpl()._id();
         lpti.uFlags = OS.TTF_TRACK;
         lpti.lpszText = OS.LPSTR_TEXTCALLBACK;
-        OS.SendMessage(((SwtToolTip) toolTip.getImpl()).hwndToolTip(), OS.TTM_ADDTOOL, 0, lpti);
+        if (toolTip.getImpl() instanceof SwtToolTip) {
+            OS.SendMessage(((SwtToolTip) toolTip.getImpl()).hwndToolTip(), OS.TTM_ADDTOOL, 0, lpti);
+        }
     }
 
     void createToolTipHandle() {
@@ -723,15 +730,20 @@ public class SwtShell extends SwtDecorations implements IShell {
     void destroyToolTip(ToolTip toolTip) {
         if (toolTips == null)
             return;
-        toolTips[((SwtToolTip) toolTip.getImpl()).id - SwtDisplay.ID_START] = null;
+        toolTips[toolTip.getImpl()._id() - SwtDisplay.ID_START] = null;
         if (balloonTipHandle != 0) {
             TOOLINFO lpti = new TOOLINFO();
             lpti.cbSize = TOOLINFO.sizeof;
-            lpti.uId = ((SwtToolTip) toolTip.getImpl()).id;
+            lpti.uId = toolTip.getImpl()._id();
             lpti.hwnd = getApi().handle;
             OS.SendMessage(balloonTipHandle, OS.TTM_DELTOOL, 0, lpti);
         }
-        ((SwtToolTip) toolTip.getImpl()).id = -1;
+        if (toolTip.getImpl() instanceof DartToolTip) {
+            ((DartToolTip) toolTip.getImpl()).id = -1;
+        }
+        if (toolTip.getImpl() instanceof SwtToolTip) {
+            ((SwtToolTip) toolTip.getImpl()).id = -1;
+        }
     }
 
     @Override
@@ -2396,7 +2408,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                         if (wParam != SwtToolTip.TIMER_ID)
                             break;
                         ToolTip tip = getCurrentToolTip(hwnd);
-                        if (tip != null && ((SwtToolTip) tip.getImpl()).autoHide) {
+                        if (tip != null && tip.getImpl()._autoHide()) {
                             tip.setVisible(false);
                         }
                         break;

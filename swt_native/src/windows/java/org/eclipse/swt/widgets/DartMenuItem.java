@@ -906,7 +906,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     void showTooltip(int x, int y) {
         if (itemToolTip == null || itemToolTip.isDisposed())
             return;
-        ((SwtToolTip) itemToolTip.getImpl()).setLocationInPixels(x, y);
+        ((DartToolTip) itemToolTip.getImpl()).setLocationInPixels(x, y);
         itemToolTip.setVisible(true);
     }
 

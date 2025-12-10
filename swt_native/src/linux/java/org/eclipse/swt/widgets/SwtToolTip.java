@@ -869,6 +869,58 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
         return 0;
     }
 
+    public Shell _parent() {
+        return parent;
+    }
+
+    public String _text() {
+        return text;
+    }
+
+    public String _message() {
+        return message;
+    }
+
+    public TrayItem _item() {
+        return item;
+    }
+
+    public int _x() {
+        return x;
+    }
+
+    public int _y() {
+        return y;
+    }
+
+    public int _timerId() {
+        return timerId;
+    }
+
+    public long _layoutText() {
+        return layoutText;
+    }
+
+    public long _layoutMessage() {
+        return layoutMessage;
+    }
+
+    public long _provider() {
+        return provider;
+    }
+
+    public int[] _borderPolygon() {
+        return borderPolygon;
+    }
+
+    public boolean _spikeAbove() {
+        return spikeAbove;
+    }
+
+    public boolean _autohide() {
+        return autohide;
+    }
+
     public ToolTip getApi() {
         if (api == null)
             api = ToolTip.createApi(this);

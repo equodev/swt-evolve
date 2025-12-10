@@ -23,6 +23,7 @@ import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent popup windows that are used
@@ -82,7 +83,7 @@ public class ToolTip extends Widget {
      */
     public ToolTip(Shell parent, int style) {
         this((IToolTip) null);
-        setImpl(new SwtToolTip(parent, style, this));
+        setImpl(Config.isEquo(ToolTip.class, parent) ? new DartToolTip(parent, style, this) : new SwtToolTip(parent, style, this));
     }
 
     /**
