@@ -2,8 +2,9 @@ package org.eclipse.swt.graphics;
 
 import java.io.*;
 import java.util.*;
+import java.util.Map.*;
+import java.util.function.*;
 import org.eclipse.swt.*;
-import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 

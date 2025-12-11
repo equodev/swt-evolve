@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -16,7 +16,6 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
 
@@ -154,10 +153,6 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (pointArray == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        addInPixels(DPIUtil.autoScaleUp(pointArray));
-    }
-
-    void addInPixels(int[] pointArray) {
         /*
 	* Bug in GTK. If gdk_region_polygon() is called with one point,
 	* it segment faults. The fix is to make sure that it is called
@@ -189,11 +184,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (rect == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        addInPixels(DPIUtil.autoScaleUp(rect));
-    }
-
-    void addInPixels(Rectangle rect) {
-        addInPixels(rect.x, rect.y, rect.width, rect.height);
+        add(rect.x, rect.y, rect.width, rect.height);
     }
 
     /**
@@ -219,10 +210,6 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (width < 0 || height < 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        add(new Rectangle(x, y, width, height));
-    }
-
-    void addInPixels(int x, int y, int width, int height) {
         cairo_rectangle_int_t rect = new cairo_rectangle_int_t();
         rect.x = x;
         rect.y = y;
@@ -272,10 +259,6 @@ public final class SwtRegion extends SwtResource implements IRegion {
     public boolean contains(int x, int y) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return contains(new Point(x, y));
-    }
-
-    boolean containsInPixels(int x, int y) {
         return Cairo.cairo_region_contains_point(getApi().handle, x, y);
     }
 
@@ -297,13 +280,9 @@ public final class SwtRegion extends SwtResource implements IRegion {
     public boolean contains(Point pt) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return containsInPixels(DPIUtil.autoScaleUp(pt));
-    }
-
-    boolean containsInPixels(Point pt) {
         if (pt == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return containsInPixels(pt.x, pt.y);
+        return contains(pt.x, pt.y);
     }
 
     @Override
@@ -324,12 +303,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
      */
     @Override
     public boolean equals(Object object) {
-        if (this.getApi() == object)
-            return true;
-        if (!(object instanceof Region))
-            return false;
-        Region region = (Region) object;
-        return getApi().handle == region.handle;
+        return super.equals(object);
     }
 
     /**
@@ -348,10 +322,6 @@ public final class SwtRegion extends SwtResource implements IRegion {
     public Rectangle getBounds() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return DPIUtil.autoScaleDown(getBoundsInPixels());
-    }
-
-    Rectangle getBoundsInPixels() {
         cairo_rectangle_int_t rect = new cairo_rectangle_int_t();
         Cairo.cairo_region_get_extents(getApi().handle, rect);
         return new Rectangle(rect.x, rect.y, rect.width, rect.height);
@@ -389,7 +359,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
      */
     @Override
     public int hashCode() {
-        return (int) getApi().handle;
+        return super.hashCode();
     }
 
     /**
@@ -413,11 +383,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (rect == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        intersectInPixels(DPIUtil.autoScaleUp(rect));
-    }
-
-    void intersectInPixels(Rectangle rect) {
-        intersectInPixels(rect.x, rect.y, rect.width, rect.height);
+        intersect(rect.x, rect.y, rect.width, rect.height);
     }
 
     /**
@@ -443,10 +409,6 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (width < 0 || height < 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        intersect(new Rectangle(x, y, width, height));
-    }
-
-    void intersectInPixels(int x, int y, int width, int height) {
         cairo_rectangle_int_t rect = new cairo_rectangle_int_t();
         rect.x = x;
         rect.y = y;
@@ -538,7 +500,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return intersectsInPixels(DPIUtil.autoScaleUp(rect));
+        return intersectsInPixels(rect);
     }
 
     boolean intersectsInPixels(Rectangle rect) {
@@ -597,10 +559,6 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (pointArray == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        subtractInPixels(DPIUtil.autoScaleUp(pointArray));
-    }
-
-    void subtractInPixels(int[] pointArray) {
         /*
 	* Bug in GTK. If gdk_region_polygon() is called with one point,
 	* it segment faults. The fix is to make sure that it is called
@@ -634,11 +592,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (rect == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        subtractInPixels(DPIUtil.autoScaleUp(rect));
-    }
-
-    void subtractInPixels(Rectangle rect) {
-        subtractInPixels(rect.x, rect.y, rect.width, rect.height);
+        subtract(rect.x, rect.y, rect.width, rect.height);
     }
 
     /**
@@ -664,10 +618,6 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (width < 0 || height < 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        subtract(new Rectangle(x, y, width, height));
-    }
-
-    void subtractInPixels(int x, int y, int width, int height) {
         cairo_rectangle_int_t rect = new cairo_rectangle_int_t();
         rect.x = x;
         rect.y = y;
@@ -721,10 +671,6 @@ public final class SwtRegion extends SwtResource implements IRegion {
     public void translate(int x, int y) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        translate(new Point(x, y));
-    }
-
-    void translateInPixels(int x, int y) {
         Cairo.cairo_region_translate(getApi().handle, x, y);
     }
 
@@ -748,8 +694,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (pt == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        pt = DPIUtil.autoScaleUp(pt);
-        translateInPixels(pt.x, pt.y);
+        translate(pt.x, pt.y);
     }
 
     /**

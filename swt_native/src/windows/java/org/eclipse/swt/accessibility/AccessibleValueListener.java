@@ -15,7 +15,7 @@
  */
 package org.eclipse.swt.accessibility;
 
-import org.eclipse.swt.internal.SWTEventListener;
+import java.util.*;
 
 /**
  * Classes which implement this interface provide methods
@@ -32,7 +32,7 @@ import org.eclipse.swt.internal.SWTEventListener;
  *
  * @since 3.6
  */
-public interface AccessibleValueListener extends SWTEventListener {
+public interface AccessibleValueListener extends EventListener {
 
     /**
      * Returns the value of this object as a number.

@@ -16,9 +16,8 @@ class ProgressBarImpl<T extends ProgressBarSwt, V extends VProgressBar>
     state.selection ??= 0;
 
     // Ensure selection is within bounds
-    final currentValue = state.selection!
-        .clamp(state.minimum!, state.maximum!)
-        .toDouble();
+    final currentValue =
+        state.selection!.clamp(state.minimum!, state.maximum!).toDouble();
 
     // Calculate progress (0.0 to 1.0)
     final range = (state.maximum! - state.minimum!).toDouble();

@@ -318,11 +318,14 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * </ul>
      */
     public Point getSize() {
-        checkWidget();
-        return DPIUtil.autoScaleDown(new Point(20, 20));
+        return new Point(20, 20);
     }
 
     public Point getSizeInPixels() {
+        ((DartControl) parent.getImpl()).forceResize();
+        if ((getApi().style & SWT.HORIZONTAL) != 0) {
+        } else {
+        }
         return null;
     }
 
@@ -358,7 +361,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public Rectangle getThumbBounds() {
         checkWidget();
-        return DPIUtil.scaleDown(getThumbBoundsInPixels(), getZoom());
+        return null;
     }
 
     Rectangle getThumbBoundsInPixels() {
@@ -385,7 +388,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public Rectangle getThumbTrackBounds() {
         checkWidget();
-        return DPIUtil.scaleDown(getThumbTrackBoundsInPixels(), getZoom());
+        return null;
     }
 
     Rectangle getThumbTrackBoundsInPixels() {

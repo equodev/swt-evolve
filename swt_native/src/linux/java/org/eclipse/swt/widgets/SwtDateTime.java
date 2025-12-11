@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -449,7 +449,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
                 flags |= GTK.GTK_CALENDAR_SHOW_WEEK_NUMBERS;
             }
             GTK3.gtk_calendar_set_display_options(getApi().handle, flags);
-            GTK.gtk_widget_show(getApi().handle);
+            gtk_widget_show(getApi().handle);
         }
     }
 
@@ -471,8 +471,8 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
                 error(SWT.ERROR_NO_HANDLES);
             GTK3.gtk_container_add(fixedHandle, getApi().handle);
             GTK3.gtk_container_add(getApi().handle, textEntryHandle);
-            GTK.gtk_widget_show(containerHandle);
-            GTK.gtk_widget_show(textEntryHandle);
+            gtk_widget_show(containerHandle);
+            gtk_widget_show(textEntryHandle);
             // In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
             // reset to default font to get the usual behavior
             setFontDescription(defaultFont().handle);
@@ -634,7 +634,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         Display display = getDisplay();
         //To display popup calendar, we need to know where the parent is relative to the whole screen.
         Rectangle coordsRelativeToScreen = ((SwtDisplay) display.getImpl()).mapInPixels(getParent(), null, getBoundsInPixels());
-        Rectangle displayRect = DPIUtil.autoScaleUp(getMonitor().getClientArea());
+        Rectangle displayRect = getMonitor().getClientArea();
         showPopupShell(containerBounds, calendarSize, coordsRelativeToScreen, displayRect);
         display.addFilter(SWT.MouseDown, mouseEventListener);
     }
@@ -1956,7 +1956,12 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         if (dateTimeText != null) {
             byte[] dateTimeConverted = Converter.javaStringToCString(dateTimeText);
             if (GTK.GTK4) {
-                GTK.gtk_entry_buffer_set_text(GTK4.gtk_text_get_buffer(textEntryHandle), dateTimeConverted, dateTimeText.length());
+                if (isDateWithDropDownButton()) {
+                    GTK.gtk_entry_buffer_set_text(GTK4.gtk_text_get_buffer(textEntryHandle), dateTimeConverted, dateTimeText.length());
+                } else {
+                    GTK4.gtk_editable_set_max_width_chars(getApi().handle, dateTimeText.length());
+                    GTK4.gtk_editable_set_text(getApi().handle, dateTimeConverted);
+                }
             } else {
                 //note, this is ignored if the control is in a fill-layout.
                 GTK3.gtk_entry_set_width_chars(textEntryHandle, dateTimeText.length());
@@ -2231,14 +2236,14 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     }
 
     @Override
-    void gtk_gesture_release_event(long gesture, int n_press, double x, double y, long event) {
+    int gtk_gesture_release_event(long gesture, int n_press, double x, double y, long event) {
         if (isDate() || isTime()) {
             int button = GTK.gtk_gesture_single_get_current_button(gesture);
             if (button == 1) {
                 onTextMouseClick();
             }
         }
-        super.gtk_gesture_release_event(gesture, n_press, x, y, event);
+        return super.gtk_gesture_release_event(gesture, n_press, x, y, event);
     }
 
     /**
@@ -2338,7 +2343,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     void hideDateTime() {
         if (isDate() || isTime()) {
-            GTK.gtk_widget_hide(fixedHandle);
+            gtk_widget_hide(fixedHandle);
         }
     }
 
@@ -2451,10 +2456,10 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     }
 
     /**
-     * Check if the given {@link FieldPosition} are considdered "the same", this is
+     * Check if the given {@link FieldPosition} are considered "the same", this is
      * when both are not <code>null</code> and reference the same
      * {@link java.text.Format.Field} attribute, or both of them have no
-     * fieldattribute and have the same position
+     * field attribute and have the same position
      *
      * @param p1
      *            first position to compare
@@ -2495,7 +2500,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     /**
      * Extracts the calendarfield transforming HOUR1 types to HOUR0
      *
-     * @return the calendarfield coresponding to the {@link Field}
+     * @return the calendarfield corresponding to the {@link Field}
      */
     private static int getCalendarField(Field field) {
         if (Field.HOUR1.equals(field)) {

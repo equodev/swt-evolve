@@ -141,12 +141,6 @@ public final class Font extends Resource {
         setImpl(Config.isEquo(Font.class) ? new DartFont(device, name, height, style, this) : new SwtFont(device, name, height, style, this));
     }
 
-    /*public*/
-    Font(Device device, String name, float height, int style) {
-        this((IFont) null);
-        setImpl(Config.isEquo(Font.class) ? new DartFont(device, name, height, style, this) : new SwtFont(device, name, height, style, this));
-    }
-
     /**
      * Compares the argument to the receiver, and returns true
      * if they represent the <em>same</em> object using a class

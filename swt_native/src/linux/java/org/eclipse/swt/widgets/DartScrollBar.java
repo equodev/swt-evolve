@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2016 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -18,7 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.DPIUtil;
 import dev.equo.swt.*;
 
 /**
@@ -292,12 +292,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * </ul>
      */
     public Point getSize() {
-        checkWidget();
-        return DPIUtil.autoScaleDown(new Point(20, 20));
-    }
-
-    public Point getSizeInPixels() {
-        return null;
+        return new Point(20, 20);
     }
 
     /**
@@ -332,11 +327,6 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public Rectangle getThumbBounds() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getThumbBoundsInPixels());
-    }
-
-    Rectangle getThumbBoundsInPixels() {
-        checkWidget();
         if ((getApi().style & SWT.VERTICAL) != 0) {
         } else {
         }
@@ -358,11 +348,6 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * @since 3.6
      */
     public Rectangle getThumbTrackBounds() {
-        checkWidget();
-        return DPIUtil.autoScaleDown(getThumbTrackBoundsInPixels());
-    }
-
-    Rectangle getThumbTrackBoundsInPixels() {
         checkWidget();
         if ((getApi().style & SWT.VERTICAL) != 0) {
         } else {

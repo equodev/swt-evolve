@@ -1,6 +1,8 @@
 package org.eclipse.swt.graphics;
 
+import java.util.*;
 import org.eclipse.swt.*;
+import org.eclipse.swt.internal.*;
 
 public interface ICursor extends IResource {
 

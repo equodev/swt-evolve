@@ -15,6 +15,7 @@
  */
 package org.eclipse.swt.graphics;
 
+import java.lang.ref.*;
 import java.util.*;
 import java.util.concurrent.*;
 import org.eclipse.swt.*;
@@ -67,7 +68,7 @@ public abstract class SwtDevice implements Drawable, IDevice {
 
     volatile boolean disposed;
 
-    private Set<Resource> resourcesWithZoomSupport = ConcurrentHashMap.newKeySet();
+    private Set<ResourceReference> resourcesWithZoomSupport = ConcurrentHashMap.newKeySet();
 
     /*
 	* TEMPORARY CODE. When a graphics object is
@@ -277,20 +278,32 @@ public abstract class SwtDevice implements Drawable, IDevice {
     public void create(DeviceData data) {
     }
 
-    int computePixels(float height) {
+    int computePixels(float height, int zoom) {
         long hDC = internal_new_GC(null);
-        int pixels = -(int) (0.5f + (height * OS.GetDeviceCaps(hDC, OS.LOGPIXELSY) / 72f));
+        int pixels = -(int) (0.5f + (height / calculateFontConversionFactor(hDC, zoom)));
         internal_dispose_GC(hDC, null);
         return pixels;
     }
 
     float computePoints(LOGFONT logFont, long hFont) {
-        return computePoints(logFont, hFont, -1);
+        return computePoints(logFont, hFont, SWT.DEFAULT);
     }
 
-    float computePoints(LOGFONT logFont, long hFont, int currentFontDPI) {
+    private float calculateFontConversionFactor(long hDC, int zoom) {
+        float conversionFactor = 72f;
+        if (isAutoScalable() && zoom != SWT.DEFAULT) {
+            // For auto scalable devices we need to use a dynamic
+            // DPI value that is extracted from the zoom
+            conversionFactor /= DPIUtil.mapZoomToDPI(zoom);
+        } else {
+            conversionFactor /= OS.GetDeviceCaps(hDC, OS.LOGPIXELSY);
+        }
+        return conversionFactor;
+    }
+
+    float computePoints(LOGFONT logFont, long hFont, int zoom) {
         long hDC = internal_new_GC(null);
-        int logPixelsY = OS.GetDeviceCaps(hDC, OS.LOGPIXELSY);
+        float conversionFactor = calculateFontConversionFactor(hDC, zoom);
         int pixels = 0;
         if (logFont.lfHeight > 0) {
             /*
@@ -309,14 +322,7 @@ public abstract class SwtDevice implements Drawable, IDevice {
             pixels = -logFont.lfHeight;
         }
         internal_dispose_GC(hDC, null);
-        float adjustedZoomFactor = 1.0f;
-        if (currentFontDPI > 0) {
-            // as Device::computePoints will always return point on the basis of the
-            // primary monitor zoom, a custom zoomFactor must be calculated if the font
-            // is used for a different zoom level
-            adjustedZoomFactor *= (float) logPixelsY / (float) currentFontDPI;
-        }
-        return adjustedZoomFactor * pixels * 72f / logPixelsY;
+        return pixels * conversionFactor;
     }
 
     /**
@@ -431,7 +437,7 @@ public abstract class SwtDevice implements Drawable, IDevice {
      */
     public Rectangle getBounds() {
         checkDevice();
-        return DPIUtil.scaleDown(getBoundsInPixels(), getDeviceZoom());
+        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), getDeviceZoom());
     }
 
     private Rectangle getBoundsInPixels() {
@@ -539,7 +545,7 @@ public abstract class SwtDevice implements Drawable, IDevice {
         int dpiX = OS.GetDeviceCaps(hDC, OS.LOGPIXELSX);
         int dpiY = OS.GetDeviceCaps(hDC, OS.LOGPIXELSY);
         internal_dispose_GC(hDC, null);
-        return DPIUtil.scaleDown(new Point(dpiX, dpiY), getDeviceZoom());
+        return Win32DPIUtils.pixelToPoint(new Point(dpiX, dpiY), DPIUtil.getZoomForAutoscaleProperty(getDeviceZoom()));
     }
 
     /**
@@ -1035,11 +1041,11 @@ public abstract class SwtDevice implements Drawable, IDevice {
     }
 
     void registerResourceWithZoomSupport(Resource resource) {
-        resourcesWithZoomSupport.add(resource);
+        resourcesWithZoomSupport.add(new ResourceReference(resource));
     }
 
     void deregisterResourceWithZoomSupport(Resource resource) {
-        resourcesWithZoomSupport.remove(resource);
+        resourcesWithZoomSupport.remove(new ResourceReference(resource));
     }
 
     /**
@@ -1053,8 +1059,39 @@ public abstract class SwtDevice implements Drawable, IDevice {
         for (Monitor monitor : display.getMonitors()) {
             availableZoomLevels.add(DPIUtil.getZoomForAutoscaleProperty(monitor.getZoom()));
         }
-        for (Resource resource : ((SwtDevice) ((Device) display).getImpl()).resourcesWithZoomSupport) {
+        Set<ResourceReference> resources = ((SwtDevice) ((Device) display).getImpl()).resourcesWithZoomSupport;
+        Iterator<ResourceReference> iterator = resources.iterator();
+        while (iterator.hasNext()) {
+            ResourceReference ref = iterator.next();
+            Resource resource = ref.get();
+            if (resource == null) {
+                // Clean up dead reference.
+                iterator.remove();
+                continue;
+            }
             ((SwtResource) resource.getImpl()).destroyHandlesExcept(availableZoomLevels);
+        }
+    }
+
+    private static class ResourceReference extends WeakReference<Resource> {
+
+        public ResourceReference(Resource referent) {
+            super(referent);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (!(obj instanceof ResourceReference passedResource))
+                return false;
+            return Objects.equals(this.get(), passedResource.get());
+        }
+
+        @Override
+        public int hashCode() {
+            Resource resource = this.get();
+            return resource != null ? resource.hashCode() : 0;
         }
     }
 

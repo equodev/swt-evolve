@@ -318,7 +318,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
      */
     public int getWidth() {
         checkWidget();
-        return DPIUtil.scaleDown(getWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getWidthInPixels(), getZoom());
     }
 
     int getWidthInPixels() {
@@ -417,7 +417,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
             if (((SwtTable) parent.getImpl()).sortColumn == this.getApi() && ((SwtTable) parent.getImpl()).sortDirection != SWT.NONE) {
                 headerWidth += SwtTable.SORT_WIDTH;
             } else if (image != null) {
-                Rectangle bounds = image.getBoundsInPixels();
+                Rectangle bounds = Win32DPIUtils.pointToPixel(image.getBounds(), getZoom());
                 headerWidth += bounds.width;
             }
             long hwndHeader = OS.SendMessage(hwnd, OS.LVM_GETHEADER, 0, 0);
@@ -448,7 +448,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
                     if (isDisposed() || parent.isDisposed())
                         break;
                     Rectangle bounds = event.getBounds();
-                    columnWidth = Math.max(columnWidth, DPIUtil.scaleUp(bounds.x + bounds.width, getZoom()) - headerRect.left);
+                    columnWidth = Math.max(columnWidth, Win32DPIUtils.pointToPixel(bounds.x + bounds.width, getZoom()) - headerRect.left);
                 }
             }
             if (newFont != 0)
@@ -881,7 +881,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
      */
     public void setWidth(int width) {
         checkWidget();
-        setWidthInPixels(DPIUtil.scaleUp(width, getZoom()));
+        setWidthInPixels(Win32DPIUtils.pointToPixel(width, getZoom()));
     }
 
     void setWidthInPixels(int width) {

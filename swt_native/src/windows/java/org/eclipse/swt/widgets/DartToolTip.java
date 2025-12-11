@@ -344,8 +344,6 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public void setLocation(int x, int y) {
         dirty();
         checkWidget();
-        int zoom = getZoom();
-        setLocationInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom));
         this.location = new Point(x, y);
     }
 
@@ -382,7 +380,6 @@ public class DartToolTip extends DartWidget implements IToolTip {
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        location = DPIUtil.scaleUp(location, getZoom());
         setLocationInPixels(location.x, location.y);
     }
 

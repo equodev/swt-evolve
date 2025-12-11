@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2022 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -1864,7 +1864,10 @@ public class Display extends Device implements Executor {
      * @param activate whether rescaling shall be activated or deactivated
      * @return whether activating or deactivating the rescaling was successful
      * @since 3.127
+     * @deprecated this method should not be used as it needs to be called already
+     *             during instantiation to take proper effect
      */
+    @Deprecated(since = "2025-03", forRemoval = true)
     public boolean setRescalingAtRuntime(boolean activate) {
         return getImpl().setRescalingAtRuntime(activate);
     }

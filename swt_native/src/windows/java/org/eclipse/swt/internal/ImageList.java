@@ -67,7 +67,7 @@ public class ImageList {
             index++;
         }
         if (count == 0) {
-            Rectangle rect = DPIUtil.scaleBounds(image.getBounds(), zoom, 100);
+            Rectangle rect = Win32DPIUtils.scaleBounds(image.getBounds(), zoom, 100);
             OS.ImageList_SetIconSize(handle, rect.width, rect.height);
         }
         setForAllHandles(index, image, count);
@@ -334,8 +334,8 @@ public class ImageList {
 
     public long getHandle(int targetZoom) {
         if (!zoomToHandle.containsKey(targetZoom)) {
-            int scaledWidth = DPIUtil.scaleUp(DPIUtil.scaleDown(width, this.zoom), targetZoom);
-            int scaledHeight = DPIUtil.scaleUp(DPIUtil.scaleDown(height, this.zoom), targetZoom);
+            int scaledWidth = Win32DPIUtils.pointToPixel(DPIUtil.pixelToPoint(width, this.zoom), targetZoom);
+            int scaledHeight = Win32DPIUtils.pointToPixel(DPIUtil.pixelToPoint(height, this.zoom), targetZoom);
             long newImageListHandle = OS.ImageList_Create(scaledWidth, scaledHeight, flags, 16, 16);
             int count = OS.ImageList_GetImageCount(handle);
             for (int i = 0; i < count; i++) {
@@ -363,10 +363,13 @@ public class ImageList {
         OS.ReleaseDC(0, hDC);
     }
 
+    /**
+     * {@return size of Images in the ImageList in points}
+     */
     public Point getImageSize() {
         int[] cx = new int[1], cy = new int[1];
         OS.ImageList_GetIconSize(handle, cx, cy);
-        return new Point(cx[0], cy[0]);
+        return Win32DPIUtils.pixelToPoint(new Point(cx[0], cy[0]), zoom);
     }
 
     public int indexOf(Image image) {

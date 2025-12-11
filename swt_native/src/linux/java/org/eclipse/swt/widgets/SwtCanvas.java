@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -17,7 +17,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
 
@@ -339,12 +338,6 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
 	 */
         if (GTK.GTK4)
             return;
-        Point destination = DPIUtil.autoScaleUp(new Point(destX, destY));
-        Rectangle srcRect = DPIUtil.autoScaleUp(new Rectangle(x, y, width, height));
-        scrollInPixels(destination.x, destination.y, srcRect.x, srcRect.y, srcRect.width, srcRect.height, all);
-    }
-
-    void scrollInPixels(int destX, int destY, int x, int y, int width, int height, boolean all) {
         if ((getApi().style & SWT.MIRRORED) != 0) {
             int clientWidth = getClientWidth();
             x = clientWidth - width - x;
@@ -459,9 +452,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         Cairo.cairo_region_destroy(copyRegion);
         Cairo.cairo_region_destroy(invalidateRegion);
         if (all) {
-            Control[] children = _getChildren();
-            for (int i = 0; i < children.length; i++) {
-                Control child = children[i];
+            for (Control child : _getChildren()) {
                 Rectangle rect = ((SwtControl) child.getImpl()).getBoundsInPixels();
                 if (Math.min(x + width, rect.x + rect.width) >= Math.max(x, rect.x) && Math.min(y + height, rect.y + rect.height) >= Math.max(y, rect.y)) {
                     ((SwtControl) child.getImpl()).setLocationInPixels(rect.x + deltaX, rect.y + deltaY);

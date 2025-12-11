@@ -39,10 +39,6 @@ public final class DartColor extends DartResource implements IColor {
 
     int alpha = 0;
 
-    DartColor(Color api) {
-        super(api);
-    }
-
     DartColor(Device device, Color api) {
         super(device, api);
     }
@@ -307,9 +303,6 @@ public final class DartColor extends DartResource implements IColor {
     @Override
     public Device getDevice() {
         // Fall back on Device.getDevice only if we haven't been disposed
-        // already.
-        if (this.device == null && this.getApi().handle != null)
-            return SwtDevice.getDevice();
         return super.getDevice();
     }
 

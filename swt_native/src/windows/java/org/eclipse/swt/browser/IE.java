@@ -437,7 +437,7 @@ class IE extends WebBrowser {
             if (version == 0) {
                 if (IEVersion != 0) {
                     /*
-				 * By default in Embedded IE the docuemntMode is Quirks(5)
+				 * By default in Embedded IE the documentMode is Quirks(5)
 				 * mode unless !DOCTYPE directives is defined in the HTML.
 				 * As per MSDN IE8 and onwards, there is a way we could hint
 				 * embedded IE to use current documentMode via appropriate
@@ -2058,7 +2058,7 @@ class IE extends WebBrowser {
         int screenY = pVarResult.getInt();
         pVarResult.dispose();
         // To Points
-        Point position = DPIUtil.autoScaleDown(new Point(screenX, screenY));
+        Point position = Win32DPIUtils.pixelToPoint(new Point(screenX, screenY), DPIUtil.getDeviceZoom());
         position = browser.getDisplay().map(null, browser, position);
         newEvent.x = position.x;
         newEvent.y = position.y;

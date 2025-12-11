@@ -21,6 +21,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
+import org.eclipse.swt.internal.gtk4.*;
 
 /**
  * Instances of this class represent icons that can be placed on the
@@ -297,7 +298,7 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
     }
 
     @Override
-    void gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
+    int gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
         switch(n_press) {
             case 1:
                 {
@@ -317,6 +318,7 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
             default:
                 break;
         }
+        return GTK4.GTK_EVENT_SEQUENCE_NONE;
     }
 
     @Override

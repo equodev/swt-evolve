@@ -38,26 +38,9 @@ import dev.equo.swt.Config;
  */
 public final class Font extends Resource {
 
-    /**
-     * the handle to the OS font resource
-     * (Warning: This field is platform dependent)
-     * <p>
-     * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
-     * public API. It is marked public only so that it can be shared
-     * within the packages provided by SWT. It is not available on all
-     * platforms and should never be accessed from application code.
-     * </p>
-     *
-     * @noreference This field is not intended to be referenced by clients.
-     */
-    public long handle;
-
-    /**
-     * Prevents uninitialized instances from being created outside the package.
-     */
-    Font(Device device) {
+    Font(Device device, long handle, int zoom) {
         this((IFont) null);
-        setImpl(Config.isEquo(Font.class) ? new DartFont(device, this) : new SwtFont(device, this));
+        setImpl(Config.isEquo(Font.class) ? new DartFont(device, handle, zoom, this) : new SwtFont(device, handle, zoom, this));
     }
 
     /**
@@ -145,12 +128,6 @@ public final class Font extends Resource {
      * @see #dispose()
      */
     public Font(Device device, String name, int height, int style) {
-        this((IFont) null);
-        setImpl(Config.isEquo(Font.class) ? new DartFont(device, name, height, style, this) : new SwtFont(device, name, height, style, this));
-    }
-
-    /*public*/
-    Font(Device device, String name, float height, int style) {
         this((IFont) null);
         setImpl(Config.isEquo(Font.class) ? new DartFont(device, name, height, style, this) : new SwtFont(device, name, height, style, this));
     }

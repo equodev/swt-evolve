@@ -358,7 +358,7 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
      */
     public Point getSize() {
         checkWidget();
-        return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getSizeInPixels(), getZoom());
     }
 
     public Point getSizeInPixels() {
@@ -416,7 +416,7 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
      */
     public Rectangle getThumbBounds() {
         checkWidget();
-        return DPIUtil.scaleDown(getThumbBoundsInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getThumbBoundsInPixels(), getZoom());
     }
 
     Rectangle getThumbBoundsInPixels() {
@@ -462,7 +462,7 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
      */
     public Rectangle getThumbTrackBounds() {
         checkWidget();
-        return DPIUtil.scaleDown(getThumbTrackBoundsInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getThumbTrackBoundsInPixels(), getZoom());
     }
 
     Rectangle getThumbTrackBoundsInPixels() {

@@ -475,9 +475,10 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                     }
                 }
             }
-            Point screenDPI = styledText.getDisplay().getDPI();
             Point printerDPI = printer.getDPI();
             resources = new HashMap<>();
+            int scaleFactorX = printerDPI.x / 100;
+            int scaleFactorY = printerDPI.y / 100;
             for (int i = 0; i < lineCount; i++) {
                 Color color = ((DartStyledTextRenderer) printerRenderer.getImpl()).getLineBackground(i, null);
                 if (color != null) {
@@ -494,7 +495,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 }
                 int indent = ((DartStyledTextRenderer) printerRenderer.getImpl()).getLineIndent(i, 0);
                 if (indent != 0) {
-                    ((DartStyledTextRenderer) printerRenderer.getImpl()).setLineIndent(i, 1, indent * printerDPI.x / screenDPI.x);
+                    ((DartStyledTextRenderer) printerRenderer.getImpl()).setLineIndent(i, 1, indent * scaleFactorX);
                 }
             }
             StyleRange[] styles = ((DartStyledTextRenderer) printerRenderer.getImpl()).styles;
@@ -538,17 +539,17 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 if (!printOptions.printTextFontStyle) {
                     style.fontStyle = SWT.NORMAL;
                 }
-                style.rise = style.rise * printerDPI.y / screenDPI.y;
+                style.rise = style.rise * scaleFactorY;
                 GlyphMetrics metrics = style.metrics;
                 if (metrics != null) {
-                    metrics.ascent = metrics.ascent * printerDPI.y / screenDPI.y;
-                    metrics.descent = metrics.descent * printerDPI.y / screenDPI.y;
-                    metrics.width = metrics.width * printerDPI.x / screenDPI.x;
+                    metrics.ascent = metrics.ascent * scaleFactorY;
+                    metrics.descent = metrics.descent * scaleFactorY;
+                    metrics.width = metrics.width * scaleFactorX;
                 }
             }
-            lineSpacing = styledText.getImpl()._lineSpacing() * printerDPI.y / screenDPI.y;
+            lineSpacing = styledText.getImpl()._lineSpacing() * scaleFactorY;
             if (printOptions.printLineNumbers) {
-                printMargin = 3 * printerDPI.x / screenDPI.x;
+                printMargin = 3 * scaleFactorX;
             }
         }
 
@@ -1270,33 +1271,49 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 }
             }
         } else {
+            int lineCount = content.getLineCount();
             if (delta >= 0) {
                 delta -= topIndexY;
-                int lineIndex = topIndex;
-                int lineCount = content.getLineCount();
+                int lineIndex = Math.max(0, topIndex);
                 while (lineIndex < lineCount) {
                     if (delta <= 0)
                         break;
-                    delta -= ((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex++);
+                    delta -= ((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex);
+                    lineIndex++;
                 }
-                if (lineIndex < lineCount && -delta + ((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex) <= clientAreaHeight - topMargin - bottomMargin) {
+                int lineHeight = 0;
+                if (lineExists(lineIndex)) {
+                    lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex);
+                }
+                if (lineIndex < lineCount && -delta + lineHeight <= clientAreaHeight - topMargin - bottomMargin) {
                     topIndex = lineIndex;
                     topIndexY = -delta;
                 } else {
                     topIndex = lineIndex - 1;
-                    topIndexY = -((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(topIndex) - delta;
+                    if (lineExists(topIndex)) {
+                        topIndexY = -((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(topIndex);
+                    }
+                    topIndexY -= delta;
                 }
             } else {
                 delta -= topIndexY;
                 int lineIndex = topIndex;
                 while (lineIndex > 0) {
-                    int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex - 1);
+                    int previousLineIndex = lineIndex - 1;
+                    int lineHeight = 0;
+                    if (lineExists(previousLineIndex)) {
+                        lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(previousLineIndex);
+                    }
                     if (delta + lineHeight > 0)
                         break;
                     delta += lineHeight;
                     lineIndex--;
                 }
-                if (lineIndex == 0 || -delta + ((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex) <= clientAreaHeight - topMargin - bottomMargin) {
+                int lineHeight = 0;
+                if (lineExists(lineIndex)) {
+                    lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getCachedLineHeight(lineIndex);
+                }
+                if (lineIndex == 0 || -delta + lineHeight <= clientAreaHeight - topMargin - bottomMargin) {
                     topIndex = lineIndex;
                     topIndexY = -delta;
                 } else {
@@ -1551,13 +1568,24 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             int lineIndex = topIndex - 1;
             maxHeight = -topIndexY;
             if (topIndexY > 0) {
-                maxHeight += ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex--);
+                if (lineExists(lineIndex)) {
+                    maxHeight += ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
+                }
+                lineIndex--;
             }
             while (height > maxHeight && lineIndex >= 0) {
-                maxHeight += ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex--);
+                if (lineExists(lineIndex)) {
+                    maxHeight += ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(lineIndex);
+                }
+                lineIndex--;
             }
         }
         return Math.min(height, maxHeight);
+    }
+
+    private boolean lineExists(int lineNumber) {
+        int lineCount = content.getLineCount();
+        return lineNumber >= 0 && lineNumber < lineCount;
     }
 
     int getAvailableHeightBellow(int height) {
@@ -1771,30 +1799,30 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             leftCaretBitmap.dispose();
         }
         int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
-        leftCaretBitmap = new Image(display, caretWidth, lineHeight);
-        GC gc = new GC(leftCaretBitmap);
-        gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
-        gc.fillRectangle(0, 0, caretWidth, lineHeight);
-        gc.setForeground(display.getSystemColor(SWT.COLOR_WHITE));
-        gc.drawLine(0, 0, 0, lineHeight);
-        gc.drawLine(0, 0, caretWidth - 1, 0);
-        gc.drawLine(0, 1, 1, 1);
-        gc.dispose();
+        final ImageGcDrawer leftCaretDrawer = (gc, width, height) -> {
+            gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+            gc.fillRectangle(0, 0, width, height);
+            gc.setForeground(display.getSystemColor(SWT.COLOR_WHITE));
+            gc.drawLine(0, 0, 0, height);
+            gc.drawLine(0, 0, width - 1, 0);
+            gc.drawLine(0, 1, 1, 1);
+        };
+        leftCaretBitmap = new Image(display, leftCaretDrawer, caretWidth, lineHeight);
         if (rightCaretBitmap != null) {
             if (defaultCaret != null && rightCaretBitmap.equals(defaultCaret.getImage())) {
                 defaultCaret.setImage(null);
             }
             rightCaretBitmap.dispose();
         }
-        rightCaretBitmap = new Image(display, caretWidth, lineHeight);
-        gc = new GC(rightCaretBitmap);
-        gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
-        gc.fillRectangle(0, 0, caretWidth, lineHeight);
-        gc.setForeground(display.getSystemColor(SWT.COLOR_WHITE));
-        gc.drawLine(caretWidth - 1, 0, caretWidth - 1, lineHeight);
-        gc.drawLine(0, 0, caretWidth - 1, 0);
-        gc.drawLine(caretWidth - 1, 1, 1, 1);
-        gc.dispose();
+        final ImageGcDrawer rightCaretDrawer = (gc, width, height) -> {
+            gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+            gc.fillRectangle(0, 0, width, height);
+            gc.setForeground(display.getSystemColor(SWT.COLOR_WHITE));
+            gc.drawLine(width - 1, 0, width - 1, height);
+            gc.drawLine(0, 0, width - 1, 0);
+            gc.drawLine(width - 1, 1, 1, 1);
+        };
+        rightCaretBitmap = new Image(display, rightCaretDrawer, caretWidth, lineHeight);
     }
 
     /**
@@ -4169,11 +4197,13 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             return topIndexY + topMargin;
         int height = topIndexY;
         if (lineIndex > topIndex) {
-            for (int i = topIndex; i < lineIndex; i++) {
+            for (int i = Math.max(topIndex, 0); i < Math.min(lineIndex, lineCount); i++) {
                 height += ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(i);
             }
         } else {
-            for (int i = topIndex - 1; i >= lineIndex; i--) {
+            int lastLineToConsider = Math.min(topIndex - 1, lineCount - 1);
+            int firstLineToConsider = Math.max(0, lineIndex);
+            for (int i = firstLineToConsider; i <= lastLineToConsider; i++) {
                 height -= ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(i);
             }
         }
@@ -4209,10 +4239,18 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             }
         } else {
             int lineCount = content.getLineCount();
-            int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(line);
+            int lineHeight = 0;
+            if (lineExists(line)) {
+                lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(line);
+            }
             while (y - lineHeight >= topIndexY && line < lineCount - 1) {
                 y -= lineHeight;
-                lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(++line);
+                ++line;
+                if (lineExists(line)) {
+                    lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight(line);
+                } else {
+                    lineHeight = 0;
+                }
             }
         }
         return line;
@@ -6349,7 +6387,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         }
         int firstLine = content.getLineAtOffset(lastTextChangeStart);
         resetCache(firstLine, 0);
-        if (!isFixedLineHeight() && topIndex > firstLine) {
+        if (!isFixedLineHeight() && isFocusControl() && topIndex > firstLine) {
             topIndex = firstLine;
             if (topIndex < 0) {
                 // TODO: This logging is in place to determine why topIndex is getting set to negative values.
@@ -8228,7 +8266,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         int maxLineIndex = ((DartStyledTextRenderer) renderer.getImpl()).maxWidthLineIndex;
         ((DartStyledTextRenderer) renderer.getImpl()).reset(lines);
         ((DartStyledTextRenderer) renderer.getImpl()).calculateClientArea();
-        if (0 <= maxLineIndex && maxLineIndex < content.getLineCount()) {
+        if (lineExists(maxLineIndex)) {
             ((DartStyledTextRenderer) renderer.getImpl()).calculate(maxLineIndex, 1);
         }
         setScrollBars(true);
@@ -8244,7 +8282,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         int maxLineIndex = ((DartStyledTextRenderer) renderer.getImpl()).maxWidthLineIndex;
         ((DartStyledTextRenderer) renderer.getImpl()).reset(firstLine, count);
         ((DartStyledTextRenderer) renderer.getImpl()).calculateClientArea();
-        if (0 <= maxLineIndex && maxLineIndex < content.getLineCount()) {
+        if (lineExists(maxLineIndex)) {
             ((DartStyledTextRenderer) renderer.getImpl()).calculate(maxLineIndex, 1);
         }
         setScrollBars(true);
@@ -9474,7 +9512,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         int keyInt = key & SWT.KEY_MASK;
         char keyChar = (char) keyInt;
         /**
-         * Bug 440535: Make sure the key getting mapped to letter is in defiened
+         * Bug 440535: Make sure the key getting mapped to letter is in defined
          * character range and filter out incorrect int to char typecasting. For
          * Example: SWT.KEYPAD_CR int gets wrongly type-cast to char letter 'p'
          */
@@ -11455,11 +11493,15 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static void updateAndRefreshCarets(StyledText styledText, Consumer<Caret> caretUpdater) {
-        caretUpdater.accept(styledText.getCaret());
-        caretUpdater.accept(styledText.getImpl()._defaultCaret());
-        for (Caret caret : styledText.getImpl()._carets()) {
-            caretUpdater.accept(caret);
+        Set<Caret> caretSet = new HashSet<>();
+        caretSet.add(styledText.getCaret());
+        caretSet.add(styledText.getImpl()._defaultCaret());
+        if (styledText.getImpl()._carets() != null) {
+            for (Caret caret : styledText.getImpl()._carets()) {
+                caretSet.add(caret);
+            }
         }
+        caretSet.stream().filter(Objects::nonNull).forEach(caretUpdater);
         ((DartStyledText) styledText.getImpl()).updateCaretVisibility();
         ((DartStyledText) styledText.getImpl()).setCaretLocations();
     }

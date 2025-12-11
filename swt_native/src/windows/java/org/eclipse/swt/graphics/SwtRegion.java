@@ -16,6 +16,7 @@
 package org.eclipse.swt.graphics;
 
 import java.util.*;
+import java.util.function.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
@@ -36,11 +37,13 @@ import org.eclipse.swt.internal.win32.*;
  */
 public final class SwtRegion extends SwtResource implements IRegion {
 
-    private int initialZoom;
-
-    private HashMap<Integer, Long> zoomToHandle = new HashMap<>();
+    private Map<Integer, RegionHandle> zoomToHandle = new HashMap<>();
 
     private List<Operation> operations = new ArrayList<>();
+
+    private boolean isDestroyed;
+
+    private int temporaryHandleZoomHint = 0;
 
     /**
      * Constructs a new empty region.
@@ -79,11 +82,6 @@ public final class SwtRegion extends SwtResource implements IRegion {
      */
     public SwtRegion(Device device, Region api) {
         super(device, api);
-        initialZoom = DPIUtil.getDeviceZoom();
-        long handle = OS.CreateRectRgn(0, 0, 0, 0);
-        zoomToHandle.put(initialZoom, handle);
-        if (handle == 0)
-            SWT.error(SWT.ERROR_NO_HANDLES);
         init();
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }
@@ -182,8 +180,17 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        final Operation operation = new OperationWithRegion(Operation::add, region);
-        storeAndApplyOperationForAllHandles(operation);
+        if (!((SwtRegion) region.getImpl()).operations.isEmpty()) {
+            adoptTemporaryHandleZoomHint(region);
+            final Operation operation = new OperationWithRegion(Operation::add, ((SwtRegion) region.getImpl()).operations);
+            storeAndApplyOperationForAllHandles(operation);
+        }
+    }
+
+    private void adoptTemporaryHandleZoomHint(Region region) {
+        if (temporaryHandleZoomHint == 0 && ((SwtRegion) region.getImpl()).temporaryHandleZoomHint != 0) {
+            this.temporaryHandleZoomHint = ((SwtRegion) region.getImpl()).temporaryHandleZoomHint;
+        }
     }
 
     /**
@@ -202,11 +209,16 @@ public final class SwtRegion extends SwtResource implements IRegion {
     public boolean contains(int x, int y) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return containsInPixels(DPIUtil.scaleUp(x, initialZoom), DPIUtil.scaleUp(y, initialZoom));
+        return applyUsingAnyHandle(regionHandle -> {
+            int zoom = regionHandle.zoom();
+            int xInPixels = Win32DPIUtils.pointToPixel(x, zoom);
+            int yInPixels = Win32DPIUtils.pointToPixel(y, zoom);
+            return containsInPixels(regionHandle.handle(), xInPixels, yInPixels);
+        });
     }
 
-    boolean containsInPixels(int x, int y) {
-        return OS.PtInRegion(getHandleForInitialZoom(), x, y);
+    boolean containsInPixels(long handle, int x, int y) {
+        return OS.PtInRegion(handle, x, y);
     }
 
     /**
@@ -229,24 +241,28 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (pt == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        Point p = DPIUtil.scaleUp(pt, initialZoom);
-        return containsInPixels(p.x, p.y);
+        return applyUsingAnyHandle(regionHandle -> {
+            int zoom = regionHandle.zoom();
+            Point p = Win32DPIUtils.pointToPixel(pt, zoom);
+            return containsInPixels(regionHandle.handle(), p.x, p.y);
+        });
     }
 
     @Override
     void destroy() {
         ((SwtDevice) device.getImpl()).deregisterResourceWithZoomSupport(this.getApi());
-        zoomToHandle.values().forEach(handle -> OS.DeleteObject(handle));
+        zoomToHandle.values().forEach(RegionHandle::destroy);
         zoomToHandle.clear();
         operations.clear();
+        this.isDestroyed = true;
     }
 
     @Override
     void destroyHandlesExcept(Set<Integer> zoomLevels) {
         zoomToHandle.entrySet().removeIf(entry -> {
             final Integer zoom = entry.getKey();
-            if (!zoomLevels.contains(zoom) && zoom != initialZoom) {
-                OS.DeleteObject(entry.getValue());
+            if (!zoomLevels.contains(zoom)) {
+                entry.getValue().destroy();
                 return true;
             }
             return false;
@@ -265,12 +281,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
      */
     @Override
     public boolean equals(Object object) {
-        if (this.getApi() == object)
-            return true;
-        if (!(object instanceof Region))
-            return false;
-        Region rgn = (Region) object;
-        return getHandleForInitialZoom() == ((SwtRegion) rgn.getImpl()).getHandleForInitialZoom();
+        return super.equals(object);
     }
 
     /**
@@ -289,12 +300,14 @@ public final class SwtRegion extends SwtResource implements IRegion {
     public Rectangle getBounds() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return DPIUtil.scaleDown(getBoundsInPixels(), initialZoom);
+        return applyUsingAnyHandle(regionHandle -> {
+            return Win32DPIUtils.pixelToPoint(getBoundsInPixels(regionHandle.handle()), regionHandle.zoom());
+        });
     }
 
-    Rectangle getBoundsInPixels() {
+    private Rectangle getBoundsInPixels(long handle) {
         RECT rect = new RECT();
-        OS.GetRgnBox(getHandleForInitialZoom(), rect);
+        OS.GetRgnBox(handle, rect);
         return new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
     }
 
@@ -310,7 +323,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
      */
     @Override
     public int hashCode() {
-        return (int) getHandleForInitialZoom();
+        return super.hashCode();
     }
 
     /**
@@ -387,8 +400,11 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        final Operation operation = new OperationWithRegion(Operation::intersect, region);
-        storeAndApplyOperationForAllHandles(operation);
+        if (!((SwtRegion) region.getImpl()).operations.isEmpty()) {
+            adoptTemporaryHandleZoomHint(region);
+            final Operation operation = new OperationWithRegion(Operation::intersect, ((SwtRegion) region.getImpl()).operations);
+            storeAndApplyOperationForAllHandles(operation);
+        }
     }
 
     /**
@@ -411,13 +427,13 @@ public final class SwtRegion extends SwtResource implements IRegion {
     public boolean intersects(int x, int y, int width, int height) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return intersectsInPixels(DPIUtil.scaleUp(x, initialZoom), DPIUtil.scaleUp(y, initialZoom), DPIUtil.scaleUp(width, initialZoom), DPIUtil.scaleUp(height, initialZoom));
+        return intersects(new Rectangle(x, y, width, height));
     }
 
-    boolean intersectsInPixels(int x, int y, int width, int height) {
+    boolean intersectsInPixels(long handle, int x, int y, int width, int height) {
         RECT r = new RECT();
         OS.SetRect(r, x, y, x + width, y + height);
-        return OS.RectInRegion(getHandleForInitialZoom(), r);
+        return OS.RectInRegion(handle, r);
     }
 
     /**
@@ -442,8 +458,10 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (rect == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        Rectangle r = DPIUtil.scaleUp(rect, initialZoom);
-        return intersectsInPixels(r.x, r.y, r.width, r.height);
+        return applyUsingAnyHandle(regionHandle -> {
+            Rectangle r = Win32DPIUtils.pointToPixel(rect, regionHandle.zoom());
+            return intersectsInPixels(regionHandle.handle(), r.x, r.y, r.width, r.height);
+        });
     }
 
     /**
@@ -458,7 +476,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
      */
     @Override
     public boolean isDisposed() {
-        return zoomToHandle.isEmpty();
+        return isDestroyed;
     }
 
     /**
@@ -476,10 +494,27 @@ public final class SwtRegion extends SwtResource implements IRegion {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         RECT rect = new RECT();
-        int result = OS.GetRgnBox(getHandleForInitialZoom(), rect);
-        if (result == OS.NULLREGION)
-            return true;
-        return ((rect.right - rect.left) <= 0) || ((rect.bottom - rect.top) <= 0);
+        return applyUsingAnyHandle(regionHandle -> {
+            int result = OS.GetRgnBox(regionHandle.handle(), rect);
+            if (result == OS.NULLREGION)
+                return true;
+            return ((rect.right - rect.left) <= 0) || ((rect.bottom - rect.top) <= 0);
+        });
+    }
+
+    /**
+     * Specific method for {@link GC#getClipping(Region)} because the current GC
+     * clipping settings at that specific point in time of executing the getClipping
+     * method need to be stored.
+     * <p>
+     * The context zoom is used as a hint for the case of creating temporary
+     * handles, such that they can be created for a zoom for which we know that the
+     * supplier is capable of providing a proper handle.
+     */
+    void set(Function<Integer, Long> handleForZoomSupplier, int contextZoom) {
+        this.temporaryHandleZoomHint = contextZoom;
+        final Operation operation = new OperationWithRegionHandle(Operation::set, handleForZoomSupplier);
+        storeAndApplyOperationForAllHandles(operation);
     }
 
     /**
@@ -580,8 +615,11 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        final Operation operation = new OperationWithRegion(Operation::subtract, region);
-        storeAndApplyOperationForAllHandles(operation);
+        if (!((SwtRegion) region.getImpl()).operations.isEmpty()) {
+            adoptTemporaryHandleZoomHint(region);
+            final Operation operation = new OperationWithRegion(Operation::subtract, ((SwtRegion) region.getImpl()).operations);
+            storeAndApplyOperationForAllHandles(operation);
+        }
     }
 
     /**
@@ -628,13 +666,52 @@ public final class SwtRegion extends SwtResource implements IRegion {
         storeAndApplyOperationForAllHandles(operation);
     }
 
-    private long getHandleForInitialZoom() {
-        return win32_getHandle(this.getApi(), initialZoom);
-    }
-
     private void storeAndApplyOperationForAllHandles(Operation operation) {
         operations.add(operation);
-        zoomToHandle.forEach((zoom, handle) -> operation.apply(handle, zoom));
+        zoomToHandle.forEach((zoom, handle) -> operation.apply(handle));
+    }
+
+    private <T> T applyUsingAnyHandle(Function<RegionHandle, T> function) {
+        if (zoomToHandle.isEmpty()) {
+            int temporaryHandleZoom = temporaryHandleZoomHint != 0 ? temporaryHandleZoomHint : device.getDeviceZoom();
+            return applyUsingTemporaryHandle(temporaryHandleZoom, operations, function);
+        }
+        return function.apply(zoomToHandle.values().iterator().next());
+    }
+
+    private static <T> T applyUsingTemporaryHandle(int zoom, List<Operation> operations, Function<RegionHandle, T> function) {
+        RegionHandle temporaryHandle = newRegionHandle(zoom, operations);
+        try {
+            return function.apply(temporaryHandle);
+        } finally {
+            temporaryHandle.destroy();
+        }
+    }
+
+    private static RegionHandle newRegionHandle(int zoom, List<Operation> operations) {
+        long newHandle = OS.CreateRectRgn(0, 0, 0, 0);
+        if (newHandle == 0)
+            SWT.error(SWT.ERROR_NO_HANDLES);
+        RegionHandle newRegionHandle = new RegionHandle(newHandle, zoom);
+        for (Operation operation : operations) {
+            operation.apply(newRegionHandle);
+        }
+        return newRegionHandle;
+    }
+
+    private RegionHandle getRegionHandle(int zoom) {
+        if (!zoomToHandle.containsKey(zoom)) {
+            RegionHandle regionHandle = newRegionHandle(zoom, operations);
+            zoomToHandle.put(zoom, regionHandle);
+        }
+        return zoomToHandle.get(zoom);
+    }
+
+    Region copy() {
+        Region region = new Region();
+        ((SwtRegion) region.getImpl()).temporaryHandleZoomHint = temporaryHandleZoomHint;
+        ((SwtRegion) region.getImpl()).operations.addAll(operations);
+        return region;
     }
 
     /**
@@ -655,14 +732,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static long win32_getHandle(Region region, int zoom) {
-        if (!((SwtRegion) region.getImpl()).zoomToHandle.containsKey(zoom)) {
-            long handle = OS.CreateRectRgn(0, 0, 0, 0);
-            for (Operation operation : ((SwtRegion) region.getImpl()).operations) {
-                operation.apply(handle, zoom);
-            }
-            ((SwtRegion) region.getImpl()).zoomToHandle.put(zoom, handle);
-        }
-        return ((SwtRegion) region.getImpl()).zoomToHandle.get(zoom);
+        return ((SwtRegion) region.getImpl()).getRegionHandle(zoom).handle();
     }
 
     /**
@@ -678,23 +748,32 @@ public final class SwtRegion extends SwtResource implements IRegion {
         return "Region {" + zoomToHandle.entrySet().stream().map(entry -> entry.getValue() + "(zoom:" + entry.getKey() + ")").collect(Collectors.joining(","));
     }
 
+    private record RegionHandle(long handle, int zoom) {
+
+        void destroy() {
+            OS.DeleteObject(handle());
+        }
+    }
+
     @FunctionalInterface
     private interface OperationStrategy {
 
         void apply(Operation operation, long handle, int zoom);
     }
 
-    private abstract class Operation {
+    private abstract static class Operation {
 
-        private OperationStrategy operationStrategy;
+        private final OperationStrategy operationStrategy;
 
         Operation(OperationStrategy operationStrategy) {
             this.operationStrategy = operationStrategy;
         }
 
-        void apply(long handle, int zoom) {
-            operationStrategy.apply(this, handle, zoom);
+        void apply(RegionHandle regionHandle) {
+            operationStrategy.apply(this, regionHandle.handle(), regionHandle.zoom());
         }
+
+        abstract void set(long handle, int zoom);
 
         abstract void add(long handle, int zoom);
 
@@ -705,13 +784,18 @@ public final class SwtRegion extends SwtResource implements IRegion {
         abstract void translate(long handle, int zoom);
     }
 
-    private class OperationWithRectangle extends Operation {
+    private static class OperationWithRectangle extends Operation {
 
-        Rectangle data;
+        private final Rectangle data;
 
         OperationWithRectangle(OperationStrategy operationStrategy, Rectangle data) {
             super(operationStrategy);
             this.data = data;
+        }
+
+        @Override
+        void set(long handle, int zoom) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -762,17 +846,22 @@ public final class SwtRegion extends SwtResource implements IRegion {
         }
 
         private Rectangle getScaledRectangle(int zoom) {
-            return DPIUtil.scaleUp(data, zoom);
+            return Win32DPIUtils.pointToPixel(data, zoom);
         }
     }
 
-    private class OperationWithArray extends Operation {
+    private static class OperationWithArray extends Operation {
 
-        int[] data;
+        private final int[] data;
 
         public OperationWithArray(OperationStrategy operationStrategy, int[] data) {
             super(operationStrategy);
             this.data = data;
+        }
+
+        @Override
+        void set(long handle, int zoom) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -810,13 +899,13 @@ public final class SwtRegion extends SwtResource implements IRegion {
         }
 
         private int[] getScaledPoints(int zoom) {
-            return DPIUtil.scaleUp(data, zoom);
+            return Win32DPIUtils.pointToPixel(data, zoom);
         }
     }
 
-    private class OperationWithPoint extends Operation {
+    private static class OperationWithPoint extends Operation {
 
-        Point data;
+        private final Point data;
 
         public OperationWithPoint(OperationStrategy operationStrategy, Point data) {
             super(operationStrategy);
@@ -824,6 +913,11 @@ public final class SwtRegion extends SwtResource implements IRegion {
         }
 
         @Override
+        void set(long handle, int zoom) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         void add(long handle, int zoom) {
             throw new UnsupportedOperationException();
         }
@@ -840,36 +934,74 @@ public final class SwtRegion extends SwtResource implements IRegion {
 
         @Override
         void translate(long handle, int zoom) {
-            Point pt = DPIUtil.scaleUp((Point) data, zoom);
+            Point pt = Win32DPIUtils.pointToPixel((Point) data, zoom);
             OS.OffsetRgn(handle, pt.x, pt.y);
         }
     }
 
-    private class OperationWithRegion extends Operation {
+    private static class OperationWithRegion extends Operation {
 
-        Region data;
+        private final List<Operation> operations;
 
-        OperationWithRegion(OperationStrategy operationStrategy, Region data) {
+        OperationWithRegion(OperationStrategy operationStrategy, List<Operation> operations) {
             super(operationStrategy);
-            this.data = data;
+            this.operations = List.copyOf(operations);
+        }
+
+        @Override
+        void set(long handle, int zoom) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         void add(long handle, int zoom) {
-            long scaledHandle = getHandleForScaledRegion(zoom);
-            OS.CombineRgn(handle, handle, scaledHandle, OS.RGN_OR);
+            applyUsingTemporaryHandle(zoom, operations, regionHandle -> {
+                return OS.CombineRgn(handle, handle, regionHandle.handle(), OS.RGN_OR);
+            });
         }
 
         @Override
         void subtract(long handle, int zoom) {
-            long scaledHandle = getHandleForScaledRegion(zoom);
-            OS.CombineRgn(handle, handle, scaledHandle, OS.RGN_DIFF);
+            applyUsingTemporaryHandle(zoom, operations, regionHandle -> {
+                return OS.CombineRgn(handle, handle, regionHandle.handle(), OS.RGN_DIFF);
+            });
         }
 
         @Override
         void intersect(long handle, int zoom) {
-            long scaledHandle = getHandleForScaledRegion(zoom);
-            OS.CombineRgn(handle, handle, scaledHandle, OS.RGN_AND);
+            applyUsingTemporaryHandle(zoom, operations, regionHandle -> {
+                return OS.CombineRgn(handle, handle, regionHandle.handle(), OS.RGN_AND);
+            });
+        }
+
+        @Override
+        void translate(long handle, int zoom) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class OperationWithRegionHandle extends Operation {
+
+        private final Function<Integer, Long> handleForZoomProvider;
+
+        OperationWithRegionHandle(OperationStrategy operationStrategy, Function<Integer, Long> handleForZoomSupplier) {
+            super(operationStrategy);
+            this.handleForZoomProvider = handleForZoomSupplier;
+        }
+
+        @Override
+        void set(long handle, int zoom) {
+            OS.CombineRgn(handle, handleForZoomProvider.apply(zoom), 0, OS.RGN_COPY);
+        }
+
+        @Override
+        void subtract(long handle, int zoom) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        void intersect(long handle, int zoom) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -877,10 +1009,9 @@ public final class SwtRegion extends SwtResource implements IRegion {
             throw new UnsupportedOperationException();
         }
 
-        private long getHandleForScaledRegion(int zoom) {
-            if (data.isDisposed() || data == SwtRegion.this.getApi())
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-            return win32_getHandle(data, zoom);
+        @Override
+        void add(long handle, int zoom) {
+            throw new UnsupportedOperationException();
         }
     }
 

@@ -16,6 +16,7 @@
 package org.eclipse.swt.graphics;
 
 import java.io.*;
+import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.CompiledJson;
 import com.dslplatform.json.CompiledJson.*;
 
@@ -44,7 +45,7 @@ import com.dslplatform.json.CompiledJson.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 @CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
-public final class Point implements Serializable {
+public sealed class Point implements Serializable permits Point.OfFloat {
 
     /**
      * the x coordinate of the point
@@ -81,11 +82,16 @@ public final class Point implements Serializable {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
-            return true;
-        if (!(object instanceof Point p))
+        if (object == null) {
             return false;
-        return (p.x == this.x) && (p.y == this.y);
+        }
+        if (object == this) {
+            return true;
+        }
+        if (!(object instanceof Point other)) {
+            return false;
+        }
+        return (other.x == this.x) && (other.y == this.y);
     }
 
     /**
@@ -113,5 +119,82 @@ public final class Point implements Serializable {
     public String toString() {
         //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         return "Point {" + x + ", " + y + "}";
+    }
+
+    /**
+     * Instances of this class represent {@link org.eclipse.swt.graphics.Point}
+     * objects with the fields capable of storing more precise value in float.
+     *
+     * @since 3.131
+     * @noreference This class is not intended to be referenced by clients
+     */
+    public static sealed class OfFloat extends Point permits Point.WithMonitor {
+
+        private static final long serialVersionUID = -1862062276431597053L;
+
+        public float residualX, residualY;
+
+        public OfFloat(int x, int y) {
+            super(x, y);
+        }
+
+        public OfFloat(float x, float y) {
+            super(Math.round(x), Math.round(y));
+            this.residualX = x - this.x;
+            this.residualY = y - this.y;
+        }
+
+        public float getX() {
+            return x + residualX;
+        }
+
+        public float getY() {
+            return y + residualY;
+        }
+
+        public void setX(float x) {
+            this.x = Math.round(x);
+            this.residualX = x - this.x;
+        }
+
+        public void setY(float y) {
+            this.y = Math.round(y);
+            this.residualY = y - this.y;
+        }
+    }
+
+    /**
+     * Instances of this class represent {@link org.eclipse.swt.graphics.Point.OfFloat}
+     * objects along with the context of the monitor in relation to which they are
+     * placed on the display. The monitor awareness makes it easy to scale and
+     * translate the points between pixels and points.
+     *
+     * @since 3.131
+     * @noreference This class is not intended to be referenced by clients
+     */
+    public static final class WithMonitor extends Point.OfFloat {
+
+        private static final long serialVersionUID = 6077427420686999194L;
+
+        private final Monitor monitor;
+
+        /**
+         * Constructs a new Point.WithMonitor
+         *
+         * @param x       the x coordinate of the point
+         * @param y       the y coordinate of the point
+         * @param monitor the monitor with whose context the point is created
+         */
+        public WithMonitor(int x, int y, Monitor monitor) {
+            super(x, y);
+            this.monitor = monitor;
+        }
+
+        /**
+         * {@return the monitor with whose context the instance is created}
+         */
+        public Monitor getMonitor() {
+            return monitor;
+        }
     }
 }

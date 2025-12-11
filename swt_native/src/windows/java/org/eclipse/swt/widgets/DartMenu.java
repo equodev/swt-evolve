@@ -285,14 +285,14 @@ public class DartMenu extends DartWidget implements IMenu {
     }
 
     void createItem(MenuItem item, int index) {
-        ((SwtDisplay) display.getImpl()).addMenuItem(item);
-        if (needsMenuCallback()) {
-            /*
-		 * Bug in Windows: when MIIM_BITMAP is used together with MFT_STRING,
-		 * InsertMenuItem() fails. The workaround is to set MIIM_BITMAP with
-		 * a separate SetMenuItemInfo().
-		 */
-        }
+        if (items == null)
+            items = new MenuItem[0];
+        MenuItem[] newItems = new MenuItem[items.length + 1];
+        System.arraycopy(items, 0, newItems, 0, index);
+        newItems[index] = item;
+        System.arraycopy(items, index, newItems, index + 1, items.length - index);
+        items = newItems;
+        ((DartWidget) item.getImpl()).register();
         redraw();
     }
 
@@ -1097,8 +1097,8 @@ public class DartMenu extends DartWidget implements IMenu {
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        location = ((SwtDisplay) getDisplay().getImpl()).translateLocationInPixelsInDisplayCoordinateSystem(location.x, location.y);
-        setLocationInPixels(location.x, location.y);
+        Point locationInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(location, getZoom());
+        setLocationInPixels(locationInPixels.x, locationInPixels.y);
         this.location = location;
     }
 

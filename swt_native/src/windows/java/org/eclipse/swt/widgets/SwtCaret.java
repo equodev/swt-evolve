@@ -132,12 +132,12 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return DPIUtil.scaleDown(getBoundsInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), getZoom());
     }
 
     Rectangle getBoundsInPixels() {
         if (image != null) {
-            Rectangle rect = image.getBoundsInPixels();
+            Rectangle rect = Win32DPIUtils.pointToPixel(image.getBounds(), getZoom());
             return new Rectangle(getXInPixels(), getYInPixels(), rect.width, rect.height);
         }
         if (width == 0) {
@@ -163,7 +163,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
         checkWidget();
         if (font == null) {
             long hFont = defaultFont();
-            return SwtFont.win32_new(display, hFont, getZoom());
+            return SwtFont.win32_new(display, hFont, getNativeZoom());
         }
         return font;
     }
@@ -226,12 +226,12 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public Point getSize() {
         checkWidget();
-        return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getSizeInPixels(), getZoom());
     }
 
     public Point getSizeInPixels() {
         if (image != null) {
-            Rectangle rect = image.getBoundsInPixels();
+            Rectangle rect = Win32DPIUtils.pointToPixel(image.getBounds(), getZoom());
             return new Point(rect.width, rect.height);
         }
         if (width == 0) {
@@ -244,19 +244,19 @@ public class SwtCaret extends SwtWidget implements ICaret {
     }
 
     private int getWidthInPixels() {
-        return DPIUtil.scaleUp(width, getZoom());
+        return Win32DPIUtils.pointToPixel(width, getZoom());
     }
 
     private int getHeightInPixels() {
-        return DPIUtil.scaleUp(height, getZoom());
+        return Win32DPIUtils.pointToPixel(height, getZoom());
     }
 
     private int getXInPixels() {
-        return DPIUtil.scaleUp(x, getZoom());
+        return Win32DPIUtils.pointToPixel(x, getZoom());
     }
 
     private int getYInPixels() {
-        return DPIUtil.scaleUp(y, getZoom());
+        return Win32DPIUtils.pointToPixel(y, getZoom());
     }
 
     /**
@@ -508,8 +508,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        Shell shell = parent.getShell();
-        this.font = font == null ? null : SwtFont.win32_new(font, shell.nativeZoom);
+        this.font = font == null ? null : SwtFont.win32_new(font, getNativeZoom());
         if (hasFocus())
             setIMEFont();
     }
@@ -544,7 +543,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
             return;
         long hFont = 0;
         if (font != null)
-            hFont = font.handle;
+            hFont = SWTFontProvider.getFontHandle(font, getNativeZoom());
         if (hFont == 0)
             hFont = defaultFont();
         long hwnd = parent.handle;
@@ -709,21 +708,19 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public static void win32_setHeight(Caret caret, int height) {
         caret.checkWidget();
-        if (caret.getImpl() instanceof SwtCaret) {
-            if (caret.getImpl()._height() == height && ((SwtCaret) caret.getImpl()).isCurrentCaret())
-                return;
-        }
-        if (caret.getImpl() instanceof DartCaret) {
-            ((DartCaret) caret.getImpl()).height = height;
-        }
-        if (caret.getImpl() instanceof SwtCaret) {
-            ((SwtCaret) caret.getImpl()).height = height;
-        }
-        if (caret.getImpl() instanceof DartCaret) {
-            ((DartCaret) caret.getImpl()).resized = true;
-        }
-        if (caret.getImpl() instanceof SwtCaret) {
-            ((SwtCaret) caret.getImpl()).resized = true;
+        if (caret.getImpl()._height() != height) {
+            if (caret.getImpl() instanceof DartCaret) {
+                ((DartCaret) caret.getImpl()).height = height;
+            }
+            if (caret.getImpl() instanceof SwtCaret) {
+                ((SwtCaret) caret.getImpl()).height = height;
+            }
+            if (caret.getImpl() instanceof DartCaret) {
+                ((DartCaret) caret.getImpl()).resized = true;
+            }
+            if (caret.getImpl() instanceof SwtCaret) {
+                ((SwtCaret) caret.getImpl()).resized = true;
+            }
         }
         if (caret.getImpl() instanceof SwtCaret) {
             if (caret.getImpl()._isVisible() && ((SwtCaret) caret.getImpl()).hasFocus())

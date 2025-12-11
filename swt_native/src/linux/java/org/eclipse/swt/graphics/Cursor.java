@@ -191,6 +191,40 @@ public final class Cursor extends Resource {
     }
 
     /**
+     * Constructs a new cursor given a device, image describing
+     * the desired cursor appearance, and the x and y coordinates of
+     * the <em>hotspot</em> (that is, the point within the area
+     * covered by the cursor which is considered to be where the
+     * on-screen pointer is "pointing").
+     * <p>
+     * You must dispose the cursor when it is no longer required.
+     * </p>
+     *
+     * @param device the device on which to allocate the cursor
+     * @param imageDataProvider the ImageDataProvider for the cursor
+     * @param hotspotX the x coordinate of the cursor's hotspot
+     * @param hotspotY the y coordinate of the cursor's hotspot
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if device is null and there is no current device</li>
+     *    <li>ERROR_NULL_ARGUMENT - if the image is null</li>
+     *    <li>ERROR_INVALID_ARGUMENT - if the hotspot is outside the bounds of the
+     * 		 image</li>
+     * </ul>
+     * @exception SWTError <ul>
+     *    <li>ERROR_NO_HANDLES - if a handle could not be obtained for cursor creation</li>
+     * </ul>
+     *
+     * @see #dispose()
+     *
+     * @since 3.131
+     */
+    public Cursor(Device device, ImageDataProvider imageDataProvider, int hotspotX, int hotspotY) {
+        this((ICursor) null);
+        setImpl(new SwtCursor(device, imageDataProvider, hotspotX, hotspotY, this));
+    }
+
+    /**
      * Compares the argument to the receiver, and returns true
      * if they represent the <em>same</em> object using a class
      * specific comparison.

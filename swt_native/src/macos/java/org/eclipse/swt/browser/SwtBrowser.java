@@ -15,7 +15,9 @@
  */
 package org.eclipse.swt.browser;
 
+import java.util.*;
 import org.eclipse.swt.*;
+import org.eclipse.swt.program.*;
 import org.eclipse.swt.widgets.*;
 
 /**
@@ -62,6 +64,9 @@ public class SwtBrowser extends SwtComposite implements IBrowser {
     //$NON-NLS-1$
     static final String PROPERTY_DEFAULTTYPE = "org.eclipse.swt.browser.DefaultType";
 
+    //$NON-NLS-1$
+    static final String WEBIEW_UNAVAILABLE_DISABLED = "org.eclipse.swt.browser.DisableWebViewUnavailableDialog";
+
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.
@@ -101,10 +106,7 @@ public class SwtBrowser extends SwtComposite implements IBrowser {
             parent.getDisplay().setData(NO_INPUT_METHOD, null);
         }
         style = getStyle();
-        webBrowser = new BrowserFactory().createWebBrowser(style);
-        if (webBrowser != null) {
-            webBrowser.setBrowser(this.getApi());
-            webBrowser.create(parent, style);
+        if (createWebBrowser(parent, style)) {
             return;
         }
         dispose();
@@ -123,6 +125,84 @@ public class SwtBrowser extends SwtComposite implements IBrowser {
                 break;
         }
         SWT.error(SWT.ERROR_NO_HANDLES, null, errMsg);
+    }
+
+    private boolean createWebBrowser(Composite parent, int style) {
+        webBrowser = new BrowserFactory().createWebBrowser(style);
+        if (webBrowser == null) {
+            return false;
+        }
+        webBrowser.setBrowser(this.getApi());
+        try {
+            webBrowser.create(parent, style);
+            return true;
+        } catch (SWTError error) {
+            boolean isEdge = "win32".equals(SWT.getPlatform()) && (style & SWT.IE) == 0;
+            if (isEdge && error.code == SWT.ERROR_NOT_IMPLEMENTED) {
+                WebViewUnavailableDialog.showAsync(getShell());
+            }
+            throw error;
+        }
+    }
+
+    private class WebViewUnavailableDialog {
+
+        private record DialogOption(int index, String message) {
+        }
+
+        private static final DialogOption USE_IE_OPTION = new DialogOption(SWT.YES, "Use IE");
+
+        private static final DialogOption MORE_INFORMATION_OPTION = new DialogOption(SWT.NO, "Information");
+
+        private static final DialogOption CANCEL_OPTION = new DialogOption(SWT.CANCEL, "Cancel");
+
+        private static final String DIALOG_TITLE = "Default browser engine not available";
+
+        private static final String DIALOG_MESSAGE = "Microsoft Edge (WebView2) is not available. Do you want to use the legacy Internet Explorer?\n\nNote: It is necessary to reopen browsers for the change to take effect and the effect will be lost at next application start. For information on how to permanently switch to Internet Explorer, press the \"Information\" button.";
+
+        private static final String FAQ_URL = "https://github.com/eclipse-platform/eclipse.platform/tree/master/docs/FAQ/FAQ_How_do_I_use_Edge-IE_as_the_Browser's_underlying_renderer.md";
+
+        private static final int DIALOG_OPTION_FLAGS = USE_IE_OPTION.index | MORE_INFORMATION_OPTION.index | CANCEL_OPTION.index;
+
+        private static final Map<Integer, String> DIALOG_OPTION_LABELS = //
+        Map.//
+        of(//
+        USE_IE_OPTION.index, //
+        USE_IE_OPTION.message, //
+        MORE_INFORMATION_OPTION.index, //
+        MORE_INFORMATION_OPTION.message, CANCEL_OPTION.index, CANCEL_OPTION.message);
+
+        private static boolean shownOnce;
+
+        static void showAsync(Shell parentShell) {
+            if (shownOnce || Boolean.getBoolean(WEBIEW_UNAVAILABLE_DISABLED)) {
+                shownOnce = true;
+                return;
+            }
+            shownOnce = true;
+            parentShell.getDisplay().asyncExec(() -> {
+                processDialog(parentShell);
+            });
+        }
+
+        static private void processDialog(Shell parentShell) {
+            MessageBox fallbackInfoBox = new MessageBox(parentShell, SWT.ICON_ERROR | DIALOG_OPTION_FLAGS);
+            fallbackInfoBox.setText(DIALOG_TITLE);
+            fallbackInfoBox.setMessage(DIALOG_MESSAGE);
+            fallbackInfoBox.setButtonLabels(DIALOG_OPTION_LABELS);
+            boolean completed;
+            do {
+                int result = fallbackInfoBox.open();
+                completed = true;
+                if (result == MORE_INFORMATION_OPTION.index) {
+                    SwtProgram.launch(FAQ_URL);
+                    completed = false;
+                } else if (result == USE_IE_OPTION.index) {
+                    System.setProperty(PROPERTY_DEFAULTTYPE, "ie");
+                    DefaultType = SWT.IE;
+                }
+            } while (!completed);
+        }
     }
 
     static Composite checkParent(Composite parent) {
@@ -190,12 +270,12 @@ public class SwtBrowser extends SwtComposite implements IBrowser {
                         //$NON-NLS-1$
                         DefaultType = SWT.WEBKIT;
                         break;
+                    } else if (current.equalsIgnoreCase("ie") && "win32".equals(platform)) {
+                        //$NON-NLS-1$ //$NON-NLS-2$
+                        DefaultType = SWT.IE;
                     } else if (current.equalsIgnoreCase("edge") && "win32".equals(platform)) {
                         //$NON-NLS-1$ //$NON-NLS-2$
                         DefaultType = SWT.EDGE;
-                    } else if (current.equalsIgnoreCase("ie") && "win32".equals(platform)) {
-                        //$NON-NLS-1$ //$NON-NLS-2$
-                        DefaultType = SWT.NONE;
                         break;
                     }
                     index = newIndex + 1;
@@ -206,7 +286,7 @@ public class SwtBrowser extends SwtComposite implements IBrowser {
             }
         }
         /* If particular backend isn't specified, use the value from the system property. */
-        if ((style & (SWT.WEBKIT | SWT.EDGE)) == 0) {
+        if ((style & (SWT.WEBKIT | SWT.IE | SWT.EDGE)) == 0) {
             style |= DefaultType;
         }
         if ("win32".equals(platform) && (style & SWT.EDGE) != 0) {

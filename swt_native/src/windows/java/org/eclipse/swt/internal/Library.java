@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2022 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -36,12 +36,12 @@ public class Library {
     /**
      * SWT Minor version number (must be in the range 0..999)
      */
-    static int MINOR_VERSION = 967;
+    static int MINOR_VERSION = 970;
 
     /**
      * SWT revision number (must be >= 0)
      */
-    static int REVISION = 8;
+    static int REVISION = 5;
 
     /**
      * The JAVA and SWT versions
@@ -415,10 +415,9 @@ public class Library {
                     version += "0";
             }
             version += MINOR_VERSION;
-            /* No "r" until first revision */
+            /* "r" followed by respective revision version starting with zero(0) */
             //$NON-NLS-1$
-            if (REVISION > 0)
-                version += "r" + REVISION;
+            version += "r" + REVISION;
         }
         return version;
     }

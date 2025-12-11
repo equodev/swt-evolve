@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2011 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -15,11 +15,12 @@
  */
 package org.eclipse.swt.internal.image;
 
+import java.io.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import java.io.*;
+import org.eclipse.swt.internal.image.FileFormat.*;
 
-public final class WinBMPFileFormat extends FileFormat {
+public final class WinBMPFileFormat extends StaticImageFileFormat {
 
     static final int BMPFileHeaderSize = 14;
 
@@ -448,16 +449,12 @@ public final class WinBMPFileFormat extends FileFormat {
     }
 
     @Override
-    boolean isFileFormat(LEDataInputStream stream) {
-        try {
-            byte[] header = new byte[18];
-            stream.read(header);
-            stream.unread(header);
-            int infoHeaderSize = (header[14] & 0xFF) | ((header[15] & 0xFF) << 8) | ((header[16] & 0xFF) << 16) | ((header[17] & 0xFF) << 24);
-            return header[0] == 0x42 && header[1] == 0x4D && infoHeaderSize >= BMPHeaderFixedSize;
-        } catch (Exception e) {
-            return false;
-        }
+    boolean isFileFormat(LEDataInputStream stream) throws IOException {
+        byte[] header = new byte[18];
+        stream.read(header);
+        stream.unread(header);
+        int infoHeaderSize = (header[14] & 0xFF) | ((header[15] & 0xFF) << 8) | ((header[16] & 0xFF) << 16) | ((header[17] & 0xFF) << 24);
+        return header[0] == 0x42 && header[1] == 0x4D && infoHeaderSize >= BMPHeaderFixedSize;
     }
 
     boolean isPaletteBMP(PaletteData pal, int depth) {

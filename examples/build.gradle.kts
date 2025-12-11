@@ -3,10 +3,12 @@ plugins {
     id("application")
 }
 
+val eclipseUrl: String by project
+
 repositories {
     ivy {
-        url = uri("https://download.eclipse.org/releases/2024-12/202412041000/plugins/")
-        name = "Eclipse 2024-12 Plugins"
+        url = uri(eclipseUrl)
+        name = "Eclipse Plugins"
         patternLayout {
             artifact("[organisation].[artifact]_[revision].[ext]")
         }
@@ -39,7 +41,7 @@ tasks.compileJava {
     options.encoding = "UTF-8"
 }
 
-val draw2dVersion = "3.18.0.202411181923"
+val draw2dVersion: String by project
 
 dependencies {
     if (gradle.parent != null)
@@ -63,7 +65,7 @@ dependencies {
 
 tasks.register<JavaExec>("runExample") {
     group = "examples"
-    description = "Run an example class. Usage: ./gradlew :examples:runExample -PmainClass=dev.equo.StyledTextSnippet"
+    description = "Run an example class. Usage: ./gradlew :examples:runExample -PmainClass=dev.equo.StyledTextSnippet1"
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set(project.findProperty("mainClass")?.toString() ?: "dev.equo.StyledTextSnippet3")
 

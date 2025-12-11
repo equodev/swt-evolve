@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2022 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -115,8 +115,6 @@ import org.eclipse.swt.internal.gtk4.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
-
-    static boolean strictChecks = System.getProperty("org.eclipse.swt.internal.gtk.enableStrictChecks") != null;
 
     private static final int SLOT_IN_USE = -2;
 
@@ -541,6 +539,11 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     Callback keysChangedCallback;
 
+    /* Settings "changed" callback */
+    long settingsChangedProc;
+
+    Callback settingsChangedCallback;
+
     /* Multiple Displays. */
     static Display Default;
 
@@ -951,12 +954,12 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             widgetTable = newWidgetTable;
         }
         int index = freeSlot + 1;
-        if (strictChecks) {
+        StrictChecks.runIfStrictChecksEnabled(() -> {
             long data = OS.g_object_get_qdata(handle, SWT_OBJECT_INDEX);
             if (data > 0 && data != index) {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, ". Potential leak of " + widget + debugInfoForIndex(data - 1));
             }
-        }
+        });
         OS.g_object_set_qdata(handle, SWT_OBJECT_INDEX, index);
         int oldSlot = freeSlot;
         freeSlot = indexTable[oldSlot];
@@ -1097,6 +1100,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     long checkIfEventProc(long display, long xEvent, long userData) {
+        if (GTK.GTK4) {
+            return 0;
+        }
         int type = OS.X_EVENT_TYPE(xEvent);
         switch(type) {
             case OS.Expose:
@@ -1235,13 +1241,13 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (module != null && module.equals("xim")) {
             System.err.println("***WARNING: Detected: GTK_IM_MODULE=xim. This input method is unsupported and can cause graphical issues.");
             System.err.println("***WARNING: Unset GTK_IM_MODULE or set GTK_IM_MODULE=ibus if flicking is experienced. ");
-        }
-        // Enforce ibus as the input module on GNOME
-        if (OS.isGNOME) {
-            long settings = GTK.gtk_settings_get_default();
-            byte[] ibus = Converter.wcsToMbcs("ibus", true);
-            if (settings != 0)
-                OS.g_object_set(settings, GTK.gtk_im_module, ibus, 0);
+            // Enforce ibus as the input module on GNOME X11
+            if (OS.isGNOME && OS.isX11()) {
+                long settings = GTK.gtk_settings_get_default();
+                byte[] ibus = Converter.wcsToMbcs("ibus", true);
+                if (settings != 0)
+                    OS.g_object_set(settings, GTK.gtk_im_module, ibus, 0);
+            }
         }
     }
 
@@ -1307,18 +1313,20 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         }
         if (OS.SWT_DEBUG)
             Device.DEBUG = true;
-        long ptr = GTK.gtk_check_version(GTK3_MAJOR, GTK3_MINOR, GTK3_MICRO);
-        if (ptr != 0) {
-            int length = C.strlen(ptr);
-            byte[] buffer = new byte[length];
-            C.memmove(buffer, ptr, length);
-            //$NON-NLS-1$
-            System.out.println("***WARNING: " + new String(Converter.mbcsToWcs(buffer)));
-            //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-            System.out.println("***WARNING: SWT requires GTK " + GTK3_MAJOR + "." + GTK3_MINOR + "." + GTK3_MICRO);
-            int major = GTK.gtk_get_major_version(), minor = GTK.gtk_get_minor_version(), micro = GTK.gtk_get_micro_version();
-            //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-            System.out.println("***WARNING: Detected: " + major + "." + minor + "." + micro);
+        if (!GTK.GTK4) {
+            long ptr = GTK.gtk_check_version(GTK3_MAJOR, GTK3_MINOR, GTK3_MICRO);
+            if (ptr != 0) {
+                int length = C.strlen(ptr);
+                byte[] buffer = new byte[length];
+                C.memmove(buffer, ptr, length);
+                //$NON-NLS-1$
+                System.out.println("***WARNING: " + new String(Converter.mbcsToWcs(buffer)));
+                //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                System.out.println("***WARNING: SWT requires GTK " + GTK3_MAJOR + "." + GTK3_MINOR + "." + GTK3_MICRO);
+                int major = GTK.gtk_get_major_version(), minor = GTK.gtk_get_minor_version(), micro = GTK.gtk_get_micro_version();
+                //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                System.out.println("***WARNING: Detected: " + major + "." + minor + "." + micro);
+            }
         }
         fixed_type = OS.swt_fixed_get_type();
         if (rendererClassInitProc == 0) {
@@ -1426,6 +1434,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             keymap = GDK.gdk_keymap_get_for_display(display);
             OS.g_signal_connect(keymap, OS.keys_changed, keysChangedProc, 0);
         }
+        //$NON-NLS-1$
+        settingsChangedCallback = new Callback(this, "settingsChangedProc", 3);
+        settingsChangedProc = settingsChangedCallback.getAddress();
+        OS.g_signal_connect(GTK.gtk_settings_get_default(), OS.notify_gtk_theme, settingsChangedProc, 0);
     }
 
     /**
@@ -1497,6 +1509,14 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     long keysChangedProc(long keymap, long user_data) {
         latinKeyGroup = findLatinKeyGroup();
+        return 0;
+    }
+
+    /**
+     * GtkSettings 'changed' event handler.
+     */
+    long settingsChangedProc(long settings, long key, long user_data) {
+        settingsChanged = true;
         return 0;
     }
 
@@ -1876,7 +1896,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     @Override
     public Rectangle getBounds() {
         checkDevice();
-        return DPIUtil.autoScaleDown(getBoundsInPixels());
+        return getBoundsInPixels();
     }
 
     /**
@@ -2005,48 +2025,50 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             gdkResource = gdk_device_get_surface_at_position(xDouble, yDouble);
             x[0] = (int) xDouble[0];
             y[0] = (int) yDouble[0];
+            if (gdkResource != 0) {
+                long gtkWindow = GTK4.gtk_native_get_for_surface(gdkResource);
+                if (gtkWindow != 0) {
+                    handle = GTK4.gtk_widget_pick(gtkWindow, xDouble[0], yDouble[0], GTK4.GTK_PICK_DEFAULT);
+                }
+            }
         } else {
             gdkResource = gdk_device_get_window_at_position(x, y);
-        }
-        if (gdkResource != 0) {
-            if (GTK.GTK4) {
-                // TODO: GTK4 need to retrieve handle
-            } else {
+            if (gdkResource != 0) {
                 GDK.gdk_window_get_user_data(gdkResource, user_data);
-            }
-            handle = user_data[0];
-        } else {
-            // Feature in GTK. The gdk_device_get_[surface/window]_at_position() functions will not return a
-            // surface/window if the pointer is over a foreign embedded window. The fix is to use XQueryPointer
-            // to find the containing GDK window (see bug 177368.)
-            // However embedding foreign windows is not supported by the Wayland backend for GTK3 and is not
-            // supported at all on GTK4, so skip the heuristic in these situations.
-            if (OS.isWayland() || GTK.GTK4)
-                return null;
-            long gdkDisplay = GDK.gdk_display_get_default();
-            if (OS.isX11()) {
-                GDK.gdk_x11_display_error_trap_push(gdkDisplay);
-            }
-            int[] unusedInt = new int[1];
-            long[] unusedPtr = new long[1], buffer = new long[1];
-            long xWindow, xParent = OS.XDefaultRootWindow(xDisplay);
-            do {
-                if (OS.XQueryPointer(xDisplay, xParent, unusedPtr, buffer, unusedInt, unusedInt, unusedInt, unusedInt, unusedInt) == 0) {
-                    handle = 0;
-                    break;
+                handle = user_data[0];
+            } else {
+                // Feature in GTK. The gdk_device_get_[surface/window]_at_position() functions will not return a
+                // surface/window if the pointer is over a foreign embedded window. The fix is to use XQueryPointer
+                // to find the containing GDK window (see bug 177368.)
+                // However embedding foreign windows is not supported by the Wayland backend for GTK3 and is not
+                // supported at all on GTK4, so skip the heuristic in these situations.
+                if (OS.isWayland() || GTK.GTK4)
+                    return null;
+                long gdkDisplay = GDK.gdk_display_get_default();
+                if (OS.isX11()) {
+                    GDK.gdk_x11_display_error_trap_push(gdkDisplay);
                 }
-                if ((xWindow = buffer[0]) != 0) {
-                    xParent = xWindow;
-                    long gdkWindow = GDK.gdk_x11_window_lookup_for_display(gdkDisplay, xWindow);
-                    if (gdkWindow != 0) {
-                        GDK.gdk_window_get_user_data(gdkWindow, user_data);
-                        if (user_data[0] != 0)
-                            handle = user_data[0];
+                int[] unusedInt = new int[1];
+                long[] unusedPtr = new long[1], buffer = new long[1];
+                long xWindow, xParent = OS.XDefaultRootWindow(xDisplay);
+                do {
+                    if (OS.XQueryPointer(xDisplay, xParent, unusedPtr, buffer, unusedInt, unusedInt, unusedInt, unusedInt, unusedInt) == 0) {
+                        handle = 0;
+                        break;
                     }
+                    if ((xWindow = buffer[0]) != 0) {
+                        xParent = xWindow;
+                        long gdkWindow = GDK.gdk_x11_window_lookup_for_display(gdkDisplay, xWindow);
+                        if (gdkWindow != 0) {
+                            GDK.gdk_window_get_user_data(gdkWindow, user_data);
+                            if (user_data[0] != 0)
+                                handle = user_data[0];
+                        }
+                    }
+                } while (xWindow != 0);
+                if (OS.isX11()) {
+                    GDK.gdk_x11_display_error_trap_pop_ignored(gdkDisplay);
                 }
-            } while (xWindow != 0);
-            if (OS.isX11()) {
-                GDK.gdk_x11_display_error_trap_pop_ignored(gdkDisplay);
             }
         }
         if (handle == 0)
@@ -2093,10 +2115,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * </ul>
      */
     public Point getCursorLocation() {
-        return DPIUtil.autoScaleDown(getCursorLocationInPixels());
-    }
-
-    Point getCursorLocationInPixels() {
         checkDevice();
         int[] x = new int[1], y = new int[1];
         if (GTK.GTK4) {
@@ -2635,6 +2653,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     public boolean getHighContrast() {
         checkDevice();
+        String gtkThemeName = OS.getThemeName();
+        if (gtkThemeName.contains("HighContrast") || gtkThemeName.contains("ContrastHigh")) {
+            return true;
+        }
         return false;
     }
 
@@ -2763,7 +2785,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     public Monitor[] getMonitors() {
         checkDevice();
         Monitor[] monitors = null;
-        Rectangle workArea = DPIUtil.autoScaleDown(getWorkArea());
+        Rectangle workArea = getWorkArea();
         long display = GDK.gdk_display_get_default();
         if (display != 0) {
             int monitorCount;
@@ -2782,11 +2804,11 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                     GDK.gdk_monitor_get_geometry(gdkMonitor, geometry);
                     Monitor monitor = new Monitor();
                     ((SwtMonitor) monitor.getImpl()).handle = gdkMonitor;
-                    ((SwtMonitor) monitor.getImpl()).x = DPIUtil.autoScaleDown(geometry.x);
-                    ((SwtMonitor) monitor.getImpl()).y = DPIUtil.autoScaleDown(geometry.y);
-                    ((SwtMonitor) monitor.getImpl()).width = DPIUtil.autoScaleDown(geometry.width);
-                    ((SwtMonitor) monitor.getImpl()).height = DPIUtil.autoScaleDown(geometry.height);
-                    if (!OS.isX11()) {
+                    ((SwtMonitor) monitor.getImpl()).x = geometry.x;
+                    ((SwtMonitor) monitor.getImpl()).y = geometry.y;
+                    ((SwtMonitor) monitor.getImpl()).width = geometry.width;
+                    ((SwtMonitor) monitor.getImpl()).height = geometry.height;
+                    if (!OS.isX11() || GTK.GTK4) {
                         int scaleFactor = (int) GDK.gdk_monitor_get_scale_factor(gdkMonitor);
                         ((SwtMonitor) monitor.getImpl()).zoom = scaleFactor * 100;
                     } else {
@@ -2797,10 +2819,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 				 */
                     if (!GTK.GTK4)
                         GDK.gdk_monitor_get_workarea(gdkMonitor, geometry);
-                    ((SwtMonitor) monitor.getImpl()).clientX = DPIUtil.autoScaleDown(geometry.x);
-                    ((SwtMonitor) monitor.getImpl()).clientY = DPIUtil.autoScaleDown(geometry.y);
-                    ((SwtMonitor) monitor.getImpl()).clientWidth = DPIUtil.autoScaleDown(geometry.width);
-                    ((SwtMonitor) monitor.getImpl()).clientHeight = DPIUtil.autoScaleDown(geometry.height);
+                    ((SwtMonitor) monitor.getImpl()).clientX = geometry.x;
+                    ((SwtMonitor) monitor.getImpl()).clientY = geometry.y;
+                    ((SwtMonitor) monitor.getImpl()).clientWidth = geometry.width;
+                    ((SwtMonitor) monitor.getImpl()).clientHeight = geometry.height;
                     monitors[i] = monitor;
                 }
             }
@@ -4132,18 +4154,18 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (from == to)
             return point;
         if (from != null) {
-            Point origin = DPIUtil.autoScaleDown(GTK.GTK4 ? from.getImpl().getSurfaceOrigin() : from.getImpl().getWindowOrigin());
+            Point origin = GTK.GTK4 ? from.getImpl().getSurfaceOrigin() : from.getImpl().getWindowOrigin();
             if ((from.style & SWT.MIRRORED) != 0)
-                point.x = DPIUtil.autoScaleDown(((SwtControl) from.getImpl()).getClientWidth()) - point.x;
+                point.x = ((SwtControl) from.getImpl()).getClientWidth() - point.x;
             point.x += origin.x;
             point.y += origin.y;
         }
         if (to != null) {
-            Point origin = DPIUtil.autoScaleDown(GTK.GTK4 ? to.getImpl().getSurfaceOrigin() : to.getImpl().getWindowOrigin());
+            Point origin = GTK.GTK4 ? to.getImpl().getSurfaceOrigin() : to.getImpl().getWindowOrigin();
             point.x -= origin.x;
             point.y -= origin.y;
             if ((to.style & SWT.MIRRORED) != 0)
-                point.x = DPIUtil.autoScaleDown(((SwtControl) to.getImpl()).getClientWidth()) - point.x;
+                point.x = ((SwtControl) to.getImpl()).getClientWidth() - point.x;
         }
         return point;
     }
@@ -4273,18 +4295,18 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             return rect;
         boolean fromRTL = false, toRTL = false;
         if (from != null) {
-            Point origin = DPIUtil.autoScaleDown(GTK.GTK4 ? from.getImpl().getSurfaceOrigin() : from.getImpl().getWindowOrigin());
+            Point origin = GTK.GTK4 ? from.getImpl().getSurfaceOrigin() : from.getImpl().getWindowOrigin();
             if (fromRTL = (from.style & SWT.MIRRORED) != 0)
-                rect.x = DPIUtil.autoScaleDown(((SwtControl) from.getImpl()).getClientWidth()) - rect.x;
+                rect.x = ((SwtControl) from.getImpl()).getClientWidth() - rect.x;
             rect.x += origin.x;
             rect.y += origin.y;
         }
         if (to != null) {
-            Point origin = DPIUtil.autoScaleDown(GTK.GTK4 ? to.getImpl().getSurfaceOrigin() : to.getImpl().getWindowOrigin());
+            Point origin = GTK.GTK4 ? to.getImpl().getSurfaceOrigin() : to.getImpl().getWindowOrigin();
             rect.x -= origin.x;
             rect.y -= origin.y;
             if (toRTL = (to.style & SWT.MIRRORED) != 0)
-                rect.x = DPIUtil.autoScaleDown(((SwtControl) to.getImpl()).getClientWidth()) - rect.x;
+                rect.x = ((SwtControl) to.getImpl()).getClientWidth() - rect.x;
         }
         if (fromRTL != toRTL)
             rect.x -= rect.width;
@@ -4430,8 +4452,8 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 error(SWT.ERROR_NULL_ARGUMENT);
             int type = event.type;
             if (type == SWT.MouseMove) {
-                Rectangle loc = DPIUtil.autoScaleUp(event.getBounds());
-                setCursorLocationInPixels(new Point(loc.x, loc.y));
+                Rectangle loc = event.getBounds();
+                setCursorLocation(new Point(loc.x, loc.y));
                 return true;
             }
             long gdkDisplay = GDK.gdk_display_get_default();
@@ -4939,27 +4961,38 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         keysChangedCallback.dispose();
         keysChangedCallback = null;
         keysChangedProc = 0;
+        /* Dispose the settings "changed" callback */
+        settingsChangedCallback.dispose();
+        settingsChangedCallback = null;
+        settingsChangedProc = 0;
         /* Dispose subclass */
-        long pangoLayoutType = OS.PANGO_TYPE_LAYOUT();
-        long pangoLayoutClass = OS.g_type_class_ref(pangoLayoutType);
-        OS.G_OBJECT_CLASS_SET_CONSTRUCTOR(pangoLayoutClass, pangoLayoutNewProc);
-        OS.g_type_class_unref(pangoLayoutClass);
-        pangoLayoutNewProc = 0;
-        long imContextType = GTK.GTK_TYPE_IM_MULTICONTEXT();
-        long imContextClass = OS.g_type_class_ref(imContextType);
-        OS.G_OBJECT_CLASS_SET_CONSTRUCTOR(imContextClass, imContextNewProc);
-        OS.g_type_class_unref(imContextClass);
-        imContextNewProc = 0;
-        long pangoFontFamilyType = OS.PANGO_TYPE_FONT_FAMILY();
-        long pangoFontFamilyClass = OS.g_type_class_ref(pangoFontFamilyType);
-        OS.G_OBJECT_CLASS_SET_CONSTRUCTOR(pangoFontFamilyClass, pangoFontFamilyNewProc);
-        OS.g_type_class_unref(pangoFontFamilyClass);
-        pangoFontFamilyNewProc = 0;
-        long pangoFontFaceType = OS.PANGO_TYPE_FONT_FACE();
-        long pangoFontFaceClass = OS.g_type_class_ref(pangoFontFaceType);
-        OS.G_OBJECT_CLASS_SET_CONSTRUCTOR(pangoFontFaceClass, pangoFontFaceNewProc);
-        OS.g_type_class_unref(pangoFontFaceClass);
-        pangoFontFaceNewProc = 0;
+        if (!GTK.GTK4) {
+            long pangoLayoutType = OS.PANGO_TYPE_LAYOUT();
+            long pangoLayoutClass = OS.g_type_class_ref(pangoLayoutType);
+            OS.G_OBJECT_CLASS_SET_CONSTRUCTOR(pangoLayoutClass, pangoLayoutNewProc);
+            OS.g_type_class_unref(pangoLayoutClass);
+            pangoLayoutNewProc = 0;
+            long imContextType = GTK.GTK_TYPE_IM_MULTICONTEXT();
+            long imContextClass = OS.g_type_class_ref(imContextType);
+            OS.G_OBJECT_CLASS_SET_CONSTRUCTOR(imContextClass, imContextNewProc);
+            OS.g_type_class_unref(imContextClass);
+            imContextNewProc = 0;
+            long pangoFontFamilyType = OS.PANGO_TYPE_FONT_FAMILY();
+            long pangoFontFamilyClass = OS.g_type_class_ref(pangoFontFamilyType);
+            OS.G_OBJECT_CLASS_SET_CONSTRUCTOR(pangoFontFamilyClass, pangoFontFamilyNewProc);
+            OS.g_type_class_unref(pangoFontFamilyClass);
+            pangoFontFamilyNewProc = 0;
+            long pangoFontFaceType = OS.PANGO_TYPE_FONT_FACE();
+            long pangoFontFaceClass = OS.g_type_class_ref(pangoFontFaceType);
+            OS.G_OBJECT_CLASS_SET_CONSTRUCTOR(pangoFontFaceClass, pangoFontFaceNewProc);
+            OS.g_type_class_unref(pangoFontFaceClass);
+            pangoFontFaceNewProc = 0;
+            long printerOptionWidgetType = GTK.gtk_printer_option_widget_get_type();
+            long printerOptionWidgetClass = OS.g_type_class_ref(printerOptionWidgetType);
+            OS.G_OBJECT_CLASS_SET_CONSTRUCTOR(printerOptionWidgetClass, printerOptionWidgetNewProc);
+            OS.g_type_class_unref(printerOptionWidgetClass);
+            printerOptionWidgetNewProc = 0;
+        }
         /* Release the sleep resources */
         max_priority = timeout = null;
         if (fds != 0)
@@ -5384,17 +5417,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         setCursorLocation(new Point(x, y));
     }
 
-    void setCursorLocationInPixels(Point location) {
-        long gdkDisplay = GDK.gdk_display_get_default();
-        long gdkPointer = GDK.gdk_get_pointer(gdkDisplay);
-        if (GTK.GTK4) {
-            //TODO: GTK4 no gdk_device_warp
-        } else {
-            long gdkScreen = GDK.gdk_screen_get_default();
-            GDK.gdk_device_warp(gdkPointer, gdkScreen, location.x, location.y);
-        }
-    }
-
     /**
      * Sets the location of the on-screen pointer relative to the top left corner
      * of the screen.  <b>Note: It is typically considered bad practice for a
@@ -5414,8 +5436,14 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         checkDevice();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        point = DPIUtil.autoScaleUp(point);
-        setCursorLocationInPixels(point);
+        long gdkDisplay = GDK.gdk_display_get_default();
+        long gdkPointer = GDK.gdk_get_pointer(gdkDisplay);
+        if (GTK.GTK4) {
+            //TODO: GTK4 no gdk_device_warp
+        } else {
+            long gdkScreen = GDK.gdk_screen_get_default();
+            GDK.gdk_device_warp(gdkPointer, gdkScreen, point.x, point.y);
+        }
     }
 
     /**
@@ -5699,7 +5727,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 GTK4.gtk_window_set_child(preeditWindow, preeditLabel);
             } else {
                 GTK3.gtk_container_add(preeditWindow, preeditLabel);
-                GTK.gtk_widget_show(preeditLabel);
+                GTK3.gtk_widget_show(preeditLabel);
             }
         }
         long[] preeditString = new long[1];
@@ -5731,15 +5759,15 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 GTK.gtk_label_set_attributes(preeditLabel, pangoAttrs[0]);
             GTK.gtk_label_set_text(preeditLabel, preeditString[0]);
             if (control.getImpl() instanceof SwtControl) {
-                Point point = ((SwtControl) control.getImpl()).toDisplayInPixels(((SwtControl) control.getImpl()).getIMCaretPos());
+                Point point = control.toDisplay(((SwtControl) control.getImpl()).getIMCaretPos());
                 GTK3.gtk_window_move(preeditWindow, point.x, point.y);
             }
             GtkRequisition requisition = new GtkRequisition();
             GTK.gtk_widget_get_preferred_size(preeditLabel, requisition, null);
             GTK3.gtk_window_resize(preeditWindow, requisition.width, requisition.height);
-            GTK.gtk_widget_show(preeditWindow);
+            GTK3.gtk_widget_show(preeditWindow);
         } else {
-            GTK.gtk_widget_hide(preeditWindow);
+            GTK3.gtk_widget_hide(preeditWindow);
         }
         if (preeditString[0] != 0)
             OS.g_free(preeditString[0]);
@@ -6525,7 +6553,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @param activate whether rescaling shall be activated or deactivated
      * @return whether activating or deactivating the rescaling was successful
      * @since 3.127
+     * @deprecated this method should not be used as it needs to be called already
+     *             during instantiation to take proper effect
      */
+    @Deprecated(since = "2025-03", forRemoval = true)
     public boolean setRescalingAtRuntime(boolean activate) {
         // not implemented for GTK
         return false;

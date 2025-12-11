@@ -24,9 +24,29 @@ val currentOs = when {
     else -> "linux"
 }
 
-val currentPlatform = "$currentOs-${if (arch.contains("aarch64") || arch.contains("arm")) "aarch64" else "x86_64"}"
+fun getSwtWs(os: String): String = when (os) {
+    "macos" -> "cocoa"
+    "windows" -> "win32"
+    else -> "gtk"
+}
 
-val swtVersion = "3.128.0.v20241113-2009"
+fun getSwtOs(os: String): String = when (os) {
+    "macos" -> "macosx"
+    "windows" -> "win32"
+    else -> "linux"
+}
+
+fun getSwtArch(arch: String): String =
+    if (arch.contains("aarch64") || arch.contains("arm")) "aarch64" else "x86_64"
+
+val currentPlatform = "$currentOs-${getSwtArch(arch)}"
+
+// Read swtVersion from gradle.properties:
+val swtVersionFull = (project.parent?.parent?.findProperty("swtVersionFull")
+    ?: project.parent?.findProperty("swtVersionFull")
+    ?: error("Required property 'swtVersionFull' is not defined in gradle.properties. Please add it to your gradle.properties file.")) as String
+
+val swtVersion = swtVersionFull.substringBefore(".v")
 
 val swtVersionConfig by configurations.creating {
     isCanBeConsumed = false
@@ -35,7 +55,7 @@ val swtVersionConfig by configurations.creating {
 
 val swtVersionProvider = provider {
     val versionFiles = swtVersionConfig.files
-    if (versionFiles.isNotEmpty() && versionFiles.first().exists()) versionFiles.first().readText().trim() else swtVersion
+    if (versionFiles.isNotEmpty() && versionFiles.first().exists()) versionFiles.first().readText().trim() else swtVersionFull
 }
 
 dependencies {
@@ -107,6 +127,14 @@ tasks.jar {
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "OSGI-OPT/")
 
+    manifest {
+        attributes(
+            "SWT-WS" to getSwtWs(currentOs),
+            "SWT-OS" to getSwtOs(currentOs),
+            "SWT-Arch" to getSwtArch(arch)
+        )
+    }
+
     dependsOn("${currentPlatform}ExtractNatives")
     dependsOn("${currentPlatform}CopyFlutterBinaries")
 }
@@ -127,23 +155,15 @@ val dart = tasks.register<Exec>("dartRunner") {
 // Create tasks for each platform JAR
 platforms.forEach { platform ->
     val osArch = platform.split("-")
-    val swtWs = when (osArch[0]) {
-        "macos" -> "cocoa"
-        "windows" -> "win32"
-        else -> "gtk"
-    }
-    val swtOs = when (osArch[0]) {
-        "macos" -> "macosx"
-        "windows" -> "win32"
-        else -> "linux"
-    }
+    val swtWs = getSwtWs(osArch[0])
+    val swtOs = getSwtOs(osArch[0])
 
     configurations.create("${platform}SwtImpl") {
         exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
     }
 
     dependencies {
-        configurations["${platform}SwtImpl"]("org.eclipse.platform:org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}:${swtVersion.substringBefore(".v")}")
+        configurations["${platform}SwtImpl"]("org.eclipse.platform:org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}:$swtVersion")
     }
 
     tasks.register<Exec>("${platform}FlutterLib") {

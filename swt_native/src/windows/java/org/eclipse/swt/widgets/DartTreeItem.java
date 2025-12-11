@@ -278,10 +278,6 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     }
 
     long fontHandle(int index) {
-        if (cellFont != null && cellFont[index] != null)
-            return cellFont[index].handle;
-        if (font != null)
-            return font.handle;
         return -1;
     }
 
@@ -339,7 +335,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return DPIUtil.scaleDown(getBoundsInPixels(), getZoom());
+        return null;
     }
 
     Rectangle getBoundsInPixels() {
@@ -364,7 +360,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Rectangle getBounds(int index) {
         checkWidget();
-        return DPIUtil.scaleDown(getBoundsInPixels(index), getZoom());
+        return null;
     }
 
     Rectangle getBoundsInPixels(int index) {
@@ -658,7 +654,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Rectangle getImageBounds(int index) {
         checkWidget();
-        return DPIUtil.scaleDown(getImageBoundsInPixels(index), getZoom());
+        return null;
     }
 
     Rectangle getImageBoundsInPixels(int index) {
@@ -753,7 +749,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Rectangle getTextBounds(int index) {
         checkWidget();
-        return DPIUtil.scaleDown(getTextBoundsInPixels(index), getZoom());
+        return null;
     }
 
     Rectangle getTextBoundsInPixels(int index) {
@@ -1020,8 +1016,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Font oldFont = this.font;
-        Shell shell = parent.getShell();
-        Font newFont = (font == null ? font : DartFont.win32_new(font, shell.nativeZoom));
+        Font newFont = (font == null ? font : DartFont.win32_new(font, getNativeZoom()));
         if (oldFont == newFont)
             return;
         this.font = newFont;
@@ -1078,8 +1073,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         Font oldFont = cellFont[index];
         if (oldFont == font)
             return;
-        Shell shell = parent.getShell();
-        cellFont[index] = font == null ? font : DartFont.win32_new(font, shell.nativeZoom);
+        cellFont[index] = font == null ? font : DartFont.win32_new(font, getNativeZoom());
         if (oldFont != null && oldFont.equals(font))
             return;
         if (font != null)
@@ -1445,10 +1439,9 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         }
         Font[] cellFonts = ((DartTreeItem) treeItem.getImpl()).cellFont;
         if (cellFonts != null) {
-            Shell shell = ((DartTreeItem) treeItem.getImpl()).parent.getShell();
             for (int index = 0; index < cellFonts.length; index++) {
                 Font cellFont = cellFonts[index];
-                cellFonts[index] = cellFont == null ? null : DartFont.win32_new(cellFont, shell.nativeZoom);
+                cellFonts[index] = cellFont == null ? null : DartFont.win32_new(cellFont, ((DartWidget) treeItem.getImpl()).getNativeZoom());
             }
         }
     }

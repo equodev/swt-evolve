@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2019 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -306,7 +306,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      * @since 3.2
      */
     public Rectangle getBounds() {
-        return DPIUtil.autoScaleDown(getBoundsinPixels());
+        return getBoundsinPixels();
     }
 
     /**
@@ -409,11 +409,6 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      * </ul>
      */
     public Rectangle getBounds(int index) {
-        checkWidget();
-        return DPIUtil.autoScaleDown(getBoundsInPixels(index));
-    }
-
-    Rectangle getBoundsInPixels(int index) {
         checkWidget();
         if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
@@ -631,11 +626,6 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Rectangle getImageBounds(int index) {
         checkWidget();
-        return DPIUtil.autoScaleDown(getImageBoundsInPixels(index));
-    }
-
-    Rectangle getImageBoundsInPixels(int index) {
-        checkWidget();
         if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         long parentHandle = parent.handle;
@@ -782,11 +772,6 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Rectangle getTextBounds(int index) {
         checkWidget();
-        return DPIUtil.autoScaleDown(getTextBoundsInPixels(index));
-    }
-
-    Rectangle getTextBoundsInPixels(int index) {
-        checkWidget();
         if (!((SwtTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         int count = Math.max(1, parent.getColumnCount());
@@ -845,11 +830,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         Image image = _getImage(index);
         int imageWidth = 0;
         if (image != null) {
-            if (DPIUtil.useCairoAutoScale()) {
-                imageWidth = image.getBounds().width;
-            } else {
-                imageWidth = image.getBoundsInPixels().width;
-            }
+            imageWidth = image.getBounds().width;
         }
         if (x[0] < imageWidth) {
             rect.x += imageWidth;
@@ -1265,14 +1246,8 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         GTK.gtk_cell_renderer_get_fixed_size(pixbufRenderer, currentWidth, currentHeight);
         if (!((SwtTable) parent.getImpl()).pixbufSizeSet) {
             if (image != null) {
-                int iWidth, iHeight;
-                if (DPIUtil.useCairoAutoScale()) {
-                    iWidth = image.getBounds().width;
-                    iHeight = image.getBounds().height;
-                } else {
-                    iWidth = image.getBoundsInPixels().width;
-                    iHeight = image.getBoundsInPixels().height;
-                }
+                int iWidth = image.getBounds().width;
+                int iHeight = image.getBounds().height;
                 if (iWidth > currentWidth[0] || iHeight > currentHeight[0]) {
                     GTK.gtk_cell_renderer_set_fixed_size(pixbufRenderer, iWidth, iHeight);
                     ((SwtTable) parent.getImpl()).pixbufHeight = iHeight;

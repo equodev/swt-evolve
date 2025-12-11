@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -4783,10 +4783,8 @@ class AccessibleObject {
         } else {
             GDK.gdk_window_get_origin(gdkResource, origin_x, origin_y);
         }
-        int scaledX = DPIUtil.autoScaleDown(origin_x[0]);
-        int scaledY = DPIUtil.autoScaleDown(origin_y[0]);
-        C.memmove(x, new int[] { scaledX }, 4);
-        C.memmove(y, new int[] { scaledY }, 4);
+        C.memmove(x, new int[] { origin_x[0] }, 4);
+        C.memmove(y, new int[] { origin_y[0] }, 4);
         return 0;
     }
 
@@ -4907,10 +4905,16 @@ class AccessibleObject {
     }
 
     void selectionChanged() {
+        //TODO investigate proper way for GTK 4.x
+        if (GTK.GTK4)
+            return;
         OS.g_signal_emit_by_name(atkHandle, ATK.selection_changed);
     }
 
     void sendEvent(int event, Object eventData) {
+        //TODO reenable for GTK 4.x
+        if (GTK.GTK4)
+            return;
         switch(event) {
             case ACC.EVENT_SELECTION_CHANGED:
                 OS.g_signal_emit_by_name(atkHandle, ATK.selection_changed);
@@ -5179,6 +5183,9 @@ class AccessibleObject {
     }
 
     void setFocus(int childID) {
+        //TODO investigate proper way for GTK 4.x
+        if (GTK.GTK4)
+            return;
         updateChildren();
         AccessibleObject accObject = getChildByID(childID);
         if (accObject != null) {
@@ -5188,10 +5195,16 @@ class AccessibleObject {
     }
 
     void textCaretMoved(int index) {
+        //TODO investigate proper way for GTK 4.x
+        if (GTK.GTK4)
+            return;
         OS.g_signal_emit_by_name(atkHandle, ATK.text_caret_moved, index);
     }
 
     void textChanged(int type, int startIndex, int length) {
+        //TODO investigate proper way for GTK 4.x
+        if (GTK.GTK4)
+            return;
         if (type == ACC.TEXT_DELETE) {
             OS.g_signal_emit_by_name(atkHandle, ATK.text_changed_delete, startIndex, length);
         } else {
@@ -5200,6 +5213,9 @@ class AccessibleObject {
     }
 
     void textSelectionChanged() {
+        //TODO investigate proper way for GTK 4.x
+        if (GTK.GTK4)
+            return;
         OS.g_signal_emit_by_name(atkHandle, ATK.text_selection_changed);
     }
 

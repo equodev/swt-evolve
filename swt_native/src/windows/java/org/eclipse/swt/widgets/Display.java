@@ -26,6 +26,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.ole.win32.*;
 import org.eclipse.swt.internal.win32.*;
+import org.eclipse.swt.internal.win32.version.*;
 
 /**
  * Instances of this class are responsible for managing the
@@ -1943,7 +1944,10 @@ public class Display extends Device implements Executor {
      * @param activate whether rescaling shall be activated or deactivated
      * @return whether activating or deactivating the rescaling was successful
      * @since 3.127
+     * @deprecated this method should not be used as it needs to be called already
+     *             during instantiation to take proper effect
      */
+    @Deprecated(since = "2025-03", forRemoval = true)
     public boolean setRescalingAtRuntime(boolean activate) {
         return getImpl().setRescalingAtRuntime(activate);
     }

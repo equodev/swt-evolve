@@ -1,8 +1,11 @@
 package org.eclipse.swt.graphics;
 
+import java.util.*;
+import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
+import org.eclipse.swt.widgets.*;
 
 public interface IGC extends IResource, ImplGC {
 
@@ -1728,6 +1731,8 @@ public interface IGC extends IResource, ImplGC {
      * @return a string representation of the receiver
      */
     String toString();
+
+    void dispose();
 
     GC getApi();
 }

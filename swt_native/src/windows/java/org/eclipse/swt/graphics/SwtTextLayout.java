@@ -425,10 +425,10 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         }
         SCRIPT_LOGATTR logAttr = new SCRIPT_LOGATTR();
         SCRIPT_PROPERTIES properties = new SCRIPT_PROPERTIES();
-        int wrapIndentInPixels = DPIUtil.scaleUp(wrapIndent, getZoom(gc));
-        int indentInPixels = DPIUtil.scaleUp(indent, getZoom(gc));
-        int wrapWidthInPixels = DPIUtil.scaleUp(wrapWidth, getZoom(gc));
-        int[] tabsInPixels = DPIUtil.scaleUp(tabs, getZoom(gc));
+        int wrapIndentInPixels = Win32DPIUtils.pointToPixel(wrapIndent, getZoom(gc));
+        int indentInPixels = Win32DPIUtils.pointToPixel(indent, getZoom(gc));
+        int wrapWidthInPixels = Win32DPIUtils.pointToPixel(wrapWidth, getZoom(gc));
+        int[] tabsInPixels = Win32DPIUtils.pointToPixel(tabs, getZoom(gc));
         int lineWidth = indentInPixels, lineStart = 0, lineCount = 1;
         for (int i = 0; i < allRuns.length - 1; i++) {
             StyleItem run = allRuns[i];
@@ -597,8 +597,8 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                     TEXTMETRIC lptm = new TEXTMETRIC();
                     OS.SelectObject(srcHdc, getItemFont(run, gc));
                     metricsAdapter.GetTextMetrics(srcHdc, lptm);
-                    run.ascentInPoints = DPIUtil.scaleDown(getDevice(), lptm.tmAscent, getZoom(gc));
-                    run.descentInPoints = DPIUtil.scaleDown(getDevice(), lptm.tmDescent, getZoom(gc));
+                    run.ascentInPoints = Win32DPIUtils.pixelToPoint(getDevice(), lptm.tmAscent, getZoom(gc));
+                    run.descentInPoints = Win32DPIUtils.pixelToPoint(getDevice(), lptm.tmDescent, getZoom(gc));
                     ascentInPoints = Math.max(ascentInPoints, run.ascentInPoints);
                     descentInPoints = Math.max(descentInPoints, run.descentInPoints);
                 }
@@ -755,7 +755,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public void draw(GC gc, int x, int y) {
         checkLayout();
-        drawInPixels(gc, DPIUtil.scaleUp(getDevice(), x, getZoom(gc)), DPIUtil.scaleUp(getDevice(), y, getZoom(gc)));
+        drawInPixels(gc, x, y);
     }
 
     /**
@@ -779,11 +779,11 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground) {
         checkLayout();
-        drawInPixels(gc, DPIUtil.scaleUp(getDevice(), x, getZoom(gc)), DPIUtil.scaleUp(getDevice(), y, getZoom(gc)), selectionStart, selectionEnd, selectionForeground, selectionBackground);
+        drawInPixels(gc, x, y, selectionStart, selectionEnd, selectionForeground, selectionBackground);
     }
 
-    void drawInPixels(GC gc, int x, int y, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground) {
-        drawInPixels(gc, x, y, selectionStart, selectionEnd, selectionForeground, selectionBackground, 0);
+    void drawInPixels(GC gc, int xInPoints, int yInPoints, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground) {
+        drawInPixels(gc, xInPoints, yInPoints, selectionStart, selectionEnd, selectionForeground, selectionBackground, 0);
     }
 
     /**
@@ -815,7 +815,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground, int flags) {
         checkLayout();
-        drawInPixels(gc, DPIUtil.scaleUp(getDevice(), x, getZoom(gc)), DPIUtil.scaleUp(getDevice(), y, getZoom(gc)), selectionStart, selectionEnd, selectionForeground, selectionBackground, flags);
+        drawInPixels(gc, x, y, selectionStart, selectionEnd, selectionForeground, selectionBackground, flags);
     }
 
     private int getNativeZoom(GC gc) {
@@ -833,11 +833,11 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         return DPIUtil.getZoomForAutoscaleProperty(nativeZoom);
     }
 
-    void drawInPixels(GC gc, int x, int y) {
-        drawInPixels(gc, x, y, -1, -1, null, null);
+    void drawInPixels(GC gc, int xInPoints, int yInPoints) {
+        drawInPixels(gc, xInPoints, yInPoints, -1, -1, null, null);
     }
 
-    void drawInPixels(GC gc, int x, int y, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground, int flags) {
+    void drawInPixels(GC gc, int xInPoints, int yInPoints, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground, int flags) {
         computeRuns(gc);
         if (gc == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -850,7 +850,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         int length = text.length();
         if (length == 0 && flags == 0)
             return;
-        y += getScaledVerticalIndent();
+        yInPoints += verticalIndentInPoints;
         long hdc = gc.handle;
         if (gc.getImpl() instanceof SwtGC) {
             Rectangle clip = ((SwtGC) gc.getImpl()).getClippingInPixels();
@@ -891,14 +891,17 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                     selectionEnd = translateOffset(Math.min(Math.max(0, selectionEnd), length - 1));
                 }
             }
+            int x = Win32DPIUtils.pointToPixel(getDevice(), xInPoints, getZoom(gc));
             RECT rect = new RECT();
             OS.SetBkMode(hdc, OS.TRANSPARENT);
             for (int line = 0; line < runs.length; line++) {
                 int drawX = x + getLineIndentInPixel(line);
-                int drawY = y + DPIUtil.scaleUp(getDevice(), lineY[line], getZoom(gc));
+                int drawY = Win32DPIUtils.pointToPixel(getDevice(), yInPoints + lineY[line], getZoom(gc));
                 StyleItem[] lineRuns = runs[line];
-                int lineHeight = DPIUtil.scaleUp(getDevice(), lineY[line + 1] - lineY[line] - lineSpacingInPoints, getZoom(gc));
-                int lineHeightWithSpacing = DPIUtil.scaleUp(getDevice(), lineY[line + 1] - lineY[line], getZoom(gc));
+                int drawYWithLineHeight = Win32DPIUtils.pointToPixel(getDevice(), yInPoints + lineY[line + 1] - lineSpacingInPoints, getZoom(gc));
+                int drawYWithLineHeightWithSpacing = Win32DPIUtils.pointToPixel(getDevice(), yInPoints + lineY[line + 1], getZoom(gc));
+                int lineHeight = Win32DPIUtils.pointToPixel(getDevice(), lineY[line + 1] - lineY[line] - lineSpacingInPoints, getZoom(gc));
+                int lineHeightWithSpacing = drawYWithLineHeightWithSpacing - drawY;
                 //Draw last line selection
                 boolean extents = false;
                 if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && (hasSelection || (flags & SWT.LAST_LINE_SELECTION) != 0)) {
@@ -945,9 +948,9 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                     if (drawX + run.width >= clip.x) {
                         if (!run.lineBreak || run.softBreak) {
                             if (extents) {
-                                OS.SetRect(rect, drawX, drawY, drawX + run.width, drawY + lineHeightWithSpacing);
+                                OS.SetRect(rect, drawX, drawY, drawX + run.width, drawYWithLineHeightWithSpacing);
                             } else {
-                                OS.SetRect(rect, drawX, drawY, drawX + run.width, drawY + lineHeight);
+                                OS.SetRect(rect, drawX, drawY, drawX + run.width, drawYWithLineHeight);
                             }
                             if (gdip) {
                                 drawRunBackgroundGDIP(run, gdipGraphics, rect, selectionStart, selectionEnd, alpha, gdipSelBackground, hasSelection);
@@ -959,10 +962,10 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                     drawX += run.width;
                 }
                 //Draw the text, underline, strikeout, and border of the runs in the line
-                int baselineInPixels = Math.max(0, DPIUtil.scaleUp(getDevice(), ascent, getZoom(gc)));
+                int baselineInPixels = Math.max(0, Win32DPIUtils.pointToPixel(getDevice(), ascent, getZoom(gc)));
                 int lineUnderlinePos = 0;
                 for (StyleItem run : lineRuns) {
-                    baselineInPixels = Math.max(baselineInPixels, DPIUtil.scaleUp(getDevice(), run.ascentInPoints, getZoom(gc)));
+                    baselineInPixels = Math.max(baselineInPixels, Win32DPIUtils.pointToPixel(getDevice(), run.ascentInPoints, getZoom(gc)));
                     lineUnderlinePos = Math.min(lineUnderlinePos, run.underlinePos);
                 }
                 RECT borderClip = null, underlineClip = null, strikeoutClip = null, pRect = null;
@@ -1271,7 +1274,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         boolean partialSelection = hasSelection && !fullSelection && !(selectionStart > end || run.start > selectionEnd);
         int offset = (orientation & SWT.RIGHT_TO_LEFT) != 0 ? -1 : 0;
         int x = rect.left + offset;
-        int y = rect.top + (baselineInPixels - DPIUtil.scaleUp(getDevice(), run.ascentInPoints, getZoom(gc)));
+        int y = rect.top + (baselineInPixels - Win32DPIUtils.pointToPixel(getDevice(), run.ascentInPoints, getZoom(gc)));
         long hFont = getItemFont(run, gc);
         OS.SelectObject(hdc, hFont);
         if (fullSelection) {
@@ -1302,7 +1305,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         // at requested position.
         int drawY = rect.top + baselineInPixels;
         if (run.style != null && run.style.rise != 0)
-            drawY -= DPIUtil.scaleUp(getDevice(), run.style.rise, getZoom(gc));
+            drawY -= Win32DPIUtils.pointToPixel(getDevice(), run.style.rise, getZoom(gc));
         int drawX = rect.left;
         long brush = color;
         if (fullSelection) {
@@ -1458,7 +1461,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 }
             }
             RECT rect = new RECT();
-            int riseInPixels = DPIUtil.scaleUp(getDevice(), style.rise, getZoom(gc));
+            int riseInPixels = Win32DPIUtils.pointToPixel(getDevice(), style.rise, getZoom(gc));
             OS.SetRect(rect, x + left, baselineInPixels - run.strikeoutPos - riseInPixels, x + run.x + run.width, baselineInPixels - run.strikeoutPos + run.strikeoutThickness - riseInPixels);
             long brush = OS.CreateSolidBrush(color);
             OS.FillRect(hdc, rect, brush);
@@ -1512,7 +1515,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                     }
                 }
             }
-            int riseInPixels = DPIUtil.scaleUp(getDevice(), style.rise, getZoom(gc));
+            int riseInPixels = Win32DPIUtils.pointToPixel(getDevice(), style.rise, getZoom(gc));
             if (clipRect != null) {
                 int gstate = Gdip.Graphics_Save(graphics);
                 if (clipRect.left == -1)
@@ -1575,7 +1578,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 }
             }
             RECT rect = new RECT();
-            int riseInPixels = DPIUtil.scaleUp(getDevice(), style.rise, getZoom(gc));
+            int riseInPixels = Win32DPIUtils.pointToPixel(getDevice(), style.rise, getZoom(gc));
             OS.SetRect(rect, x + left, baselineInPixels - lineUnderlinePos - riseInPixels, x + run.x + run.width, baselineInPixels - lineUnderlinePos + run.underlineThickness - riseInPixels);
             if (clipRect != null) {
                 if (clipRect.left == -1)
@@ -1657,7 +1660,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                         int penStyle = style.underlineStyle == UNDERLINE_IME_DASH ? OS.PS_DASH : OS.PS_DOT;
                         long pen = OS.CreatePen(penStyle, 1, color);
                         long oldPen = OS.SelectObject(hdc, pen);
-                        int descentInPixels = DPIUtil.scaleUp(getDevice(), run.descentInPoints, getZoom(gc));
+                        int descentInPixels = Win32DPIUtils.pointToPixel(getDevice(), run.descentInPoints, getZoom(gc));
                         OS.SetRect(rect, rect.left, baselineInPixels + descentInPixels, rect.right, baselineInPixels + descentInPixels + run.underlineThickness);
                         OS.MoveToEx(hdc, rect.left, rect.top, 0);
                         OS.LineTo(hdc, rect.right, rect.top);
@@ -1715,7 +1718,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 }
             }
             RECT rect = new RECT();
-            int riseInPixels = DPIUtil.scaleUp(getDevice(), style.rise, getZoom(gc));
+            int riseInPixels = Win32DPIUtils.pointToPixel(getDevice(), style.rise, getZoom(gc));
             OS.SetRect(rect, x + left, baselineInPixels - lineUnderlinePos - riseInPixels, x + run.x + run.width, baselineInPixels - lineUnderlinePos + run.underlineThickness - riseInPixels);
             Rect gdipRect = null;
             if (clipRect != null) {
@@ -1816,7 +1819,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                             gstate = Gdip.Graphics_Save(graphics);
                             Gdip.Graphics_SetClip(graphics, gdipRect, Gdip.CombineModeExclude);
                         }
-                        int descentInPixels = DPIUtil.scaleUp(getDevice(), run.descentInPoints, getZoom(gc));
+                        int descentInPixels = Win32DPIUtils.pointToPixel(getDevice(), run.descentInPoints, getZoom(gc));
                         Gdip.Graphics_DrawLine(graphics, pen, rect.left, baselineInPixels + descentInPixels, run.width - run.length, baselineInPixels + descentInPixels);
                         if (gdipRect != null) {
                             Gdip.Graphics_Restore(graphics, gstate);
@@ -1909,7 +1912,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             width = wrapWidth;
         } else {
             for (int line = 0; line < runs.length; line++) {
-                width = Math.max(width, DPIUtil.scaleDown(lineWidthInPixels[line], getZoom()) + getLineIndent(line));
+                width = Math.max(width, DPIUtil.pixelToPoint(lineWidthInPixels[line], getZoom()) + getLineIndent(line));
             }
         }
         return new Rectangle(0, 0, width, lineY[lineY.length - 1] + getVerticalIndent());
@@ -1931,7 +1934,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public Rectangle getBounds(int start, int end) {
         checkLayout();
-        return DPIUtil.scaleDown(getDevice(), getBoundsInPixels(start, end), getZoom(null));
+        return Win32DPIUtils.pixelToPoint(getDevice(), getBoundsInPixels(start, end), getZoom(null));
     }
 
     Rectangle getBoundsInPixels(int start, int end) {
@@ -1981,7 +1984,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 int cx = 0;
                 if (run.style != null && run.style.metrics != null) {
                     GlyphMetrics metrics = run.style.metrics;
-                    cx = DPIUtil.scaleUp(getDevice(), metrics.width, getZoom()) * (start - run.start);
+                    cx = Win32DPIUtils.pointToPixel(getDevice(), metrics.width, getZoom()) * (start - run.start);
                 } else if (!run.tab) {
                     int iX = ScriptCPtoX(start - run.start, false, run);
                     cx = isRTL ? run.width - iX : iX;
@@ -1996,7 +1999,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 int cx = run.width;
                 if (run.style != null && run.style.metrics != null) {
                     GlyphMetrics metrics = run.style.metrics;
-                    cx = DPIUtil.scaleUp(getDevice(), metrics.width, getZoom()) * (end - run.start + 1);
+                    cx = Win32DPIUtils.pointToPixel(getDevice(), metrics.width, getZoom()) * (end - run.start + 1);
                 } else if (!run.tab) {
                     int iX = ScriptCPtoX(end - run.start, true, run);
                     cx = isRTL ? run.width - iX : iX;
@@ -2013,8 +2016,8 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             }
             left = Math.min(left, runLead);
             right = Math.max(right, runTrail);
-            top = Math.min(top, DPIUtil.scaleUp(lineY[lineIndex], getZoom(null)));
-            bottom = Math.max(bottom, DPIUtil.scaleUp(lineY[lineIndex + 1] - lineSpacingInPoints, getZoom(null)));
+            top = Math.min(top, Win32DPIUtils.pointToPixel(lineY[lineIndex], getZoom(null)));
+            bottom = Math.max(bottom, Win32DPIUtils.pointToPixel(lineY[lineIndex + 1] - lineSpacingInPoints, getZoom(null)));
         }
         return new Rectangle(left, top, right - left, bottom - top + getScaledVerticalIndent());
     }
@@ -2090,12 +2093,12 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             return item.fallbackFont;
         final int zoom = getNativeZoom(gc);
         if (item.style != null && item.style.font != null) {
-            return SwtFont.win32_new(item.style.font, zoom).handle;
+            return SWTFontProvider.getFontHandle(item.style.font, zoom);
         }
         if (this.font != null) {
-            return SwtFont.win32_new(this.font, zoom).handle;
+            return SWTFontProvider.getFontHandle(this.font, zoom);
         }
-        return SWTFontProvider.getSystemFont(device, zoom).handle;
+        return SWTFontProvider.getSystemFontHandle(device, zoom);
     }
 
     /**
@@ -2142,7 +2145,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public Rectangle getLineBounds(int lineIndex) {
         checkLayout();
-        return DPIUtil.scaleDown(getDevice(), getLineBoundsInPixels(lineIndex), getZoom());
+        return Win32DPIUtils.pixelToPoint(getDevice(), getLineBoundsInPixels(lineIndex), getZoom());
     }
 
     Rectangle getLineBoundsInPixels(int lineIndex) {
@@ -2150,9 +2153,9 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         if (!(0 <= lineIndex && lineIndex < runs.length))
             SWT.error(SWT.ERROR_INVALID_RANGE);
         int x = getLineIndentInPixel(lineIndex);
-        int y = DPIUtil.scaleUp(getDevice(), lineY[lineIndex], getZoom());
+        int y = Win32DPIUtils.pointToPixel(getDevice(), lineY[lineIndex], getZoom());
         int width = lineWidthInPixels[lineIndex];
-        int height = DPIUtil.scaleUp(getDevice(), lineY[lineIndex + 1] - lineY[lineIndex] - lineSpacingInPoints, getZoom());
+        int height = Win32DPIUtils.pointToPixel(getDevice(), lineY[lineIndex + 1] - lineY[lineIndex] - lineSpacingInPoints, getZoom());
         return new Rectangle(x, y, width, height);
     }
 
@@ -2173,18 +2176,18 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
     }
 
     int getLineIndent(int lineIndex) {
-        return DPIUtil.scaleDown(getLineIndentInPixel(lineIndex), getZoom());
+        return DPIUtil.pixelToPoint(getLineIndentInPixel(lineIndex), getZoom());
     }
 
     int getLineIndentInPixel(int lineIndex) {
-        int lineIndent = DPIUtil.scaleUp(wrapIndent, getZoom());
+        int lineIndent = Win32DPIUtils.pointToPixel(wrapIndent, getZoom());
         if (lineIndex == 0) {
-            lineIndent = DPIUtil.scaleUp(indent, getZoom());
+            lineIndent = Win32DPIUtils.pointToPixel(indent, getZoom());
         } else {
             StyleItem[] previousLine = runs[lineIndex - 1];
             StyleItem previousRun = previousLine[previousLine.length - 1];
             if (previousRun.lineBreak && !previousRun.softBreak) {
-                lineIndent = DPIUtil.scaleUp(indent, getZoom());
+                lineIndent = Win32DPIUtils.pointToPixel(indent, getZoom());
             }
         }
         if (wrapWidth != -1) {
@@ -2199,10 +2202,10 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 int lineWidth = this.lineWidthInPixels[lineIndex] + lineIndent;
                 switch(alignment) {
                     case SWT.CENTER:
-                        lineIndent += (DPIUtil.scaleUp(wrapWidth, getZoom()) - lineWidth) / 2;
+                        lineIndent += (Win32DPIUtils.pointToPixel(wrapWidth, getZoom()) - lineWidth) / 2;
                         break;
                     case SWT.RIGHT:
-                        lineIndent += DPIUtil.scaleUp(wrapWidth, getZoom()) - lineWidth;
+                        lineIndent += Win32DPIUtils.pointToPixel(wrapWidth, getZoom()) - lineWidth;
                         break;
                 }
             }
@@ -2260,14 +2263,15 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         long hDC = device.internal_new_GC(null);
         long srcHdc = OS.CreateCompatibleDC(hDC);
         TEXTMETRIC lptm = new TEXTMETRIC();
-        Font availableFont = font != null ? font : ((SwtDevice) device.getImpl()).systemFont;
-        OS.SelectObject(srcHdc, availableFont.handle);
+        final int zoom = getZoom();
+        long availableFont = font != null ? SWTFontProvider.getFontHandle(font, nativeZoom) : SWTFontProvider.getSystemFontHandle(device, nativeZoom);
+        OS.SelectObject(srcHdc, availableFont);
         metricsAdapter.GetTextMetrics(srcHdc, lptm);
         OS.DeleteDC(srcHdc);
         device.internal_dispose_GC(hDC, null);
-        int ascentInPoints = this.ascent;
-        int descentInPoints = this.descent;
-        int leadingInPoints = DPIUtil.scaleDown(getDevice(), lptm.tmInternalLeading, availableFont.getImpl()._zoom());
+        int ascentInPoints = Math.max(Win32DPIUtils.pixelToPoint(this.device, lptm.tmAscent, zoom), this.ascent);
+        int descentInPoints = Math.max(Win32DPIUtils.pixelToPoint(this.device, lptm.tmDescent, zoom), this.descent);
+        int leadingInPoints = Win32DPIUtils.pixelToPoint(this.device, lptm.tmInternalLeading, zoom);
         if (text.length() != 0) {
             for (StyleItem run : runs[lineIndex]) {
                 if (run.ascentInPoints > ascentInPoints) {
@@ -2277,10 +2281,10 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 descentInPoints = Math.max(descentInPoints, run.descentInPoints);
             }
         }
-        lptm.tmAscent = DPIUtil.scaleUp(getDevice(), ascentInPoints, getZoom());
-        lptm.tmDescent = DPIUtil.scaleUp(getDevice(), descentInPoints, getZoom());
-        lptm.tmHeight = DPIUtil.scaleUp(getDevice(), ascentInPoints + descentInPoints, getZoom());
-        lptm.tmInternalLeading = DPIUtil.scaleUp(getDevice(), leadingInPoints, getZoom());
+        lptm.tmAscent = Win32DPIUtils.pointToPixel(this.device, ascentInPoints, zoom);
+        lptm.tmDescent = Win32DPIUtils.pointToPixel(this.device, descentInPoints, zoom);
+        lptm.tmHeight = Win32DPIUtils.pointToPixel(this.device, ascentInPoints + descentInPoints, zoom);
+        lptm.tmInternalLeading = Win32DPIUtils.pointToPixel(this.device, leadingInPoints, zoom);
         lptm.tmAveCharWidth = 0;
         return SwtFontMetrics.win32_new(lptm, nativeZoom);
     }
@@ -2324,7 +2328,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public Point getLocation(int offset, boolean trailing) {
         checkLayout();
-        return DPIUtil.scaleDown(getDevice(), getLocationInPixels(offset, trailing), getZoom());
+        return Win32DPIUtils.pixelToPoint(getDevice(), getLocationInPixels(offset, trailing), getZoom());
     }
 
     Point getLocationInPixels(int offset, boolean trailing) {
@@ -2341,7 +2345,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         }
         line = Math.min(line, runs.length - 1);
         if (offset == length) {
-            return new Point(getLineIndentInPixel(line) + lineWidthInPixels[line], DPIUtil.scaleUp(getDevice(), lineY[line], getZoom()));
+            return new Point(getLineIndentInPixel(line) + lineWidthInPixels[line], Win32DPIUtils.pointToPixel(getDevice(), lineY[line], getZoom()));
         }
         /* For trailing use the low surrogate and for lead use the high surrogate */
         char ch = segmentsText.charAt(offset);
@@ -2377,7 +2381,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 int width;
                 if (run.style != null && run.style.metrics != null) {
                     GlyphMetrics metrics = run.style.metrics;
-                    width = DPIUtil.scaleUp(getDevice(), metrics.width, getZoom()) * (offset - run.start + (trailing ? 1 : 0));
+                    width = Win32DPIUtils.pointToPixel(getDevice(), metrics.width, getZoom()) * (offset - run.start + (trailing ? 1 : 0));
                 } else if (run.tab) {
                     width = (trailing || (offset == length)) ? run.width : 0;
                 } else {
@@ -2385,7 +2389,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                     final int iX = ScriptCPtoX(runOffset, trailing, run);
                     width = (orientation & SWT.RIGHT_TO_LEFT) != 0 ? run.width - iX : iX;
                 }
-                return new Point(run.x + width, DPIUtil.scaleUp(getDevice(), lineY[line], getZoom()) + getScaledVerticalIndent());
+                return new Point(run.x + width, Win32DPIUtils.pointToPixel(getDevice(), lineY[line], getZoom()) + getScaledVerticalIndent());
             }
         }
         return new Point(0, 0);
@@ -2549,7 +2553,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         checkLayout();
         if (point == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return getOffsetInPixels(DPIUtil.scaleUp(getDevice(), point, getZoom()), trailing);
+        return getOffsetInPixels(Win32DPIUtils.pointToPixel(getDevice(), point, getZoom()), trailing);
     }
 
     int getOffsetInPixels(Point point, int[] trailing) {
@@ -2581,7 +2585,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public int getOffset(int x, int y, int[] trailing) {
         checkLayout();
-        return getOffsetInPixels(DPIUtil.scaleUp(getDevice(), x, getZoom()), DPIUtil.scaleUp(getDevice(), y, getZoom()), trailing);
+        return getOffsetInPixels(Win32DPIUtils.pointToPixel(getDevice(), x, getZoom()), Win32DPIUtils.pointToPixel(getDevice(), y, getZoom()), trailing);
     }
 
     int getOffsetInPixels(int x, int y, int[] trailing) {
@@ -2591,7 +2595,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         int line;
         int lineCount = runs.length;
         for (line = 0; line < lineCount; line++) {
-            if (DPIUtil.scaleUp(getDevice(), lineY[line + 1], getZoom()) > y)
+            if (Win32DPIUtils.pointToPixel(getDevice(), lineY[line + 1], getZoom()) > y)
                 break;
         }
         line = Math.min(line, runs.length - 1);
@@ -2617,7 +2621,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 if (run.style != null && run.style.metrics != null) {
                     GlyphMetrics metrics = run.style.metrics;
                     if (metrics.width > 0) {
-                        final int metricsWidthInPixels = DPIUtil.scaleUp(getDevice(), metrics.width, getZoom());
+                        final int metricsWidthInPixels = Win32DPIUtils.pointToPixel(getDevice(), metrics.width, getZoom());
                         if (trailing != null) {
                             trailing[0] = (xRun % metricsWidthInPixels < metricsWidthInPixels / 2) ? 0 : 1;
                         }
@@ -2865,7 +2869,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         if (verticalIndentInPoints == 0) {
             return verticalIndentInPoints;
         }
-        return DPIUtil.scaleUp(getDevice(), verticalIndentInPoints, getZoom());
+        return Win32DPIUtils.pointToPixel(getDevice(), verticalIndentInPoints, getZoom());
     }
 
     /**
@@ -4126,7 +4130,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
 			 *  equals zero for FFFC (possibly other unicode code points), the fix
 			 *  is to make sure the glyph is at least one pixel wide.
 			 */
-                run.width = DPIUtil.scaleUp(getDevice(), metrics.width, getZoom()) * Math.max(1, run.glyphCount);
+                run.width = Win32DPIUtils.pointToPixel(getDevice(), metrics.width, getZoom()) * Math.max(1, run.glyphCount);
                 run.ascentInPoints = metrics.ascent;
                 run.descentInPoints = metrics.descent;
                 run.leadingInPoints = 0;
@@ -4138,9 +4142,9 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                     lptm = new TEXTMETRIC();
                     metricsAdapter.GetTextMetrics(hdc, lptm);
                 }
-                run.ascentInPoints = DPIUtil.scaleDown(getDevice(), lptm.tmAscent, getZoom(gc));
-                run.descentInPoints = DPIUtil.scaleDown(getDevice(), lptm.tmDescent, getZoom(gc));
-                run.leadingInPoints = DPIUtil.scaleDown(getDevice(), lptm.tmInternalLeading, getZoom(gc));
+                run.ascentInPoints = Win32DPIUtils.pixelToPoint(getDevice(), lptm.tmAscent, getZoom(gc));
+                run.descentInPoints = Win32DPIUtils.pixelToPoint(getDevice(), lptm.tmDescent, getZoom(gc));
+                run.leadingInPoints = Win32DPIUtils.pixelToPoint(getDevice(), lptm.tmInternalLeading, getZoom(gc));
             }
             if (lotm != null) {
                 run.underlinePos = lotm.otmsUnderscorePosition;
@@ -4150,7 +4154,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             } else {
                 run.underlinePos = 1;
                 run.underlineThickness = 1;
-                run.strikeoutPos = DPIUtil.scaleUp(getDevice(), run.ascentInPoints, getZoom(gc)) / 2;
+                run.strikeoutPos = Win32DPIUtils.pointToPixel(getDevice(), run.ascentInPoints, getZoom(gc)) / 2;
                 run.strikeoutThickness = 1;
             }
             run.ascentInPoints += style.rise;
@@ -4158,9 +4162,9 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         } else {
             TEXTMETRIC lptm = new TEXTMETRIC();
             metricsAdapter.GetTextMetrics(hdc, lptm);
-            run.ascentInPoints = DPIUtil.scaleDown(getDevice(), lptm.tmAscent, getZoom(gc));
-            run.descentInPoints = DPIUtil.scaleDown(getDevice(), lptm.tmDescent, getZoom(gc));
-            run.leadingInPoints = DPIUtil.scaleDown(getDevice(), lptm.tmInternalLeading, getZoom(gc));
+            run.ascentInPoints = Win32DPIUtils.pixelToPoint(getDevice(), lptm.tmAscent, getZoom(gc));
+            run.descentInPoints = Win32DPIUtils.pixelToPoint(getDevice(), lptm.tmDescent, getZoom(gc));
+            run.leadingInPoints = Win32DPIUtils.pixelToPoint(getDevice(), lptm.tmInternalLeading, getZoom(gc));
         }
     }
 

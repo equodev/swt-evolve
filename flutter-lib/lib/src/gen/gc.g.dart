@@ -59,17 +59,59 @@ Map<String, dynamic> _$VGCToJson(VGC instance) => <String, dynamic>{
       'textAntialias': instance.textAntialias,
     };
 
-VGCCopyArea _$VGCCopyAreaFromJson(Map<String, dynamic> json) => VGCCopyArea(
+VGCCopyAreaImageintint _$VGCCopyAreaImageintintFromJson(
+        Map<String, dynamic> json) =>
+    VGCCopyAreaImageintint(
+      x: (json['x'] as num?)?.toInt() ?? 0,
+      y: (json['y'] as num?)?.toInt() ?? 0,
+    )..image = json['image'] == null
+        ? null
+        : VImage.fromJson(json['image'] as Map<String, dynamic>);
+
+Map<String, dynamic> _$VGCCopyAreaImageintintToJson(
+        VGCCopyAreaImageintint instance) =>
+    <String, dynamic>{
+      'image': instance.image,
+      'x': instance.x,
+      'y': instance.y,
+    };
+
+VGCCopyAreaintintintintintint _$VGCCopyAreaintintintintintintFromJson(
+        Map<String, dynamic> json) =>
+    VGCCopyAreaintintintintintint(
       srcX: (json['srcX'] as num?)?.toInt() ?? 0,
       srcY: (json['srcY'] as num?)?.toInt() ?? 0,
       width: (json['width'] as num?)?.toInt() ?? 0,
       height: (json['height'] as num?)?.toInt() ?? 0,
       destX: (json['destX'] as num?)?.toInt() ?? 0,
       destY: (json['destY'] as num?)?.toInt() ?? 0,
-      paint: json['paint'] as bool? ?? false,
     );
 
-Map<String, dynamic> _$VGCCopyAreaToJson(VGCCopyArea instance) =>
+Map<String, dynamic> _$VGCCopyAreaintintintintintintToJson(
+        VGCCopyAreaintintintintintint instance) =>
+    <String, dynamic>{
+      'srcX': instance.srcX,
+      'srcY': instance.srcY,
+      'width': instance.width,
+      'height': instance.height,
+      'destX': instance.destX,
+      'destY': instance.destY,
+    };
+
+VGCCopyAreaintintintintintintboolean
+    _$VGCCopyAreaintintintintintintbooleanFromJson(Map<String, dynamic> json) =>
+        VGCCopyAreaintintintintintintboolean(
+          srcX: (json['srcX'] as num?)?.toInt() ?? 0,
+          srcY: (json['srcY'] as num?)?.toInt() ?? 0,
+          width: (json['width'] as num?)?.toInt() ?? 0,
+          height: (json['height'] as num?)?.toInt() ?? 0,
+          destX: (json['destX'] as num?)?.toInt() ?? 0,
+          destY: (json['destY'] as num?)?.toInt() ?? 0,
+          paint: json['paint'] as bool? ?? false,
+        );
+
+Map<String, dynamic> _$VGCCopyAreaintintintintintintbooleanToJson(
+        VGCCopyAreaintintintintintintboolean instance) =>
     <String, dynamic>{
       'srcX': instance.srcX,
       'srcY': instance.srcY,
@@ -80,22 +122,9 @@ Map<String, dynamic> _$VGCCopyAreaToJson(VGCCopyArea instance) =>
       'paint': instance.paint,
     };
 
-VGCCopyAreaImage _$VGCCopyAreaImageFromJson(Map<String, dynamic> json) =>
-    VGCCopyAreaImage(
-      x: (json['x'] as num?)?.toInt() ?? 0,
-      y: (json['y'] as num?)?.toInt() ?? 0,
-    )..image = json['image'] == null
-        ? null
-        : VImage.fromJson(json['image'] as Map<String, dynamic>);
-
-Map<String, dynamic> _$VGCCopyAreaImageToJson(VGCCopyAreaImage instance) =>
-    <String, dynamic>{
-      'image': instance.image,
-      'x': instance.x,
-      'y': instance.y,
-    };
-
-VGCDrawArc _$VGCDrawArcFromJson(Map<String, dynamic> json) => VGCDrawArc(
+VGCDrawArcintintintintintint _$VGCDrawArcintintintintintintFromJson(
+        Map<String, dynamic> json) =>
+    VGCDrawArcintintintintintint(
       x: (json['x'] as num?)?.toInt() ?? 0,
       y: (json['y'] as num?)?.toInt() ?? 0,
       width: (json['width'] as num?)?.toInt() ?? 0,
@@ -104,7 +133,8 @@ VGCDrawArc _$VGCDrawArcFromJson(Map<String, dynamic> json) => VGCDrawArc(
       arcAngle: (json['arcAngle'] as num?)?.toInt() ?? 0,
     );
 
-Map<String, dynamic> _$VGCDrawArcToJson(VGCDrawArc instance) =>
+Map<String, dynamic> _$VGCDrawArcintintintintintintToJson(
+        VGCDrawArcintintintintintint instance) =>
     <String, dynamic>{
       'x': instance.x,
       'y': instance.y,
@@ -114,14 +144,17 @@ Map<String, dynamic> _$VGCDrawArcToJson(VGCDrawArc instance) =>
       'arcAngle': instance.arcAngle,
     };
 
-VGCDrawFocus _$VGCDrawFocusFromJson(Map<String, dynamic> json) => VGCDrawFocus(
+VGCDrawFocusintintintint _$VGCDrawFocusintintintintFromJson(
+        Map<String, dynamic> json) =>
+    VGCDrawFocusintintintint(
       x: (json['x'] as num?)?.toInt() ?? 0,
       y: (json['y'] as num?)?.toInt() ?? 0,
       width: (json['width'] as num?)?.toInt() ?? 0,
       height: (json['height'] as num?)?.toInt() ?? 0,
     );
 
-Map<String, dynamic> _$VGCDrawFocusToJson(VGCDrawFocus instance) =>
+Map<String, dynamic> _$VGCDrawFocusintintintintToJson(
+        VGCDrawFocusintintintint instance) =>
     <String, dynamic>{
       'x': instance.x,
       'y': instance.y,
@@ -129,23 +162,43 @@ Map<String, dynamic> _$VGCDrawFocusToJson(VGCDrawFocus instance) =>
       'height': instance.height,
     };
 
-VGCDrawImage _$VGCDrawImageFromJson(Map<String, dynamic> json) => VGCDrawImage(
-      srcX: (json['srcX'] as num?)?.toInt() ?? 0,
-      srcY: (json['srcY'] as num?)?.toInt() ?? 0,
-      srcWidth: (json['srcWidth'] as num?)?.toInt() ?? 0,
-      srcHeight: (json['srcHeight'] as num?)?.toInt() ?? 0,
-      destX: (json['destX'] as num?)?.toInt() ?? 0,
-      destY: (json['destY'] as num?)?.toInt() ?? 0,
-      destWidth: (json['destWidth'] as num?)?.toInt() ?? 0,
-      destHeight: (json['destHeight'] as num?)?.toInt() ?? 0,
-      simple: json['simple'] as bool? ?? false,
-    )..srcImage = json['srcImage'] == null
+VGCDrawImageImageintint _$VGCDrawImageImageintintFromJson(
+        Map<String, dynamic> json) =>
+    VGCDrawImageImageintint(
+      x: (json['x'] as num?)?.toInt() ?? 0,
+      y: (json['y'] as num?)?.toInt() ?? 0,
+    )..image = json['image'] == null
         ? null
-        : VImage.fromJson(json['srcImage'] as Map<String, dynamic>);
+        : VImage.fromJson(json['image'] as Map<String, dynamic>);
 
-Map<String, dynamic> _$VGCDrawImageToJson(VGCDrawImage instance) =>
+Map<String, dynamic> _$VGCDrawImageImageintintToJson(
+        VGCDrawImageImageintint instance) =>
     <String, dynamic>{
-      'srcImage': instance.srcImage,
+      'image': instance.image,
+      'x': instance.x,
+      'y': instance.y,
+    };
+
+VGCDrawImageImageintintintintintintintint
+    _$VGCDrawImageImageintintintintintintintintFromJson(
+            Map<String, dynamic> json) =>
+        VGCDrawImageImageintintintintintintintint(
+          srcX: (json['srcX'] as num?)?.toInt() ?? 0,
+          srcY: (json['srcY'] as num?)?.toInt() ?? 0,
+          srcWidth: (json['srcWidth'] as num?)?.toInt() ?? 0,
+          srcHeight: (json['srcHeight'] as num?)?.toInt() ?? 0,
+          destX: (json['destX'] as num?)?.toInt() ?? 0,
+          destY: (json['destY'] as num?)?.toInt() ?? 0,
+          destWidth: (json['destWidth'] as num?)?.toInt() ?? 0,
+          destHeight: (json['destHeight'] as num?)?.toInt() ?? 0,
+        )..image = json['image'] == null
+            ? null
+            : VImage.fromJson(json['image'] as Map<String, dynamic>);
+
+Map<String, dynamic> _$VGCDrawImageImageintintintintintintintintToJson(
+        VGCDrawImageImageintintintintintintintint instance) =>
+    <String, dynamic>{
+      'image': instance.image,
       'srcX': instance.srcX,
       'srcY': instance.srcY,
       'srcWidth': instance.srcWidth,
@@ -154,17 +207,19 @@ Map<String, dynamic> _$VGCDrawImageToJson(VGCDrawImage instance) =>
       'destY': instance.destY,
       'destWidth': instance.destWidth,
       'destHeight': instance.destHeight,
-      'simple': instance.simple,
     };
 
-VGCDrawLine _$VGCDrawLineFromJson(Map<String, dynamic> json) => VGCDrawLine(
+VGCDrawLineintintintint _$VGCDrawLineintintintintFromJson(
+        Map<String, dynamic> json) =>
+    VGCDrawLineintintintint(
       x1: (json['x1'] as num?)?.toInt() ?? 0,
       y1: (json['y1'] as num?)?.toInt() ?? 0,
       x2: (json['x2'] as num?)?.toInt() ?? 0,
       y2: (json['y2'] as num?)?.toInt() ?? 0,
     );
 
-Map<String, dynamic> _$VGCDrawLineToJson(VGCDrawLine instance) =>
+Map<String, dynamic> _$VGCDrawLineintintintintToJson(
+        VGCDrawLineintintintint instance) =>
     <String, dynamic>{
       'x1': instance.x1,
       'y1': instance.y1,
@@ -172,83 +227,103 @@ Map<String, dynamic> _$VGCDrawLineToJson(VGCDrawLine instance) =>
       'y2': instance.y2,
     };
 
-VGCDrawOval _$VGCDrawOvalFromJson(Map<String, dynamic> json) => VGCDrawOval(
-      x: (json['x'] as num?)?.toInt() ?? 0,
-      y: (json['y'] as num?)?.toInt() ?? 0,
-      width: (json['width'] as num?)?.toInt() ?? 0,
-      height: (json['height'] as num?)?.toInt() ?? 0,
-    );
-
-Map<String, dynamic> _$VGCDrawOvalToJson(VGCDrawOval instance) =>
-    <String, dynamic>{
-      'x': instance.x,
-      'y': instance.y,
-      'width': instance.width,
-      'height': instance.height,
-    };
-
-VGCDrawPoint _$VGCDrawPointFromJson(Map<String, dynamic> json) => VGCDrawPoint(
-      x: (json['x'] as num?)?.toInt() ?? 0,
-      y: (json['y'] as num?)?.toInt() ?? 0,
-    );
-
-Map<String, dynamic> _$VGCDrawPointToJson(VGCDrawPoint instance) =>
-    <String, dynamic>{
-      'x': instance.x,
-      'y': instance.y,
-    };
-
-VGCDrawPolygon _$VGCDrawPolygonFromJson(Map<String, dynamic> json) =>
-    VGCDrawPolygon()
-      ..pointArray = (json['pointArray'] as List<dynamic>?)
-          ?.map((e) => (e as num).toInt())
-          .toList();
-
-Map<String, dynamic> _$VGCDrawPolygonToJson(VGCDrawPolygon instance) =>
-    <String, dynamic>{
-      'pointArray': instance.pointArray,
-    };
-
-VGCDrawPolyline _$VGCDrawPolylineFromJson(Map<String, dynamic> json) =>
-    VGCDrawPolyline()
-      ..pointArray = (json['pointArray'] as List<dynamic>?)
-          ?.map((e) => (e as num).toInt())
-          .toList();
-
-Map<String, dynamic> _$VGCDrawPolylineToJson(VGCDrawPolyline instance) =>
-    <String, dynamic>{
-      'pointArray': instance.pointArray,
-    };
-
-VGCDrawRectangle _$VGCDrawRectangleFromJson(Map<String, dynamic> json) =>
-    VGCDrawRectangle(
-      x: (json['x'] as num?)?.toInt() ?? 0,
-      y: (json['y'] as num?)?.toInt() ?? 0,
-      width: (json['width'] as num?)?.toInt() ?? 0,
-      height: (json['height'] as num?)?.toInt() ?? 0,
-    );
-
-Map<String, dynamic> _$VGCDrawRectangleToJson(VGCDrawRectangle instance) =>
-    <String, dynamic>{
-      'x': instance.x,
-      'y': instance.y,
-      'width': instance.width,
-      'height': instance.height,
-    };
-
-VGCDrawRoundRectangle _$VGCDrawRoundRectangleFromJson(
+VGCDrawOvalintintintint _$VGCDrawOvalintintintintFromJson(
         Map<String, dynamic> json) =>
-    VGCDrawRoundRectangle(
+    VGCDrawOvalintintintint(
       x: (json['x'] as num?)?.toInt() ?? 0,
       y: (json['y'] as num?)?.toInt() ?? 0,
       width: (json['width'] as num?)?.toInt() ?? 0,
       height: (json['height'] as num?)?.toInt() ?? 0,
-      arcWidth: (json['arcWidth'] as num?)?.toInt() ?? 0,
-      arcHeight: (json['arcHeight'] as num?)?.toInt() ?? 0,
     );
 
-Map<String, dynamic> _$VGCDrawRoundRectangleToJson(
-        VGCDrawRoundRectangle instance) =>
+Map<String, dynamic> _$VGCDrawOvalintintintintToJson(
+        VGCDrawOvalintintintint instance) =>
+    <String, dynamic>{
+      'x': instance.x,
+      'y': instance.y,
+      'width': instance.width,
+      'height': instance.height,
+    };
+
+VGCDrawPointintint _$VGCDrawPointintintFromJson(Map<String, dynamic> json) =>
+    VGCDrawPointintint(
+      x: (json['x'] as num?)?.toInt() ?? 0,
+      y: (json['y'] as num?)?.toInt() ?? 0,
+    );
+
+Map<String, dynamic> _$VGCDrawPointintintToJson(VGCDrawPointintint instance) =>
+    <String, dynamic>{
+      'x': instance.x,
+      'y': instance.y,
+    };
+
+VGCDrawPolygonint _$VGCDrawPolygonintFromJson(Map<String, dynamic> json) =>
+    VGCDrawPolygonint()
+      ..pointArray = (json['pointArray'] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
+          .toList();
+
+Map<String, dynamic> _$VGCDrawPolygonintToJson(VGCDrawPolygonint instance) =>
+    <String, dynamic>{
+      'pointArray': instance.pointArray,
+    };
+
+VGCDrawPolylineint _$VGCDrawPolylineintFromJson(Map<String, dynamic> json) =>
+    VGCDrawPolylineint()
+      ..pointArray = (json['pointArray'] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
+          .toList();
+
+Map<String, dynamic> _$VGCDrawPolylineintToJson(VGCDrawPolylineint instance) =>
+    <String, dynamic>{
+      'pointArray': instance.pointArray,
+    };
+
+VGCDrawRectangleRectangle _$VGCDrawRectangleRectangleFromJson(
+        Map<String, dynamic> json) =>
+    VGCDrawRectangleRectangle()
+      ..rect = json['rect'] == null
+          ? null
+          : VRectangle.fromJson(json['rect'] as Map<String, dynamic>);
+
+Map<String, dynamic> _$VGCDrawRectangleRectangleToJson(
+        VGCDrawRectangleRectangle instance) =>
+    <String, dynamic>{
+      'rect': instance.rect,
+    };
+
+VGCDrawRectangleintintintint _$VGCDrawRectangleintintintintFromJson(
+        Map<String, dynamic> json) =>
+    VGCDrawRectangleintintintint(
+      x: (json['x'] as num?)?.toInt() ?? 0,
+      y: (json['y'] as num?)?.toInt() ?? 0,
+      width: (json['width'] as num?)?.toInt() ?? 0,
+      height: (json['height'] as num?)?.toInt() ?? 0,
+    );
+
+Map<String, dynamic> _$VGCDrawRectangleintintintintToJson(
+        VGCDrawRectangleintintintint instance) =>
+    <String, dynamic>{
+      'x': instance.x,
+      'y': instance.y,
+      'width': instance.width,
+      'height': instance.height,
+    };
+
+VGCDrawRoundRectangleintintintintintint
+    _$VGCDrawRoundRectangleintintintintintintFromJson(
+            Map<String, dynamic> json) =>
+        VGCDrawRoundRectangleintintintintintint(
+          x: (json['x'] as num?)?.toInt() ?? 0,
+          y: (json['y'] as num?)?.toInt() ?? 0,
+          width: (json['width'] as num?)?.toInt() ?? 0,
+          height: (json['height'] as num?)?.toInt() ?? 0,
+          arcWidth: (json['arcWidth'] as num?)?.toInt() ?? 0,
+          arcHeight: (json['arcHeight'] as num?)?.toInt() ?? 0,
+        );
+
+Map<String, dynamic> _$VGCDrawRoundRectangleintintintintintintToJson(
+        VGCDrawRoundRectangleintintintintintint instance) =>
     <String, dynamic>{
       'x': instance.x,
       'y': instance.y,
@@ -258,14 +333,85 @@ Map<String, dynamic> _$VGCDrawRoundRectangleToJson(
       'arcHeight': instance.arcHeight,
     };
 
-VGCDrawText _$VGCDrawTextFromJson(Map<String, dynamic> json) => VGCDrawText(
+VGCDrawStringStringintint _$VGCDrawStringStringintintFromJson(
+        Map<String, dynamic> json) =>
+    VGCDrawStringStringintint(
+      string: json['string'] as String? ?? '',
+      x: (json['x'] as num?)?.toInt() ?? 0,
+      y: (json['y'] as num?)?.toInt() ?? 0,
+    );
+
+Map<String, dynamic> _$VGCDrawStringStringintintToJson(
+        VGCDrawStringStringintint instance) =>
+    <String, dynamic>{
+      'string': instance.string,
+      'x': instance.x,
+      'y': instance.y,
+    };
+
+VGCDrawStringStringintintboolean _$VGCDrawStringStringintintbooleanFromJson(
+        Map<String, dynamic> json) =>
+    VGCDrawStringStringintintboolean(
+      string: json['string'] as String? ?? '',
+      x: (json['x'] as num?)?.toInt() ?? 0,
+      y: (json['y'] as num?)?.toInt() ?? 0,
+      isTransparent: json['isTransparent'] as bool? ?? false,
+    );
+
+Map<String, dynamic> _$VGCDrawStringStringintintbooleanToJson(
+        VGCDrawStringStringintintboolean instance) =>
+    <String, dynamic>{
+      'string': instance.string,
+      'x': instance.x,
+      'y': instance.y,
+      'isTransparent': instance.isTransparent,
+    };
+
+VGCDrawTextStringintint _$VGCDrawTextStringintintFromJson(
+        Map<String, dynamic> json) =>
+    VGCDrawTextStringintint(
+      string: json['string'] as String? ?? '',
+      x: (json['x'] as num?)?.toInt() ?? 0,
+      y: (json['y'] as num?)?.toInt() ?? 0,
+    );
+
+Map<String, dynamic> _$VGCDrawTextStringintintToJson(
+        VGCDrawTextStringintint instance) =>
+    <String, dynamic>{
+      'string': instance.string,
+      'x': instance.x,
+      'y': instance.y,
+    };
+
+VGCDrawTextStringintintboolean _$VGCDrawTextStringintintbooleanFromJson(
+        Map<String, dynamic> json) =>
+    VGCDrawTextStringintintboolean(
+      string: json['string'] as String? ?? '',
+      x: (json['x'] as num?)?.toInt() ?? 0,
+      y: (json['y'] as num?)?.toInt() ?? 0,
+      isTransparent: json['isTransparent'] as bool? ?? false,
+    );
+
+Map<String, dynamic> _$VGCDrawTextStringintintbooleanToJson(
+        VGCDrawTextStringintintboolean instance) =>
+    <String, dynamic>{
+      'string': instance.string,
+      'x': instance.x,
+      'y': instance.y,
+      'isTransparent': instance.isTransparent,
+    };
+
+VGCDrawTextStringintintint _$VGCDrawTextStringintintintFromJson(
+        Map<String, dynamic> json) =>
+    VGCDrawTextStringintintint(
       string: json['string'] as String? ?? '',
       x: (json['x'] as num?)?.toInt() ?? 0,
       y: (json['y'] as num?)?.toInt() ?? 0,
       flags: (json['flags'] as num?)?.toInt() ?? 0,
     );
 
-Map<String, dynamic> _$VGCDrawTextToJson(VGCDrawText instance) =>
+Map<String, dynamic> _$VGCDrawTextStringintintintToJson(
+        VGCDrawTextStringintintint instance) =>
     <String, dynamic>{
       'string': instance.string,
       'x': instance.x,
@@ -273,7 +419,9 @@ Map<String, dynamic> _$VGCDrawTextToJson(VGCDrawText instance) =>
       'flags': instance.flags,
     };
 
-VGCFillArc _$VGCFillArcFromJson(Map<String, dynamic> json) => VGCFillArc(
+VGCFillArcintintintintintint _$VGCFillArcintintintintintintFromJson(
+        Map<String, dynamic> json) =>
+    VGCFillArcintintintintintint(
       x: (json['x'] as num?)?.toInt() ?? 0,
       y: (json['y'] as num?)?.toInt() ?? 0,
       width: (json['width'] as num?)?.toInt() ?? 0,
@@ -282,7 +430,8 @@ VGCFillArc _$VGCFillArcFromJson(Map<String, dynamic> json) => VGCFillArc(
       arcAngle: (json['arcAngle'] as num?)?.toInt() ?? 0,
     );
 
-Map<String, dynamic> _$VGCFillArcToJson(VGCFillArc instance) =>
+Map<String, dynamic> _$VGCFillArcintintintintintintToJson(
+        VGCFillArcintintintintintint instance) =>
     <String, dynamic>{
       'x': instance.x,
       'y': instance.y,
@@ -292,18 +441,19 @@ Map<String, dynamic> _$VGCFillArcToJson(VGCFillArc instance) =>
       'arcAngle': instance.arcAngle,
     };
 
-VGCFillGradientRectangle _$VGCFillGradientRectangleFromJson(
-        Map<String, dynamic> json) =>
-    VGCFillGradientRectangle(
-      x: (json['x'] as num?)?.toInt() ?? 0,
-      y: (json['y'] as num?)?.toInt() ?? 0,
-      width: (json['width'] as num?)?.toInt() ?? 0,
-      height: (json['height'] as num?)?.toInt() ?? 0,
-      vertical: json['vertical'] as bool? ?? false,
-    );
+VGCFillGradientRectangleintintintintboolean
+    _$VGCFillGradientRectangleintintintintbooleanFromJson(
+            Map<String, dynamic> json) =>
+        VGCFillGradientRectangleintintintintboolean(
+          x: (json['x'] as num?)?.toInt() ?? 0,
+          y: (json['y'] as num?)?.toInt() ?? 0,
+          width: (json['width'] as num?)?.toInt() ?? 0,
+          height: (json['height'] as num?)?.toInt() ?? 0,
+          vertical: json['vertical'] as bool? ?? false,
+        );
 
-Map<String, dynamic> _$VGCFillGradientRectangleToJson(
-        VGCFillGradientRectangle instance) =>
+Map<String, dynamic> _$VGCFillGradientRectangleintintintintbooleanToJson(
+        VGCFillGradientRectangleintintintintboolean instance) =>
     <String, dynamic>{
       'x': instance.x,
       'y': instance.y,
@@ -312,14 +462,17 @@ Map<String, dynamic> _$VGCFillGradientRectangleToJson(
       'vertical': instance.vertical,
     };
 
-VGCFillOval _$VGCFillOvalFromJson(Map<String, dynamic> json) => VGCFillOval(
+VGCFillOvalintintintint _$VGCFillOvalintintintintFromJson(
+        Map<String, dynamic> json) =>
+    VGCFillOvalintintintint(
       x: (json['x'] as num?)?.toInt() ?? 0,
       y: (json['y'] as num?)?.toInt() ?? 0,
       width: (json['width'] as num?)?.toInt() ?? 0,
       height: (json['height'] as num?)?.toInt() ?? 0,
     );
 
-Map<String, dynamic> _$VGCFillOvalToJson(VGCFillOval instance) =>
+Map<String, dynamic> _$VGCFillOvalintintintintToJson(
+        VGCFillOvalintintintint instance) =>
     <String, dynamic>{
       'x': instance.x,
       'y': instance.y,
@@ -327,26 +480,41 @@ Map<String, dynamic> _$VGCFillOvalToJson(VGCFillOval instance) =>
       'height': instance.height,
     };
 
-VGCFillPolygon _$VGCFillPolygonFromJson(Map<String, dynamic> json) =>
-    VGCFillPolygon()
+VGCFillPolygonint _$VGCFillPolygonintFromJson(Map<String, dynamic> json) =>
+    VGCFillPolygonint()
       ..pointArray = (json['pointArray'] as List<dynamic>?)
           ?.map((e) => (e as num).toInt())
           .toList();
 
-Map<String, dynamic> _$VGCFillPolygonToJson(VGCFillPolygon instance) =>
+Map<String, dynamic> _$VGCFillPolygonintToJson(VGCFillPolygonint instance) =>
     <String, dynamic>{
       'pointArray': instance.pointArray,
     };
 
-VGCFillRectangle _$VGCFillRectangleFromJson(Map<String, dynamic> json) =>
-    VGCFillRectangle(
+VGCFillRectangleRectangle _$VGCFillRectangleRectangleFromJson(
+        Map<String, dynamic> json) =>
+    VGCFillRectangleRectangle()
+      ..rect = json['rect'] == null
+          ? null
+          : VRectangle.fromJson(json['rect'] as Map<String, dynamic>);
+
+Map<String, dynamic> _$VGCFillRectangleRectangleToJson(
+        VGCFillRectangleRectangle instance) =>
+    <String, dynamic>{
+      'rect': instance.rect,
+    };
+
+VGCFillRectangleintintintint _$VGCFillRectangleintintintintFromJson(
+        Map<String, dynamic> json) =>
+    VGCFillRectangleintintintint(
       x: (json['x'] as num?)?.toInt() ?? 0,
       y: (json['y'] as num?)?.toInt() ?? 0,
       width: (json['width'] as num?)?.toInt() ?? 0,
       height: (json['height'] as num?)?.toInt() ?? 0,
     );
 
-Map<String, dynamic> _$VGCFillRectangleToJson(VGCFillRectangle instance) =>
+Map<String, dynamic> _$VGCFillRectangleintintintintToJson(
+        VGCFillRectangleintintintint instance) =>
     <String, dynamic>{
       'x': instance.x,
       'y': instance.y,
@@ -354,19 +522,20 @@ Map<String, dynamic> _$VGCFillRectangleToJson(VGCFillRectangle instance) =>
       'height': instance.height,
     };
 
-VGCFillRoundRectangle _$VGCFillRoundRectangleFromJson(
-        Map<String, dynamic> json) =>
-    VGCFillRoundRectangle(
-      x: (json['x'] as num?)?.toInt() ?? 0,
-      y: (json['y'] as num?)?.toInt() ?? 0,
-      width: (json['width'] as num?)?.toInt() ?? 0,
-      height: (json['height'] as num?)?.toInt() ?? 0,
-      arcWidth: (json['arcWidth'] as num?)?.toInt() ?? 0,
-      arcHeight: (json['arcHeight'] as num?)?.toInt() ?? 0,
-    );
+VGCFillRoundRectangleintintintintintint
+    _$VGCFillRoundRectangleintintintintintintFromJson(
+            Map<String, dynamic> json) =>
+        VGCFillRoundRectangleintintintintintint(
+          x: (json['x'] as num?)?.toInt() ?? 0,
+          y: (json['y'] as num?)?.toInt() ?? 0,
+          width: (json['width'] as num?)?.toInt() ?? 0,
+          height: (json['height'] as num?)?.toInt() ?? 0,
+          arcWidth: (json['arcWidth'] as num?)?.toInt() ?? 0,
+          arcHeight: (json['arcHeight'] as num?)?.toInt() ?? 0,
+        );
 
-Map<String, dynamic> _$VGCFillRoundRectangleToJson(
-        VGCFillRoundRectangle instance) =>
+Map<String, dynamic> _$VGCFillRoundRectangleintintintintintintToJson(
+        VGCFillRoundRectangleintintintintintint instance) =>
     <String, dynamic>{
       'x': instance.x,
       'y': instance.y,

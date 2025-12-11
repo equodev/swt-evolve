@@ -421,9 +421,15 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
                     SwtDragSource.this.drag(event);
                 }
             }
+            if (event.type == SWT.ZoomChanged) {
+                if (!SwtDragSource.this.getApi().isDisposed()) {
+                    this.getApi().nativeZoom = event.detail;
+                }
+            }
         };
         control.addListener(SWT.Dispose, controlListener);
         control.addListener(SWT.DragDetect, controlListener);
+        control.addListener(SWT.ZoomChanged, controlListener);
         this.addListener(SWT.Dispose, e -> SwtDragSource.this.onDispose());
         Object effect = control.getData(DEFAULT_DRAG_SOURCE_EFFECT);
         if (effect instanceof DragSourceEffect) {
@@ -546,7 +552,7 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
             int offsetX = event.offsetX;
             hwndDrag = topControl.handle;
             if ((topControl.getStyle() & SWT.RIGHT_TO_LEFT) != 0) {
-                offsetX = image.getBoundsInPixels().width - offsetX;
+                offsetX = Win32DPIUtils.pointToPixel(image.getBounds(), zoom).width - offsetX;
                 RECT rect = new RECT();
                 OS.GetClientRect(topControl.handle, rect);
                 hwndDrag = OS.CreateWindowEx(OS.WS_EX_TRANSPARENT | OS.WS_EX_NOINHERITLAYOUT, WindowClass, null, OS.WS_CHILD | OS.WS_CLIPSIBLINGS, 0, 0, rect.right - rect.left, rect.bottom - rect.top, topControl.handle, 0, OS.GetModuleHandle(null), null);
@@ -565,9 +571,9 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
             OS.RedrawWindow(topControl.handle, null, 0, flags);
             POINT pt = new POINT();
             // To Pixels
-            pt.x = DPIUtil.scaleUp(dragEvent.x, zoom);
+            pt.x = Win32DPIUtils.pointToPixel(dragEvent.x, zoom);
             // To Pixels
-            pt.y = DPIUtil.scaleUp(dragEvent.y, zoom);
+            pt.y = Win32DPIUtils.pointToPixel(dragEvent.y, zoom);
             OS.MapWindowPoints(control.handle, 0, pt, 1);
             RECT rect = new RECT();
             OS.GetWindowRect(hwndDrag, rect);

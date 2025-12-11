@@ -1,10 +1,13 @@
 package org.eclipse.swt.widgets;
 
 import java.util.*;
+import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
+import org.eclipse.swt.browser.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.ole.win32.*;
 
 public interface ImplControl extends ImplWidget {
 

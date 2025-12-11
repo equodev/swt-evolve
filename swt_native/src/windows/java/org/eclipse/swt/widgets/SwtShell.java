@@ -20,6 +20,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import org.eclipse.swt.internal.win32.version.*;
 
 /**
  * Instances of this class represent the "windows"
@@ -312,16 +313,9 @@ public class SwtShell extends SwtDecorations implements IShell {
         if (handle != 0 && !embedded) {
             getApi().state |= FOREIGN_HANDLE;
         }
-        int shellNativeZoom;
-        if (parent != null) {
-            shellNativeZoom = parent.nativeZoom;
-        } else {
-            int mappedDPIZoom = getMonitor().getZoom();
-            shellNativeZoom = mappedDPIZoom;
-        }
-        this.getApi().nativeZoom = shellNativeZoom;
         reskinWidget();
         createWidget();
+        this.getApi().nativeZoom = DPIUtil.mapDPIToZoom(OS.GetDpiForWindow(this.getApi().handle));
     }
 
     /**
@@ -591,11 +585,11 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     void setTitleColoring() {
         int attributeID = 0;
-        if (OS.WIN32_BUILD >= OS.WIN32_BUILD_WIN10_2004) {
+        if (OsVersion.IS_WIN10_2004) {
             // Documented since build 20348, but was already present since build 19041
             final int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
             attributeID = DWMWA_USE_IMMERSIVE_DARK_MODE;
-        } else if (OS.WIN32_BUILD >= OS.WIN32_BUILD_WIN10_1809) {
+        } else if (OsVersion.IS_WIN10_1809) {
             // Undocumented value
             attributeID = 19;
         } else {
@@ -1098,7 +1092,7 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public Point getMaximumSize() {
         checkWidget();
-        return DPIUtil.scaleDown(getMaximumSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getMaximumSizeInPixels(), getZoom());
     }
 
     Point getMaximumSizeInPixels() {
@@ -1115,7 +1109,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 RECT rect = new RECT();
                 int bits1 = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE);
                 int bits2 = OS.GetWindowLong(getApi().handle, OS.GWL_EXSTYLE);
-                OS.AdjustWindowRectEx(rect, bits1, false, bits2);
+                adjustWindowRectEx(rect, bits1, false, bits2);
                 height = Math.min(height, rect.bottom - rect.top);
             }
         }
@@ -1139,7 +1133,7 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public Point getMinimumSize() {
         checkWidget();
-        return DPIUtil.scaleDown(getMinimumSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getMinimumSizeInPixels(), getZoom());
     }
 
     Point getMinimumSizeInPixels() {
@@ -1156,7 +1150,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 RECT rect = new RECT();
                 int bits1 = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE);
                 int bits2 = OS.GetWindowLong(getApi().handle, OS.GWL_EXSTYLE);
-                OS.AdjustWindowRectEx(rect, bits1, false, bits2);
+                adjustWindowRectEx(rect, bits1, false, bits2);
                 height = Math.max(height, rect.bottom - rect.top);
             }
         }
@@ -1627,54 +1621,46 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     @Override
     public Rectangle getBounds() {
-        if (getDisplay().isRescalingAtRuntime()) {
-            Rectangle boundsInPixels = getBoundsInPixels();
-            return ((SwtDisplay) display.getImpl()).translateRectangleInPointsInDisplayCoordinateSystemByContainment(boundsInPixels.x, boundsInPixels.y, boundsInPixels.width, boundsInPixels.height);
-        }
-        return super.getBounds();
+        checkWidget();
+        return ((SwtDisplay) getDisplay().getImpl()).translateFromDisplayCoordinates(getBoundsInPixels(), getZoom());
     }
 
     @Override
     public Point getLocation() {
-        if (getDisplay().isRescalingAtRuntime()) {
-            Point locationInPixels = getLocationInPixels();
-            return ((SwtDisplay) display.getImpl()).translateLocationInPointInDisplayCoordinateSystem(locationInPixels.x, locationInPixels.y);
-        }
-        return super.getLocation();
+        checkWidget();
+        return ((SwtDisplay) getDisplay().getImpl()).translateFromDisplayCoordinates(getLocationInPixels(), getZoom());
     }
 
     @Override
     public void setLocation(Point location) {
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        setLocation(location.x, location.y);
+        checkWidget();
+        Point locationInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(location, getZoom());
+        setLocationInPixels(locationInPixels.x, locationInPixels.y);
     }
 
     @Override
     public void setLocation(int x, int y) {
-        if (getDisplay().isRescalingAtRuntime()) {
-            Point location = ((SwtDisplay) display.getImpl()).translateLocationInPixelsInDisplayCoordinateSystem(x, y);
-            setLocationInPixels(location.x, location.y);
-        } else {
-            super.setLocation(x, y);
-        }
+        setLocation(new Point(x, y));
     }
 
     @Override
     public void setBounds(Rectangle rect) {
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        setBounds(rect.x, rect.y, rect.width, rect.height);
+        checkWidget();
+        Rectangle boundsInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(rect, getZoom());
+        // The scaling of the width and height in case of a monitor change is handled by
+        // the WM_DPICHANGED event processing. So to avoid duplicate scaling, we always
+        // have to scale width and height with the zoom of the original monitor (still
+        // returned by getZoom()) here.
+        setBoundsInPixels(boundsInPixels.x, boundsInPixels.y, Win32DPIUtils.pointToPixel(rect.width, getZoom()), Win32DPIUtils.pointToPixel(rect.height, getZoom()));
     }
 
     @Override
     public void setBounds(int x, int y, int width, int height) {
-        if (getDisplay().isRescalingAtRuntime()) {
-            Rectangle boundsInPixels = ((SwtDisplay) display.getImpl()).translateRectangleInPixelsInDisplayCoordinateSystemByContainment(x, y, width, height);
-            setBoundsInPixels(boundsInPixels.x, boundsInPixels.y, boundsInPixels.width, boundsInPixels.height);
-        } else {
-            super.setBounds(x, y, width, height);
-        }
+        setBounds(new Rectangle(x, y, width, height));
     }
 
     @Override
@@ -1855,7 +1841,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     public void setMaximumSize(int width, int height) {
         checkWidget();
         int zoom = getZoom();
-        setMaximumSizeInPixels(DPIUtil.scaleUp(width, zoom), DPIUtil.scaleUp(height, zoom));
+        setMaximumSizeInPixels(Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom));
     }
 
     /**
@@ -1884,7 +1870,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = DPIUtil.scaleUp(size, getZoom());
+        size = Win32DPIUtils.pointToPixel(size, getZoom());
         setMaximumSizeInPixels(size.x, size.y);
     }
 
@@ -1899,7 +1885,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 RECT rect = new RECT();
                 int bits1 = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE);
                 int bits2 = OS.GetWindowLong(getApi().handle, OS.GWL_EXSTYLE);
-                OS.AdjustWindowRectEx(rect, bits1, false, bits2);
+                adjustWindowRectEx(rect, bits1, false, bits2);
                 heightLimit = rect.bottom - rect.top;
             }
         }
@@ -1934,7 +1920,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     public void setMinimumSize(int width, int height) {
         checkWidget();
         int zoom = getZoom();
-        setMinimumSizeInPixels(DPIUtil.scaleUp(width, zoom), DPIUtil.scaleUp(height, zoom));
+        setMinimumSizeInPixels(Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom));
     }
 
     void setMinimumSizeInPixels(int width, int height) {
@@ -1948,7 +1934,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 RECT rect = new RECT();
                 int bits1 = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE);
                 int bits2 = OS.GetWindowLong(getApi().handle, OS.GWL_EXSTYLE);
-                OS.AdjustWindowRectEx(rect, bits1, false, bits2);
+                adjustWindowRectEx(rect, bits1, false, bits2);
                 heightLimit = rect.bottom - rect.top;
             }
         }
@@ -1986,7 +1972,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = DPIUtil.scaleUp(size, getZoom());
+        size = Win32DPIUtils.pointToPixel(size, getZoom());
         setMinimumSizeInPixels(size.x, size.y);
     }
 
@@ -2395,6 +2381,38 @@ public class SwtShell extends SwtDecorations implements IShell {
         OS.ReleaseDC(getApi().handle, dc);
     }
 
+    /**
+     * Fills the remaining area which are not painted by MenuBar and ClientArea
+     * inside the shell window.
+     */
+    private void fillUnpaintedRegionInShellWindow() {
+        if (menuBar == null)
+            return;
+        Rectangle clientArea = getClientRectInWindow();
+        Rectangle menuArea = ((SwtMenu) menuBar.getImpl()).getBounds();
+        Rectangle windowBounds = getBoundsInPixels();
+        menuArea.x = menuArea.x - windowBounds.x;
+        menuArea.y = menuArea.y - windowBounds.y;
+        long windowRegion = OS.CreateRectRgn(0, 0, windowBounds.width, windowBounds.height);
+        long menuRegion = OS.CreateRectRgn(menuArea.x, menuArea.y, menuArea.x + menuArea.width, menuArea.y + menuArea.height);
+        long clientRegion = OS.CreateRectRgn(clientArea.x, clientArea.y, clientArea.x + clientArea.width, clientArea.y + clientArea.height);
+        OS.CombineRgn(windowRegion, windowRegion, menuRegion, OS.RGN_DIFF);
+        OS.CombineRgn(windowRegion, windowRegion, clientRegion, OS.RGN_DIFF);
+        OS.DeleteObject(menuRegion);
+        OS.DeleteObject(clientRegion);
+        int dwRop = ((SwtDisplay) display.getImpl()).useDarkModeExplorerTheme ? OS.BLACKNESS : OS.PATCOPY;
+        long dc = OS.GetWindowDC(getApi().handle);
+        POINT pt = null;
+        pt = new POINT();
+        OS.GetWindowOrgEx(dc, pt);
+        OS.OffsetRgn(windowRegion, -pt.x, -pt.y);
+        OS.SelectClipRgn(dc, windowRegion);
+        OS.OffsetRgn(windowRegion, pt.x, pt.y);
+        OS.PatBlt(dc, 0, 0, windowBounds.width, windowBounds.height, dwRop);
+        OS.DeleteObject(windowRegion);
+        OS.ReleaseDC(getApi().handle, dc);
+    }
+
     @Override
     long windowProc(long hwnd, int msg, long wParam, long lParam) {
         if (getApi().handle == 0)
@@ -2443,6 +2461,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 {
                     long ret = super.windowProc(hwnd, msg, wParam, lParam);
                     overpaintMenuBorder();
+                    fillUnpaintedRegionInShellWindow();
                     return ret;
                 }
         }
@@ -2641,6 +2660,16 @@ public class SwtShell extends SwtDecorations implements IShell {
                 hittest = OS.HTBORDER;
             return new LRESULT(hittest);
         }
+        /*
+	 * In quarter zoom levels, sometimes the MenuItem in the MenuBar has more height
+	 * than the MenuBar, which leads to a gap between the client area and the menu
+	 * bar leaving it unpainted and unmanaged. On hovering over the MenuItem, it
+	 * leaves the gap area painted with remains of the MenuItem hover overlay. The
+	 * event WM_NCHITTEST is sent on hovering over MenuItem and hence the overlay
+	 * remains can be cleaned by calling
+	 * fillUnpaintedRegionBetweenMenuBarAndClientArea on this event.
+	 */
+        fillUnpaintedRegionInShellWindow();
         return null;
     }
 
@@ -2726,7 +2755,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                     RECT rect = new RECT();
                     OS.GetClientRect(getApi().handle, rect);
                     if (OS.PtInRect(rect, pt)) {
-                        OS.SetCursor(cursor.handle);
+                        OS.SetCursor(SwtCursor.win32_getHandle(cursor, DPIUtil.getZoomForAutoscaleProperty(getNativeZoom())));
                         switch(msg) {
                             case OS.WM_LBUTTONDOWN:
                             case OS.WM_RBUTTONDOWN:
@@ -2788,7 +2817,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                     RECT rect = new RECT();
                     int bits1 = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE);
                     int bits2 = OS.GetWindowLong(getApi().handle, OS.GWL_EXSTYLE);
-                    OS.AdjustWindowRectEx(rect, bits1, false, bits2);
+                    adjustWindowRectEx(rect, bits1, false, bits2);
                     lpwp.cy = Math.max(lpwp.cy, rect.bottom - rect.top);
                 }
             }

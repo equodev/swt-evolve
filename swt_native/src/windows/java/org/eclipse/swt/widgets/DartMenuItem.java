@@ -46,6 +46,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
 
     long hBitmap;
 
+    Image imageSelected;
+
+    long hBitmapSelected;
+
     int id, accelerator, userId;
 
     ToolTip itemToolTip;
@@ -64,6 +68,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     // This static is used to mitigate this increase
     private final static int WINDOWS_OVERHEAD = 6;
 
+    // Workaround for: selection indicator is missing for menu item with image on Win11 (#501)
     /**
      * Constructs a new instance of this class given its parent
      * (which must be a <code>Menu</code>) and a style value
@@ -475,6 +480,11 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     void releaseWidget() {
         super.releaseWidget();
         hBitmap = 0;
+        hBitmapSelected = 0;
+        if (imageSelected != null) {
+            imageSelected.dispose();
+            imageSelected = null;
+        }
         if (accelerator != 0) {
             ((DartMenu) parent.getImpl()).destroyAccelerators();
         }
@@ -692,10 +702,131 @@ public class DartMenuItem extends DartItem implements IMenuItem {
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
         super.setImage(image);
+        if (imageSelected != null) {
+            imageSelected.dispose();
+            imageSelected = null;
+        }
+        updateImage();
+    }
+
+    private void updateImage() {
         if (((DartMenu) parent.getImpl()).needsMenuCallback()) {
         } else {
         }
         ((DartMenu) parent.getImpl()).redraw();
+    }
+
+    private void initCustomSelectedImage() {
+        Image image = this.image;
+        if (image == null) {
+            return;
+        }
+        Rectangle imageBounds = image.getBounds();
+        Color foregroundColor = increaseContrast((((SwtDisplay) display.getImpl()).menuBarForegroundPixel != -1) ? SwtColor.win32_new(this.display, ((SwtDisplay) display.getImpl()).menuBarForegroundPixel) : ((DartMenu) parent.getImpl()).getForeground());
+        Color backgroundColor = increaseContrast((((SwtDisplay) display.getImpl()).menuBarBackgroundPixel != -1) ? SwtColor.win32_new(this.display, ((SwtDisplay) display.getImpl()).menuBarBackgroundPixel) : ((DartMenu) parent.getImpl()).getBackground());
+        ImageGcDrawer drawer = new ImageGcDrawer() {
+
+            @Override
+            public int getGcStyle() {
+                return SWT.TRANSPARENT;
+            }
+
+            @Override
+            public void drawOn(GC gc, int imageWidth, int imageHeight) {
+                gc.setAdvanced(true);
+                gc.drawImage(image, imageWidth - imageBounds.width, (imageHeight - imageBounds.height) / 2);
+                gc.setAntialias(SWT.ON);
+                int x = imageWidth - 16;
+                int y = imageHeight / 2 - 8;
+                if ((getApi().style & SWT.CHECK) != 0) {
+                    drawCheck(gc, foregroundColor, backgroundColor, x, y);
+                } else {
+                    drawRadio(gc, foregroundColor, backgroundColor, x, y);
+                }
+            }
+        };
+        imageSelected = new Image(image.getDevice(), drawer, Math.max(imageBounds.width, 16), Math.max(imageBounds.height, 16));
+    }
+
+    private void drawCheck(GC gc, Color foregroundColor, Color backgroundColor, int x, int y) {
+        int[] points = new int[] { x + 4, y + 10, x + 6, y + 12, x + 12, y + 6 };
+        gc.setLineStyle(SWT.LINE_SOLID);
+        gc.setForeground(backgroundColor);
+        gc.setLineCap(SWT.CAP_ROUND);
+        gc.setLineJoin(SWT.JOIN_ROUND);
+        gc.setAlpha(127);
+        gc.setLineWidth(6);
+        gc.drawPolyline(points);
+        gc.setLineJoin(SWT.JOIN_MITER);
+        gc.setAlpha(255);
+        gc.setLineWidth(3);
+        gc.drawPolyline(points);
+        gc.setForeground(foregroundColor);
+        gc.setLineWidth(1);
+        gc.setLineCap(SWT.CAP_FLAT);
+        gc.drawPolyline(points);
+    }
+
+    private void drawRadio(GC gc, Color foregroundColor, Color backgroundColor, int x, int y) {
+        gc.setBackground(backgroundColor);
+        gc.setAlpha(127);
+        gc.fillOval(x + 4, y + 5, 8, 8);
+        gc.setAlpha(255);
+        gc.fillOval(x + 5, y + 6, 6, 6);
+        gc.setBackground(foregroundColor);
+        gc.fillOval(x + 6, y + 7, 4, 4);
+    }
+
+    private Color increaseContrast(Color color) {
+        return (color.getRed() + color.getGreen() + color.getBlue() > 127 * 3) ? display.getSystemColor(SWT.COLOR_WHITE) : color;
+    }
+
+    private long getMenuItemIconBitmapHandle(Image image) {
+        if (image == null) {
+            return 0;
+        }
+        int zoom = adaptZoomForMenuItem(getApi().nativeZoom, image);
+        return SwtDisplay.create32bitDIB(image, zoom);
+    }
+
+    private long getMenuItemIconSelectedBitmapHandle() {
+        Image image = imageSelected;
+        if (image == null) {
+            return 0;
+        }
+        int zoom = adaptZoomForMenuItem(getApi().nativeZoom, image);
+        return hBitmapSelected = SwtDisplay.create32bitDIB(image, zoom);
+    }
+
+    private int adaptZoomForMenuItem(int currentZoom, Image image) {
+        int primaryMonitorZoomAtAppStartUp = getPrimaryMonitorZoomAtStartup();
+        /*
+	 * Windows has inconsistent behavior when setting the size of MenuItem image and
+	 * hence we need to adjust the size of the images as per different kind of zoom
+	 * level, i.e. full (100s), half (50s) and quarter (25s). The image size per
+	 * zoom level is also affected by the primaryMonitorZoomAtAppStartUp. The
+	 * implementation below is based on the pattern observed for all the zoom values
+	 * and what fits the best for these zoom level types.
+	 */
+        if (primaryMonitorZoomAtAppStartUp > currentZoom && isQuarterZoom(currentZoom)) {
+            return currentZoom - 25;
+        }
+        if (!isHalfZoom(primaryMonitorZoomAtAppStartUp) && isHalfZoom(currentZoom)) {
+            // Use the size recommended by System Metrics. This value only holds
+        }
+        return currentZoom;
+    }
+
+    private static boolean isHalfZoom(int zoom) {
+        return zoom % 50 == 0 && zoom % 100 != 0;
+    }
+
+    private static boolean isQuarterZoom(int zoom) {
+        return zoom % 10 != 0 && zoom % 25 == 0;
+    }
+
+    private static int getPrimaryMonitorZoomAtStartup() {
+        return 0;
     }
 
     /**
@@ -928,7 +1059,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     }
 
     private int getMonitorZoom() {
-        return ((SwtMonitor) getMenu().getShell().getMonitor().getImpl()).zoom;
+        return ((SwtMonitor) getParent().getShell().getMonitor().getImpl()).zoom;
     }
 
     private int getMenuZoom() {
@@ -940,7 +1071,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     }
 
     private Point calculateRenderedTextSize() {
-        GC gc = new GC(this.getMenu().getShell());
+        GC gc = new GC(this.getParent().getShell());
         String textWithoutMnemonicCharacter = getText().replace("&", "");
         Point points = gc.textExtent(textWithoutMnemonicCharacter);
         gc.dispose();
@@ -957,8 +1088,6 @@ public class DartMenuItem extends DartItem implements IMenuItem {
                 // Pixel height of font in this example is 15px
                 // GC calculated height of 15px, scales down with adjusted zoom of 100% and returns 15pt -> should be 10pt
                 // this calculation is corrected by the following line
-                // This is the only place, where the GC needs to use the native zoom to do that, therefore it is fixed only here
-                points = DPIUtil.scaleDown(DPIUtil.scaleUp(points, adjustedPrimaryMonitorZoom), primaryMonitorZoom);
             }
         }
         return points;
@@ -968,12 +1097,9 @@ public class DartMenuItem extends DartItem implements IMenuItem {
         if (!(widget instanceof MenuItem menuItem)) {
             return;
         }
-        // Refresh the image
-        Image menuItemImage = menuItem.getImage();
-        if (menuItemImage != null) {
-            Image currentImage = menuItemImage;
-            ((DartMenuItem) menuItem.getImpl()).image = null;
-            menuItem.setImage(currentImage);
+        // Refresh the image(s)
+        if (menuItem.getImage() != null) {
+            ((DartMenuItem) ((MenuItem) menuItem).getImpl()).updateImage();
         }
         // Refresh the sub menu
         Menu subMenu = menuItem.getMenu();
@@ -997,6 +1123,14 @@ public class DartMenuItem extends DartItem implements IMenuItem {
 
     public long _hBitmap() {
         return hBitmap;
+    }
+
+    public Image _imageSelected() {
+        return imageSelected;
+    }
+
+    public long _hBitmapSelected() {
+        return hBitmapSelected;
     }
 
     public int _id() {

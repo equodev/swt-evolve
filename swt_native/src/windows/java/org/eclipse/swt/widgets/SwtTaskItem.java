@@ -492,7 +492,7 @@ public class SwtTaskItem extends SwtItem implements ITaskItem {
         long hIcon = 0;
         switch(overlayImage.type) {
             case SWT.BITMAP:
-                image2 = SwtDisplay.createIcon(overlayImage);
+                image2 = SwtDisplay.createIcon(overlayImage, getZoom());
                 hIcon = SwtImage.win32_getHandle(image2, getZoom());
                 break;
             case SWT.ICON:

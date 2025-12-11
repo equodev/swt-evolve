@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -20,7 +20,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
 import dev.equo.swt.*;
 
 /**
@@ -156,8 +155,7 @@ public class DartLink extends DartControl implements ILink {
             gc.setForeground(disabledColor);
         if (hasFocus() && focusIndex != -1) {
             Rectangle[] rects = getRectanglesInPixels(focusIndex);
-            for (int i = 0; i < rects.length; i++) {
-                Rectangle rect = DPIUtil.autoScaleDown(rects[i]);
+            for (Rectangle rect : rects) {
                 gc.drawFocus(rect.x, rect.y, rect.width, rect.height);
             }
         }

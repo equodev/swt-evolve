@@ -180,7 +180,7 @@ public class SwtTreeDropTargetEffect extends SwtDropTargetEffect implements ITre
         long handle = tree.handle;
         Point coordinates = new Point(event.x, event.y);
         // To Pixels
-        coordinates = DPIUtil.scaleUp(tree.toControl(coordinates), DPIUtil.getZoomForAutoscaleProperty(tree.nativeZoom));
+        coordinates = Win32DPIUtils.pointToPixel(tree.toControl(coordinates), DPIUtil.getZoomForAutoscaleProperty(tree.nativeZoom));
         TVHITTESTINFO lpht = new TVHITTESTINFO();
         lpht.x = coordinates.x;
         lpht.y = coordinates.y;

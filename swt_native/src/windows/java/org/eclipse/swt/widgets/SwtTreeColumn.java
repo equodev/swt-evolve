@@ -320,7 +320,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
      */
     public int getWidth() {
         checkWidget();
-        return DPIUtil.scaleDown(getWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getWidthInPixels(), getZoom());
     }
 
     int getWidthInPixels() {
@@ -373,7 +373,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
                     if (isDisposed() || parent.isDisposed())
                         break;
                     Rectangle bounds = event.getBounds();
-                    itemRight = DPIUtil.scaleUp(bounds.x + bounds.width, getZoom());
+                    itemRight = Win32DPIUtils.pointToPixel(bounds.x + bounds.width, getZoom());
                 } else {
                     long hFont = ((SwtTreeItem) item.getImpl()).fontHandle(index);
                     if (hFont != -1)
@@ -404,7 +404,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
                 headerImage = image;
             }
             if (headerImage != null) {
-                Rectangle bounds = headerImage.getBoundsInPixels();
+                Rectangle bounds = Win32DPIUtils.pointToPixel(headerImage.getBounds(), getZoom());
                 headerWidth += bounds.width;
             }
             int margin = 0;
@@ -759,7 +759,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
      */
     public void setWidth(int width) {
         checkWidget();
-        setWidthInPixels(DPIUtil.scaleUp(width, getZoom()));
+        setWidthInPixels(Win32DPIUtils.pointToPixel(width, getZoom()));
     }
 
     void setWidthInPixels(int width) {

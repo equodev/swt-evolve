@@ -72,7 +72,7 @@ public final class SwtFontMetrics implements IFontMetrics {
      * @return the ascent of the font
      */
     public int getAscent() {
-        return DPIUtil.scaleDown(getApi().handle.tmAscent - getApi().handle.tmInternalLeading, getZoom());
+        return DPIUtil.pixelToPoint(getApi().handle.tmAscent - getApi().handle.tmInternalLeading, getZoom());
     }
 
     /**
@@ -95,7 +95,7 @@ public final class SwtFontMetrics implements IFontMetrics {
      */
     @Deprecated
     public int getAverageCharWidth() {
-        return DPIUtil.scaleDown(getApi().handle.tmAveCharWidth, getZoom());
+        return DPIUtil.pixelToPoint(getApi().handle.tmAveCharWidth, getZoom());
     }
 
     /**
@@ -107,7 +107,7 @@ public final class SwtFontMetrics implements IFontMetrics {
      * @return the descent of the font
      */
     public int getDescent() {
-        return DPIUtil.scaleDown(getApi().handle.tmDescent, getZoom());
+        return DPIUtil.pixelToPoint(getApi().handle.tmDescent, getZoom());
     }
 
     /**
@@ -122,7 +122,7 @@ public final class SwtFontMetrics implements IFontMetrics {
      * @see #getLeading
      */
     public int getHeight() {
-        return DPIUtil.scaleDown(getApi().handle.tmHeight, getZoom());
+        return DPIUtil.pixelToPoint(getApi().handle.tmHeight, getZoom());
     }
 
     /**
@@ -188,7 +188,7 @@ public final class SwtFontMetrics implements IFontMetrics {
     public static FontMetrics win32_new(TEXTMETRIC handle, int nativeZoom) {
         FontMetrics fontMetrics = new FontMetrics();
         fontMetrics.handle = handle;
-        //Coming soon with Font support: ((SwtFontMetrics) fontMetrics.getImpl()).nativeZoom = nativeZoom;
+        //fontMetrics.nativeZoom = nativeZoom;
         ;
         return fontMetrics;
     }

@@ -262,7 +262,7 @@ public class SWT_AWT {
             if (parent.isDisposed())
                 return;
             // To Pixels
-            final Rectangle clientArea = DPIUtil.scaleUp(parent.getClientArea(), DPIUtil.getZoomForAutoscaleProperty(parent.nativeZoom));
+            final Rectangle clientArea = Win32DPIUtils.pointToPixel(parent.getClientArea(), DPIUtil.getZoomForAutoscaleProperty(parent.nativeZoom));
             EventQueue.invokeLater(() -> {
                 frame.setSize(clientArea.width, clientArea.height);
                 frame.validate();
@@ -311,7 +311,7 @@ public class SWT_AWT {
                         return;
                     Dimension dim = parent.getSize();
                     // To Points
-                    shell.setSize(DPIUtil.autoScaleDown(new Point(dim.width, dim.height)));
+                    shell.setSize(Win32DPIUtils.pixelToPoint(new Point(dim.width, dim.height), DPIUtil.getDeviceZoom()));
                 });
             }
         };

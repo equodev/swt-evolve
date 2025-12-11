@@ -114,6 +114,7 @@ class SWT {
   static const int READ_ONLY = 1 << 3;
   static const int WRAP = 1 << 6;
   static const int SEARCH = 1 << 7;
+  static const int NO_SEARCH = 1 << 10;
   static const int SIMPLE = 1 << 6;
   static const int PASSWORD = 1 << 22;
   static const int SHADOW_IN = 1 << 2;
@@ -193,6 +194,7 @@ class SWT {
   static const int WEBKIT = 1 << 16;
   static const int CHROMIUM = 1 << 17;
   static const int EDGE = 1 << 18;
+  static const int IE = 1 << 19;
   static const int BALLOON = 1 << 12;
   static const int BEGINNING = 1;
   static const int FILL = 4;

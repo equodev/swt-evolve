@@ -164,7 +164,7 @@ public class SwtLabel extends SwtControl implements ILabel {
             return new Point(width, height);
         }
         if (isImageMode) {
-            Rectangle rect = DPIUtil.scaleBounds(image.getBounds(), this.getZoom(), 100);
+            Rectangle rect = Win32DPIUtils.scaleBounds(image.getBounds(), this.getZoom(), 100);
             width += rect.width;
             height += rect.height;
         } else {
@@ -596,7 +596,7 @@ public class SwtLabel extends SwtControl implements ILabel {
         if (width == 0 || height == 0)
             return;
         int zoom = getZoom();
-        Rectangle imageRect = DPIUtil.scaleBounds(image.getBounds(), zoom, 100);
+        Rectangle imageRect = Win32DPIUtils.scaleBounds(image.getBounds(), zoom, 100);
         int x = 0;
         if ((getApi().style & SWT.CENTER) != 0) {
             x = Math.max(0, (width - imageRect.width) / 2);
@@ -607,7 +607,7 @@ public class SwtLabel extends SwtControl implements ILabel {
         data.device = display;
         GC gc = createNewGC(struct.hDC, data);
         Image image = getEnabled() ? this.image : new Image(display, this.image, SWT.IMAGE_DISABLE);
-        gc.drawImage(image, DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(Math.max(0, (height - imageRect.height) / 2), zoom));
+        gc.drawImage(image, DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(Math.max(0, (height - imageRect.height) / 2), zoom));
         if (image != this.image)
             image.dispose();
         gc.dispose();

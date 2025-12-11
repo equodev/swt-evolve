@@ -54,14 +54,6 @@ public final class Color extends Resource {
     /**
      * Prevents uninitialized instances from being created outside the package.
      */
-    Color() {
-        this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(this) : new SwtColor(this));
-    }
-
-    /**
-     * Prevents uninitialized instances from being created outside the package.
-     */
     Color(Device device) {
         this((IColor) null);
         setImpl(Config.isEquo(Color.class) ? new DartColor(device, this) : new SwtColor(device, this));

@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2017 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -17,7 +17,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
 import dev.equo.swt.*;
 
 /**
@@ -116,8 +115,7 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      */
     public Rectangle computeTrim(int x, int y, int width, int height) {
         checkWidget();
-        Rectangle rect = DPIUtil.autoScaleUp(new Rectangle(x, y, width, height));
-        return DPIUtil.autoScaleDown(computeTrimInPixels(rect.x, rect.y, rect.width, rect.height));
+        return computeTrimInPixels(x, y, width, height);
     }
 
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {

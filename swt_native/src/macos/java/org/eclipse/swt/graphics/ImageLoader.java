@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2016 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -11,6 +11,7 @@
  *
  *  Contributors:
  *      IBM Corporation - initial API and implementation
+ *      Hannes Wellmann - Unify ImageLoader implementations and extract differences into InternalImageLoader
  * *****************************************************************************
  */
 package org.eclipse.swt.graphics;
@@ -18,6 +19,8 @@ package org.eclipse.swt.graphics;
 import java.io.*;
 import java.util.*;
 import org.eclipse.swt.*;
+import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.DPIUtil.*;
 import org.eclipse.swt.internal.image.*;
 
 /**
@@ -143,17 +146,29 @@ public class ImageLoader {
      *    <li>ERROR_NULL_ARGUMENT - if the stream is null</li>
      * </ul>
      * @exception SWTException <ul>
-     *    <li>ERROR_IO - if an IO error occurs while reading from the stream</li>
+     *    <li>ERROR_IO - if an IO error occurs while reading the stream</li>
      *    <li>ERROR_INVALID_IMAGE - if the image stream contains invalid data</li>
      *    <li>ERROR_UNSUPPORTED_FORMAT - if the image stream contains an unrecognized format</li>
      * </ul>
      */
     public ImageData[] load(InputStream stream) {
+        load(stream, FileFormat.DEFAULT_ZOOM, FileFormat.DEFAULT_ZOOM);
+        return data;
+    }
+
+    List<ElementAtZoom<ImageData>> load(InputStream stream, int fileZoom, int targetZoom) {
         if (stream == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         reset();
-        data = FileFormat.load(stream, this);
-        return data;
+        List<ElementAtZoom<ImageData>> images = NativeImageLoader.load(new ElementAtZoom<>(stream, fileZoom), this, targetZoom);
+        data = images.stream().map(ElementAtZoom::element).toArray(ImageData[]::new);
+        return images;
+    }
+
+    static boolean canLoadAtZoom(InputStream stream, int fileZoom, int targetZoom) {
+        if (stream == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        return FileFormat.canLoadAtZoom(new ElementAtZoom<>(stream, fileZoom), targetZoom);
     }
 
     /**
@@ -169,47 +184,56 @@ public class ImageLoader {
      *    <li>ERROR_NULL_ARGUMENT - if the file name is null</li>
      * </ul>
      * @exception SWTException <ul>
-     *    <li>ERROR_IO - if an IO error occurs while reading from the file</li>
+     *    <li>ERROR_IO - if an IO error occurs while reading the file</li>
      *    <li>ERROR_INVALID_IMAGE - if the image file contains invalid data</li>
      *    <li>ERROR_UNSUPPORTED_FORMAT - if the image file contains an unrecognized format</li>
      * </ul>
      */
     public ImageData[] load(String filename) {
+        load(filename, FileFormat.DEFAULT_ZOOM, FileFormat.DEFAULT_ZOOM);
+        return data;
+    }
+
+    List<ElementAtZoom<ImageData>> load(String filename, int fileZoom, int targetZoom) {
         if (filename == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        InputStream stream = null;
-        try {
-            stream = new FileInputStream(filename);
-            return load(stream);
+        try (InputStream stream = new FileInputStream(filename)) {
+            return load(stream, fileZoom, targetZoom);
         } catch (IOException e) {
             SWT.error(SWT.ERROR_IO, e);
-        } finally {
-            try {
-                if (stream != null)
-                    stream.close();
-            } catch (IOException e) {
-                // Ignore error
-            }
         }
         return null;
+    }
+
+    static boolean canLoadAtZoom(String filename, int fileZoom, int targetZoom) {
+        if (filename == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        try (InputStream stream = new FileInputStream(filename)) {
+            return canLoadAtZoom(stream, fileZoom, targetZoom);
+        } catch (IOException e) {
+            SWT.error(SWT.ERROR_IO, e);
+        }
+        return false;
     }
 
     /**
      * Saves the image data in this ImageLoader to the specified stream.
      * The format parameter can have one of the following values:
      * <dl>
-     * <dt><code>IMAGE_BMP</code></dt>
+     * <dt>{@link SWT#IMAGE_BMP}</dt>
      * <dd>Windows BMP file format, no compression</dd>
-     * <dt><code>IMAGE_BMP_RLE</code></dt>
+     * <dt>{@link SWT#IMAGE_BMP_RLE}</dt>
      * <dd>Windows BMP file format, RLE compression if appropriate</dd>
-     * <dt><code>IMAGE_GIF</code></dt>
+     * <dt>{@link SWT#IMAGE_GIF}</dt>
      * <dd>GIF file format</dd>
-     * <dt><code>IMAGE_ICO</code></dt>
+     * <dt>{@link SWT#IMAGE_ICO}</dt>
      * <dd>Windows ICO file format</dd>
-     * <dt><code>IMAGE_JPEG</code></dt>
+     * <dt>{@link SWT#IMAGE_JPEG}</dt>
      * <dd>JPEG file format</dd>
-     * <dt><code>IMAGE_PNG</code></dt>
+     * <dt>{@link SWT#IMAGE_PNG}</dt>
      * <dd>PNG file format</dd>
+     * <dt>{@link SWT#IMAGE_TIFF}</dt>
+     * <dd>TIFF file format</dd>
      * </dl>
      *
      * @param stream the output stream to write the images to
@@ -227,25 +251,27 @@ public class ImageLoader {
     public void save(OutputStream stream, int format) {
         if (stream == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        FileFormat.save(stream, format, this);
+        NativeImageLoader.save(stream, format, this);
     }
 
     /**
      * Saves the image data in this ImageLoader to a file with the specified name.
      * The format parameter can have one of the following values:
      * <dl>
-     * <dt><code>IMAGE_BMP</code></dt>
+     * <dt>{@link SWT#IMAGE_BMP}</dt>
      * <dd>Windows BMP file format, no compression</dd>
-     * <dt><code>IMAGE_BMP_RLE</code></dt>
+     * <dt>{@link SWT#IMAGE_BMP_RLE}</dt>
      * <dd>Windows BMP file format, RLE compression if appropriate</dd>
-     * <dt><code>IMAGE_GIF</code></dt>
+     * <dt>{@link SWT#IMAGE_GIF}</dt>
      * <dd>GIF file format</dd>
-     * <dt><code>IMAGE_ICO</code></dt>
+     * <dt>{@link SWT#IMAGE_ICO}</dt>
      * <dd>Windows ICO file format</dd>
-     * <dt><code>IMAGE_JPEG</code></dt>
+     * <dt>{@link SWT#IMAGE_JPEG}</dt>
      * <dd>JPEG file format</dd>
-     * <dt><code>IMAGE_PNG</code></dt>
+     * <dt>{@link SWT#IMAGE_PNG}</dt>
      * <dd>PNG file format</dd>
+     * <dt>{@link SWT#IMAGE_TIFF}</dt>
+     * <dd>TIFF file format</dd>
      * </dl>
      *
      * @param filename the name of the file to write the images to
@@ -263,16 +289,10 @@ public class ImageLoader {
     public void save(String filename, int format) {
         if (filename == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        OutputStream stream = null;
-        try {
-            stream = new FileOutputStream(filename);
+        try (OutputStream stream = new FileOutputStream(filename)) {
+            save(stream, format);
         } catch (IOException e) {
             SWT.error(SWT.ERROR_IO, e);
-        }
-        save(stream, format);
-        try {
-            stream.close();
-        } catch (IOException e) {
         }
     }
 

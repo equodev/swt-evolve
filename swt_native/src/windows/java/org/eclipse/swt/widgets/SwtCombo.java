@@ -957,7 +957,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public Point getCaretLocation() {
         checkWidget();
-        return DPIUtil.scaleDown(getCaretLocationInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getCaretLocationInPixels(), getZoom());
     }
 
     Point getCaretLocationInPixels() {
@@ -1131,7 +1131,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public int getItemHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getItemHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getItemHeightInPixels(), getZoom());
     }
 
     int getItemHeightInPixels() {
@@ -1403,7 +1403,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public int getTextHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getTextHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getTextHeightInPixels(), getZoom());
     }
 
     int getTextHeightInPixels() {

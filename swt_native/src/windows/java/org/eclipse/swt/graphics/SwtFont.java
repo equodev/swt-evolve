@@ -38,17 +38,45 @@ import org.eclipse.swt.internal.win32.*;
 public final class SwtFont extends SwtResource implements IFont {
 
     /**
+     * the handle to the OS font resource
+     * (Warning: This field is platform dependent)
+     * <p>
+     * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
+     * public API. It is marked public only so that it can be shared
+     * within the packages provided by SWT. It is not available on all
+     * platforms and should never be accessed from application code.
+     * </p>
+     */
+    private long handle;
+
+    /**
      * The zoom in % of the standard resolution used for conversion of point height to pixel height
      * (Warning: This field is platform dependent)
      */
     int zoom;
 
     /**
-     * Prevents uninitialized instances from being created outside the package.
+     * this field is used to mark destroyed fonts
      */
-    SwtFont(Device device, Font api) {
+    private boolean isDestroyed;
+
+    /**
+     * this field is used to store fontData provided during initialization
+     */
+    private final FontData fontData;
+
+    /**
+     * Font height in points. As the conversion to pixel height involves rounding the fontHeight must
+     * be cached.
+     */
+    private final float fontHeight;
+
+    SwtFont(Device device, long handle, int zoom, Font api) {
         super(device, api);
-        this.zoom = extractZoom(this.device);
+        this.fontData = null;
+        this.handle = handle;
+        this.zoom = zoom;
+        this.fontHeight = ((SwtDevice) device.getImpl()).computePoints(fetchLogFontData(), handle, zoom);
     }
 
     /**
@@ -73,15 +101,21 @@ public final class SwtFont extends SwtResource implements IFont {
      */
     public SwtFont(Device device, FontData fd, Font api) {
         super(device, api);
-        this.zoom = extractZoom(this.device);
-        init(fd);
+        if (fd == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        this.zoom = DPIUtil.getNativeDeviceZoom();
+        this.fontData = new FontData(fd);
+        this.fontHeight = fd.height;
         init();
     }
 
     SwtFont(Device device, FontData fd, int zoom, Font api) {
         super(device, api);
+        if (fd == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.zoom = zoom;
-        init(fd);
+        this.fontData = new FontData(fd);
+        this.fontHeight = fd.height;
         init();
     }
 
@@ -120,8 +154,10 @@ public final class SwtFont extends SwtResource implements IFont {
             if (fd == null)
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        this.zoom = extractZoom(this.device);
-        init(fds[0]);
+        this.zoom = DPIUtil.getNativeDeviceZoom();
+        FontData fd = fds[0];
+        this.fontData = new FontData(fd);
+        this.fontHeight = fd.height;
         init();
     }
 
@@ -153,25 +189,17 @@ public final class SwtFont extends SwtResource implements IFont {
         super(device, api);
         if (name == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.zoom = extractZoom(this.device);
-        init(new FontData(name, height, style));
-        init();
-    }
-
-    /*public*/
-    SwtFont(Device device, String name, float height, int style, Font api) {
-        super(device, api);
-        if (name == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.zoom = extractZoom(this.device);
-        init(new FontData(name, height, style));
+        this.zoom = DPIUtil.getNativeDeviceZoom();
+        this.fontData = new FontData(name, height, style);
+        this.fontHeight = height;
         init();
     }
 
     @Override
     void destroy() {
-        OS.DeleteObject(getApi().handle);
-        getApi().handle = 0;
+        OS.DeleteObject(handle);
+        handle = 0;
+        isDestroyed = true;
     }
 
     /**
@@ -191,7 +219,7 @@ public final class SwtFont extends SwtResource implements IFont {
         if (!(object instanceof Font))
             return false;
         Font font = (Font) object;
-        return device == font.getImpl()._device() && getApi().handle == font.handle;
+        return device == font.getImpl()._device() && win32_getHandle(this.getApi()) == win32_getHandle(font);
     }
 
     /**
@@ -209,10 +237,14 @@ public final class SwtFont extends SwtResource implements IFont {
     public FontData[] getFontData() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        LOGFONT logFont = fetchLogFontData();
+        return new FontData[] { SwtFontData.win32_new(logFont, fontHeight) };
+    }
+
+    private LOGFONT fetchLogFontData() {
         LOGFONT logFont = new LOGFONT();
-        OS.GetObject(getApi().handle, LOGFONT.sizeof, logFont);
-        float heightInPoints = ((SwtDevice) device.getImpl()).computePoints(logFont, getApi().handle, DPIUtil.mapZoomToDPI(zoom));
-        return new FontData[] { SwtFontData.win32_new(logFont, heightInPoints) };
+        OS.GetObject(win32_getHandle(this.getApi()), LOGFONT.sizeof, logFont);
+        return logFont;
     }
 
     /**
@@ -227,7 +259,7 @@ public final class SwtFont extends SwtResource implements IFont {
      */
     @Override
     public int hashCode() {
-        return (int) getApi().handle;
+        return (int) win32_getHandle(this.getApi());
     }
 
     void init(FontData fd) {
@@ -235,15 +267,10 @@ public final class SwtFont extends SwtResource implements IFont {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         LOGFONT logFont = fd.data;
         int lfHeight = logFont.lfHeight;
-        logFont.lfHeight = ((SwtDevice) device.getImpl()).computePixels(fd.height);
-        int primaryZoom = extractZoom(device);
-        if (zoom != primaryZoom) {
-            float scaleFactor = 1f * zoom / primaryZoom;
-            logFont.lfHeight *= scaleFactor;
-        }
-        getApi().handle = OS.CreateFontIndirect(logFont);
+        logFont.lfHeight = ((SwtDevice) device.getImpl()).computePixels(fd.height, zoom);
+        handle = OS.CreateFontIndirect(logFont);
         logFont.lfHeight = lfHeight;
-        if (getApi().handle == 0)
+        if (handle == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
     }
 
@@ -259,7 +286,7 @@ public final class SwtFont extends SwtResource implements IFont {
      */
     @Override
     public boolean isDisposed() {
-        return getApi().handle == 0;
+        return isDestroyed;
     }
 
     /**
@@ -272,14 +299,29 @@ public final class SwtFont extends SwtResource implements IFont {
     public String toString() {
         if (isDisposed())
             return "Font {*DISPOSED*}";
-        return "Font {" + getApi().handle + "}";
+        return "Font {" + handle + "}";
     }
 
-    private static int extractZoom(Device device) {
-        if (device == null) {
-            return DPIUtil.getNativeDeviceZoom();
+    /**
+     * Creates or returns a handle for the requested font.
+     * <p>
+     * <b>IMPORTANT:</b> This method is not part of the public API for
+     * <code>Font</code>. It is marked public only so that it can be shared within
+     * the packages provided by SWT. It is not available on all platforms, and
+     * should never be called from application code.
+     *
+     * @param font the font to get the handle of
+     * @return handle of the font
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     */
+    public static long win32_getHandle(Font font) {
+        if (((SwtFont) font.getImpl()).handle == 0 && ((SwtFont) font.getImpl()).fontData != null && !((SwtFont) font.getImpl()).isDestroyed) {
+            if (font.getImpl() instanceof SwtFont) {
+                ((SwtFont) font.getImpl()).init(((SwtFont) font.getImpl()).fontData);
+            }
         }
-        return DPIUtil.mapDPIToZoom(((SwtDevice) device.getImpl())._getDPIx());
+        return ((SwtFont) font.getImpl()).handle;
     }
 
     /**
@@ -299,17 +341,8 @@ public final class SwtFont extends SwtResource implements IFont {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static Font win32_new(Device device, long handle) {
-        Font font = new Font(device);
-        if (font.getImpl() instanceof DartFont) {
-            ((DartFont) font.getImpl()).zoom = extractZoom(font.getImpl()._device());
-        }
-        if (font.getImpl() instanceof SwtFont) {
-            ((SwtFont) font.getImpl()).zoom = extractZoom(font.getImpl()._device());
-        }
-        font.handle = handle;
-        ///*	 * When created this way, Font doesn't own its .handle, and	 * for this reason it can't be disposed. Tell leak detector	 * to just ignore it.	 */font.ignoreNonDisposed();
-        ;
-        return font;
+        int zoom = DPIUtil.getNativeDeviceZoom();
+        return win32_new(device, handle, zoom);
     }
 
     /**
@@ -331,13 +364,9 @@ public final class SwtFont extends SwtResource implements IFont {
      * @since 3.126
      */
     public static Font win32_new(Device device, long handle, int zoom) {
-        Font font = win32_new(device, handle);
-        if (font.getImpl() instanceof DartFont) {
-            ((DartFont) font.getImpl()).zoom = zoom;
-        }
-        if (font.getImpl() instanceof SwtFont) {
-            ((SwtFont) font.getImpl()).zoom = zoom;
-        }
+        Font font = new Font(device, handle, zoom);
+        ///*	 * When created this way, Font doesn't own its .handle, and	 * for this reason it can't be disposed. Tell leak detector	 * to just ignore it.	 */font.ignoreNonDisposed();
+        ;
         return font;
     }
 

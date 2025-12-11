@@ -63,7 +63,7 @@ import dev.equo.swt.*;
  * </p>
  * <dl>
  * <dt><b>Styles:</b></dt>
- * <dd>SINGLE, MULTI, CHECK, FULL_SELECTION, VIRTUAL, NO_SCROLL</dd>
+ * <dd>SINGLE, MULTI, CHECK, FULL_SELECTION, VIRTUAL, NO_SCROLL, NO_SEARCH</dd>
  * <dt><b>Events:</b></dt>
  * <dd>Selection, DefaultSelection, Collapse, Expand, SetData, MeasureItem, EraseItem, PaintItem, EmptinessChanged</dd>
  * </dl>
@@ -976,7 +976,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public int getGridLineWidth() {
         checkWidget();
-        return DPIUtil.scaleDown(getGridLineWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getGridLineWidthInPixels(), getZoom());
     }
 
     int getGridLineWidthInPixels() {
@@ -1037,7 +1037,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public int getHeaderHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getHeaderHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getHeaderHeightInPixels(), getZoom());
     }
 
     int getHeaderHeightInPixels() {
@@ -1276,7 +1276,7 @@ public class DartTree extends DartComposite implements ITree {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return getItemInPixels(DPIUtil.scaleUp(point, getZoom()));
+        return null;
     }
 
     TreeItem getItemInPixels(Point point) {
@@ -1338,7 +1338,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public int getItemHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getItemHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getItemHeightInPixels(), getZoom());
     }
 
     int getItemHeightInPixels() {
@@ -2026,9 +2026,6 @@ public class DartTree extends DartComposite implements ITree {
         gc.dispose();
         if (isDisposed() || item.isDisposed())
             return null;
-        Rectangle rect = DPIUtil.scaleUp(event.getBounds(), getZoom());
-        if (rect.height > getItemHeightInPixels())
-            setItemHeight(rect.height);
         return event;
     }
 
@@ -2723,7 +2720,7 @@ public class DartTree extends DartComposite implements ITree {
         }
         Point pt = toDisplayInPixels(x, y);
         int zoom = getZoom();
-        event.setLocation(DPIUtil.scaleDown(pt.x, zoom), DPIUtil.scaleDown(pt.y, zoom));
+        event.setLocation(DPIUtil.pixelToPoint(pt.x, zoom), DPIUtil.pixelToPoint(pt.y, zoom));
     }
 
     @Override

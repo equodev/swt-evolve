@@ -132,6 +132,10 @@ public final class Printer extends Device {
         getImpl().create(deviceData);
     }
 
+    protected int getDeviceZoom() {
+        return getImpl().getDeviceZoom();
+    }
+
     /**
      * Invokes platform specific functionality to allocate a new GC handle.
      * <p>

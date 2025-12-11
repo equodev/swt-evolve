@@ -608,7 +608,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return getItemInPixels(DPIUtil.scaleUp(point, getZoom()));
+        return getItemInPixels(Win32DPIUtils.pointToPixel(point, getZoom()));
     }
 
     ToolItem getItemInPixels(Point point) {
@@ -1339,10 +1339,10 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     void updateOrientation() {
         super.updateOrientation();
         if (imageList != null) {
-            Point size = imageList.getImageSize();
-            ImageList newImageList = ((SwtDisplay) display.getImpl()).getImageListToolBar(getApi().style & SWT.RIGHT_TO_LEFT, size.x, size.y, getZoom());
-            ImageList newHotImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarHot(getApi().style & SWT.RIGHT_TO_LEFT, size.x, size.y, getZoom());
-            ImageList newDisabledImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarDisabled(getApi().style & SWT.RIGHT_TO_LEFT, size.x, size.y, getZoom());
+            Point sizeInPoints = imageList.getImageSize();
+            ImageList newImageList = ((SwtDisplay) display.getImpl()).getImageListToolBar(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, getZoom());
+            ImageList newHotImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarHot(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, getZoom());
+            ImageList newDisabledImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarDisabled(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, getZoom());
             TBBUTTONINFO info = new TBBUTTONINFO();
             info.cbSize = TBBUTTONINFO.sizeof;
             info.dwMask = OS.TBIF_IMAGE;
@@ -1748,7 +1748,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                     RECT rect = new RECT();
                     OS.SendMessage(getApi().handle, OS.TB_GETITEMRECT, index, rect);
                     int zoom = getZoom();
-                    event.setLocation(DPIUtil.scaleDown(rect.left, zoom), DPIUtil.scaleDown(rect.bottom, zoom));
+                    event.setLocation(DPIUtil.pixelToPoint(rect.left, zoom), DPIUtil.pixelToPoint(rect.bottom, zoom));
                     ((SwtWidget) child.getImpl()).sendSelectionEvent(SWT.Selection, event, false);
                 }
                 break;

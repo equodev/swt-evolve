@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -318,15 +318,11 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
      */
     public ToolItem getItem(Point point) {
         checkWidget();
-        return getItemInPixels(DPIUtil.autoScaleUp(point));
-    }
-
-    ToolItem getItemInPixels(Point point) {
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         ToolItem[] items = getItems();
         for (int i = 0; i < items.length; i++) {
-            if (((SwtToolItem) items[i].getImpl()).getBoundsInPixels().contains(point))
+            if (items[i].getBounds().contains(point))
                 return items[i];
         }
         return null;
@@ -529,10 +525,10 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                 event.detail = SWT.ARROW;
                 GtkAllocation allocation = new GtkAllocation();
                 GTK.gtk_widget_get_allocation(widget, allocation);
-                event.x = DPIUtil.autoScaleDown(allocation.x);
+                event.x = allocation.x;
                 if ((getApi().style & SWT.MIRRORED) != 0)
-                    event.x = DPIUtil.autoScaleDown(getClientWidth() - allocation.width) - event.x;
-                event.y = DPIUtil.autoScaleDown(allocation.y + allocation.height);
+                    event.x = getClientWidth() - allocation.width - event.x;
+                event.y = allocation.y + allocation.height;
                 break;
             case SWT.RADIO:
                 if ((getApi().style & SWT.NO_RADIO_GROUP) == 0)

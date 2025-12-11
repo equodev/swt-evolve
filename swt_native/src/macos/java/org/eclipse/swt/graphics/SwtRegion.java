@@ -457,11 +457,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
      */
     @Override
     public boolean equals(Object object) {
-        if (this.getApi() == object)
-            return true;
-        if (!(object instanceof Region region))
-            return false;
-        return getApi().handle == region.handle;
+        return super.equals(object);
     }
 
     /**
@@ -540,7 +536,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
      */
     @Override
     public int hashCode() {
-        return (int) getApi().handle;
+        return super.hashCode();
     }
 
     /**

@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -241,15 +241,11 @@ public class DartToolBar extends DartComposite implements IToolBar {
      */
     public ToolItem getItem(Point point) {
         checkWidget();
-        return getItemInPixels(DPIUtil.autoScaleUp(point));
-    }
-
-    ToolItem getItemInPixels(Point point) {
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         ToolItem[] items = getItems();
         for (int i = 0; i < items.length; i++) {
-            if (((DartToolItem) items[i].getImpl()).getBoundsInPixels().contains(point))
+            if (items[i].getBounds().contains(point))
                 return items[i];
         }
         return null;

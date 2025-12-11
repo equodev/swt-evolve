@@ -63,7 +63,7 @@ import org.eclipse.swt.internal.win32.*;
  * </p>
  * <dl>
  * <dt><b>Styles:</b></dt>
- * <dd>SINGLE, MULTI, CHECK, FULL_SELECTION, VIRTUAL, NO_SCROLL</dd>
+ * <dd>SINGLE, MULTI, CHECK, FULL_SELECTION, VIRTUAL, NO_SCROLL, NO_SEARCH</dd>
  * <dt><b>Events:</b></dt>
  * <dd>Selection, DefaultSelection, Collapse, Expand, SetData, MeasureItem, EraseItem, PaintItem, EmptinessChanged</dd>
  * </dl>
@@ -586,7 +586,7 @@ public class SwtTree extends SwtComposite implements ITree {
                                     Rectangle bounds = image.getBounds();
                                     // To Points
                                     if (size == null)
-                                        size = DPIUtil.scaleDown(getImageSize(), zoom);
+                                        size = Win32DPIUtils.pixelToPoint(getImageSize(), zoom);
                                     if (!ignoreDrawForeground) {
                                         GCData data = new GCData();
                                         data.device = display;
@@ -594,8 +594,8 @@ public class SwtTree extends SwtComposite implements ITree {
                                         if (item.getImpl() instanceof SwtTreeItem) {
                                             // Pixels
                                             RECT iconRect = ((SwtTreeItem) item.getImpl()).getBounds(index, false, true, false, false, true, hDC);
-                                            gc.setClipping(DPIUtil.scaleDown(new Rectangle(iconRect.left, iconRect.top, iconRect.right - iconRect.left, iconRect.bottom - iconRect.top), zoom));
-                                            gc.drawImage(image, 0, 0, bounds.width, bounds.height, DPIUtil.scaleDown(iconRect.left, zoom), DPIUtil.scaleDown(iconRect.top, zoom), size.x, size.y);
+                                            gc.setClipping(Win32DPIUtils.pixelToPoint(new Rectangle(iconRect.left, iconRect.top, iconRect.right - iconRect.left, iconRect.bottom - iconRect.top), zoom));
+                                            gc.drawImage(image, 0, 0, bounds.width, bounds.height, DPIUtil.pixelToPoint(iconRect.left, zoom), DPIUtil.pixelToPoint(iconRect.top, zoom), size.x, size.y);
                                         }
                                         OS.SelectClipRgn(hDC, 0);
                                         gc.dispose();
@@ -731,7 +731,7 @@ public class SwtTree extends SwtComposite implements ITree {
                                         }
                                     }
                                 }
-                                Rectangle bounds = DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom());
+                                Rectangle bounds = Win32DPIUtils.pixelToPoint(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom());
                                 event.setBounds(bounds);
                                 gc.setClipping(bounds);
                                 sendEvent(SWT.EraseItem, event);
@@ -861,20 +861,20 @@ public class SwtTree extends SwtComposite implements ITree {
                             Rectangle bounds = image.getBounds();
                             // To Points
                             if (size == null)
-                                size = DPIUtil.scaleDown(getImageSize(), zoom);
+                                size = Win32DPIUtils.pixelToPoint(getImageSize(), zoom);
                             if (!ignoreDrawForeground) {
                                 //int y1 = rect.top + (index == 0 ? (getItemHeight () - size.y) / 2 : 0);
-                                int y1 = rect.top + DPIUtil.scaleUp((getItemHeight() - size.y) / 2, zoom);
+                                int y1 = rect.top + Win32DPIUtils.pointToPixel((getItemHeight() - size.y) / 2, zoom);
                                 int x1 = Math.max(rect.left, rect.left - inset + 1);
                                 GCData data = new GCData();
                                 data.device = display;
                                 GC gc = createNewGC(hDC, data);
-                                gc.setClipping(DPIUtil.scaleDown(new Rectangle(x1, rect.top, rect.right - x1, rect.bottom - rect.top), zoom));
-                                gc.drawImage(image, 0, 0, bounds.width, bounds.height, DPIUtil.scaleDown(x1, zoom), DPIUtil.scaleDown(y1, zoom), size.x, size.y);
+                                gc.setClipping(Win32DPIUtils.pixelToPoint(new Rectangle(x1, rect.top, rect.right - x1, rect.bottom - rect.top), zoom));
+                                gc.drawImage(image, 0, 0, bounds.width, bounds.height, DPIUtil.pixelToPoint(x1, zoom), DPIUtil.pixelToPoint(y1, zoom), size.x, size.y);
                                 OS.SelectClipRgn(hDC, 0);
                                 gc.dispose();
                             }
-                            OS.SetRect(rect, rect.left + DPIUtil.scaleUp(size.x, zoom) + offset, rect.top, rect.right - inset, rect.bottom);
+                            OS.SetRect(rect, rect.left + Win32DPIUtils.pointToPixel(size.x, zoom) + offset, rect.top, rect.right - inset, rect.bottom);
                         } else {
                             if (i == 0) {
                                 if (OS.SendMessage(getApi().handle, OS.TVM_GETIMAGELIST, OS.TVSIL_NORMAL, 0) != 0) {
@@ -985,11 +985,11 @@ public class SwtTree extends SwtComposite implements ITree {
                                 }
                             }
                         }
-                        event.setBounds(DPIUtil.scaleDown(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
+                        event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
                         RECT cellRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, true, true, true, hDC);
                         int cellWidth = cellRect.right - cellRect.left;
                         int cellHeight = cellRect.bottom - cellRect.top;
-                        gc.setClipping(DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellWidth, cellHeight), zoom));
+                        gc.setClipping(Win32DPIUtils.pixelToPoint(new Rectangle(cellRect.left, cellRect.top, cellWidth, cellHeight), zoom));
                         sendEvent(SWT.PaintItem, event);
                         if (data.focusDrawn)
                             focusRect = null;
@@ -1168,7 +1168,7 @@ public class SwtTree extends SwtComposite implements ITree {
             Rectangle boundsInPixels = null;
             if (hooks(SWT.MeasureItem)) {
                 measureEvent = sendMeasureItemEvent(item, index, hDC, selected ? SWT.SELECTED : 0);
-                boundsInPixels = DPIUtil.scaleUp(measureEvent.getBounds(), getZoom());
+                boundsInPixels = Win32DPIUtils.pointToPixel(measureEvent.getBounds(), getZoom());
                 if (isDisposed() || item.isDisposed())
                     return null;
             }
@@ -1229,7 +1229,7 @@ public class SwtTree extends SwtComposite implements ITree {
                             }
                         }
                     }
-                    Rectangle bounds = DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom());
+                    Rectangle bounds = Win32DPIUtils.pixelToPoint(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom());
                     event.setBounds(bounds);
                     gc.setClipping(bounds);
                     sendEvent(SWT.EraseItem, event);
@@ -2958,14 +2958,14 @@ public class SwtTree extends SwtComposite implements ITree {
                             Event event = sendMeasureItemEvent(item[0], order[index[0]], hDC, detail);
                             if (isDisposed() || item[0].isDisposed())
                                 break;
-                            Rectangle boundsInPixels = DPIUtil.scaleUp(event.getBounds(), getZoom());
+                            Rectangle boundsInPixels = Win32DPIUtils.pointToPixel(event.getBounds(), getZoom());
                             itemRect[0] = new RECT();
                             itemRect[0].left = boundsInPixels.x;
                             itemRect[0].right = boundsInPixels.x + boundsInPixels.width;
                             itemRect[0].top = boundsInPixels.y;
                             itemRect[0].bottom = boundsInPixels.y + boundsInPixels.height;
                         } else {
-                            itemRect[0] = ((SwtTreeItem) item[0].getImpl()).getBounds(order[index[0]], true, false, false, false, false, hDC);
+                            itemRect[0] = ((SwtTreeItem) item[0].getImpl()).getBounds(order[index[0]], true, true, false, false, false, hDC);
                         }
                         if (itemRect[0].right > cellRect[0].right)
                             found = true;
@@ -3122,7 +3122,7 @@ public class SwtTree extends SwtComposite implements ITree {
      */
     public int getGridLineWidth() {
         checkWidget();
-        return DPIUtil.scaleDown(getGridLineWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getGridLineWidthInPixels(), getZoom());
     }
 
     int getGridLineWidthInPixels() {
@@ -3183,7 +3183,7 @@ public class SwtTree extends SwtComposite implements ITree {
      */
     public int getHeaderHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getHeaderHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getHeaderHeightInPixels(), getZoom());
     }
 
     int getHeaderHeightInPixels() {
@@ -3223,7 +3223,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     Point getImageSize() {
         if (imageList != null)
-            return imageList.getImageSize();
+            return Win32DPIUtils.pointToPixel(imageList.getImageSize(), getZoom());
         return new Point(0, getItemHeightInPixels());
     }
 
@@ -3460,7 +3460,7 @@ public class SwtTree extends SwtComposite implements ITree {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return getItemInPixels(DPIUtil.scaleUp(point, getZoom()));
+        return getItemInPixels(Win32DPIUtils.pointToPixel(point, getZoom()));
     }
 
     TreeItem getItemInPixels(Point point) {
@@ -3538,7 +3538,7 @@ public class SwtTree extends SwtComposite implements ITree {
      */
     public int getItemHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getItemHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getItemHeightInPixels(), getZoom());
     }
 
     int getItemHeightInPixels() {
@@ -3923,7 +3923,7 @@ public class SwtTree extends SwtComposite implements ITree {
         int state = (int) OS.SendMessage(getApi().handle, OS.TVM_GETITEMSTATE, hItem, OS.TVIS_SELECTED);
         int detail = (state & OS.TVIS_SELECTED) != 0 ? SWT.SELECTED : 0;
         Event event = sendMeasureItemEvent(item, order[index[0]], hDC, detail);
-        if (DPIUtil.scaleUp(event.getBounds(), getZoom()).contains(x, y))
+        if (Win32DPIUtils.pointToPixel(event.getBounds(), getZoom()).contains(x, y))
             result = true;
         if (newFont != 0)
             OS.SelectObject(hDC, oldFont);
@@ -3936,8 +3936,8 @@ public class SwtTree extends SwtComposite implements ITree {
         if (image == null)
             return OS.I_IMAGENONE;
         if (imageList == null) {
-            Rectangle bounds = DPIUtil.scaleBounds(image.getBounds(), this.getZoom(), 100);
-            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, bounds.width, bounds.height, getZoom());
+            Rectangle boundsInPoints = image.getBounds();
+            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, boundsInPoints.width, boundsInPoints.height, getZoom());
         }
         int imageIndex = imageList.indexOf(image);
         if (imageIndex == -1)
@@ -3962,8 +3962,8 @@ public class SwtTree extends SwtComposite implements ITree {
         if (image == null)
             return OS.I_IMAGENONE;
         if (headerImageList == null) {
-            Rectangle bounds = DPIUtil.scaleBounds(image.getBounds(), this.getZoom(), 100);
-            headerImageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, bounds.width, bounds.height, getZoom());
+            Rectangle boundsInPoints = image.getBounds();
+            headerImageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, boundsInPoints.width, boundsInPoints.height, getZoom());
             int index = headerImageList.indexOf(image);
             if (index == -1)
                 index = headerImageList.add(image);
@@ -4755,7 +4755,7 @@ public class SwtTree extends SwtComposite implements ITree {
         event.index = column;
         event.gc = gc;
         event.detail |= SWT.FOREGROUND;
-        event.setBounds(DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom()));
+        event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom()));
         //gc.setClipping (event.x, event.y, event.width, event.height);
         sendEvent(SWT.EraseItem, event);
         event.gc = null;
@@ -4776,7 +4776,7 @@ public class SwtTree extends SwtComposite implements ITree {
         event.item = item;
         event.gc = gc;
         event.index = index;
-        event.setBounds(DPIUtil.scaleDown(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
+        event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
         event.detail = detail;
         sendEvent(SWT.MeasureItem, event);
         event.gc = null;
@@ -4784,7 +4784,7 @@ public class SwtTree extends SwtComposite implements ITree {
         OS.RestoreDC(hDC, nSavedDC);
         if (isDisposed() || item.isDisposed())
             return null;
-        Rectangle rect = DPIUtil.scaleUp(event.getBounds(), getZoom());
+        Rectangle rect = Win32DPIUtils.pointToPixel(event.getBounds(), getZoom());
         if (hwndHeader != 0) {
             if (columnCount == 0) {
                 if (rect.x + rect.width > scrollWidth) {
@@ -4813,7 +4813,7 @@ public class SwtTree extends SwtComposite implements ITree {
         event.index = column;
         event.gc = gc;
         event.detail |= SWT.FOREGROUND;
-        event.setBounds(DPIUtil.scaleDown(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
+        event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
         //gc.setClipping (cellRect.left, cellRect.top, cellWidth, cellHeight);
         sendEvent(SWT.PaintItem, event);
         event.gc = null;
@@ -4890,7 +4890,7 @@ public class SwtTree extends SwtComposite implements ITree {
 	* is IDC_ARROW.
 	*/
         Cursor cursor = findCursor();
-        long hCursor = cursor == null ? OS.LoadCursor(0, OS.IDC_ARROW) : cursor.handle;
+        long hCursor = cursor == null ? OS.LoadCursor(0, OS.IDC_ARROW) : SwtCursor.win32_getHandle(cursor, DPIUtil.getZoomForAutoscaleProperty(getNativeZoom()));
         OS.SetCursor(hCursor);
     }
 
@@ -5635,7 +5635,7 @@ public class SwtTree extends SwtComposite implements ITree {
      * In a Tree without imageList, the indent also controls the chevron (glyph) size.
      */
     private void calculateAndApplyIndentSize() {
-        int indent = DPIUtil.scaleUp(DEFAULT_INDENT, getApi().nativeZoom);
+        int indent = Win32DPIUtils.pointToPixel(DEFAULT_INDENT, getApi().nativeZoom);
         OS.SendMessage(getApi().handle, OS.TVM_SETINDENT, indent, 0);
     }
 
@@ -6039,7 +6039,7 @@ public class SwtTree extends SwtComposite implements ITree {
         }
         Point pt = toDisplayInPixels(x, y);
         int zoom = getZoom();
-        event.setLocation(DPIUtil.scaleDown(pt.x, zoom), DPIUtil.scaleDown(pt.y, zoom));
+        event.setLocation(DPIUtil.pixelToPoint(pt.x, zoom), DPIUtil.pixelToPoint(pt.y, zoom));
     }
 
     @Override
@@ -6079,9 +6079,9 @@ public class SwtTree extends SwtComposite implements ITree {
         if ((getApi().style & SWT.CHECK) != 0)
             setCheckboxImageList();
         if (imageList != null) {
-            Point size = imageList.getImageSize();
+            Point sizeInPoints = imageList.getImageSize();
             ((SwtDisplay) display.getImpl()).releaseImageList(imageList);
-            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, size.x, size.y, getZoom());
+            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, getZoom());
             for (TreeItem item : items) {
                 if (item != null) {
                     Image image = ((SwtItem) item.getImpl()).image;
@@ -6097,9 +6097,9 @@ public class SwtTree extends SwtComposite implements ITree {
         }
         if (hwndHeader != 0) {
             if (headerImageList != null) {
-                Point size = headerImageList.getImageSize();
+                Point sizeInPoints = headerImageList.getImageSize();
                 ((SwtDisplay) display.getImpl()).releaseImageList(headerImageList);
-                headerImageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, size.x, size.y, getZoom());
+                headerImageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, getZoom());
                 if (columns != null) {
                     for (int i = 0; i < columns.length; i++) {
                         TreeColumn column = columns[i];
@@ -7495,7 +7495,7 @@ public class SwtTree extends SwtComposite implements ITree {
                     if (hooksPaint) {
                         Event event = new Event();
                         event.gc = gc;
-                        event.setBounds(DPIUtil.scaleDown(new Rectangle(ps.left, ps.top, ps.right - ps.left, ps.bottom - ps.top), getZoom()));
+                        event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(ps.left, ps.top, ps.right - ps.left, ps.bottom - ps.top), getZoom()));
                         sendEvent(SWT.Paint, event);
                         // widget could be disposed at this point
                         event.gc = null;
@@ -7751,6 +7751,8 @@ public class SwtTree extends SwtComposite implements ITree {
             LRESULT result = wmNotifyToolTip(hdr, wParam, lParam);
             if (result != null)
                 return result;
+        } else if (hdr.code == OS.TTN_SHOW) {
+            return positionTooltip(hdr, wParam, lParam, false);
         }
         if (hdr.hwndFrom == hwndHeader && hwndHeader != 0) {
             LRESULT result = wmNotifyHeader(hdr, wParam, lParam);
@@ -8282,7 +8284,7 @@ public class SwtTree extends SwtComposite implements ITree {
 							 * Sort indicator size needs to scale as per the Native Windows OS DPI level
 							 * when header is custom drawn. For more details refer bug 537097.
 							 */
-                                        int leg = DPIUtil.scaleUp(3, getApi().nativeZoom);
+                                        int leg = Win32DPIUtils.pointToPixel(3, getApi().nativeZoom);
                                         if (sortDirection == SWT.UP) {
                                             OS.Polyline(nmcd.hdc, new int[] { center - leg, 1 + leg, center + 1, 0 }, 2);
                                             OS.Polyline(nmcd.hdc, new int[] { center + leg, 1 + leg, center - 1, 0 }, 2);
@@ -8324,9 +8326,9 @@ public class SwtTree extends SwtComposite implements ITree {
                                         data.device = display;
                                         GC gc = createNewGC(nmcd.hdc, data);
                                         int zoom = getZoom();
-                                        Rectangle imageBounds = DPIUtil.scaleBounds(((SwtItem) columns[i].getImpl()).image.getBounds(), zoom, 100);
+                                        Rectangle imageBounds = Win32DPIUtils.scaleBounds(((SwtItem) columns[i].getImpl()).image.getBounds(), zoom, 100);
                                         int y = Math.max(0, (nmcd.bottom - imageBounds.height) / 2);
-                                        gc.drawImage(((SwtItem) columns[i].getImpl()).image, DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom));
+                                        gc.drawImage(((SwtItem) columns[i].getImpl()).image, DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(y, zoom));
                                         x += imageBounds.width + 12;
                                         gc.dispose();
                                     }
@@ -8554,31 +8556,51 @@ public class SwtTree extends SwtComposite implements ITree {
                 }
             case OS.TTN_SHOW:
                 {
-                    LRESULT result = super.wmNotify(hdr, wParam, lParam);
-                    if (result != null)
-                        return result;
-                    int pos = OS.GetMessagePos();
-                    POINT pt = new POINT();
-                    OS.POINTSTOPOINT(pt, pos);
-                    OS.ScreenToClient(getApi().handle, pt);
-                    int[] index = new int[1];
-                    TreeItem[] item = new TreeItem[1];
-                    RECT[] cellRect = new RECT[1], itemRect = new RECT[1];
-                    if (findCell(pt.x, pt.y, item, index, cellRect, itemRect)) {
-                        RECT toolRect = toolTipRect(itemRect[0]);
-                        OS.MapWindowPoints(getApi().handle, 0, toolRect, 2);
-                        int width = toolRect.right - toolRect.left;
-                        int height = toolRect.bottom - toolRect.top;
-                        int flags = OS.SWP_NOACTIVATE | OS.SWP_NOZORDER | OS.SWP_NOSIZE;
-                        if (isCustomToolTip())
-                            flags &= ~OS.SWP_NOSIZE;
-                        OS.SetWindowPos(itemToolTipHandle, 0, toolRect.left, toolRect.top, width, height, flags);
-                        return LRESULT.ONE;
-                    }
-                    return result;
+                    return positionTooltip(hdr, wParam, lParam, true);
                 }
         }
         return null;
+    }
+
+    private LRESULT positionTooltip(NMHDR hdr, long wParam, long lParam, boolean managedTooltip) {
+        LRESULT result = super.wmNotify(hdr, wParam, lParam);
+        if (result != null)
+            return result;
+        int flags = OS.SWP_NOACTIVATE | OS.SWP_NOZORDER | OS.SWP_NOSIZE;
+        if (isCustomToolTip() || !managedTooltip)
+            flags &= ~OS.SWP_NOSIZE;
+        int pos = OS.GetMessagePos();
+        POINT pt = new POINT();
+        OS.POINTSTOPOINT(pt, pos);
+        OS.ScreenToClient(getApi().handle, pt);
+        int[] index = new int[1];
+        TreeItem[] item = new TreeItem[1];
+        RECT[] cellRect = new RECT[1], itemRect = new RECT[1];
+        if (findCell(pt.x, pt.y, item, index, cellRect, itemRect)) {
+            RECT toolRect = managedTooltip ? toolTipRect(itemRect[0]) : itemRect[0];
+            OS.MapWindowPoints(getApi().handle, 0, toolRect, 2);
+            // Retrieve the monitor containing the cursor position, as tool tip placement
+            // must occur on the same monitor to avoid potential infinite loops. When a tool tip
+            // appears on a different monitor than the cursor, the operating system may
+            // attempt to re-scale it based on that monitor's settings. This re-scaling
+            // triggers additional display messages to SWT, creating an infinite loop
+            // of positioning and re-scaling events.
+            // Refer: https://github.com/eclipse-platform/eclipse.platform.swt/issues/557
+            Rectangle adjustedTooltipBounds = ((SwtDisplay) getDisplay().getImpl()).fitRectangleBoundsIntoMonitorWithCursor(toolRect);
+            if (adjustedTooltipBounds != null) {
+                OS.SetWindowPos(hdr.hwndFrom, 0, adjustedTooltipBounds.x, adjustedTooltipBounds.y, adjustedTooltipBounds.width, adjustedTooltipBounds.height, flags);
+                result = LRESULT.ONE;
+            }
+        } else if (!managedTooltip) {
+            // If managedTooltip is false and the cursor is not over the valid part of the
+            // target cell, Windows may still try to display the default tooltip. Since we
+            // can't prevent it from showing at this point, we set its bounds to zero to
+            // effectively hide it.
+            flags |= OS.SWP_NOMOVE;
+            OS.SetWindowPos(hdr.hwndFrom, 0, 0, 0, 0, 0, flags);
+            result = LRESULT.ONE;
+        }
+        return result;
     }
 
     LRESULT wmNotifyToolTip(NMTTCUSTOMDRAW nmcd, long lParam) {
@@ -8648,7 +8670,7 @@ public class SwtTree extends SwtComposite implements ITree {
                                             // Points
                                             Rectangle rect = image.getBounds();
                                             int zoom = getZoom();
-                                            gc.drawImage(image, rect.x, rect.y, rect.width, rect.height, DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(imageRect.top, zoom), DPIUtil.scaleDown(size.x, zoom), DPIUtil.scaleDown(size.y, zoom));
+                                            gc.drawImage(image, rect.x, rect.y, rect.width, rect.height, DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(imageRect.top, zoom), DPIUtil.pixelToPoint(size.x, zoom), DPIUtil.pixelToPoint(size.y, zoom));
                                             x += INSET + (index[0] == 0 ? 1 : 0);
                                         }
                                         x += size.x;

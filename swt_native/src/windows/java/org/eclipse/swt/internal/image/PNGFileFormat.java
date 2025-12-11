@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2011 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -19,8 +19,9 @@ import java.io.*;
 import java.util.zip.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.image.FileFormat.*;
 
-public final class PNGFileFormat extends FileFormat {
+public final class PNGFileFormat extends StaticImageFileFormat {
 
     static final int SIGNATURE_LENGTH = 8;
 
@@ -145,39 +146,35 @@ public final class PNGFileFormat extends FileFormat {
     }
 
     @Override
-    boolean isFileFormat(LEDataInputStream stream) {
-        try {
-            byte[] signature = new byte[SIGNATURE_LENGTH];
-            stream.read(signature);
-            stream.unread(signature);
-            //137
-            if ((signature[0] & 0xFF) != 137)
-                return false;
-            //P
-            if ((signature[1] & 0xFF) != 80)
-                return false;
-            //N
-            if ((signature[2] & 0xFF) != 78)
-                return false;
-            //G
-            if ((signature[3] & 0xFF) != 71)
-                return false;
-            //<RETURN>
-            if ((signature[4] & 0xFF) != 13)
-                return false;
-            //<LINEFEED>
-            if ((signature[5] & 0xFF) != 10)
-                return false;
-            //<CTRL/Z>
-            if ((signature[6] & 0xFF) != 26)
-                return false;
-            //<LINEFEED>
-            if ((signature[7] & 0xFF) != 10)
-                return false;
-            return true;
-        } catch (Exception e) {
+    boolean isFileFormat(LEDataInputStream stream) throws IOException {
+        byte[] signature = new byte[SIGNATURE_LENGTH];
+        stream.read(signature);
+        stream.unread(signature);
+        //137
+        if ((signature[0] & 0xFF) != 137)
             return false;
-        }
+        //P
+        if ((signature[1] & 0xFF) != 80)
+            return false;
+        //N
+        if ((signature[2] & 0xFF) != 78)
+            return false;
+        //G
+        if ((signature[3] & 0xFF) != 71)
+            return false;
+        //<RETURN>
+        if ((signature[4] & 0xFF) != 13)
+            return false;
+        //<LINEFEED>
+        if ((signature[5] & 0xFF) != 10)
+            return false;
+        //<CTRL/Z>
+        if ((signature[6] & 0xFF) != 26)
+            return false;
+        //<LINEFEED>
+        if ((signature[7] & 0xFF) != 10)
+            return false;
+        return true;
     }
 
     /**

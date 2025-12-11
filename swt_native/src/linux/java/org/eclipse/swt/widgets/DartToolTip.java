@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -158,7 +158,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
         point = getLocation();
         int[] polyline = new int[0];
         Region region = new Region(display);
-        region.add(DPIUtil.autoScaleDown(polyline));
+        region.add(polyline);
         region.dispose();
     }
 
@@ -425,16 +425,11 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public void setLocation(int x, int y) {
         dirty();
         checkWidget();
-        setLocation(new Point(x, y));
-        this.location = new Point(x, y);
-    }
-
-    void setLocationInPixels(int x, int y) {
-        checkWidget();
         this.x = x;
         this.y = y;
         if ((getApi().style & SWT.BALLOON) != 0) {
         }
+        this.location = new Point(x, y);
     }
 
     /**
@@ -461,14 +456,9 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public void setLocation(Point location) {
         checkWidget();
-        setLocationInPixels(DPIUtil.autoScaleUp(location));
-    }
-
-    void setLocationInPixels(Point location) {
-        checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        setLocationInPixels(location.x, location.y);
+        setLocation(location.x, location.y);
     }
 
     /**

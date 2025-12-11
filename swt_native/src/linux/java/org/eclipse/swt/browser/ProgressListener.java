@@ -15,8 +15,8 @@
  */
 package org.eclipse.swt.browser;
 
+import java.util.*;
 import java.util.function.*;
-import org.eclipse.swt.internal.*;
 
 /**
  * This listener interface may be implemented in order to receive
@@ -30,7 +30,7 @@ import org.eclipse.swt.internal.*;
  *
  * @since 3.0
  */
-public interface ProgressListener extends SWTEventListener {
+public interface ProgressListener extends EventListener {
 
     /**
      * This method is called when a progress is made during the loading of the

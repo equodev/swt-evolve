@@ -15,6 +15,8 @@
  */
 package org.eclipse.swt.internal;
 
+import org.eclipse.swt.internal.win32.version.*;
+
 public class Platform {
 
     //$NON-NLS-1$
@@ -22,5 +24,13 @@ public class Platform {
 
     public static boolean isLoadable() {
         return Library.isLoadable();
+    }
+
+    public static void exitIfNotLoadable() {
+        if (!Library.isLoadable()) {
+            System.err.println("Libraries for platform " + Platform.PLATFORM + " cannot be loaded because of incompatible environment");
+            System.exit(1);
+        }
+        OsVersion.checkCompatibleWindowsVersion();
     }
 }

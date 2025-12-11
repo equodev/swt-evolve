@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -900,11 +900,6 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setLocation(int x, int y) {
         checkWidget();
-        setLocation(new Point(x, y));
-    }
-
-    void setLocationInPixels(int x, int y) {
-        checkWidget();
         if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
             return;
         this.x = x;
@@ -939,15 +934,10 @@ public class DartMenu extends DartWidget implements IMenu {
     public void setLocation(Point location) {
         dirty();
         checkWidget();
-        setLocationInPixels(DPIUtil.autoScaleUp(location));
-        this.location = location;
-    }
-
-    void setLocationInPixels(Point location) {
-        checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        setLocationInPixels(location.x, location.y);
+        setLocation(location.x, location.y);
+        this.location = location;
     }
 
     /**

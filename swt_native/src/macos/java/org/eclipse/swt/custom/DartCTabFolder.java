@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.*;
 import org.eclipse.swt.widgets.*;
 import dev.equo.swt.*;
 
@@ -383,13 +384,20 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                 case SWT.Deactivate:
                     onDeactivate(event);
                     break;
+                case SWT.ZoomChanged:
+                    onZoomChange(event);
+                    break;
             }
         };
-        int[] folderEvents = new int[] { SWT.Dispose, SWT.DragDetect, SWT.FocusIn, SWT.FocusOut, SWT.KeyDown, SWT.MenuDetect, SWT.MouseDoubleClick, SWT.MouseDown, SWT.MouseEnter, SWT.MouseExit, SWT.MouseHover, SWT.MouseMove, SWT.MouseUp, SWT.Paint, SWT.Resize, SWT.Traverse, SWT.Activate, SWT.Deactivate };
+        int[] folderEvents = new int[] { SWT.Dispose, SWT.DragDetect, SWT.FocusIn, SWT.FocusOut, SWT.KeyDown, SWT.MenuDetect, SWT.MouseDoubleClick, SWT.MouseDown, SWT.MouseEnter, SWT.MouseExit, SWT.MouseHover, SWT.MouseMove, SWT.MouseUp, SWT.Paint, SWT.Resize, SWT.Traverse, SWT.Activate, SWT.Deactivate, SWT.ZoomChanged };
         for (int folderEvent : folderEvents) {
             addListener(folderEvent, listener);
         }
         initAccessible();
+    }
+
+    private void onZoomChange(Event event) {
+        update();
     }
 
     void onDeactivate(Event event) {
@@ -1877,11 +1885,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         }
         int x = event.x, y = event.y;
         switch(event.type) {
-            case SWT.MouseEnter:
-                {
-                    setToolTipText(null);
-                    break;
-                }
             case SWT.MouseExit:
                 {
                     for (int i = 0; i < items.length; i++) {
@@ -1982,6 +1985,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                         return;
                     }
                     break;
+                }
+            case SWT.MouseEnter:
+                {
+                    // fall through to the "move" case, see
+                    // https://github.com/eclipse-platform/eclipse.platform.swt/issues/2017
                 }
             case SWT.MouseMove:
                 {
@@ -4130,12 +4138,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                                 bkImageBounds[i] = bounds;
                                 if (controlBkImages[i] != null)
                                     controlBkImages[i].dispose();
-                                controlBkImages[i] = new Image(control.getDisplay(), bounds);
-                                //Coming soon with GC support: GC gc = new GC(controlBkImages[i]);
-                                ;
-                                //Coming soon with GC support: renderer.draw(CTabFolderRenderer.PART_BACKGROUND, 0, bounds, gc);
-                                ;
-                                //Coming soon with GC support: gc.dispose();
+                                //controlBkImages[i] = new Image(control.getDisplay(), (gc, imageWidth, imageHeight) -> renderer.draw(CTabFolderRenderer.PART_BACKGROUND, 0, bounds, gc), bounds.width, bounds.height);
                                 ;
                                 control.setBackground(null);
                                 control.setBackgroundImage(controlBkImages[i]);

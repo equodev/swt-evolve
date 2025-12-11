@@ -36,10 +36,6 @@ import org.eclipse.swt.*;
  */
 public final class SwtColor extends SwtResource implements IColor {
 
-    SwtColor(Color api) {
-        super(api);
-    }
-
     SwtColor(Device device, Color api) {
         super(device, api);
     }

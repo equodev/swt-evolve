@@ -412,9 +412,9 @@ public class SwtGroup extends SwtComposite implements IGroup {
     void showWidget() {
         super.showWidget();
         if (clientHandle != 0)
-            GTK.gtk_widget_show(clientHandle);
+            gtk_widget_show(clientHandle);
         if (labelHandle != 0)
-            GTK.gtk_widget_show(labelHandle);
+            gtk_widget_show(labelHandle);
     }
 
     @Override

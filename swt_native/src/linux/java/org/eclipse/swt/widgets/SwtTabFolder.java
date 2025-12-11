@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -307,11 +307,11 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         GTK.gtk_notebook_insert_page(getApi().handle, pageHandle, boxHandle, index);
         OS.g_signal_handlers_unblock_matched(getApi().handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, SWITCH_PAGE);
         if (GTK.GTK4) {
-            GTK.gtk_widget_hide(imageHandle);
+            gtk_widget_hide(imageHandle);
         } else {
-            GTK.gtk_widget_show(boxHandle);
-            GTK.gtk_widget_show(labelHandle);
-            GTK.gtk_widget_show(pageHandle);
+            gtk_widget_show(boxHandle);
+            gtk_widget_show(labelHandle);
+            gtk_widget_show(pageHandle);
         }
         item.state |= HANDLE;
         item.handle = boxHandle;
@@ -593,7 +593,10 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         TabItem item = items[page_num];
         if (GTK.GTK4) {
             Control control = item.getControl();
-            ((SwtControl) control.getImpl()).setBoundsInPixels(getClientAreaInPixels());
+            if (control != null && !control.isDisposed()) {
+                ((SwtControl) control.getImpl()).setBoundsInPixels(getClientAreaInPixels());
+                control.setVisible(true);
+            }
         } else {
             int index = GTK.gtk_notebook_get_current_page(getApi().handle);
             if (index != -1) {
@@ -668,7 +671,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
                 index++;
             }
             if (index == count) {
-                Rectangle rect = DPIUtil.autoScaleUp(child.getBounds());
+                Rectangle rect = child.getBounds();
                 width = Math.max(width, rect.x + rect.width);
                 height = Math.max(height, rect.y + rect.height);
             } else {
@@ -676,7 +679,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
 			 * Since computeSize can be overridden by subclasses, we cannot
 			 * call computeSizeInPixels directly.
 			 */
-                Point size = DPIUtil.autoScaleUp(child.computeSize(DPIUtil.autoScaleDown(wHint), DPIUtil.autoScaleDown(hHint), flushCache));
+                Point size = child.computeSize(wHint, hHint, flushCache);
                 width = Math.max(width, size.x);
                 height = Math.max(height, size.y);
             }

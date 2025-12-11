@@ -2583,7 +2583,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     private static NSString getAwtRunLoopMode() {
         // Special run loop mode mode used by AWT enters when it only wants related messages processed.
-        // The name of this mode is a defacto contract established by the JavaNativeFoundation (JNF) libary.
+        // The name of this mode is a defacto contract established by the JavaNativeFoundation (JNF) library.
         // It could be accessed via OS.objc_lookUpClass("JNFRunLoop").
         //
         // However, in JDK 11.0.12 / 13.0.8 / 15.0.4 / 17 this broke:
@@ -3595,7 +3595,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                             }
                         }
                         /**
-                         * Bug(?) in UCKeyTranslate:  If event.keyCode doesn't map to a valid SWT constant and event.characer is 0 we still need to post an event.
+                         * Bug(?) in UCKeyTranslate:  If event.keyCode doesn't map to a valid SWT constant and event.character is 0 we still need to post an event.
                          * In Carbon, KeyTranslate eventually found a key that generated 0 but UCKeyTranslate never generates 0.
                          * When that happens, post an event from key 127, which does nothing.
                          */
@@ -6138,10 +6138,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         switch(Selector.valueOf(sel)) {
             case sel_changeColor_:
                 {
-                    ColorDialog dialog = (ColorDialog) OS.JNIGetObject(jniRef[0]);
-                    if (dialog == null)
-                        return 0;
-                    ((SwtColorDialog) dialog.getImpl()).changeColor(id, sel, arg0);
+                    Object object = OS.JNIGetObject(jniRef[0]);
+                    if (object instanceof ColorDialog colorDialog) {
+                        ((SwtColorDialog) colorDialog.getImpl()).changeColor(id, sel, arg0);
+                    }
                     return 0;
                 }
             case sel_changeFont_:
@@ -6170,10 +6170,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             case sel_windowWillClose_:
                 {
                     Object object = OS.JNIGetObject(jniRef[0]);
-                    if (object instanceof FontDialog) {
-                        ((SwtFontDialog) ((FontDialog) object).getImpl()).windowWillClose(id, sel, arg0);
-                    } else if (object instanceof ColorDialog) {
-                        ((SwtColorDialog) ((ColorDialog) object).getImpl()).windowWillClose(id, sel, arg0);
+                    if (object instanceof FontDialog fontDialog) {
+                        ((SwtFontDialog) fontDialog.getImpl()).windowWillClose(id, sel, arg0);
+                    } else if (object instanceof ColorDialog colorDialog) {
+                        ((SwtColorDialog) colorDialog.getImpl()).windowWillClose(id, sel, arg0);
                     }
                     return 0;
                 }
@@ -7227,7 +7227,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @param activate whether rescaling shall be activated or deactivated
      * @return whether activating or deactivating the rescaling was successful
      * @since 3.127
+     * @deprecated this method should not be used as it needs to be called already
+     *             during instantiation to take proper effect
      */
+    @Deprecated(since = "2025-03", forRemoval = true)
     public boolean setRescalingAtRuntime(boolean activate) {
         // not implemented for Cocoa
         return false;

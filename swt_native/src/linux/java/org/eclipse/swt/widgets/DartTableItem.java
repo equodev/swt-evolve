@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2019 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -265,7 +265,7 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 3.2
      */
     public Rectangle getBounds() {
-        return DPIUtil.autoScaleDown(getBoundsinPixels());
+        return getBoundsinPixels();
     }
 
     /**
@@ -327,11 +327,6 @@ public class DartTableItem extends DartItem implements ITableItem {
      * </ul>
      */
     public Rectangle getBounds(int index) {
-        checkWidget();
-        return DPIUtil.autoScaleDown(getBoundsInPixels(index));
-    }
-
-    Rectangle getBoundsInPixels(int index) {
         checkWidget();
         if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
@@ -518,11 +513,6 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public Rectangle getImageBounds(int index) {
         checkWidget();
-        return DPIUtil.autoScaleDown(getImageBoundsInPixels(index));
-    }
-
-    Rectangle getImageBoundsInPixels(int index) {
-        checkWidget();
         if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         long column = 0;
@@ -653,11 +643,6 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public Rectangle getTextBounds(int index) {
         checkWidget();
-        return DPIUtil.autoScaleDown(getTextBoundsInPixels(index));
-    }
-
-    Rectangle getTextBoundsInPixels(int index) {
-        checkWidget();
         if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         int count = Math.max(1, parent.getColumnCount());
@@ -688,9 +673,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         Image image = _getImage(index);
         int imageWidth = 0;
         if (image != null) {
-            {
-                imageWidth = image.getBoundsInPixels().width;
-            }
+            imageWidth = image.getBounds().width;
         }
         if (x[0] < imageWidth) {
         } else {
@@ -1044,11 +1027,8 @@ public class DartTableItem extends DartItem implements ITableItem {
         int[] currentHeight = new int[1];
         if (!((DartTable) parent.getImpl()).pixbufSizeSet) {
             if (image != null) {
-                int iWidth, iHeight;
-                {
-                    iWidth = image.getBoundsInPixels().width;
-                    iHeight = image.getBoundsInPixels().height;
-                }
+                int iWidth = image.getBounds().width;
+                int iHeight = image.getBounds().height;
                 if (iWidth > currentWidth[0] || iHeight > currentHeight[0]) {
                     ((DartTable) parent.getImpl()).pixbufHeight = iHeight;
                     ((DartTable) parent.getImpl()).pixbufWidth = iWidth;

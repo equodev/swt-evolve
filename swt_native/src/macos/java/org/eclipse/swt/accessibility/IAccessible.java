@@ -256,7 +256,7 @@ public interface IAccessible {
      * Return YES if the UIElement doesn't show up to the outside world -
      * i.e. its parent should return the UIElement's children as its own -
      * cutting the UIElement out. E.g. NSControls are ignored when they are single-celled.
-     *
+     * <p>
      * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
      * public API. It is marked public only so that it can be shared
      * within the packages provided by SWT. It is not available on all

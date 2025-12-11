@@ -83,6 +83,7 @@ public class SwtTaskBar extends SwtWidget implements ITaskBar {
     SwtTaskBar(Display display, int style, TaskBar api) {
         super(api);
         this.display = display;
+        this.getApi().nativeZoom = display.getDeviceZoom();
         createHandle();
         reskinWidget();
     }
@@ -189,13 +190,10 @@ public class SwtTaskBar extends SwtWidget implements ITaskBar {
                     icon = directory + "\\" + "menu" + ((SwtMenuItem) item.getImpl()).id + ".ico";
                     ImageData data;
                     if (((SwtMenuItem) item.getImpl()).hBitmap != 0) {
-                        Image image2 = SwtImage.win32_new(display, SWT.BITMAP, ((SwtMenuItem) item.getImpl()).hBitmap);
+                        long handle = OS.CopyImage(((SwtMenuItem) item.getImpl()).hBitmap, SWT.BITMAP, 0, 0, 0);
+                        Image image2 = SwtImage.win32_new(display, SWT.BITMAP, handle, getApi().nativeZoom);
                         data = image2.getImageData(DPIUtil.getDeviceZoom());
-                        /*
-					 * image2 instance doesn't own the handle and shall not be disposed. Make it
-					 * appear disposed to cause leak trackers to ignore it.
-					 */
-                        image2.handle = 0;
+                        image2.dispose();
                     } else {
                         data = image.getImageData(DPIUtil.getDeviceZoom());
                     }

@@ -38,13 +38,13 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
             OS.swt_fixed_add(fixedHandle, view);
         else
             GTK3.gtk_container_add(fixedHandle, view);
-        GTK.gtk_widget_show(view);
+        GTKWrapper.gtk_widget_show(view);
 
         control.getApi().handle = fixedHandle;
         ((SwtDisplay) control.display.getImpl()).addWidget(control.getApi().handle, control.getApi());
-        
+
         // Show the container after everything is properly anchored
-        GTK.gtk_widget_show(fixedHandle);
+        GTKWrapper.gtk_widget_show(fixedHandle);
     }
 
     @Override
@@ -87,7 +87,7 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
         if (control.getApi().handle != 0) {
             // Remove from SWT display first
             ((SwtDisplay) control.display.getImpl()).removeWidget(control.getApi().handle);
-            // Destroy the SWT fixed container - GTK will automatically 
+            // Destroy the SWT fixed container - GTK will automatically
             if (GTK.GTK4) {
                 GTK.gtk_widget_unparent(control.getApi().handle);
             } else {

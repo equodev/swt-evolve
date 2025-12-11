@@ -961,7 +961,7 @@ public class OleClientSite extends Composite {
 
     RECT getRect() {
         // To Pixels
-        Rectangle area = DPIUtil.scaleUp(getClientArea(), DPIUtil.getZoomForAutoscaleProperty(nativeZoom));
+        Rectangle area = Win32DPIUtils.pointToPixel(getClientArea(), DPIUtil.getZoomForAutoscaleProperty(nativeZoom));
         RECT rect = new RECT();
         rect.left = area.x;
         rect.top = area.y;
@@ -1163,7 +1163,7 @@ public class OleClientSite extends Composite {
 
     private int OnPosRectChange(long lprcPosRect) {
         // To Pixels
-        Point size = DPIUtil.scaleUp(getSize(), DPIUtil.getZoomForAutoscaleProperty(nativeZoom));
+        Point size = Win32DPIUtils.pointToPixel(getSize(), DPIUtil.getZoomForAutoscaleProperty(nativeZoom));
         setExtent(size.x, size.y);
         return COM.S_OK;
     }
@@ -1172,7 +1172,7 @@ public class OleClientSite extends Composite {
         if (state == STATE_RUNNING || state == STATE_INPLACEACTIVE) {
             SIZE size = getExtent();
             // To Pixels
-            Rectangle area = DPIUtil.scaleUp(getClientArea(), DPIUtil.getZoomForAutoscaleProperty(nativeZoom));
+            Rectangle area = Win32DPIUtils.pointToPixel(getClientArea(), DPIUtil.getZoomForAutoscaleProperty(nativeZoom));
             RECT rect = new RECT();
             if (getProgramID().startsWith("Excel.Sheet")) {
                 //$NON-NLS-1$
@@ -1555,8 +1555,8 @@ public class OleClientSite extends Composite {
     void setBounds() {
         int zoom = DPIUtil.getZoomForAutoscaleProperty(nativeZoom);
         // To Pixels
-        Rectangle area = DPIUtil.scaleUp(frame.getClientArea(), zoom);
-        setBounds(DPIUtil.scaleDown(borderWidths.left, zoom), DPIUtil.scaleDown(borderWidths.top, zoom), DPIUtil.scaleDown(area.width - borderWidths.left - borderWidths.right, zoom), DPIUtil.scaleDown(area.height - borderWidths.top - borderWidths.bottom, zoom));
+        Rectangle area = Win32DPIUtils.pointToPixel(frame.getClientArea(), zoom);
+        setBounds(DPIUtil.pixelToPoint(borderWidths.left, zoom), DPIUtil.pixelToPoint(borderWidths.top, zoom), DPIUtil.pixelToPoint(area.width - borderWidths.left - borderWidths.right, zoom), DPIUtil.pixelToPoint(area.height - borderWidths.top - borderWidths.bottom, zoom));
         setObjectRects();
     }
 

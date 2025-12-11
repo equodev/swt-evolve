@@ -16,7 +16,7 @@ public class VFont extends VResource {
     }
 
     public FontData[] getFontData() {
-        FontData[] values = ((DartFont) impl).fontData;
+        FontData[] values = ((DartFont) impl).getFontData();
         if (values == null)
             return null;
         ArrayList<FontData> result = new ArrayList<>(values.length);
@@ -26,7 +26,7 @@ public class VFont extends VResource {
     }
 
     public void setFontData(FontData[] value) {
-        ((DartFont) impl).fontData = value;
+        ((DartFont) impl)._fontData = value;
     }
 
     @JsonConverter(target = Font.class)

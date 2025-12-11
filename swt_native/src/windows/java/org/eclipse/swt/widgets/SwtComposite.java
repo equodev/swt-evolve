@@ -231,7 +231,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                 changed |= (getApi().state & LAYOUT_CHANGED) != 0;
                 getApi().state &= ~LAYOUT_CHANGED;
                 int zoom = getZoom();
-                size = DPIUtil.scaleUp(layout.computeSize(this.getApi(), DPIUtil.scaleDown(wHint, zoom), DPIUtil.scaleDown(hHint, zoom), changed), zoom);
+                size = Win32DPIUtils.pointToPixel(layout.computeSize(this.getApi(), DPIUtil.pixelToPoint(wHint, zoom), DPIUtil.pixelToPoint(hHint, zoom), changed), zoom);
             } else {
                 size = new Point(wHint, hHint);
             }
@@ -251,9 +251,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 	 * call computeTrimInPixels directly.
 	 */
         int zoom = getZoom();
-        Rectangle trim = DPIUtil.scaleUp(computeTrim(0, 0, DPIUtil.scaleDown(size.x, zoom), DPIUtil.scaleDown(size.y, zoom)), zoom);
-        if (size.y == 64)
-            trim.height = 32;
+        Rectangle trim = Win32DPIUtils.pointToPixel(computeTrim(0, 0, DPIUtil.pixelToPoint(size.x, zoom), DPIUtil.pixelToPoint(size.y, zoom)), zoom);
         return new Point(trim.width, trim.height);
     }
 
@@ -376,13 +374,10 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
         checkWidget();
         int zoom = getZoom();
-        x = DPIUtil.scaleUp(x, zoom);
-        y = DPIUtil.scaleUp(y, zoom);
-        width = DPIUtil.scaleUp(width, zoom);
-        height = DPIUtil.scaleUp(height, zoom);
-        offsetX = DPIUtil.scaleUp(offsetX, zoom);
-        offsetY = DPIUtil.scaleUp(offsetY, zoom);
-        drawBackgroundInPixels(gc, x, y, width, height, offsetX, offsetY);
+        Rectangle rectangle = Win32DPIUtils.pointToPixel(new Rectangle(x, y, width, height), zoom);
+        offsetX = Win32DPIUtils.pointToPixel(offsetX, zoom);
+        offsetY = Win32DPIUtils.pointToPixel(offsetY, zoom);
+        drawBackgroundInPixels(gc, rectangle.x, rectangle.y, rectangle.width, rectangle.height, offsetX, offsetY);
     }
 
     void drawBackgroundInPixels(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
@@ -918,10 +913,10 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 	 * call getClientAreaInPixels directly.
 	 */
         int zoom = getZoom();
-        Rectangle clientArea = DPIUtil.scaleUp(getClientArea(), zoom);
+        Rectangle clientArea = Win32DPIUtils.pointToPixel(getClientArea(), zoom);
         int width = 0, height = 0;
         for (Control element : _getChildren()) {
-            Rectangle rect = DPIUtil.scaleUp(element.getBounds(), zoom);
+            Rectangle rect = Win32DPIUtils.pointToPixel(element.getBounds(), zoom);
             width = Math.max(width, rect.x - clientArea.x + rect.width);
             height = Math.max(height, rect.y - clientArea.y + rect.height);
         }
@@ -1492,7 +1487,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         long code = callWindowProc(getApi().handle, OS.WM_GETFONT, wParam, lParam);
         if (code != 0)
             return new LRESULT(code);
-        return new LRESULT(font != null ? font.handle : defaultFont());
+        return new LRESULT(font != null ? SWTFontProvider.getFontHandle(font, getNativeZoom()) : defaultFont());
     }
 
     @Override
@@ -1592,32 +1587,34 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                     RECT prcTarget = new RECT();
                     OS.SetRect(prcTarget, ps.left, ps.top, ps.right, ps.bottom);
                     long hBufferedPaint = OS.BeginBufferedPaint(hDC, prcTarget, flags, null, phdc);
-                    GCData data = new GCData();
-                    data.device = display;
-                    data.foreground = getForegroundPixel();
-                    Control control = findBackgroundControl();
-                    if (control == null)
-                        control = this.getApi();
-                    data.background = control.getImpl().getBackgroundPixel();
-                    data.font = SwtFont.win32_new(display, OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0), getApi().nativeZoom);
-                    data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
-                    if ((getApi().style & SWT.NO_BACKGROUND) != 0) {
-                        /* This code is intentionally commented because it may be slow to copy bits from the screen */
-                        //paintGC.copyArea (image, ps.left, ps.top);
-                    } else {
-                        RECT rect = new RECT();
-                        OS.SetRect(rect, ps.left, ps.top, ps.right, ps.bottom);
-                        drawBackground(phdc[0], rect);
+                    if (hBufferedPaint != 0 && phdc[0] != 0) {
+                        GCData data = new GCData();
+                        data.device = display;
+                        data.foreground = getForegroundPixel();
+                        Control control = findBackgroundControl();
+                        if (control == null)
+                            control = this.getApi();
+                        data.background = control.getImpl().getBackgroundPixel();
+                        data.font = SWTFontProvider.getFont(display, OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0), getNativeZoom());
+                        data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
+                        if ((getApi().style & SWT.NO_BACKGROUND) != 0) {
+                            /* This code is intentionally commented because it may be slow to copy bits from the screen */
+                            //paintGC.copyArea (image, ps.left, ps.top);
+                        } else {
+                            RECT rect = new RECT();
+                            OS.SetRect(rect, ps.left, ps.top, ps.right, ps.bottom);
+                            drawBackground(phdc[0], rect);
+                        }
+                        GC gc = createNewGC(phdc[0], data);
+                        Event event = new Event();
+                        event.gc = gc;
+                        event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(ps.left, ps.top, width, height), getZoom()));
+                        sendEvent(SWT.Paint, event);
+                        if (data.focusDrawn && !isDisposed())
+                            updateUIState();
+                        gc.dispose();
+                        OS.EndBufferedPaint(hBufferedPaint, true);
                     }
-                    GC gc = createNewGC(phdc[0], data);
-                    Event event = new Event();
-                    event.gc = gc;
-                    event.setBounds(DPIUtil.scaleDown(new Rectangle(ps.left, ps.top, width, height), getZoom()));
-                    sendEvent(SWT.Paint, event);
-                    if (data.focusDrawn && !isDisposed())
-                        updateUIState();
-                    gc.dispose();
-                    OS.EndBufferedPaint(hBufferedPaint, true);
                 }
                 OS.EndPaint(getApi().handle, ps);
             } else {
@@ -1692,7 +1689,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                             if ((getApi().style & (SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | SWT.TRANSPARENT)) == 0) {
                                 drawBackground(gc.handle, rect);
                             }
-                            event.setBounds(DPIUtil.scaleDown(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top), zoom));
+                            event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top), zoom));
                             event.count = count - 1 - i;
                             sendEvent(SWT.Paint, event);
                         }
@@ -1703,7 +1700,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                             OS.SetRect(rect, ps.left, ps.top, ps.right, ps.bottom);
                             drawBackground(gc.handle, rect);
                         }
-                        event.setBounds(DPIUtil.scaleDown(new Rectangle(ps.left, ps.top, width, height), zoom));
+                        event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(ps.left, ps.top, width, height), zoom));
                         sendEvent(SWT.Paint, event);
                     }
                     // widget could be disposed at this point
@@ -1716,7 +1713,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                         }
                         gc.dispose();
                         if (!isDisposed()) {
-                            paintGC.drawImage(image, DPIUtil.scaleDown(ps.left, zoom), DPIUtil.scaleDown(ps.top, zoom));
+                            paintGC.drawImage(image, DPIUtil.pixelToPoint(ps.left, zoom), DPIUtil.pixelToPoint(ps.top, zoom));
                         }
                         image.dispose();
                         gc = paintGC;
@@ -1781,7 +1778,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                 GC gc = createNewGC(wParam, data);
                 Event event = new Event();
                 event.gc = gc;
-                event.setBounds(DPIUtil.scaleDown(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top), getZoom()));
+                event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top), getZoom()));
                 sendEvent(SWT.Paint, event);
                 event.gc = null;
                 gc.dispose();

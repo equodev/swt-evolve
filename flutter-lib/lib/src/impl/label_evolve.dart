@@ -183,11 +183,6 @@ class TextLabel extends StatelessWidget {
       color: color,
     );
 
-    // Print font data for debugging (optional)
-    if (vFont != null) {
-      FontUtils.printFontData(vFont, context: 'Label');
-    }
-
     Widget textWidget = Text(
       text,
       textAlign: alignment,

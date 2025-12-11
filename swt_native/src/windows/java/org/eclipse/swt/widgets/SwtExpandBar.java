@@ -418,7 +418,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
      */
     public int getSpacing() {
         checkWidget();
-        return DPIUtil.scaleDown(getSpacingInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getSpacingInPixels(), getZoom());
     }
 
     int getSpacingInPixels() {
@@ -547,7 +547,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
     @Override
     public void setFont(Font font) {
         super.setFont(font);
-        hFont = font != null ? font.handle : 0;
+        hFont = font != null ? SWTFontProvider.getFontHandle(font, getNativeZoom()) : 0;
         layoutItems(0, true);
     }
 
@@ -601,7 +601,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
      */
     public void setSpacing(int spacing) {
         checkWidget();
-        setSpacingInPixels(DPIUtil.scaleUp(spacing, getZoom()));
+        setSpacingInPixels(Win32DPIUtils.pointToPixel(spacing, getZoom()));
     }
 
     void setSpacingInPixels(int spacing) {
@@ -844,7 +844,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
                 if (hooks(SWT.Paint) || filters(SWT.Paint)) {
                     Event event = new Event();
                     event.gc = gc;
-                    event.setBounds(DPIUtil.scaleDown(new Rectangle(rect.left, rect.top, width, height), getZoom()));
+                    event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(rect.left, rect.top, width, height), getZoom()));
                     sendEvent(SWT.Paint, event);
                     event.gc = null;
                 }

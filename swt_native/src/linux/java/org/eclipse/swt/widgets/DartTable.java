@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2022 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -58,7 +58,7 @@ import dev.equo.swt.*;
  * </p>
  * <dl>
  * <dt><b>Styles:</b></dt>
- * <dd>SINGLE, MULTI, CHECK, FULL_SELECTION, HIDE_SELECTION, VIRTUAL, NO_SCROLL</dd>
+ * <dd>SINGLE, MULTI, CHECK, FULL_SELECTION, HIDE_SELECTION, VIRTUAL, NO_SCROLL, NO_SEARCH</dd>
  * <dt><b>Events:</b></dt>
  * <dd>Selection, DefaultSelection, SetData, MeasureItem, EraseItem, PaintItem</dd>
  * </dl>
@@ -999,11 +999,6 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getGridLineWidth() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getGridLineWidthInPixels());
-    }
-
-    int getGridLineWidthInPixels() {
-        checkWidget();
         return 0;
     }
 
@@ -1052,11 +1047,6 @@ public class DartTable extends DartComposite implements ITable {
      * @since 2.0
      */
     public int getHeaderHeight() {
-        checkWidget();
-        return DPIUtil.autoScaleDown(getHeaderHeightInPixels());
-    }
-
-    int getHeaderHeightInPixels() {
         checkWidget();
         int height = 0;
         if (columnCount > 0) {
@@ -1139,11 +1129,6 @@ public class DartTable extends DartComposite implements ITable {
      */
     public TableItem getItem(Point point) {
         checkWidget();
-        return getItemInPixels(DPIUtil.autoScaleUp(point));
-    }
-
-    TableItem getItemInPixels(Point point) {
-        checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         long[] path = new long[1];
@@ -1180,11 +1165,6 @@ public class DartTable extends DartComposite implements ITable {
      * </ul>
      */
     public int getItemHeight() {
-        checkWidget();
-        return DPIUtil.autoScaleDown(getItemHeightInPixels());
-    }
-
-    int getItemHeightInPixels() {
         checkWidget();
         int height = 0;
         if (itemCount == 0) {
@@ -1874,8 +1854,8 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     boolean searchEnabled() {
-        /* Disable searching when using VIRTUAL */
-        if ((getApi().style & SWT.VIRTUAL) != 0)
+        /* Disable searching when using VIRTUAL or NO_SEARCH */
+        if ((getApi().style & SWT.VIRTUAL) != 0 || (getApi().style & SWT.NO_SEARCH) != 0)
             return false;
         return true;
     }

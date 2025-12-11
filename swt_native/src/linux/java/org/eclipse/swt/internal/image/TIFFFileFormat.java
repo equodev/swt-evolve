@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2009 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -15,31 +15,28 @@
  */
 package org.eclipse.swt.internal.image;
 
+import java.io.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import java.io.*;
+import org.eclipse.swt.internal.image.FileFormat.*;
 
 /**
  * Baseline TIFF decoder revision 6.0
  * Extension T4-encoding CCITT T.4 1D
  */
-public final class TIFFFileFormat extends FileFormat {
+public final class TIFFFileFormat extends StaticImageFileFormat {
 
     @Override
-    boolean isFileFormat(LEDataInputStream stream) {
-        try {
-            byte[] header = new byte[4];
-            stream.read(header);
-            stream.unread(header);
-            if (header[0] != header[1])
-                return false;
-            if (!(header[0] == 0x49 && header[2] == 42 && header[3] == 0) && !(header[0] == 0x4d && header[2] == 0 && header[3] == 42)) {
-                return false;
-            }
-            return true;
-        } catch (Exception e) {
+    boolean isFileFormat(LEDataInputStream stream) throws IOException {
+        byte[] header = new byte[4];
+        stream.read(header);
+        stream.unread(header);
+        if (header[0] != header[1])
+            return false;
+        if (!(header[0] == 0x49 && header[2] == 42 && header[3] == 0) && !(header[0] == 0x4d && header[2] == 0 && header[3] == 42)) {
             return false;
         }
+        return true;
     }
 
     @Override

@@ -16,7 +16,6 @@
 package org.eclipse.swt.internal;
 
 import java.util.*;
-import java.util.Map.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.win32.*;
 
@@ -30,167 +29,131 @@ import org.eclipse.swt.internal.win32.*;
  */
 final class ScalingSWTFontRegistry implements SWTFontRegistry {
 
-    private class ScaledFontContainer {
+    private abstract class ScaledFontContainer {
 
-        // the first (unknown) font to be requested as scaled variant
-        // usually it is scaled to the primary monitor zoom, but that is not guaranteed
-        private Font baseFont;
+        protected Map<Integer, Font> scaledFonts = new HashMap<>();
 
-        private Map<Integer, Font> scaledFonts = new HashMap<>();
-
-        ScaledFontContainer(Font baseFont, int fontZoom) {
-            this.baseFont = baseFont;
-            scaledFonts.put(fontZoom, baseFont);
-        }
-
-        private Font getScaledFont(int targetZoom) {
-            if (scaledFonts.containsKey(targetZoom)) {
-                Font font = scaledFonts.get(targetZoom);
+        private Font getScaledFont(int zoom) {
+            if (scaledFonts.containsKey(zoom)) {
+                Font font = scaledFonts.get(zoom);
                 if (font.isDisposed()) {
-                    scaledFonts.remove(targetZoom);
-                    return null;
+                    scaledFonts.remove(zoom);
+                    return createAndCacheFont(zoom);
                 }
                 return font;
             }
-            return null;
+            return createAndCacheFont(zoom);
         }
 
-        private Font scaleFont(int zoom) {
-            FontData fontData = baseFont.getFontData()[0];
-            fontData.data.lfHeight = computePixels(zoom, fontData);
-            Font scaledFont = SwtFont.win32_new(device, fontData, zoom);
-            addScaledFont(zoom, scaledFont);
-            return scaledFont;
+        private Font createAndCacheFont(int zoom) {
+            Font newFont = createFont(zoom);
+            FontData clonedFontData = new FontData(newFont.getFontData()[0]);
+            fontsKeyMap.put(clonedFontData, this);
+            fontHandlesKeyMap.put(SwtFont.win32_getHandle(newFont), this);
+            scaledFonts.put(zoom, newFont);
+            return newFont;
         }
 
-        private void addScaledFont(int targetZoom, Font scaledFont) {
-            scaledFonts.put(targetZoom, scaledFont);
+        protected abstract Font createFont(int zoom);
+
+        protected abstract void dispose();
+    }
+
+    private class ScaledCustomFontContainer extends ScaledFontContainer {
+
+        private final FontData fontData;
+
+        ScaledCustomFontContainer(FontData fontData) {
+            this.fontData = fontData;
+        }
+
+        @Override
+        protected Font createFont(int zoom) {
+            return SwtFont.win32_new(device, fontData, zoom);
+        }
+
+        @Override
+        protected void dispose() {
+            for (Font font : scaledFonts.values()) {
+                font.dispose();
+            }
         }
     }
 
-    private static FontData KEY_SYSTEM_FONTS = new FontData();
+    private class ScaledSystemFontContainer extends ScaledFontContainer {
 
-    private Map<Long, ScaledFontContainer> fontHandleMap = new HashMap<>();
+        @Override
+        protected Font createFont(int zoom) {
+            long newHandle = createSystemFontHandle(zoom);
+            return SwtFont.win32_new(device, newHandle, zoom);
+        }
 
-    private Map<FontData, ScaledFontContainer> fontKeyMap = new HashMap<>();
+        private long createSystemFontHandle(int zoom) {
+            long hFont = 0;
+            NONCLIENTMETRICS info = new NONCLIENTMETRICS();
+            info.cbSize = NONCLIENTMETRICS.sizeof;
+            if (fetchSystemParametersInfo(info, zoom)) {
+                LOGFONT logFont = info.lfMessageFont;
+                hFont = OS.CreateFontIndirect(logFont);
+            }
+            if (hFont == 0)
+                hFont = OS.GetStockObject(OS.DEFAULT_GUI_FONT);
+            if (hFont == 0)
+                hFont = OS.GetStockObject(OS.SYSTEM_FONT);
+            return hFont;
+        }
+
+        private static boolean fetchSystemParametersInfo(NONCLIENTMETRICS info, int targetZoom) {
+            return OS.SystemParametersInfoForDpi(OS.SPI_GETNONCLIENTMETRICS, NONCLIENTMETRICS.sizeof, info, 0, DPIUtil.mapZoomToDPI(targetZoom));
+        }
+
+        @Override
+        protected void dispose() {
+            // do not dispose the system fonts, they are not tied to the device of this registry
+        }
+    }
+
+    private ScaledFontContainer systemFontContainer;
+
+    private Map<FontData, ScaledFontContainer> fontsKeyMap = new HashMap<>();
+
+    private Map<Long, ScaledFontContainer> fontHandlesKeyMap = new HashMap<>();
 
     private Device device;
 
     ScalingSWTFontRegistry(Device device) {
         this.device = device;
+        systemFontContainer = new ScaledSystemFontContainer();
     }
 
     @Override
     public Font getSystemFont(int zoom) {
-        ScaledFontContainer container = getOrCreateBaseSystemFontContainer(device);
-        Font systemFont = container.getScaledFont(zoom);
-        if (systemFont != null) {
-            return systemFont;
-        }
-        long systemFontHandle = createSystemFont(zoom);
-        systemFont = SwtFont.win32_new(device, systemFontHandle, zoom);
-        container.addScaledFont(zoom, systemFont);
-        return systemFont;
-    }
-
-    private ScaledFontContainer getOrCreateBaseSystemFontContainer(Device device) {
-        ScaledFontContainer systemFontContainer = fontKeyMap.get(KEY_SYSTEM_FONTS);
-        if (systemFontContainer == null) {
-            long hDC = device.internal_new_GC(null);
-            int dpiX = OS.GetDeviceCaps(hDC, OS.LOGPIXELSX);
-            device.internal_dispose_GC(hDC, null);
-            int primaryZoom = DPIUtil.mapDPIToZoom(dpiX);
-            long systemFontHandle = createSystemFont(primaryZoom);
-            Font systemFont = SwtFont.win32_new(device, systemFontHandle, primaryZoom);
-            systemFontContainer = new ScaledFontContainer(systemFont, primaryZoom);
-            fontHandleMap.put(systemFont.handle, systemFontContainer);
-            fontKeyMap.put(KEY_SYSTEM_FONTS, systemFontContainer);
-        }
-        return systemFontContainer;
-    }
-
-    private long createSystemFont(int targetZoom) {
-        long hFont = 0;
-        NONCLIENTMETRICS info = new NONCLIENTMETRICS();
-        info.cbSize = NONCLIENTMETRICS.sizeof;
-        if (fetchSystemParametersInfo(info, targetZoom)) {
-            LOGFONT logFont = info.lfMessageFont;
-            hFont = OS.CreateFontIndirect(logFont);
-        }
-        if (hFont == 0)
-            hFont = OS.GetStockObject(OS.DEFAULT_GUI_FONT);
-        if (hFont == 0)
-            hFont = OS.GetStockObject(OS.SYSTEM_FONT);
-        return hFont;
-    }
-
-    private static boolean fetchSystemParametersInfo(NONCLIENTMETRICS info, int targetZoom) {
-        if (OS.WIN32_BUILD >= OS.WIN32_BUILD_WIN10_1607) {
-            return OS.SystemParametersInfoForDpi(OS.SPI_GETNONCLIENTMETRICS, NONCLIENTMETRICS.sizeof, info, 0, DPIUtil.mapZoomToDPI(targetZoom));
-        } else {
-            return OS.SystemParametersInfo(OS.SPI_GETNONCLIENTMETRICS, 0, info, 0);
-        }
+        return systemFontContainer.getScaledFont(zoom);
     }
 
     @Override
     public Font getFont(FontData fontData, int zoom) {
         ScaledFontContainer container;
-        if (fontKeyMap.containsKey(fontData)) {
-            container = fontKeyMap.get(fontData);
+        if (fontsKeyMap.containsKey(fontData)) {
+            container = fontsKeyMap.get(fontData);
         } else {
-            int calculatedZoom = computeZoom(fontData);
-            Font newFont = SwtFont.win32_new(device, fontData, calculatedZoom);
-            container = new ScaledFontContainer(newFont, calculatedZoom);
-            fontHandleMap.put(newFont.handle, container);
-            fontKeyMap.put(fontData, container);
+            FontData clonedFontData = new FontData(fontData);
+            container = new ScaledCustomFontContainer(clonedFontData);
         }
-        return getOrCreateFont(container, zoom);
+        return container.getScaledFont(zoom);
+    }
+
+    @Override
+    public Font getFont(long fontHandle, int zoom) {
+        if (fontHandlesKeyMap.containsKey(fontHandle)) {
+            return fontHandlesKeyMap.get(fontHandle).getScaledFont(zoom);
+        }
+        return SwtFont.win32_new(device, fontHandle, zoom);
     }
 
     @Override
     public void dispose() {
-        for (Entry<FontData, ScaledFontContainer> fontContainerEntry : fontKeyMap.entrySet()) {
-            if (KEY_SYSTEM_FONTS.equals(fontContainerEntry.getKey())) {
-                // do not dispose the system fonts here, they are not tied to the device of this registry
-                continue;
-            }
-            ScaledFontContainer scaledFontContainer = fontContainerEntry.getValue();
-            for (Font font : scaledFontContainer.scaledFonts.values()) {
-                font.dispose();
-            }
-        }
-        fontKeyMap.clear();
-    }
-
-    private Font getOrCreateFont(ScaledFontContainer container, int zoom) {
-        Font scaledFont = container.getScaledFont(zoom);
-        if (scaledFont == null) {
-            scaledFont = container.scaleFont(zoom);
-            fontHandleMap.put(scaledFont.handle, container);
-            fontKeyMap.put(scaledFont.getFontData()[0], container);
-        }
-        return scaledFont;
-    }
-
-    private int computeZoom(FontData fontData) {
-        int dpi = device.getDPI().x;
-        int pixelsAtPrimaryMonitorZoom = computePixels(fontData.height);
-        int value = DPIUtil.mapDPIToZoom(dpi) * fontData.data.lfHeight / pixelsAtPrimaryMonitorZoom;
-        return value;
-    }
-
-    private int computePixels(int zoom, FontData fontData) {
-        int dpi = device.getDPI().x;
-        int adjustedLogFontHeight = computePixels(fontData.height);
-        int primaryZoom = DPIUtil.mapDPIToZoom(dpi);
-        if (zoom != primaryZoom) {
-            adjustedLogFontHeight *= (1f * zoom / primaryZoom);
-        }
-        return adjustedLogFontHeight;
-    }
-
-    private int computePixels(float height) {
-        int dpi = device.getDPI().x;
-        return -(int) (0.5f + (height * dpi / 72f));
+        fontsKeyMap.values().forEach(ScaledFontContainer::dispose);
+        fontsKeyMap.clear();
     }
 }

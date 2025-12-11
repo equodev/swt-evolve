@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2019 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -17,7 +17,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
 
@@ -158,13 +157,8 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getBoundsInPixels());
-    }
-
-    Rectangle getBoundsInPixels() {
-        checkWidget();
         if (image != null) {
-            Rectangle rect = image.getBoundsInPixels();
+            Rectangle rect = image.getBounds();
             return new Rectangle(x, y, rect.width, rect.height);
         } else {
             if (width == 0) {
@@ -219,11 +213,6 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public Point getLocation() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getLocationInPixels());
-    }
-
-    Point getLocationInPixels() {
-        checkWidget();
         return new Point(x, y);
     }
 
@@ -254,13 +243,8 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public Point getSize() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getSizeInPixels());
-    }
-
-    public Point getSizeInPixels() {
-        checkWidget();
         if (image != null) {
-            Rectangle rect = image.getBoundsInPixels();
+            Rectangle rect = image.getBounds();
             return new Point(rect.width, rect.height);
         } else {
             if (width == 0) {
@@ -377,11 +361,6 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public void setBounds(int x, int y, int width, int height) {
         checkWidget();
-        setBounds(new Rectangle(x, y, width, height));
-    }
-
-    void setBoundsInPixels(int x, int y, int width, int height) {
-        checkWidget();
         if (this.x == x && this.y == y && this.width == width && this.height == height)
             return;
         boolean isFocus = isFocusCaret();
@@ -411,15 +390,9 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public void setBounds(Rectangle rect) {
         checkWidget();
-        rect = DPIUtil.autoScaleUp(rect);
-        setBoundsInPixels(rect);
-    }
-
-    void setBoundsInPixels(Rectangle rect) {
-        checkWidget();
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        setBoundsInPixels(rect.x, rect.y, rect.width, rect.height);
+        setBounds(rect.x, rect.y, rect.width, rect.height);
     }
 
     void setFocus() {
@@ -496,12 +469,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public void setLocation(int x, int y) {
         checkWidget();
-        setLocation(new Point(x, y));
-    }
-
-    void setLocationInPixels(int x, int y) {
-        checkWidget();
-        setBoundsInPixels(x, y, width, height);
+        setBounds(x, y, width, height);
     }
 
     /**
@@ -518,14 +486,9 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public void setLocation(Point location) {
         checkWidget();
-        setLocationInPixels(DPIUtil.autoScaleUp(location));
-    }
-
-    void setLocationInPixels(Point location) {
-        checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        setLocationInPixels(location.x, location.y);
+        setLocation(location.x, location.y);
     }
 
     /**
@@ -541,12 +504,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public void setSize(int width, int height) {
         checkWidget();
-        setSize(new Point(width, height));
-    }
-
-    void setSizeInPixels(int width, int height) {
-        checkWidget();
-        setBoundsInPixels(x, y, width, height);
+        setBounds(x, y, width, height);
     }
 
     /**
@@ -564,14 +522,9 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public void setSize(Point size) {
         checkWidget();
-        setSizeInPixels(DPIUtil.autoScaleUp(size));
-    }
-
-    void setSizeInPixels(Point size) {
-        checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        setSizeInPixels(size.x, size.y);
+        setSize(size.x, size.y);
     }
 
     /**

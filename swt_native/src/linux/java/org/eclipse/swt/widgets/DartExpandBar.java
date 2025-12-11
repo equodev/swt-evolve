@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
 import dev.equo.swt.*;
 
 /**
@@ -257,7 +256,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
      */
     public int getSpacing() {
         checkWidget();
-        return DPIUtil.autoScaleDown(spacing);
+        return spacing;
     }
 
     /**
@@ -388,11 +387,6 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
      * </ul>
      */
     public void setSpacing(int spacing) {
-        checkWidget();
-        setSpacingInPixels(DPIUtil.autoScaleUp(spacing));
-    }
-
-    void setSpacingInPixels(int spacing) {
         dirty();
         checkWidget();
         if (spacing < 0)

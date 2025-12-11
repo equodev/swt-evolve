@@ -166,10 +166,6 @@ public class DartTableItem extends DartItem implements ITableItem {
     }
 
     long fontHandle(int index) {
-        if (cellFont != null && cellFont[index] != null)
-            return cellFont[index].handle;
-        if (font != null)
-            return font.handle;
         return -1;
     }
 
@@ -233,7 +229,7 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return DPIUtil.scaleDown(getBoundsInPixels(), getZoom());
+        return null;
     }
 
     Rectangle getBoundsInPixels() {
@@ -259,7 +255,7 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public Rectangle getBounds(int index) {
         checkWidget();
-        return DPIUtil.scaleDown(getBoundsInPixels(index), getZoom());
+        return null;
     }
 
     Rectangle getBoundsInPixels(int index) {
@@ -452,7 +448,7 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public Rectangle getImageBounds(int index) {
         checkWidget();
-        return DPIUtil.scaleDown(getImageBoundsInPixels(index), getZoom());
+        return null;
     }
 
     Rectangle getImageBoundsInPixels(int index) {
@@ -559,7 +555,7 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public Rectangle getTextBounds(int index) {
         checkWidget();
-        return DPIUtil.scaleDown(getTextBoundsInPixels(index), getZoom());
+        return null;
     }
 
     Rectangle getTextBoundsInPixels(int index) {
@@ -742,8 +738,7 @@ public class DartTableItem extends DartItem implements ITableItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Font oldFont = this.font;
-        Shell shell = parent.getShell();
-        Font newFont = (font == null ? font : DartFont.win32_new(font, shell.nativeZoom));
+        Font newFont = (font == null ? font : DartFont.win32_new(font, getNativeZoom()));
         if (oldFont == newFont)
             return;
         this.font = newFont;
@@ -810,7 +805,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         Font oldFont = cellFont[index];
         if (oldFont == font)
             return;
-        cellFont[index] = font == null ? font : DartFont.win32_new(font, getApi().nativeZoom);
+        cellFont[index] = font == null ? font : DartFont.win32_new(font, getNativeZoom());
         if (oldFont != null && oldFont.equals(font))
             return;
         if (font != null)
@@ -1173,10 +1168,9 @@ public class DartTableItem extends DartItem implements ITableItem {
         }
         Font[] cellFonts = ((DartTableItem) tableItem.getImpl()).cellFont;
         if (cellFonts != null) {
-            Shell shell = ((DartTableItem) tableItem.getImpl()).parent.getShell();
             for (int index = 0; index < cellFonts.length; index++) {
                 Font cellFont = cellFonts[index];
-                cellFonts[index] = cellFont == null ? null : DartFont.win32_new(cellFont, shell.nativeZoom);
+                cellFonts[index] = cellFont == null ? null : DartFont.win32_new(cellFont, ((DartWidget) tableItem.getImpl()).getNativeZoom());
             }
         }
     }

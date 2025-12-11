@@ -139,13 +139,6 @@ public final class SwtFont extends SwtResource implements IFont {
         init();
     }
 
-    /*public*/
-    SwtFont(Device device, String name, float height, int style, Font api) {
-        super(device, api);
-        init(name, height, style, null);
-        init();
-    }
-
     @Override
     void destroy() {
         OS.pango_font_description_free(getApi().handle);

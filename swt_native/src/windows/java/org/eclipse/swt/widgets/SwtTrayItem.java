@@ -483,7 +483,7 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
         if (icon != null) {
             switch(icon.type) {
                 case SWT.BITMAP:
-                    image2 = SwtDisplay.createIcon(image);
+                    image2 = SwtDisplay.createIcon(image, getZoom());
                     hIcon = SwtImage.win32_getHandle(image2, getZoom());
                     break;
                 case SWT.ICON:

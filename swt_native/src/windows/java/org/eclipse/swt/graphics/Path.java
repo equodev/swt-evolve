@@ -16,6 +16,7 @@
 package org.eclipse.swt.graphics;
 
 import java.util.*;
+import java.util.function.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
@@ -72,11 +73,6 @@ public class Path extends Resource {
     public Path(Device device) {
         this((IPath) null);
         setImpl(new SwtPath(device, this));
-    }
-
-    Path(Device device, int zoom) {
-        this((IPath) null);
-        setImpl(new SwtPath(device, zoom, this));
     }
 
     /**
@@ -149,11 +145,6 @@ public class Path extends Resource {
     public Path(Device device, PathData data) {
         this((IPath) null);
         setImpl(new SwtPath(device, data, this));
-    }
-
-    Path(Device device, PathData data, int zoom) {
-        this((IPath) null);
-        setImpl(new SwtPath(device, data, zoom, this));
     }
 
     /**

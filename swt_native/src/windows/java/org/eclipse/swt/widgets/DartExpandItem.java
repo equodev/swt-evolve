@@ -182,16 +182,11 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      */
     public int getHeaderHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getHeaderHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getHeaderHeightInPixels(), getZoom());
     }
 
     int getHeaderHeightInPixels() {
         int headerHeightInPixels = ((DartExpandBar) parent.getImpl()).getBandHeight();
-        int imageHeightInPixels = DPIUtil.scaleUp(imageHeight, getZoom());
-        int imageHeaderDiff = headerHeightInPixels - imageHeightInPixels;
-        if (imageHeaderDiff < IMAGE_MARGIN) {
-            headerHeightInPixels = imageHeightInPixels + IMAGE_MARGIN;
-        }
         return headerHeightInPixels;
     }
 
@@ -207,7 +202,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      */
     public int getHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getHeightInPixels(), getZoom());
     }
 
     int getHeightInPixels() {
@@ -249,10 +244,6 @@ public class DartExpandItem extends DartItem implements IExpandItem {
 
     void redraw(boolean all) {
         int headerHeightInPixels = getHeaderHeightInPixels();
-        int zoom = getZoom();
-        int imageHeightInPixels = DPIUtil.scaleUp(imageHeight, zoom);
-        if (imageHeightInPixels > headerHeightInPixels) {
-        }
         if (!((DartExpandBar) parent.getImpl()).isAppThemed()) {
         }
     }
@@ -368,7 +359,6 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      */
     public void setHeight(int height) {
         checkWidget();
-        setHeightInPixels(DPIUtil.scaleUp(height, getZoom()));
     }
 
     void setHeightInPixels(int height) {

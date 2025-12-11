@@ -126,14 +126,16 @@ class _SimpleSpinnerState extends State<_SimpleSpinner> {
 
   void _incrementValue() {
     if (!widget.enabled || widget.readOnly) return;
-    int newValue = (widget.value + widget.increment).clamp(widget.min, widget.max);
+    int newValue =
+        (widget.value + widget.increment).clamp(widget.min, widget.max);
     _controller.text = _formatValue(newValue);
     widget.onChanged(newValue);
   }
 
   void _decrementValue() {
     if (!widget.enabled || widget.readOnly) return;
-    int newValue = (widget.value - widget.increment).clamp(widget.min, widget.max);
+    int newValue =
+        (widget.value - widget.increment).clamp(widget.min, widget.max);
     _controller.text = _formatValue(newValue);
     widget.onChanged(newValue);
   }
@@ -188,12 +190,14 @@ class _SimpleSpinnerState extends State<_SimpleSpinner> {
               readOnly: widget.readOnly,
               textAlign: TextAlign.right,
               style: TextStyle(
-                color: widget.enabled ? foregroundColor : getForegroundDisabled(),
+                color:
+                    widget.enabled ? foregroundColor : getForegroundDisabled(),
                 fontSize: 14,
               ),
               decoration: InputDecoration(
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 isDense: true,
               ),
               keyboardType: TextInputType.numberWithOptions(
@@ -220,29 +224,38 @@ class _SimpleSpinnerState extends State<_SimpleSpinner> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: (widget.enabled && !widget.readOnly) ? _incrementValue : null,
+                    onTap: (widget.enabled && !widget.readOnly)
+                        ? _incrementValue
+                        : null,
                     child: Container(
                       decoration: BoxDecoration(
                         color: backgroundColor,
-                        border: Border(bottom: BorderSide(color: borderColor, width: 0.5)),
+                        border: Border(
+                            bottom: BorderSide(color: borderColor, width: 0.5)),
                       ),
                       child: Icon(
                         Icons.arrow_drop_up,
                         size: 16,
-                        color: (widget.enabled && !widget.readOnly) ? accentColor : getForegroundDisabled(),
+                        color: (widget.enabled && !widget.readOnly)
+                            ? accentColor
+                            : getForegroundDisabled(),
                       ),
                     ),
                   ),
                 ),
                 Expanded(
                   child: GestureDetector(
-                    onTap: (widget.enabled && !widget.readOnly) ? _decrementValue : null,
+                    onTap: (widget.enabled && !widget.readOnly)
+                        ? _decrementValue
+                        : null,
                     child: Container(
                       color: backgroundColor,
                       child: Icon(
                         Icons.arrow_drop_down,
                         size: 16,
-                        color: (widget.enabled && !widget.readOnly) ? accentColor : getForegroundDisabled(),
+                        color: (widget.enabled && !widget.readOnly)
+                            ? accentColor
+                            : getForegroundDisabled(),
                       ),
                     ),
                   ),
