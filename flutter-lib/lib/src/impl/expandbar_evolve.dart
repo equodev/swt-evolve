@@ -50,9 +50,9 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
         child: Column(
           children: expandItems
               .map((item) => Padding(
-                    padding: EdgeInsets.symmetric(vertical: 2),
-                    child: item,
-                  ))
+            padding: EdgeInsets.symmetric(vertical: 2),
+            child: item,
+          ))
               .toList(),
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -183,21 +183,10 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     width: double.infinity,
-                    height:
-                        (expandItem.height != null && expandItem.height! > 0)
-                            ? expandItem.height!.toDouble()
-                            : (expandItem.control is VComposite &&
-                                    (expandItem.control as VComposite).bounds !=
-                                        null)
-                                ? (expandItem.control as VComposite)
-                                    .bounds!
-                                    .height
-                                    .toDouble()
-                                : null,
-                    child: Container(
-                      alignment: Alignment.topLeft,
-                      child: contentWidget,
-                    ),
+                    height: (expandItem.height != null && expandItem.height! > 0)
+                        ? expandItem.height!.toDouble()
+                        : null,
+                    child: contentWidget,
                   ),
                 ),
             ],
