@@ -819,10 +819,15 @@ public abstract class Control extends Widget implements Drawable {
     }
 
     /**
-     * Returns a point describing the receiver's location relative
-     * to its parent in points (or its display if its parent is null), unless
-     * the receiver is a shell. In this case, the point is
-     * relative to the display.
+     * Returns a point describing the receiver's location relative to its parent in
+     * points (or its display if its parent is null), unless the receiver is a
+     * shell. In this case, the point is usually relative to the display.
+     * <p>
+     * <b>Warning:</b> When executing this operation on a shell, it may not yield a
+     * value with the expected meaning on some platforms. For example, executing
+     * this operation on a shell when the environment uses the Wayland protocol, the
+     * result is <b>not</b> a coordinate relative to the display. It will not change
+     * when moving the shell.
      *
      * @return the receiver's location
      *
@@ -1651,6 +1656,9 @@ public abstract class Control extends Widget implements Drawable {
      * <p>
      * Note: This operation is a hint and may be overridden by the platform.
      * </p>
+     * <p>
+     * Note: The background color can be overridden by setting a background image.
+     * </p>
      * @param color the new color (or null)
      *
      * @exception IllegalArgumentException <ul>
@@ -1673,6 +1681,9 @@ public abstract class Control extends Widget implements Drawable {
      * <p>
      * Note: This operation is a hint and may be overridden by the platform.
      * For example, on Windows the background of a Button cannot be changed.
+     * </p>
+     * <p>
+     * Note: Setting a background image overrides a set background color.
      * </p>
      * @param image the new image (or null)
      *
@@ -1898,11 +1909,14 @@ public abstract class Control extends Widget implements Drawable {
     }
 
     /**
-     * Sets the receiver's location to the point specified by
-     * the arguments which are relative to the receiver's
-     * parent (or its display if its parent is null), unless
-     * the receiver is a shell. In this case, the point is
-     * relative to the display.
+     * Sets the receiver's location to the point specified by the arguments which
+     * are relative to the receiver's parent (or its display if its parent is null),
+     * unless the receiver is a shell. In this case, the point is relative to the
+     * display.
+     * <p>
+     * <b>Warning:</b> When executing this operation on a shell, it may not have the
+     * intended effect on some platforms. For example, executing this operation on a
+     * shell when the environment uses the Wayland protocol, nothing will happen.
      *
      * @param x the new x coordinate for the receiver
      * @param y the new y coordinate for the receiver
@@ -1917,11 +1931,14 @@ public abstract class Control extends Widget implements Drawable {
     }
 
     /**
-     * Sets the receiver's location to the point specified by
-     * the arguments which are relative to the receiver's
-     * parent (or its display if its parent is null), unless
-     * the receiver is a shell. In this case, the point is
-     * relative to the display.
+     * Sets the receiver's location to the point specified by the argument which
+     * is relative to the receiver's parent (or its display if its parent is null),
+     * unless the receiver is a shell. In this case, the point is relative to the
+     * display.
+     * <p>
+     * <b>Warning:</b> When executing this operation on a shell, it may not have the
+     * intended effect on some platforms. For example, executing this operation on a
+     * shell when the environment uses the Wayland protocol, nothing will happen.
      *
      * @param location the new location for the receiver
      *

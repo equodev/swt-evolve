@@ -306,7 +306,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
             bits0 &= ~OS.WS_BORDER;
             bits1 |= OS.WS_EX_CLIENTEDGE;
         }
-        OS.AdjustWindowRectEx(rect, bits0, false, bits1);
+        adjustWindowRectEx(rect, bits0, false, bits1);
         width = rect.right - rect.left;
         height = rect.bottom - rect.top;
         /*

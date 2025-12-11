@@ -793,6 +793,7 @@ class DefaultContent implements StyledTextContent {
      * </ul>
      */
     @Override
+    @SuppressWarnings("removal")
     public void removeTextChangeListener(TextChangeListener listener) {
         if (listener == null)
             error(SWT.ERROR_NULL_ARGUMENT);

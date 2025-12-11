@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2016 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -334,11 +334,6 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
      */
     public int getWidth() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getWidthInPixels());
-    }
-
-    int getWidthInPixels() {
-        checkWidget();
         if (!GTK.gtk_tree_view_column_get_visible(getApi().handle)) {
             return 0;
         }
@@ -373,9 +368,10 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
     }
 
     @Override
-    void gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
+    int gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
         boolean doubleClick = n_press >= 2 ? true : false;
         sendSelectionEvent(doubleClick ? SWT.DefaultSelection : SWT.Selection);
+        return GTK4.GTK_EVENT_SEQUENCE_NONE;
     }
 
     @Override
@@ -489,7 +485,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
             }
             OS.g_free(iter);
         }
-        setWidthInPixels(width);
+        setWidth(width);
     }
 
     @Override
@@ -623,14 +619,14 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
             } else {
                 GTK3.gtk_image_set_from_surface(imageHandle, headerImageList.getSurface(imageIndex));
             }
-            GTK.gtk_widget_show(imageHandle);
+            gtk_widget_show(imageHandle);
         } else {
             if (GTK.GTK4) {
                 GTK4.gtk_image_clear(imageHandle);
             } else {
                 GTK3.gtk_image_set_from_surface(imageHandle, 0);
             }
-            GTK.gtk_widget_hide(imageHandle);
+            gtk_widget_hide(imageHandle);
         }
     }
 
@@ -698,9 +694,9 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
         byte[] buffer = Converter.wcsToMbcs(chars, true);
         GTK.gtk_label_set_text_with_mnemonic(labelHandle, buffer);
         if (string.length() != 0) {
-            GTK.gtk_widget_show(labelHandle);
+            gtk_widget_show(labelHandle);
         } else {
-            GTK.gtk_widget_hide(labelHandle);
+            gtk_widget_hide(labelHandle);
         }
     }
 
@@ -748,11 +744,6 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
      * </ul>
      */
     public void setWidth(int width) {
-        checkWidget();
-        setWidthInPixels(DPIUtil.autoScaleUp(width));
-    }
-
-    void setWidthInPixels(int width) {
         checkWidget();
         if (width < 0)
             return;

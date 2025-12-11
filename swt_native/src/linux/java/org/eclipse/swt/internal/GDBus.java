@@ -62,7 +62,7 @@ public class GDBus {
          *  @param inputArgs   2D array pair of Strings in the format of:  (DBUS_TYPE_*, argument_name).
          *                     Where argument_name is only so that it's seen by command line by user.
          *  @param outputArgs  Same as inputArgs, but for returning values.
-         *  @param userFunction  A Function<Object[],Object[]>, that you would like to run when the user calls the method over gdbus.
+         *  @param userFunction  A Function&lt;Object[],Object[]&gt;, that you would like to run when the user calls the method over gdbus.
          *                       Note, input argument(s) are provided as an Object[] array. You need to cast items manually.
          *                       Output must always be an Object[] array or null. (E.g Object[] with only 1 element in it).
          *
@@ -168,7 +168,7 @@ public class GDBus {
         0, // user_data_free_func
         0);
         if (owner_id == 0) {
-            System.err.println("SWT GDBus: Failed to aquire bus name: " + serviceName);
+            System.err.println("SWT GDBus: Failed to acquire bus name: " + serviceName);
         }
     }
 
@@ -263,7 +263,7 @@ public class GDBus {
     // Callback Only called directly by JNI.
     @SuppressWarnings("unused")
     private static long onNameAcquired(long connection, long name, long user_data) {
-        // Currently not used, but can be used if acquring the gdbus name should trigger something to load.
+        // Currently not used, but can be used if acquiring the gdbus name should trigger something to load.
         return 0;
     }
 

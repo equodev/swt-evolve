@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2016 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -16,7 +16,6 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 
 /**
@@ -137,7 +136,7 @@ public class SwtTransform extends SwtResource implements ITransform {
         getApi().handle = new double[6];
         if (getApi().handle == null)
             SWT.error(SWT.ERROR_NO_HANDLES);
-        Cairo.cairo_matrix_init(getApi().handle, m11, m12, m21, m22, DPIUtil.autoScaleUp(dx), DPIUtil.autoScaleUp(dy));
+        Cairo.cairo_matrix_init(getApi().handle, m11, m12, m21, m22, dx, dy);
         init();
     }
 
@@ -179,8 +178,8 @@ public class SwtTransform extends SwtResource implements ITransform {
         elements[1] = (float) getApi().handle[1];
         elements[2] = (float) getApi().handle[2];
         elements[3] = (float) getApi().handle[3];
-        elements[4] = DPIUtil.autoScaleDown((float) getApi().handle[4]);
-        elements[5] = DPIUtil.autoScaleDown((float) getApi().handle[5]);
+        elements[4] = (float) getApi().handle[4];
+        elements[5] = (float) getApi().handle[5];
     }
 
     /**
@@ -324,7 +323,7 @@ public class SwtTransform extends SwtResource implements ITransform {
     public void setElements(float m11, float m12, float m21, float m22, float dx, float dy) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        Cairo.cairo_matrix_init(getApi().handle, m11, m12, m21, m22, DPIUtil.autoScaleUp(dx), DPIUtil.autoScaleUp(dy));
+        Cairo.cairo_matrix_init(getApi().handle, m11, m12, m21, m22, dx, dy);
     }
 
     /**
@@ -369,11 +368,11 @@ public class SwtTransform extends SwtResource implements ITransform {
         double[] dx = new double[1], dy = new double[1];
         int length = pointArray.length / 2;
         for (int i = 0, j = 0; i < length; i++, j += 2) {
-            dx[0] = DPIUtil.autoScaleUp(pointArray[j]);
-            dy[0] = DPIUtil.autoScaleUp(pointArray[j + 1]);
+            dx[0] = pointArray[j];
+            dy[0] = pointArray[j + 1];
             Cairo.cairo_matrix_transform_point(getApi().handle, dx, dy);
-            pointArray[j] = DPIUtil.autoScaleDown((float) dx[0]);
-            pointArray[j + 1] = DPIUtil.autoScaleDown((float) dy[0]);
+            pointArray[j] = (float) dx[0];
+            pointArray[j + 1] = (float) dy[0];
         }
     }
 
@@ -391,7 +390,7 @@ public class SwtTransform extends SwtResource implements ITransform {
     public void translate(float offsetX, float offsetY) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        Cairo.cairo_matrix_translate(getApi().handle, DPIUtil.autoScaleUp(offsetX), DPIUtil.autoScaleUp(offsetY));
+        Cairo.cairo_matrix_translate(getApi().handle, offsetX, offsetY);
     }
 
     /**

@@ -243,7 +243,6 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         }
         if ((getApi().style & SWT.FLAT) == 0) {
             if (!isLastItemOfRow(index)) {
-                margin += DPIUtil.scaleUp(SEPARATOR_WIDTH, getZoom());
             }
         }
         return margin;
@@ -349,7 +348,6 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         Point[] sizes = getItemSizesInPixels();
         if (sizes != null) {
             for (int i = 0; i < sizes.length; i++) {
-                sizes[i] = DPIUtil.scaleDown(sizes[i], getZoom());
             }
         }
         return sizes;
@@ -533,7 +531,6 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
             error(SWT.ERROR_NULL_ARGUMENT);
         Point[] sizesInPoints = new Point[sizes.length];
         for (int i = 0; i < sizes.length; i++) {
-            sizesInPoints[i] = DPIUtil.scaleUp(sizes[i], getZoom());
         }
         setItemLayoutInPixels(itemOrder, wrapIndices, sizesInPoints);
     }

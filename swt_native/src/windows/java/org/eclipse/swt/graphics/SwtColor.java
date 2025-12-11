@@ -41,13 +41,6 @@ public final class SwtColor extends SwtResource implements IColor {
     /**
      * Prevents uninitialized instances from being created outside the package.
      */
-    SwtColor(Color api) {
-        super(api);
-    }
-
-    /**
-     * Prevents uninitialized instances from being created outside the package.
-     */
     SwtColor(Device device, Color api) {
         super(device, api);
     }

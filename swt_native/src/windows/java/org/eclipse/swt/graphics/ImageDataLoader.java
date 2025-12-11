@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2006 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -16,6 +16,9 @@
 package org.eclipse.swt.graphics;
 
 import java.io.*;
+import java.util.*;
+import org.eclipse.swt.*;
+import org.eclipse.swt.internal.DPIUtil.*;
 
 /**
  * Internal class that separates ImageData from ImageLoader
@@ -23,11 +26,39 @@ import java.io.*;
  */
 class ImageDataLoader {
 
-    public static ImageData[] load(InputStream stream) {
-        return new ImageLoader().load(stream);
+    public static ImageData load(InputStream stream) {
+        ImageData[] data = new ImageLoader().load(stream);
+        if (data.length < 1)
+            SWT.error(SWT.ERROR_INVALID_IMAGE);
+        return data[0];
     }
 
-    public static ImageData[] load(String filename) {
-        return new ImageLoader().load(filename);
+    public static ImageData load(String filename) {
+        ImageData[] data = new ImageLoader().load(filename);
+        if (data.length < 1)
+            SWT.error(SWT.ERROR_INVALID_IMAGE);
+        return data[0];
+    }
+
+    public static boolean canLoadAtZoom(InputStream stream, int fileZoom, int targetZoom) {
+        return ImageLoader.canLoadAtZoom(stream, fileZoom, targetZoom);
+    }
+
+    public static ElementAtZoom<ImageData> load(InputStream stream, int fileZoom, int targetZoom) {
+        List<ElementAtZoom<ImageData>> data = new ImageLoader().load(stream, fileZoom, targetZoom);
+        if (data.isEmpty())
+            SWT.error(SWT.ERROR_INVALID_IMAGE);
+        return data.get(0);
+    }
+
+    public static boolean canLoadAtZoom(String filename, int fileZoom, int targetZoom) {
+        return ImageLoader.canLoadAtZoom(filename, fileZoom, targetZoom);
+    }
+
+    public static ElementAtZoom<ImageData> load(String filename, int fileZoom, int targetZoom) {
+        List<ElementAtZoom<ImageData>> data = new ImageLoader().load(filename, fileZoom, targetZoom);
+        if (data.isEmpty())
+            SWT.error(SWT.ERROR_INVALID_IMAGE);
+        return data.get(0);
     }
 }

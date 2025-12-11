@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2022 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -15,11 +15,14 @@
  */
 package org.eclipse.swt.graphics;
 
+import static org.eclipse.swt.internal.image.ImageColorTransformer.DEFAULT_DISABLED_IMAGE_TRANSFORMER;
 import java.io.*;
+import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.DPIUtil.*;
 import org.eclipse.swt.internal.cairo.*;
+import org.eclipse.swt.internal.image.*;
 import dev.equo.swt.*;
 
 /**
@@ -110,6 +113,11 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     private ImageDataProvider imageDataProvider;
 
     /**
+     * ImageGcDrawer to provide a callback to draw on a GC for various zoom levels
+     */
+    private ImageGcDrawer imageGcDrawer;
+
+    /**
      * Style flag used to differentiate normal, gray-scale and disabled images based
      * on image data providers. Without this, a normal and a disabled image of the
      * same image data provider would be considered equal.
@@ -163,8 +171,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, int width, int height, Image api) {
         super(device, api);
-        Point size = DPIUtil.autoScaleUp(new Point(width, height));
-        currentDeviceZoom = DPIUtil.getDeviceZoom();
+        Point size = new Point(width, height);
         init(size.x, size.y);
         init();
     }
@@ -223,6 +230,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         this.getApi().type = srcImage.type;
         this.imageDataProvider = ((DartImage) srcImage.getImpl()).imageDataProvider;
         this.imageFileNameProvider = ((DartImage) srcImage.getImpl()).imageFileNameProvider;
+        this.imageGcDrawer = ((DartImage) srcImage.getImpl()).imageGcDrawer;
         this.styleFlag = ((DartImage) srcImage.getImpl()).styleFlag | flag;
         this.currentDeviceZoom = ((DartImage) srcImage.getImpl()).currentDeviceZoom;
         if (flag != SWT.IMAGE_DISABLE)
@@ -231,6 +239,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         int height = this.height = srcImage.getImpl()._height();
         if (getApi().surface == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
+        if (DPIUtil.getDeviceZoom() != currentDeviceZoom) {
+        }
         if (flag != SWT.IMAGE_COPY) {
             int oa, or, og, ob;
             {
@@ -244,6 +254,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                     {
                         for (int y = 0; y < height; y++) {
                             for (int x = 0, offset = 0; x < width; x++, offset += 4) {
+                                // The alpha value is embedded into the RGB values as well, so extract it out
+                                // of those values for transformation and reapply it afterwards
+                                // Note: don't change execution order, e.g., using *= assignment, as this is
                             }
                         }
                         break;
@@ -295,14 +308,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * </ul>
      *
      * @see #dispose()
+     *
+     * @deprecated use {@link Image#Image(Device, int, int)} instead
      */
+    @Deprecated(since = "2025-06", forRemoval = true)
     public DartImage(Device device, Rectangle bounds, Image api) {
         super(device, api);
         if (bounds == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        currentDeviceZoom = DPIUtil.getDeviceZoom();
-        Rectangle bounds1 = DPIUtil.autoScaleUp(bounds);
-        init(bounds1.width, bounds1.height);
+        init(bounds.width, bounds.height);
         init();
     }
 
@@ -330,12 +344,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * @see #dispose()
      */
     public DartImage(Device device, ImageData data, Image api) {
+        this(device, data, 100, api);
+    }
+
+    DartImage(Device device, ImageData data, int zoom, Image api) {
         super(device, api);
         if (data == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        currentDeviceZoom = DPIUtil.getDeviceZoom();
-        data = DPIUtil.autoScaleUp(device, data);
-        init(data);
+        currentDeviceZoom = zoom;
+        init(data, zoom);
         init();
     }
 
@@ -379,8 +396,6 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         currentDeviceZoom = DPIUtil.getDeviceZoom();
-        source = DPIUtil.autoScaleUp(device, source);
-        mask = DPIUtil.autoScaleUp(device, mask);
         mask = ImageData.convertMask(mask);
         ImageData image = new ImageData(source.width, source.height, source.depth, source.palette, source.scanlinePad, source.data);
         image.maskPad = mask.scanlinePad;
@@ -446,7 +461,6 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         super(device, api);
         ImageData data = new ImageData(stream);
         currentDeviceZoom = DPIUtil.getDeviceZoom();
-        data = DPIUtil.autoScaleUp(device, data);
         init(data);
         init();
     }
@@ -490,7 +504,6 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         ImageData data = new ImageData(filename);
         currentDeviceZoom = DPIUtil.getDeviceZoom();
-        data = DPIUtil.autoScaleUp(device, data);
         init(data);
         init();
     }
@@ -529,18 +542,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         this.filename = ImageUtils.getFilename(imageFileNameProvider.getImagePath(100));
         this.imageFileNameProvider = imageFileNameProvider;
         currentDeviceZoom = DPIUtil.getDeviceZoom();
-        ElementAtZoom<String> filename = DPIUtil.validateAndGetImagePathAtZoom(imageFileNameProvider, currentDeviceZoom);
-        if (filename.zoom() == currentDeviceZoom) {
-            initNative(filename.element());
-            if (this.getApi().surface == 0) {
-                ImageData data = new ImageData(filename.element());
-                init(data);
-            }
-        } else {
-            ImageData imageData = new ImageData(filename.element());
-            ImageData resizedData = DPIUtil.autoScaleImageData(device, imageData, filename.zoom());
-            init(resizedData);
-        }
+        initFromFileNameProvider(currentDeviceZoom);
         init();
     }
 
@@ -577,9 +579,37 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         super(device, api);
         this.imageDataProvider = imageDataProvider;
         currentDeviceZoom = DPIUtil.getDeviceZoom();
-        ElementAtZoom<ImageData> data = DPIUtil.validateAndGetImageDataAtZoom(imageDataProvider, currentDeviceZoom);
-        ImageData resizedData = DPIUtil.autoScaleImageData(device, data.element(), data.zoom());
-        init(resizedData);
+        initFromImageDataProvider(currentDeviceZoom);
+        init();
+    }
+
+    /**
+     * The provided ImageGcDrawer will be called on demand whenever a new variant of the
+     * Image for an additional zoom is required. Depending on the OS-specific implementation
+     * these calls will be done during the instantiation or later when a new variant is
+     * requested.
+     *
+     * @param device the device on which to create the image
+     * @param imageGcDrawer the ImageGcDrawer object to be called when a new image variant
+     * for another zoom is required.
+     * @param width the width of the new image in points
+     * @param height the height of the new image in points
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if device is null and there is no current device</li>
+     *    <li>ERROR_NULL_ARGUMENT - if the ImageGcDrawer is null</li>
+     * </ul>
+     * @since 3.129
+     */
+    public DartImage(Device device, ImageGcDrawer imageGcDrawer, int width, int height, Image api) {
+        super(device, api);
+        if (imageGcDrawer == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
+        this.imageGcDrawer = imageGcDrawer;
+        currentDeviceZoom = 100;
+        ImageData imageData = drawWithImageGcDrawer(width, height, currentDeviceZoom);
+        init(imageData, currentDeviceZoom);
         init();
     }
 
@@ -594,42 +624,34 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (imageFileNameProvider != null) {
             int deviceZoomLevel = deviceZoom;
             if (deviceZoomLevel != currentDeviceZoom) {
-                ElementAtZoom<String> filename = DPIUtil.validateAndGetImagePathAtZoom(imageFileNameProvider, deviceZoomLevel);
-                /* Avoid re-creating the fall-back image, when current zoom is already 100% */
-                if (filename.zoom() == deviceZoomLevel) {
-                    /* Release current native resources */
-                    destroy();
-                    initNative(filename.element());
-                    if (this.getApi().surface == 0) {
-                        ImageData data = new ImageData(filename.element());
-                        init(data);
-                    }
-                    init();
-                    refreshed = true;
-                } else {
-                    /* Release current native resources */
-                    destroy();
-                    ImageData imageData = new ImageData(filename.element());
-                    ImageData resizedData = DPIUtil.autoScaleImageData(device, imageData, filename.zoom());
-                    init(resizedData);
-                    init();
-                    refreshed = true;
-                }
+                /* Release current native resources */
+                destroy();
+                initFromFileNameProvider(deviceZoomLevel);
+                init();
+                refreshed = true;
                 currentDeviceZoom = deviceZoomLevel;
             }
         } else if (imageDataProvider != null) {
             int deviceZoomLevel = deviceZoom;
             if (deviceZoomLevel != currentDeviceZoom) {
-                ElementAtZoom<ImageData> data = DPIUtil.validateAndGetImageDataAtZoom(imageDataProvider, deviceZoomLevel);
                 /* Release current native resources */
                 destroy();
-                ImageData resizedData = DPIUtil.autoScaleImageData(device, data.element(), data.zoom());
-                init(resizedData);
+                initFromImageDataProvider(deviceZoomLevel);
                 init();
                 refreshed = true;
                 currentDeviceZoom = deviceZoomLevel;
             }
-        } else {
+        } else if (imageGcDrawer != null) {
+            int deviceZoomLevel = deviceZoom;
+            if (deviceZoomLevel != currentDeviceZoom) {
+                ImageData data = drawWithImageGcDrawer(width, height, deviceZoomLevel);
+                /* Release current native resources */
+                destroy();
+                init(data);
+                init();
+                refreshed = true;
+                currentDeviceZoom = deviceZoomLevel;
+            }
         }
         return refreshed;
     }
@@ -638,6 +660,27 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         try {
         } catch (SWTException e) {
         }
+    }
+
+    private void initFromFileNameProvider(int zoom) {
+        ElementAtZoom<String> fileForZoom = DPIUtil.validateAndGetImagePathAtZoom(imageFileNameProvider, zoom);
+        if (fileForZoom.zoom() == zoom) {
+            initNative(fileForZoom.element());
+        }
+        if (this.getApi().surface == 0) {
+            ElementAtZoom<ImageData> imageDataAtZoom = ImageDataLoader.load(fileForZoom.element(), fileForZoom.zoom(), zoom);
+            ImageData imageData = imageDataAtZoom.element();
+            if (imageDataAtZoom.zoom() != zoom) {
+                imageData = DPIUtil.scaleImageData(device, imageDataAtZoom, zoom);
+            }
+            init(imageData);
+        }
+    }
+
+    private void initFromImageDataProvider(int zoom) {
+        ElementAtZoom<ImageData> data = DPIUtil.validateAndGetImageDataAtZoom(imageDataProvider, zoom);
+        ImageData resizedData = DPIUtil.scaleImageData(device, data.element(), zoom, data.zoom());
+        init(resizedData);
     }
 
     void createFromPixbuf(int type, long pixbuf) {
@@ -723,6 +766,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             return (styleFlag == ((DartImage) image.getImpl()).styleFlag) && imageDataProvider.equals(((DartImage) image.getImpl()).imageDataProvider);
         } else if (imageFileNameProvider != null && ((DartImage) image.getImpl()).imageFileNameProvider != null) {
             return (styleFlag == ((DartImage) image.getImpl()).styleFlag) && imageFileNameProvider.equals(((DartImage) image.getImpl()).imageFileNameProvider);
+        } else if (imageGcDrawer != null && ((DartImage) image.getImpl()).imageGcDrawer != null) {
+            return styleFlag == ((DartImage) image.getImpl()).styleFlag && imageGcDrawer.equals(((DartImage) image.getImpl()).imageGcDrawer) && width == image.getImpl()._width() && height == image.getImpl()._height();
         } else {
             return getApi().surface == image.surface;
         }
@@ -772,7 +817,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public Rectangle getBounds() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return DPIUtil.autoScaleDown(getBoundsInPixels());
+        return getBoundsInPixels();
     }
 
     /**
@@ -790,7 +835,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * @deprecated This API doesn't serve the purpose in an environment having
      *             multiple monitors with different DPIs, hence deprecated.
      */
-    @Deprecated
+    @Deprecated(since = "2025-09", forRemoval = true)
     public Rectangle getBoundsInPixels() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
@@ -841,7 +886,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      *             multiple monitors with different DPIs, hence deprecated. Use
      *             {@link #getImageData(int)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2025-09", forRemoval = true)
     public ImageData getImageDataAtCurrentZoom() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
@@ -890,6 +935,29 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         return this.imageData;
     }
 
+    private ImageData drawWithImageGcDrawer(int width, int height, int zoom) {
+        int gcStyle = imageGcDrawer.getGcStyle();
+        Image image;
+        if ((gcStyle & SWT.TRANSPARENT) != 0) {
+            /* Create a 24 bit image data with alpha channel */
+            final ImageData resultData = new ImageData(width, height, 24, new PaletteData(0xFF, 0xFF00, 0xFF0000));
+            resultData.alphaData = new byte[width * height];
+            image = new Image(device, resultData, zoom);
+        } else {
+            image = new Image(device, width, height);
+        }
+        GC gc = new GC(image, gcStyle);
+        try {
+            imageGcDrawer.drawOn(gc, width, height);
+            ImageData imageData = image.getImageData(zoom);
+            imageGcDrawer.postProcess(imageData);
+            return imageData;
+        } finally {
+            gc.dispose();
+            image.dispose();
+        }
+    }
+
     /**
      * Returns an integer hash code for the receiver. Any two
      * objects that return <code>true</code> when passed to
@@ -906,6 +974,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             return imageDataProvider.hashCode();
         } else if (imageFileNameProvider != null) {
             return imageFileNameProvider.hashCode();
+        } else if (imageGcDrawer != null) {
+            return Objects.hash(imageGcDrawer, width, height);
         } else {
             return (int) getApi().surface;
         }
@@ -920,14 +990,17 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (getApi().surface == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
         // When we create a blank image we need to set it to 100 in GTK3 as we draw using 100% scale.
-        {
-            currentDeviceZoom = DPIUtil.getDeviceZoom();
-        }
+        // Cairo will take care of scaling for us when image needs to be scaled.
+        currentDeviceZoom = 100;
         this.width = width;
         this.height = height;
     }
 
     void init(ImageData image) {
+        init(image, DPIUtil.getDeviceZoom());
+    }
+
+    private void init(ImageData image, int zoom) {
         if (image == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         PaletteData palette = image.palette;
@@ -938,7 +1011,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         int imageDataWidth = image.width;
         int imageDataHeight = image.height;
         // Scale dimensions of Image object to 100% scale factor
-        double scaleFactor = DPIUtil.getDeviceZoom() / 100f;
+        double scaleFactor = zoom / 100f;
         this.width = (int) Math.round(imageDataWidth / scaleFactor);
         this.height = (int) Math.round(imageDataHeight / scaleFactor);
         getApi().surface = 1;
@@ -1163,6 +1236,24 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             return "Image {" + imageFileNameProvider.getImagePath(100) + "}";
         }
         return "Image {" + getApi().surface + "}";
+    }
+
+    /**
+     * <b>IMPORTANT:</b> This method is not part of the public
+     * API for Image. It is marked public only so that it
+     * can be shared within the packages provided by SWT.
+     *
+     * Draws a scaled image using the GC for a given imageData.
+     *
+     * @param gc the GC to draw on the resulting image
+     * @param imageData the imageData which is used to draw the scaled Image
+     * @param width the width of the original image
+     * @param height the height of the original image
+     * @param scaleFactor the factor with which the image is supposed to be scaled
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     */
+    public static void drawScaled(GC gc, ImageData imageData, int width, int height, float scaleFactor) {
     }
 
     Color background;

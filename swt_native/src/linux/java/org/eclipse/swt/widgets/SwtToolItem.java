@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2020 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -320,8 +320,8 @@ public class SwtToolItem extends SwtItem implements IToolItem {
                 GTK.gtk_widget_set_valign(boxHandle, GTK.GTK_ALIGN_CENTER);
                 GTK4.gtk_box_append(boxHandle, imageHandle);
                 GTK4.gtk_box_append(boxHandle, labelHandle);
-                GTK.gtk_widget_hide(imageHandle);
-                GTK.gtk_widget_hide(labelHandle);
+                gtk_widget_hide(imageHandle);
+                gtk_widget_hide(labelHandle);
             } else {
                 labelHandle = GTK.gtk_label_new_with_mnemonic(null);
                 if (labelHandle == 0)
@@ -422,11 +422,6 @@ public class SwtToolItem extends SwtItem implements IToolItem {
      * </ul>
      */
     public Rectangle getBounds() {
-        checkWidget();
-        return DPIUtil.autoScaleDown(getBoundsInPixels());
-    }
-
-    Rectangle getBoundsInPixels() {
         checkWidget();
         ((SwtControl) parent.getImpl()).forceResize();
         long topHandle = topHandle();
@@ -625,11 +620,6 @@ public class SwtToolItem extends SwtItem implements IToolItem {
      */
     public int getWidth() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getWidthInPixels());
-    }
-
-    int getWidthInPixels() {
-        checkWidget();
         ((SwtControl) parent.getImpl()).forceResize();
         long topHandle = topHandle();
         GtkAllocation allocation = new GtkAllocation();
@@ -679,10 +669,10 @@ public class SwtToolItem extends SwtItem implements IToolItem {
                                 event.detail = SWT.ARROW;
                                 GtkAllocation allocation = new GtkAllocation();
                                 GTK.gtk_widget_get_allocation(topHandle, allocation);
-                                event.x = DPIUtil.autoScaleDown(allocation.x);
+                                event.x = allocation.x;
                                 if ((getApi().style & SWT.MIRRORED) != 0)
-                                    event.x = DPIUtil.autoScaleDown(((SwtControl) parent.getImpl()).getClientWidth() - allocation.width) - event.x;
-                                event.y = DPIUtil.autoScaleDown(allocation.y + allocation.height);
+                                    event.x = ((SwtControl) parent.getImpl()).getClientWidth() - allocation.width - event.x;
+                                event.y = allocation.y + allocation.height;
                             }
                             break;
                         }
@@ -790,18 +780,28 @@ public class SwtToolItem extends SwtItem implements IToolItem {
             if (imageList != null) {
                 int index = imageList.indexOf(hotImage);
                 if (index != -1 && imageHandle != 0) {
-                    if (GTK.GTK4) {
-                        long pixbuf = ImageList.createPixbuf(hotImage);
-                        long texture = GDK.gdk_texture_new_for_pixbuf(pixbuf);
-                        OS.g_object_unref(pixbuf);
-                        GTK4.gtk_image_set_from_paintable(imageHandle, texture);
-                    } else {
-                        GTK3.gtk_image_set_from_surface(imageHandle, imageList.getSurface(index));
-                    }
+                    GTK3.gtk_image_set_from_surface(imageHandle, imageList.getSurface(index));
                 }
             }
         }
         return 0;
+    }
+
+    @Override
+    void gtk4_enter_event(long controller, double x, double y, long event) {
+        drawHotImage = (parent.style & SWT.FLAT) != 0 && hotImage != null;
+        if (drawHotImage) {
+            ImageList imageList = ((SwtToolBar) parent.getImpl()).imageList;
+            if (imageList != null) {
+                int index = imageList.indexOf(hotImage);
+                if (index != -1 && imageHandle != 0) {
+                    long pixbuf = ImageList.createPixbuf(hotImage);
+                    long texture = GDK.gdk_texture_new_for_pixbuf(pixbuf);
+                    OS.g_object_unref(pixbuf);
+                    GTK4.gtk_image_set_from_paintable(imageHandle, texture);
+                }
+            }
+        }
     }
 
     @Override
@@ -854,19 +854,31 @@ public class SwtToolItem extends SwtItem implements IToolItem {
                 if (imageList != null) {
                     int index = imageList.indexOf(image);
                     if (index != -1 && imageHandle != 0) {
-                        if (GTK.GTK4) {
-                            long pixbuf = ImageList.createPixbuf(image);
-                            long texture = GDK.gdk_texture_new_for_pixbuf(pixbuf);
-                            OS.g_object_unref(pixbuf);
-                            GTK4.gtk_image_set_from_paintable(imageHandle, texture);
-                        } else {
-                            GTK3.gtk_image_set_from_surface(imageHandle, imageList.getSurface(index));
-                        }
+                        GTK3.gtk_image_set_from_surface(imageHandle, imageList.getSurface(index));
                     }
                 }
             }
         }
         return 0;
+    }
+
+    @Override
+    void gtk4_leave_event(long controller, long event) {
+        if (drawHotImage) {
+            drawHotImage = false;
+            if (image != null) {
+                ImageList imageList = ((SwtToolBar) parent.getImpl()).imageList;
+                if (imageList != null) {
+                    int index = imageList.indexOf(image);
+                    if (index != -1 && imageHandle != 0) {
+                        long pixbuf = ImageList.createPixbuf(image);
+                        long texture = GDK.gdk_texture_new_for_pixbuf(pixbuf);
+                        OS.g_object_unref(pixbuf);
+                        GTK4.gtk_image_set_from_paintable(imageHandle, texture);
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -1350,7 +1362,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
                 imageList.put(imageIndex, image);
             }
             if (GTK.GTK4) {
-                GTK.gtk_widget_show(imageHandle);
+                gtk_widget_show(imageHandle);
                 long pixbuf = ImageList.createPixbuf(image);
                 long texture = GDK.gdk_texture_new_for_pixbuf(pixbuf);
                 OS.g_object_unref(pixbuf);
@@ -1361,7 +1373,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
         } else {
             if (GTK.GTK4) {
                 GTK4.gtk_image_clear(imageHandle);
-                GTK.gtk_widget_hide(imageHandle);
+                gtk_widget_hide(imageHandle);
             } else {
                 GTK3.gtk_image_set_from_surface(imageHandle, 0);
             }
@@ -1469,7 +1481,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
         char[] chars = fixMnemonic(string);
         byte[] buffer = Converter.wcsToMbcs(chars, true);
         if (GTK.GTK4) {
-            GTK.gtk_widget_show(labelHandle);
+            gtk_widget_show(labelHandle);
             GTK.gtk_label_set_text_with_mnemonic(labelHandle, buffer);
         } else {
             GTK.gtk_label_set_text_with_mnemonic(labelHandle, buffer);
@@ -1564,11 +1576,6 @@ public class SwtToolItem extends SwtItem implements IToolItem {
      */
     public void setWidth(int width) {
         checkWidget();
-        setWidthInPixels(DPIUtil.autoScaleUp(width));
-    }
-
-    void setWidthInPixels(int width) {
-        checkWidget();
         if ((getApi().style & SWT.SEPARATOR) == 0)
             return;
         if (width < 0)
@@ -1594,11 +1601,11 @@ public class SwtToolItem extends SwtItem implements IToolItem {
             }
         } else {
             if (getApi().handle != 0)
-                GTK.gtk_widget_show(getApi().handle);
+                gtk_widget_show(getApi().handle);
             if (labelHandle != 0)
-                GTK.gtk_widget_show(labelHandle);
+                gtk_widget_show(labelHandle);
             if (imageHandle != 0)
-                GTK.gtk_widget_show(imageHandle);
+                gtk_widget_show(imageHandle);
             GTK3.gtk_toolbar_insert(parent.handle, getApi().handle, index);
         }
     }

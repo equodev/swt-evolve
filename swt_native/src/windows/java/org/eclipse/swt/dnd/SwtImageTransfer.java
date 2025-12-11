@@ -17,7 +17,6 @@ package org.eclipse.swt.dnd;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.ole.win32.*;
 import org.eclipse.swt.internal.win32.*;
 
@@ -189,8 +188,9 @@ public class SwtImageTransfer extends SwtByteArrayTransfer implements IImageTran
                         pSourceBits -= scanline;
                     }
                 }
-                Image image = SwtImage.win32_new(null, SWT.BITMAP, memDib);
-                ImageData data = image.getImageData(DPIUtil.getDeviceZoom());
+                final int DEFAULT_IMAGE_STORAGE_ZOOM = 100;
+                Image image = SwtImage.win32_new(null, SWT.BITMAP, memDib, DEFAULT_IMAGE_STORAGE_ZOOM);
+                ImageData data = image.getImageData();
                 OS.DeleteObject(memDib);
                 image.dispose();
                 return data;

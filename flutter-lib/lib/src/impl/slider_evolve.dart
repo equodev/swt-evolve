@@ -20,9 +20,8 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
     state.thumb ??= 10;
 
     // Ensure selection is within bounds
-    final currentValue = state.selection!
-        .clamp(state.minimum!, state.maximum!)
-        .toDouble();
+    final currentValue =
+        state.selection!.clamp(state.minimum!, state.maximum!).toDouble();
 
     // Use bounds if available, otherwise use default size from Sizes.java
     final width = state.bounds?.width.toDouble() ?? 200.0;
@@ -105,20 +104,24 @@ class _SimpleSliderState extends State<_SimpleSlider> {
         value: displayValue.clamp(widget.min, widget.max),
         min: widget.min,
         max: widget.max,
-        onChanged: widget.enabled ? (value) {
-          // Update local value for smooth UI during drag
-          setState(() {
-            _localValue = value;
-          });
-          widget.onChanged(value);
-        } : null,
-        onChangeEnd: widget.enabled ? (value) {
-          // Clear local value and let Java's response be the source of truth
-          setState(() {
-            _localValue = null;
-          });
-          widget.onChangeEnd(value);
-        } : null,
+        onChanged: widget.enabled
+            ? (value) {
+                // Update local value for smooth UI during drag
+                setState(() {
+                  _localValue = value;
+                });
+                widget.onChanged(value);
+              }
+            : null,
+        onChangeEnd: widget.enabled
+            ? (value) {
+                // Clear local value and let Java's response be the source of truth
+                setState(() {
+                  _localValue = null;
+                });
+                widget.onChangeEnd(value);
+              }
+            : null,
       ),
     );
 
@@ -128,7 +131,8 @@ class _SimpleSliderState extends State<_SimpleSlider> {
         width: widget.width,
         height: widget.height,
         child: RotatedBox(
-          quarterTurns: 3, // 270 degrees counter-clockwise (same as 90 degrees clockwise)
+          quarterTurns:
+              3, // 270 degrees counter-clockwise (same as 90 degrees clockwise)
           child: SizedBox(
             width: widget.height, // Swap width and height because of rotation
             height: widget.width,

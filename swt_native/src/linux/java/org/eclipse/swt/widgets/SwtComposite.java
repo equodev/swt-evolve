@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2020 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -269,7 +269,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         if (layout != null) {
             if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
                 changed |= (getApi().state & LAYOUT_CHANGED) != 0;
-                size = DPIUtil.autoScaleUp(layout.computeSize(this.getApi(), DPIUtil.autoScaleDown(wHint), DPIUtil.autoScaleDown(hHint), changed));
+                size = layout.computeSize(this.getApi(), wHint, hHint, changed);
                 getApi().state &= ~LAYOUT_CHANGED;
             } else {
                 size = new Point(wHint, hHint);
@@ -285,7 +285,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             size.x = wHint;
         if (hHint != SWT.DEFAULT)
             size.y = hHint;
-        Rectangle trim = DPIUtil.autoScaleUp(computeTrim(0, 0, DPIUtil.autoScaleDown(size.x), DPIUtil.autoScaleDown(size.y)));
+        Rectangle trim = computeTrim(0, 0, size.x, size.y);
         if (size.y == 64)
             trim.height = 32;
         return new Point(trim.width, trim.height);
@@ -455,8 +455,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         if (fixClipHandle == 0 || fixClipMap.isEmpty()) {
             return;
         } else {
-            Control[] children = _getChildren();
-            for (Control child : children) {
+            for (Control child : _getChildren()) {
                 if (fixClipMap.containsKey(child)) {
                     long[] childHandles = fixClipMap.get(child);
                     for (long widget : childHandles) {
@@ -509,7 +508,9 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         int height = (getApi().state & ZERO_HEIGHT) != 0 ? 0 : allocation.height;
         // We specify a 0 value for x & y as we want the whole widget to be
         // colored, not some portion of it.
-        GTK.gtk_render_background(context, cairo, 0, 0, width, height);
+        if (backgroundImage == null) {
+            GTK.gtk_render_background(context, cairo, 0, 0, width, height);
+        }
         // If fixClipHandle is set: iterate through the children of widget
         // and set their clips to be that of their allocation
         if (widget == fixClipHandle)
@@ -561,14 +562,6 @@ public class SwtComposite extends SwtScrollable implements IComposite {
      */
     public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
         checkWidget();
-        Rectangle rect = DPIUtil.autoScaleUp(new Rectangle(x, y, width, height));
-        offsetX = DPIUtil.autoScaleUp(offsetX);
-        offsetY = DPIUtil.autoScaleUp(offsetY);
-        drawBackgroundInPixels(gc, rect.x, rect.y, rect.width, rect.height, offsetX, offsetY);
-    }
-
-    void drawBackgroundInPixels(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
-        checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (gc.isDisposed())
@@ -608,7 +601,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             Cairo.cairo_fill(cairo);
             Cairo.cairo_restore(cairo);
         } else {
-            gc.fillRectangle(DPIUtil.autoScaleDown(new Rectangle(x, y, width, height)));
+            gc.fillRectangle(new Rectangle(x, y, width, height));
         }
     }
 
@@ -628,9 +621,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         if (control == this.getApi())
             return new Menu[0];
         Menu[] result = super.findMenus(control);
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            Control child = children[i];
+        for (Control child : _getChildren()) {
             Menu[] menuList = child.getImpl().findMenus(control);
             if (menuList.length != 0) {
                 Menu[] newResult = new Menu[result.length + menuList.length];
@@ -645,9 +636,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     @Override
     public void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus) {
         super.fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            children[i].getImpl().fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
+        for (Control child : _getChildren()) {
+            child.getImpl().fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
         }
     }
 
@@ -664,9 +654,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 
     @Override
     void fixModal(long group, long modalGroup) {
-        Control[] controls = _getChildren();
-        for (int i = 0; i < controls.length; i++) {
-            ((SwtControl) controls[i].getImpl()).fixModal(group, modalGroup);
+        for (Control control : _getChildren()) {
+            ((SwtControl) control.getImpl()).fixModal(group, modalGroup);
         }
     }
 
@@ -675,9 +664,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         super.fixStyle();
         if (scrolledHandle == 0)
             fixStyle(getApi().handle);
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            children[i].getImpl().fixStyle();
+        for (Control child : _getChildren()) {
+            child.getImpl().fixStyle();
         }
     }
 
@@ -898,15 +886,15 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         if (tabList == null) {
             int count = 0;
             Control[] list = _getChildren();
-            for (int i = 0; i < list.length; i++) {
-                if (list[i].getImpl().isTabGroup())
+            for (Control element : list) {
+                if (element.getImpl().isTabGroup())
                     count++;
             }
             tabList = new Control[count];
             int index = 0;
-            for (int i = 0; i < list.length; i++) {
-                if (list[i].getImpl().isTabGroup()) {
-                    tabList[index++] = list[i];
+            for (Control element : list) {
+                if (element.getImpl().isTabGroup()) {
+                    tabList[index++] = element;
                 }
             }
         }
@@ -1384,9 +1372,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                 getApi().state |= LAYOUT_CHANGED;
         }
         if (all) {
-            Control[] children = _getChildren();
-            for (int i = 0; i < children.length; i++) {
-                children[i].getImpl().markLayout(changed, all);
+            for (Control child : _getChildren()) {
+                child.getImpl().markLayout(changed, all);
             }
         }
     }
@@ -1395,7 +1382,15 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         if (child == sibling)
             return;
         long parentHandle = parentingHandle();
-        OS.swt_fixed_restack(parentHandle, child, sibling, true);
+        if (GTK.GTK4) {
+            if (sibling == 0) {
+                GTK4.gtk_widget_insert_after(child, parentHandle, 0L);
+            } else {
+                GTK4.gtk_widget_insert_before(child, parentHandle, sibling);
+            }
+        } else {
+            OS.swt_fixed_restack(parentHandle, child, sibling, true);
+        }
         return;
     }
 
@@ -1407,15 +1402,21 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             moveAbove(child, scrolledHandle != 0 ? scrolledHandle : getApi().handle);
             return;
         }
-        OS.swt_fixed_restack(parentHandle, child, sibling, false);
+        if (GTK.GTK4) {
+            if (sibling == 0) {
+                GTK4.gtk_widget_insert_before(child, parentHandle, 0L);
+            } else {
+                GTK4.gtk_widget_insert_after(child, parentHandle, sibling);
+            }
+        } else {
+            OS.swt_fixed_restack(parentHandle, child, sibling, false);
+        }
         return;
     }
 
     @Override
     void moveChildren(int oldWidth) {
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            Control child = children[i];
+        for (Control child : _getChildren()) {
             long topHandle = child.getImpl().topHandle();
             GtkAllocation allocation = new GtkAllocation();
             GTK.gtk_widget_get_allocation(topHandle, allocation);
@@ -1451,15 +1452,14 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     }
 
     Point minimumSize(int wHint, int hHint, boolean changed) {
-        Control[] children = _getChildren();
         /*
 	 * Since getClientArea can be overridden by subclasses, we cannot
 	 * call getClientAreaInPixels directly.
 	 */
-        Rectangle clientArea = DPIUtil.autoScaleUp(getClientArea());
+        Rectangle clientArea = getClientArea();
         int width = 0, height = 0;
-        for (int i = 0; i < children.length; i++) {
-            Rectangle rect = DPIUtil.autoScaleUp(children[i].getBounds());
+        for (Control child : _getChildren()) {
+            Rectangle rect = child.getBounds();
             width = Math.max(width, rect.x - clientArea.x + rect.width);
             height = Math.max(height, rect.y - clientArea.y + rect.height);
         }
@@ -1476,7 +1476,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     void printWidget(GC gc, long drawable, int depth, int x, int y) {
         Region oldClip = new Region(gc.getDevice());
         Region newClip = new Region(gc.getDevice());
-        Point loc = DPIUtil.autoScaleDown(new Point(x, y));
+        Point loc = new Point(x, y);
         gc.getClipping(oldClip);
         Rectangle rect = getBounds();
         newClip.add(oldClip);
@@ -1487,7 +1487,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         Point pt = ((SwtDisplay) display.getImpl()).mapInPixels(this.getApi(), parent, clientRect.x, clientRect.y);
         clientRect.x = x + pt.x - rect.x;
         clientRect.y = y + pt.y - rect.y;
-        newClip.intersect(DPIUtil.autoScaleDown(clientRect));
+        newClip.intersect(clientRect);
         gc.setClipping(newClip);
         Control[] children = _getChildren();
         for (int i = children.length - 1; i >= 0; --i) {
@@ -1578,9 +1578,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     @Override
     void redrawChildren() {
         super.redrawChildren();
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            Control child = children[i];
+        for (Control child : _getChildren()) {
             if ((child.state & PARENT_BACKGROUND) != 0) {
                 ((SwtControl) child.getImpl()).redrawWidget(0, 0, 0, 0, true, false, true);
                 ((SwtControl) child.getImpl()).redrawChildren();
@@ -1634,9 +1632,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     @Override
     void reskinChildren(int flags) {
         super.reskinChildren(flags);
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            Control child = children[i];
+        for (Control child : _getChildren()) {
             if (child != null)
                 child.reskin(flags);
         }
@@ -1670,9 +1666,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     public void setBackgroundMode(int mode) {
         checkWidget();
         backgroundMode = mode;
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            children[i].getImpl().updateBackgroundMode();
+        for (Control child : _getChildren()) {
+            child.getImpl().updateBackgroundMode();
         }
     }
 
@@ -1697,7 +1692,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         long topHandle = topHandle();
         if (fixedHandle != 0 && getApi().handle != 0 && getVisible() && //if SWT State is not HIDDEN, but widget is hidden on GTK side.
         !GTK.gtk_widget_get_visible(topHandle) && topHandle == fixedHandle && width > 0 && height > 0 && resize) {
-            GTK.gtk_widget_show(topHandle);
+            gtk_widget_show(topHandle);
         }
         int result = super.setBounds(x, y, width, height, move, resize);
         if ((result & RESIZED) != 0 && layout != null) {
@@ -1710,9 +1705,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     @Override
     public boolean setFocus() {
         checkWidget();
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            Control child = children[i];
+        for (Control child : _getChildren()) {
             if (child.getVisible() && child.setFocus())
                 return true;
         }
@@ -1776,9 +1769,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         if (!create) {
             int flags = SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT;
             int orientation = getApi().style & flags;
-            Control[] children = _getChildren();
-            for (int i = 0; i < children.length; i++) {
-                children[i].setOrientation(orientation);
+            for (Control child : _getChildren()) {
+                child.setOrientation(orientation);
             }
             if (((getApi().style & SWT.RIGHT_TO_LEFT) != 0) != ((getApi().style & SWT.MIRRORED) != 0)) {
                 moveChildren(-1);
@@ -1807,9 +1799,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             takeFocus = true;
         if (takeFocus && setTabItemFocus(next))
             return true;
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            Control child = children[i];
+        for (Control child : _getChildren()) {
             /*
 		 * It is unlikely but possible that a child is disposed at this point, for more
 		 * details refer bug 381668.
@@ -1869,7 +1859,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     void showWidget() {
         super.showWidget();
         if (socketHandle != 0) {
-            GTK.gtk_widget_show(socketHandle);
+            gtk_widget_show(socketHandle);
             getApi().embeddedHandle = GTK.gtk_socket_get_id(socketHandle);
         }
         if (scrolledHandle == 0)
@@ -1886,9 +1876,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         if (super.translateMnemonic(event, control))
             return true;
         if (control != null) {
-            Control[] children = _getChildren();
-            for (int i = 0; i < children.length; i++) {
-                Control child = children[i];
+            for (Control child : _getChildren()) {
                 if (child.getImpl().translateMnemonic(event, control))
                     return true;
             }
@@ -1917,9 +1905,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     @Override
     public void updateBackgroundMode() {
         super.updateBackgroundMode();
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            children[i].getImpl().updateBackgroundMode();
+        for (Control child : _getChildren()) {
+            child.getImpl().updateBackgroundMode();
         }
     }
 
@@ -1938,9 +1925,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         }
         if (all) {
             getApi().state &= ~LAYOUT_CHILD;
-            Control[] children = _getChildren();
-            for (int i = 0; i < children.length; i++) {
-                children[i].getImpl().updateLayout(all);
+            for (Control child : _getChildren()) {
+                child.getImpl().updateLayout(all);
             }
         }
     }

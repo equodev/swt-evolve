@@ -12,6 +12,10 @@ public interface ImplMenuItem extends ImplItem {
 
     long _hBitmap();
 
+    Image _imageSelected();
+
+    long _hBitmapSelected();
+
     int _id();
 
     int _accelerator();

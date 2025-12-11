@@ -1,14 +1,19 @@
 package org.eclipse.swt.graphics;
 
+import static org.eclipse.swt.internal.image.ImageColorTransformer.DEFAULT_DISABLED_IMAGE_TRANSFORMER;
 import java.io.*;
 import java.util.*;
+import java.util.Map.*;
+import java.util.function.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.DPIUtil.*;
 import org.eclipse.swt.internal.gdip.*;
-import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.internal.image.*;
 
 public interface IImage extends IResource, ImplImage {
+
+    void dispose();
 
     /**
      * Compares the argument to the receiver, and returns true

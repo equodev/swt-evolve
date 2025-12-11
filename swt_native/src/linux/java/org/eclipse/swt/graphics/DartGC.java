@@ -361,22 +361,19 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void copyArea(Image image, int x, int y) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (image == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (image.type != SWT.BITMAP || image.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        Point loc = DPIUtil.autoScaleUp(drawable, new Point(x, y));
-        copyAreaInPixels(image, loc.x, loc.y);
-    }
-
-    void copyAreaInPixels(Image image, int x, int y) {
-        VGCCopyAreaImage drawOp = new VGCCopyAreaImage();
+        VGCCopyAreaImageintint drawOp = new VGCCopyAreaImageintint();
         drawOp.image = ImageUtils.copyImage(display, image);
         drawOp.x = x;
         drawOp.y = y;
-        FlutterBridge.send(this, "copyAreaImage", drawOp);
+        FlutterBridge.send(this, "copyAreaImageintint", drawOp);
+    }
+
+    void copyAreaInPixels(Image image, int x, int y) {
+        if (data.image != null) {
+        } else if (data.drawable != 0) {
+        } else {
+            return;
+        }
     }
 
     /**
@@ -395,11 +392,14 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void copyArea(int srcX, int srcY, int width, int height, int destX, int destY) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        Rectangle src = DPIUtil.autoScaleUp(drawable, new Rectangle(srcX, srcY, width, height));
-        Point dest = DPIUtil.autoScaleUp(drawable, new Point(destX, destY));
-        copyAreaInPixels(src.x, src.y, src.width, src.height, dest.x, dest.y);
+        VGCCopyAreaintintintintintint drawOp = new VGCCopyAreaintintintintintint();
+        drawOp.srcX = srcX;
+        drawOp.srcY = srcY;
+        drawOp.width = width;
+        drawOp.height = height;
+        drawOp.destX = destX;
+        drawOp.destY = destY;
+        FlutterBridge.send(this, "copyAreaintintintintintint", drawOp);
     }
 
     void copyAreaInPixels(int srcX, int srcY, int width, int height, int destX, int destY) {
@@ -425,15 +425,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void copyArea(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        Rectangle srcLoc = DPIUtil.autoScaleUp(drawable, new Rectangle(srcX, srcY, width, height));
-        Point destLoc = DPIUtil.autoScaleUp(drawable, new Point(destX, destY));
-        copyAreaInPixels(srcLoc.x, srcLoc.y, srcLoc.width, srcLoc.height, destLoc.x, destLoc.y, paint);
-    }
-
-    void copyAreaInPixels(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
-        VGCCopyArea drawOp = new VGCCopyArea();
+        VGCCopyAreaintintintintintintboolean drawOp = new VGCCopyAreaintintintintintintboolean();
         drawOp.srcX = srcX;
         drawOp.srcY = srcY;
         drawOp.width = width;
@@ -441,7 +433,39 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.destX = destX;
         drawOp.destY = destY;
         drawOp.paint = paint;
-        FlutterBridge.send(this, "copyArea", drawOp);
+        FlutterBridge.send(this, "copyAreaintintintintintintboolean", drawOp);
+    }
+
+    void copyAreaInPixels(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
+        if (width <= 0 || height <= 0)
+            return;
+        int deltaX = destX - srcX, deltaY = destY - srcY;
+        if (deltaX == 0 && deltaY == 0)
+            return;
+        long drawable = data.drawable;
+        if (data.image != null) {
+            // As source and target area may be overlapping, we need to draw on
+            // an intermediate surface to avoid that parts of the source area are
+        } else if (drawable != 0) {
+            if (paint) {
+            }
+        }
+        if (data.image == null && paint) {
+            boolean disjoint = (destX + width < srcX) || (srcX + width < destX) || (destY + height < srcY) || (srcY + height < destY);
+            if (disjoint) {
+            } else {
+                if (deltaX != 0) {
+                    int newX = destX - deltaX;
+                    if (deltaX < 0)
+                        newX = destX + width;
+                }
+                if (deltaY != 0) {
+                    int newY = destY - deltaY;
+                    if (deltaY < 0)
+                        newY = destY + height;
+                }
+            }
+        }
     }
 
     void createLayout() {
@@ -513,21 +537,37 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        Rectangle loc = DPIUtil.autoScaleUp(drawable, new Rectangle(x, y, width, height));
-        drawArcInPixels(loc.x, loc.y, loc.width, loc.height, startAngle, arcAngle);
-    }
-
-    void drawArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        VGCDrawArc drawOp = new VGCDrawArc();
+        VGCDrawArcintintintintintint drawOp = new VGCDrawArcintintintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.startAngle = startAngle;
         drawOp.arcAngle = arcAngle;
-        FlutterBridge.send(this, "drawArc", drawOp);
+        FlutterBridge.send(this, "drawArcintintintintintint", drawOp);
+    }
+
+    void drawArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
+        checkGC(DRAW);
+        if (width < 0) {
+            x = x + width;
+            width = -width;
+        }
+        if (height < 0) {
+            y = y + height;
+            height = -height;
+        }
+        if (width == 0 || height == 0 || arcAngle == 0)
+            return;
+        if (width == height) {
+            if (arcAngle >= 0) {
+            } else {
+            }
+        } else {
+            if (arcAngle >= 0) {
+            } else {
+            }
+        }
     }
 
     /**
@@ -548,19 +588,16 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void drawFocus(int x, int y, int width, int height) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        Rectangle loc = DPIUtil.autoScaleUp(drawable, new Rectangle(x, y, width, height));
-        drawFocusInPixels(loc.x, loc.y, loc.width, loc.height);
-    }
-
-    void drawFocusInPixels(int x, int y, int width, int height) {
-        VGCDrawFocus drawOp = new VGCDrawFocus();
+        VGCDrawFocusintintintint drawOp = new VGCDrawFocusintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "drawFocus", drawOp);
+        FlutterBridge.send(this, "drawFocusintintintint", drawOp);
+    }
+
+    void drawFocusInPixels(int x, int y, int width, int height) {
+        checkGC(FOREGROUND);
     }
 
     /**
@@ -583,14 +620,11 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawImage(Image image, int x, int y) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (image == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (image.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        Point loc = DPIUtil.autoScaleUp(drawable, new Point(x, y));
-        drawImageInPixels(image, loc.x, loc.y);
+        VGCDrawImageImageintint drawOp = new VGCDrawImageImageintint();
+        drawOp.image = ImageUtils.copyImage(display, image);
+        drawOp.x = x;
+        drawOp.y = y;
+        FlutterBridge.send(this, "drawImageImageintint", drawOp);
     }
 
     void drawImageInPixels(Image image, int x, int y) {
@@ -630,24 +664,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (srcWidth == 0 || srcHeight == 0 || destWidth == 0 || destHeight == 0)
-            return;
-        if (srcX < 0 || srcY < 0 || srcWidth < 0 || srcHeight < 0 || destWidth < 0 || destHeight < 0) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        if (image == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (image.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        Rectangle destRect = DPIUtil.autoScaleUp(drawable, new Rectangle(destX, destY, destWidth, destHeight));
-        drawImage(image, srcX, srcY, srcWidth, srcHeight, destRect.x, destRect.y, destRect.width, destRect.height, false);
-    }
-
-    void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
-        VGCDrawImage drawOp = new VGCDrawImage();
-        drawOp.srcImage = ImageUtils.copyImage(display, srcImage);
+        VGCDrawImageImageintintintintintintintint drawOp = new VGCDrawImageImageintintintintintintintint();
+        drawOp.image = ImageUtils.copyImage(display, image);
         drawOp.srcX = srcX;
         drawOp.srcY = srcY;
         drawOp.srcWidth = srcWidth;
@@ -656,8 +674,48 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.destY = destY;
         drawOp.destWidth = destWidth;
         drawOp.destHeight = destHeight;
-        drawOp.simple = simple;
-        FlutterBridge.send(this, "drawImage", drawOp);
+        FlutterBridge.send(this, "drawImageImageintintintintintintintint", drawOp);
+    }
+
+    void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+        /* Refresh Image as per zoom level, if required. */
+        ((DartImage) srcImage.getImpl()).refreshImageForZoom();
+        ImageData srcImageData = srcImage.getImageData();
+        int imgWidth = srcImageData.width;
+        int imgHeight = srcImageData.height;
+        if (simple) {
+            srcWidth = destWidth = imgWidth;
+            srcHeight = destHeight = imgHeight;
+        } else {
+            simple = srcX == 0 && srcY == 0 && srcWidth == destWidth && destWidth == imgWidth && srcHeight == destHeight && destHeight == imgHeight;
+            if (srcX + srcWidth > imgWidth + 1 || srcY + srcHeight > imgHeight + 1) {
+                //rounding error correction for hidpi
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+        }
+        if (data.alpha != 0) {
+            ((DartImage) srcImage.getImpl()).createSurface();
+            if ((data.style & SWT.MIRRORED) != 0) {
+            }
+            if (srcWidth != destWidth || srcHeight != destHeight) {
+            } else {
+            }
+            switch(data.interpolation) {
+                case SWT.DEFAULT:
+                    break;
+                case SWT.NONE:
+                    break;
+                case SWT.LOW:
+                    break;
+                case SWT.HIGH:
+                    break;
+            }
+            if (srcWidth != destWidth || srcHeight != destHeight) {
+            }
+            if (data.alpha != 0xFF) {
+            } else {
+            }
+        }
     }
 
     /**
@@ -674,20 +732,16 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawLine(int x1, int y1, int x2, int y2) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        Point loc1 = DPIUtil.autoScaleUp(drawable, new Point(x1, y1));
-        Point loc2 = DPIUtil.autoScaleUp(drawable, new Point(x2, y2));
-        drawLineInPixels(loc1.x, loc1.y, loc2.x, loc2.y);
-    }
-
-    void drawLineInPixels(int x1, int y1, int x2, int y2) {
-        VGCDrawLine drawOp = new VGCDrawLine();
+        VGCDrawLineintintintint drawOp = new VGCDrawLineintintintint();
         drawOp.x1 = x1;
         drawOp.y1 = y1;
         drawOp.x2 = x2;
         drawOp.y2 = y2;
-        FlutterBridge.send(this, "drawLine", drawOp);
+        FlutterBridge.send(this, "drawLineintintintint", drawOp);
+    }
+
+    void drawLineInPixels(int x1, int y1, int x2, int y2) {
+        checkGC(DRAW);
     }
 
     /**
@@ -712,19 +766,27 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawOval(int x, int y, int width, int height) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        Rectangle rect = DPIUtil.autoScaleUp(drawable, new Rectangle(x, y, width, height));
-        drawOvalInPixels(rect.x, rect.y, rect.width, rect.height);
-    }
-
-    void drawOvalInPixels(int x, int y, int width, int height) {
-        VGCDrawOval drawOp = new VGCDrawOval();
+        VGCDrawOvalintintintint drawOp = new VGCDrawOvalintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "drawOval", drawOp);
+        FlutterBridge.send(this, "drawOvalintintintint", drawOp);
+    }
+
+    void drawOvalInPixels(int x, int y, int width, int height) {
+        checkGC(DRAW);
+        if (width < 0) {
+            x = x + width;
+            width = -width;
+        }
+        if (height < 0) {
+            y = y + height;
+            height = -height;
+        }
+        if (width == height) {
+        } else {
+        }
     }
 
     /**
@@ -778,17 +840,14 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.0
      */
     public void drawPoint(int x, int y) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        Point loc = DPIUtil.autoScaleUp(drawable, new Point(x, y));
-        drawPointInPixels(loc.x, loc.y);
+        VGCDrawPointintint drawOp = new VGCDrawPointintint();
+        drawOp.x = x;
+        drawOp.y = y;
+        FlutterBridge.send(this, "drawPointintint", drawOp);
     }
 
     void drawPointInPixels(int x, int y) {
-        VGCDrawPoint drawOp = new VGCDrawPoint();
-        drawOp.x = x;
-        drawOp.y = y;
-        FlutterBridge.send(this, "drawPoint", drawOp);
+        checkGC(DRAW);
     }
 
     /**
@@ -809,18 +868,13 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawPolygon(int[] pointArray) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (pointArray == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        int[] scaledPointArray = DPIUtil.autoScaleUp(drawable, pointArray);
-        drawPolygonInPixels(scaledPointArray);
+        VGCDrawPolygonint drawOp = new VGCDrawPolygonint();
+        drawOp.pointArray = pointArray;
+        FlutterBridge.send(this, "drawPolygonint", drawOp);
     }
 
     void drawPolygonInPixels(int[] pointArray) {
-        VGCDrawPolygon drawOp = new VGCDrawPolygon();
-        drawOp.pointArray = pointArray;
-        FlutterBridge.send(this, "drawPolygon", drawOp);
+        checkGC(DRAW);
     }
 
     /**
@@ -841,18 +895,13 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawPolyline(int[] pointArray) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (pointArray == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        int[] scaledPointArray = DPIUtil.autoScaleUp(drawable, pointArray);
-        drawPolylineInPixels(scaledPointArray);
+        VGCDrawPolylineint drawOp = new VGCDrawPolylineint();
+        drawOp.pointArray = pointArray;
+        FlutterBridge.send(this, "drawPolylineint", drawOp);
     }
 
     void drawPolylineInPixels(int[] pointArray) {
-        VGCDrawPolyline drawOp = new VGCDrawPolyline();
-        drawOp.pointArray = pointArray;
-        FlutterBridge.send(this, "drawPolyline", drawOp);
+        checkGC(DRAW);
     }
 
     /**
@@ -871,18 +920,24 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawRectangle(int x, int y, int width, int height) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        drawRectangle(new Rectangle(x, y, width, height));
-    }
-
-    void drawRectangleInPixels(int x, int y, int width, int height) {
-        VGCDrawRectangle drawOp = new VGCDrawRectangle();
+        VGCDrawRectangleintintintint drawOp = new VGCDrawRectangleintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "drawRectangle", drawOp);
+        FlutterBridge.send(this, "drawRectangleintintintint", drawOp);
+    }
+
+    void drawRectangleInPixels(int x, int y, int width, int height) {
+        checkGC(DRAW);
+        if (width < 0) {
+            x = x + width;
+            width = -width;
+        }
+        if (height < 0) {
+            y = y + height;
+            height = -height;
+        }
     }
 
     /**
@@ -902,9 +957,9 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawRectangle(Rectangle rect) {
-        if (rect == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        drawRectangleInPixels(DPIUtil.autoScaleUp(drawable, rect));
+        VGCDrawRectangleRectangle drawOp = new VGCDrawRectangleRectangle();
+        drawOp.rect = rect;
+        FlutterBridge.send(this, "drawRectangleRectangle", drawOp);
     }
 
     void drawRectangleInPixels(Rectangle rect) {
@@ -933,22 +988,39 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        Rectangle rect = DPIUtil.autoScaleUp(drawable, new Rectangle(x, y, width, height));
-        Point arcSize = DPIUtil.autoScaleUp(drawable, new Point(arcWidth, arcHeight));
-        drawRoundRectangleInPixels(rect.x, rect.y, rect.width, rect.height, arcSize.x, arcSize.y);
-    }
-
-    void drawRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        VGCDrawRoundRectangle drawOp = new VGCDrawRoundRectangle();
+        VGCDrawRoundRectangleintintintintintint drawOp = new VGCDrawRoundRectangleintintintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.arcWidth = arcWidth;
         drawOp.arcHeight = arcHeight;
-        FlutterBridge.send(this, "drawRoundRectangle", drawOp);
+        FlutterBridge.send(this, "drawRoundRectangleintintintintintint", drawOp);
+    }
+
+    void drawRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+        checkGC(DRAW);
+        int nx = x;
+        int ny = y;
+        int nw = width;
+        int nh = height;
+        int naw = arcWidth;
+        int nah = arcHeight;
+        if (nw < 0) {
+            nw = 0 - nw;
+            nx = nx - nw;
+        }
+        if (nh < 0) {
+            nh = 0 - nh;
+            ny = ny - nh;
+        }
+        if (naw < 0)
+            naw = 0 - naw;
+        if (nah < 0)
+            nah = 0 - nah;
+        if (naw == 0 || nah == 0) {
+        } else {
+        }
     }
 
     /**
@@ -974,11 +1046,11 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawString(String string, int x, int y) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (string == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        drawString(string, x, y, false);
+        VGCDrawStringStringintint drawOp = new VGCDrawStringStringintint();
+        drawOp.string = string;
+        drawOp.x = x;
+        drawOp.y = y;
+        FlutterBridge.send(this, "drawStringStringintint", drawOp);
     }
 
     void drawStringInPixels(String string, int x, int y) {
@@ -1013,19 +1085,16 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawString(String string, int x, int y, boolean isTransparent) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (string == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        Point loc = DPIUtil.autoScaleUp(drawable, new Point(x, y));
-        drawStringInPixels(string, loc.x, loc.y, isTransparent);
+        VGCDrawStringStringintintboolean drawOp = new VGCDrawStringStringintintboolean();
+        drawOp.string = string;
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.isTransparent = isTransparent;
+        FlutterBridge.send(this, "drawStringStringintintboolean", drawOp);
     }
 
     void drawStringInPixels(String string, int x, int y, boolean isTransparent) {
-        int flags = SWT.DRAW_DELIMITER | SWT.DRAW_TAB;
-        if (isTransparent)
-            flags |= SWT.DRAW_TRANSPARENT;
-        drawTextInPixels(string, x, y, flags);
+        drawTextInPixels(string, x, y, isTransparent ? SWT.DRAW_TRANSPARENT : 0);
     }
 
     /**
@@ -1051,7 +1120,11 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y) {
-        drawText(string, x, y, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
+        VGCDrawTextStringintint drawOp = new VGCDrawTextStringintint();
+        drawOp.string = string;
+        drawOp.x = x;
+        drawOp.y = y;
+        FlutterBridge.send(this, "drawTextStringintint", drawOp);
     }
 
     void drawTextInPixels(String string, int x, int y) {
@@ -1083,8 +1156,12 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y, boolean isTransparent) {
-        Point loc = DPIUtil.autoScaleUp(drawable, new Point(x, y));
-        drawTextInPixels(string, loc.x, loc.y, isTransparent);
+        VGCDrawTextStringintintboolean drawOp = new VGCDrawTextStringintintboolean();
+        drawOp.string = string;
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.isTransparent = isTransparent;
+        FlutterBridge.send(this, "drawTextStringintintboolean", drawOp);
     }
 
     void drawTextInPixels(String string, int x, int y, boolean isTransparent) {
@@ -1134,17 +1211,37 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y, int flags) {
-        Point loc = DPIUtil.autoScaleUp(drawable, new Point(x, y));
-        drawTextInPixels(string, loc.x, loc.y, flags);
-    }
-
-    void drawTextInPixels(String string, int x, int y, int flags) {
-        VGCDrawText drawOp = new VGCDrawText();
+        VGCDrawTextStringintintint drawOp = new VGCDrawTextStringintintint();
         drawOp.string = string;
         drawOp.x = x;
         drawOp.y = y;
         drawOp.flags = flags;
-        FlutterBridge.send(this, "drawText", drawOp);
+        FlutterBridge.send(this, "drawTextStringintintint", drawOp);
+    }
+
+    void drawTextInPixels(String string, int x, int y, int flags) {
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (string == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (string.length() == 0)
+            return;
+        setString(string, flags);
+        checkGC(FONT);
+        if ((flags & SWT.DRAW_TRANSPARENT) == 0) {
+            checkGC(BACKGROUND);
+            if (data.stringWidth == -1) {
+                computeStringSize();
+            }
+        }
+        checkGC(FOREGROUND);
+        if ((data.style & SWT.MIRRORED) != 0) {
+            if (data.stringWidth == -1) {
+                computeStringSize();
+            }
+        }
+        if ((data.style & SWT.MIRRORED) != 0) {
+        }
     }
 
     /**
@@ -1199,21 +1296,37 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawArc
      */
     public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        Rectangle rect = DPIUtil.autoScaleUp(drawable, new Rectangle(x, y, width, height));
-        fillArcInPixels(rect.x, rect.y, rect.width, rect.height, startAngle, arcAngle);
-    }
-
-    void fillArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        VGCFillArc drawOp = new VGCFillArc();
+        VGCFillArcintintintintintint drawOp = new VGCFillArcintintintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.startAngle = startAngle;
         drawOp.arcAngle = arcAngle;
-        FlutterBridge.send(this, "fillArc", drawOp);
+        FlutterBridge.send(this, "fillArcintintintintintint", drawOp);
+    }
+
+    void fillArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
+        checkGC(FILL);
+        if (width < 0) {
+            x = x + width;
+            width = -width;
+        }
+        if (height < 0) {
+            y = y + height;
+            height = -height;
+        }
+        if (width == 0 || height == 0 || arcAngle == 0)
+            return;
+        if (width == height) {
+            if (arcAngle >= 0) {
+            } else {
+            }
+        } else {
+            if (arcAngle >= 0) {
+            } else {
+            }
+        }
     }
 
     /**
@@ -1237,20 +1350,49 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillGradientRectangle(int x, int y, int width, int height, boolean vertical) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        Rectangle rect = DPIUtil.autoScaleUp(drawable, new Rectangle(x, y, width, height));
-        fillGradientRectangleInPixels(rect.x, rect.y, rect.width, rect.height, vertical);
-    }
-
-    void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean vertical) {
-        VGCFillGradientRectangle drawOp = new VGCFillGradientRectangle();
+        VGCFillGradientRectangleintintintintboolean drawOp = new VGCFillGradientRectangleintintintintboolean();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.vertical = vertical;
-        FlutterBridge.send(this, "fillGradientRectangle", drawOp);
+        FlutterBridge.send(this, "fillGradientRectangleintintintintboolean", drawOp);
+    }
+
+    void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean vertical) {
+        if ((width == 0) || (height == 0))
+            return;
+        /* Rewrite this to use GdkPixbuf */
+        RGB backgroundRGB, foregroundRGB;
+        backgroundRGB = getBackground().getRGB();
+        foregroundRGB = getForeground().getRGB();
+        RGB fromRGB, toRGB;
+        fromRGB = foregroundRGB;
+        toRGB = backgroundRGB;
+        boolean swapColors = false;
+        if (width < 0) {
+            x += width;
+            width = -width;
+            if (!vertical)
+                swapColors = true;
+        }
+        if (height < 0) {
+            y += height;
+            height = -height;
+            if (vertical)
+                swapColors = true;
+        }
+        if (swapColors) {
+            fromRGB = backgroundRGB;
+            toRGB = foregroundRGB;
+        }
+        if (fromRGB.equals(toRGB)) {
+            fillRectangleInPixels(x, y, width, height);
+            return;
+        }
+        if (vertical) {
+        } else {
+        }
     }
 
     /**
@@ -1270,19 +1412,27 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawOval
      */
     public void fillOval(int x, int y, int width, int height) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        Rectangle rect = DPIUtil.autoScaleUp(drawable, new Rectangle(x, y, width, height));
-        fillOvalInPixels(rect.x, rect.y, rect.width, rect.height);
-    }
-
-    void fillOvalInPixels(int x, int y, int width, int height) {
-        VGCFillOval drawOp = new VGCFillOval();
+        VGCFillOvalintintintint drawOp = new VGCFillOvalintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "fillOval", drawOp);
+        FlutterBridge.send(this, "fillOvalintintintint", drawOp);
+    }
+
+    void fillOvalInPixels(int x, int y, int width, int height) {
+        checkGC(FILL);
+        if (width < 0) {
+            x = x + width;
+            width = -width;
+        }
+        if (height < 0) {
+            y = y + height;
+            height = -height;
+        }
+        if (width == height) {
+        } else {
+        }
     }
 
     /**
@@ -1338,18 +1488,13 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawPolygon
      */
     public void fillPolygon(int[] pointArray) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (pointArray == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        int[] scaledPointArray = DPIUtil.autoScaleUp(drawable, pointArray);
-        fillPolygonInPixels(scaledPointArray);
+        VGCFillPolygonint drawOp = new VGCFillPolygonint();
+        drawOp.pointArray = pointArray;
+        FlutterBridge.send(this, "fillPolygonint", drawOp);
     }
 
     void fillPolygonInPixels(int[] pointArray) {
-        VGCFillPolygon drawOp = new VGCFillPolygon();
-        drawOp.pointArray = pointArray;
-        FlutterBridge.send(this, "fillPolygon", drawOp);
+        checkGC(FILL);
     }
 
     /**
@@ -1368,18 +1513,27 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(int x, int y, int width, int height) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        fillRectangle(new Rectangle(x, y, width, height));
-    }
-
-    void fillRectangleInPixels(int x, int y, int width, int height) {
-        VGCFillRectangle drawOp = new VGCFillRectangle();
+        VGCFillRectangleintintintint drawOp = new VGCFillRectangleintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "fillRectangle", drawOp);
+        FlutterBridge.send(this, "fillRectangleintintintint", drawOp);
+    }
+
+    void fillRectangleInPixels(int x, int y, int width, int height) {
+        checkGC(FILL);
+        if (width < 0) {
+            x = x + width;
+            width = -width;
+        }
+        if (height < 0) {
+            y = y + height;
+            height = -height;
+        }
+        if (data.regionSet != 0) {
+        } else {
+        }
     }
 
     /**
@@ -1398,11 +1552,9 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(Rectangle rect) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (rect == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        fillRectangleInPixels(DPIUtil.autoScaleUp(drawable, rect));
+        VGCFillRectangleRectangle drawOp = new VGCFillRectangleRectangle();
+        drawOp.rect = rect;
+        FlutterBridge.send(this, "fillRectangleRectangle", drawOp);
     }
 
     void fillRectangleInPixels(Rectangle rect) {
@@ -1427,22 +1579,39 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRoundRectangle
      */
     public void fillRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        Rectangle rect = DPIUtil.autoScaleUp(drawable, new Rectangle(x, y, width, height));
-        Point arcSize = DPIUtil.autoScaleUp(drawable, new Point(arcWidth, arcHeight));
-        fillRoundRectangleInPixels(rect.x, rect.y, rect.width, rect.height, arcSize.x, arcSize.y);
-    }
-
-    void fillRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        VGCFillRoundRectangle drawOp = new VGCFillRoundRectangle();
+        VGCFillRoundRectangleintintintintintint drawOp = new VGCFillRoundRectangleintintintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.arcWidth = arcWidth;
         drawOp.arcHeight = arcHeight;
-        FlutterBridge.send(this, "fillRoundRectangle", drawOp);
+        FlutterBridge.send(this, "fillRoundRectangleintintintintintint", drawOp);
+    }
+
+    void fillRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+        checkGC(FILL);
+        int nx = x;
+        int ny = y;
+        int nw = width;
+        int nh = height;
+        int naw = arcWidth;
+        int nah = arcHeight;
+        if (nw < 0) {
+            nw = 0 - nw;
+            nx = nx - nw;
+        }
+        if (nh < 0) {
+            nh = 0 - nh;
+            ny = ny - nh;
+        }
+        if (naw < 0)
+            naw = 0 - naw;
+        if (nah < 0)
+            nah = 0 - nah;
+        if (naw == 0 || nah == 0) {
+        } else {
+        }
     }
 
     int fixMnemonic(char[] buffer) {
@@ -1634,7 +1803,7 @@ public final class DartGC extends DartResource implements IGC {
     public Rectangle getClipping() {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return DPIUtil.autoScaleDown(drawable, getClippingInPixels());
+        return getClippingInPixels();
     }
 
     Rectangle getClippingInPixels() {
@@ -1878,7 +2047,7 @@ public final class DartGC extends DartResource implements IGC {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         LineAttributes attributes = getLineAttributesInPixels();
-        attributes.width = DPIUtil.autoScaleDown(drawable, attributes.width);
+        attributes.width = attributes.width;
         return attributes;
     }
 
@@ -1986,7 +2155,7 @@ public final class DartGC extends DartResource implements IGC {
     public int getLineWidth() {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return (int) DPIUtil.autoScaleDown(drawable, data.lineWidth);
+        return getLineWidthInPixels();
     }
 
     int getLineWidthInPixels() {
@@ -2567,7 +2736,7 @@ public final class DartGC extends DartResource implements IGC {
     public void setClipping(int x, int y, int width, int height) {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        setClippingInPixels(DPIUtil.autoScaleUp(drawable, x), DPIUtil.autoScaleUp(drawable, y), DPIUtil.autoScaleUp(drawable, width), DPIUtil.autoScaleUp(drawable, height));
+        setClippingInPixels(x, y, width, height);
     }
 
     void setClippingInPixels(int x, int y, int width, int height) {
@@ -2635,7 +2804,7 @@ public final class DartGC extends DartResource implements IGC {
     public void setClipping(Rectangle rect) {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        setClippingInPixels(DPIUtil.autoScaleUp(drawable, rect));
+        setClippingInPixels(rect);
     }
 
     void setClippingInPixels(Rectangle rect) {
@@ -2882,7 +3051,7 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (attributes == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        attributes.width = DPIUtil.autoScaleUp(drawable, attributes.width);
+        attributes.width = attributes.width;
         setLineAttributesInPixels(attributes);
     }
 
@@ -3164,7 +3333,7 @@ public final class DartGC extends DartResource implements IGC {
     public void setLineWidth(int lineWidth) {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        setLineWidthInPixels(DPIUtil.autoScaleUp(drawable, lineWidth));
+        setLineWidthInPixels(lineWidth);
     }
 
     void setLineWidthInPixels(int lineWidth) {
@@ -3336,7 +3505,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Point stringExtent(String string) {
-        return DPIUtil.autoScaleDown(drawable, stringExtentInPixels(string));
+        return stringExtentInPixels(string);
     }
 
     Point stringExtentInPixels(String string) {
@@ -3363,7 +3532,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Point textExtent(String string) {
-        return DPIUtil.autoScaleDown(drawable, textExtentInPixels(string));
+        return textExtentInPixels(string);
     }
 
     Point textExtentInPixels(String string) {
@@ -3406,7 +3575,7 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return DPIUtil.autoScaleDown(drawable, textExtentInPixels(string, flags));
+        return textExtentInPixels(string, flags);
     }
 
     Point textExtentInPixels(String string, int flags) {

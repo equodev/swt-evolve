@@ -8,6 +8,8 @@ import org.eclipse.swt.graphics.*;
 
 public interface ImplWidget {
 
+    boolean _autoScaleDisabled();
+
     Display _display();
 
     EventTable _eventTable();

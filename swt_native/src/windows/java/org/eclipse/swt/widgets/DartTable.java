@@ -59,7 +59,7 @@ import dev.equo.swt.*;
  * </p>
  * <dl>
  * <dt><b>Styles:</b></dt>
- * <dd>SINGLE, MULTI, CHECK, FULL_SELECTION, HIDE_SELECTION, VIRTUAL, NO_SCROLL</dd>
+ * <dd>SINGLE, MULTI, CHECK, FULL_SELECTION, HIDE_SELECTION, VIRTUAL, NO_SCROLL, NO_SEARCH</dd>
  * <dt><b>Events:</b></dt>
  * <dd>Selection, DefaultSelection, SetData, MeasureItem, EraseItem, PaintItem</dd>
  * </dl>
@@ -948,7 +948,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getGridLineWidth() {
         checkWidget();
-        return DPIUtil.scaleDown(getGridLineWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getGridLineWidthInPixels(), getZoom());
     }
 
     int getGridLineWidthInPixels() {
@@ -1009,7 +1009,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getHeaderHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getHeaderHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getHeaderHeightInPixels(), getZoom());
     }
 
     int getHeaderHeightInPixels() {
@@ -1087,7 +1087,7 @@ public class DartTable extends DartComposite implements ITable {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return getItemInPixels(DPIUtil.scaleUp(point, getZoom()));
+        return null;
     }
 
     TableItem getItemInPixels(Point point) {
@@ -1127,7 +1127,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getItemHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getItemHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getItemHeightInPixels(), getZoom());
     }
 
     int getItemHeightInPixels() {
@@ -2774,7 +2774,7 @@ public class DartTable extends DartComposite implements ITable {
         }
         Point pt = toDisplayInPixels(x, y);
         int zoom = getZoom();
-        event.setLocation(DPIUtil.scaleDown(pt.x, zoom), DPIUtil.scaleDown(pt.y, zoom));
+        event.setLocation(DPIUtil.pixelToPoint(pt.x, zoom), DPIUtil.pixelToPoint(pt.y, zoom));
     }
 
     void updateMoveable() {
@@ -2827,6 +2827,11 @@ public class DartTable extends DartComposite implements ITable {
         // Request ScrollWidth
         if (table.getColumns().length == 0) {
         }
+        // if the item height was set at least once programmatically with CDDS_SUBITEMPREPAINT,
+        // the item height of the table is not managed by the OS anymore e.g. when the zoom
+        // on the monitor is changed, the height of the item will stay at the fixed size.
+        // Resetting it will re-enable the default behavior again
+        ((DartTable) table.getImpl()).setItemHeight(-1);
         if (table.getColumns().length == 0 && scrollWidth != 0) {
             // Update scrollbar width if no columns are available
             ((DartTable) table.getImpl()).setScrollWidth(scrollWidth);

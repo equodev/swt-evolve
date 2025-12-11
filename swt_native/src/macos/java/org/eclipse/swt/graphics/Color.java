@@ -51,11 +51,6 @@ public final class Color extends Resource {
      */
     public double[] handle;
 
-    Color() {
-        this((IColor) null);
-        setImpl(Config.isEquo(Color.class) ? new DartColor(this) : new SwtColor(this));
-    }
-
     Color(Device device) {
         this((IColor) null);
         setImpl(Config.isEquo(Color.class) ? new DartColor(device, this) : new SwtColor(device, this));

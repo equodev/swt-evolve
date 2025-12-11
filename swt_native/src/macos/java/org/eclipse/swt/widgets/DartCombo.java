@@ -380,7 +380,6 @@ public class DartCombo extends DartComposite implements ICombo {
     @Override
     void createWidget() {
         text = "";
-        selection = new Point(0, 0);
         super.createWidget();
         if ((getApi().style & SWT.READ_ONLY) == 0) {
         }

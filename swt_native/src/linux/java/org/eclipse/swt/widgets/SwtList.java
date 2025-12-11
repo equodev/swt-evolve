@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -29,7 +29,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * when a string is selected.  A list may be single or multi select.
  * <dl>
  * <dt><b>Styles:</b></dt>
- * <dd>SINGLE, MULTI</dd>
+ * <dd>SINGLE, MULTI, NO_SEARCH</dd>
  * <dt><b>Events:</b></dt>
  * <dd>Selection, DefaultSelection</dd>
  * </dl>
@@ -261,14 +261,7 @@ public class SwtList extends SwtScrollable implements IList {
                 GTK3.gtk_scrolled_window_set_shadow_type(scrolledHandle, GTK.GTK_SHADOW_ETCHED_IN);
             }
         }
-        /*
-	* Bug in GTK. When a treeview is the child of an override shell,
-	* and if the user has ever invokes the interactive search field,
-	* and the treeview is disposed on a focus out event, it segment
-	* faults. The fix is to disable the search field in an override
-	* shell.
-	*/
-        if ((getShell().style & SWT.ON_TOP) != 0) {
+        if (!searchEnabled()) {
             GTK.gtk_tree_view_set_search_column(getApi().handle, -1);
         }
         // In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
@@ -299,7 +292,7 @@ public class SwtList extends SwtScrollable implements IList {
 	 * based on the number of items in the table
 	 */
         if (size.y == 0 && hHint == SWT.DEFAULT) {
-            size.y = getItemCount() * getItemHeightInPixels();
+            size.y = getItemCount() * getItemHeight();
         }
         /*
 	 * In case the table doesn't contain any elements,
@@ -569,11 +562,6 @@ public class SwtList extends SwtScrollable implements IList {
      * </ul>
      */
     public int getItemHeight() {
-        checkWidget();
-        return DPIUtil.autoScaleDown(getItemHeightInPixels());
-    }
-
-    int getItemHeightInPixels() {
         checkWidget();
         final int BASE_ITEM_PADDING = 1;
         int[] h = new int[1];
@@ -929,14 +917,15 @@ public class SwtList extends SwtScrollable implements IList {
     }
 
     @Override
-    void gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
+    int gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
         if (n_press == 1)
-            return;
-        super.gtk_gesture_press_event(gesture, n_press, x, y, event);
+            return GTK4.GTK_EVENT_SEQUENCE_NONE;
+        int result = super.gtk_gesture_press_event(gesture, n_press, x, y, event);
         if (n_press == 2 && rowActivated) {
             sendTreeDefaultSelection();
             rowActivated = false;
         }
+        return result;
     }
 
     @Override
@@ -1321,6 +1310,20 @@ public class SwtList extends SwtScrollable implements IList {
             return;
         eventTable.unhook(SWT.Selection, listener);
         eventTable.unhook(SWT.DefaultSelection, listener);
+    }
+
+    boolean searchEnabled() {
+        /* Disable searching when using NO_SEARCH */
+        if ((getApi().style & SWT.NO_SEARCH) != 0 || /*
+		* Bug in GTK. When a treeview is the child of an override shell,
+		* and if the user has ever invokes the interactive search field,
+		* and the treeview is disposed on a focus out event, it segment
+		* faults. The fix is to disable the search field in an override
+		* shell.
+		*/
+        (getShell().style & SWT.ON_TOP) != 0)
+            return false;
+        return true;
     }
 
     /**

@@ -28,6 +28,4 @@ public interface ImplCaret extends ImplWidget {
     Font _font();
 
     boolean blinkCaret();
-
-    Point getSizeInPixels();
 }

@@ -16,7 +16,7 @@
  */
 package org.eclipse.swt.events;
 
-import org.eclipse.swt.internal.*;
+import java.util.*;
 
 /**
  * Classes which implement this interface provide a method
@@ -34,7 +34,7 @@ import org.eclipse.swt.internal.*;
  * @see TraverseEvent
  */
 @FunctionalInterface
-public interface TraverseListener extends SWTEventListener {
+public interface TraverseListener extends EventListener {
 
     /**
      * Sent when a traverse event occurs in a control.

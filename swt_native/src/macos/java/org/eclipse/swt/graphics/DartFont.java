@@ -157,13 +157,6 @@ public final class DartFont extends DartResource implements IFont {
         }
     }
 
-    /*public*/
-    DartFont(Device device, String name, float height, int style, Font api) {
-        super(device, api);
-        init(name, height, style, null);
-        init();
-    }
-
     @Override
     void destroy() {
         metrics = null;

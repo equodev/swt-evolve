@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2020 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -15,11 +15,15 @@
  */
 package org.eclipse.swt.graphics;
 
+import static org.eclipse.swt.internal.image.ImageColorTransformer.DEFAULT_DISABLED_IMAGE_TRANSFORMER;
 import java.io.*;
+import java.util.*;
+import java.util.function.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.internal.graphics.*;
+import org.eclipse.swt.internal.image.*;
 
 /**
  * Instances of this class are graphics which have been prepared
@@ -105,6 +109,11 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      * ImageDataProvider to provide ImageData at various Zoom levels
      */
     private ImageDataProvider imageDataProvider;
+
+    /**
+     * ImageGcDrawer to provide a callback to draw on a GC for various zoom levels
+     */
+    private ImageGcDrawer imageGcDrawer;
 
     /**
      * Style flag used to differentiate normal, gray-scale and disabled images based
@@ -354,8 +363,9 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             createRepFromSourceAndApplyFlag(((SwtImage) srcImage.getImpl()).getRepresentation(100), srcWidth, srcHeight, flag);
             imageFileNameProvider = ((SwtImage) srcImage.getImpl()).imageFileNameProvider;
             imageDataProvider = ((SwtImage) srcImage.getImpl()).imageDataProvider;
+            imageGcDrawer = ((SwtImage) srcImage.getImpl()).imageGcDrawer;
             this.styleFlag = ((SwtImage) srcImage.getImpl()).styleFlag | flag;
-            if (imageFileNameProvider != null || imageDataProvider != null) {
+            if (imageFileNameProvider != null || imageDataProvider != null || ((SwtImage) srcImage.getImpl()).imageGcDrawer != null) {
                 /* If source image has 200% representation then create the 200% representation for the new image & apply flag */
                 NSBitmapImageRep rep200 = ((SwtImage) srcImage.getImpl()).getRepresentation(200);
                 if (rep200 != null)
@@ -396,12 +406,14 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         long data = rep.bitmapData();
         C.memmove(data, srcData, srcWidth * srcHeight * 4);
         if (flag != SWT.IMAGE_COPY) {
-            final int redOffset, greenOffset, blueOffset;
+            final int redOffset, greenOffset, blueOffset, alphaOffset;
             if (srcBpp == 32 && (srcBitmapFormat & OS.NSAlphaFirstBitmapFormat) == 0) {
                 redOffset = 0;
                 greenOffset = 1;
                 blueOffset = 2;
+                alphaOffset = 3;
             } else {
+                alphaOffset = 0;
                 redOffset = 1;
                 greenOffset = 2;
                 blueOffset = 3;
@@ -410,16 +422,6 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             switch(flag) {
                 case SWT.IMAGE_DISABLE:
                     {
-                        Color zeroColor = this.device.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);
-                        RGB zeroRGB = zeroColor.getRGB();
-                        byte zeroRed = (byte) zeroRGB.red;
-                        byte zeroGreen = (byte) zeroRGB.green;
-                        byte zeroBlue = (byte) zeroRGB.blue;
-                        Color oneColor = this.device.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
-                        RGB oneRGB = oneColor.getRGB();
-                        byte oneRed = (byte) oneRGB.red;
-                        byte oneGreen = (byte) oneRGB.green;
-                        byte oneBlue = (byte) oneRGB.blue;
                         byte[] line = new byte[(int) srcBpr];
                         for (int y = 0; y < srcHeight; y++) {
                             C.memmove(line, data + (y * srcBpr), srcBpr);
@@ -428,16 +430,12 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                                 int red = line[offset + redOffset] & 0xFF;
                                 int green = line[offset + greenOffset] & 0xFF;
                                 int blue = line[offset + blueOffset] & 0xFF;
-                                int intensity = red * red + green * green + blue * blue;
-                                if (intensity < 98304) {
-                                    line[offset + redOffset] = zeroRed;
-                                    line[offset + greenOffset] = zeroGreen;
-                                    line[offset + blueOffset] = zeroBlue;
-                                } else {
-                                    line[offset + redOffset] = oneRed;
-                                    line[offset + greenOffset] = oneGreen;
-                                    line[offset + blueOffset] = oneBlue;
-                                }
+                                int alpha = line[offset + alphaOffset] & 0xFF;
+                                RGBA result = DEFAULT_DISABLED_IMAGE_TRANSFORMER.adaptPixelValue(red, green, blue, alpha);
+                                line[offset + redOffset] = (byte) result.rgb.red;
+                                line[offset + greenOffset] = (byte) result.rgb.green;
+                                line[offset + blueOffset] = (byte) result.rgb.blue;
+                                line[offset + alphaOffset] = (byte) result.alpha;
                                 offset += 4;
                             }
                             C.memmove(data + (y * srcBpr), line, srcBpr);
@@ -500,7 +498,10 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      * </ul>
      *
      * @see #dispose()
+     *
+     * @deprecated use {@link Image#Image(Device, int, int)} instead
      */
+    @Deprecated(since = "2025-06", forRemoval = true)
     public SwtImage(Device device, Rectangle bounds, Image api) {
         super(device, api);
         if (bounds == null)
@@ -546,7 +547,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
         try {
-            init(data);
+            init(data, 100);
             init();
         } finally {
             if (pool != null)
@@ -601,7 +602,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             ImageData image = new ImageData(source.width, source.height, source.depth, source.palette, source.scanlinePad, source.data);
             image.maskPad = mask.scanlinePad;
             image.maskData = mask.data;
-            init(image);
+            init(image, 100);
         } finally {
             if (pool != null)
                 pool.release();
@@ -663,12 +664,18 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      */
     public SwtImage(Device device, InputStream stream, Image api) {
         super(device, api);
+        if (stream == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
         try {
-            init(new ImageData(stream));
+            byte[] input = stream.readAllBytes();
+            initWithSupplier(zoom -> ImageDataLoader.canLoadAtZoom(new ByteArrayInputStream(input), FileFormat.DEFAULT_ZOOM, zoom), zoom -> ImageDataLoader.load(new ByteArrayInputStream(input), FileFormat.DEFAULT_ZOOM, zoom).element());
             init();
+        } catch (IOException e) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT, e);
         } finally {
             if (pool != null)
                 pool.release();
@@ -717,8 +724,9 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             if (filename == null)
                 SWT.error(SWT.ERROR_NULL_ARGUMENT);
             initNative(filename);
-            if (this.getApi().handle == null)
-                init(new ImageData(filename));
+            if (this.getApi().handle == null) {
+                initWithSupplier(zoom -> ImageDataLoader.canLoadAtZoom(filename, FileFormat.DEFAULT_ZOOM, zoom), zoom -> ImageDataLoader.load(filename, FileFormat.DEFAULT_ZOOM, zoom).element());
+            }
             init();
         } finally {
             if (pool != null)
@@ -770,7 +778,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         try {
             initNative(filename);
             if (this.getApi().handle == null)
-                init(new ImageData(filename));
+                init(ImageDataLoader.load(filename, 100, 100).element(), 100);
             init();
             String filename2x = imageFileNameProvider.getImagePath(200);
             if (filename2x != null) {
@@ -778,6 +786,13 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                 id id = NSImageRep.imageRepWithContentsOfFile(NSString.stringWith(filename2x));
                 NSImageRep rep = new NSImageRep(id);
                 getApi().handle.addRepresentation(rep);
+            } else if (ImageDataLoader.canLoadAtZoom(filename, 100, 200)) {
+                // Try to natively scale up the image (e.g. possible if it's an SVG)
+                ImageData imageData2x = ImageDataLoader.load(filename, 100, 200).element();
+                alphaInfo_200 = new AlphaInfo();
+                NSBitmapImageRep rep = createRepresentation(imageData2x, alphaInfo_200);
+                getApi().handle.addRepresentation(rep);
+                rep.release();
             }
         } finally {
             if (pool != null)
@@ -826,8 +841,11 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
         try {
-            init(data);
+            init(data, 100);
             init();
+            StrictChecks.runIfStrictChecksEnabled(() -> {
+                DPIUtil.validateLinearScaling(imageDataProvider);
+            });
             ImageData data2x = imageDataProvider.getImageData(200);
             if (data2x != null) {
                 alphaInfo_200 = new AlphaInfo();
@@ -838,6 +856,69 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         } finally {
             if (pool != null)
                 pool.release();
+        }
+    }
+
+    /**
+     * The provided ImageGcDrawer will be called on demand whenever a new variant of the
+     * Image for an additional zoom is required. Depending on the OS-specific implementation
+     * these calls will be done during the instantiation or later when a new variant is
+     * requested.
+     *
+     * @param device the device on which to create the image
+     * @param imageGcDrawer the ImageGcDrawer object to be called when a new image variant
+     * for another zoom is required.
+     * @param width the width of the new image in points
+     * @param height the height of the new image in points
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if device is null and there is no current device</li>
+     *    <li>ERROR_NULL_ARGUMENT - if the ImageGcDrawer is null</li>
+     * </ul>
+     * @since 3.129
+     */
+    public SwtImage(Device device, ImageGcDrawer imageGcDrawer, int width, int height, Image api) {
+        super(device, api);
+        if (imageGcDrawer == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        this.imageGcDrawer = imageGcDrawer;
+        this.width = width;
+        this.height = height;
+        ImageData data = drawWithImageGcDrawer(imageGcDrawer, width, height, DPIUtil.getDeviceZoom());
+        if (data == null)
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        NSAutoreleasePool pool = null;
+        if (!NSThread.isMainThread())
+            pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
+        try {
+            init(data, DPIUtil.getDeviceZoom());
+            init();
+        } finally {
+            if (pool != null)
+                pool.release();
+        }
+    }
+
+    private ImageData drawWithImageGcDrawer(ImageGcDrawer imageGcDrawer, int width, int height, int zoom) {
+        int gcStyle = imageGcDrawer.getGcStyle();
+        Image image;
+        if ((gcStyle & SWT.TRANSPARENT) != 0) {
+            /* Create a 24 bit image data with alpha channel */
+            final ImageData resultData = new ImageData(width, height, 24, new PaletteData(0xFF, 0xFF00, 0xFF0000));
+            resultData.alphaData = new byte[width * height];
+            image = new Image(device, resultData);
+        } else {
+            image = new Image(device, width, height);
+        }
+        GC gc = new GC(image, gcStyle);
+        try {
+            imageGcDrawer.drawOn(gc, width, height);
+            ImageData imageData = image.getImageData(zoom);
+            imageGcDrawer.postProcess(imageData);
+            return imageData;
+        } finally {
+            gc.dispose();
+            image.dispose();
         }
     }
 
@@ -1115,6 +1196,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             return styleFlag == ((SwtImage) image.getImpl()).styleFlag && imageDataProvider.equals(((SwtImage) image.getImpl()).imageDataProvider);
         } else if (imageFileNameProvider != null && ((SwtImage) image.getImpl()).imageFileNameProvider != null) {
             return styleFlag == ((SwtImage) image.getImpl()).styleFlag && imageFileNameProvider.equals(((SwtImage) image.getImpl()).imageFileNameProvider);
+        } else if (imageGcDrawer != null && ((SwtImage) image.getImpl()).imageGcDrawer != null) {
+            return styleFlag == ((SwtImage) image.getImpl()).styleFlag && imageGcDrawer.equals(((SwtImage) image.getImpl()).imageGcDrawer) && width == image.getImpl()._width() && height == image.getImpl()._height();
         } else {
             return getApi().handle == image.handle;
         }
@@ -1223,7 +1306,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      * @deprecated This API doesn't serve the purpose in an environment having
      *             multiple monitors with different DPIs, hence deprecated.
      */
-    @Deprecated
+    @Deprecated(since = "2025-09", forRemoval = true)
     public Rectangle getBoundsInPixels() {
         Rectangle bounds = getBounds();
         int scaleFactor = (int) NSScreen.mainScreen().backingScaleFactor();
@@ -1270,7 +1353,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      *             multiple monitors with different DPIs, hence deprecated. Use
      *             {@link #getImageData(int)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2025-09", forRemoval = true)
     public ImageData getImageDataAtCurrentZoom() {
         return getImageData(DPIUtil.getDeviceZoom());
     }
@@ -1361,6 +1444,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             return imageDataProvider.hashCode();
         } else if (imageFileNameProvider != null) {
             return imageFileNameProvider.hashCode();
+        } else if (imageGcDrawer != null) {
+            return Objects.hash(imageGcDrawer, height, width);
         } else {
             return getApi().handle != null ? (int) getApi().handle.id : 0;
         }
@@ -1388,7 +1473,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             alphaInfo_100 = new AlphaInfo();
     }
 
-    void init(ImageData image) {
+    void init(ImageData image, int imageZoom) {
         if (image == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (getApi().handle != null)
@@ -1398,14 +1483,26 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         size.width = width;
         size.height = height;
         getApi().handle = getApi().handle.initWithSize(size);
-        this.width = image.width;
-        this.height = image.height;
+        this.width = image.width * 100 / imageZoom;
+        this.height = image.height * 100 / imageZoom;
         if (alphaInfo_100 == null)
             alphaInfo_100 = new AlphaInfo();
         NSBitmapImageRep rep = createRepresentation(image, alphaInfo_100);
         getApi().handle.addRepresentation(rep);
         rep.release();
         getApi().handle.setCacheMode(OS.NSImageCacheNever);
+    }
+
+    private void initWithSupplier(Function<Integer, Boolean> canLoadAtZoom, Function<Integer, ImageData> zoomToImageData) {
+        ImageData imageData = zoomToImageData.apply(100);
+        init(imageData, 100);
+        if (canLoadAtZoom.apply(200)) {
+            ImageData imageData2x = zoomToImageData.apply(200);
+            alphaInfo_200 = new AlphaInfo();
+            NSBitmapImageRep rep = createRepresentation(imageData2x, alphaInfo_200);
+            getApi().handle.addRepresentation(rep);
+            rep.release();
+        }
     }
 
     void initAlpha_200(NSBitmapImageRep nativeRep) {
@@ -1722,6 +1819,34 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         if (isDisposed())
             return "Image {*DISPOSED*}";
         return "Image {" + getApi().handle + "}";
+    }
+
+    /**
+     * <b>IMPORTANT:</b> This method is not part of the public
+     * API for Image. It is marked public only so that it
+     * can be shared within the packages provided by SWT.
+     *
+     * Draws a scaled image using the GC for a given imageData.
+     *
+     * @param gc the GC to draw on the resulting image
+     * @param imageData the imageData which is used to draw the scaled Image
+     * @param width the width of the original image
+     * @param height the height of the original image
+     * @param scaleFactor the factor with which the image is supposed to be scaled
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     */
+    public static void drawScaled(GC gc, ImageData imageData, int width, int height, float scaleFactor) {
+        StrictChecks.runWithStrictChecksDisabled(() -> {
+            Image imageToDraw = new Image(gc.getImpl()._device(), (ImageDataProvider) zoom -> imageData);
+            gc.drawImage(imageToDraw, 0, 0, CocoaDPIUtil.pixelToPoint(width), CocoaDPIUtil.pixelToPoint(height), /*
+				 * E.g. destWidth here is effectively DPIUtil.autoScaleDown (scaledWidth), but
+				 * avoiding rounding errors. Nevertheless, we still have some rounding errors
+				 * due to the point-based API GC#drawImage(..).
+				 */
+            0, 0, Math.round(CocoaDPIUtil.pixelToPoint(width * scaleFactor)), Math.round(CocoaDPIUtil.pixelToPoint(height * scaleFactor)));
+            imageToDraw.dispose();
+        });
     }
 
     public GC _memGC() {

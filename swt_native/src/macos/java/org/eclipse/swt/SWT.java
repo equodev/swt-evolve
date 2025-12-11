@@ -1555,11 +1555,26 @@ public class SWT {
      * <p><b>Used By:</b></p>
      * <ul>
      * <li><code>Text</code></li>
+     * <li><code>Browser</code> (WebKit and GTK only)</li>
      * </ul>
      *
      * @since 3.3
      */
     public static final int SEARCH = 1 << 7;
+
+    /**
+     * Style constant for disabling GTK interactive search popup (value is 1&lt;&lt;10).
+     * <br>Note that this is a <em>HINT</em> and is currently only supported on GTK.
+     * <p><b>Used By:</b></p>
+     * <ul>
+     * <li><code>List</code></li>
+     * <li><code>Table</code></li>
+     * <li><code>Tree</code></li>
+     * </ul>
+     *
+     * @since 3.130
+     */
+    public static final int NO_SEARCH = 1 << 10;
 
     /**
      * Style constant for simple (not drop down) behavior (value is 1&lt;&lt;6).
@@ -2561,8 +2576,6 @@ public class SWT {
     /**
      * Style constant specifying that a Browser should use Edge (WebView2)
      * for rendering its content (value is 1&lt;&lt;18).
-     * <p>NOTE: Edge integration is experimental, it isn't a drop-in replacement
-     * for Internet Explorer.</p>
      * <p><b>Used By:</b></p>
      * <ul>
      * <li><code>Browser</code></li>
@@ -2571,6 +2584,18 @@ public class SWT {
      * @since 3.116
      */
     public static final int EDGE = 1 << 18;
+
+    /**
+     * Style constant specifying that a Browser should use Internet Explorer
+     * for rendering its content (value is 1&lt;&lt;19).
+     * <p><b>Used By:</b></p>
+     * <ul>
+     * <li><code>Browser</code></li>
+     * </ul>
+     *
+     * @since 3.129
+     */
+    public static final int IE = 1 << 19;
 
     /**
      * Style constant for balloon behavior (value is 1&lt;&lt;12).
@@ -4432,7 +4457,6 @@ public class SWT {
 
     /**
      * Image format constant indicating a SVG format image (value is 8).
-     * <br>Note that this is a <em>HINT</em> and is currently only supported on GTK.
      *
      * @since 3.113
      */

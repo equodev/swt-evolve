@@ -497,9 +497,9 @@ class WebSite extends OleControlSite {
         POINT pt = new POINT();
         OS.MoveMemory(pt, ppt, POINT.sizeof);
         // To Points
-        pt.x = DPIUtil.autoScaleDown(pt.x);
+        pt.x = DPIUtil.pixelToPoint(pt.x, DPIUtil.getDeviceZoom());
         // To Points
-        pt.y = DPIUtil.autoScaleDown(pt.y);
+        pt.y = DPIUtil.pixelToPoint(pt.y, DPIUtil.getDeviceZoom());
         event.x = pt.x;
         event.y = pt.y;
         browser.notifyListeners(SWT.MenuDetect, event);

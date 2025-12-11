@@ -184,8 +184,8 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
         long hDC = gc.handle;
         int headerHeightinPixels = getHeaderHeightInPixels();
         int zoom = getZoom();
-        int imageHeightInPixels = DPIUtil.scaleUp(imageHeight, zoom);
-        int imageWidthInPixels = DPIUtil.scaleUp(imageWidth, zoom);
+        int imageHeightInPixels = Win32DPIUtils.pointToPixel(imageHeight, zoom);
+        int imageWidthInPixels = Win32DPIUtils.pointToPixel(imageWidth, zoom);
         RECT rect = new RECT();
         OS.SetRect(rect, x, y, x + width, y + headerHeightinPixels);
         if (hTheme != 0) {
@@ -197,8 +197,8 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
         }
         if (image != null) {
             rect.left += SwtExpandItem.TEXT_INSET;
-            int yInPoints = DPIUtil.scaleDown(rect.top + ((headerHeightinPixels - imageHeightInPixels) / 2), zoom);
-            gc.drawImage(image, DPIUtil.scaleDown(rect.left, zoom), yInPoints);
+            int yInPoints = DPIUtil.pixelToPoint(rect.top + ((headerHeightinPixels - imageHeightInPixels) / 2), zoom);
+            gc.drawImage(image, DPIUtil.pixelToPoint(rect.left, zoom), yInPoints);
             rect.left += imageWidthInPixels;
         }
         if (text.length() > 0) {
@@ -299,12 +299,12 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      */
     public int getHeaderHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getHeaderHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getHeaderHeightInPixels(), getZoom());
     }
 
     int getHeaderHeightInPixels() {
         int headerHeightInPixels = ((SwtExpandBar) parent.getImpl()).getBandHeight();
-        int imageHeightInPixels = DPIUtil.scaleUp(imageHeight, getZoom());
+        int imageHeightInPixels = Win32DPIUtils.pointToPixel(imageHeight, getZoom());
         int imageHeaderDiff = headerHeightInPixels - imageHeightInPixels;
         if (imageHeaderDiff < IMAGE_MARGIN) {
             headerHeightInPixels = imageHeightInPixels + IMAGE_MARGIN;
@@ -324,7 +324,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      */
     public int getHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getHeightInPixels(), getZoom());
     }
 
     int getHeightInPixels() {
@@ -373,8 +373,8 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
         long parentHandle = parent.handle;
         int headerHeightInPixels = getHeaderHeightInPixels();
         int zoom = getZoom();
-        int imageHeightInPixels = DPIUtil.scaleUp(imageHeight, zoom);
-        int imageWidthInPixels = DPIUtil.scaleUp(imageWidth, zoom);
+        int imageHeightInPixels = Win32DPIUtils.pointToPixel(imageHeight, zoom);
+        int imageWidthInPixels = Win32DPIUtils.pointToPixel(imageWidth, zoom);
         RECT rect = new RECT();
         int left = all ? x : x + width - headerHeightInPixels;
         OS.SetRect(rect, left, y, x + width, y + headerHeightInPixels);
@@ -498,7 +498,7 @@ public class SwtExpandItem extends SwtItem implements IExpandItem {
      */
     public void setHeight(int height) {
         checkWidget();
-        setHeightInPixels(DPIUtil.scaleUp(height, getZoom()));
+        setHeightInPixels(Win32DPIUtils.pointToPixel(height, getZoom()));
     }
 
     void setHeightInPixels(int height) {

@@ -27,49 +27,120 @@ abstract class GCState<T extends GCSwt, V extends VGC>
   }
 
   void _registerListeners() {
-    onOp("copyArea", (p) => onCopyArea(VGCCopyArea.fromJson(p)));
-    onOp("copyAreaImage", (p) => onCopyAreaImage(VGCCopyAreaImage.fromJson(p)));
-    onOp("drawArc", (p) => onDrawArc(VGCDrawArc.fromJson(p)));
-    onOp("drawFocus", (p) => onDrawFocus(VGCDrawFocus.fromJson(p)));
-    onOp("drawImage", (p) => onDrawImage(VGCDrawImage.fromJson(p)));
-    onOp("drawLine", (p) => onDrawLine(VGCDrawLine.fromJson(p)));
-    onOp("drawOval", (p) => onDrawOval(VGCDrawOval.fromJson(p)));
-    onOp("drawPoint", (p) => onDrawPoint(VGCDrawPoint.fromJson(p)));
-    onOp("drawPolygon", (p) => onDrawPolygon(VGCDrawPolygon.fromJson(p)));
-    onOp("drawPolyline", (p) => onDrawPolyline(VGCDrawPolyline.fromJson(p)));
-    onOp("drawRectangle", (p) => onDrawRectangle(VGCDrawRectangle.fromJson(p)));
-    onOp("drawRoundRectangle",
-        (p) => onDrawRoundRectangle(VGCDrawRoundRectangle.fromJson(p)));
-    onOp("drawText", (p) => onDrawText(VGCDrawText.fromJson(p)));
-    onOp("fillArc", (p) => onFillArc(VGCFillArc.fromJson(p)));
-    onOp("fillGradientRectangle",
-        (p) => onFillGradientRectangle(VGCFillGradientRectangle.fromJson(p)));
-    onOp("fillOval", (p) => onFillOval(VGCFillOval.fromJson(p)));
-    onOp("fillPolygon", (p) => onFillPolygon(VGCFillPolygon.fromJson(p)));
-    onOp("fillRectangle", (p) => onFillRectangle(VGCFillRectangle.fromJson(p)));
-    onOp("fillRoundRectangle",
-        (p) => onFillRoundRectangle(VGCFillRoundRectangle.fromJson(p)));
+    onOp("copyAreaImageintint",
+        (p) => onCopyAreaImageintint(VGCCopyAreaImageintint.fromJson(p)));
+    onOp(
+        "copyAreaintintintintintint",
+        (p) => onCopyAreaintintintintintint(
+            VGCCopyAreaintintintintintint.fromJson(p)));
+    onOp(
+        "copyAreaintintintintintintboolean",
+        (p) => onCopyAreaintintintintintintboolean(
+            VGCCopyAreaintintintintintintboolean.fromJson(p)));
+    onOp(
+        "drawArcintintintintintint",
+        (p) => onDrawArcintintintintintint(
+            VGCDrawArcintintintintintint.fromJson(p)));
+    onOp("drawFocusintintintint",
+        (p) => onDrawFocusintintintint(VGCDrawFocusintintintint.fromJson(p)));
+    onOp("drawImageImageintint",
+        (p) => onDrawImageImageintint(VGCDrawImageImageintint.fromJson(p)));
+    onOp(
+        "drawImageImageintintintintintintintint",
+        (p) => onDrawImageImageintintintintintintintint(
+            VGCDrawImageImageintintintintintintintint.fromJson(p)));
+    onOp("drawLineintintintint",
+        (p) => onDrawLineintintintint(VGCDrawLineintintintint.fromJson(p)));
+    onOp("drawOvalintintintint",
+        (p) => onDrawOvalintintintint(VGCDrawOvalintintintint.fromJson(p)));
+    onOp("drawPointintint",
+        (p) => onDrawPointintint(VGCDrawPointintint.fromJson(p)));
+    onOp("drawPolygonint",
+        (p) => onDrawPolygonint(VGCDrawPolygonint.fromJson(p)));
+    onOp("drawPolylineint",
+        (p) => onDrawPolylineint(VGCDrawPolylineint.fromJson(p)));
+    onOp("drawRectangleRectangle",
+        (p) => onDrawRectangleRectangle(VGCDrawRectangleRectangle.fromJson(p)));
+    onOp(
+        "drawRectangleintintintint",
+        (p) => onDrawRectangleintintintint(
+            VGCDrawRectangleintintintint.fromJson(p)));
+    onOp(
+        "drawRoundRectangleintintintintintint",
+        (p) => onDrawRoundRectangleintintintintintint(
+            VGCDrawRoundRectangleintintintintintint.fromJson(p)));
+    onOp("drawStringStringintint",
+        (p) => onDrawStringStringintint(VGCDrawStringStringintint.fromJson(p)));
+    onOp(
+        "drawStringStringintintboolean",
+        (p) => onDrawStringStringintintboolean(
+            VGCDrawStringStringintintboolean.fromJson(p)));
+    onOp("drawTextStringintint",
+        (p) => onDrawTextStringintint(VGCDrawTextStringintint.fromJson(p)));
+    onOp(
+        "drawTextStringintintboolean",
+        (p) => onDrawTextStringintintboolean(
+            VGCDrawTextStringintintboolean.fromJson(p)));
+    onOp(
+        "drawTextStringintintint",
+        (p) =>
+            onDrawTextStringintintint(VGCDrawTextStringintintint.fromJson(p)));
+    onOp(
+        "fillArcintintintintintint",
+        (p) => onFillArcintintintintintint(
+            VGCFillArcintintintintintint.fromJson(p)));
+    onOp(
+        "fillGradientRectangleintintintintboolean",
+        (p) => onFillGradientRectangleintintintintboolean(
+            VGCFillGradientRectangleintintintintboolean.fromJson(p)));
+    onOp("fillOvalintintintint",
+        (p) => onFillOvalintintintint(VGCFillOvalintintintint.fromJson(p)));
+    onOp("fillPolygonint",
+        (p) => onFillPolygonint(VGCFillPolygonint.fromJson(p)));
+    onOp("fillRectangleRectangle",
+        (p) => onFillRectangleRectangle(VGCFillRectangleRectangle.fromJson(p)));
+    onOp(
+        "fillRectangleintintintint",
+        (p) => onFillRectangleintintintint(
+            VGCFillRectangleintintintint.fromJson(p)));
+    onOp(
+        "fillRoundRectangleintintintintintint",
+        (p) => onFillRoundRectangleintintintintintint(
+            VGCFillRoundRectangleintintintintintint.fromJson(p)));
   }
 
-  void onCopyArea(VGCCopyArea opArgs);
-  void onCopyAreaImage(VGCCopyAreaImage opArgs);
-  void onDrawArc(VGCDrawArc opArgs);
-  void onDrawFocus(VGCDrawFocus opArgs);
-  void onDrawImage(VGCDrawImage opArgs);
-  void onDrawLine(VGCDrawLine opArgs);
-  void onDrawOval(VGCDrawOval opArgs);
-  void onDrawPoint(VGCDrawPoint opArgs);
-  void onDrawPolygon(VGCDrawPolygon opArgs);
-  void onDrawPolyline(VGCDrawPolyline opArgs);
-  void onDrawRectangle(VGCDrawRectangle opArgs);
-  void onDrawRoundRectangle(VGCDrawRoundRectangle opArgs);
-  void onDrawText(VGCDrawText opArgs);
-  void onFillArc(VGCFillArc opArgs);
-  void onFillGradientRectangle(VGCFillGradientRectangle opArgs);
-  void onFillOval(VGCFillOval opArgs);
-  void onFillPolygon(VGCFillPolygon opArgs);
-  void onFillRectangle(VGCFillRectangle opArgs);
-  void onFillRoundRectangle(VGCFillRoundRectangle opArgs);
+  void onCopyAreaImageintint(VGCCopyAreaImageintint opArgs);
+  void onCopyAreaintintintintintint(VGCCopyAreaintintintintintint opArgs);
+  void onCopyAreaintintintintintintboolean(
+      VGCCopyAreaintintintintintintboolean opArgs);
+  void onDrawArcintintintintintint(VGCDrawArcintintintintintint opArgs);
+  void onDrawFocusintintintint(VGCDrawFocusintintintint opArgs);
+  void onDrawImageImageintint(VGCDrawImageImageintint opArgs);
+  void onDrawImageImageintintintintintintintint(
+      VGCDrawImageImageintintintintintintintint opArgs);
+  void onDrawLineintintintint(VGCDrawLineintintintint opArgs);
+  void onDrawOvalintintintint(VGCDrawOvalintintintint opArgs);
+  void onDrawPointintint(VGCDrawPointintint opArgs);
+  void onDrawPolygonint(VGCDrawPolygonint opArgs);
+  void onDrawPolylineint(VGCDrawPolylineint opArgs);
+  void onDrawRectangleRectangle(VGCDrawRectangleRectangle opArgs);
+  void onDrawRectangleintintintint(VGCDrawRectangleintintintint opArgs);
+  void onDrawRoundRectangleintintintintintint(
+      VGCDrawRoundRectangleintintintintintint opArgs);
+  void onDrawStringStringintint(VGCDrawStringStringintint opArgs);
+  void onDrawStringStringintintboolean(VGCDrawStringStringintintboolean opArgs);
+  void onDrawTextStringintint(VGCDrawTextStringintint opArgs);
+  void onDrawTextStringintintboolean(VGCDrawTextStringintintboolean opArgs);
+  void onDrawTextStringintintint(VGCDrawTextStringintintint opArgs);
+  void onFillArcintintintintintint(VGCFillArcintintintintintint opArgs);
+  void onFillGradientRectangleintintintintboolean(
+      VGCFillGradientRectangleintintintintboolean opArgs);
+  void onFillOvalintintintint(VGCFillOvalintintintint opArgs);
+  void onFillPolygonint(VGCFillPolygonint opArgs);
+  void onFillRectangleRectangle(VGCFillRectangleRectangle opArgs);
+  void onFillRectangleintintintint(VGCFillRectangleintintintint opArgs);
+  void onFillRoundRectangleintintintintintint(
+      VGCFillRoundRectangleintintintintintint opArgs);
 }
 
 @JsonSerializable()
@@ -101,7 +172,42 @@ class VGC extends VWidget {
 }
 
 @JsonSerializable()
-class VGCCopyArea {
+class VGCCopyAreaImageintint {
+  VImage? image;
+  int x;
+  int y;
+
+  VGCCopyAreaImageintint({this.x = 0, this.y = 0});
+
+  factory VGCCopyAreaImageintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCCopyAreaImageintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCCopyAreaImageintintToJson(this);
+}
+
+@JsonSerializable()
+class VGCCopyAreaintintintintintint {
+  int srcX;
+  int srcY;
+  int width;
+  int height;
+  int destX;
+  int destY;
+
+  VGCCopyAreaintintintintintint(
+      {this.srcX = 0,
+      this.srcY = 0,
+      this.width = 0,
+      this.height = 0,
+      this.destX = 0,
+      this.destY = 0});
+
+  factory VGCCopyAreaintintintintintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCCopyAreaintintintintintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCCopyAreaintintintintintintToJson(this);
+}
+
+@JsonSerializable()
+class VGCCopyAreaintintintintintintboolean {
   int srcX;
   int srcY;
   int width;
@@ -110,7 +216,7 @@ class VGCCopyArea {
   int destY;
   bool paint;
 
-  VGCCopyArea(
+  VGCCopyAreaintintintintintintboolean(
       {this.srcX = 0,
       this.srcY = 0,
       this.width = 0,
@@ -119,26 +225,15 @@ class VGCCopyArea {
       this.destY = 0,
       this.paint = false});
 
-  factory VGCCopyArea.fromJson(Map<String, dynamic> json) =>
-      _$VGCCopyAreaFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCCopyAreaToJson(this);
+  factory VGCCopyAreaintintintintintintboolean.fromJson(
+          Map<String, dynamic> json) =>
+      _$VGCCopyAreaintintintintintintbooleanFromJson(json);
+  Map<String, dynamic> toJson() =>
+      _$VGCCopyAreaintintintintintintbooleanToJson(this);
 }
 
 @JsonSerializable()
-class VGCCopyAreaImage {
-  VImage? image;
-  int x;
-  int y;
-
-  VGCCopyAreaImage({this.x = 0, this.y = 0});
-
-  factory VGCCopyAreaImage.fromJson(Map<String, dynamic> json) =>
-      _$VGCCopyAreaImageFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCCopyAreaImageToJson(this);
-}
-
-@JsonSerializable()
-class VGCDrawArc {
+class VGCDrawArcintintintintintint {
   int x;
   int y;
   int width;
@@ -146,7 +241,7 @@ class VGCDrawArc {
   int startAngle;
   int arcAngle;
 
-  VGCDrawArc(
+  VGCDrawArcintintintintintint(
       {this.x = 0,
       this.y = 0,
       this.width = 0,
@@ -154,28 +249,42 @@ class VGCDrawArc {
       this.startAngle = 0,
       this.arcAngle = 0});
 
-  factory VGCDrawArc.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawArcFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawArcToJson(this);
+  factory VGCDrawArcintintintintintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawArcintintintintintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawArcintintintintintintToJson(this);
 }
 
 @JsonSerializable()
-class VGCDrawFocus {
+class VGCDrawFocusintintintint {
   int x;
   int y;
   int width;
   int height;
 
-  VGCDrawFocus({this.x = 0, this.y = 0, this.width = 0, this.height = 0});
+  VGCDrawFocusintintintint(
+      {this.x = 0, this.y = 0, this.width = 0, this.height = 0});
 
-  factory VGCDrawFocus.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawFocusFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawFocusToJson(this);
+  factory VGCDrawFocusintintintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawFocusintintintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawFocusintintintintToJson(this);
 }
 
 @JsonSerializable()
-class VGCDrawImage {
-  VImage? srcImage;
+class VGCDrawImageImageintint {
+  VImage? image;
+  int x;
+  int y;
+
+  VGCDrawImageImageintint({this.x = 0, this.y = 0});
+
+  factory VGCDrawImageImageintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawImageImageintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawImageImageintintToJson(this);
+}
+
+@JsonSerializable()
+class VGCDrawImageImageintintintintintintintint {
+  VImage? image;
   int srcX;
   int srcY;
   int srcWidth;
@@ -184,9 +293,8 @@ class VGCDrawImage {
   int destY;
   int destWidth;
   int destHeight;
-  bool simple;
 
-  VGCDrawImage(
+  VGCDrawImageImageintintintintintintintint(
       {this.srcX = 0,
       this.srcY = 0,
       this.srcWidth = 0,
@@ -194,92 +302,106 @@ class VGCDrawImage {
       this.destX = 0,
       this.destY = 0,
       this.destWidth = 0,
-      this.destHeight = 0,
-      this.simple = false});
+      this.destHeight = 0});
 
-  factory VGCDrawImage.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawImageFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawImageToJson(this);
+  factory VGCDrawImageImageintintintintintintintint.fromJson(
+          Map<String, dynamic> json) =>
+      _$VGCDrawImageImageintintintintintintintintFromJson(json);
+  Map<String, dynamic> toJson() =>
+      _$VGCDrawImageImageintintintintintintintintToJson(this);
 }
 
 @JsonSerializable()
-class VGCDrawLine {
+class VGCDrawLineintintintint {
   int x1;
   int y1;
   int x2;
   int y2;
 
-  VGCDrawLine({this.x1 = 0, this.y1 = 0, this.x2 = 0, this.y2 = 0});
+  VGCDrawLineintintintint({this.x1 = 0, this.y1 = 0, this.x2 = 0, this.y2 = 0});
 
-  factory VGCDrawLine.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawLineFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawLineToJson(this);
+  factory VGCDrawLineintintintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawLineintintintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawLineintintintintToJson(this);
 }
 
 @JsonSerializable()
-class VGCDrawOval {
+class VGCDrawOvalintintintint {
   int x;
   int y;
   int width;
   int height;
 
-  VGCDrawOval({this.x = 0, this.y = 0, this.width = 0, this.height = 0});
+  VGCDrawOvalintintintint(
+      {this.x = 0, this.y = 0, this.width = 0, this.height = 0});
 
-  factory VGCDrawOval.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawOvalFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawOvalToJson(this);
+  factory VGCDrawOvalintintintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawOvalintintintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawOvalintintintintToJson(this);
 }
 
 @JsonSerializable()
-class VGCDrawPoint {
+class VGCDrawPointintint {
   int x;
   int y;
 
-  VGCDrawPoint({this.x = 0, this.y = 0});
+  VGCDrawPointintint({this.x = 0, this.y = 0});
 
-  factory VGCDrawPoint.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawPointFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawPointToJson(this);
+  factory VGCDrawPointintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawPointintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawPointintintToJson(this);
 }
 
 @JsonSerializable()
-class VGCDrawPolygon {
+class VGCDrawPolygonint {
   List<int>? pointArray;
 
-  VGCDrawPolygon();
+  VGCDrawPolygonint();
 
-  factory VGCDrawPolygon.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawPolygonFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawPolygonToJson(this);
+  factory VGCDrawPolygonint.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawPolygonintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawPolygonintToJson(this);
 }
 
 @JsonSerializable()
-class VGCDrawPolyline {
+class VGCDrawPolylineint {
   List<int>? pointArray;
 
-  VGCDrawPolyline();
+  VGCDrawPolylineint();
 
-  factory VGCDrawPolyline.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawPolylineFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawPolylineToJson(this);
+  factory VGCDrawPolylineint.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawPolylineintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawPolylineintToJson(this);
 }
 
 @JsonSerializable()
-class VGCDrawRectangle {
+class VGCDrawRectangleRectangle {
+  VRectangle? rect;
+
+  VGCDrawRectangleRectangle();
+
+  factory VGCDrawRectangleRectangle.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawRectangleRectangleFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawRectangleRectangleToJson(this);
+}
+
+@JsonSerializable()
+class VGCDrawRectangleintintintint {
   int x;
   int y;
   int width;
   int height;
 
-  VGCDrawRectangle({this.x = 0, this.y = 0, this.width = 0, this.height = 0});
+  VGCDrawRectangleintintintint(
+      {this.x = 0, this.y = 0, this.width = 0, this.height = 0});
 
-  factory VGCDrawRectangle.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawRectangleFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawRectangleToJson(this);
+  factory VGCDrawRectangleintintintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawRectangleintintintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawRectangleintintintintToJson(this);
 }
 
 @JsonSerializable()
-class VGCDrawRoundRectangle {
+class VGCDrawRoundRectangleintintintintintint {
   int x;
   int y;
   int width;
@@ -287,7 +409,7 @@ class VGCDrawRoundRectangle {
   int arcWidth;
   int arcHeight;
 
-  VGCDrawRoundRectangle(
+  VGCDrawRoundRectangleintintintintintint(
       {this.x = 0,
       this.y = 0,
       this.width = 0,
@@ -295,27 +417,88 @@ class VGCDrawRoundRectangle {
       this.arcWidth = 0,
       this.arcHeight = 0});
 
-  factory VGCDrawRoundRectangle.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawRoundRectangleFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawRoundRectangleToJson(this);
+  factory VGCDrawRoundRectangleintintintintintint.fromJson(
+          Map<String, dynamic> json) =>
+      _$VGCDrawRoundRectangleintintintintintintFromJson(json);
+  Map<String, dynamic> toJson() =>
+      _$VGCDrawRoundRectangleintintintintintintToJson(this);
 }
 
 @JsonSerializable()
-class VGCDrawText {
+class VGCDrawStringStringintint {
+  String string;
+  int x;
+  int y;
+
+  VGCDrawStringStringintint({this.string = '', this.x = 0, this.y = 0});
+
+  factory VGCDrawStringStringintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawStringStringintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawStringStringintintToJson(this);
+}
+
+@JsonSerializable()
+class VGCDrawStringStringintintboolean {
+  String string;
+  int x;
+  int y;
+  bool isTransparent;
+
+  VGCDrawStringStringintintboolean(
+      {this.string = '', this.x = 0, this.y = 0, this.isTransparent = false});
+
+  factory VGCDrawStringStringintintboolean.fromJson(
+          Map<String, dynamic> json) =>
+      _$VGCDrawStringStringintintbooleanFromJson(json);
+  Map<String, dynamic> toJson() =>
+      _$VGCDrawStringStringintintbooleanToJson(this);
+}
+
+@JsonSerializable()
+class VGCDrawTextStringintint {
+  String string;
+  int x;
+  int y;
+
+  VGCDrawTextStringintint({this.string = '', this.x = 0, this.y = 0});
+
+  factory VGCDrawTextStringintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawTextStringintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawTextStringintintToJson(this);
+}
+
+@JsonSerializable()
+class VGCDrawTextStringintintboolean {
+  String string;
+  int x;
+  int y;
+  bool isTransparent;
+
+  VGCDrawTextStringintintboolean(
+      {this.string = '', this.x = 0, this.y = 0, this.isTransparent = false});
+
+  factory VGCDrawTextStringintintboolean.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawTextStringintintbooleanFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawTextStringintintbooleanToJson(this);
+}
+
+@JsonSerializable()
+class VGCDrawTextStringintintint {
   String string;
   int x;
   int y;
   int flags;
 
-  VGCDrawText({this.string = '', this.x = 0, this.y = 0, this.flags = 0});
+  VGCDrawTextStringintintint(
+      {this.string = '', this.x = 0, this.y = 0, this.flags = 0});
 
-  factory VGCDrawText.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawTextFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawTextToJson(this);
+  factory VGCDrawTextStringintintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawTextStringintintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawTextStringintintintToJson(this);
 }
 
 @JsonSerializable()
-class VGCFillArc {
+class VGCFillArcintintintintintint {
   int x;
   int y;
   int width;
@@ -323,7 +506,7 @@ class VGCFillArc {
   int startAngle;
   int arcAngle;
 
-  VGCFillArc(
+  VGCFillArcintintintintintint(
       {this.x = 0,
       this.y = 0,
       this.width = 0,
@@ -331,72 +514,87 @@ class VGCFillArc {
       this.startAngle = 0,
       this.arcAngle = 0});
 
-  factory VGCFillArc.fromJson(Map<String, dynamic> json) =>
-      _$VGCFillArcFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCFillArcToJson(this);
+  factory VGCFillArcintintintintintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCFillArcintintintintintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCFillArcintintintintintintToJson(this);
 }
 
 @JsonSerializable()
-class VGCFillGradientRectangle {
+class VGCFillGradientRectangleintintintintboolean {
   int x;
   int y;
   int width;
   int height;
   bool vertical;
 
-  VGCFillGradientRectangle(
+  VGCFillGradientRectangleintintintintboolean(
       {this.x = 0,
       this.y = 0,
       this.width = 0,
       this.height = 0,
       this.vertical = false});
 
-  factory VGCFillGradientRectangle.fromJson(Map<String, dynamic> json) =>
-      _$VGCFillGradientRectangleFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCFillGradientRectangleToJson(this);
+  factory VGCFillGradientRectangleintintintintboolean.fromJson(
+          Map<String, dynamic> json) =>
+      _$VGCFillGradientRectangleintintintintbooleanFromJson(json);
+  Map<String, dynamic> toJson() =>
+      _$VGCFillGradientRectangleintintintintbooleanToJson(this);
 }
 
 @JsonSerializable()
-class VGCFillOval {
+class VGCFillOvalintintintint {
   int x;
   int y;
   int width;
   int height;
 
-  VGCFillOval({this.x = 0, this.y = 0, this.width = 0, this.height = 0});
+  VGCFillOvalintintintint(
+      {this.x = 0, this.y = 0, this.width = 0, this.height = 0});
 
-  factory VGCFillOval.fromJson(Map<String, dynamic> json) =>
-      _$VGCFillOvalFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCFillOvalToJson(this);
+  factory VGCFillOvalintintintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCFillOvalintintintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCFillOvalintintintintToJson(this);
 }
 
 @JsonSerializable()
-class VGCFillPolygon {
+class VGCFillPolygonint {
   List<int>? pointArray;
 
-  VGCFillPolygon();
+  VGCFillPolygonint();
 
-  factory VGCFillPolygon.fromJson(Map<String, dynamic> json) =>
-      _$VGCFillPolygonFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCFillPolygonToJson(this);
+  factory VGCFillPolygonint.fromJson(Map<String, dynamic> json) =>
+      _$VGCFillPolygonintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCFillPolygonintToJson(this);
 }
 
 @JsonSerializable()
-class VGCFillRectangle {
+class VGCFillRectangleRectangle {
+  VRectangle? rect;
+
+  VGCFillRectangleRectangle();
+
+  factory VGCFillRectangleRectangle.fromJson(Map<String, dynamic> json) =>
+      _$VGCFillRectangleRectangleFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCFillRectangleRectangleToJson(this);
+}
+
+@JsonSerializable()
+class VGCFillRectangleintintintint {
   int x;
   int y;
   int width;
   int height;
 
-  VGCFillRectangle({this.x = 0, this.y = 0, this.width = 0, this.height = 0});
+  VGCFillRectangleintintintint(
+      {this.x = 0, this.y = 0, this.width = 0, this.height = 0});
 
-  factory VGCFillRectangle.fromJson(Map<String, dynamic> json) =>
-      _$VGCFillRectangleFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCFillRectangleToJson(this);
+  factory VGCFillRectangleintintintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCFillRectangleintintintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCFillRectangleintintintintToJson(this);
 }
 
 @JsonSerializable()
-class VGCFillRoundRectangle {
+class VGCFillRoundRectangleintintintintintint {
   int x;
   int y;
   int width;
@@ -404,7 +602,7 @@ class VGCFillRoundRectangle {
   int arcWidth;
   int arcHeight;
 
-  VGCFillRoundRectangle(
+  VGCFillRoundRectangleintintintintintint(
       {this.x = 0,
       this.y = 0,
       this.width = 0,
@@ -412,7 +610,9 @@ class VGCFillRoundRectangle {
       this.arcWidth = 0,
       this.arcHeight = 0});
 
-  factory VGCFillRoundRectangle.fromJson(Map<String, dynamic> json) =>
-      _$VGCFillRoundRectangleFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCFillRoundRectangleToJson(this);
+  factory VGCFillRoundRectangleintintintintintint.fromJson(
+          Map<String, dynamic> json) =>
+      _$VGCFillRoundRectangleintintintintintintFromJson(json);
+  Map<String, dynamic> toJson() =>
+      _$VGCFillRoundRectangleintintintintintintToJson(this);
 }

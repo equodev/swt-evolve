@@ -579,7 +579,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public Point getCaretLocation() {
         checkWidget();
-        return DPIUtil.scaleDown(getCaretLocationInPixels(), getZoom());
+        return null;
     }
 
     Point getCaretLocationInPixels() {
@@ -734,7 +734,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public int getLineHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getLineHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getLineHeightInPixels(), getZoom());
     }
 
     int getLineHeightInPixels() {
@@ -1038,7 +1038,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public int getTopPixel() {
         checkWidget();
-        return DPIUtil.scaleDown(getTopPixelInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getTopPixelInPixels(), getZoom());
     }
 
     int getTopPixelInPixels() {
@@ -1735,7 +1735,7 @@ public class DartText extends DartScrollable implements IText {
     void updateMenuLocation(Event event) {
         Point pointInPixels = ((SwtDisplay) display.getImpl()).mapInPixels(this.getApi(), null, getCaretLocationInPixels());
         int zoom = getZoom();
-        event.setLocation(DPIUtil.scaleDown(pointInPixels.x, zoom), DPIUtil.scaleDown(pointInPixels.y + getLineHeightInPixels(), zoom));
+        event.setLocation(DPIUtil.pixelToPoint(pointInPixels.x, zoom), DPIUtil.pixelToPoint(pointInPixels.y + getLineHeightInPixels(), zoom));
     }
 
     @Override

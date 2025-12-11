@@ -26,6 +26,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.ole.win32.*;
 import org.eclipse.swt.internal.win32.*;
+import org.eclipse.swt.internal.win32.version.*;
 
 /**
  * Instances of this class are responsible for managing the
@@ -144,6 +145,8 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     // events are dispatched outside SWT, e.g. TrackPopupMenu or DoDragDrop
     boolean externalEventLoop;
+
+    private CoordinateSystemMapper coordinateSystemMapper;
 
     private boolean rescalingAtRuntime;
 
@@ -596,6 +599,12 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     static int SWT_OPENDOC;
 
+    private static int ICON_SIZE_AT_100 = retrieveDefaultIconSize();
+
+    private static int retrieveDefaultIconSize() {
+        return OS.GetSystemMetricsForDpi(OS.SM_CXICON, DPIUtil.mapZoomToDPI(100));
+    }
+
     /* Skinning support */
     Widget[] skinList = new Widget[GROW_SIZE];
 
@@ -1039,8 +1048,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     public void create(DeviceData data) {
         checkSubclass();
         checkDisplay(thread = Thread.currentThread(), true);
-        if (DPIUtil.isAutoScaleOnRuntimeActive()) {
-            setRescalingAtRuntime(true);
+        if (Win32DPIUtils.isMonitorSpecificScalingActive()) {
+            setMonitorSpecificScaling(true);
+            Win32DPIUtils.setAutoScaleForMonitorSpecificScaling();
         }
         createDisplay(data);
         register(this.getApi());
@@ -1274,9 +1284,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         return memDib;
     }
 
-    static Image createIcon(Image image) {
+    static Image createIcon(Image image, int zoom) {
         Device device = image.getDevice();
-        ImageData data = image.getImageDataAtCurrentZoom();
+        ImageData data = image.getImageData(zoom);
         if (data.alpha == -1 && data.alphaData == null) {
             ImageData mask = data.getTransparencyMask();
             return new Image(device, data, mask);
@@ -1285,7 +1295,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         long hMask, hBitmap;
         long hDC = device.internal_new_GC(null);
         long dstHdc = OS.CreateCompatibleDC(hDC), oldDstBitmap;
-        hBitmap = SwtDisplay.create32bitDIB(image.handle, data.alpha, data.alphaData, data.transparentPixel);
+        hBitmap = SwtDisplay.create32bitDIB(SwtImage.win32_getHandle(image, zoom), data.alpha, data.alphaData, data.transparentPixel);
         hMask = OS.CreateBitmap(width, height, 1, 1, null);
         oldDstBitmap = OS.SelectObject(dstHdc, hMask);
         OS.PatBlt(dstHdc, 0, 0, width, height, OS.BLACKNESS);
@@ -1301,7 +1311,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             SWT.error(SWT.ERROR_NO_HANDLES);
         OS.DeleteObject(hBitmap);
         OS.DeleteObject(hMask);
-        return SwtImage.win32_new(device, SWT.ICON, hIcon);
+        return SwtImage.win32_new(device, SWT.ICON, hIcon, zoom);
     }
 
     long getTextSearchIcon(int size) {
@@ -1566,7 +1576,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     long foregroundIdleProc(long code, long wParam, long lParam) {
         if (code >= 0) {
-            if (!((SwtSynchronizer) synchronizer.getImpl()).isMessagesEmpty()) {
+            Supplier<Boolean> processMessages = () -> {
                 sendPostExternalEventDispatchEvent();
                 if (runMessagesInIdle) {
                     if (runMessagesInMessageProc) {
@@ -1593,6 +1603,16 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 if (!OS.PeekMessage(msg, 0, 0, 0, flags))
                     wakeThread();
                 sendPreExternalEventDispatchEvent();
+                return true;
+            };
+            if (!((SwtSynchronizer) synchronizer.getImpl()).isMessagesEmpty()) {
+                // Windows hooks will inherit the thread DPI awareness from
+                // the process. Whatever DPI awareness was set before on
+                // the thread will be overwritten before the hook is called.
+                // This requires to reset the thread DPi awareness to make
+                // sure, all UI updates caused by this will be executed
+                // with the correct DPI awareness
+                Win32DPIUtils.runWithProperDPIAwareness(this.getApi(), processMessages);
             }
         }
         return OS.CallNextHookEx(idleHook, (int) code, wParam, lParam);
@@ -1691,7 +1711,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     @Override
     public Rectangle getBounds() {
         checkDevice();
-        return DPIUtil.autoScaleDown(getBoundsInPixels());
+        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), DPIUtil.getDeviceZoom());
     }
 
     Rectangle getBoundsInPixels() {
@@ -1765,7 +1785,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     @Override
     public Rectangle getClientArea() {
         checkDevice();
-        return DPIUtil.autoScaleDown(getClientAreaInPixels());
+        return Win32DPIUtils.pixelToPoint(getClientAreaInPixels(), DPIUtil.getDeviceZoom());
     }
 
     Rectangle getClientAreaInPixels() {
@@ -1822,11 +1842,29 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     public Point getCursorLocation() {
         checkDevice();
-        Point cursorLocationInPixels = getCursorLocationInPixels();
-        if (isRescalingAtRuntime()) {
-            return translateLocationInPointInDisplayCoordinateSystem(cursorLocationInPixels.x, cursorLocationInPixels.y);
+        return coordinateSystemMapper.getCursorLocation();
+    }
+
+    Rectangle fitRectangleBoundsIntoMonitorWithCursor(RECT rect) {
+        Rectangle monitorBounds = coordinateSystemMapper.getContainingMonitorBoundsInPixels(getCursorLocation());
+        if (monitorBounds == null) {
+            return null;
         }
-        return DPIUtil.autoScaleDown(cursorLocationInPixels);
+        int rectWidth = rect.right - rect.left;
+        int rectHeight = rect.bottom - rect.top;
+        if (rect.left < monitorBounds.x) {
+            rect.left = monitorBounds.x;
+        }
+        int monitorBoundsRightEnd = monitorBounds.x + monitorBounds.width;
+        if (rect.right > monitorBoundsRightEnd) {
+            if (rectWidth <= monitorBounds.width) {
+                rect.left = monitorBoundsRightEnd - rectWidth;
+            } else {
+                rect.left = monitorBounds.x;
+            }
+            rectWidth = monitorBoundsRightEnd - rect.left;
+        }
+        return new Rectangle(rect.left, rect.top, rectWidth, rectHeight);
     }
 
     Point getCursorLocationInPixels() {
@@ -2146,7 +2184,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             System.arraycopy(imageList, 0, newList, 0, length);
             imageList = newList;
         }
-        ImageList list = new ImageList(style, width, height, zoom);
+        ImageList list = new ImageList(style, Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom), zoom);
         imageList[i] = list;
         list.addRef();
         return list;
@@ -2175,7 +2213,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             System.arraycopy(toolImageList, 0, newList, 0, length);
             toolImageList = newList;
         }
-        ImageList list = new ImageList(style, width, height, zoom);
+        ImageList list = new ImageList(style, Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom), zoom);
         toolImageList[i] = list;
         list.addRef();
         return list;
@@ -2204,7 +2242,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             System.arraycopy(toolDisabledImageList, 0, newList, 0, length);
             toolDisabledImageList = newList;
         }
-        ImageList list = new ImageList(style, width, height, zoom);
+        ImageList list = new ImageList(style, Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom), zoom);
         toolDisabledImageList[i] = list;
         list.addRef();
         return list;
@@ -2233,7 +2271,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             System.arraycopy(toolHotImageList, 0, newList, 0, length);
             toolHotImageList = newList;
         }
-        ImageList list = new ImageList(style, width, height, zoom);
+        ImageList list = new ImageList(style, Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom), zoom);
         toolHotImageList[i] = list;
         list.addRef();
         return list;
@@ -2263,7 +2301,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         /*
 	 * The registry settings, and Dark Theme itself, is present since Win10 1809
 	 */
-        if (OS.WIN32_BUILD >= OS.WIN32_BUILD_WIN10_1809) {
+        if (OsVersion.IS_WIN10_1809) {
             int[] result = OS.readRegistryDwords(OS.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "AppsUseLightTheme");
             if (result != null) {
                 isDarkTheme = (result[0] == 0);
@@ -2313,14 +2351,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         int[] dpiY = new int[1];
         int result = OS.GetDpiForMonitor(((SwtMonitor) monitor.getImpl()).handle, OS.MDT_EFFECTIVE_DPI, dpiX, dpiY);
         result = (result == OS.S_OK) ? DPIUtil.mapDPIToZoom(dpiX[0]) : 100;
-        if (DPIUtil.isAutoScaleOnRuntimeActive()) {
-            int autoscaleZoom = DPIUtil.getZoomForAutoscaleProperty(result);
-            ((SwtMonitor) monitor.getImpl()).setBounds(getMonitorBoundsInPointsInDisplayCoordinateSystem(boundsInPixels, autoscaleZoom));
-            ((SwtMonitor) monitor.getImpl()).setClientArea(getMonitorBoundsInPointsInDisplayCoordinateSystem(clientAreaInPixels, autoscaleZoom));
-        } else {
-            ((SwtMonitor) monitor.getImpl()).setBounds(DPIUtil.autoScaleDown(boundsInPixels));
-            ((SwtMonitor) monitor.getImpl()).setClientArea(DPIUtil.autoScaleDown(clientAreaInPixels));
-        }
+        int autoscaleZoom = DPIUtil.getZoomForAutoscaleProperty(result);
+        ((SwtMonitor) monitor.getImpl()).setBounds(coordinateSystemMapper.mapMonitorBounds(boundsInPixels, autoscaleZoom));
+        ((SwtMonitor) monitor.getImpl()).setClientArea(coordinateSystemMapper.mapMonitorBounds(clientAreaInPixels, autoscaleZoom));
         if (result == 0) {
             System.err.println("***WARNING: GetDpiForMonitor: SWT could not get valid monitor scaling factor.");
             result = 100;
@@ -2331,13 +2364,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 	 */
         ((SwtMonitor) monitor.getImpl()).zoom = result;
         return monitor;
-    }
-
-    private Rectangle getMonitorBoundsInPointsInDisplayCoordinateSystem(Rectangle boundsInPixels, int zoom) {
-        Rectangle bounds = DPIUtil.scaleDown(boundsInPixels, zoom);
-        bounds.x = boundsInPixels.x;
-        bounds.y = boundsInPixels.y;
-        return bounds;
     }
 
     /**
@@ -2718,33 +2744,45 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 {
                     if (errorImage != null)
                         return errorImage;
-                    long hIcon = OS.LoadImage(0, OS.OIC_HAND, OS.IMAGE_ICON, 0, 0, OS.LR_SHARED);
-                    return errorImage = SwtImage.win32_new(this.getApi(), SWT.ICON, hIcon);
+                    errorImage = new Image(this.getApi(), getImageDataProviderForIcon(OS.OIC_HAND));
+                    return errorImage;
                 }
             case SWT.ICON_WORKING:
             case SWT.ICON_INFORMATION:
                 {
                     if (infoImage != null)
                         return infoImage;
-                    long hIcon = OS.LoadImage(0, OS.OIC_INFORMATION, OS.IMAGE_ICON, 0, 0, OS.LR_SHARED);
-                    return infoImage = SwtImage.win32_new(this.getApi(), SWT.ICON, hIcon);
+                    infoImage = new Image(this.getApi(), getImageDataProviderForIcon(OS.OIC_INFORMATION));
+                    return infoImage;
                 }
             case SWT.ICON_QUESTION:
                 {
                     if (questionImage != null)
                         return questionImage;
-                    long hIcon = OS.LoadImage(0, OS.OIC_QUES, OS.IMAGE_ICON, 0, 0, OS.LR_SHARED);
-                    return questionImage = SwtImage.win32_new(this.getApi(), SWT.ICON, hIcon);
+                    questionImage = new Image(this.getApi(), getImageDataProviderForIcon(OS.OIC_QUES));
+                    return questionImage;
                 }
             case SWT.ICON_WARNING:
                 {
                     if (warningIcon != null)
                         return warningIcon;
-                    long hIcon = OS.LoadImage(0, OS.OIC_BANG, OS.IMAGE_ICON, 0, 0, OS.LR_SHARED);
-                    return warningIcon = SwtImage.win32_new(this.getApi(), SWT.ICON, hIcon);
+                    warningIcon = new Image(this.getApi(), getImageDataProviderForIcon(OS.OIC_BANG));
+                    return warningIcon;
                 }
         }
         return null;
+    }
+
+    private ImageDataProvider getImageDataProviderForIcon(int iconName) {
+        return zoom -> {
+            int scaledIconSize = Win32DPIUtils.pointToPixel(ICON_SIZE_AT_100, zoom);
+            long[] hIcon = new long[1];
+            OS.LoadIconWithScaleDown(0, iconName, scaledIconSize, scaledIconSize, hIcon);
+            Image image = SwtImage.win32_new(this.getApi(), SWT.ICON, hIcon[0], zoom);
+            ImageData imageData = image.getImageData(zoom);
+            image.dispose();
+            return imageData;
+        };
     }
 
     /**
@@ -2956,6 +2994,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         // Field initialization happens after super constructor
         controlByHandle = new HashMap<>();
         this.synchronizer = new Synchronizer(this.getApi());
+        if (this.coordinateSystemMapper == null) {
+            this.coordinateSystemMapper = new SingleZoomCoordinateSystemMapper(this.getApi());
+        }
         super.init();
         DPIUtil.setDeviceZoom(getDeviceZoom());
         /* Set the application user model ID, if APP_NAME is non Default */
@@ -3119,12 +3160,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         checkDevice();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (isRescalingAtRuntime()) {
-            return map(from, to, point.x, point.y);
-        }
-        int zoom = getZoomLevelForMapping(from, to);
-        point = DPIUtil.scaleUp(point, zoom);
-        return DPIUtil.scaleDown(mapInPixels(from, to, point), zoom);
+        return coordinateSystemMapper.map(from, to, point);
     }
 
     Point mapInPixels(Control from, Control to, Point point) {
@@ -3169,24 +3205,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     public Point map(Control from, Control to, int x, int y) {
         checkDevice();
-        if (isRescalingAtRuntime()) {
-            Point mappedPointInPoints;
-            if (from == null) {
-                Point mappedPointInpixels = mapInPixels(from, to, getPixelsFromPoint(to.getShell().getMonitor(), x, y));
-                mappedPointInPoints = DPIUtil.scaleDown(mappedPointInpixels, to.getImpl().getZoom());
-            } else if (to == null) {
-                Point mappedPointInpixels = mapInPixels(from, to, DPIUtil.scaleUp(new Point(x, y), from.getImpl().getZoom()));
-                mappedPointInPoints = getPointFromPixels(from.getShell().getMonitor(), mappedPointInpixels.x, mappedPointInpixels.y);
-            } else {
-                Point mappedPointInpixels = mapInPixels(from, to, DPIUtil.scaleUp(new Point(x, y), from.getImpl().getZoom()));
-                mappedPointInPoints = DPIUtil.scaleDown(mappedPointInpixels, to.getImpl().getZoom());
-            }
-            return mappedPointInPoints;
-        }
-        int zoom = getZoomLevelForMapping(from, to);
-        x = DPIUtil.scaleUp(x, zoom);
-        y = DPIUtil.scaleUp(y, zoom);
-        return DPIUtil.scaleDown(mapInPixels(from, to, x, y), zoom);
+        return coordinateSystemMapper.map(from, to, x, y);
     }
 
     Point mapInPixels(Control from, Control to, int x, int y) {
@@ -3203,17 +3222,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         point.y = y;
         OS.MapWindowPoints(hwndFrom, hwndTo, point, 1);
         return new Point(point.x, point.y);
-    }
-
-    private int getZoomLevelForMapping(Control from, Control to) {
-        if (from != null && from.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
-        if (to != null && to.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
-        if (to != null) {
-            return to.getImpl().getZoom();
-        }
-        return from.getImpl().getZoom();
     }
 
     /**
@@ -3256,12 +3264,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         checkDevice();
         if (rectangle == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (isRescalingAtRuntime()) {
-            return map(from, to, rectangle.x, rectangle.y, rectangle.width, rectangle.height);
-        }
-        int zoom = getZoomLevelForMapping(from, to);
-        rectangle = DPIUtil.scaleUp(rectangle, zoom);
-        return DPIUtil.scaleDown(mapInPixels(from, to, rectangle), zoom);
+        return coordinateSystemMapper.map(from, to, rectangle);
     }
 
     Rectangle mapInPixels(Control from, Control to, Rectangle rectangle) {
@@ -3308,26 +3311,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     public Rectangle map(Control from, Control to, int x, int y, int width, int height) {
         checkDevice();
-        if (isRescalingAtRuntime()) {
-            Rectangle mappedRectangleInPoints;
-            if (from == null) {
-                Rectangle mappedRectangleInPixels = mapInPixels(from, to, translateRectangleInPixelsInDisplayCoordinateSystem(x, y, width, height, to.getShell().getMonitor()));
-                mappedRectangleInPoints = DPIUtil.scaleDown(mappedRectangleInPixels, to.getImpl().getZoom());
-            } else if (to == null) {
-                Rectangle mappedRectangleInPixels = mapInPixels(from, to, DPIUtil.scaleUp(new Rectangle(x, y, width, height), from.getImpl().getZoom()));
-                mappedRectangleInPoints = translateRectangleInPointsInDisplayCoordinateSystem(mappedRectangleInPixels.x, mappedRectangleInPixels.y, mappedRectangleInPixels.width, mappedRectangleInPixels.height, from.getShell().getMonitor());
-            } else {
-                Rectangle mappedRectangleInPixels = mapInPixels(from, to, DPIUtil.scaleUp(new Rectangle(x, y, width, height), from.getImpl().getZoom()));
-                mappedRectangleInPoints = DPIUtil.scaleDown(mappedRectangleInPixels, to.getImpl().getZoom());
-            }
-            return mappedRectangleInPoints;
-        }
-        int zoom = getZoomLevelForMapping(from, to);
-        x = DPIUtil.scaleUp(x, zoom);
-        y = DPIUtil.scaleUp(y, zoom);
-        width = DPIUtil.scaleUp(width, zoom);
-        height = DPIUtil.scaleUp(height, zoom);
-        return DPIUtil.scaleDown(mapInPixels(from, to, x, y, width, height), zoom);
+        return coordinateSystemMapper.map(from, to, x, y, width, height);
     }
 
     Rectangle mapInPixels(Control from, Control to, int x, int y, int width, int height) {
@@ -3348,54 +3332,20 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         return new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
     }
 
-    Point translateLocationInPixelsInDisplayCoordinateSystem(int x, int y) {
-        Monitor monitor = getContainingMonitor(x, y);
-        return getPixelsFromPoint(monitor, x, y);
+    Point translateFromDisplayCoordinates(Point point, int zoom) {
+        return coordinateSystemMapper.translateFromDisplayCoordinates(point, zoom);
     }
 
-    Point translateLocationInPointInDisplayCoordinateSystem(int x, int y) {
-        Monitor monitor = getContainingMonitorInPixelsCoordinate(x, y);
-        return getPointFromPixels(monitor, x, y);
+    Point translateToDisplayCoordinates(Point point, int zoom) {
+        return coordinateSystemMapper.translateToDisplayCoordinates(point, zoom);
     }
 
-    Rectangle translateRectangleInPixelsInDisplayCoordinateSystemByContainment(int x, int y, int width, int height) {
-        Monitor monitorByLocation = getContainingMonitor(x, y);
-        Monitor monitorByContainment = getContainingMonitor(x, y, width, height);
-        return translateRectangleInPixelsInDisplayCoordinateSystem(x, y, width, height, monitorByLocation, monitorByContainment);
+    Rectangle translateFromDisplayCoordinates(Rectangle rect, int zoom) {
+        return coordinateSystemMapper.translateFromDisplayCoordinates(rect, zoom);
     }
 
-    private Rectangle translateRectangleInPixelsInDisplayCoordinateSystem(int x, int y, int width, int height, Monitor monitor) {
-        return translateRectangleInPixelsInDisplayCoordinateSystem(x, y, width, height, monitor, monitor);
-    }
-
-    private Rectangle translateRectangleInPixelsInDisplayCoordinateSystem(int x, int y, int width, int height, Monitor monitorOfLocation, Monitor monitorOfArea) {
-        Point topLeft = getPixelsFromPoint(monitorOfLocation, x, y);
-        int zoom = getApplicableMonitorZoom(monitorOfArea);
-        int widthInPixels = DPIUtil.scaleUp(width, zoom);
-        int heightInPixels = DPIUtil.scaleUp(height, zoom);
-        return new Rectangle(topLeft.x, topLeft.y, widthInPixels, heightInPixels);
-    }
-
-    Rectangle translateRectangleInPointsInDisplayCoordinateSystemByContainment(int x, int y, int widthInPixels, int heightInPixels) {
-        Monitor monitorByLocation = getContainingMonitor(x, y);
-        Monitor monitorByContainment = getContainingMonitor(x, y, widthInPixels, heightInPixels);
-        return translateRectangleInPointsInDisplayCoordinateSystem(x, y, widthInPixels, heightInPixels, monitorByLocation, monitorByContainment);
-    }
-
-    private Rectangle translateRectangleInPointsInDisplayCoordinateSystem(int x, int y, int widthInPixels, int heightInPixels, Monitor monitor) {
-        return translateRectangleInPointsInDisplayCoordinateSystem(x, y, widthInPixels, heightInPixels, monitor, monitor);
-    }
-
-    private Rectangle translateRectangleInPointsInDisplayCoordinateSystem(int x, int y, int widthInPixels, int heightInPixels, Monitor monitorOfLocation, Monitor monitorOfArea) {
-        Point topLeft = getPointFromPixels(monitorOfLocation, x, y);
-        int zoom = getApplicableMonitorZoom(monitorOfArea);
-        int width = DPIUtil.scaleDown(widthInPixels, zoom);
-        int height = DPIUtil.scaleDown(heightInPixels, zoom);
-        return new Rectangle(topLeft.x, topLeft.y, width, height);
-    }
-
-    private int getApplicableMonitorZoom(Monitor monitor) {
-        return DPIUtil.getZoomForAutoscaleProperty(isRescalingAtRuntime() ? ((SwtMonitor) monitor.getImpl()).zoom : getDeviceZoom());
+    Rectangle translateToDisplayCoordinates(Rectangle rect, int zoom) {
+        return coordinateSystemMapper.translateToDisplayCoordinates(rect, zoom);
     }
 
     long messageProc(long hwnd, long msg, long wParam, long lParam) {
@@ -3710,10 +3660,19 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                     if (hookMsg.message == OS.WM_NULL) {
                         MSG msg = new MSG();
                         int flags = OS.PM_NOREMOVE | OS.PM_NOYIELD | OS.PM_QS_INPUT | OS.PM_QS_POSTMESSAGE;
-                        if (!OS.PeekMessage(msg, 0, 0, 0, flags)) {
-                            if (runAsyncMessages(false))
-                                wakeThread();
-                        }
+                        // Windows hooks will inherit the thread DPI awareness from
+                        // the process. Whatever DPI awareness was set before on
+                        // the thread will be overwritten before the hook is called.
+                        // This requires to reset the thread DPi awareness to make
+                        // sure, all UI updates caused by this will be executed
+                        // with the correct DPI awareness
+                        Win32DPIUtils.runWithProperDPIAwareness(this.getApi(), () -> {
+                            if (!OS.PeekMessage(msg, 0, 0, 0, flags)) {
+                                if (runAsyncMessages(false))
+                                    wakeThread();
+                            }
+                            return true;
+                        });
                     }
                     break;
                 }
@@ -3903,7 +3862,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                             int y = OS.GetSystemMetrics(OS.SM_YVIRTUALSCREEN);
                             int width = OS.GetSystemMetrics(OS.SM_CXVIRTUALSCREEN);
                             int height = OS.GetSystemMetrics(OS.SM_CYVIRTUALSCREEN);
-                            Point loc = DPIUtil.scaleUp(event.getLocation(), getDeviceZoom());
+                            Point loc = Win32DPIUtils.pointToPixel(event.getLocation(), getDeviceZoom());
                             inputs.dx = ((loc.x - x) * 65535 + width - 2) / (width - 1);
                             inputs.dy = ((loc.y - y) * 65535 + height - 2) / (height - 1);
                         } else {
@@ -4693,12 +4652,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     public void setCursorLocation(int x, int y) {
         checkDevice();
-        if (isRescalingAtRuntime()) {
-            Point cursorLocationInPixels = translateLocationInPixelsInDisplayCoordinateSystem(x, y);
-            setCursorLocationInPixels(cursorLocationInPixels.x, cursorLocationInPixels.y);
-        } else {
-            setCursorLocationInPixels(DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y));
-        }
+        coordinateSystemMapper.setCursorLocation(x, y);
     }
 
     void setCursorLocationInPixels(int x, int y) {
@@ -5521,49 +5475,29 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     static String withCrLf(String string) {
-        /* If the string is empty, return the string. */
-        int length = string.length();
-        if (length == 0)
-            return string;
-        /*
-	* Check for an LF or CR/LF and assume the rest of
-	* the string is formated that way.  This will not
-	* work if the string contains mixed delimiters.
-	*/
-        int i = string.indexOf('\n', 0);
-        if (i == -1)
-            return string;
-        if (i > 0 && string.charAt(i - 1) == '\r') {
-            return string;
-        }
-        /*
-	* The string is formatted with LF.  Compute the
-	* number of lines and the size of the buffer
-	* needed to hold the result
-	*/
-        i++;
-        int count = 1;
-        while (i < length) {
-            if ((i = string.indexOf('\n', i)) == -1)
-                break;
-            count++;
-            i++;
-        }
-        count += length;
         /* Create a new string with the CR/LF line terminator. */
-        i = 0;
-        StringBuilder result = new StringBuilder(count);
+        int i = 0;
+        int length = string.length();
+        StringBuilder result = new StringBuilder(length);
         while (i < length) {
             int j = string.indexOf('\n', i);
-            if (j == -1)
-                j = length;
-            result.append(string.substring(i, j));
-            if ((i = j) < length) {
-                //$NON-NLS-1$
-                result.append("\r\n");
-                i++;
+            if (j > 0 && string.charAt(j - 1) == '\r') {
+                result.append(string.substring(i, j + 1));
+                i = j + 1;
+            } else {
+                if (j == -1)
+                    j = length;
+                result.append(string.substring(i, j));
+                if ((i = j) < length) {
+                    //$NON-NLS-1$
+                    result.append("\r\n");
+                    i++;
+                }
             }
         }
+        /* Avoid creating a copy of the string if it has not changed */
+        if (string.length() == result.length())
+            return string;
         return result.toString();
     }
 
@@ -5749,100 +5683,24 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @param activate whether rescaling shall be activated or deactivated
      * @return whether activating or deactivating the rescaling was successful
      * @since 3.127
+     * @deprecated this method should not be used as it needs to be called already
+     *             during instantiation to take proper effect
      */
+    @Deprecated(since = "2025-03", forRemoval = true)
     public boolean setRescalingAtRuntime(boolean activate) {
+        return setMonitorSpecificScaling(activate);
+    }
+
+    private boolean setMonitorSpecificScaling(boolean activate) {
         int desiredApiAwareness = activate ? OS.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 : OS.DPI_AWARENESS_CONTEXT_SYSTEM_AWARE;
-        if (setDPIAwareness(desiredApiAwareness)) {
+        if (Win32DPIUtils.setDPIAwareness(desiredApiAwareness)) {
             rescalingAtRuntime = activate;
+            coordinateSystemMapper = activate ? new MultiZoomCoordinateSystemMapper(this.getApi(), this::getMonitors) : new SingleZoomCoordinateSystemMapper(this.getApi());
             // dispose a existing font registry for the default display
             SWTFontProvider.disposeFontRegistry(this.getApi());
             return true;
         }
         return false;
-    }
-
-    private boolean setDPIAwareness(int desiredDpiAwareness) {
-        if (OS.WIN32_BUILD < OS.WIN32_BUILD_WIN10_1607) {
-            System.err.println("***WARNING: the OS version does not support setting DPI awareness.");
-            return false;
-        }
-        if (desiredDpiAwareness == OS.GetThreadDpiAwarenessContext()) {
-            return true;
-        }
-        if (desiredDpiAwareness == OS.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) {
-            // "Per Monitor V2" only available in more recent Windows version
-            boolean perMonitorV2Available = OS.WIN32_BUILD >= OS.WIN32_BUILD_WIN10_1809;
-            if (!perMonitorV2Available) {
-                System.err.println("***WARNING: the OS version does not support DPI awareness mode PerMonitorV2.");
-                return false;
-            }
-        }
-        long setDpiAwarenessResult = OS.SetThreadDpiAwarenessContext(desiredDpiAwareness);
-        if (setDpiAwarenessResult == 0L) {
-            System.err.println("***WARNING: setting DPI awareness failed.");
-            return false;
-        }
-        return true;
-    }
-
-    private Monitor getContainingMonitor(int x, int y) {
-        Monitor[] monitors = getMonitors();
-        for (Monitor currentMonitor : monitors) {
-            Rectangle clientArea = currentMonitor.getClientArea();
-            if (clientArea.contains(x, y)) {
-                return currentMonitor;
-            }
-        }
-        return getPrimaryMonitor();
-    }
-
-    private Monitor getContainingMonitor(int x, int y, int width, int height) {
-        Rectangle rectangle = new Rectangle(x, y, width, height);
-        Monitor[] monitors = getMonitors();
-        Monitor selectedMonitor = getPrimaryMonitor();
-        int highestArea = 0;
-        for (Monitor currentMonitor : monitors) {
-            Rectangle clientArea = currentMonitor.getClientArea();
-            Rectangle intersection = clientArea.intersection(rectangle);
-            int area = intersection.width * intersection.height;
-            if (area > highestArea) {
-                selectedMonitor = currentMonitor;
-                highestArea = area;
-            }
-        }
-        return selectedMonitor;
-    }
-
-    private Monitor getContainingMonitorInPixelsCoordinate(int xInPixels, int yInPixels) {
-        Monitor[] monitors = getMonitors();
-        for (Monitor current : monitors) {
-            Rectangle clientArea = getMonitorClientAreaInPixels(current);
-            if (clientArea.contains(xInPixels, yInPixels)) {
-                return current;
-            }
-        }
-        return getPrimaryMonitor();
-    }
-
-    private Rectangle getMonitorClientAreaInPixels(Monitor monitor) {
-        int zoom = getApplicableMonitorZoom(monitor);
-        int widthInPixels = DPIUtil.scaleUp(((SwtMonitor) monitor.getImpl()).clientWidth, zoom);
-        int heightInPixels = DPIUtil.scaleUp(((SwtMonitor) monitor.getImpl()).clientHeight, zoom);
-        return new Rectangle(((SwtMonitor) monitor.getImpl()).clientX, ((SwtMonitor) monitor.getImpl()).clientY, widthInPixels, heightInPixels);
-    }
-
-    private Point getPixelsFromPoint(Monitor monitor, int x, int y) {
-        int zoom = getApplicableMonitorZoom(monitor);
-        int mappedX = DPIUtil.scaleUp(x - ((SwtMonitor) monitor.getImpl()).clientX, zoom) + ((SwtMonitor) monitor.getImpl()).clientX;
-        int mappedY = DPIUtil.scaleUp(y - ((SwtMonitor) monitor.getImpl()).clientY, zoom) + ((SwtMonitor) monitor.getImpl()).clientY;
-        return new Point(mappedX, mappedY);
-    }
-
-    private Point getPointFromPixels(Monitor monitor, int x, int y) {
-        int zoom = getApplicableMonitorZoom(monitor);
-        int mappedX = DPIUtil.scaleDown(x - ((SwtMonitor) monitor.getImpl()).clientX, zoom) + ((SwtMonitor) monitor.getImpl()).clientX;
-        int mappedY = DPIUtil.scaleDown(y - ((SwtMonitor) monitor.getImpl()).clientY, zoom) + ((SwtMonitor) monitor.getImpl()).clientY;
-        return new Point(mappedX, mappedY);
     }
 
     public Display getApi() {

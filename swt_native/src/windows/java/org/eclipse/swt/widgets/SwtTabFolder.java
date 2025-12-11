@@ -473,8 +473,8 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         if (image == null)
             return -1;
         if (imageList == null) {
-            Rectangle bounds = DPIUtil.scaleBounds(image.getBounds(), this.getZoom(), 100);
-            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, bounds.width, bounds.height, this.getZoom());
+            Rectangle boundsInPoints = image.getBounds();
+            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, boundsInPoints.width, boundsInPoints.height, getZoom());
             int index = imageList.add(image);
             long hImageList = imageList.getHandle(getZoom());
             OS.SendMessage(getApi().handle, OS.TCM_SETIMAGELIST, 0, hImageList);
@@ -531,7 +531,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
             }
             int zoom = getZoom();
             if (index == count) {
-                Rectangle rect = DPIUtil.scaleUp(child.getBounds(), zoom);
+                Rectangle rect = Win32DPIUtils.pointToPixel(child.getBounds(), zoom);
                 width = Math.max(width, rect.x + rect.width);
                 height = Math.max(height, rect.y + rect.height);
             } else {
@@ -539,7 +539,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
 			 * Since computeSize can be overridden by subclasses, we cannot
 			 * call computeSizeInPixels directly.
 			 */
-                Point size = DPIUtil.scaleUp(child.computeSize(DPIUtil.scaleDown(wHint, zoom), DPIUtil.scaleDown(hHint, zoom), flushCache), zoom);
+                Point size = Win32DPIUtils.pointToPixel(child.computeSize(DPIUtil.pixelToPoint(wHint, zoom), DPIUtil.pixelToPoint(hHint, zoom), flushCache), zoom);
                 width = Math.max(width, size.x);
                 height = Math.max(height, size.y);
             }
@@ -871,9 +871,9 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         OS.SetWindowPos(getApi().handle, 0, 0, 0, width - 1, height - 1, OS.SWP_NOMOVE | OS.SWP_NOZORDER);
         OS.SetWindowPos(getApi().handle, 0, 0, 0, width, height, OS.SWP_NOMOVE | OS.SWP_NOZORDER);
         if (imageList != null) {
-            Point size = imageList.getImageSize();
+            Point sizeInPoints = imageList.getImageSize();
             ((SwtDisplay) display.getImpl()).releaseImageList(imageList);
-            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, size.x, size.y, this.getZoom());
+            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, this.getZoom());
             long hImageList = imageList.getHandle(getZoom());
             OS.SendMessage(getApi().handle, OS.TCM_SETIMAGELIST, 0, hImageList);
             TCITEM tcItem = new TCITEM();

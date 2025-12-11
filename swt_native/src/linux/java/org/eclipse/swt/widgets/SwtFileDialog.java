@@ -127,7 +127,11 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
         if ((style & SWT.MULTI) != 0) {
             long list = 0;
             if (GTK.GTK4) {
-                list = file;
+                if (GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) {
+                    list = file;
+                } else {
+                    list = GTK4.gtk_file_chooser_get_files(handle);
+                }
             } else {
                 if (uriMode) {
                     list = GTK3.gtk_file_chooser_get_uris(handle);
@@ -195,6 +199,9 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
             long utf8Ptr = 0;
             if (uriMode) {
                 if (GTK.GTK4) {
+                    if (GTK.GTK_VERSION < OS.VERSION(4, 10, 0)) {
+                        file = GTK4.gtk_file_chooser_get_file(handle);
+                    }
                     utf8Ptr = OS.g_file_get_uri(file);
                 } else {
                     utf8Ptr = GTK3.gtk_file_chooser_get_uri(handle);
@@ -202,6 +209,9 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
             } else {
                 long path;
                 if (GTK.GTK4) {
+                    if (GTK.GTK_VERSION < OS.VERSION(4, 10, 0)) {
+                        file = GTK4.gtk_file_chooser_get_file(handle);
+                    }
                     path = OS.g_file_get_path(file);
                 } else {
                     path = GTK3.gtk_file_chooser_get_filename(handle);
@@ -231,10 +241,10 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
         }
         filterIndex = -1;
         long filter;
-        if (GTK.GTK4) {
+        if (GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) {
             filter = GTK4.gtk_file_dialog_get_default_filter(handle);
         } else {
-            filter = GTK3.gtk_file_chooser_get_filter(handle);
+            filter = GTK.gtk_file_chooser_get_filter(handle);
         }
         if (filter != 0) {
             long filterNamePtr = GTK.gtk_file_filter_get_name(filter);
@@ -410,14 +420,16 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
         int action = (style & SWT.SAVE) != 0 ? GTK.GTK_FILE_CHOOSER_ACTION_SAVE : GTK.GTK_FILE_CHOOSER_ACTION_OPEN;
         long shellHandle = ((SwtShell) parent.getImpl()).topHandle();
         Display display = parent != null ? parent.getDisplay() : SwtDisplay.getCurrent();
-        if (GTK.GTK4) {
+        if (GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) {
             handle = GTK4.gtk_file_dialog_new();
-            GTK4.gtk_file_dialog_set_title(handle, titleBytes);
         } else {
-            handle = GTK3.gtk_file_chooser_native_new(titleBytes, shellHandle, action, null, null);
+            handle = GTK.gtk_file_chooser_native_new(titleBytes, shellHandle, action, null, null);
         }
         if (handle == 0)
             error(SWT.ERROR_NO_HANDLES);
+        if (GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) {
+            GTK4.gtk_file_dialog_set_title(handle, titleBytes);
+        }
         if (uriMode && !GTK.GTK4) {
             // GTK4 file chooser works on GFiles and does not need to worry about this
             GTK3.gtk_file_chooser_set_local_only(handle, false);
@@ -433,16 +445,53 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
         int response;
         long file = 0;
         if (GTK.GTK4) {
-            if ((style & SWT.MULTI) != 0) {
-                file = SyncDialogUtil.run(display, asyncCallback -> GTK4.gtk_file_dialog_open_multiple(handle, shellHandle, 0, asyncCallback, 0), asyncResult -> GTK4.gtk_file_dialog_open_multiple_finish(handle, asyncResult, null));
-            } else {
-                if ((style & SWT.SAVE) != 0) {
-                    file = SyncDialogUtil.run(display, asyncCallback -> GTK4.gtk_file_dialog_save(handle, shellHandle, 0, asyncCallback, 0), asyncResult -> GTK4.gtk_file_dialog_save_finish(handle, asyncResult, null));
+            if (GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) {
+                if ((style & SWT.MULTI) != 0) {
+                    file = SyncDialogUtil.run(display, new AsyncReadyCallback() {
+
+                        @Override
+                        public void async(long callback) {
+                            GTK4.gtk_file_dialog_open_multiple(handle, shellHandle, 0, callback, 0);
+                        }
+
+                        @Override
+                        public long await(long result) {
+                            return GTK4.gtk_file_dialog_open_multiple_finish(handle, result, null);
+                        }
+                    });
                 } else {
-                    file = SyncDialogUtil.run(display, asyncCallback -> GTK4.gtk_file_dialog_open(handle, shellHandle, 0, asyncCallback, 0), asyncResult -> GTK4.gtk_file_dialog_open_finish(handle, asyncResult, null));
+                    if ((style & SWT.SAVE) != 0) {
+                        file = SyncDialogUtil.run(display, new AsyncReadyCallback() {
+
+                            @Override
+                            public void async(long callback) {
+                                GTK4.gtk_file_dialog_save(handle, shellHandle, 0, callback, 0);
+                            }
+
+                            @Override
+                            public long await(long result) {
+                                return GTK4.gtk_file_dialog_save_finish(handle, result, null);
+                            }
+                        });
+                    } else {
+                        file = SyncDialogUtil.run(display, new AsyncReadyCallback() {
+
+                            @Override
+                            public void async(long callback) {
+                                GTK4.gtk_file_dialog_open(handle, shellHandle, 0, callback, 0);
+                            }
+
+                            @Override
+                            public long await(long result) {
+                                return GTK4.gtk_file_dialog_open_finish(handle, result, null);
+                            }
+                        });
+                    }
                 }
+                response = file != 0 ? GTK.GTK_RESPONSE_ACCEPT : GTK.GTK_RESPONSE_CANCEL;
+            } else {
+                response = SyncDialogUtil.run(display, handle, true);
             }
-            response = file != 0 ? GTK.GTK_RESPONSE_ACCEPT : GTK.GTK_RESPONSE_CANCEL;
         } else {
             ((SwtDisplay) display.getImpl()).externalEventLoop = true;
             display.sendPreExternalEventDispatchEvent();
@@ -467,8 +516,8 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
 
     void presetChooserDialog() {
         /* MULTI is only valid if the native dialog's action is Open */
-        if (!GTK.GTK4 && (style & (SWT.SAVE | SWT.MULTI)) == SWT.MULTI) {
-            GTK3.gtk_file_chooser_set_select_multiple(handle, true);
+        if ((GTK.GTK_VERSION < OS.VERSION(4, 10, 0)) && (style & (SWT.SAVE | SWT.MULTI)) == SWT.MULTI) {
+            GTK.gtk_file_chooser_set_select_multiple(handle, true);
         }
         if (filterPath == null)
             filterPath = "";
@@ -483,7 +532,11 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
                     byte[] buffer = Converter.wcsToMbcs(filterPath, true);
                     if (GTK.GTK4) {
                         long file = OS.g_file_new_for_uri(buffer);
-                        GTK4.gtk_file_dialog_set_initial_folder(handle, file);
+                        if (GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) {
+                            GTK4.gtk_file_dialog_set_initial_folder(handle, file);
+                        } else {
+                            GTK4.gtk_file_chooser_set_current_folder(handle, file, 0);
+                        }
                         OS.g_object_unref(file);
                     } else {
                         GTK3.gtk_file_chooser_set_current_folder_uri(handle, buffer);
@@ -500,7 +553,11 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
                     if (ptr != 0) {
                         if (GTK.GTK4) {
                             long file = OS.g_file_new_for_path(buffer);
-                            GTK4.gtk_file_dialog_set_initial_folder(handle, file);
+                            if (GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) {
+                                GTK4.gtk_file_dialog_set_initial_folder(handle, file);
+                            } else {
+                                GTK4.gtk_file_chooser_set_current_folder(handle, file, 0);
+                            }
                             OS.g_object_unref(file);
                         } else {
                             GTK3.gtk_file_chooser_set_current_folder(handle, ptr);
@@ -535,10 +592,10 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
                     }
                 }
                 byte[] buffer = Converter.wcsToMbcs(filenameWithExt.toString(), true);
-                if (GTK.GTK4) {
+                if (GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) {
                     GTK4.gtk_file_dialog_set_initial_name(handle, buffer);
                 } else {
-                    GTK3.gtk_file_chooser_set_current_name(handle, buffer);
+                    GTK.gtk_file_chooser_set_current_name(handle, buffer);
                 }
             }
         } else {
@@ -559,11 +616,19 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
                 long file;
                 if (uriMode) {
                     file = OS.g_file_new_for_uri(buffer);
-                    GTK4.gtk_file_dialog_set_initial_file(handle, file);
+                    if (GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) {
+                        GTK4.gtk_file_dialog_set_initial_file(handle, file);
+                    } else {
+                        GTK4.gtk_file_chooser_set_file(handle, file, 0);
+                    }
                 } else {
                     file = OS.g_file_new_for_path(buffer);
                     if (fileName.length() > 0) {
-                        GTK4.gtk_file_dialog_set_initial_file(handle, file);
+                        if (GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) {
+                            GTK4.gtk_file_dialog_set_initial_file(handle, file);
+                        } else {
+                            GTK4.gtk_file_chooser_set_file(handle, file, 0);
+                        }
                     }
                 }
                 OS.g_object_unref(file);
@@ -603,7 +668,7 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
             filterExtensions = new String[0];
         long initialFilter = 0;
         long fileFilters = 0;
-        if (GTK.GTK4) {
+        if (GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) {
             fileFilters = OS.g_list_store_new(GTK.GTK_TYPE_FILE_FILTER());
         }
         for (int i = 0; i < filterExtensions.length; i++) {
@@ -628,25 +693,25 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
                 String current = filterExtensions[i].substring(start);
                 byte[] filterString = Converter.wcsToMbcs(current, true);
                 GTK.gtk_file_filter_add_pattern(filter, filterString);
-                if (GTK.GTK4) {
+                if (GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) {
                     OS.g_list_store_append(fileFilters, filter);
                 } else {
-                    GTK3.gtk_file_chooser_add_filter(handle, filter);
+                    GTK.gtk_file_chooser_add_filter(handle, filter);
                 }
                 if (i == filterIndex) {
                     initialFilter = filter;
                 }
             }
         }
-        if (GTK.GTK4) {
+        if (GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) {
             GTK4.gtk_file_dialog_set_filters(handle, fileFilters);
             OS.g_object_unref(fileFilters);
         }
         if (initialFilter != 0) {
-            if (GTK.GTK4) {
+            if (GTK.GTK_VERSION >= OS.VERSION(4, 10, 0)) {
                 GTK4.gtk_file_dialog_set_default_filter(handle, initialFilter);
             } else {
-                GTK3.gtk_file_chooser_set_filter(handle, initialFilter);
+                GTK.gtk_file_chooser_set_filter(handle, initialFilter);
             }
         }
         fullPath = null;
@@ -794,7 +859,7 @@ public class SwtFileDialog extends SwtDialog implements IFileDialog {
  * When the FileDialog is in URI mode it returns
  * a URI (instead of a file name) for the following
  * methods: open() and getFilterPath().
- * The input argment for setFilterPath() should also
+ * The input argument for setFilterPath() should also
  * be a URI.
  */
     /*public*/

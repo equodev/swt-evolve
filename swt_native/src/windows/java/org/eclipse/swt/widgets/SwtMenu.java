@@ -1265,8 +1265,8 @@ public class SwtMenu extends SwtWidget implements IMenu {
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        location = ((SwtDisplay) getDisplay().getImpl()).translateLocationInPixelsInDisplayCoordinateSystem(location.x, location.y);
-        setLocationInPixels(location.x, location.y);
+        Point locationInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(location, getZoom());
+        setLocationInPixels(locationInPixels.x, locationInPixels.y);
     }
 
     /**

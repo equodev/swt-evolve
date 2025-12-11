@@ -16,6 +16,7 @@
 package org.eclipse.swt.graphics;
 
 import java.util.*;
+import java.util.function.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;

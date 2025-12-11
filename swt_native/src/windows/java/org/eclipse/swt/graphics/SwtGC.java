@@ -15,10 +15,14 @@
  */
 package org.eclipse.swt.graphics;
 
+import java.util.*;
+import java.util.List;
+import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.internal.win32.*;
+import org.eclipse.swt.widgets.*;
 
 /**
  * Class <code>GC</code> is where all of the drawing capabilities that are
@@ -65,6 +69,10 @@ public final class SwtGC extends SwtResource implements IGC {
     Drawable drawable;
 
     GCData data;
+
+    private final GCData originalData = new GCData();
+
+    private final List<Operation> operations = new ArrayList<>();
 
     static final int FOREGROUND = 1 << 0;
 
@@ -177,6 +185,7 @@ public final class SwtGC extends SwtResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         GCData data = new GCData();
         data.style = checkStyle(style);
+        ((SwtGCData) data.getImpl()).copyTo(originalData);
         long hDC = drawable.internal_new_GC(data);
         Device device = data.device;
         if (device == null)
@@ -194,7 +203,26 @@ public final class SwtGC extends SwtResource implements IGC {
         return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
     }
 
+    private void validateGCState() {
+        if (drawable == null) {
+            return;
+        }
+        try {
+            GCData newData = new GCData();
+            long newHdc = drawable.internal_new_GC(newData);
+            if (data.nativeZoom != newData.nativeZoom) {
+                System.err.println("***WARNING: Zoom of the underlying Drawable of the GC has changed. This indicates a " + "long running GC that should be recreated.");
+            }
+            drawable.internal_dispose_GC(newHdc, newData);
+        } catch (Exception e) {
+            // ignore if recreation fails
+        }
+    }
+
     void checkGC(int mask) {
+        StrictChecks.runIfStrictChecksEnabled(() -> {
+            validateGCState();
+        });
         int state = data.state;
         if ((state & mask) == mask)
             return;
@@ -363,10 +391,10 @@ public final class SwtGC extends SwtResource implements IGC {
                 }
             }
             if ((state & FONT) != 0) {
-                Font font = data.font;
-                OS.SelectObject(getApi().handle, font.handle);
+                long fontHandle = SWTFontProvider.getFontHandle(data.font, data.nativeZoom);
+                OS.SelectObject(getApi().handle, fontHandle);
                 long[] hFont = new long[1];
-                long gdipFont = createGdipFont(getApi().handle, font.handle, gdipGraphics, ((SwtDevice) device.getImpl()).fontCollection, null, hFont);
+                long gdipFont = createGdipFont(getApi().handle, fontHandle, gdipGraphics, ((SwtDevice) device.getImpl()).fontCollection, null, hFont);
                 if (hFont[0] != 0)
                     OS.SelectObject(getApi().handle, hFont[0]);
                 if (data.hGDIFont != 0)
@@ -511,8 +539,8 @@ public final class SwtGC extends SwtResource implements IGC {
             OS.SetTextColor(getApi().handle, data.foreground);
         }
         if ((state & FONT) != 0) {
-            Font font = data.font;
-            OS.SelectObject(getApi().handle, font.handle);
+            long fontHandle = SWTFontProvider.getFontHandle(data.font, data.nativeZoom);
+            OS.SelectObject(getApi().handle, fontHandle);
         }
     }
 
@@ -533,26 +561,73 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void copyArea(Image image, int x, int y) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        copyAreaInPixels(image, x, y);
-    }
-
-    void copyAreaInPixels(Image image, int x, int y) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (image == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (image.type != SWT.BITMAP || image.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        /* Copy the bitmap area */
-        Rectangle rect = image.getBoundsInPixels();
-        long memHdc = OS.CreateCompatibleDC(getApi().handle);
-        long hOldBitmap = OS.SelectObject(memHdc, SwtImage.win32_getHandle(image, getZoom()));
-        OS.BitBlt(memHdc, 0, 0, rect.width, rect.height, getApi().handle, x, y, OS.SRCCOPY);
-        OS.SelectObject(memHdc, hOldBitmap);
-        OS.DeleteDC(memHdc);
+        storeAndApplyOperationForExistingHandle(new CopyAreaToImageOperation(image, x, y));
+    }
+
+    private abstract class ImageOperation extends Operation {
+
+        private Image image;
+
+        ImageOperation(Image image) {
+            setImage(image);
+            ((SwtImage) image.getImpl()).addOnDisposeListener(this::setCopyOfImage);
+        }
+
+        private void setImage(Image image) {
+            this.image = image;
+        }
+
+        private void setCopyOfImage(Image image) {
+            if (!SwtGC.this.getApi().isDisposed()) {
+                Image copiedImage = new Image(image.getImpl()._device(), image, SWT.IMAGE_COPY);
+                setImage(copiedImage);
+                registerForDisposal(copiedImage);
+            }
+        }
+
+        protected Image getImage() {
+            return image;
+        }
+    }
+
+    private class CopyAreaToImageOperation extends ImageOperation {
+
+        private final int x;
+
+        private final int y;
+
+        CopyAreaToImageOperation(Image image, int x, int y) {
+            super(image);
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        void apply() {
+            int zoom = getZoom();
+            int scaledX = Win32DPIUtils.pointToPixel(drawable, this.x, zoom);
+            int scaledY = Win32DPIUtils.pointToPixel(drawable, this.y, zoom);
+            copyAreaInPixels(getImage(), scaledX, scaledY);
+        }
+    }
+
+    private void copyAreaInPixels(Image image, int x, int y) {
+        if (image.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (image.getImpl() instanceof SwtImage) {
+            /* Copy the bitmap area */
+            Rectangle rect = ((SwtImage) image.getImpl()).getBounds(getZoom());
+            long memHdc = OS.CreateCompatibleDC(getApi().handle);
+            long hOldBitmap = OS.SelectObject(memHdc, SwtImage.win32_getHandle(image, getZoom()));
+            OS.BitBlt(memHdc, 0, 0, rect.width, rect.height, getApi().handle, x, y, OS.SRCCOPY);
+            OS.SelectObject(memHdc, hOldBitmap);
+            OS.DeleteDC(memHdc);
+        }
     }
 
     /**
@@ -571,6 +646,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void copyArea(int srcX, int srcY, int width, int height, int destX, int destY) {
+        checkNonDisposed();
         copyArea(srcX, srcY, width, height, destX, destY, true);
     }
 
@@ -593,19 +669,35 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void copyArea(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
-        int deviceZoom = getZoom();
-        srcX = DPIUtil.scaleUp(drawable, srcX, deviceZoom);
-        srcY = DPIUtil.scaleUp(drawable, srcY, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        destX = DPIUtil.scaleUp(drawable, destX, deviceZoom);
-        destY = DPIUtil.scaleUp(drawable, destY, deviceZoom);
-        copyAreaInPixels(srcX, srcY, width, height, destX, destY, paint);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new CopyAreaOperation(new Rectangle(srcX, srcY, width, height), new Rectangle(destX, destY, width, height), paint));
     }
 
-    void copyAreaInPixels(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class CopyAreaOperation extends Operation {
+
+        private final Rectangle source;
+
+        private final Rectangle destination;
+
+        private final boolean paint;
+
+        CopyAreaOperation(Rectangle source, Rectangle destination, boolean paint) {
+            this.source = source;
+            this.destination = destination;
+            this.paint = paint;
+        }
+
+        @Override
+        void apply() {
+            int zoom = getZoom();
+            Rectangle sourceRect = Win32DPIUtils.pointToPixel(drawable, source, zoom);
+            Rectangle destRect = Win32DPIUtils.pointToPixel(drawable, destination, zoom);
+            copyAreaInPixels(sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height, destRect.x, destRect.y, paint);
+        }
+    }
+
+    private void copyAreaInPixels(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
+        checkNonDisposed();
         long hwnd = data.hwnd;
         if (hwnd == 0) {
             OS.BitBlt(getApi().handle, destX, destY, width, height, getApi().handle, srcX, srcY, OS.SRCCOPY);
@@ -858,17 +950,32 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        drawArcInPixels(x, y, width, height, startAngle, arcAngle);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new DrawArcOperation(new Rectangle(x, y, width, height), startAngle, arcAngle));
     }
 
-    void drawArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class DrawArcOperation extends Operation {
+
+        private final Rectangle rectangle;
+
+        private final int startAngle;
+
+        private final int arcAngle;
+
+        DrawArcOperation(Rectangle rectangle, int startAngle, int arcAngle) {
+            this.rectangle = rectangle;
+            this.startAngle = startAngle;
+            this.arcAngle = arcAngle;
+        }
+
+        @Override
+        void apply() {
+            Rectangle rect = Win32DPIUtils.pointToPixel(drawable, rectangle, getZoom());
+            drawArcInPixels(rect.x, rect.y, rect.width, rect.height, startAngle, arcAngle);
+        }
+    }
+
+    private void drawArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
         checkGC(DRAW);
         if (width < 0) {
             x = x + width;
@@ -945,17 +1052,26 @@ public final class SwtGC extends SwtResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void drawFocus(int x, int y, int width, int height) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        drawFocusInPixels(x, y, width, height);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new DrawFocusOperation(new Rectangle(x, y, width, height)));
     }
 
-    void drawFocusInPixels(int x, int y, int width, int height) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class DrawFocusOperation extends Operation {
+
+        private final Rectangle rectangle;
+
+        DrawFocusOperation(Rectangle rectangle) {
+            this.rectangle = rectangle;
+        }
+
+        @Override
+        void apply() {
+            Rectangle rect = Win32DPIUtils.pointToPixel(drawable, rectangle, getZoom());
+            drawFocusInPixels(rect.x, rect.y, rect.width, rect.height);
+        }
+    }
+
+    private void drawFocusInPixels(int x, int y, int width, int height) {
         if ((data.uiState & OS.UISF_HIDEFOCUS) != 0)
             return;
         data.focusDrawn = true;
@@ -1028,20 +1144,33 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawImage(Image image, int x, int y) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        drawImageInPixels(image, x, y);
-    }
-
-    void drawImageInPixels(Image image, int x, int y) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (image == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (image.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        drawImage(image, 0, 0, -1, -1, x, y, -1, -1, true);
+        storeAndApplyOperationForExistingHandle(new DrawImageOperation(image, new Point(x, y)));
+    }
+
+    private class DrawImageOperation extends ImageOperation {
+
+        private final Point location;
+
+        DrawImageOperation(Image image, Point location) {
+            super(image);
+            this.location = location;
+        }
+
+        @Override
+        void apply() {
+            drawImageInPixels(getImage(), Win32DPIUtils.pointToPixel(drawable, this.location, getZoom()));
+        }
+
+        private void drawImageInPixels(Image image, Point location) {
+            if (image.isDisposed())
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            drawImage(image, 0, 0, -1, -1, location.x, location.y, -1, -1, true, getZoom());
+        }
     }
 
     /**
@@ -1077,8 +1206,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (srcWidth == 0 || srcHeight == 0 || destWidth == 0 || destHeight == 0)
             return;
         if (srcX < 0 || srcY < 0 || srcWidth < 0 || srcHeight < 0 || destWidth < 0 || destHeight < 0) {
@@ -1088,21 +1216,75 @@ public final class SwtGC extends SwtResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (image.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        int deviceZoom = getZoom();
-        Rectangle src = DPIUtil.scaleUp(drawable, new Rectangle(srcX, srcY, srcWidth, srcHeight), deviceZoom);
-        Rectangle dest = DPIUtil.scaleUp(drawable, new Rectangle(destX, destY, destWidth, destHeight), deviceZoom);
-        if (deviceZoom != 100) {
+        storeAndApplyOperationForExistingHandle(new DrawScalingImageToImageOperation(image, new Rectangle(srcX, srcY, srcWidth, srcHeight), new Rectangle(destX, destY, destWidth, destHeight)));
+    }
+
+    void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+        storeAndApplyOperationForExistingHandle(new DrawImageToImageOperation(srcImage, new Rectangle(srcX, srcY, srcWidth, srcHeight), new Rectangle(destX, destY, destWidth, destHeight), simple));
+    }
+
+    private class DrawScalingImageToImageOperation extends ImageOperation {
+
+        private final Rectangle source;
+
+        private final Rectangle destination;
+
+        DrawScalingImageToImageOperation(Image image, Rectangle source, Rectangle destination) {
+            super(image);
+            this.source = source;
+            this.destination = destination;
+        }
+
+        @Override
+        void apply() {
+            int gcZoom = getZoom();
+            int srcImageZoom = calculateZoomForImage(gcZoom, source.width, source.height, destination.width, destination.height);
+            drawImage(getImage(), source.x, source.y, source.width, source.height, destination.x, destination.y, destination.width, destination.height, gcZoom, srcImageZoom);
+        }
+
+        private Collection<Integer> getAllCurrentMonitorZooms() {
+            if (device instanceof Display display) {
+                return Arrays.stream(display.getMonitors()).map(Monitor::getZoom).collect(Collectors.toSet());
+            }
+            return Collections.emptySet();
+        }
+
+        private int calculateZoomForImage(int gcZoom, int srcWidth, int srcHeight, int destWidth, int destHeight) {
+            if (srcWidth == 1 && srcHeight == 1) {
+                // One pixel images can use the GC zoom
+                return gcZoom;
+            }
+            if (destWidth == srcWidth && destHeight == srcHeight) {
+                // unscaled images can use the GC zoom
+                return gcZoom;
+            }
+            float imageScaleFactor = 1f * destWidth / srcWidth;
+            int imageZoom = Math.round(gcZoom * imageScaleFactor);
+            if (getAllCurrentMonitorZooms().contains(imageZoom)) {
+                return imageZoom;
+            }
+            if (imageZoom > 150) {
+                return 200;
+            }
+            return 100;
+        }
+    }
+
+    private void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, int imageZoom, int scaledImageZoom) {
+        Rectangle src = Win32DPIUtils.pointToPixel(drawable, new Rectangle(srcX, srcY, srcWidth, srcHeight), scaledImageZoom);
+        Rectangle dest = Win32DPIUtils.pointToPixel(drawable, new Rectangle(destX, destY, destWidth, destHeight), imageZoom);
+        if (scaledImageZoom != 100) {
             if (image.getImpl() instanceof SwtImage) {
                 /*
 		 * This is a HACK! Due to rounding errors at fractional scale factors,
 		 * the coordinates may be slightly off. The workaround is to restrict
 		 * coordinates to the allowed bounds.
 		 */
-                Rectangle b = ((SwtImage) image.getImpl()).getBounds(deviceZoom);
+                Rectangle b = ((SwtImage) image.getImpl()).getBounds(scaledImageZoom);
                 int errX = src.x + src.width - b.width;
                 int errY = src.y + src.height - b.height;
                 if (errX != 0 || errY != 0) {
-                    if (errX <= deviceZoom / 100 && errY <= deviceZoom / 100) {
+                    if (errX <= scaledImageZoom / 100 && errY <= scaledImageZoom / 100) {
                         src.intersect(b);
                     } else {
                         SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1110,14 +1292,35 @@ public final class SwtGC extends SwtResource implements IGC {
                 }
             }
         }
-        drawImage(image, src.x, src.y, src.width, src.height, dest.x, dest.y, dest.width, dest.height, false);
+        drawImage(image, src.x, src.y, src.width, src.height, dest.x, dest.y, dest.width, dest.height, false, scaledImageZoom);
     }
 
-    void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+    private class DrawImageToImageOperation extends ImageOperation {
+
+        private final Rectangle source;
+
+        private final Rectangle destination;
+
+        private final boolean simple;
+
+        DrawImageToImageOperation(Image image, Rectangle source, Rectangle destination, boolean simple) {
+            super(image);
+            this.source = source;
+            this.destination = destination;
+            this.simple = simple;
+        }
+
+        @Override
+        void apply() {
+            drawImage(getImage(), source.x, source.y, source.width, source.height, destination.x, destination.y, destination.width, destination.height, simple, getZoom());
+        }
+    }
+
+    private void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imageZoom) {
         if (data.gdipGraphics != 0) {
             if (srcImage.getImpl() instanceof SwtImage) {
                 //TODO - cache bitmap
-                long[] gdipImage = ((SwtImage) srcImage.getImpl()).createGdipImage(getZoom());
+                long[] gdipImage = ((SwtImage) srcImage.getImpl()).createGdipImage(imageZoom);
                 long img = gdipImage[0];
                 int imgWidth = Gdip.Image_GetWidth(img);
                 int imgHeight = Gdip.Image_GetHeight(img);
@@ -1164,17 +1367,20 @@ public final class SwtGC extends SwtResource implements IGC {
             }
             return;
         }
-        switch(srcImage.type) {
-            case SWT.BITMAP:
-                drawBitmap(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-                break;
-            case SWT.ICON:
-                drawIcon(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-                break;
+        if (srcImage.getImpl() instanceof SwtImage) {
+            long imageHandle = ((SwtImage) srcImage.getImpl()).getHandle(imageZoom, data.nativeZoom);
+            switch(srcImage.type) {
+                case SWT.BITMAP:
+                    drawBitmap(srcImage, imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                    break;
+                case SWT.ICON:
+                    drawIcon(imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                    break;
+            }
         }
     }
 
-    void drawIcon(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+    private void drawIcon(long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
         int technology = OS.GetDeviceCaps(getApi().handle, OS.TECHNOLOGY);
         boolean drawIcon = true;
         int flags = OS.DI_NORMAL;
@@ -1196,14 +1402,14 @@ public final class SwtGC extends SwtResource implements IGC {
         if (simple && technology != OS.DT_RASPRINTER && drawIcon) {
             if (offsetX != 0 || offsetY != 0)
                 OS.SetWindowOrgEx(getApi().handle, 0, 0, null);
-            OS.DrawIconEx(getApi().handle, destX - offsetX, destY - offsetY, SwtImage.win32_getHandle(srcImage, getZoom()), 0, 0, 0, 0, flags);
+            OS.DrawIconEx(getApi().handle, destX - offsetX, destY - offsetY, imageHandle, 0, 0, 0, 0, flags);
             if (offsetX != 0 || offsetY != 0)
                 OS.SetWindowOrgEx(getApi().handle, offsetX, offsetY, null);
             return;
         }
         /* Get the icon info */
         ICONINFO srcIconInfo = new ICONINFO();
-        OS.GetIconInfo(SwtImage.win32_getHandle(srcImage, getZoom()), srcIconInfo);
+        OS.GetIconInfo(imageHandle, srcIconInfo);
         /* Get the icon width and height */
         long hBitmap = srcIconInfo.hbmColor;
         if (hBitmap == 0)
@@ -1222,12 +1428,12 @@ public final class SwtGC extends SwtResource implements IGC {
         if (!failed) {
             simple = srcX == 0 && srcY == 0 && srcWidth == destWidth && srcHeight == destHeight && srcWidth == iconWidth && srcHeight == iconHeight;
             if (!drawIcon) {
-                drawBitmapMask(srcImage, srcIconInfo.hbmColor, srcIconInfo.hbmMask, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple, iconWidth, iconHeight, false);
+                drawBitmapMask(srcIconInfo.hbmColor, srcIconInfo.hbmMask, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple, iconWidth, iconHeight, false);
             } else if (simple && technology != OS.DT_RASPRINTER) {
                 /* Simple case: no stretching, entire icon */
                 if (offsetX != 0 || offsetY != 0)
                     OS.SetWindowOrgEx(getApi().handle, 0, 0, null);
-                OS.DrawIconEx(getApi().handle, destX - offsetX, destY - offsetY, SwtImage.win32_getHandle(srcImage, getZoom()), 0, 0, 0, 0, flags);
+                OS.DrawIconEx(getApi().handle, destX - offsetX, destY - offsetY, imageHandle, 0, 0, 0, 0, flags);
                 if (offsetX != 0 || offsetY != 0)
                     OS.SetWindowOrgEx(getApi().handle, offsetX, offsetY, null);
             } else {
@@ -1301,9 +1507,9 @@ public final class SwtGC extends SwtResource implements IGC {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
     }
 
-    void drawBitmap(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+    private void drawBitmap(Image srcImage, long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
         BITMAP bm = new BITMAP();
-        OS.GetObject(SwtImage.win32_getHandle(srcImage, getZoom()), BITMAP.sizeof, bm);
+        OS.GetObject(imageHandle, BITMAP.sizeof, bm);
         int imgWidth = bm.bmWidth;
         int imgHeight = bm.bmHeight;
         if (simple) {
@@ -1329,19 +1535,19 @@ public final class SwtGC extends SwtResource implements IGC {
         boolean isDib = bm.bmBits != 0;
         int depth = bm.bmPlanes * bm.bmBitsPixel;
         if (isDib && depth == 32) {
-            drawBitmapAlpha(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+            drawBitmapAlpha(imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
         } else if (srcImage.getImpl()._transparentPixel() != -1) {
-            drawBitmapTransparent(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple, bm, imgWidth, imgHeight);
+            drawBitmapTransparent(srcImage, imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple, bm, imgWidth, imgHeight);
         } else {
-            drawBitmapColor(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+            drawBitmapColor(imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
         }
         if (mustRestore) {
-            long hOldBitmap = OS.SelectObject(memGC.handle, SwtImage.win32_getHandle(srcImage, getZoom()));
+            long hOldBitmap = OS.SelectObject(memGC.handle, imageHandle);
             memGC.getImpl()._data().hNullBitmap = hOldBitmap;
         }
     }
 
-    void drawBitmapAlpha(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+    private void drawBitmapAlpha(long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
         boolean alphaBlendSupport = true;
         boolean isPrinter = OS.GetDeviceCaps(getApi().handle, OS.TECHNOLOGY) == OS.DT_RASPRINTER;
         int sourceAlpha = -1;
@@ -1349,7 +1555,7 @@ public final class SwtGC extends SwtResource implements IGC {
             int caps = OS.GetDeviceCaps(getApi().handle, OS.SHADEBLENDCAPS);
             if (caps != 0) {
                 long srcHdc = OS.CreateCompatibleDC(getApi().handle);
-                long oldSrcBitmap = OS.SelectObject(srcHdc, SwtImage.win32_getHandle(srcImage, getZoom()));
+                long oldSrcBitmap = OS.SelectObject(srcHdc, imageHandle);
                 long memDib = SwtImage.createDIB(srcWidth, srcHeight, 32);
                 if (memDib == 0)
                     SWT.error(SWT.ERROR_NO_HANDLES);
@@ -1378,7 +1584,7 @@ public final class SwtGC extends SwtResource implements IGC {
                     if (sourceAlpha == 0)
                         return;
                     if (sourceAlpha == 255) {
-                        drawBitmapColor(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                        drawBitmapColor(imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
                         return;
                     }
                     alphaBlendSupport = (caps & OS.SB_CONST_ALPHA) != 0;
@@ -1391,7 +1597,7 @@ public final class SwtGC extends SwtResource implements IGC {
             BLENDFUNCTION blend = new BLENDFUNCTION();
             blend.BlendOp = OS.AC_SRC_OVER;
             long srcHdc = OS.CreateCompatibleDC(getApi().handle);
-            long oldSrcBitmap = OS.SelectObject(srcHdc, SwtImage.win32_getHandle(srcImage, getZoom()));
+            long oldSrcBitmap = OS.SelectObject(srcHdc, imageHandle);
             blend.SourceConstantAlpha = (byte) sourceAlpha;
             blend.AlphaFormat = OS.AC_SRC_ALPHA;
             OS.AlphaBlend(getApi().handle, destX, destY, destWidth, destHeight, srcHdc, srcX, srcY, srcWidth, srcHeight, blend);
@@ -1422,7 +1628,7 @@ public final class SwtGC extends SwtResource implements IGC {
         srcHeight = Math.max(1, sy2 - sy1);
         /* Create resources */
         long srcHdc = OS.CreateCompatibleDC(getApi().handle);
-        long oldSrcBitmap = OS.SelectObject(srcHdc, SwtImage.win32_getHandle(srcImage, getZoom()));
+        long oldSrcBitmap = OS.SelectObject(srcHdc, imageHandle);
         long memHdc = OS.CreateCompatibleDC(getApi().handle);
         long memDib = SwtImage.createDIB(Math.max(srcWidth, destWidth), Math.max(srcHeight, destHeight), 32);
         if (memDib == 0)
@@ -1493,7 +1699,7 @@ public final class SwtGC extends SwtResource implements IGC {
         OS.DeleteDC(srcHdc);
     }
 
-    void drawBitmapTransparentByClipping(long srcHdc, long maskHdc, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imgWidth, int imgHeight) {
+    private void drawBitmapTransparentByClipping(long srcHdc, long maskHdc, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imgWidth, int imgHeight) {
         /* Create a clipping region from the mask */
         long rgn = OS.CreateRectRgn(0, 0, 0, 0);
         for (int y = 0; y < imgHeight; y++) {
@@ -1534,7 +1740,7 @@ public final class SwtGC extends SwtResource implements IGC {
         OS.DeleteObject(rgn);
     }
 
-    void drawBitmapMask(Image srcImage, long srcColor, long srcMask, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imgWidth, int imgHeight, boolean offscreen) {
+    private void drawBitmapMask(long srcColor, long srcMask, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imgWidth, int imgHeight, boolean offscreen) {
         int srcColorY = srcY;
         if (srcColor == 0) {
             srcColor = srcMask;
@@ -1586,10 +1792,10 @@ public final class SwtGC extends SwtResource implements IGC {
         OS.DeleteDC(srcHdc);
     }
 
-    void drawBitmapTransparent(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, BITMAP bm, int imgWidth, int imgHeight) {
+    private void drawBitmapTransparent(Image srcImage, long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, BITMAP bm, int imgWidth, int imgHeight) {
         /* Find the RGB values for the transparent pixel. */
         boolean isDib = bm.bmBits != 0;
-        long hBitmap = SwtImage.win32_getHandle(srcImage, getZoom());
+        long hBitmap = imageHandle;
         long srcHdc = OS.CreateCompatibleDC(getApi().handle);
         long oldSrcBitmap = OS.SelectObject(srcHdc, hBitmap);
         byte[] originalColors = null;
@@ -1634,7 +1840,7 @@ public final class SwtGC extends SwtResource implements IGC {
                     bmiHeader.biBitCount = bm.bmBitsPixel;
                     byte[] bmi = new byte[BITMAPINFOHEADER.sizeof + numColors * 4];
                     OS.MoveMemory(bmi, bmiHeader, BITMAPINFOHEADER.sizeof);
-                    OS.GetDIBits(srcHdc, SwtImage.win32_getHandle(srcImage, getZoom()), 0, 0, null, bmi, OS.DIB_RGB_COLORS);
+                    OS.GetDIBits(srcHdc, imageHandle, 0, 0, null, bmi, OS.DIB_RGB_COLORS);
                     int offset = BITMAPINFOHEADER.sizeof + 4 * srcImage.getImpl()._transparentPixel();
                     transRed = bmi[offset + 2] & 0xFF;
                     transGreen = bmi[offset + 1] & 0xFF;
@@ -1713,14 +1919,14 @@ public final class SwtGC extends SwtResource implements IGC {
             OS.DeleteObject(maskBitmap);
         }
         OS.SelectObject(srcHdc, oldSrcBitmap);
-        if (hBitmap != SwtImage.win32_getHandle(srcImage, getZoom()))
+        if (hBitmap != imageHandle)
             OS.DeleteObject(hBitmap);
         OS.DeleteDC(srcHdc);
     }
 
-    void drawBitmapColor(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+    private void drawBitmapColor(long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
         long srcHdc = OS.CreateCompatibleDC(getApi().handle);
-        long oldSrcBitmap = OS.SelectObject(srcHdc, SwtImage.win32_getHandle(srcImage, getZoom()));
+        long oldSrcBitmap = OS.SelectObject(srcHdc, imageHandle);
         int dwRop = OS.GetROP2(getApi().handle) == OS.R2_XORPEN ? OS.SRCINVERT : OS.SRCCOPY;
         if (!simple && (srcWidth != destWidth || srcHeight != destHeight)) {
             int mode = OS.SetStretchBltMode(getApi().handle, OS.COLORONCOLOR);
@@ -1747,17 +1953,31 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawLine(int x1, int y1, int x2, int y2) {
-        int deviceZoom = getZoom();
-        x1 = DPIUtil.scaleUp(drawable, x1, deviceZoom);
-        x2 = DPIUtil.scaleUp(drawable, x2, deviceZoom);
-        y1 = DPIUtil.scaleUp(drawable, y1, deviceZoom);
-        y2 = DPIUtil.scaleUp(drawable, y2, deviceZoom);
-        drawLineInPixels(x1, y1, x2, y2);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new DrawLineOperation(x1, y1, x2, y2));
     }
 
-    void drawLineInPixels(int x1, int y1, int x2, int y2) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class DrawLineOperation extends Operation {
+
+        private final Point start;
+
+        private final Point end;
+
+        DrawLineOperation(int x1, int y1, int x2, int y2) {
+            this.start = new Point(x1, y1);
+            this.end = new Point(x2, y2);
+        }
+
+        @Override
+        void apply() {
+            int deviceZoom = getZoom();
+            Point startInPixels = Win32DPIUtils.pointToPixel(drawable, start, deviceZoom);
+            Point endInPixels = Win32DPIUtils.pointToPixel(drawable, end, deviceZoom);
+            drawLineInPixels(startInPixels.x, startInPixels.y, endInPixels.x, endInPixels.y);
+        }
+    }
+
+    private void drawLineInPixels(int x1, int y1, int x2, int y2) {
         checkGC(DRAW);
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
@@ -1801,17 +2021,26 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawOval(int x, int y, int width, int height) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        drawOvalInPixels(x, y, width, height);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new DrawOvalOperation(new Rectangle(x, y, width, height)));
     }
 
-    void drawOvalInPixels(int x, int y, int width, int height) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class DrawOvalOperation extends Operation {
+
+        private final Rectangle bounds;
+
+        DrawOvalOperation(Rectangle bounds) {
+            this.bounds = bounds;
+        }
+
+        @Override
+        void apply() {
+            Rectangle boundsInPixels = Win32DPIUtils.pointToPixel(drawable, bounds, getZoom());
+            drawOvalInPixels(boundsInPixels.x, boundsInPixels.y, boundsInPixels.width, boundsInPixels.height);
+        }
+    }
+
+    private void drawOvalInPixels(int x, int y, int width, int height) {
         checkGC(DRAW);
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
@@ -1851,19 +2080,39 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void drawPath(Path path) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (path == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        long pathHandle = ((SwtPath) path.getImpl()).getHandle(getZoom());
-        if (pathHandle == 0)
+        if (path.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        initGdip();
-        checkGC(DRAW);
-        long gdipGraphics = data.gdipGraphics;
-        Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
-        Gdip.Graphics_DrawPath(gdipGraphics, data.gdipPen, pathHandle);
-        Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
+        storeAndApplyOperationForExistingHandle(new DrawPathOperation(path));
+    }
+
+    private class DrawPathOperation extends Operation {
+
+        private final PathData pathData;
+
+        DrawPathOperation(Path path) {
+            this.pathData = path.getPathData();
+        }
+
+        @Override
+        void apply() {
+            Path path = new Path(device, pathData);
+            try {
+                long pathHandle = ((SwtPath) path.getImpl()).getHandle(getZoom());
+                if (pathHandle == 0)
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                initGdip();
+                checkGC(DRAW);
+                long gdipGraphics = data.gdipGraphics;
+                Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
+                Gdip.Graphics_DrawPath(gdipGraphics, data.gdipPen, pathHandle);
+                Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
+            } finally {
+                path.dispose();
+            }
+        }
     }
 
     /**
@@ -1884,15 +2133,26 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.0
      */
     public void drawPoint(int x, int y) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        drawPointInPixels(x, y);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new DrawPointOperation(x, y));
     }
 
-    void drawPointInPixels(int x, int y) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class DrawPointOperation extends Operation {
+
+        private final Point location;
+
+        DrawPointOperation(int x, int y) {
+            this.location = new Point(x, y);
+        }
+
+        @Override
+        void apply() {
+            Point scaleUpLocation = Win32DPIUtils.pointToPixel(location, getZoom());
+            drawPointInPixels(scaleUpLocation.x, scaleUpLocation.y);
+        }
+    }
+
+    private void drawPointInPixels(int x, int y) {
         if (data.gdipGraphics != 0) {
             checkGC(DRAW);
             Gdip.Graphics_FillRectangle(data.gdipGraphics, getFgBrush(), x, y, 1, 1);
@@ -1919,14 +2179,27 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawPolygon(int[] pointArray) {
+        checkNonDisposed();
         if (pointArray == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        drawPolygonInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
+        storeAndApplyOperationForExistingHandle(new DrawPolygonOperation(pointArray));
     }
 
-    void drawPolygonInPixels(int[] pointArray) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class DrawPolygonOperation extends Operation {
+
+        private final int[] pointArray;
+
+        DrawPolygonOperation(int[] pointArray) {
+            this.pointArray = pointArray;
+        }
+
+        @Override
+        void apply() {
+            drawPolygonInPixels(Win32DPIUtils.pointToPixel(drawable, pointArray, getZoom()));
+        }
+    }
+
+    private void drawPolygonInPixels(int[] pointArray) {
         checkGC(DRAW);
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
@@ -1970,14 +2243,27 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawPolyline(int[] pointArray) {
-        drawPolylineInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
-    }
-
-    void drawPolylineInPixels(int[] pointArray) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (pointArray == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        storeAndApplyOperationForExistingHandle(new DrawPolylineOperation(pointArray));
+    }
+
+    private class DrawPolylineOperation extends Operation {
+
+        private final int[] pointArray;
+
+        DrawPolylineOperation(int[] pointArray) {
+            this.pointArray = pointArray;
+        }
+
+        @Override
+        void apply() {
+            drawPolylineInPixels(Win32DPIUtils.pointToPixel(drawable, pointArray, getZoom()));
+        }
+    }
+
+    private void drawPolylineInPixels(int[] pointArray) {
         checkGC(DRAW);
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
@@ -2025,17 +2311,26 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawRectangle(int x, int y, int width, int height) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        drawRectangleInPixels(x, y, width, height);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new DrawRectangleOperation(new Rectangle(x, y, width, height)));
     }
 
-    void drawRectangleInPixels(int x, int y, int width, int height) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class DrawRectangleOperation extends Operation {
+
+        private final Rectangle rectangle;
+
+        DrawRectangleOperation(Rectangle rectangle) {
+            this.rectangle = rectangle;
+        }
+
+        @Override
+        void apply() {
+            Rectangle rect = Win32DPIUtils.pointToPixel(drawable, rectangle, getZoom());
+            drawRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
+        }
+    }
+
+    private void drawRectangleInPixels(int x, int y, int width, int height) {
         checkGC(DRAW);
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
@@ -2086,10 +2381,10 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawRectangle(Rectangle rect) {
+        checkNonDisposed();
         if (rect == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        rect = DPIUtil.scaleUp(drawable, rect, getZoom());
-        drawRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
+        storeAndApplyOperationForExistingHandle(new DrawRectangleOperation(rect));
     }
 
     /**
@@ -2114,19 +2409,35 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        arcWidth = DPIUtil.scaleUp(drawable, arcWidth, deviceZoom);
-        arcHeight = DPIUtil.scaleUp(drawable, arcHeight, deviceZoom);
-        drawRoundRectangleInPixels(x, y, width, height, arcWidth, arcHeight);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new DrawRoundRectangleOperation(new Rectangle(x, y, width, height), arcWidth, arcHeight));
     }
 
-    void drawRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class DrawRoundRectangleOperation extends Operation {
+
+        private final Rectangle rectangle;
+
+        private final int arcWidth;
+
+        private final int arcHeight;
+
+        DrawRoundRectangleOperation(Rectangle rectangle, int arcWidth, int arcHeight) {
+            this.rectangle = rectangle;
+            this.arcWidth = arcWidth;
+            this.arcHeight = arcHeight;
+        }
+
+        @Override
+        void apply() {
+            int zoom = getZoom();
+            Rectangle rect = Win32DPIUtils.pointToPixel(drawable, rectangle, zoom);
+            int scaledArcWidth = Win32DPIUtils.pointToPixel(drawable, arcWidth, zoom);
+            int scaledArcHeight = Win32DPIUtils.pointToPixel(drawable, arcHeight, zoom);
+            drawRoundRectangleInPixels(rect.x, rect.y, rect.width, rect.height, scaledArcWidth, scaledArcHeight);
+        }
+    }
+
+    private void drawRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
         checkGC(DRAW);
         if (data.gdipGraphics != 0) {
             drawRoundRectangleGdip(data.gdipGraphics, data.gdipPen, x, y, width, height, arcWidth, arcHeight);
@@ -2139,7 +2450,7 @@ public final class SwtGC extends SwtResource implements IGC {
         OS.RoundRect(getApi().handle, x, y, x + width + 1, y + height + 1, arcWidth, arcHeight);
     }
 
-    void drawRoundRectangleGdip(long gdipGraphics, long pen, int x, int y, int width, int height, int arcWidth, int arcHeight) {
+    private void drawRoundRectangleGdip(long gdipGraphics, long pen, int x, int y, int width, int height, int arcWidth, int arcHeight) {
         int nx = x;
         int ny = y;
         int nw = width;
@@ -2213,10 +2524,8 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawString(String string, int x, int y) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        drawStringInPixels(string, x, y, false);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new DrawStringOperation(string, new Point(x, y), false));
     }
 
     /**
@@ -2247,19 +2556,36 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawString(String string, int x, int y, boolean isTransparent) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        drawStringInPixels(string, x, y, isTransparent);
-    }
-
-    void drawStringInPixels(String string, int x, int y, boolean isTransparent) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (string.isEmpty())
             return;
+        storeAndApplyOperationForExistingHandle(new DrawStringOperation(string, new Point(x, y), isTransparent));
+    }
+
+    private class DrawStringOperation extends Operation {
+
+        private final String string;
+
+        private final Point location;
+
+        private final boolean isTransparent;
+
+        DrawStringOperation(String string, Point location, boolean isTransparent) {
+            this.string = string;
+            this.location = location;
+            this.isTransparent = isTransparent;
+        }
+
+        @Override
+        void apply() {
+            Point scaledLocation = Win32DPIUtils.pointToPixel(drawable, location, getZoom());
+            drawStringInPixels(string, scaledLocation.x, scaledLocation.y, isTransparent);
+        }
+    }
+
+    private void drawStringInPixels(String string, int x, int y, boolean isTransparent) {
         char[] buffer = string.toCharArray();
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
@@ -2343,14 +2669,12 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        drawTextInPixels(string, x, y);
-    }
-
-    void drawTextInPixels(String string, int x, int y) {
-        drawTextInPixels(string, x, y, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
+        checkNonDisposed();
+        if (string == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (string.isEmpty())
+            return;
+        storeAndApplyOperationForExistingHandle(new DrawTextOperation(string, new Point(x, y), SWT.DRAW_DELIMITER | SWT.DRAW_TAB));
     }
 
     /**
@@ -2378,17 +2702,15 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y, boolean isTransparent) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        drawTextInPixels(string, x, y, isTransparent);
-    }
-
-    void drawTextInPixels(String string, int x, int y, boolean isTransparent) {
+        checkNonDisposed();
+        if (string == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (string.isEmpty())
+            return;
         int flags = SWT.DRAW_DELIMITER | SWT.DRAW_TAB;
         if (isTransparent)
             flags |= SWT.DRAW_TRANSPARENT;
-        drawTextInPixels(string, x, y, flags);
+        storeAndApplyOperationForExistingHandle(new DrawTextOperation(string, new Point(x, y), flags));
     }
 
     /**
@@ -2431,19 +2753,36 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y, int flags) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        drawTextInPixels(string, x, y, flags);
-    }
-
-    void drawTextInPixels(String string, int x, int y, int flags) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (string.isEmpty())
             return;
+        storeAndApplyOperationForExistingHandle(new DrawTextOperation(string, new Point(x, y), flags));
+    }
+
+    private class DrawTextOperation extends Operation {
+
+        private final String string;
+
+        private final Point location;
+
+        private final int flags;
+
+        DrawTextOperation(String string, Point location, int flags) {
+            this.string = string;
+            this.location = location;
+            this.flags = flags;
+        }
+
+        @Override
+        void apply() {
+            Point scaledLocation = Win32DPIUtils.pointToPixel(drawable, location, getZoom());
+            drawTextInPixels(string, scaledLocation.x, scaledLocation.y, flags);
+        }
+    }
+
+    private void drawTextInPixels(String string, int x, int y, int flags) {
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
             checkGC(FONT | FOREGROUND | ((flags & SWT.DRAW_TRANSPARENT) != 0 ? 0 : BACKGROUND));
@@ -2499,7 +2838,7 @@ public final class SwtGC extends SwtResource implements IGC {
         OS.SetBkMode(getApi().handle, oldBkMode);
     }
 
-    boolean useGDIP(long hdc, char[] buffer) {
+    private boolean useGDIP(long hdc, char[] buffer) {
         short[] glyphs = new short[buffer.length];
         OS.GetGlyphIndices(hdc, buffer, buffer.length, glyphs, OS.GGI_MARK_NONEXISTING_GLYPHS);
         for (int i = 0; i < glyphs.length; i++) {
@@ -2523,7 +2862,7 @@ public final class SwtGC extends SwtResource implements IGC {
         long hdc = Gdip.Graphics_GetHDC(gdipGraphics);
         long hFont = data.hGDIFont;
         if (hFont == 0 && data.font != null)
-            hFont = data.font.handle;
+            hFont = SWTFontProvider.getFontHandle(data.font, data.nativeZoom);
         long oldFont = 0;
         if (hFont != 0)
             oldFont = OS.SelectObject(hdc, hFont);
@@ -2596,7 +2935,7 @@ public final class SwtGC extends SwtResource implements IGC {
         }
     }
 
-    RectF drawText(long gdipGraphics, char[] buffer, int start, int length, int x, int y, int flags, int mnemonicIndex, TEXTMETRIC lptm, boolean draw) {
+    private RectF drawText(long gdipGraphics, char[] buffer, int start, int length, int x, int y, int flags, int mnemonicIndex, TEXTMETRIC lptm, boolean draw) {
         boolean drawMnemonic = draw && mnemonicIndex != -1 && (data.uiState & OS.UISF_HIDEACCEL) == 0;
         boolean needsBounds = !draw || drawMnemonic || (flags & SWT.DRAW_TRANSPARENT) == 0 || (data.style & SWT.MIRRORED) != 0 || (flags & SWT.DRAW_DELIMITER) != 0;
         if (length <= 0) {
@@ -2622,7 +2961,7 @@ public final class SwtGC extends SwtResource implements IGC {
         long hdc = Gdip.Graphics_GetHDC(gdipGraphics);
         long hFont = data.hGDIFont;
         if (hFont == 0 && data.font != null)
-            hFont = data.font.handle;
+            hFont = SWTFontProvider.getFontHandle(data.font, data.nativeZoom);
         long oldFont = 0;
         if (hFont != 0)
             oldFont = OS.SelectObject(hdc, hFont);
@@ -2716,7 +3055,7 @@ public final class SwtGC extends SwtResource implements IGC {
         return bounds;
     }
 
-    void drawTextGDIP(long gdipGraphics, String string, int x, int y, int flags, boolean draw, Point size) {
+    private void drawTextGDIP(long gdipGraphics, String string, int x, int y, int flags, boolean draw, Point size) {
         boolean needsBounds = !draw || (flags & SWT.DRAW_TRANSPARENT) == 0;
         char[] buffer;
         int length = string.length();
@@ -2837,17 +3176,33 @@ public final class SwtGC extends SwtResource implements IGC {
      * @see #drawArc
      */
     public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        fillArcInPixels(x, y, width, height, startAngle, arcAngle);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new FillArcOperation(new Rectangle(x, y, width, height), startAngle, arcAngle));
     }
 
-    void fillArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class FillArcOperation extends Operation {
+
+        private final Rectangle bounds;
+
+        private final int startAngle;
+
+        private final int arcAngle;
+
+        FillArcOperation(Rectangle bounds, int startAngle, int arcAngle) {
+            this.bounds = bounds;
+            this.startAngle = startAngle;
+            this.arcAngle = arcAngle;
+        }
+
+        @Override
+        void apply() {
+            Rectangle rect = Win32DPIUtils.pointToPixel(drawable, bounds, getZoom());
+            fillArcInPixels(rect.x, rect.y, rect.width, rect.height, startAngle, arcAngle);
+        }
+    }
+
+    private void fillArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
+        checkNonDisposed();
         checkGC(FILL);
         if (width < 0) {
             x = x + width;
@@ -2917,17 +3272,27 @@ public final class SwtGC extends SwtResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillGradientRectangle(int x, int y, int width, int height, boolean vertical) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        fillGradientRectangleInPixels(x, y, width, height, vertical);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new FillGradientRectangleOperation(new Rectangle(x, y, width, height), vertical));
     }
 
-    void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean vertical) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class FillGradientRectangleOperation extends FillRectangleOperation {
+
+        private final boolean vertical;
+
+        FillGradientRectangleOperation(Rectangle rectangle, boolean vertical) {
+            super(rectangle);
+            this.vertical = vertical;
+        }
+
+        @Override
+        void apply() {
+            Rectangle rect = Win32DPIUtils.pointToPixel(drawable, rectangle, getZoom());
+            fillGradientRectangleInPixels(rect.x, rect.y, rect.width, rect.height, vertical, getZoom());
+        }
+    }
+
+    private void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean vertical, int zoom) {
         if (width == 0 || height == 0)
             return;
         RGB backgroundRGB, foregroundRGB;
@@ -3014,7 +3379,7 @@ public final class SwtGC extends SwtResource implements IGC {
         }
         final int depth = OS.GetDeviceCaps(getApi().handle, OS.BITSPIXEL);
         final int bitResolution = (depth >= 24) ? 8 : (depth >= 15) ? 5 : 0;
-        ImageData.fillGradientRectangle(this.getApi(), data.device, x, y, width, height, vertical, fromRGB, toRGB, bitResolution, bitResolution, bitResolution);
+        ImageData.fillGradientRectangle(this.getApi(), data.device, x, y, width, height, vertical, fromRGB, toRGB, bitResolution, bitResolution, bitResolution, zoom);
     }
 
     /**
@@ -3034,17 +3399,27 @@ public final class SwtGC extends SwtResource implements IGC {
      * @see #drawOval
      */
     public void fillOval(int x, int y, int width, int height) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        fillOvalInPixels(x, y, width, height);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new FillOvalOperation(new Rectangle(x, y, width, height)));
     }
 
-    void fillOvalInPixels(int x, int y, int width, int height) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class FillOvalOperation extends Operation {
+
+        private final Rectangle bounds;
+
+        FillOvalOperation(Rectangle bounds) {
+            this.bounds = bounds;
+        }
+
+        @Override
+        void apply() {
+            Rectangle rect = Win32DPIUtils.pointToPixel(drawable, bounds, getZoom());
+            fillOvalInPixels(rect.x, rect.y, rect.width, rect.height);
+        }
+    }
+
+    private void fillOvalInPixels(int x, int y, int width, int height) {
+        checkNonDisposed();
         checkGC(FILL);
         if (data.gdipGraphics != 0) {
             Gdip.Graphics_FillEllipse(data.gdipGraphics, data.gdipBrush, x, y, width, height);
@@ -3079,18 +3454,38 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void fillPath(Path path) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (path == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        final long pathHandle = ((SwtPath) path.getImpl()).getHandle(getZoom());
-        if (pathHandle == 0)
+        if (path.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        initGdip();
-        checkGC(FILL);
-        int mode = OS.GetPolyFillMode(getApi().handle) == OS.WINDING ? Gdip.FillModeWinding : Gdip.FillModeAlternate;
-        Gdip.GraphicsPath_SetFillMode(pathHandle, mode);
-        Gdip.Graphics_FillPath(data.gdipGraphics, data.gdipBrush, pathHandle);
+        storeAndApplyOperationForExistingHandle(new FillPathOperation(path));
+    }
+
+    private class FillPathOperation extends Operation {
+
+        private final PathData pathData;
+
+        FillPathOperation(Path path) {
+            this.pathData = path.getPathData();
+        }
+
+        @Override
+        void apply() {
+            Path path = new Path(device, pathData);
+            try {
+                long pathHandle = ((SwtPath) path.getImpl()).getHandle(getZoom());
+                if (pathHandle == 0)
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                initGdip();
+                checkGC(FILL);
+                int mode = OS.GetPolyFillMode(getApi().handle) == OS.WINDING ? Gdip.FillModeWinding : Gdip.FillModeAlternate;
+                Gdip.GraphicsPath_SetFillMode(pathHandle, mode);
+                Gdip.Graphics_FillPath(data.gdipGraphics, data.gdipBrush, pathHandle);
+            } finally {
+                path.dispose();
+            }
+        }
     }
 
     /**
@@ -3113,14 +3508,28 @@ public final class SwtGC extends SwtResource implements IGC {
      * @see #drawPolygon
      */
     public void fillPolygon(int[] pointArray) {
+        checkNonDisposed();
         if (pointArray == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        fillPolygonInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
+        storeAndApplyOperationForExistingHandle(new FillPolygonOperation(pointArray));
     }
 
-    void fillPolygonInPixels(int[] pointArray) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class FillPolygonOperation extends Operation {
+
+        private final int[] pointArray;
+
+        FillPolygonOperation(int[] pointArray) {
+            this.pointArray = pointArray;
+        }
+
+        @Override
+        void apply() {
+            fillPolygonInPixels(Win32DPIUtils.pointToPixel(drawable, pointArray, getZoom()));
+        }
+    }
+
+    private void fillPolygonInPixels(int[] pointArray) {
+        checkNonDisposed();
         checkGC(FILL);
         if (data.gdipGraphics != 0) {
             int mode = OS.GetPolyFillMode(getApi().handle) == OS.WINDING ? Gdip.FillModeWinding : Gdip.FillModeAlternate;
@@ -3164,17 +3573,26 @@ public final class SwtGC extends SwtResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(int x, int y, int width, int height) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        fillRectangleInPixels(x, y, width, height);
+        storeAndApplyOperationForExistingHandle(new FillRectangleOperation(new Rectangle(x, y, width, height)));
+    }
+
+    private class FillRectangleOperation extends Operation {
+
+        protected final Rectangle rectangle;
+
+        FillRectangleOperation(Rectangle rectangle) {
+            this.rectangle = rectangle;
+        }
+
+        @Override
+        void apply() {
+            Rectangle scaledBounds = Win32DPIUtils.pointToPixel(drawable, rectangle, getZoom());
+            fillRectangleInPixels(scaledBounds.x, scaledBounds.y, scaledBounds.width, scaledBounds.height);
+        }
     }
 
     void fillRectangleInPixels(int x, int y, int width, int height) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         checkGC(FILL);
         if (data.gdipGraphics != 0) {
             if (width < 0) {
@@ -3208,10 +3626,10 @@ public final class SwtGC extends SwtResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(Rectangle rect) {
+        checkNonDisposed();
         if (rect == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        rect = DPIUtil.scaleUp(drawable, rect, getZoom());
-        fillRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
+        storeAndApplyOperationForExistingHandle(new FillRectangleOperation(rect));
     }
 
     /**
@@ -3232,19 +3650,36 @@ public final class SwtGC extends SwtResource implements IGC {
      * @see #drawRoundRectangle
      */
     public void fillRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        arcWidth = DPIUtil.scaleUp(drawable, arcWidth, deviceZoom);
-        arcHeight = DPIUtil.scaleUp(drawable, arcHeight, deviceZoom);
-        fillRoundRectangleInPixels(x, y, width, height, arcWidth, arcHeight);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new FillRoundRectangleOperation(new Rectangle(x, y, width, height), arcWidth, arcHeight));
     }
 
-    void fillRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class FillRoundRectangleOperation extends Operation {
+
+        private final Rectangle rectangle;
+
+        private final int arcWidth;
+
+        private final int arcHeight;
+
+        FillRoundRectangleOperation(Rectangle rectangle, int arcWidth, int arcHeight) {
+            this.rectangle = rectangle;
+            this.arcWidth = arcWidth;
+            this.arcHeight = arcHeight;
+        }
+
+        @Override
+        void apply() {
+            int zoom = getZoom();
+            Rectangle rect = Win32DPIUtils.pointToPixel(drawable, rectangle, zoom);
+            int scaledArcWidth = Win32DPIUtils.pointToPixel(drawable, arcWidth, zoom);
+            int scaledArcHeight = Win32DPIUtils.pointToPixel(drawable, arcHeight, zoom);
+            fillRoundRectangleInPixels(rect.x, rect.y, rect.width, rect.height, scaledArcWidth, scaledArcHeight);
+        }
+    }
+
+    private void fillRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+        checkNonDisposed();
         checkGC(FILL);
         if (data.gdipGraphics != 0) {
             fillRoundRectangleGdip(data.gdipGraphics, data.gdipBrush, x, y, width, height, arcWidth, arcHeight);
@@ -3255,7 +3690,7 @@ public final class SwtGC extends SwtResource implements IGC {
         OS.RoundRect(getApi().handle, x, y, x + width + 1, y + height + 1, arcWidth, arcHeight);
     }
 
-    void fillRoundRectangleGdip(long gdipGraphics, long brush, int x, int y, int width, int height, int arcWidth, int arcHeight) {
+    private void fillRoundRectangleGdip(long gdipGraphics, long brush, int x, int y, int width, int height, int arcWidth, int arcHeight) {
         int nx = x;
         int ny = y;
         int nw = width;
@@ -3304,7 +3739,7 @@ public final class SwtGC extends SwtResource implements IGC {
         }
     }
 
-    void flush() {
+    private void flush() {
         if (data.gdipGraphics != 0) {
             Gdip.Graphics_Flush(data.gdipGraphics, 0);
             /*
@@ -3333,8 +3768,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public int getAdvanceWidth(char ch) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         checkGC(FONT);
         int[] width = new int[1];
         OS.GetCharWidth(getApi().handle, ch, ch, width);
@@ -3367,8 +3801,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public boolean getAdvanced() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.gdipGraphics != 0;
     }
 
@@ -3385,8 +3818,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public int getAlpha() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.alpha;
     }
 
@@ -3407,8 +3839,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public int getAntialias() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (data.gdipGraphics == 0)
             return SWT.DEFAULT;
         int mode = Gdip.Graphics_GetSmoothingMode(data.gdipGraphics);
@@ -3436,8 +3867,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public Color getBackground() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return SwtColor.win32_new(data.device, data.background);
     }
 
@@ -3456,8 +3886,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public Pattern getBackgroundPattern() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.backgroundPattern;
     }
 
@@ -3478,8 +3907,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public int getCharWidth(char ch) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         checkGC(FONT);
         /* GetCharABCWidths only succeeds on truetype fonts */
         int[] width = new int[3];
@@ -3507,12 +3935,11 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public Rectangle getClipping() {
-        return DPIUtil.scaleDown(drawable, getClippingInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(drawable, getClippingInPixels(), getZoom());
     }
 
     Rectangle getClippingInPixels() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
             Rect rect = new Rect();
@@ -3541,12 +3968,50 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void getClipping(Region region) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (region == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        storeAndApplyOperationForExistingHandle(new GetClippingOperation(region));
+    }
+
+    private class GetClippingOperation extends Operation {
+
+        private final Map<Integer, Long> zoomToRegionHandle = new HashMap<>();
+
+        public GetClippingOperation(Region region) {
+            ((SwtRegion) region.getImpl()).set(zoom -> {
+                if (!zoomToRegionHandle.containsKey(zoom)) {
+                    System.err.println("No clipping handle for zoom " + zoom + " has been created on this GC");
+                    return zoomToRegionHandle.values().iterator().next();
+                }
+                return zoomToRegionHandle.get(zoom);
+            }, getZoom());
+        }
+
+        // Whenever the GC handle is recalculated for a new zoom, we compute and store the clipping
+        // at the times when getClipping(Region) was originally called, such that the region to which
+        // that clipping is set can retrieve it from the storage when required.
+        @Override
+        void apply() {
+            zoomToRegionHandle.computeIfAbsent(getZoom(), __ -> getClippingRegion());
+        }
+
+        @Override
+        void disposeAll() {
+            for (long handle : zoomToRegionHandle.values()) {
+                OS.DeleteObject(handle);
+            }
+            super.disposeAll();
+        }
+    }
+
+    /**
+     * @return a region handle with the current clipping region of this GC
+     */
+    private long getClippingRegion() {
+        long regionHandle = OS.CreateRectRgn(0, 0, 0, 0);
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
             long rgn = Gdip.Region_new();
@@ -3556,7 +4021,7 @@ public final class SwtGC extends SwtResource implements IGC {
                 Gdip.Graphics_SetPixelOffsetMode(gdipGraphics, Gdip.PixelOffsetModeNone);
                 Gdip.Graphics_GetVisibleClipBounds(gdipGraphics, rect);
                 Gdip.Graphics_SetPixelOffsetMode(gdipGraphics, Gdip.PixelOffsetModeHalf);
-                OS.SetRectRgn(SwtRegion.win32_getHandle(region, getZoom()), rect.X, rect.Y, rect.X + rect.Width, rect.Y + rect.Height);
+                OS.SetRectRgn(regionHandle, rect.X, rect.Y, rect.X + rect.Width, rect.Y + rect.Height);
             } else {
                 long matrix = Gdip.Matrix_new(1, 0, 0, 1, 0, 0);
                 long identity = Gdip.Matrix_new(1, 0, 0, 1, 0, 0);
@@ -3569,26 +4034,26 @@ public final class SwtGC extends SwtResource implements IGC {
                 POINT pt = new POINT();
                 OS.GetWindowOrgEx(getApi().handle, pt);
                 OS.OffsetRgn(hRgn, pt.x, pt.y);
-                OS.CombineRgn(SwtRegion.win32_getHandle(region, getZoom()), hRgn, 0, OS.RGN_COPY);
+                OS.CombineRgn(regionHandle, hRgn, 0, OS.RGN_COPY);
                 OS.DeleteObject(hRgn);
             }
             Gdip.Region_delete(rgn);
-            return;
+            return regionHandle;
         }
         POINT pt = new POINT();
         OS.GetWindowOrgEx(getApi().handle, pt);
-        int result = OS.GetClipRgn(getApi().handle, SwtRegion.win32_getHandle(region, getZoom()));
+        int result = OS.GetClipRgn(getApi().handle, regionHandle);
         if (result != 1) {
             RECT rect = new RECT();
             OS.GetClipBox(getApi().handle, rect);
-            OS.SetRectRgn(SwtRegion.win32_getHandle(region, getZoom()), rect.left, rect.top, rect.right, rect.bottom);
+            OS.SetRectRgn(regionHandle, rect.left, rect.top, rect.right, rect.bottom);
         } else {
-            OS.OffsetRgn(SwtRegion.win32_getHandle(region, getZoom()), pt.x, pt.y);
+            OS.OffsetRgn(regionHandle, pt.x, pt.y);
         }
         long metaRgn = OS.CreateRectRgn(0, 0, 0, 0);
         if (OS.GetMetaRgn(getApi().handle, metaRgn) != 0) {
             OS.OffsetRgn(metaRgn, pt.x, pt.y);
-            OS.CombineRgn(SwtRegion.win32_getHandle(region, getZoom()), metaRgn, SwtRegion.win32_getHandle(region, getZoom()), OS.RGN_AND);
+            OS.CombineRgn(regionHandle, metaRgn, regionHandle, OS.RGN_AND);
         }
         OS.DeleteObject(metaRgn);
         long hwnd = data.hwnd;
@@ -3605,10 +4070,11 @@ public final class SwtGC extends SwtResource implements IGC {
                 }
                 OS.MapWindowPoints(0, hwnd, pt, 1);
                 OS.OffsetRgn(sysRgn, pt.x, pt.y);
-                OS.CombineRgn(SwtRegion.win32_getHandle(region, getZoom()), sysRgn, SwtRegion.win32_getHandle(region, getZoom()), OS.RGN_AND);
+                OS.CombineRgn(regionHandle, sysRgn, regionHandle, OS.RGN_AND);
             }
             OS.DeleteObject(sysRgn);
         }
+        return regionHandle;
     }
 
     long getFgBrush() {
@@ -3628,8 +4094,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public int getFillRule() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return OS.GetPolyFillMode(getApi().handle) == OS.WINDING ? SWT.FILL_WINDING : SWT.FILL_EVEN_ODD;
     }
 
@@ -3644,8 +4109,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public Font getFont() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.font;
     }
 
@@ -3661,8 +4125,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public FontMetrics getFontMetrics() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         checkGC(FONT);
         TEXTMETRIC lptm = new TEXTMETRIC();
         OS.GetTextMetrics(getApi().handle, lptm);
@@ -3679,8 +4142,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public Color getForeground() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return SwtColor.win32_new(data.device, data.foreground);
     }
 
@@ -3699,8 +4161,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public Pattern getForegroundPattern() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.foregroundPattern;
     }
 
@@ -3727,8 +4188,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.2
      */
     public GCData getGCData() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data;
     }
 
@@ -3746,8 +4206,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public int getInterpolation() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (data.gdipGraphics == 0)
             return SWT.DEFAULT;
         int mode = Gdip.Graphics_GetInterpolationMode(data.gdipGraphics);
@@ -3782,16 +4241,15 @@ public final class SwtGC extends SwtResource implements IGC {
     public LineAttributes getLineAttributes() {
         LineAttributes attributes = getLineAttributesInPixels();
         int deviceZoom = getZoom();
-        attributes.width = DPIUtil.scaleDown(drawable, attributes.width, deviceZoom);
+        attributes.width = Win32DPIUtils.pixelToPoint(drawable, attributes.width, deviceZoom);
         if (attributes.dash != null) {
-            attributes.dash = DPIUtil.scaleDown(drawable, attributes.dash, deviceZoom);
+            attributes.dash = Win32DPIUtils.pixelToPoint(drawable, attributes.dash, deviceZoom);
         }
         return attributes;
     }
 
     LineAttributes getLineAttributesInPixels() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         float[] dashes = null;
         if (data.lineDashes != null) {
             dashes = new float[data.lineDashes.length];
@@ -3814,8 +4272,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public int getLineCap() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.lineCap;
     }
 
@@ -3832,14 +4289,13 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public int[] getLineDash() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (data.lineDashes == null)
             return null;
         int[] lineDashes = new int[data.lineDashes.length];
         int deviceZoom = getZoom();
         for (int i = 0; i < lineDashes.length; i++) {
-            lineDashes[i] = DPIUtil.scaleDown(drawable, (int) data.lineDashes[i], deviceZoom);
+            lineDashes[i] = Win32DPIUtils.pixelToPoint(drawable, (int) data.lineDashes[i], deviceZoom);
         }
         return lineDashes;
     }
@@ -3858,8 +4314,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public int getLineJoin() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.lineJoin;
     }
 
@@ -3876,8 +4331,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public int getLineStyle() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.lineStyle;
     }
 
@@ -3894,12 +4348,11 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public int getLineWidth() {
-        return DPIUtil.scaleDown(drawable, getLineWidthInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(drawable, getLineWidthInPixels(), getZoom());
     }
 
     int getLineWidthInPixels() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return (int) data.lineWidth;
     }
 
@@ -3922,8 +4375,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 2.1.2
      */
     public int getStyle() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.style;
     }
 
@@ -3944,8 +4396,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public int getTextAntialias() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (data.gdipGraphics == 0)
             return SWT.DEFAULT;
         int mode = Gdip.Graphics_GetTextRenderingHint(data.gdipGraphics);
@@ -3982,8 +4433,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void getTransform(Transform transform) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (transform == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (transform.isDisposed())
@@ -4015,8 +4465,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public boolean getXORMode() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return OS.GetROP2(getApi().handle) == OS.R2_XORPEN;
     }
 
@@ -4074,7 +4523,7 @@ public final class SwtGC extends SwtResource implements IGC {
         }
     }
 
-    long identity() {
+    private long identity() {
         if ((data.style & SWT.MIRRORED) != 0) {
             int width = 0;
             int technology = OS.GetDeviceCaps(getApi().handle, OS.TECHNOLOGY);
@@ -4107,7 +4556,7 @@ public final class SwtGC extends SwtResource implements IGC {
         return Gdip.Matrix_new(1, 0, 0, 1, 0, 0);
     }
 
-    void init(Drawable drawable, GCData data, long hDC) {
+    private void init(Drawable drawable, GCData data, long hDC) {
         int foreground = data.foreground;
         if (foreground != -1) {
             data.state &= ~(FOREGROUND | FOREGROUND_TEXT | PEN);
@@ -4121,18 +4570,18 @@ public final class SwtGC extends SwtResource implements IGC {
             data.background = OS.GetBkColor(hDC);
         }
         data.state &= ~(NULL_BRUSH | NULL_PEN);
-        Font font = data.font;
-        if (font != null) {
-            data.state &= ~FONT;
-        } else {
-            data.font = SwtFont.win32_new(device, OS.GetCurrentObject(hDC, OS.OBJ_FONT));
-        }
         if (data.nativeZoom == 0) {
             data.nativeZoom = extractZoom(hDC);
         }
+        if (data.font != null) {
+            data.state &= ~FONT;
+            data.font = SwtFont.win32_new(data.font, data.nativeZoom);
+        } else {
+            data.font = SWTFontProvider.getFont(device, OS.GetCurrentObject(hDC, OS.OBJ_FONT), data.nativeZoom);
+        }
         Image image = data.image;
         if (image != null) {
-            data.hNullBitmap = OS.SelectObject(hDC, SwtImage.win32_getHandle(image, DPIUtil.getZoomForAutoscaleProperty(data.nativeZoom)));
+            data.hNullBitmap = OS.SelectObject(hDC, ((SwtImage) image.getImpl()).getHandle(((SwtGCData) data.getImpl()).imageZoom, data.nativeZoom));
             if (image.getImpl() instanceof DartImage) {
                 ((DartImage) image.getImpl()).memGC = this.getApi();
             }
@@ -4156,6 +4605,9 @@ public final class SwtGC extends SwtResource implements IGC {
     }
 
     private static int extractZoom(long hDC) {
+        StrictChecks.runIfStrictChecksEnabled(() -> {
+            System.err.println("***WARNING: GC is initialized with a missing zoom. This indicates an " + "incompatible custom Drawable implementation.");
+        });
         long hwnd = OS.WindowFromDC(hDC);
         long parentWindow = OS.GetAncestor(hwnd, OS.GA_ROOT);
         long monitorParent = OS.MonitorFromWindow(parentWindow, OS.MONITOR_DEFAULTTONEAREST);
@@ -4199,8 +4651,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public boolean isClipped() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
             long rgn = Gdip.Region_new();
@@ -4213,6 +4664,12 @@ public final class SwtGC extends SwtResource implements IGC {
         int result = OS.GetClipRgn(getApi().handle, region);
         OS.DeleteObject(region);
         return result > 0;
+    }
+
+    private void checkNonDisposed() {
+        if (isDisposed()) {
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        }
     }
 
     /**
@@ -4230,7 +4687,7 @@ public final class SwtGC extends SwtResource implements IGC {
         return getApi().handle == 0;
     }
 
-    float measureSpace(long font, long format) {
+    private float measureSpace(long font, long format) {
         PointF pt = new PointF();
         RectF bounds = new RectF();
         Gdip.Graphics_MeasureString(data.gdipGraphics, new char[] { ' ' }, 1, font, pt, format, bounds);
@@ -4280,20 +4737,33 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void setAdvanced(boolean advanced) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (advanced && data.gdipGraphics != 0)
-            return;
-        if (advanced) {
-            initGdip();
-        } else {
-            disposeGdip();
-            data.alpha = 0xFF;
-            data.backgroundPattern = data.foregroundPattern = null;
-            data.state = 0;
-            setClipping(0);
-            if ((data.style & SWT.MIRRORED) != 0) {
-                OS.SetLayout(getApi().handle, OS.GetLayout(getApi().handle) | OS.LAYOUT_RTL);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetAdvancedOperation(advanced));
+    }
+
+    private class SetAdvancedOperation extends Operation {
+
+        private final boolean advanced;
+
+        SetAdvancedOperation(boolean advanced) {
+            this.advanced = advanced;
+        }
+
+        @Override
+        void apply() {
+            if (advanced && data.gdipGraphics != 0)
+                return;
+            if (advanced) {
+                initGdip();
+            } else {
+                disposeGdip();
+                data.alpha = 0xFF;
+                data.backgroundPattern = data.foregroundPattern = null;
+                data.state = 0;
+                setClipping(0);
+                if ((data.style & SWT.MIRRORED) != 0) {
+                    OS.SetLayout(getApi().handle, OS.GetLayout(getApi().handle) | OS.LAYOUT_RTL);
+                }
             }
         }
     }
@@ -4327,26 +4797,39 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void setAntialias(int antialias) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT)
-            return;
-        int mode = 0;
-        switch(antialias) {
-            case SWT.DEFAULT:
-                mode = Gdip.SmoothingModeDefault;
-                break;
-            case SWT.OFF:
-                mode = Gdip.SmoothingModeNone;
-                break;
-            case SWT.ON:
-                mode = Gdip.SmoothingModeAntiAlias;
-                break;
-            default:
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetAntialiasOperation(antialias));
+    }
+
+    private class SetAntialiasOperation extends Operation {
+
+        private final int antialias;
+
+        SetAntialiasOperation(int antialias) {
+            this.antialias = antialias;
         }
-        initGdip();
-        Gdip.Graphics_SetSmoothingMode(data.gdipGraphics, mode);
+
+        @Override
+        void apply() {
+            if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT)
+                return;
+            int mode = 0;
+            switch(antialias) {
+                case SWT.DEFAULT:
+                    mode = Gdip.SmoothingModeDefault;
+                    break;
+                case SWT.OFF:
+                    mode = Gdip.SmoothingModeNone;
+                    break;
+                case SWT.ON:
+                    mode = Gdip.SmoothingModeAntiAlias;
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+            initGdip();
+            Gdip.Graphics_SetSmoothingMode(data.gdipGraphics, mode);
+        }
     }
 
     /**
@@ -4370,20 +4853,33 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void setAlpha(int alpha) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (data.gdipGraphics == 0 && (alpha & 0xFF) == 0xFF)
-            return;
-        initGdip();
-        data.alpha = alpha & 0xFF;
-        data.state &= ~(BACKGROUND | FOREGROUND);
-        if (data.gdipFgPatternBrushAlpha != 0) {
-            Gdip.TextureBrush_delete(data.gdipFgPatternBrushAlpha);
-            data.gdipFgPatternBrushAlpha = 0;
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetAlphaOperation(alpha));
+    }
+
+    private class SetAlphaOperation extends Operation {
+
+        private final int alpha;
+
+        SetAlphaOperation(int alpha) {
+            this.alpha = alpha;
         }
-        if (data.gdipBgPatternBrushAlpha != 0) {
-            Gdip.TextureBrush_delete(data.gdipBgPatternBrushAlpha);
-            data.gdipBgPatternBrushAlpha = 0;
+
+        @Override
+        void apply() {
+            if (data.gdipGraphics == 0 && (alpha & 0xFF) == 0xFF)
+                return;
+            initGdip();
+            data.alpha = alpha & 0xFF;
+            data.state &= ~(BACKGROUND | FOREGROUND);
+            if (data.gdipFgPatternBrushAlpha != 0) {
+                Gdip.TextureBrush_delete(data.gdipFgPatternBrushAlpha);
+                data.gdipFgPatternBrushAlpha = 0;
+            }
+            if (data.gdipBgPatternBrushAlpha != 0) {
+                Gdip.TextureBrush_delete(data.gdipBgPatternBrushAlpha);
+                data.gdipBgPatternBrushAlpha = 0;
+            }
         }
     }
 
@@ -4403,17 +4899,32 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void setBackground(Color color) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (data.backgroundPattern == null && data.background == color.handle)
-            return;
-        data.backgroundPattern = null;
-        data.background = color.handle;
-        data.state &= ~(BACKGROUND | BACKGROUND_TEXT);
+        storeAndApplyOperationForExistingHandle(new SetBackgroundOperation(color));
+    }
+
+    private class SetBackgroundOperation extends Operation {
+
+        private final Color color;
+
+        SetBackgroundOperation(Color color) {
+            RGB rgb = color.getRGB();
+            this.color = new Color(color.getDevice(), rgb);
+            registerForDisposal(this.color);
+        }
+
+        @Override
+        void apply() {
+            if (data.backgroundPattern == null && data.background == color.handle)
+                return;
+            data.backgroundPattern = null;
+            data.background = color.handle;
+            data.state &= ~(BACKGROUND | BACKGROUND_TEXT);
+        }
     }
 
     /**
@@ -4441,25 +4952,59 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void setBackgroundPattern(Pattern pattern) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (pattern != null && pattern.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (data.gdipGraphics == 0 && pattern == null)
-            return;
-        initGdip();
-        if (data.backgroundPattern == pattern)
-            return;
-        data.backgroundPattern = pattern;
-        data.state &= ~BACKGROUND;
-        if (data.gdipBgPatternBrushAlpha != 0) {
-            Gdip.TextureBrush_delete(data.gdipBgPatternBrushAlpha);
-            data.gdipBgPatternBrushAlpha = 0;
+        storeAndApplyOperationForExistingHandle(new SetBackgroundPatternOperation(pattern));
+    }
+
+    private class SetBackgroundPatternOperation extends Operation {
+
+        private final Pattern pattern;
+
+        SetBackgroundPatternOperation(Pattern pattern) {
+            this.pattern = pattern == null ? null : ((SwtPattern) pattern.getImpl()).copy();
+            registerForDisposal(this.pattern);
+        }
+
+        @Override
+        void apply() {
+            if (data.gdipGraphics == 0 && pattern == null)
+                return;
+            initGdip();
+            if (data.backgroundPattern == pattern)
+                return;
+            data.backgroundPattern = pattern;
+            data.state &= ~BACKGROUND;
+            if (data.gdipBgPatternBrushAlpha != 0) {
+                Gdip.TextureBrush_delete(data.gdipBgPatternBrushAlpha);
+                data.gdipBgPatternBrushAlpha = 0;
+            }
         }
     }
 
-    void setClipping(long clipRgn) {
-        long hRgn = clipRgn;
+    private void setClipping(long clipRgn) {
+        checkNonDisposed();
+        setClippingRegion(clipRgn);
+    }
+
+    private class SetClippingRegionOperation extends Operation {
+
+        private final Region clipRgn;
+
+        SetClippingRegionOperation(Region clipRgn) {
+            this.clipRgn = clipRgn != null ? ((SwtRegion) clipRgn.getImpl()).copy() : null;
+            registerForDisposal(this.clipRgn);
+        }
+
+        @Override
+        void apply() {
+            // Reset clipping if clipRgn is null.
+            setClippingRegion(clipRgn != null ? SwtRegion.win32_getHandle(clipRgn, getZoom()) : 0);
+        }
+    }
+
+    private void setClippingRegion(long hRgn) {
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
             if (hRgn != 0) {
@@ -4498,19 +5043,29 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void setClipping(int x, int y, int width, int height) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        setClippingInPixels(x, y, width, height);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetClippingOperation(new Rectangle(x, y, width, height)));
     }
 
-    void setClippingInPixels(int x, int y, int width, int height) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class SetClippingOperation extends Operation {
+
+        private final Rectangle rectangle;
+
+        SetClippingOperation(Rectangle rectangle) {
+            this.rectangle = rectangle;
+        }
+
+        @Override
+        void apply() {
+            Rectangle rect = Win32DPIUtils.pointToPixel(drawable, rectangle, getZoom());
+            setClippingInPixels(rect.x, rect.y, rect.width, rect.height);
+        }
+    }
+
+    private void setClippingInPixels(int x, int y, int width, int height) {
+        checkNonDisposed();
         long hRgn = OS.CreateRectRgn(x, y, x + width, y + height);
-        setClipping(hRgn);
+        setClippingRegion(hRgn);
         OS.DeleteObject(hRgn);
     }
 
@@ -4541,17 +5096,32 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void setClipping(Path path) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (path != null && path.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        setClipping(0);
-        if (path != null) {
-            initGdip();
-            int mode = OS.GetPolyFillMode(getApi().handle) == OS.WINDING ? Gdip.FillModeWinding : Gdip.FillModeAlternate;
-            final long pathHandle = ((SwtPath) path.getImpl()).getHandle(getZoom());
-            Gdip.GraphicsPath_SetFillMode(pathHandle, mode);
-            Gdip.Graphics_SetClipPath(data.gdipGraphics, pathHandle);
+        storeAndApplyOperationForExistingHandle(new SetClippingPathOperation(path));
+    }
+
+    private class SetClippingPathOperation extends Operation {
+
+        private final PathData pathData;
+
+        SetClippingPathOperation(Path path) {
+            this.pathData = path == null ? null : path.getPathData();
+        }
+
+        @Override
+        void apply() {
+            setClipping(0);
+            if (pathData != null) {
+                Path path = new Path(device, pathData);
+                initGdip();
+                int mode = OS.GetPolyFillMode(getApi().handle) == OS.WINDING ? Gdip.FillModeWinding : Gdip.FillModeAlternate;
+                final long pathHandle = ((SwtPath) path.getImpl()).getHandle(getZoom());
+                Gdip.GraphicsPath_SetFillMode(pathHandle, mode);
+                Gdip.Graphics_SetClipPath(data.gdipGraphics, pathHandle);
+                path.dispose();
+            }
         }
     }
 
@@ -4569,13 +5139,11 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void setClipping(Rectangle rect) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (rect == null) {
-            setClipping(0);
+            storeAndApplyOperationForExistingHandle(new SetClippingRegionOperation(null));
         } else {
-            rect = DPIUtil.scaleUp(drawable, rect, getZoom());
-            setClippingInPixels(rect.x, rect.y, rect.width, rect.height);
+            storeAndApplyOperationForExistingHandle(new SetClippingOperation(rect));
         }
     }
 
@@ -4596,11 +5164,10 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void setClipping(Region region) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (region != null && region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        setClipping(region != null ? SwtRegion.win32_getHandle(region, getZoom()) : 0);
+        storeAndApplyOperationForExistingHandle(new SetClippingRegionOperation(region));
     }
 
     /**
@@ -4620,20 +5187,33 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void setFillRule(int rule) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        int mode = OS.ALTERNATE;
-        switch(rule) {
-            case SWT.FILL_WINDING:
-                mode = OS.WINDING;
-                break;
-            case SWT.FILL_EVEN_ODD:
-                mode = OS.ALTERNATE;
-                break;
-            default:
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetFillRuleOperation(rule));
+    }
+
+    private class SetFillRuleOperation extends Operation {
+
+        private final int rule;
+
+        SetFillRuleOperation(int rule) {
+            this.rule = rule;
         }
-        OS.SetPolyFillMode(getApi().handle, mode);
+
+        @Override
+        void apply() {
+            int mode = OS.ALTERNATE;
+            switch(rule) {
+                case SWT.FILL_WINDING:
+                    mode = OS.WINDING;
+                    break;
+                case SWT.FILL_EVEN_ODD:
+                    mode = OS.ALTERNATE;
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+            OS.SetPolyFillMode(getApi().handle, mode);
+        }
     }
 
     /**
@@ -4652,12 +5232,25 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void setFont(Font font) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (font != null && font.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        data.font = font != null ? SWTFontProvider.getFont(device, font.getFontData()[0], data.nativeZoom) : SWTFontProvider.getSystemFont(device, data.nativeZoom);
-        data.state &= ~FONT;
+        storeAndApplyOperationForExistingHandle(new SetFontOperation(font));
+    }
+
+    private class SetFontOperation extends Operation {
+
+        private final Font font;
+
+        SetFontOperation(Font font) {
+            this.font = font != null ? SWTFontProvider.getFont(font.getDevice(), font.getFontData()[0], data.nativeZoom) : null;
+        }
+
+        @Override
+        void apply() {
+            data.font = font != null ? SWTFontProvider.getFont(font.getDevice(), font.getFontData()[0], data.nativeZoom) : SWTFontProvider.getSystemFont(device, data.nativeZoom);
+            data.state &= ~FONT;
+        }
     }
 
     /**
@@ -4675,17 +5268,32 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void setForeground(Color color) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (data.foregroundPattern == null && color.handle == data.foreground)
-            return;
-        data.foregroundPattern = null;
-        data.foreground = color.handle;
-        data.state &= ~(FOREGROUND | FOREGROUND_TEXT);
+        storeAndApplyOperationForExistingHandle(new SetForegroundOperation(color));
+    }
+
+    private class SetForegroundOperation extends Operation {
+
+        private final Color color;
+
+        SetForegroundOperation(Color color) {
+            RGB rgb = color.getRGB();
+            this.color = new Color(color.getDevice(), rgb);
+            registerForDisposal(this.color);
+        }
+
+        @Override
+        void apply() {
+            if (data.foregroundPattern == null && color.handle == data.foreground)
+                return;
+            data.foregroundPattern = null;
+            data.foreground = color.handle;
+            data.state &= ~(FOREGROUND | FOREGROUND_TEXT);
+        }
     }
 
     /**
@@ -4712,20 +5320,34 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void setForegroundPattern(Pattern pattern) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (pattern != null && pattern.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (data.gdipGraphics == 0 && pattern == null)
-            return;
-        initGdip();
-        if (data.foregroundPattern == pattern)
-            return;
-        data.foregroundPattern = pattern;
-        data.state &= ~FOREGROUND;
-        if (data.gdipFgPatternBrushAlpha != 0) {
-            Gdip.TextureBrush_delete(data.gdipFgPatternBrushAlpha);
-            data.gdipFgPatternBrushAlpha = 0;
+        storeAndApplyOperationForExistingHandle(new SetForegroundPatternOperation(pattern));
+    }
+
+    private class SetForegroundPatternOperation extends Operation {
+
+        private final Pattern pattern;
+
+        SetForegroundPatternOperation(Pattern pattern) {
+            this.pattern = pattern == null ? null : ((SwtPattern) pattern.getImpl()).copy();
+            registerForDisposal(this.pattern);
+        }
+
+        @Override
+        void apply() {
+            if (data.gdipGraphics == 0 && pattern == null)
+                return;
+            initGdip();
+            if (data.foregroundPattern == pattern)
+                return;
+            data.foregroundPattern = pattern;
+            data.state &= ~FOREGROUND;
+            if (data.gdipFgPatternBrushAlpha != 0) {
+                Gdip.TextureBrush_delete(data.gdipFgPatternBrushAlpha);
+                data.gdipFgPatternBrushAlpha = 0;
+            }
         }
     }
 
@@ -4756,29 +5378,42 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void setInterpolation(int interpolation) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (data.gdipGraphics == 0 && interpolation == SWT.DEFAULT)
-            return;
-        int mode = 0;
-        switch(interpolation) {
-            case SWT.DEFAULT:
-                mode = Gdip.InterpolationModeDefault;
-                break;
-            case SWT.NONE:
-                mode = Gdip.InterpolationModeNearestNeighbor;
-                break;
-            case SWT.LOW:
-                mode = Gdip.InterpolationModeLowQuality;
-                break;
-            case SWT.HIGH:
-                mode = Gdip.InterpolationModeHighQuality;
-                break;
-            default:
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetInterpolationOperation(interpolation));
+    }
+
+    private class SetInterpolationOperation extends Operation {
+
+        private final int interpolation;
+
+        SetInterpolationOperation(int interpolation) {
+            this.interpolation = interpolation;
         }
-        initGdip();
-        Gdip.Graphics_SetInterpolationMode(data.gdipGraphics, mode);
+
+        @Override
+        void apply() {
+            if (data.gdipGraphics == 0 && interpolation == SWT.DEFAULT)
+                return;
+            int mode = 0;
+            switch(interpolation) {
+                case SWT.DEFAULT:
+                    mode = Gdip.InterpolationModeDefault;
+                    break;
+                case SWT.NONE:
+                    mode = Gdip.InterpolationModeNearestNeighbor;
+                    break;
+                case SWT.LOW:
+                    mode = Gdip.InterpolationModeLowQuality;
+                    break;
+                case SWT.HIGH:
+                    mode = Gdip.InterpolationModeHighQuality;
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+            initGdip();
+            Gdip.Graphics_SetInterpolationMode(data.gdipGraphics, mode);
+        }
     }
 
     /**
@@ -4808,13 +5443,27 @@ public final class SwtGC extends SwtResource implements IGC {
     public void setLineAttributes(LineAttributes attributes) {
         if (attributes == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        attributes.width = DPIUtil.scaleUp(drawable, attributes.width, getZoom());
-        setLineAttributesInPixels(attributes);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetLineAttributesOperation(attributes));
     }
 
-    void setLineAttributesInPixels(LineAttributes attributes) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class SetLineAttributesOperation extends Operation {
+
+        private final LineAttributes attributes;
+
+        SetLineAttributesOperation(LineAttributes attributes) {
+            this.attributes = new LineAttributes(attributes.width, attributes.cap, attributes.join, attributes.style, attributes.dash, attributes.dashOffset, attributes.miterLimit);
+        }
+
+        @Override
+        void apply() {
+            attributes.width = Win32DPIUtils.pointToPixel(drawable, attributes.width, getZoom());
+            setLineAttributesInPixels(attributes);
+        }
+    }
+
+    private void setLineAttributesInPixels(LineAttributes attributes) {
+        checkNonDisposed();
         int mask = 0;
         float lineWidth = attributes.width;
         if (lineWidth != data.lineWidth) {
@@ -4877,7 +5526,7 @@ public final class SwtGC extends SwtResource implements IGC {
                 float[] newDashes = new float[dashes.length];
                 int deviceZoom = getZoom();
                 for (int i = 0; i < newDashes.length; i++) {
-                    newDashes[i] = DPIUtil.scaleUp(drawable, dashes[i], deviceZoom);
+                    newDashes[i] = Win32DPIUtils.pointToPixel(drawable, dashes[i], deviceZoom);
                 }
                 dashes = newDashes;
                 mask |= LINE_STYLE;
@@ -4929,20 +5578,33 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void setLineCap(int cap) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (data.lineCap == cap)
-            return;
-        switch(cap) {
-            case SWT.CAP_ROUND:
-            case SWT.CAP_FLAT:
-            case SWT.CAP_SQUARE:
-                break;
-            default:
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetLineCapOperation(cap));
+    }
+
+    private class SetLineCapOperation extends Operation {
+
+        private final int cap;
+
+        SetLineCapOperation(int cap) {
+            this.cap = cap;
         }
-        data.lineCap = cap;
-        data.state &= ~LINE_CAP;
+
+        @Override
+        void apply() {
+            if (data.lineCap == cap)
+                return;
+            switch(cap) {
+                case SWT.CAP_ROUND:
+                case SWT.CAP_FLAT:
+                case SWT.CAP_SQUARE:
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+            data.lineCap = cap;
+            data.state &= ~LINE_CAP;
+        }
     }
 
     /**
@@ -4963,31 +5625,44 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void setLineDash(int[] dashes) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        float[] lineDashes = data.lineDashes;
-        if (dashes != null && dashes.length > 0) {
-            boolean changed = data.lineStyle != SWT.LINE_CUSTOM || lineDashes == null || lineDashes.length != dashes.length;
-            float[] newDashes = new float[dashes.length];
-            int deviceZoom = getZoom();
-            for (int i = 0; i < dashes.length; i++) {
-                if (dashes[i] <= 0)
-                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-                newDashes[i] = DPIUtil.scaleUp(drawable, (float) dashes[i], deviceZoom);
-                if (!changed && lineDashes[i] != newDashes[i])
-                    changed = true;
-            }
-            if (!changed)
-                return;
-            data.lineDashes = newDashes;
-            data.lineStyle = SWT.LINE_CUSTOM;
-        } else {
-            if (data.lineStyle == SWT.LINE_SOLID && (lineDashes == null || lineDashes.length == 0))
-                return;
-            data.lineDashes = null;
-            data.lineStyle = SWT.LINE_SOLID;
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetLineDashOperation(dashes));
+    }
+
+    private class SetLineDashOperation extends Operation {
+
+        private final int[] dashes;
+
+        SetLineDashOperation(int[] dashes) {
+            this.dashes = dashes == null ? null : Arrays.copyOf(dashes, dashes.length);
         }
-        data.state &= ~LINE_STYLE;
+
+        @Override
+        void apply() {
+            float[] lineDashes = data.lineDashes;
+            if (dashes != null && dashes.length > 0) {
+                boolean changed = data.lineStyle != SWT.LINE_CUSTOM || lineDashes == null || lineDashes.length != dashes.length;
+                float[] newDashes = new float[dashes.length];
+                int deviceZoom = getZoom();
+                for (int i = 0; i < dashes.length; i++) {
+                    if (dashes[i] <= 0)
+                        SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                    newDashes[i] = Win32DPIUtils.pointToPixel(drawable, (float) dashes[i], deviceZoom);
+                    if (!changed && lineDashes[i] != newDashes[i])
+                        changed = true;
+                }
+                if (!changed)
+                    return;
+                data.lineDashes = newDashes;
+                data.lineStyle = SWT.LINE_CUSTOM;
+            } else {
+                if (data.lineStyle == SWT.LINE_SOLID && (lineDashes == null || lineDashes.length == 0))
+                    return;
+                data.lineDashes = null;
+                data.lineStyle = SWT.LINE_SOLID;
+            }
+            data.state &= ~LINE_STYLE;
+        }
     }
 
     /**
@@ -5007,20 +5682,33 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void setLineJoin(int join) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (data.lineJoin == join)
-            return;
-        switch(join) {
-            case SWT.JOIN_MITER:
-            case SWT.JOIN_ROUND:
-            case SWT.JOIN_BEVEL:
-                break;
-            default:
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetLineJoinOperation(join));
+    }
+
+    private class SetLineJoinOperation extends Operation {
+
+        private final int join;
+
+        SetLineJoinOperation(int join) {
+            this.join = join;
         }
-        data.lineJoin = join;
-        data.state &= ~LINE_JOIN;
+
+        @Override
+        void apply() {
+            if (data.lineJoin == join)
+                return;
+            switch(join) {
+                case SWT.JOIN_MITER:
+                case SWT.JOIN_ROUND:
+                case SWT.JOIN_BEVEL:
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+            data.lineJoin = join;
+            data.state &= ~LINE_JOIN;
+        }
     }
 
     /**
@@ -5039,26 +5727,40 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void setLineStyle(int lineStyle) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (data.lineStyle == lineStyle)
-            return;
-        switch(lineStyle) {
-            case SWT.LINE_SOLID:
-            case SWT.LINE_DASH:
-            case SWT.LINE_DOT:
-            case SWT.LINE_DASHDOT:
-            case SWT.LINE_DASHDOTDOT:
-                break;
-            case SWT.LINE_CUSTOM:
-                if (data.lineDashes == null)
-                    lineStyle = SWT.LINE_SOLID;
-                break;
-            default:
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetLineStyleOperation(lineStyle));
+    }
+
+    private class SetLineStyleOperation extends Operation {
+
+        private final int lineStyle;
+
+        SetLineStyleOperation(int lineStyle) {
+            this.lineStyle = lineStyle;
         }
-        data.lineStyle = lineStyle;
-        data.state &= ~LINE_STYLE;
+
+        @Override
+        void apply() {
+            if (data.lineStyle == lineStyle)
+                return;
+            int newLineStyle = this.lineStyle;
+            switch(newLineStyle) {
+                case SWT.LINE_SOLID:
+                case SWT.LINE_DASH:
+                case SWT.LINE_DOT:
+                case SWT.LINE_DASHDOT:
+                case SWT.LINE_DASHDOTDOT:
+                    break;
+                case SWT.LINE_CUSTOM:
+                    if (data.lineDashes == null)
+                        newLineStyle = SWT.LINE_SOLID;
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+            data.lineStyle = newLineStyle;
+            data.state &= ~LINE_STYLE;
+        }
     }
 
     /**
@@ -5082,13 +5784,26 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void setLineWidth(int lineWidth) {
-        lineWidth = DPIUtil.scaleUp(drawable, lineWidth, getZoom());
-        setLineWidthInPixels(lineWidth);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetLineWidthOperation(lineWidth));
     }
 
-    void setLineWidthInPixels(int lineWidth) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class SetLineWidthOperation extends Operation {
+
+        private final int width;
+
+        SetLineWidthOperation(int width) {
+            this.width = width;
+        }
+
+        @Override
+        void apply() {
+            int lineWidth = Win32DPIUtils.pointToPixel(drawable, width, getZoom());
+            setLineWidthInPixels(lineWidth);
+        }
+    }
+
+    private void setLineWidthInPixels(int lineWidth) {
         if (data.lineWidth == lineWidth)
             return;
         data.lineWidth = lineWidth;
@@ -5110,9 +5825,22 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public void setXORMode(boolean xor) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        OS.SetROP2(getApi().handle, xor ? OS.R2_XORPEN : OS.R2_COPYPEN);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetXORModeOperation(xor));
+    }
+
+    private class SetXORModeOperation extends Operation {
+
+        private final boolean xor;
+
+        SetXORModeOperation(boolean xor) {
+            this.xor = xor;
+        }
+
+        @Override
+        void apply() {
+            OS.SetROP2(getApi().handle, xor ? OS.R2_XORPEN : OS.R2_COPYPEN);
+        }
     }
 
     /**
@@ -5144,32 +5872,45 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void setTextAntialias(int antialias) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT)
-            return;
-        int textMode = 0;
-        switch(antialias) {
-            case SWT.DEFAULT:
-                textMode = Gdip.TextRenderingHintSystemDefault;
-                break;
-            case SWT.OFF:
-                textMode = Gdip.TextRenderingHintSingleBitPerPixelGridFit;
-                break;
-            case SWT.ON:
-                int[] type = new int[1];
-                OS.SystemParametersInfo(OS.SPI_GETFONTSMOOTHINGTYPE, 0, type, 0);
-                if (type[0] == OS.FE_FONTSMOOTHINGCLEARTYPE) {
-                    textMode = Gdip.TextRenderingHintClearTypeGridFit;
-                } else {
-                    textMode = Gdip.TextRenderingHintAntiAliasGridFit;
-                }
-                break;
-            default:
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetTextAntialiasOperation(antialias));
+    }
+
+    private class SetTextAntialiasOperation extends Operation {
+
+        private final int antialias;
+
+        SetTextAntialiasOperation(int antialias) {
+            this.antialias = antialias;
         }
-        initGdip();
-        Gdip.Graphics_SetTextRenderingHint(data.gdipGraphics, textMode);
+
+        @Override
+        void apply() {
+            if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT)
+                return;
+            int textMode = 0;
+            switch(antialias) {
+                case SWT.DEFAULT:
+                    textMode = Gdip.TextRenderingHintSystemDefault;
+                    break;
+                case SWT.OFF:
+                    textMode = Gdip.TextRenderingHintSingleBitPerPixelGridFit;
+                    break;
+                case SWT.ON:
+                    int[] type = new int[1];
+                    OS.SystemParametersInfo(OS.SPI_GETFONTSMOOTHINGTYPE, 0, type, 0);
+                    if (type[0] == OS.FE_FONTSMOOTHINGCLEARTYPE) {
+                        textMode = Gdip.TextRenderingHintClearTypeGridFit;
+                    } else {
+                        textMode = Gdip.TextRenderingHintAntiAliasGridFit;
+                    }
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+            initGdip();
+            Gdip.Graphics_SetTextRenderingHint(data.gdipGraphics, textMode);
+        }
     }
 
     /**
@@ -5199,20 +5940,40 @@ public final class SwtGC extends SwtResource implements IGC {
      * @since 3.1
      */
     public void setTransform(Transform transform) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (transform != null && transform.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (data.gdipGraphics == 0 && transform == null)
-            return;
-        initGdip();
-        long identity = identity();
-        if (transform != null) {
-            Gdip.Matrix_Multiply(identity, ((SwtTransform) transform.getImpl()).getHandle(getZoom()), Gdip.MatrixOrderPrepend);
+        storeAndApplyOperationForExistingHandle(new SetTransformOperation(transform));
+    }
+
+    private class SetTransformOperation extends Operation {
+
+        private final Transform transform;
+
+        SetTransformOperation(Transform transform) {
+            if (transform != null) {
+                float[] elements = new float[6];
+                transform.getElements(elements);
+                this.transform = new Transform(device, elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]);
+                registerForDisposal(this.transform);
+            } else {
+                this.transform = null;
+            }
         }
-        Gdip.Graphics_SetTransform(data.gdipGraphics, identity);
-        Gdip.Matrix_delete(identity);
-        data.state &= ~DRAW_OFFSET;
+
+        @Override
+        void apply() {
+            if (data.gdipGraphics == 0 && transform == null)
+                return;
+            initGdip();
+            long identity = identity();
+            if (transform != null) {
+                Gdip.Matrix_Multiply(identity, ((SwtTransform) transform.getImpl()).getHandle(getZoom()), Gdip.MatrixOrderPrepend);
+            }
+            Gdip.Graphics_SetTransform(data.gdipGraphics, identity);
+            Gdip.Matrix_delete(identity);
+            data.state &= ~DRAW_OFFSET;
+        }
     }
 
     /**
@@ -5237,12 +5998,11 @@ public final class SwtGC extends SwtResource implements IGC {
     public Point stringExtent(String string) {
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return DPIUtil.scaleDown(drawable, stringExtentInPixels(string), getZoom());
+        return Win32DPIUtils.pixelToPoint(drawable, stringExtentInPixels(string), getZoom());
     }
 
     Point stringExtentInPixels(String string) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         checkGC(FONT);
         int length = string.length();
         long gdipGraphics = data.gdipGraphics;
@@ -5283,7 +6043,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public Point textExtent(String string) {
-        return DPIUtil.scaleDown(drawable, textExtentInPixels(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB), getZoom());
+        return Win32DPIUtils.pixelToPoint(drawable, textExtentInPixels(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB), getZoom());
     }
 
     /**
@@ -5318,12 +6078,11 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public Point textExtent(String string, int flags) {
-        return DPIUtil.scaleDown(drawable, textExtentInPixels(string, flags), getZoom());
+        return Win32DPIUtils.pixelToPoint(drawable, textExtentInPixels(string, flags), getZoom());
     }
 
     Point textExtentInPixels(String string, int flags) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         checkGC(FONT);
@@ -5349,6 +6108,15 @@ public final class SwtGC extends SwtResource implements IGC {
             uFormat |= OS.DT_NOPREFIX;
         OS.DrawText(getApi().handle, buffer, buffer.length, rect, uFormat);
         return new Point(rect.right, rect.bottom);
+    }
+
+    void refreshFor(Drawable drawable) {
+        if (drawable == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        destroy();
+        GCData newData = new GCData();
+        ((SwtGCData) originalData.getImpl()).copyTo(newData);
+        createGcHandle(drawable, newData);
     }
 
     /**
@@ -5383,6 +6151,7 @@ public final class SwtGC extends SwtResource implements IGC {
      */
     public static GC win32_new(Drawable drawable, GCData data) {
         GC gc = new GC();
+        ((SwtGCData) data.getImpl()).copyTo(((SwtGC) gc.getImpl()).originalData);
         long hDC = drawable.internal_new_GC(data);
         if (gc.getImpl() instanceof DartResource) {
             ((DartResource) gc.getImpl()).device = data.device;
@@ -5424,6 +6193,7 @@ public final class SwtGC extends SwtResource implements IGC {
         if ((flags & OS.LAYOUT_RTL) != 0) {
             data.style |= SWT.RIGHT_TO_LEFT | SWT.MIRRORED;
         }
+        ((SwtGCData) data.getImpl()).copyTo(((SwtGC) gc.getImpl()).originalData);
         ((SwtGC) gc.getImpl()).init(null, data, hDC);
         return gc;
     }
@@ -5454,8 +6224,56 @@ public final class SwtGC extends SwtResource implements IGC {
         return (int) (Math.sin(angle * (Math.PI / 180)) * length);
     }
 
-    private int getZoom() {
+    public int getZoom() {
         return DPIUtil.getZoomForAutoscaleProperty(data.nativeZoom);
+    }
+
+    private void storeAndApplyOperationForExistingHandle(Operation operation) {
+        operations.add(operation);
+        operation.apply();
+    }
+
+    private void createGcHandle(Drawable drawable, GCData newData) {
+        long newHandle = drawable.internal_new_GC(newData);
+        if (newHandle == 0)
+            SWT.error(SWT.ERROR_NO_HANDLES);
+        init(drawable, newData, newHandle);
+        for (Operation operation : operations) {
+            operation.apply();
+        }
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        disposeOperations();
+    }
+
+    private void disposeOperations() {
+        for (Operation op : operations) {
+            op.disposeAll();
+        }
+        operations.clear();
+    }
+
+    private abstract class Operation {
+
+        private final List<Resource> disposables = new ArrayList<>();
+
+        abstract void apply();
+
+        protected void registerForDisposal(Resource resource) {
+            if (resource != null) {
+                disposables.add(resource);
+            }
+        }
+
+        void disposeAll() {
+            for (Resource r : disposables) {
+                r.dispose();
+            }
+            disposables.clear();
+        }
     }
 
     public Drawable _drawable() {

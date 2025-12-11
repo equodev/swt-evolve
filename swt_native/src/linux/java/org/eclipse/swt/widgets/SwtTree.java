@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2022 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -67,7 +67,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * </p>
  * <dl>
  * <dt><b>Styles:</b></dt>
- * <dd>SINGLE, MULTI, CHECK, FULL_SELECTION, VIRTUAL, NO_SCROLL</dd>
+ * <dd>SINGLE, MULTI, CHECK, FULL_SELECTION, VIRTUAL, NO_SCROLL, NO_SEARCH</dd>
  * <dt><b>Events:</b></dt>
  * <dd>Selection, DefaultSelection, Collapse, Expand, SetData, MeasureItem, EraseItem, PaintItem, EmptinessChanged</dd>
  * </dl>
@@ -700,7 +700,7 @@ public class SwtTree extends SwtComposite implements ITree {
 	 * the number of items at the root of the tree.
 	 */
         if (hHint == SWT.DEFAULT && size.y == getHeaderHeight()) {
-            int itemHeight = getItemHeightInPixels();
+            int itemHeight = getItemHeight();
             // Initialize to height of root items & header
             size.y = getItemCount() * itemHeight + getHeaderHeight();
             for (TreeItem item : items) {
@@ -977,12 +977,12 @@ public class SwtTree extends SwtComposite implements ITree {
         if (GTK.GTK4) {
             GTK4.gtk_box_append(boxHandle, imageHandle);
             GTK4.gtk_box_append(boxHandle, labelHandle);
-            GTK.gtk_widget_hide(imageHandle);
+            gtk_widget_hide(imageHandle);
         } else {
             GTK3.gtk_container_add(boxHandle, imageHandle);
             GTK3.gtk_container_add(boxHandle, labelHandle);
-            GTK.gtk_widget_show(boxHandle);
-            GTK.gtk_widget_show(labelHandle);
+            gtk_widget_show(boxHandle);
+            gtk_widget_show(labelHandle);
         }
         ((SwtTreeColumn) column.getImpl()).labelHandle = labelHandle;
         ((SwtTreeColumn) column.getImpl()).imageHandle = imageHandle;
@@ -1371,7 +1371,7 @@ public class SwtTree extends SwtComposite implements ITree {
             long[] path = new long[1];
             if (GTK.gtk_gesture_drag_get_start_point(dragGesture, startX, startY)) {
                 if (getHeaderVisible()) {
-                    startY[0] -= getHeaderHeightInPixels();
+                    startY[0] -= getHeaderHeight();
                 }
                 if (GTK.gtk_tree_view_get_path_at_pos(getApi().handle, (int) startX[0], (int) startY[0], path, null, null, null)) {
                     if (path[0] != 0) {
@@ -1656,11 +1656,6 @@ public class SwtTree extends SwtComposite implements ITree {
      */
     public int getGridLineWidth() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getGridLineWidthInPixels());
-    }
-
-    int getGridLineWidthInPixels() {
-        checkWidget();
         return 0;
     }
 
@@ -1709,11 +1704,6 @@ public class SwtTree extends SwtComposite implements ITree {
      * @since 3.1
      */
     public int getHeaderHeight() {
-        checkWidget();
-        return DPIUtil.autoScaleDown(getHeaderHeightInPixels());
-    }
-
-    int getHeaderHeightInPixels() {
         checkWidget();
         if (!GTK.gtk_tree_view_get_headers_visible(getApi().handle))
             return 0;
@@ -1826,11 +1816,6 @@ public class SwtTree extends SwtComposite implements ITree {
      */
     public TreeItem getItem(Point point) {
         checkWidget();
-        return getItemInPixels(DPIUtil.autoScaleUp(point));
-    }
-
-    TreeItem getItemInPixels(Point point) {
-        checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         long[] path = new long[1];
@@ -1904,11 +1889,6 @@ public class SwtTree extends SwtComposite implements ITree {
      * </ul>
      */
     public int getItemHeight() {
-        checkWidget();
-        return DPIUtil.autoScaleDown(getItemHeightInPixels());
-    }
-
-    int getItemHeightInPixels() {
         checkWidget();
         int height = 0;
         int itemCount = GTK.gtk_tree_model_iter_n_children(modelHandle, 0);
@@ -2368,12 +2348,13 @@ public class SwtTree extends SwtComposite implements ITree {
     }
 
     @Override
-    void gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
-        super.gtk_gesture_press_event(gesture, n_press, x, y, event);
+    int gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
+        int result = super.gtk_gesture_press_event(gesture, n_press, x, y, event);
         if (n_press == 2 && rowActivated) {
             sendTreeDefaultSelection();
             rowActivated = false;
         }
+        return result;
     }
 
     @Override
@@ -2903,7 +2884,11 @@ public class SwtTree extends SwtComposite implements ITree {
         if (checkRenderer != 0) {
             ((SwtDisplay) display.getImpl()).removeWidget(checkRenderer);
             OS.g_object_unref(checkRenderer);
-            checkRenderer = isOwnerDrawn ? OS.g_object_new(((SwtDisplay) display.getImpl()).gtk_cell_renderer_toggle_get_type(), 0) : GTK.gtk_cell_renderer_toggle_new();
+            if (GTK.GTK4) {
+                checkRenderer = GTK.gtk_cell_renderer_toggle_new();
+            } else {
+                checkRenderer = isOwnerDrawn ? OS.g_object_new(((SwtDisplay) display.getImpl()).gtk_cell_renderer_toggle_get_type(), 0) : GTK.gtk_cell_renderer_toggle_new();
+            }
             if (checkRenderer == 0)
                 error(SWT.ERROR_NO_HANDLES);
             OS.g_object_ref(checkRenderer);
@@ -3152,14 +3137,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 Image image = item.getImage(columnIndex);
                 int imageWidth = 0;
                 if (image != null && !image.isDisposed()) {
-                    Rectangle bounds;
-                    if (DPIUtil.useCairoAutoScale()) {
-                        bounds = image.getBounds();
-                    } else {
-                        bounds = image.getBoundsInPixels();
-                    }
-                    bounds = image.getBounds();
-                    imageWidth = bounds.width;
+                    imageWidth = image.getBounds().width;
                 }
                 contentWidth[0] += imageWidth;
                 GC gc = new GC(this.getApi());
@@ -3169,7 +3147,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 event.index = columnIndex;
                 event.gc = gc;
                 Rectangle eventRect = new Rectangle(0, 0, contentWidth[0], contentHeight[0]);
-                event.setBounds(DPIUtil.autoScaleDown(eventRect));
+                event.setBounds(eventRect);
                 long path = GTK.gtk_tree_model_get_path(modelHandle, iter);
                 long selection = GTK.gtk_tree_view_get_selection(getApi().handle);
                 if (GTK.gtk_tree_selection_path_is_selected(selection, path)) {
@@ -3178,7 +3156,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 GTK.gtk_tree_path_free(path);
                 sendEvent(SWT.MeasureItem, event);
                 gc.dispose();
-                Rectangle rect = DPIUtil.autoScaleUp(event.getBounds());
+                Rectangle rect = event.getBounds();
                 contentWidth[0] = rect.width - imageWidth;
                 if (contentHeight[0] < rect.height)
                     contentHeight[0] = rect.height;
@@ -3329,12 +3307,9 @@ public class SwtTree extends SwtComposite implements ITree {
                     if (cr != 0) {
                         // Use the original rectangle, not the Cairo clipping for the y, width, and height values.
                         // See bug 535124.
-                        Rectangle rect2 = DPIUtil.autoScaleDown(rect);
-                        gc.setClipping(rect2.x, rect2.y, rect2.width, rect2.height);
+                        gc.setClipping(rect.x, rect.y, rect.width, rect.height);
                     } else {
-                        Rectangle rect2 = DPIUtil.autoScaleDown(rect);
-                        // Caveat: rect2 is necessary because GC#setClipping(Rectangle) got broken by bug 446075
-                        gc.setClipping(rect2.x, rect2.y, rect2.width, rect2.height);
+                        gc.setClipping(rect.x, rect.y, rect.width, rect.height);
                     }
                     // SWT.PaintItem/SWT.EraseItem often expect that event.y matches
                     // what 'event.item.getBounds()' returns. The workaround is to
@@ -3348,7 +3323,7 @@ public class SwtTree extends SwtComposite implements ITree {
                         event.index = columnIndex;
                         event.gc = gc;
                         event.detail = drawState;
-                        event.setBounds(DPIUtil.autoScaleDown(eventRect));
+                        event.setBounds(eventRect);
                         sendEvent(SWT.EraseItem, event);
                     } finally {
                         Cairo.cairo_translate(cr, 0, y_offset);
@@ -3374,7 +3349,7 @@ public class SwtTree extends SwtComposite implements ITree {
         if ((drawState & SWT.BACKGROUND) != 0 && (drawState & SWT.SELECTED) == 0) {
             GC gc = getGC(cr);
             gc.setBackground(item.getBackground(columnIndex));
-            gc.fillRectangle(DPIUtil.autoScaleDown(rendererRect.toRectangle()));
+            gc.fillRectangle(rendererRect.toRectangle());
             gc.dispose();
         }
         if ((drawState & SWT.FOREGROUND) != 0 || GTK.GTK_IS_CELL_RENDERER_TOGGLE(cell)) {
@@ -3410,13 +3385,7 @@ public class SwtTree extends SwtComposite implements ITree {
                     Image image = item.getImage(columnIndex);
                     int imageWidth = 0;
                     if (image != null) {
-                        Rectangle bounds;
-                        if (DPIUtil.useCairoAutoScale()) {
-                            bounds = image.getBounds();
-                        } else {
-                            bounds = image.getBoundsInPixels();
-                        }
-                        imageWidth = bounds.width;
+                        imageWidth = image.getBounds().width;
                     }
                     // Account for the image width on GTK3, see bug 535124.
                     if (cr != 0) {
@@ -3452,9 +3421,7 @@ public class SwtTree extends SwtComposite implements ITree {
                     if ((getApi().style & SWT.MIRRORED) != 0) {
                         rect.x = getClientWidth() - rect.width - rect.x;
                     }
-                    Rectangle rect2 = DPIUtil.autoScaleDown(rect);
-                    // Caveat: rect2 is necessary because GC#setClipping(Rectangle) got broken by bug 446075
-                    gc.setClipping(rect2.x, rect2.y, rect2.width, rect2.height);
+                    gc.setClipping(rect.x, rect.y, rect.width, rect.height);
                     // SWT.PaintItem/SWT.EraseItem often expect that event.y matches
                     // what 'event.item.getBounds()' returns. The workaround is to
                     // adjust coordinate system temporarily.
@@ -3467,7 +3434,7 @@ public class SwtTree extends SwtComposite implements ITree {
                         event.index = columnIndex;
                         event.gc = gc;
                         event.detail = drawState;
-                        event.setBounds(DPIUtil.autoScaleDown(eventRect));
+                        event.setBounds(eventRect);
                         sendEvent(SWT.PaintItem, event);
                     } finally {
                         Cairo.cairo_translate(cr, 0, y_offset);
@@ -3523,8 +3490,8 @@ public class SwtTree extends SwtComposite implements ITree {
     }
 
     boolean searchEnabled() {
-        /* Disable searching when using VIRTUAL */
-        if ((getApi().style & SWT.VIRTUAL) != 0)
+        /* Disable searching when using VIRTUAL or NO_SEARCH */
+        if ((getApi().style & SWT.VIRTUAL) != 0 || (getApi().style & SWT.NO_SEARCH) != 0)
             return false;
         return true;
     }
@@ -3556,18 +3523,16 @@ public class SwtTree extends SwtComposite implements ITree {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (((SwtTreeItem) item.getImpl()).parent != this.getApi())
             return;
-        if (item.getImpl() instanceof SwtTreeItem) {
-            Rectangle rect = ((SwtTreeItem) item.getImpl()).getBoundsInPixels();
-            long[] path = new long[1];
-            GTK.gtk_widget_realize(getApi().handle);
-            if (!GTK.gtk_tree_view_get_path_at_pos(getApi().handle, rect.x, rect.y, path, null, null, null))
-                return;
-            if (path[0] == 0)
-                return;
-            int position = before ? GTK.GTK_TREE_VIEW_DROP_BEFORE : GTK.GTK_TREE_VIEW_DROP_AFTER;
-            GTK.gtk_tree_view_set_drag_dest_row(getApi().handle, path[0], position);
-            GTK.gtk_tree_path_free(path[0]);
-        }
+        Rectangle rect = item.getBounds();
+        long[] path = new long[1];
+        GTK.gtk_widget_realize(getApi().handle);
+        if (!GTK.gtk_tree_view_get_path_at_pos(getApi().handle, rect.x, rect.y, path, null, null, null))
+            return;
+        if (path[0] == 0)
+            return;
+        int position = before ? GTK.GTK_TREE_VIEW_DROP_BEFORE : GTK.GTK_TREE_VIEW_DROP_AFTER;
+        GTK.gtk_tree_view_set_drag_dest_row(getApi().handle, path[0], position);
+        GTK.gtk_tree_path_free(path[0]);
     }
 
     void setItemCount(long parentIter, int count) {
@@ -3944,7 +3909,7 @@ public class SwtTree extends SwtComposite implements ITree {
      */
     public void setLinesVisible(boolean show) {
         checkWidget();
-        //Note: this is overriden by the active theme in GTK3.
+        //Note: this is overridden by the active theme in GTK3.
         GTK.gtk_tree_view_set_grid_lines(getApi().handle, show ? GTK.GTK_TREE_VIEW_GRID_LINES_VERTICAL : GTK.GTK_TREE_VIEW_GRID_LINES_NONE);
     }
 

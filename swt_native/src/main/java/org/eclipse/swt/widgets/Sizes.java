@@ -78,8 +78,8 @@ public class Sizes {
         }
 
         if (c.image != null) {
-            int imageWidth = c.image.getImpl()._width();
-            int imageHeight = c.image.getImpl()._height();
+            int imageWidth = c.image.getImpl().getBounds().width;
+            int imageHeight = c.image.getImpl().getBounds().height;
 
             if (c.text != null && !c.text.isEmpty()) {
                 width += 8;
@@ -335,6 +335,9 @@ public class Sizes {
         }
     }
 
+    public static Point compute(DartControl dartControl) {
+        return new Point(10,10); // ToDo
+    }
     public static Point compute(DartMenu c) {
         int style = c.getApi().style;
         boolean isBar = (style & org.eclipse.swt.SWT.BAR) != 0;

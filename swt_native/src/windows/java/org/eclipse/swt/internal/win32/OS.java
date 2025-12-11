@@ -19,6 +19,7 @@ package org.eclipse.swt.internal.win32;
 import java.util.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.win32.version.*;
 import org.eclipse.swt.widgets.*;
 
 public class OS extends C {
@@ -32,28 +33,6 @@ public class OS extends C {
 	* SWT Windows flags
 	*/
     public static final boolean IsDBLocale;
-
-    /**
-     * Always reports the correct build number, regardless of manifest and
-     * compatibility GUIDs. Note that build number alone is sufficient to
-     * identify Windows version.
-     */
-    public static final int WIN32_BUILD;
-
-    /**
-     * Values taken from https://en.wikipedia.org/wiki/List_of_Microsoft_Windows_versions
-     */
-    // "Windows 10 August 2016 Update"
-    public static final int WIN32_BUILD_WIN10_1607 = 14393;
-
-    // "Windows 10 October 2018 Update"
-    public static final int WIN32_BUILD_WIN10_1809 = 17763;
-
-    // "Windows 10 May 2020 Update"
-    public static final int WIN32_BUILD_WIN10_2004 = 19041;
-
-    // Initial Windows 11 release
-    public static final int WIN32_BUILD_WIN11_21H2 = 22000;
 
     public static final String NO_MANIFEST = "org.eclipse.swt.internal.win32.OS.NO_MANIFEST";
 
@@ -69,19 +48,6 @@ public class OS extends C {
     public static final int SM_IMMENABLED = 0x52;
 
     static {
-        /*
-		 * Starting with Windows 10, GetVersionEx() lies about version unless
-		 * application manifest has a proper entry. RtlGetVersion() always
-		 * reports true version.
-		 */
-        OSVERSIONINFOEX osVersionInfoEx = new OSVERSIONINFOEX();
-        osVersionInfoEx.dwOSVersionInfoSize = OSVERSIONINFOEX.sizeof;
-        if (0 == OS.RtlGetVersion(osVersionInfoEx)) {
-            WIN32_BUILD = osVersionInfoEx.dwBuildNumber;
-        } else {
-            System.err.println("SWT: OS: Failed to detect Windows build number");
-            WIN32_BUILD = 0;
-        }
         /* Load the manifest to force the XP Theme */
         if (System.getProperty(NO_MANIFEST) == null) {
             ACTCTX pActCtx = new ACTCTX();
@@ -660,6 +626,8 @@ public class OS extends C {
 
     public static final int DPI_AWARENESS_CONTEXT_UNAWARE = 24592;
 
+    public static final int DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED = 1073766416;
+
     public static final int DPI_AWARENESS_CONTEXT_SYSTEM_AWARE = 24593;
 
     public static final int DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE = 18;
@@ -831,6 +799,8 @@ public class OS extends C {
     public static final int EP_EDITTEXT = 1;
 
     public static final int ERROR_FILE_NOT_FOUND = 0x2;
+
+    public static final int ERROR_INVALID_STATE = 0x139F;
 
     public static final int ERROR_NO_MORE_ITEMS = 0x103;
 
@@ -1748,6 +1718,8 @@ public class OS extends C {
 
     public static final int MF_UNCHECKED = 0x0;
 
+    public static final int MIIM_CHECKMARKS = 0x8;
+
     public static final int MIIM_BITMAP = 0x80;
 
     public static final int MIIM_DATA = 0x20;
@@ -2055,6 +2027,9 @@ public class OS extends C {
 
     public static final int PM_NOYIELD = 0x2;
 
+    // undocumented ( >= Windows 8.1)
+    public static final int PW_RENDERFULLCONTENT = 0x2;
+
     public static final int QS_HOTKEY = 0x0080;
 
     public static final int QS_KEY = 0x0001;
@@ -2339,6 +2314,8 @@ public class OS extends C {
 
     public static final int SHGFI_SMALLICON = 0x1;
 
+    public static final int SHGFI_LARGEICON = 0x0;
+
     public static final int SHGFI_USEFILEATTRIBUTES = 0x000000010;
 
     public static final int SIGDN_FILESYSPATH = 0x80058000;
@@ -2408,6 +2385,8 @@ public class OS extends C {
     public static final int SM_CYHSCROLL = 0x3;
 
     public static final int SM_CYMENU = 0xf;
+
+    public static final int SM_CYMENUCHECK = 72;
 
     public static final int SM_CXMINTRACK = 34;
 
@@ -3434,6 +3413,8 @@ public class OS extends C {
 
     public static final int WM_DPICHANGED = 0x02E0;
 
+    public static final int WM_DISPLAYCHANGE = 0x7E;
+
     public static final int WM_DRAWITEM = 0x2b;
 
     public static final int WM_ENDSESSION = 0x16;
@@ -3866,8 +3847,6 @@ public class OS extends C {
 
     public static final native int OUTLINETEXTMETRIC_sizeof();
 
-    public static final native int OSVERSIONINFOEX_sizeof();
-
     public static final native int PAINTSTRUCT_sizeof();
 
     public static final native int POINT_sizeof();
@@ -4235,6 +4214,11 @@ public class OS extends C {
         return SetWindowText(hWnd, lpString1);
     }
 
+    public static final int SHDefExtractIcon(TCHAR lpszFile, int iIndex, int uFlags, long[] phiconLarge, long[] phiconSmall, int nIconSize) {
+        char[] lpszFile1 = lpszFile == null ? null : lpszFile.chars;
+        return SHDefExtractIcon(lpszFile1, iIndex, uFlags, phiconLarge, phiconSmall, nIconSize);
+    }
+
     public static final boolean UnregisterClass(TCHAR lpClassName, long hInstance) {
         char[] lpClassName1 = lpClassName == null ? null : lpClassName.chars;
         return UnregisterClass(lpClassName1, hInstance);
@@ -4325,7 +4309,7 @@ public class OS extends C {
      */
     public static final native int AddFontResourceEx(char[] lpszFilename, int fl, long pdv);
 
-    public static final native boolean AdjustWindowRectEx(RECT lpRect, int dwStyle, boolean bMenu, int dwExStyle);
+    public static final native boolean AdjustWindowRectExForDpi(RECT lpRect, int dwStyle, boolean bMenu, int dwExStyle, int dpi);
 
     /**
      * @method flags=no_gen
@@ -5062,6 +5046,11 @@ public class OS extends C {
      */
     public static final native int GetDpiForMonitor(long hmonitor, int dpiType, int[] dpiX, int[] dpiY);
 
+    /**
+     * @method flags=dynamic
+     */
+    public static final native int GetDpiForWindow(long hWnd);
+
     public static final native long GetFocus();
 
     /**
@@ -5353,9 +5342,6 @@ public class OS extends C {
 
     public static final native int GetSystemMetrics(int nIndex);
 
-    /**
-     * @method flags=dynamic
-     */
     public static final native int GetSystemMetricsForDpi(int nIndex, int dpi);
 
     /**
@@ -5825,6 +5811,13 @@ public class OS extends C {
      * @param lpszName cast=(LPWSTR)
      */
     public static final native long LoadImage(long hinst, long lpszName, int uType, int cxDesired, int cyDesired, int fuLoad);
+
+    /**
+     * @param hinst cast=(HINSTANCE)
+     * @param lpszName cast=(LPWSTR)
+     * @param phico cast=(HICON *)
+     */
+    public static final native long LoadIconWithScaleDown(long hinst, long lpszName, int cxDesired, int cyDesired, long[] phico);
 
     /**
      * @param pwszKLID cast=(LPCWSTR)
@@ -6660,11 +6653,6 @@ public class OS extends C {
     public static final native boolean RoundRect(long hdc, int nLeftRect, int nTopRect, int nRightRect, int nBottomRect, int nWidth, int nHeight);
 
     /**
-     * @method flags=dynamic
-     */
-    public static final native int RtlGetVersion(OSVERSIONINFOEX lpVersionInformation);
-
-    /**
      * @param hdc cast=(HDC)
      */
     public static final native int SaveDC(long hdc);
@@ -7313,6 +7301,13 @@ public class OS extends C {
     public static final native boolean SetWorldTransform(long hdc, float[] lpXform);
 
     /**
+     * @param lpszFile cast=(LPWSTR)
+     * @param phiconLarge cast=(HICON FAR *)
+     * @param phiconSmall cast=(HICON FAR *)
+     */
+    public static final native int SHDefExtractIcon(char[] lpszFile, int iIndex, int uFlags, long[] phiconLarge, long[] phiconSmall, int nIconSize);
+
+    /**
      * @param pszPath cast=(LPCWSTR),flags=no_out
      */
     public static final native long SHGetFileInfo(char[] pszPath, int dwFileAttributes, SHFILEINFO psfi, int cbFileInfo, int uFlags);
@@ -7369,9 +7364,6 @@ public class OS extends C {
 
     public static final native boolean SystemParametersInfo(int uiAction, int uiParam, int[] pvParam, int fWinIni);
 
-    /**
-     * @method flags=dynamic
-     */
     public static final native boolean SystemParametersInfoForDpi(int uiAction, int uiParam, NONCLIENTMETRICS pvParam, int fWinIni, int dpi);
 
     /**
@@ -7540,7 +7532,7 @@ public class OS extends C {
     public static final native boolean DuplicateHandle(long hSourceProcessHandle, long hSourceHandle, long hTargetProcessHandle, long[] lpTargetHandle, int dwDesiredAccess, boolean b, int dwOptions);
 
     public static long OpenThemeData(long hwnd, char[] themeName, int dpi) {
-        if (OS.WIN32_BUILD >= OS.WIN32_BUILD_WIN10_1809) {
+        if (OsVersion.IS_WIN10_1809) {
             return OS.OpenThemeDataForDpi(hwnd, themeName, dpi);
         } else {
             return OS.OpenThemeData(hwnd, themeName);

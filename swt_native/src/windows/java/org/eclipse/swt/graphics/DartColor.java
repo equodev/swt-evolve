@@ -42,13 +42,6 @@ public final class DartColor extends DartResource implements IColor {
     /**
      * Prevents uninitialized instances from being created outside the package.
      */
-    DartColor(Color api) {
-        super(api);
-    }
-
-    /**
-     * Prevents uninitialized instances from being created outside the package.
-     */
     DartColor(Device device, Color api) {
         super(device, api);
     }
@@ -313,9 +306,6 @@ public final class DartColor extends DartResource implements IColor {
     @Override
     public Device getDevice() {
         // Fall back on Device.getDevice only if we haven't been disposed
-        // already.
-        if (this.device == null && this.getApi().handle != -1)
-            return SwtDevice.getDevice();
         return super.getDevice();
     }
 

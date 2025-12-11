@@ -17,8 +17,10 @@
 package org.eclipse.swt.widgets;
 
 import java.util.*;
+import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
+import org.eclipse.swt.browser.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
@@ -585,10 +587,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point computeSize(int wHint, int hHint, boolean changed) {
         checkWidget();
-        int zoom = getZoom();
-        wHint = (wHint != SWT.DEFAULT ? DPIUtil.scaleUp(wHint, zoom) : wHint);
-        hHint = (hHint != SWT.DEFAULT ? DPIUtil.scaleUp(hHint, zoom) : hHint);
-        return DPIUtil.scaleDown(computeSizeInPixels(wHint, hHint, changed), zoom);
+        return Sizes.compute(this);
     }
 
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
@@ -669,7 +668,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     long defaultFont() {
-        return ((SwtDisplay) display.getImpl()).getSystemFont(getShell().nativeZoom).handle;
+        return 0;
     }
 
     int defaultForeground() {
@@ -729,9 +728,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (event == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        Point loc = event.getLocation();
-        int zoom = getZoom();
-        return dragDetect(event.button, event.count, event.stateMask, DPIUtil.scaleUp(loc.x, zoom), DPIUtil.scaleUp(loc.y, zoom));
+        return false;
     }
 
     /**
@@ -774,9 +771,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (event == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        int zoom = getZoom();
-        // To Pixels
-        return dragDetect(event.button, event.count, event.stateMask, DPIUtil.scaleUp(event.x, zoom), DPIUtil.scaleUp(event.y, zoom));
+        return false;
     }
 
     boolean dragDetect(int button, int count, int stateMask, int x, int y) {
@@ -882,6 +877,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return false;
         if (isFocusControl())
             return true;
+        getBridge().setFocus(this);
         ((SwtDecorations) shell.getImpl()).setSavedFocus(null);
         /*
 	* This code is intentionally commented.
@@ -899,7 +895,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 	*/
         if (isDisposed())
             return false;
-        getBridge().setFocus(this);
         ((SwtDecorations) shell.getImpl()).setSavedFocus(this.getApi());
         return isFocusControl();
     }
@@ -1002,7 +997,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public int getBorderWidth() {
         checkWidget();
-        return DPIUtil.scaleDown(getBorderWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getBorderWidthInPixels(), getZoom());
     }
 
     int getBorderWidthInPixels() {
@@ -1024,7 +1019,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Rectangle getBounds() {
         checkWidget();
-        return DPIUtil.scaleDown(getBoundsInPixels(), getZoom());
+        return this.bounds;
     }
 
     Rectangle getBoundsInPixels() {
@@ -1156,10 +1151,15 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     /**
-     * Returns a point describing the receiver's location relative
-     * to its parent in points (or its display if its parent is null), unless
-     * the receiver is a shell. In this case, the point is
-     * relative to the display.
+     * Returns a point describing the receiver's location relative to its parent in
+     * points (or its display if its parent is null), unless the receiver is a
+     * shell. In this case, the point is usually relative to the display.
+     * <p>
+     * <b>Warning:</b> When executing this operation on a shell, it may not yield a
+     * value with the expected meaning on some platforms. For example, executing
+     * this operation on a shell when the environment uses the Wayland protocol, the
+     * result is <b>not</b> a coordinate relative to the display. It will not change
+     * when moving the shell.
      *
      * @return the receiver's location
      *
@@ -1170,7 +1170,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point getLocation() {
         checkWidget();
-        return DPIUtil.scaleDown(getLocationInPixels(), getZoom());
+        return new Point(bounds.x, bounds.y);
     }
 
     Point getLocationInPixels() {
@@ -1321,7 +1321,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point getSize() {
         checkWidget();
-        return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
+        return new Point(bounds.width, bounds.height);
     }
 
     public Point getSizeInPixels() {
@@ -1982,11 +1982,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void redraw(int x, int y, int width, int height, boolean all) {
         checkWidget();
-        int zoom = getZoom();
-        x = DPIUtil.scaleUp(x, zoom);
-        y = DPIUtil.scaleUp(y, zoom);
-        width = DPIUtil.scaleUp(width, zoom);
-        height = DPIUtil.scaleUp(height, zoom);
         if (width <= 0 || height <= 0)
             return;
     }
@@ -2505,6 +2500,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * <p>
      * Note: This operation is a hint and may be overridden by the platform.
      * </p>
+     * <p>
+     * Note: The background color can be overridden by setting a background image.
+     * </p>
      * @param color the new color (or null)
      *
      * @exception IllegalArgumentException <ul>
@@ -2549,6 +2547,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * <p>
      * Note: This operation is a hint and may be overridden by the platform.
      * For example, on Windows the background of a Button cannot be changed.
+     * </p>
+     * <p>
+     * Note: Setting a background image overrides a set background color.
      * </p>
      * @param image the new image (or null)
      *
@@ -2617,40 +2618,26 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setBounds(int x, int y, int width, int height) {
-        checkWidget();
-        int zoom = getZoom();
-        x = DPIUtil.scaleUp(x, zoom);
-        y = DPIUtil.scaleUp(y, zoom);
-        width = DPIUtil.scaleUp(width, zoom);
-        height = DPIUtil.scaleUp(height, zoom);
-        setBoundsInPixels(x, y, width, height);
+        dirty();
+        setBounds(new Rectangle(x, y, width, height));
+        this.bounds = new Rectangle(x, y, width, height);
+        getBridge().setBounds(this, bounds);
     }
 
     void setBoundsInPixels(int x, int y, int width, int height) {
-        this.bounds = new Rectangle(x, y, width, height);
-        dirty();
-        this.bounds = new Rectangle(x, y, width, height);
-        getBridge().setBounds(this, bounds);
     }
 
     void setBoundsInPixels(int x, int y, int width, int height, int flags) {
-        dirty();
         setBoundsInPixels(x, y, width, height, flags, true);
-        this.bounds = new Rectangle(x, y, width, height);
-        getBridge().setBounds(this, bounds);
     }
 
     void setBoundsInPixels(int x, int y, int width, int height, int flags, boolean defer) {
-        this.bounds = new Rectangle(x, y, width, height);
-        dirty();
         if (findImageControl() != null) {
         } else {
         }
         if (defer && parent != null) {
             forceResize();
         }
-        this.bounds = new Rectangle(x, y, width, height);
-        getBridge().setBounds(this, bounds);
     }
 
     /**
@@ -2677,10 +2664,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setBounds(Rectangle rect) {
+        dirty();
         checkWidget();
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        setBoundsInPixels(DPIUtil.scaleUp(rect, getZoom()));
+        this.bounds = rect;
+        getBridge().setBounds(this, bounds);
     }
 
     void setBoundsInPixels(Rectangle rect) {
@@ -2851,13 +2840,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (newFont != null) {
             if (newFont.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            newFont = DartFont.win32_new(newFont, getShell().nativeZoom);
+            newFont = DartFont.win32_new(newFont, getNativeZoom());
         }
         long hFont = 0;
         if (newFont != null) {
             if (newFont.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            hFont = newFont.handle;
         }
         this.font = newFont;
         if (hFont == 0)
@@ -2916,11 +2904,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     /**
-     * Sets the receiver's location to the point specified by
-     * the arguments which are relative to the receiver's
-     * parent (or its display if its parent is null), unless
-     * the receiver is a shell. In this case, the point is
-     * relative to the display.
+     * Sets the receiver's location to the point specified by the arguments which
+     * are relative to the receiver's parent (or its display if its parent is null),
+     * unless the receiver is a shell. In this case, the point is relative to the
+     * display.
+     * <p>
+     * <b>Warning:</b> When executing this operation on a shell, it may not have the
+     * intended effect on some platforms. For example, executing this operation on a
+     * shell when the environment uses the Wayland protocol, nothing will happen.
      *
      * @param x the new x coordinate for the receiver
      * @param y the new y coordinate for the receiver
@@ -2932,9 +2923,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setLocation(int x, int y) {
         checkWidget();
-        int zoom = getZoom();
-        x = DPIUtil.scaleUp(x, zoom);
-        y = DPIUtil.scaleUp(y, zoom);
         setLocationInPixels(x, y);
     }
 
@@ -2943,11 +2931,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     /**
-     * Sets the receiver's location to the point specified by
-     * the arguments which are relative to the receiver's
-     * parent (or its display if its parent is null), unless
-     * the receiver is a shell. In this case, the point is
-     * relative to the display.
+     * Sets the receiver's location to the point specified by the argument which
+     * is relative to the receiver's parent (or its display if its parent is null),
+     * unless the receiver is a shell. In this case, the point is relative to the
+     * display.
+     * <p>
+     * <b>Warning:</b> When executing this operation on a shell, it may not have the
+     * intended effect on some platforms. For example, executing this operation on a
+     * shell when the environment uses the Wayland protocol, nothing will happen.
      *
      * @param location the new location for the receiver
      *
@@ -2960,7 +2951,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        location = DPIUtil.scaleUp(location, getZoom());
         setLocationInPixels(location.x, location.y);
     }
 
@@ -3144,9 +3134,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setSize(int width, int height) {
         checkWidget();
-        int zoom = getZoom();
-        width = DPIUtil.scaleUp(width, zoom);
-        height = DPIUtil.scaleUp(height, zoom);
         setSizeInPixels(width, height);
     }
 
@@ -3187,7 +3174,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = DPIUtil.scaleUp(size, getZoom());
         setSizeInPixels(size.x, size.y);
     }
 
@@ -3404,13 +3390,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point toControl(int x, int y) {
         checkWidget();
-        int zoom = getZoom();
-        if (getDisplay().isRescalingAtRuntime()) {
-            Point displayPointInPixels = ((SwtDisplay) getDisplay().getImpl()).translateLocationInPixelsInDisplayCoordinateSystem(x, y);
-            final Point controlPointInPixels = toControlInPixels(displayPointInPixels.x, displayPointInPixels.y);
-            return DPIUtil.scaleDown(controlPointInPixels, zoom);
-        }
-        return DPIUtil.scaleDown(toControlInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom)), zoom);
+        return null;
     }
 
     Point toControlInPixels(int x, int y) {
@@ -3465,13 +3445,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 2.1
      */
     public Point toDisplay(int x, int y) {
-        checkWidget();
-        int zoom = getZoom();
-        if (getDisplay().isRescalingAtRuntime()) {
-            Point displayPointInPixels = toDisplayInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom));
-            return ((SwtDisplay) getDisplay().getImpl()).translateLocationInPointInDisplayCoordinateSystem(displayPointInPixels.x, displayPointInPixels.y);
-        }
-        return DPIUtil.scaleDown(toDisplayInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom)), zoom);
+        return new Point(x, y);
     }
 
     Point toDisplayInPixels(int x, int y) {
@@ -3982,11 +3956,16 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return true;
     }
 
+    void handleMonitorSpecificDpiChange(int newNativeZoom, Rectangle newBoundsInPixels) {
+        DPIUtil.setDeviceZoom(newNativeZoom);
+        this.setBoundsInPixels(newBoundsInPixels.x, newBoundsInPixels.y, newBoundsInPixels.width, newBoundsInPixels.height);
+    }
+
     private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
         if (!(widget instanceof Control control)) {
             return;
         }
-        resizeFont(control, control.getShell().nativeZoom);
+        resizeFont(control, ((DartWidget) control.getImpl()).getNativeZoom());
         Image image = ((DartControl) control.getImpl()).backgroundImage;
         if (image != null) {
             if (image.isDisposed()) {

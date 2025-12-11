@@ -341,7 +341,7 @@ public class FileDialog extends Dialog {
  * When the FileDialog is in URI mode it returns
  * a URI (instead of a file name) for the following
  * methods: open() and getFilterPath().
- * The input argment for setFilterPath() should also
+ * The input argument for setFilterPath() should also
  * be a URI.
  */
     protected FileDialog(IFileDialog impl) {

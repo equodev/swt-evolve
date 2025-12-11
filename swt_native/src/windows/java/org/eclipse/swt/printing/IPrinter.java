@@ -13,6 +13,8 @@ public interface IPrinter extends IDevice {
      */
     void create(DeviceData deviceData);
 
+    int getDeviceZoom();
+
     /**
      * Invokes platform specific functionality to allocate a new GC handle.
      * <p>

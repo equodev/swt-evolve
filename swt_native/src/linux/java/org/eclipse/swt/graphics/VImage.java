@@ -1,6 +1,7 @@
 package org.eclipse.swt.graphics;
 
 import java.io.*;
+import java.util.*;
 import org.eclipse.swt.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;

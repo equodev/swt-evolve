@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2017 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -332,11 +332,6 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
      */
     public int getWidth() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getWidthInPixels());
-    }
-
-    int getWidthInPixels() {
-        checkWidget();
         if (!GTK.gtk_tree_view_column_get_visible(getApi().handle)) {
             return 0;
         }
@@ -483,10 +478,10 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
         if (buttonHandle != 0) {
             boolean hideHeader = !GTK.gtk_widget_get_visible(buttonHandle);
             GtkRequisition requisition = new GtkRequisition();
-            GTK.gtk_widget_show(buttonHandle);
+            gtk_widget_show(buttonHandle);
             gtk_widget_get_preferred_size(buttonHandle, requisition);
             if (hideHeader) {
-                GTK.gtk_widget_hide(buttonHandle);
+                gtk_widget_hide(buttonHandle);
             }
             width = requisition.width;
         }
@@ -523,7 +518,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
             }
             OS.g_free(iter);
         }
-        setWidthInPixels(width);
+        setWidth(width);
     }
 
     @Override
@@ -657,14 +652,14 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
             } else {
                 GTK3.gtk_image_set_from_surface(imageHandle, headerImageList.getSurface(imageIndex));
             }
-            GTK.gtk_widget_show(imageHandle);
+            gtk_widget_show(imageHandle);
         } else {
             if (GTK.GTK4) {
                 GTK4.gtk_image_clear(imageHandle);
             } else {
                 GTK3.gtk_image_set_from_surface(imageHandle, 0);
             }
-            GTK.gtk_widget_hide(imageHandle);
+            gtk_widget_hide(imageHandle);
         }
     }
 
@@ -734,9 +729,9 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
         byte[] buffer = Converter.wcsToMbcs(chars, true);
         GTK.gtk_label_set_text_with_mnemonic(labelHandle, buffer);
         if (string.length() != 0) {
-            GTK.gtk_widget_show(labelHandle);
+            gtk_widget_show(labelHandle);
         } else {
-            GTK.gtk_widget_hide(labelHandle);
+            gtk_widget_hide(labelHandle);
         }
     }
 
@@ -784,11 +779,6 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
      * </ul>
      */
     public void setWidth(int width) {
-        checkWidget();
-        setWidthInPixels(DPIUtil.autoScaleUp(width));
-    }
-
-    void setWidthInPixels(int width) {
         checkWidget();
         if (width < 0)
             return;

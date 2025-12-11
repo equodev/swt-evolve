@@ -15,7 +15,7 @@
  */
 package org.eclipse.swt.internal;
 
-import java.util.EventListener;
+import java.util.*;
 
 /**
  * This interface is the cross-platform version of the
@@ -30,5 +30,6 @@ import java.util.EventListener;
  * </p>
  * @noreference This interface is not intended to be referenced by clients.
  */
+@Deprecated(forRemoval = true, since = "2025-03")
 public interface SWTEventListener extends EventListener {
 }

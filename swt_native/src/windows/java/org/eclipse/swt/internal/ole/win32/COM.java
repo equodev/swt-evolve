@@ -435,6 +435,8 @@ public class COM extends OS {
 
     public static final int DVASPECT_CONTENT = 1;
 
+    public static final int E_ABORT = 0x80004004;
+
     public static final int E_ACCESSDENIED = 0x80070005;
 
     public static final int E_FAIL = -2147467259;

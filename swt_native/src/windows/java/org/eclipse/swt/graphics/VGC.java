@@ -1,6 +1,9 @@
 package org.eclipse.swt.graphics;
 
+import java.util.*;
+import java.util.stream.*;
 import org.eclipse.swt.*;
+import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 
@@ -192,7 +195,33 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
-    public static class VGCCopyArea {
+    public static class VGCCopyAreaImageintint {
+
+        public Image image;
+
+        public int x;
+
+        public int y;
+    }
+
+    @CompiledJson()
+    public static class VGCCopyAreaintintintintintint {
+
+        public int srcX;
+
+        public int srcY;
+
+        public int width;
+
+        public int height;
+
+        public int destX;
+
+        public int destY;
+    }
+
+    @CompiledJson()
+    public static class VGCCopyAreaintintintintintintboolean {
 
         public int srcX;
 
@@ -210,17 +239,7 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
-    public static class VGCCopyAreaImage {
-
-        public Image image;
-
-        public int x;
-
-        public int y;
-    }
-
-    @CompiledJson()
-    public static class VGCDrawArc {
+    public static class VGCDrawArcintintintintintint {
 
         public int x;
 
@@ -236,7 +255,7 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
-    public static class VGCDrawFocus {
+    public static class VGCDrawFocusintintintint {
 
         public int x;
 
@@ -248,9 +267,19 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
-    public static class VGCDrawImage {
+    public static class VGCDrawImageImageintint {
 
-        public Image srcImage;
+        public Image image;
+
+        public int x;
+
+        public int y;
+    }
+
+    @CompiledJson()
+    public static class VGCDrawImageImageintintintintintintintint {
+
+        public Image image;
 
         public int srcX;
 
@@ -267,12 +296,10 @@ public class VGC extends VResource {
         public int destWidth;
 
         public int destHeight;
-
-        public boolean simple;
     }
 
     @CompiledJson()
-    public static class VGCDrawLine {
+    public static class VGCDrawLineintintintint {
 
         public int x1;
 
@@ -284,7 +311,7 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
-    public static class VGCDrawOval {
+    public static class VGCDrawOvalintintintint {
 
         public int x;
 
@@ -296,7 +323,7 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
-    public static class VGCDrawPoint {
+    public static class VGCDrawPointintint {
 
         public int x;
 
@@ -304,19 +331,25 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
-    public static class VGCDrawPolygon {
+    public static class VGCDrawPolygonint {
 
         public int[] pointArray;
     }
 
     @CompiledJson()
-    public static class VGCDrawPolyline {
+    public static class VGCDrawPolylineint {
 
         public int[] pointArray;
     }
 
     @CompiledJson()
-    public static class VGCDrawRectangle {
+    public static class VGCDrawRectangleRectangle {
+
+        public Rectangle rect;
+    }
+
+    @CompiledJson()
+    public static class VGCDrawRectangleintintintint {
 
         public int x;
 
@@ -328,7 +361,7 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
-    public static class VGCDrawRoundRectangle {
+    public static class VGCDrawRoundRectangleintintintintintint {
 
         public int x;
 
@@ -344,7 +377,51 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
-    public static class VGCDrawText {
+    public static class VGCDrawStringStringintint {
+
+        public String string;
+
+        public int x;
+
+        public int y;
+    }
+
+    @CompiledJson()
+    public static class VGCDrawStringStringintintboolean {
+
+        public String string;
+
+        public int x;
+
+        public int y;
+
+        public boolean isTransparent;
+    }
+
+    @CompiledJson()
+    public static class VGCDrawTextStringintint {
+
+        public String string;
+
+        public int x;
+
+        public int y;
+    }
+
+    @CompiledJson()
+    public static class VGCDrawTextStringintintboolean {
+
+        public String string;
+
+        public int x;
+
+        public int y;
+
+        public boolean isTransparent;
+    }
+
+    @CompiledJson()
+    public static class VGCDrawTextStringintintint {
 
         public String string;
 
@@ -356,7 +433,7 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
-    public static class VGCFillArc {
+    public static class VGCFillArcintintintintintint {
 
         public int x;
 
@@ -372,7 +449,7 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
-    public static class VGCFillGradientRectangle {
+    public static class VGCFillGradientRectangleintintintintboolean {
 
         public int x;
 
@@ -386,7 +463,7 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
-    public static class VGCFillOval {
+    public static class VGCFillOvalintintintint {
 
         public int x;
 
@@ -398,13 +475,19 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
-    public static class VGCFillPolygon {
+    public static class VGCFillPolygonint {
 
         public int[] pointArray;
     }
 
     @CompiledJson()
-    public static class VGCFillRectangle {
+    public static class VGCFillRectangleRectangle {
+
+        public Rectangle rect;
+    }
+
+    @CompiledJson()
+    public static class VGCFillRectangleintintintint {
 
         public int x;
 
@@ -416,7 +499,7 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
-    public static class VGCFillRoundRectangle {
+    public static class VGCFillRoundRectangleintintintintintint {
 
         public int x;
 

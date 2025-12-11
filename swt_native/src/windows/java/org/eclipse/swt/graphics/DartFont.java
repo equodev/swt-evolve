@@ -38,17 +38,38 @@ import dev.equo.swt.*;
 public final class DartFont extends DartResource implements IFont {
 
     /**
+     * the handle to the OS font resource
+     * (Warning: This field is platform dependent)
+     * <p>
+     * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
+     * public API. It is marked public only so that it can be shared
+     * within the packages provided by SWT. It is not available on all
+     * platforms and should never be accessed from application code.
+     * </p>
+     */
+    private long handle;
+
+    /**
      * The zoom in % of the standard resolution used for conversion of point height to pixel height
      * (Warning: This field is platform dependent)
      */
     int zoom;
 
     /**
-     * Prevents uninitialized instances from being created outside the package.
+     * this field is used to mark destroyed fonts
      */
-    DartFont(Device device, Font api) {
+    private boolean isDestroyed;
+
+    /**
+     * this field is used to store fontData provided during initialization
+     */
+    private final FontData fontData;
+
+    DartFont(Device device, long handle, int zoom, Font api) {
         super(device, api);
-        this.zoom = extractZoom(this.device);
+        this.fontData = null;
+        this.handle = handle;
+        this.zoom = zoom;
     }
 
     /**
@@ -73,15 +94,19 @@ public final class DartFont extends DartResource implements IFont {
      */
     public DartFont(Device device, FontData fd, Font api) {
         super(device, api);
-        this.zoom = extractZoom(this.device);
-        init(fd);
+        if (fd == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        this.zoom = DPIUtil.getNativeDeviceZoom();
+        this.fontData = new FontData(fd);
         init();
     }
 
     DartFont(Device device, FontData fd, int zoom, Font api) {
         super(device, api);
+        if (fd == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.zoom = zoom;
-        init(fd);
+        this.fontData = new FontData(fd);
         init();
     }
 
@@ -120,8 +145,9 @@ public final class DartFont extends DartResource implements IFont {
             if (fd == null)
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        this.zoom = extractZoom(this.device);
-        init(fds[0]);
+        this.zoom = DPIUtil.getNativeDeviceZoom();
+        FontData fd = fds[0];
+        this.fontData = new FontData(fd);
         init();
     }
 
@@ -153,24 +179,15 @@ public final class DartFont extends DartResource implements IFont {
         super(device, api);
         if (name == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.zoom = extractZoom(this.device);
-        init(new FontData(name, height, style));
-        init();
-    }
-
-    /*public*/
-    DartFont(Device device, String name, float height, int style, Font api) {
-        super(device, api);
-        if (name == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.zoom = extractZoom(this.device);
-        init(new FontData(name, height, style));
+        this.zoom = DPIUtil.getNativeDeviceZoom();
+        this.fontData = new FontData(name, height, style);
         init();
     }
 
     @Override
     void destroy() {
-        getApi().handle = 0;
+        handle = 0;
+        isDestroyed = true;
     }
 
     /**
@@ -189,8 +206,7 @@ public final class DartFont extends DartResource implements IFont {
             return true;
         if (!(object instanceof Font))
             return false;
-        Font font = (Font) object;
-        return device == font.getImpl()._device() && getApi().handle == font.handle;
+        return false;
     }
 
     /**
@@ -208,7 +224,7 @@ public final class DartFont extends DartResource implements IFont {
     public FontData[] getFontData() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return this.fontData;
+        return this._fontData;
     }
 
     /**
@@ -223,18 +239,13 @@ public final class DartFont extends DartResource implements IFont {
      */
     @Override
     public int hashCode() {
-        return (int) getApi().handle;
+        return 0;
     }
 
     void init(FontData fd) {
         if (fd == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        fontData[0] = new FontData(fd.getName(), fd.getHeight(), fd.getStyle());
-        getApi().handle = 1;
-        int primaryZoom = extractZoom(device);
-        if (zoom != primaryZoom) {
-        }
-        if (getApi().handle == 0)
+        if (handle == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
     }
 
@@ -250,7 +261,7 @@ public final class DartFont extends DartResource implements IFont {
      */
     @Override
     public boolean isDisposed() {
-        return getApi().handle == 0;
+        return isDestroyed;
     }
 
     /**
@@ -263,24 +274,17 @@ public final class DartFont extends DartResource implements IFont {
     public String toString() {
         if (isDisposed())
             return "Font {*DISPOSED*}";
-        return "Font {" + getApi().handle + "}";
+        return "Font {" + handle + "}";
     }
 
-    private static int extractZoom(Device device) {
-        if (device == null) {
-            return DPIUtil.getNativeDeviceZoom();
-        }
-        return DPIUtil.mapDPIToZoom(((SwtDevice) device.getImpl())._getDPIx());
-    }
-
-    FontData[] fontData = new FontData[1];
+    FontData[] _fontData = new FontData[0];
 
     public int _zoom() {
         return zoom;
     }
 
-    public FontData[] _fontData() {
-        return fontData;
+    public FontData[] __fontData() {
+        return _fontData;
     }
 
     public static Font win32_new(Font newFont, int nativeZoom) {

@@ -15,6 +15,7 @@
  */
 package org.eclipse.swt.graphics;
 
+import java.lang.ref.*;
 import java.util.*;
 import java.util.concurrent.*;
 import org.eclipse.swt.*;

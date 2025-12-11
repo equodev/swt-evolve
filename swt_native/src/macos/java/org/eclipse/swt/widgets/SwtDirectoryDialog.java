@@ -201,7 +201,7 @@ public class SwtDirectoryDialog extends SwtDialog implements IDirectoryDialog {
         directoryPath = null;
         panel = NSOpenPanel.openPanel();
         if (panel == null) {
-            return null;
+            throw new SWTException(SWT.ERROR_INVALID_RETURN_VALUE);
         }
         callback_performKeyEquivalent = new Callback(this, "_performKeyEquivalent", 3);
         long proc = callback_performKeyEquivalent.getAddress();

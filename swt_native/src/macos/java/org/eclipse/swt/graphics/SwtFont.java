@@ -172,13 +172,6 @@ public final class SwtFont extends SwtResource implements IFont {
         }
     }
 
-    /*public*/
-    SwtFont(Device device, String name, float height, int style, Font api) {
-        super(device, api);
-        init(name, height, style, null);
-        init();
-    }
-
     void addTraits(NSMutableAttributedString attrStr, NSRange range) {
         if ((getApi().extraTraits & OS.NSBoldFontMask) != 0) {
             attrStr.addAttribute(OS.NSStrokeWidthAttributeName, NSNumber.numberWithDouble(SYNTHETIC_BOLD), range);

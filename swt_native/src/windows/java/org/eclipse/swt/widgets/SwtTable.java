@@ -59,7 +59,7 @@ import org.eclipse.swt.internal.win32.*;
  * </p>
  * <dl>
  * <dt><b>Styles:</b></dt>
- * <dd>SINGLE, MULTI, CHECK, FULL_SELECTION, HIDE_SELECTION, VIRTUAL, NO_SCROLL</dd>
+ * <dd>SINGLE, MULTI, CHECK, FULL_SELECTION, HIDE_SELECTION, VIRTUAL, NO_SCROLL, NO_SEARCH</dd>
  * <dt><b>Events:</b></dt>
  * <dd>Selection, DefaultSelection, SetData, MeasureItem, EraseItem, PaintItem</dd>
  * </dl>
@@ -2436,7 +2436,7 @@ public class SwtTable extends SwtComposite implements ITable {
      */
     public int getGridLineWidth() {
         checkWidget();
-        return DPIUtil.scaleDown(getGridLineWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getGridLineWidthInPixels(), getZoom());
     }
 
     int getGridLineWidthInPixels() {
@@ -2497,7 +2497,7 @@ public class SwtTable extends SwtComposite implements ITable {
      */
     public int getHeaderHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getHeaderHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getHeaderHeightInPixels(), getZoom());
     }
 
     int getHeaderHeightInPixels() {
@@ -2581,7 +2581,7 @@ public class SwtTable extends SwtComposite implements ITable {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return getItemInPixels(DPIUtil.scaleUp(point, getZoom()));
+        return getItemInPixels(Win32DPIUtils.pointToPixel(point, getZoom()));
     }
 
     TableItem getItemInPixels(Point point) {
@@ -2684,7 +2684,7 @@ public class SwtTable extends SwtComposite implements ITable {
      */
     public int getItemHeight() {
         checkWidget();
-        return DPIUtil.scaleDown(getItemHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getItemHeightInPixels(), getZoom());
     }
 
     int getItemHeightInPixels() {
@@ -2947,7 +2947,7 @@ public class SwtTable extends SwtComposite implements ITable {
             if (hFont != -1)
                 hFont = OS.SelectObject(hDC, hFont);
             Event event = sendMeasureItemEvent(item, index, 0, hDC);
-            if (DPIUtil.scaleUp(event.getBounds(), getZoom()).contains(x, y))
+            if (Win32DPIUtils.pointToPixel(event.getBounds(), getZoom()).contains(x, y))
                 result = true;
             if (hFont != -1)
                 hFont = OS.SelectObject(hDC, hFont);
@@ -2968,8 +2968,8 @@ public class SwtTable extends SwtComposite implements ITable {
             setSubImagesVisible(true);
         }
         if (imageList == null) {
-            Rectangle bounds = DPIUtil.scaleBounds(image.getBounds(), this.getZoom(), 100);
-            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, bounds.width, bounds.height, getZoom());
+            Rectangle boundsInPoints = image.getBounds();
+            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, boundsInPoints.width, boundsInPoints.height, getZoom());
             int index = imageList.indexOf(image);
             if (index == -1)
                 index = imageList.add(image);
@@ -3011,8 +3011,8 @@ public class SwtTable extends SwtComposite implements ITable {
         if (image == null)
             return OS.I_IMAGENONE;
         if (headerImageList == null) {
-            Rectangle bounds = DPIUtil.scaleBounds(image.getBounds(), this.getZoom(), 100);
-            headerImageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, bounds.width, bounds.height, getZoom());
+            Rectangle boundsInPoints = image.getBounds();
+            headerImageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, boundsInPoints.width, boundsInPoints.height, getZoom());
             int index = headerImageList.indexOf(image);
             if (index == -1)
                 index = headerImageList.add(image);
@@ -3660,7 +3660,7 @@ public class SwtTable extends SwtComposite implements ITable {
                 event.detail |= SWT.SELECTED;
             if (drawBackground)
                 event.detail |= SWT.BACKGROUND;
-            Rectangle bounds = DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom());
+            Rectangle bounds = Win32DPIUtils.pixelToPoint(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom());
             event.setBounds(bounds);
             gc.setClipping(bounds);
             sendEvent(SWT.EraseItem, event);
@@ -3707,7 +3707,7 @@ public class SwtTable extends SwtComposite implements ITable {
                 RECT textRect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, false, fullText, false, hDC);
                 if ((getApi().style & SWT.FULL_SELECTION) == 0) {
                     if (measureEvent != null) {
-                        Rectangle boundsInPixels = DPIUtil.scaleUp(measureEvent.getBounds(), getZoom());
+                        Rectangle boundsInPixels = Win32DPIUtils.pointToPixel(measureEvent.getBounds(), getZoom());
                         textRect.right = Math.min(cellRect.right, boundsInPixels.x + boundsInPixels.width);
                     }
                     if (!ignoreDrawFocus) {
@@ -3786,7 +3786,7 @@ public class SwtTable extends SwtComposite implements ITable {
         event.index = column;
         event.gc = gc;
         event.detail |= SWT.FOREGROUND;
-        event.setBounds(DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom()));
+        event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(cellRect.left, cellRect.top, cellRect.right - cellRect.left, cellRect.bottom - cellRect.top), getZoom()));
         //gc.setClipping (event.x, event.y, event.width, event.height);
         sendEvent(SWT.EraseItem, event);
         event.gc = null;
@@ -3807,7 +3807,7 @@ public class SwtTable extends SwtComposite implements ITable {
         event.item = item;
         event.gc = gc;
         event.index = column;
-        event.setBounds(DPIUtil.scaleDown(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
+        event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
         boolean drawSelected = false;
         if (OS.IsWindowEnabled(getApi().handle)) {
             LVITEM lvItem = new LVITEM();
@@ -3831,7 +3831,7 @@ public class SwtTable extends SwtComposite implements ITable {
         gc.dispose();
         OS.RestoreDC(hDC, nSavedDC);
         if (!isDisposed() && !item.isDisposed()) {
-            Rectangle boundsInPixels = DPIUtil.scaleUp(event.getBounds(), getZoom());
+            Rectangle boundsInPixels = Win32DPIUtils.pointToPixel(event.getBounds(), getZoom());
             if (columnCount == 0) {
                 int width = (int) OS.SendMessage(getApi().handle, OS.LVM_GETCOLUMNWIDTH, 0, 0);
                 if (boundsInPixels.x + boundsInPixels.width > width)
@@ -4122,11 +4122,11 @@ public class SwtTable extends SwtComposite implements ITable {
                 event.detail |= SWT.SELECTED;
             if (drawBackground)
                 event.detail |= SWT.BACKGROUND;
-            event.setBounds(DPIUtil.scaleDown(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
+            event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
             RECT cellRect = ((SwtTableItem) item.getImpl()).getBounds((int) nmcd.dwItemSpec, nmcd.iSubItem, true, true, true, true, hDC);
             int cellWidth = cellRect.right - cellRect.left;
             int cellHeight = cellRect.bottom - cellRect.top;
-            gc.setClipping(DPIUtil.scaleDown(new Rectangle(cellRect.left, cellRect.top, cellWidth, cellHeight), getZoom()));
+            gc.setClipping(Win32DPIUtils.pixelToPoint(new Rectangle(cellRect.left, cellRect.top, cellWidth, cellHeight), getZoom()));
             sendEvent(SWT.PaintItem, event);
             if (data.focusDrawn)
                 focusRect = null;
@@ -4152,7 +4152,7 @@ public class SwtTable extends SwtComposite implements ITable {
         event.index = column;
         event.gc = gc;
         event.detail |= SWT.FOREGROUND;
-        event.setBounds(DPIUtil.scaleDown(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
+        event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top), getZoom()));
         //gc.setClipping (cellRect.left, cellRect.top, cellWidth, cellHeight);
         sendEvent(SWT.PaintItem, event);
         event.gc = null;
@@ -4848,7 +4848,7 @@ public class SwtTable extends SwtComposite implements ITable {
         if (itemHeight == -1) {
             /*
 		* Feature in Windows.  Windows has no API to restore the
-		* defualt item height for a table.  The fix is to use
+		* default item height for a table.  The fix is to use
 		* WM_SETFONT which recomputes and assigns the default item
 		* height.
 		*/
@@ -5810,7 +5810,7 @@ public class SwtTable extends SwtComposite implements ITable {
         }
         Point pt = toDisplayInPixels(x, y);
         int zoom = getZoom();
-        event.setLocation(DPIUtil.scaleDown(pt.x, zoom), DPIUtil.scaleDown(pt.y, zoom));
+        event.setLocation(DPIUtil.pixelToPoint(pt.x, zoom), DPIUtil.pixelToPoint(pt.y, zoom));
     }
 
     void updateMoveable() {
@@ -5847,9 +5847,9 @@ public class SwtTable extends SwtComposite implements ITable {
         if ((getApi().style & SWT.CHECK) != 0)
             fixCheckboxImageListColor(false);
         if (imageList != null) {
-            Point size = imageList.getImageSize();
+            Point sizeInPoints = imageList.getImageSize();
             ((SwtDisplay) display.getImpl()).releaseImageList(imageList);
-            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, size.x, size.y, getZoom());
+            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, getZoom());
             int count = (int) OS.SendMessage(getApi().handle, OS.LVM_GETITEMCOUNT, 0, 0);
             for (int i = 0; i < count; i++) {
                 TableItem item = _getItem(i, false);
@@ -5867,9 +5867,9 @@ public class SwtTable extends SwtComposite implements ITable {
         }
         if (hwndHeader != 0) {
             if (headerImageList != null) {
-                Point size = headerImageList.getImageSize();
+                Point sizeInPoints = headerImageList.getImageSize();
                 ((SwtDisplay) display.getImpl()).releaseImageList(headerImageList);
-                headerImageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, size.x, size.y, getZoom());
+                headerImageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, getZoom());
                 if (columns != null) {
                     for (int i = 0; i < columns.length; i++) {
                         TableColumn column = columns[i];
@@ -7249,7 +7249,7 @@ public class SwtTable extends SwtComposite implements ITable {
 							 * Sort indicator size needs to scale as per the Native Windows OS DPI level
 							 * when header is custom drawn. For more details refer bug 537097.
 							 */
-                                        int leg = DPIUtil.scaleUp(3, getApi().nativeZoom);
+                                        int leg = Win32DPIUtils.pointToPixel(3, getApi().nativeZoom);
                                         if (sortDirection == SWT.UP) {
                                             OS.Polyline(nmcd.hdc, new int[] { center - leg, 1 + leg, center + 1, 0 }, 2);
                                             OS.Polyline(nmcd.hdc, new int[] { center + leg, 1 + leg, center - 1, 0 }, 2);
@@ -7296,10 +7296,10 @@ public class SwtTable extends SwtComposite implements ITable {
                                         GCData data = new GCData();
                                         data.device = display;
                                         GC gc = createNewGC(nmcd.hdc, data);
-                                        int y = Math.max(0, (nmcd.bottom - ((SwtItem) columns[i].getImpl()).image.getBoundsInPixels().height) / 2);
+                                        int y = Math.max(0, (nmcd.bottom - Win32DPIUtils.pointToPixel(((SwtItem) columns[i].getImpl()).image.getBounds(), getZoom()).height) / 2);
                                         int zoom = getZoom();
-                                        gc.drawImage(((SwtItem) columns[i].getImpl()).image, DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom));
-                                        x += ((SwtItem) columns[i].getImpl()).image.getBoundsInPixels().width + 12;
+                                        gc.drawImage(((SwtItem) columns[i].getImpl()).image, DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(y, zoom));
+                                        x += Win32DPIUtils.pointToPixel(((SwtItem) columns[i].getImpl()).image.getBounds(), getZoom()).width + 12;
                                         gc.dispose();
                                     }
                                     if (((SwtItem) columns[i].getImpl()).text != null) {
@@ -7504,91 +7504,89 @@ public class SwtTable extends SwtComposite implements ITable {
                     LRESULT result = super.wmNotify(hdr, wParam, lParam);
                     if (result != null)
                         return result;
-                    if (hdr.code != OS.TTN_SHOW)
-                        tipRequested = true;
-                    long code = callWindowProc(getApi().handle, OS.WM_NOTIFY, wParam, lParam);
-                    if (hdr.code != OS.TTN_SHOW)
-                        tipRequested = false;
                     if (toolTipText != null)
                         break;
-                    if (isCustomToolTip()) {
-                        LVHITTESTINFO pinfo = new LVHITTESTINFO();
-                        int pos = OS.GetMessagePos();
-                        POINT pt = new POINT();
-                        OS.POINTSTOPOINT(pt, pos);
-                        OS.ScreenToClient(getApi().handle, pt);
-                        pinfo.x = pt.x;
-                        pinfo.y = pt.y;
-                        /*
-				*  Bug in Windows.  When LVM_SUBITEMHITTEST is used to hittest
-				*  a point that is above the table, instead of returning -1 to
-				*  indicate that the hittest failed, a negative index is returned.
-				*  The fix is to consider any value that is negative a failure.
-				*/
-                        if (OS.SendMessage(getApi().handle, OS.LVM_SUBITEMHITTEST, 0, pinfo) >= 0) {
-                            TableItem item = _getItem(pinfo.iItem);
-                            long hDC = OS.GetDC(getApi().handle);
-                            long oldFont = 0, newFont = OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0);
-                            if (newFont != 0)
-                                oldFont = OS.SelectObject(hDC, newFont);
-                            long hFont = ((SwtTableItem) item.getImpl()).fontHandle(pinfo.iSubItem);
-                            if (hFont != -1)
-                                hFont = OS.SelectObject(hDC, hFont);
-                            Event event = sendMeasureItemEvent(item, pinfo.iItem, pinfo.iSubItem, hDC);
-                            if (!isDisposed() && !item.isDisposed()) {
-                                RECT itemRect = new RECT();
-                                Rectangle boundsInPixels = DPIUtil.scaleUp(event.getBounds(), getZoom());
-                                OS.SetRect(itemRect, boundsInPixels.x, boundsInPixels.y, boundsInPixels.x + boundsInPixels.width, boundsInPixels.y + boundsInPixels.height);
-                                if (hdr.code == OS.TTN_SHOW) {
-                                    RECT toolRect = toolTipRect(itemRect);
-                                    OS.MapWindowPoints(getApi().handle, 0, toolRect, 2);
-                                    long hwndToolTip = OS.SendMessage(getApi().handle, OS.LVM_GETTOOLTIPS, 0, 0);
-                                    int flags = OS.SWP_NOACTIVATE | OS.SWP_NOZORDER;
-                                    int width = toolRect.right - toolRect.left, height = toolRect.bottom - toolRect.top;
-                                    OS.SetWindowPos(hwndToolTip, 0, toolRect.left, toolRect.top, width, height, flags);
-                                } else {
-                                    NMTTDISPINFO lpnmtdi = new NMTTDISPINFO();
-                                    OS.MoveMemory(lpnmtdi, lParam, NMTTDISPINFO.sizeof);
-                                    if (lpnmtdi.lpszText != 0) {
-                                        OS.MoveMemory(lpnmtdi.lpszText, new char[1], 2);
-                                        OS.MoveMemory(lParam, lpnmtdi, NMTTDISPINFO.sizeof);
-                                    }
-                                    if (item.getImpl() instanceof SwtTableItem) {
-                                        RECT cellRect = ((SwtTableItem) item.getImpl()).getBounds(pinfo.iItem, pinfo.iSubItem, true, true, true, true, hDC);
-                                        RECT clientRect = new RECT();
-                                        OS.GetClientRect(getApi().handle, clientRect);
-                                        if (itemRect.right > cellRect.right || itemRect.right > clientRect.right) {
-                                            //TEMPORARY CODE
-                                            String string = " ";
-                                            //								String string = null;
-                                            //								if (pinfo.iSubItem == 0) {
-                                            //									string = item.text;
-                                            //								} else {
-                                            //									String [] strings  = item.strings;
-                                            //									if (strings != null) string = strings [pinfo.iSubItem];
-                                            //								}
-                                            if (string != null) {
-                                                Shell shell = getShell();
-                                                char[] chars = new char[string.length() + 1];
-                                                string.getChars(0, string.length(), chars, 0);
-                                                ((SwtShell) shell.getImpl()).setToolTipText(lpnmtdi, chars);
-                                                OS.MoveMemory(lParam, lpnmtdi, NMTTDISPINFO.sizeof);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            if (hFont != -1)
-                                hFont = OS.SelectObject(hDC, hFont);
-                            if (newFont != 0)
-                                OS.SelectObject(hDC, oldFont);
-                            OS.ReleaseDC(getApi().handle, hDC);
-                        }
-                    }
-                    return new LRESULT(code);
+                    result = positionTooltip(hdr, lParam);
+                    return result;
                 }
         }
         return null;
+    }
+
+    private LRESULT positionTooltip(NMHDR hdr, long lParam) {
+        LRESULT result = null;
+        LVHITTESTINFO pinfo = new LVHITTESTINFO();
+        int pos = OS.GetMessagePos();
+        POINT pt = new POINT();
+        OS.POINTSTOPOINT(pt, pos);
+        OS.ScreenToClient(getApi().handle, pt);
+        pinfo.x = pt.x;
+        pinfo.y = pt.y;
+        /*
+	*  Bug in Windows.  When LVM_SUBITEMHITTEST is used to hittest
+	*  a point that is above the table, instead of returning -1 to
+	*  indicate that the hittest failed, a negative index is returned.
+	*  The fix is to consider any value that is negative a failure.
+	*/
+        if (OS.SendMessage(getApi().handle, OS.LVM_SUBITEMHITTEST, 0, pinfo) >= 0) {
+            TableItem item = _getItem(pinfo.iItem);
+            long hDC = OS.GetDC(getApi().handle);
+            long oldFont = 0, newFont = OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0);
+            if (newFont != 0)
+                oldFont = OS.SelectObject(hDC, newFont);
+            long hFont = ((SwtTableItem) item.getImpl()).fontHandle(pinfo.iSubItem);
+            if (hFont != -1)
+                hFont = OS.SelectObject(hDC, hFont);
+            if (!isDisposed() && !item.isDisposed()) {
+                if (hdr.code == OS.TTN_SHOW) {
+                    RECT itemRect = getItemBounds(pinfo, item, hDC);
+                    RECT toolRect = isCustomToolTip() ? toolTipRect(itemRect) : itemRect;
+                    OS.MapWindowPoints(getApi().handle, 0, toolRect, 2);
+                    long hwndToolTip = OS.SendMessage(getApi().handle, OS.LVM_GETTOOLTIPS, 0, 0);
+                    int flags = OS.SWP_NOACTIVATE | OS.SWP_NOZORDER;
+                    Rectangle adjustedTooltipBounds = ((SwtDisplay) getDisplay().getImpl()).fitRectangleBoundsIntoMonitorWithCursor(toolRect);
+                    OS.SetWindowPos(hwndToolTip, 0, adjustedTooltipBounds.x, adjustedTooltipBounds.y, adjustedTooltipBounds.width, adjustedTooltipBounds.height, flags);
+                    result = LRESULT.ONE;
+                } else if (isCustomToolTip()) {
+                    RECT itemRect = getItemBounds(pinfo, item, hDC);
+                    NMTTDISPINFO lpnmtdi = new NMTTDISPINFO();
+                    OS.MoveMemory(lpnmtdi, lParam, NMTTDISPINFO.sizeof);
+                    if (lpnmtdi.lpszText != 0) {
+                        OS.MoveMemory(lpnmtdi.lpszText, new char[1], 2);
+                        OS.MoveMemory(lParam, lpnmtdi, NMTTDISPINFO.sizeof);
+                    }
+                    if (item.getImpl() instanceof SwtTableItem) {
+                        RECT cellRect = ((SwtTableItem) item.getImpl()).getBounds(pinfo.iItem, pinfo.iSubItem, true, true, true, true, hDC);
+                        RECT clientRect = new RECT();
+                        OS.GetClientRect(getApi().handle, clientRect);
+                        if (itemRect.right > cellRect.right || itemRect.right > clientRect.right) {
+                            //TEMPORARY CODE
+                            String string = " ";
+                            Shell shell = getShell();
+                            char[] chars = new char[string.length() + 1];
+                            string.getChars(0, string.length(), chars, 0);
+                            ((SwtShell) shell.getImpl()).setToolTipText(lpnmtdi, chars);
+                            OS.MoveMemory(lParam, lpnmtdi, NMTTDISPINFO.sizeof);
+                            result = LRESULT.ONE;
+                        }
+                    }
+                }
+            }
+            if (hFont != -1)
+                hFont = OS.SelectObject(hDC, hFont);
+            if (newFont != 0)
+                OS.SelectObject(hDC, oldFont);
+            OS.ReleaseDC(getApi().handle, hDC);
+        }
+        return result;
+    }
+
+    private RECT getItemBounds(LVHITTESTINFO pinfo, TableItem item, long hDC) {
+        Event event = sendMeasureItemEvent(item, pinfo.iItem, pinfo.iSubItem, hDC);
+        RECT itemRect = new RECT();
+        Rectangle boundsInPixels = Win32DPIUtils.pointToPixel(event.getBounds(), getZoom());
+        OS.SetRect(itemRect, boundsInPixels.x, boundsInPixels.y, boundsInPixels.x + boundsInPixels.width, boundsInPixels.y + boundsInPixels.height);
+        return itemRect;
     }
 
     LRESULT wmNotifyToolTip(NMTTCUSTOMDRAW nmcd, long lParam) {
@@ -7654,13 +7652,13 @@ public class SwtTable extends SwtComposite implements ITable {
                                     x -= gridWidth;
                                 Image image = item.getImage(pinfo.iSubItem);
                                 if (image != null) {
-                                    Rectangle rect = image.getBoundsInPixels();
+                                    Rectangle rect = Win32DPIUtils.pointToPixel(image.getBounds(), getZoom());
                                     RECT imageRect = ((SwtTableItem) item.getImpl()).getBounds(pinfo.iItem, pinfo.iSubItem, false, true, false, false, hDC);
-                                    Point size = imageList == null ? new Point(rect.width, rect.height) : imageList.getImageSize();
+                                    Point size = imageList == null ? new Point(rect.width, rect.height) : Win32DPIUtils.pointToPixel(imageList.getImageSize(), getZoom());
                                     int y = imageRect.top + Math.max(0, (imageRect.bottom - imageRect.top - size.y) / 2);
                                     int zoom = getZoom();
-                                    rect = DPIUtil.scaleDown(rect, zoom);
-                                    gc.drawImage(image, rect.x, rect.y, rect.width, rect.height, DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom), DPIUtil.scaleDown(size.x, zoom), DPIUtil.scaleDown(size.y, zoom));
+                                    rect = Win32DPIUtils.pixelToPoint(rect, zoom);
+                                    gc.drawImage(image, rect.x, rect.y, rect.width, rect.height, DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(y, zoom), DPIUtil.pixelToPoint(size.x, zoom), DPIUtil.pixelToPoint(size.y, zoom));
                                     x += size.x + INSET + (pinfo.iSubItem == 0 ? -2 : 4);
                                 } else {
                                     x += INSET + 2;
@@ -7720,6 +7718,11 @@ public class SwtTable extends SwtComposite implements ITable {
             ((SwtDisplay) display.getImpl()).releaseImageList(imageList);
             ((SwtTable) table.getImpl()).imageList = null;
         }
+        // if the item height was set at least once programmatically with CDDS_SUBITEMPREPAINT,
+        // the item height of the table is not managed by the OS anymore e.g. when the zoom
+        // on the monitor is changed, the height of the item will stay at the fixed size.
+        // Resetting it will re-enable the default behavior again
+        ((SwtTable) table.getImpl()).setItemHeight(-1);
         for (TableItem item : table.getItems()) {
             DPIZoomChangeRegistry.applyChange(item, newZoom, scalingFactor);
         }

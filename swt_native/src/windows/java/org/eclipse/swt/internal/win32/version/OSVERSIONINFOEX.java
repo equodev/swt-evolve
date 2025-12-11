@@ -13,7 +13,7 @@
  *      Syntevo - initial API and implementation
  * *****************************************************************************
  */
-package org.eclipse.swt.internal.win32;
+package org.eclipse.swt.internal.win32.version;
 
 public class OSVERSIONINFOEX {
 
@@ -54,5 +54,5 @@ public class OSVERSIONINFOEX {
      */
     public int wReserved;
 
-    public static final int sizeof = OS.OSVERSIONINFOEX_sizeof();
+    public static final int sizeof = OsVersion.OSVERSIONINFOEX_sizeof();
 }

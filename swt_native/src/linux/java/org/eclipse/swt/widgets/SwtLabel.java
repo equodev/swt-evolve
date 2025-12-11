@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -221,7 +221,7 @@ public class SwtLabel extends SwtControl implements ILabel {
 	* tall as the font height.
 	*
 	* NOTE: This work around does not fix the case when there are
-	* muliple lines of text.
+	* multiple lines of text.
 	*/
         if (hHint == SWT.DEFAULT && labelHandle != 0) {
             long layout = GTK.gtk_label_get_layout(labelHandle);
@@ -278,7 +278,7 @@ public class SwtLabel extends SwtControl implements ILabel {
                 labelHandle = GTK.gtk_label_new_with_mnemonic(null);
                 if (labelHandle == 0)
                     error(SWT.ERROR_NO_HANDLES);
-                imageHandle = GTK4.gtk_picture_new();
+                imageHandle = GTK.gtk_image_new();
                 if (imageHandle == 0)
                     error(SWT.ERROR_NO_HANDLES);
                 GTK4.gtk_box_append(getApi().handle, labelHandle);
@@ -704,20 +704,20 @@ public class SwtLabel extends SwtControl implements ILabel {
                 long pixbuf = ImageList.createPixbuf(image);
                 long texture = GDK.gdk_texture_new_for_pixbuf(pixbuf);
                 OS.g_object_unref(pixbuf);
-                GTK4.gtk_picture_set_paintable(imageHandle, texture);
+                GTK4.gtk_image_set_from_paintable(imageHandle, texture);
             } else {
                 GTK3.gtk_image_set_from_surface(imageHandle, image.surface);
             }
-            GTK.gtk_widget_hide(labelHandle);
-            GTK.gtk_widget_show(imageHandle);
+            gtk_widget_hide(labelHandle);
+            gtk_widget_show(imageHandle);
         } else {
             if (GTK.GTK4) {
-                GTK4.gtk_picture_set_paintable(imageHandle, 0);
+                GTK4.gtk_image_set_from_paintable(imageHandle, 0);
             } else {
                 GTK3.gtk_image_set_from_surface(imageHandle, 0);
             }
-            GTK.gtk_widget_show(labelHandle);
-            GTK.gtk_widget_hide(imageHandle);
+            gtk_widget_show(labelHandle);
+            gtk_widget_hide(imageHandle);
         }
     }
 
@@ -762,8 +762,8 @@ public class SwtLabel extends SwtControl implements ILabel {
         char[] chars = fixMnemonic(string);
         byte[] buffer = Converter.wcsToMbcs(chars, true);
         GTK.gtk_label_set_text_with_mnemonic(labelHandle, buffer);
-        GTK.gtk_widget_hide(imageHandle);
-        GTK.gtk_widget_show(labelHandle);
+        gtk_widget_hide(imageHandle);
+        gtk_widget_show(labelHandle);
     }
 
     @Override
@@ -776,11 +776,11 @@ public class SwtLabel extends SwtControl implements ILabel {
     void showWidget() {
         super.showWidget();
         if (frameHandle != 0)
-            GTK.gtk_widget_show(frameHandle);
+            gtk_widget_show(frameHandle);
         if (labelHandle != 0)
-            GTK.gtk_widget_show(labelHandle);
+            gtk_widget_show(labelHandle);
         if (boxHandle != 0)
-            GTK.gtk_widget_show(boxHandle);
+            gtk_widget_show(boxHandle);
     }
 
     @Override

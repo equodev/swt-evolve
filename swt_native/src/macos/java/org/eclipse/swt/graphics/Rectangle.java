@@ -17,6 +17,7 @@ package org.eclipse.swt.graphics;
 
 import java.io.*;
 import org.eclipse.swt.*;
+import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.CompiledJson;
 import com.dslplatform.json.CompiledJson.*;
 
@@ -47,7 +48,7 @@ import com.dslplatform.json.CompiledJson.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
 @CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
-public final class Rectangle implements Serializable {
+public sealed class Rectangle implements Serializable, Cloneable permits Rectangle.OfFloat {
 
     /**
      * the x coordinate of the rectangle
@@ -163,11 +164,16 @@ public final class Rectangle implements Serializable {
      */
     @Override
     public boolean equals(Object object) {
-        if (object == this)
-            return true;
-        if (!(object instanceof Rectangle r))
+        if (object == null) {
             return false;
-        return (r.x == this.x) && (r.y == this.y) && (r.width == this.width) && (r.height == this.height);
+        }
+        if (object == this) {
+            return true;
+        }
+        if (!(object instanceof Rectangle other)) {
+            return false;
+        }
+        return (other.x == this.x) && (other.y == this.y) && (other.width == this.width) && (other.height == this.height);
     }
 
     /**
@@ -358,5 +364,155 @@ public final class Rectangle implements Serializable {
         rhs = rect.y + rect.height;
         int bottom = lhs > rhs ? lhs : rhs;
         return new Rectangle(left, top, right - left, bottom - top);
+    }
+
+    /**
+     * Creates a new {@code Rectangle} using the specified top-left point and
+     * dimensions.
+     * <p>
+     * If the provided {@code Point} instance carries additional contextual
+     * information, an extended {@code Rectangle} type may be returned to preserve
+     * that context. Otherwise, a standard {@code Rectangle} is returned.
+     * </p>
+     *
+     * @param topLeft the top-left corner of the rectangle
+     * @param width   the width of the rectangle
+     * @param height  the height of the rectangle
+     * @return a new {@code Rectangle} instance appropriate for the given point and
+     *         dimensions
+     * @since 3.131
+     */
+    public static Rectangle of(Point topLeft, int width, int height) {
+        if (topLeft instanceof Point.WithMonitor monitorAwareTopLeft) {
+            return new Rectangle.WithMonitor(monitorAwareTopLeft.getX(), monitorAwareTopLeft.getY(), width, height, monitorAwareTopLeft.getMonitor());
+        }
+        return new Rectangle(topLeft.x, topLeft.y, width, height);
+    }
+
+    /**
+     * Creates and returns a copy of this {@code Rectangle}.
+     * <p>
+     * This method performs a shallow copy of the rectangle's fields: {@code x},
+     * {@code y}, {@code width}, and {@code height}. It does not copy any
+     * subclass-specific fields, so subclasses should override this method if
+     * additional fields exist.
+     * </p>
+     *
+     * @return a new {@code Rectangle} instance with the same position and size as
+     *         this one
+     * @since 3.131
+     */
+    @Override
+    public Rectangle clone() {
+        return new Rectangle(x, y, width, height);
+    }
+
+    /**
+     * Instances of this class represent {@link org.eclipse.swt.graphics.Rectangle}
+     * objects which supports values of Float type for it's fields
+     *
+     * @since 3.131
+     * @noreference This class is not intended to be referenced by clients
+     */
+    public static sealed class OfFloat extends Rectangle permits Rectangle.WithMonitor {
+
+        private static final long serialVersionUID = -3006999002677468391L;
+
+        private float residualX, residualY, residualWidth, residualHeight;
+
+        public OfFloat(int x, int y, int width, int height) {
+            super(x, y, width, height);
+        }
+
+        public OfFloat(float x, float y, float width, float height) {
+            super(Math.round(x), Math.round(y), Math.round(width), Math.round(height));
+            this.residualX = x - this.x;
+            this.residualY = y - this.y;
+            this.residualWidth = width - this.width;
+            this.residualHeight = height - this.height;
+        }
+
+        public float getX() {
+            return x + residualX;
+        }
+
+        public float getY() {
+            return y + residualY;
+        }
+
+        public float getWidth() {
+            return width + residualWidth;
+        }
+
+        public float getHeight() {
+            return height + residualHeight;
+        }
+
+        public void setX(float x) {
+            this.x = Math.round(x);
+            this.residualX = x - this.x;
+        }
+
+        public void setY(float y) {
+            this.y = Math.round(y);
+            this.residualY = y - this.y;
+        }
+
+        public void setWidth(float width) {
+            this.width = Math.round(width);
+            this.residualWidth = width - this.width;
+        }
+
+        public void setHeight(float height) {
+            this.height = Math.round(height);
+            this.residualHeight = height - this.height;
+        }
+    }
+
+    /**
+     * Instances of this class represent {@link org.eclipse.swt.graphics.Rectangle.OfFloat}
+     * objects along with the context of the monitor in relation to which they are
+     * placed on the display. The monitor awareness makes it easy to scale and
+     * translate the rectangles between pixels and points.
+     *
+     * @since 3.131
+     * @noreference This class is not intended to be referenced by clients
+     */
+    public static final class WithMonitor extends Rectangle.OfFloat {
+
+        private static final long serialVersionUID = 5041911840525116925L;
+
+        private final Monitor monitor;
+
+        /**
+         * Constructs a new Rectangle.WithMonitor
+         *
+         * @param x the x coordinate of the top left corner of the rectangle
+         * @param y the y coordinate of the top left corner of the rectangle
+         * @param width the width of the rectangle
+         * @param height the height of the rectangle
+         * @param monitor the monitor with whose context the rectangle is created
+         */
+        public WithMonitor(int x, int y, int width, int height, Monitor monitor) {
+            super(x, y, width, height);
+            this.monitor = monitor;
+        }
+
+        private WithMonitor(float x, float y, float width, float height, Monitor monitor) {
+            super(x, y, width, height);
+            this.monitor = monitor;
+        }
+
+        /**
+         * {@return the monitor with whose context the instance is created}
+         */
+        public Monitor getMonitor() {
+            return monitor;
+        }
+
+        @Override
+        public Rectangle.WithMonitor clone() {
+            return new Rectangle.WithMonitor(getX(), getY(), getWidth(), getHeight(), monitor);
+        }
     }
 }

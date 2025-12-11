@@ -285,7 +285,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
      */
     public int getSpacing() {
         checkWidget();
-        return DPIUtil.scaleDown(getSpacingInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getSpacingInPixels(), getZoom());
     }
 
     int getSpacingInPixels() {
@@ -413,7 +413,6 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
     public void setFont(Font font) {
         dirty();
         super.setFont(font);
-        hFont = font != null ? font.handle : 0;
         layoutItems(0, true);
     }
 
@@ -447,7 +446,6 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
      */
     public void setSpacing(int spacing) {
         checkWidget();
-        setSpacingInPixels(DPIUtil.scaleUp(spacing, getZoom()));
     }
 
     void setSpacingInPixels(int spacing) {

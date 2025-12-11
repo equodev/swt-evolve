@@ -1413,7 +1413,7 @@ public class SwtAccessible implements IAccessible {
      * You can assume the point has already been determined to lie within the receiver.
      * Override this method to do deeper hit testing within a UIElement - e.g. a NSMatrix
      * would test its cells. The point is bottom-left relative screen coordinates.
-     *
+     * <p>
      * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
      * public API. It is marked public only so that it can be shared
      * within the packages provided by SWT. It is not available on all
@@ -1450,7 +1450,7 @@ public class SwtAccessible implements IAccessible {
      * Return YES if the UIElement doesn't show up to the outside world -
      * i.e. its parent should return the UIElement's children as its own -
      * cutting the UIElement out. E.g. NSControls are ignored when they are single-celled.
-     *
+     * <p>
      * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
      * public API. It is marked public only so that it can be shared
      * within the packages provided by SWT. It is not available on all
@@ -1476,7 +1476,7 @@ public class SwtAccessible implements IAccessible {
 
     /**
      * Return the array of supported attributes that take parameters.
-     *
+     * <p>
      * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
      * public API. It is marked public only so that it can be shared
      * within the packages provided by SWT. It is not available on all
@@ -1532,7 +1532,7 @@ public class SwtAccessible implements IAccessible {
 
     /**
      * Performs the specified action.
-     *
+     * <p>
      * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
      * public API. It is marked public only so that it can be shared
      * within the packages provided by SWT. It is not available on all
@@ -1578,7 +1578,7 @@ public class SwtAccessible implements IAccessible {
     /**
      * Set the value of the specified attribute to the given value.
      * Unsupported attributes are ignored.
-     *
+     * <p>
      * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
      * public API. It is marked public only so that it can be shared
      * within the packages provided by SWT. It is not available on all

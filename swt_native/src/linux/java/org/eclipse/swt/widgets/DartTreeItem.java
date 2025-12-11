@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2019 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -390,12 +390,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Rectangle getBounds(int index) {
         checkWidget();
-        return DPIUtil.autoScaleDown(getBoundsInPixels(index));
-    }
-
-    Rectangle getBoundsInPixels(int index) {
         // TODO fully test on early and later versions of GTK
-        checkWidget();
         if (!((DartTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         long column = 0;
@@ -423,13 +418,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getBoundsInPixels());
-    }
-
-    Rectangle getBoundsInPixels() {
         // TODO fully test on early and later versions of GTK
         // shifted a bit too far right on later versions of GTK - however, old Tree also had this problem
-        checkWidget();
         if (!((DartTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         ((DartTree) parent.getImpl()).ignoreSize = true;
@@ -627,12 +617,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Rectangle getImageBounds(int index) {
         checkWidget();
-        return DPIUtil.autoScaleDown(getImageBoundsInPixels(index));
-    }
-
-    Rectangle getImageBoundsInPixels(int index) {
         // TODO fully test on early and later versions of GTK
-        checkWidget();
         if (!((DartTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         long column = 0;
@@ -852,11 +837,6 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Rectangle getTextBounds(int index) {
         checkWidget();
-        return DPIUtil.autoScaleDown(getTextBoundsInPixels(index));
-    }
-
-    Rectangle getTextBoundsInPixels(int index) {
-        checkWidget();
         if (!((DartTree) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
         int count = Math.max(1, parent.getColumnCount());
@@ -887,9 +867,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         Image image = _getImage(index);
         int imageWidth = 0;
         if (image != null) {
-            {
-                imageWidth = image.getBoundsInPixels().width;
-            }
+            imageWidth = image.getBounds().width;
         }
         if (x[0] < imageWidth) {
         } else {
@@ -1330,11 +1308,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         int[] currentHeight = new int[1];
         if (!((DartTree) parent.getImpl()).pixbufSizeSet) {
             if (image != null) {
-                int iWidth, iHeight;
-                {
-                    iWidth = image.getBoundsInPixels().width;
-                    iHeight = image.getBoundsInPixels().height;
-                }
+                int iWidth = image.getBounds().width;
+                int iHeight = image.getBounds().height;
                 if (iWidth > currentWidth[0] || iHeight > currentHeight[0]) {
                     ((DartTree) parent.getImpl()).pixbufSizeSet = true;
                     ((DartTree) parent.getImpl()).pixbufHeight = iHeight;

@@ -211,8 +211,6 @@ public class DartButton extends DartControl implements IButton {
             return MARGIN;
         int margin = 0;
         if (image != null && text.length() != 0) {
-            Rectangle bounds = DPIUtil.scaleBounds(image.getBounds(), this.getZoom(), 100);
-            margin += bounds.width + MARGIN * 2;
             if ((getApi().style & SWT.LEFT) != 0) {
                 margin = MARGIN;
             } else if ((getApi().style & SWT.RIGHT) != 0) {
@@ -796,9 +794,6 @@ public class DartButton extends DartControl implements IButton {
 
     private int getCheckboxTextOffset(long hdc) {
         int result = 0;
-        {
-            result += DPIUtil.scaleUp(13, getApi().nativeZoom);
-        }
         return result;
     }
 

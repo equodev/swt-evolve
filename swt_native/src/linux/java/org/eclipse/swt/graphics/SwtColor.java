@@ -39,10 +39,6 @@ public final class SwtColor extends SwtResource implements IColor {
 
     int alpha = 0;
 
-    SwtColor(Color api) {
-        super(api);
-    }
-
     SwtColor(Device device, Color api) {
         super(device, api);
     }

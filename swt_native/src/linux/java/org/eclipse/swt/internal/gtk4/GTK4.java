@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2021, 2024 Syntevo and others.
+ *  Copyright (c) 2021, 2025 Syntevo and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -23,6 +23,18 @@ import org.eclipse.swt.internal.gtk.*;
 public class GTK4 {
 
     public static final int GTK_POPOVER_MENU_NESTED = 1 << 0;
+
+    public static final int GTK_EVENT_SEQUENCE_NONE = 0;
+
+    public static final int GTK_EVENT_SEQUENCE_CLAIMED = 1;
+
+    public static final int GTK_EVENT_SEQUENCE_DENIED = 2;
+
+    public static final int GTK_PICK_DEFAULT = 0;
+
+    public static final int GTK_PICK_INSENSITIVE = 1;
+
+    public static final int GTK_PICK_NON_TARGETABLE = 2;
 
     /**
      * @param context cast=(GtkIMContext *)
@@ -144,6 +156,23 @@ public class GTK4 {
      */
     public static final native long gtk_editable_get_delegate(long editable);
 
+    /**
+     * @param editable cast=(GtkEditable *)
+     */
+    public static final native int gtk_editable_get_max_width_chars(long editable);
+
+    /**
+     * @param editable cast=(GtkEditable *)
+     * @param chars cast=(int)
+     */
+    public static final native void gtk_editable_set_max_width_chars(long editable, int chars);
+
+    /**
+     * @param editable cast=(GtkEditable *)
+     * @param text cast=(const gchar *)
+     */
+    public static final native void gtk_editable_set_text(long editable, byte[] text);
+
     /* GtkPicture */
     public static final native long gtk_picture_new();
 
@@ -160,6 +189,12 @@ public class GTK4 {
 
     /* GTK Initialization */
     public static final native boolean gtk_init_check();
+
+    /* GtkNative */
+    /**
+     * @param surface cast=(GdkSurface *)
+     */
+    public static final native long gtk_native_get_for_surface(long surface);
 
     /* GdkToplevel */
     /**
@@ -224,6 +259,35 @@ public class GTK4 {
      * @param builder cast=(GdkContentFormatsBuilder *)
      */
     public static final native long gdk_content_formats_builder_free_to_formats(long builder);
+
+    /* GtkFileChooser */
+    /**
+     * @method flags=ignore_deprecations
+     * @param chooser cast=(GtkFileChooser *)
+     */
+    public static final native long gtk_file_chooser_get_files(long chooser);
+
+    /**
+     * @method flags=ignore_deprecations
+     * @param chooser cast=(GtkFileChooser *)
+     */
+    public static final native long gtk_file_chooser_get_file(long chooser);
+
+    /**
+     * @method flags=ignore_deprecations
+     * @param chooser cast=(GtkFileChooser *)
+     * @param file cast=(GFile *)
+     * @param error cast=(GError **)
+     */
+    public static final native boolean gtk_file_chooser_set_current_folder(long chooser, long file, long error);
+
+    /**
+     * @method flags=ignore_deprecations
+     * @param chooser cast=(GtkFileChooser *)
+     * @param file cast=(GFile *)
+     * @param error cast=(GError **)
+     */
+    public static final native boolean gtk_file_chooser_set_file(long chooser, long file, long error);
 
     /* GtkFileDialog */
     /**
@@ -349,6 +413,101 @@ public class GTK4 {
      */
     public static final native long gtk_file_dialog_save_finish(long self, long result, long[] error);
 
+    /* GtkFontDialog */
+    /**
+     * @method flags=dynamic
+     *
+     * @param parent cast=(GtkWindow *)
+     * @param initial_value cast=(PangoFontDescription *)
+     * @param cancellable cast=(GCancellable *)
+     * @param callback cast=(GAsyncReadyCallback)
+     * @param user_data cast=(gpointer)
+     */
+    public static final native void gtk_font_dialog_choose_font(long self, long parent, long initial_value, long cancellable, long callback, long user_data);
+
+    /**
+     * @method flags=dynamic
+     *
+     * @param result cast=(GAsyncResult *)
+     * @param error cast=(GError **)
+     */
+    public static final native long gtk_font_dialog_choose_font_finish(long self, long result, long[] error);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native long gtk_font_dialog_new();
+
+    /**
+     * @method flags=dynamic
+     *
+     * @param modal cast=(gboolean)
+     */
+    public static final native long gtk_font_dialog_set_modal(long self, boolean modal);
+
+    /**
+     * @method flags=dynamic
+     *
+     * @param title cast=(char *)
+     */
+    public static final native long gtk_font_dialog_set_title(long self, byte[] title);
+
+    /* GtkColorDialog */
+    /**
+     * @method flags=dynamic
+     */
+    public static final native long gtk_color_dialog_new();
+
+    /**
+     * @method flags=dynamic
+     *
+     * @param title cast=(char *)
+     */
+    public static final native long gtk_color_dialog_set_title(long self, byte[] title);
+
+    /**
+     * @method flags=dynamic
+     *
+     * @param with_alpha cast=(gboolean)
+     */
+    public static final native void gtk_color_dialog_set_with_alpha(long self, boolean with_alpha);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native boolean gtk_color_dialog_get_with_alpha(long self);
+
+    /**
+     * @method flags=dynamic
+     *
+     * @param modal cast=(gboolean)
+     */
+    public static final native void gtk_color_dialog_set_modal(long self, boolean modal);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native boolean gtk_color_dialog_get_modal(long self);
+
+    /**
+     * @method flags=dynamic
+     *
+     * @param parent cast=(GtkWindow *)
+     * @param initial_color cast=(GdkRGBA *)
+     * @param cancellable cast=(GCancellable *)
+     * @param callback cast=(GAsyncReadyCallback)
+     * @param user_data cast=(gpointer)
+     */
+    public static final native void gtk_color_dialog_choose_rgba(long self, long parent, GdkRGBA initial_color, long cancellable, long callback, long user_data);
+
+    /**
+     * @method flags=dynamic
+     *
+     * @param result cast=(GAsyncResult *)
+     * @param error cast=(GError **)
+     */
+    public static final native long gtk_color_dialog_choose_rgba_finish(long self, long result, long[] error);
+
     /* GtkScrolledWindow */
     public static final native long gtk_scrolled_window_new();
 
@@ -418,6 +577,11 @@ public class GTK4 {
      * @param name cast=(const char *)
      */
     public static final native void gtk_window_set_icon_name(long window, long name);
+
+    /**
+     * @param window cast=(GtkWindow *)
+     */
+    public static final native long gtk_window_get_titlebar(long window);
 
     /* GtkShortcutController */
     public static final native long gtk_shortcut_controller_new();
@@ -549,6 +713,11 @@ public class GTK4 {
      * @param buffer cast=(GtkEntryBuffer *)
      */
     public static final native void gtk_entry_set_buffer(long entry, long buffer);
+
+    /**
+     * @param entry cast=(GtkEntryBuffer *)
+     */
+    public static final native long gtk_entry_buffer_get_text(long entry);
 
     /**
      * @param entry cast=(GtkEntry *)
@@ -716,6 +885,28 @@ public class GTK4 {
      * @param allocation cast=(GtkAllocation *),flags=no_out
      */
     public static final native void gtk_widget_size_allocate(long widget, GtkAllocation allocation, int baseline);
+
+    /**
+     * @param widget cast=(GtkWidget *)
+     * @param parent cast=(GtkWidget *)
+     * @param previous_sibling cast=(GtkWidget *)
+     */
+    public static final native void gtk_widget_insert_after(long widget, long parent, long previous_sibling);
+
+    /**
+     * @param widget cast=(GtkWidget *)
+     * @param parent cast=(GtkWidget *)
+     * @param next_sibling cast=(GtkWidget *)
+     */
+    public static final native void gtk_widget_insert_before(long widget, long parent, long next_sibling);
+
+    /**
+     * @param widget cast=(GtkWidget *)
+     * @param x cast=(double)
+     * @param y cast=(double)
+     * @param flags cast=(GtkPickFlags)
+     */
+    public static final native long gtk_widget_pick(long widget, double x, double y, int flags);
 
     /* GtkComboBox */
     /**
@@ -901,9 +1092,27 @@ public class GTK4 {
      */
     public static final native long gdk_content_formats_to_string(long formats);
 
+    /**
+     * @param formats cast=(GdkContentFormats *)
+     * @param n_gtypes cast=(gsize *)
+     */
+    public static final native long gdk_content_formats_get_gtypes(long formats, long[] n_gtypes);
+
     public static final native long gtk_gesture_rotate_new();
 
     public static final native long gtk_gesture_zoom_new();
 
     public static final native long gtk_gesture_drag_new();
+
+    /**
+     * @param gesture cast=(GtkGesture *)
+     * @param sequence cast=(GdkEventSequence *)
+     * @param state cast=(GtkEventSequenceState)
+     */
+    public static final native boolean gtk_gesture_set_sequence_state(long gesture, long sequence, int state);
+
+    /**
+     * @param gesture cast=(GtkGesture *)
+     */
+    public static final native long gtk_gesture_get_last_updated_sequence(long gesture);
 }

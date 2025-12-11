@@ -316,7 +316,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public int getWidth() {
         checkWidget();
-        return DPIUtil.scaleDown(getWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getWidthInPixels(), getZoom());
     }
 
     int getWidthInPixels() {
@@ -581,7 +581,6 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setWidth(int width) {
         checkWidget();
-        setWidthInPixels(DPIUtil.scaleUp(width, getZoom()));
     }
 
     void setWidthInPixels(int width) {

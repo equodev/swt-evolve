@@ -164,6 +164,7 @@ class EventTable {
         }
     }
 
+    @SuppressWarnings("removal")
     public void unhook(int eventType, EventListener listener) {
         if (types == null)
             return;

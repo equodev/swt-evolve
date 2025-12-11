@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2014 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -19,11 +19,12 @@
  */
 package org.eclipse.swt.internal.image;
 
+import java.io.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import java.io.*;
+import org.eclipse.swt.internal.image.FileFormat.*;
 
-public final class JPEGFileFormat extends FileFormat {
+public final class JPEGFileFormat extends StaticImageFileFormat {
 
     int restartInterval;
 
@@ -1499,15 +1500,11 @@ public final class JPEGFileFormat extends FileFormat {
     }
 
     @Override
-    boolean isFileFormat(LEDataInputStream stream) {
-        try {
-            JPEGStartOfImage soi = new JPEGStartOfImage(stream);
-            stream.unread(soi.reference);
-            // we no longer check for appN
-            return soi.verify();
-        } catch (Exception e) {
-            return false;
-        }
+    boolean isFileFormat(LEDataInputStream stream) throws IOException {
+        JPEGStartOfImage soi = new JPEGStartOfImage(stream);
+        stream.unread(soi.reference);
+        // we no longer check for appN
+        return soi.verify();
     }
 
     boolean isZeroInColumn(int[] dataUnit, int col) {

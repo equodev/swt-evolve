@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2016 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -332,11 +332,6 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public int getWidth() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getWidthInPixels());
-    }
-
-    int getWidthInPixels() {
-        checkWidget();
         return this.lastWidth;
     }
 
@@ -371,7 +366,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
             }
         } else {
         }
-        setWidthInPixels(width);
+        setWidth(width);
     }
 
     @Override
@@ -606,11 +601,6 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      * </ul>
      */
     public void setWidth(int width) {
-        checkWidget();
-        setWidthInPixels(DPIUtil.autoScaleUp(width));
-    }
-
-    void setWidthInPixels(int width) {
         dirty();
         checkWidget();
         if (width < 0)

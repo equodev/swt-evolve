@@ -20,6 +20,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import org.eclipse.swt.internal.win32.version.*;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -46,6 +47,10 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
 
     long hBitmap;
 
+    Image imageSelected;
+
+    long hBitmapSelected;
+
     int id, accelerator, userId;
 
     ToolTip itemToolTip;
@@ -63,6 +68,10 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     // value in wmMeasureChild is increased by a fixed value (in points) when wmDrawChild is called
     // This static is used to mitigate this increase
     private final static int WINDOWS_OVERHEAD = 6;
+
+    // Workaround for: selection indicator is missing for menu item with image on Win11 (#501)
+    // 0= off/system behavior; 1= no image if selected; 2= with overlay marker (default)
+    private final static int CUSTOM_SELECTION_IMAGE = (OsVersion.IS_WIN11_21H2) ? Integer.getInteger("org.eclipse.swt.internal.win32.menu.customSelectionImage", 2) : 0;
 
     static {
         DPIZoomChangeRegistry.registerHandler(SwtMenuItem::handleDPIChange, MenuItem.class);
@@ -576,6 +585,13 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         if (hBitmap != 0)
             OS.DeleteObject(hBitmap);
         hBitmap = 0;
+        if (hBitmapSelected != 0)
+            OS.DeleteObject(hBitmapSelected);
+        hBitmapSelected = 0;
+        if (imageSelected != null) {
+            imageSelected.dispose();
+            imageSelected = null;
+        }
         if (accelerator != 0) {
             ((SwtMenu) parent.getImpl()).destroyAccelerators();
         }
@@ -822,6 +838,17 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
         super.setImage(image);
+        if (imageSelected != null) {
+            imageSelected.dispose();
+            imageSelected = null;
+        }
+        if ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0 && CUSTOM_SELECTION_IMAGE > 1 && image != null && getSelection()) {
+            initCustomSelectedImage();
+        }
+        updateImage();
+    }
+
+    private void updateImage() {
         MENUITEMINFO info = new MENUITEMINFO();
         info.cbSize = MENUITEMINFO.sizeof;
         info.fMask = OS.MIIM_BITMAP;
@@ -829,9 +856,14 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
             info.hbmpItem = OS.HBMMENU_CALLBACK;
         } else {
             if (OS.IsAppThemed()) {
-                if (hBitmap != 0)
-                    OS.DeleteObject(hBitmap);
-                info.hbmpItem = hBitmap = image != null ? SwtDisplay.create32bitDIB(image, getZoom()) : 0;
+                hBitmap = getMenuItemIconBitmapHandle(image);
+                if ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0 && CUSTOM_SELECTION_IMAGE > 0) {
+                    info.fMask |= OS.MIIM_CHECKMARKS;
+                    info.hbmpUnchecked = hBitmap;
+                    info.hbmpChecked = getMenuItemIconSelectedBitmapHandle();
+                } else {
+                    info.hbmpItem = hBitmap;
+                }
             } else {
                 info.hbmpItem = image != null ? OS.HBMMENU_CALLBACK : 0;
             }
@@ -839,6 +871,129 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         long hMenu = parent.handle;
         OS.SetMenuItemInfo(hMenu, id, false, info);
         ((SwtMenu) parent.getImpl()).redraw();
+    }
+
+    private void initCustomSelectedImage() {
+        Image image = this.image;
+        if (image == null) {
+            return;
+        }
+        Rectangle imageBounds = image.getBounds();
+        Color foregroundColor = increaseContrast((((SwtDisplay) display.getImpl()).menuBarForegroundPixel != -1) ? SwtColor.win32_new(this.display, ((SwtDisplay) display.getImpl()).menuBarForegroundPixel) : ((SwtMenu) parent.getImpl()).getForeground());
+        Color backgroundColor = increaseContrast((((SwtDisplay) display.getImpl()).menuBarBackgroundPixel != -1) ? SwtColor.win32_new(this.display, ((SwtDisplay) display.getImpl()).menuBarBackgroundPixel) : ((SwtMenu) parent.getImpl()).getBackground());
+        ImageGcDrawer drawer = new ImageGcDrawer() {
+
+            @Override
+            public int getGcStyle() {
+                return SWT.TRANSPARENT;
+            }
+
+            @Override
+            public void drawOn(GC gc, int imageWidth, int imageHeight) {
+                gc.setAdvanced(true);
+                gc.drawImage(image, imageWidth - imageBounds.width, (imageHeight - imageBounds.height) / 2);
+                gc.setAntialias(SWT.ON);
+                int x = imageWidth - 16;
+                int y = imageHeight / 2 - 8;
+                if ((getApi().style & SWT.CHECK) != 0) {
+                    drawCheck(gc, foregroundColor, backgroundColor, x, y);
+                } else {
+                    drawRadio(gc, foregroundColor, backgroundColor, x, y);
+                }
+            }
+        };
+        imageSelected = new Image(image.getDevice(), drawer, Math.max(imageBounds.width, 16), Math.max(imageBounds.height, 16));
+    }
+
+    private void drawCheck(GC gc, Color foregroundColor, Color backgroundColor, int x, int y) {
+        int[] points = new int[] { x + 4, y + 10, x + 6, y + 12, x + 12, y + 6 };
+        gc.setLineStyle(SWT.LINE_SOLID);
+        gc.setForeground(backgroundColor);
+        gc.setLineCap(SWT.CAP_ROUND);
+        gc.setLineJoin(SWT.JOIN_ROUND);
+        gc.setAlpha(127);
+        gc.setLineWidth(6);
+        gc.drawPolyline(points);
+        gc.setLineJoin(SWT.JOIN_MITER);
+        gc.setAlpha(255);
+        gc.setLineWidth(3);
+        gc.drawPolyline(points);
+        gc.setForeground(foregroundColor);
+        gc.setLineWidth(1);
+        gc.setLineCap(SWT.CAP_FLAT);
+        gc.drawPolyline(points);
+    }
+
+    private void drawRadio(GC gc, Color foregroundColor, Color backgroundColor, int x, int y) {
+        gc.setBackground(backgroundColor);
+        gc.setAlpha(127);
+        gc.fillOval(x + 4, y + 5, 8, 8);
+        gc.setAlpha(255);
+        gc.fillOval(x + 5, y + 6, 6, 6);
+        gc.setBackground(foregroundColor);
+        gc.fillOval(x + 6, y + 7, 4, 4);
+    }
+
+    private Color increaseContrast(Color color) {
+        return (color.getRed() + color.getGreen() + color.getBlue() > 127 * 3) ? display.getSystemColor(SWT.COLOR_WHITE) : color;
+    }
+
+    private long getMenuItemIconBitmapHandle(Image image) {
+        if (image == null) {
+            return 0;
+        }
+        if (hBitmap != 0)
+            OS.DeleteObject(hBitmap);
+        int zoom = adaptZoomForMenuItem(getApi().nativeZoom, image);
+        return SwtDisplay.create32bitDIB(image, zoom);
+    }
+
+    private long getMenuItemIconSelectedBitmapHandle() {
+        Image image = imageSelected;
+        if (image == null) {
+            return 0;
+        }
+        if (hBitmapSelected != 0)
+            OS.DeleteObject(hBitmapSelected);
+        int zoom = adaptZoomForMenuItem(getApi().nativeZoom, image);
+        return hBitmapSelected = SwtDisplay.create32bitDIB(image, zoom);
+    }
+
+    private int adaptZoomForMenuItem(int currentZoom, Image image) {
+        int primaryMonitorZoomAtAppStartUp = getPrimaryMonitorZoomAtStartup();
+        /*
+	 * Windows has inconsistent behavior when setting the size of MenuItem image and
+	 * hence we need to adjust the size of the images as per different kind of zoom
+	 * level, i.e. full (100s), half (50s) and quarter (25s). The image size per
+	 * zoom level is also affected by the primaryMonitorZoomAtAppStartUp. The
+	 * implementation below is based on the pattern observed for all the zoom values
+	 * and what fits the best for these zoom level types.
+	 */
+        if (primaryMonitorZoomAtAppStartUp > currentZoom && isQuarterZoom(currentZoom)) {
+            return currentZoom - 25;
+        }
+        if (!isHalfZoom(primaryMonitorZoomAtAppStartUp) && isHalfZoom(currentZoom)) {
+            // Use the size recommended by System Metrics. This value only holds
+            // for this case and does not work consistently for other cases.
+            double expectedSize = getSystemMetrics(OS.SM_CYMENUCHECK);
+            return (int) ((expectedSize / image.getBounds().height) * 100);
+        }
+        return currentZoom;
+    }
+
+    private static boolean isHalfZoom(int zoom) {
+        return zoom % 50 == 0 && zoom % 100 != 0;
+    }
+
+    private static boolean isQuarterZoom(int zoom) {
+        return zoom % 10 != 0 && zoom % 25 == 0;
+    }
+
+    private static int getPrimaryMonitorZoomAtStartup() {
+        long hDC = OS.GetDC(0);
+        int dpi = OS.GetDeviceCaps(hDC, OS.LOGPIXELSX);
+        OS.ReleaseDC(0, hDC);
+        return DPIUtil.mapDPIToZoom(dpi);
     }
 
     /**
@@ -998,6 +1153,12 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         info.fState &= ~OS.MFS_CHECKED;
         if (selected)
             info.fState |= OS.MFS_CHECKED;
+        if (selected && CUSTOM_SELECTION_IMAGE > 1 && hBitmap != 0 && imageSelected == null) {
+            initCustomSelectedImage();
+            info.fMask |= OS.MIIM_CHECKMARKS;
+            info.hbmpUnchecked = hBitmap;
+            info.hbmpChecked = getMenuItemIconSelectedBitmapHandle();
+        }
         success = OS.SetMenuItemInfo(hMenu, id, false, info);
         if (!success) {
             /*
@@ -1193,7 +1354,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     }
 
     private int getMonitorZoom() {
-        return ((SwtMonitor) getMenu().getShell().getMonitor().getImpl()).zoom;
+        return ((SwtMonitor) getParent().getShell().getMonitor().getImpl()).zoom;
     }
 
     private int getMenuZoom() {
@@ -1234,20 +1395,20 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
                     flags |= SWT.DRAW_MNEMONIC;
                 }
                 Rectangle menuItemBounds = this.getBounds();
-                int fillMenuWidth = DPIUtil.scaleDown(menuItemBounds.width, zoom);
-                int fillMenuHeight = DPIUtil.scaleDown(menuItemBounds.height, zoom);
-                menuItemArea = new Rectangle(DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(struct.top, zoom), fillMenuWidth, fillMenuHeight);
+                int fillMenuWidth = DPIUtil.pixelToPoint(menuItemBounds.width, zoom);
+                int fillMenuHeight = DPIUtil.pixelToPoint(menuItemBounds.height, zoom);
+                menuItemArea = new Rectangle(DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(struct.top, zoom), fillMenuWidth, fillMenuHeight);
                 gc.setForeground(isInactive ? display.getSystemColor(SWT.COLOR_GRAY) : display.getSystemColor(SWT.COLOR_WHITE));
                 gc.setBackground(isSelected ? display.getSystemColor(SWT.COLOR_DARK_GRAY) : ((SwtMenu) parent.getImpl()).getBackground());
                 gc.fillRectangle(menuItemArea);
-                int xPositionText = LEFT_TEXT_MARGIN + DPIUtil.scaleDown(x, zoom) + (this.image != null ? this.image.getBounds().width + IMAGE_TEXT_GAP : 0);
-                int yPositionText = DPIUtil.scaleDown(struct.top, zoom) + MARGIN_HEIGHT;
+                int xPositionText = LEFT_TEXT_MARGIN + DPIUtil.pixelToPoint(x, zoom) + (this.image != null ? this.image.getBounds().width + IMAGE_TEXT_GAP : 0);
+                int yPositionText = DPIUtil.pixelToPoint(struct.top, zoom) + MARGIN_HEIGHT;
                 gc.drawText(drawnText, xPositionText, yPositionText, flags);
             }
             if (image != null) {
                 Image image = getEnabled() ? this.image : new Image(display, this.image, SWT.IMAGE_DISABLE);
                 int gap = (menuItemArea.height - image.getBounds().height) / 2;
-                gc.drawImage(image, LEFT_TEXT_MARGIN + DPIUtil.scaleDown(x, zoom), gap + DPIUtil.scaleDown(struct.top, zoom));
+                gc.drawImage(image, LEFT_TEXT_MARGIN + DPIUtil.pixelToPoint(x, zoom), gap + DPIUtil.pixelToPoint(struct.top, zoom));
                 if (this.image != image) {
                     image.dispose();
                 }
@@ -1267,7 +1428,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
             if (((SwtMenu) parent.getImpl()).needsMenuCallback()) {
                 Point point = calculateRenderedTextSize();
                 int menuZoom = getDisplay().isRescalingAtRuntime() ? super.getZoom() : getMonitorZoom();
-                struct.itemHeight = DPIUtil.scaleUp(point.y, menuZoom);
+                struct.itemHeight = Win32DPIUtils.pointToPixel(point.y, menuZoom);
                 /*
 			 * Weirdness in Windows. Setting `HBMMENU_CALLBACK` causes
 			 * item sizes to mean something else. It seems that it is
@@ -1277,14 +1438,14 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
 			 * that value of 5 works well in matching text to mnemonic.
 			 */
                 int horizontalSpaceImage = this.image != null ? this.image.getBounds().width + IMAGE_TEXT_GAP : 0;
-                struct.itemWidth = DPIUtil.scaleUp(LEFT_TEXT_MARGIN + point.x - WINDOWS_OVERHEAD + horizontalSpaceImage, menuZoom);
+                struct.itemWidth = Win32DPIUtils.pointToPixel(LEFT_TEXT_MARGIN + point.x - WINDOWS_OVERHEAD + horizontalSpaceImage, menuZoom);
                 OS.MoveMemory(lParam, struct, MEASUREITEMSTRUCT.sizeof);
                 return null;
             }
         }
         int width = 0, height = 0;
         if (image != null) {
-            Rectangle rect = image.getBoundsInPixels();
+            Rectangle rect = Win32DPIUtils.pointToPixel(image.getBounds(), getZoom());
             width = rect.width;
             height = rect.height;
         } else {
@@ -1306,7 +1467,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
             if ((lpcmi.dwStyle & OS.MNS_CHECKORBMP) == 0) {
                 for (MenuItem item : parent.getItems()) {
                     if (((SwtItem) item.getImpl()).image != null) {
-                        Rectangle rect = ((SwtItem) item.getImpl()).image.getBoundsInPixels();
+                        Rectangle rect = Win32DPIUtils.pointToPixel(((SwtItem) item.getImpl()).image.getBounds(), getZoom());
                         width = Math.max(width, rect.width);
                     }
                 }
@@ -1321,7 +1482,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     }
 
     private Point calculateRenderedTextSize() {
-        GC gc = new GC(this.getMenu().getShell());
+        GC gc = new GC(this.getParent().getShell());
         String textWithoutMnemonicCharacter = getText().replace("&", "");
         Point points = gc.textExtent(textWithoutMnemonicCharacter);
         gc.dispose();
@@ -1339,7 +1500,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
                 // GC calculated height of 15px, scales down with adjusted zoom of 100% and returns 15pt -> should be 10pt
                 // this calculation is corrected by the following line
                 // This is the only place, where the GC needs to use the native zoom to do that, therefore it is fixed only here
-                points = DPIUtil.scaleDown(DPIUtil.scaleUp(points, adjustedPrimaryMonitorZoom), primaryMonitorZoom);
+                points = Win32DPIUtils.pixelToPoint(Win32DPIUtils.pointToPixel(points, adjustedPrimaryMonitorZoom), primaryMonitorZoom);
             }
         }
         return points;
@@ -1362,12 +1523,9 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         if (!(widget instanceof MenuItem menuItem)) {
             return;
         }
-        // Refresh the image
-        Image menuItemImage = menuItem.getImage();
-        if (menuItemImage != null) {
-            Image currentImage = menuItemImage;
-            ((SwtMenuItem) menuItem.getImpl()).image = null;
-            menuItem.setImage(currentImage);
+        // Refresh the image(s)
+        if (menuItem.getImage() != null) {
+            ((SwtMenuItem) ((MenuItem) menuItem).getImpl()).updateImage();
         }
         // Refresh the sub menu
         Menu subMenu = menuItem.getMenu();
@@ -1386,6 +1544,14 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
 
     public long _hBitmap() {
         return hBitmap;
+    }
+
+    public Image _imageSelected() {
+        return imageSelected;
+    }
+
+    public long _hBitmapSelected() {
+        return hBitmapSelected;
     }
 
     public int _id() {

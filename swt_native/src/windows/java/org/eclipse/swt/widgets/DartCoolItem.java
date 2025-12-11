@@ -191,10 +191,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public Point computeSize(int wHint, int hHint) {
         checkWidget();
-        int zoom = getZoom();
-        wHint = (wHint != SWT.DEFAULT ? DPIUtil.scaleUp(wHint, zoom) : wHint);
-        hHint = (hHint != SWT.DEFAULT ? DPIUtil.scaleUp(hHint, zoom) : hHint);
-        return DPIUtil.scaleDown(computeSizeInPixels(wHint, hHint), zoom);
+        return Sizes.compute(this);
     }
 
     Point computeSizeInPixels(int wHint, int hHint) {
@@ -220,7 +217,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return DPIUtil.scaleDown(getBoundsInPixels(), getZoom());
+        return null;
     }
 
     Rectangle getBoundsInPixels() {
@@ -352,7 +349,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public Point getPreferredSize() {
         checkWidget();
-        return DPIUtil.scaleDown(getPreferredSizeInPixels(), getZoom());
+        return this.preferredSize;
     }
 
     Point getPreferredSizeInPixels() {
@@ -380,8 +377,6 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setPreferredSize(int width, int height) {
         checkWidget();
-        int zoom = getZoom();
-        setPreferredSizeInPixels(DPIUtil.scaleUp(width, zoom), DPIUtil.scaleUp(height, zoom));
     }
 
     void setPreferredSizeInPixels(int width, int height) {
@@ -420,7 +415,6 @@ public class DartCoolItem extends DartItem implements ICoolItem {
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = DPIUtil.scaleUp(size, getZoom());
         setPreferredSizeInPixels(size.x, size.y);
     }
 
@@ -439,7 +433,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public Point getSize() {
         checkWidget();
-        return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
+        return this.size;
     }
 
     public Point getSizeInPixels() {
@@ -474,8 +468,6 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setSize(int width, int height) {
         checkWidget();
-        int zoom = getZoom();
-        setSizeInPixels(DPIUtil.scaleUp(width, zoom), DPIUtil.scaleUp(height, zoom));
     }
 
     void setSizeInPixels(int width, int height) {
@@ -522,7 +514,6 @@ public class DartCoolItem extends DartItem implements ICoolItem {
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = DPIUtil.scaleUp(size, getZoom());
         setSizeInPixels(size.x, size.y);
     }
 
@@ -541,7 +532,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public Point getMinimumSize() {
         checkWidget();
-        return DPIUtil.scaleDown(getMinimumSizeInPixels(), getZoom());
+        return this.minimumSize;
     }
 
     Point getMinimumSizeInPixels() {
@@ -572,8 +563,6 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setMinimumSize(int width, int height) {
         checkWidget();
-        int zoom = getZoom();
-        setMinimumSizeInPixels(DPIUtil.scaleUp(width, zoom), DPIUtil.scaleUp(height, zoom));
     }
 
     void setMinimumSizeInPixels(int width, int height) {
@@ -615,7 +604,6 @@ public class DartCoolItem extends DartItem implements ICoolItem {
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = DPIUtil.scaleUp(size, getZoom());
         setMinimumSizeInPixels(size.x, size.y);
     }
 

@@ -6,7 +6,6 @@ import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.widgets.*;
 
 public interface IProgram {
 

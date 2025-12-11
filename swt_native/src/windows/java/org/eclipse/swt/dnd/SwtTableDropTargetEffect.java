@@ -161,7 +161,7 @@ public class SwtTableDropTargetEffect extends SwtDropTargetEffect implements ITa
         long handle = table.handle;
         Point coordinates = new Point(event.x, event.y);
         // To Pixels
-        coordinates = DPIUtil.scaleUp(table.toControl(coordinates), DPIUtil.getZoomForAutoscaleProperty(table.nativeZoom));
+        coordinates = Win32DPIUtils.pointToPixel(table.toControl(coordinates), DPIUtil.getZoomForAutoscaleProperty(table.nativeZoom));
         LVHITTESTINFO pinfo = new LVHITTESTINFO();
         pinfo.x = coordinates.x;
         pinfo.y = coordinates.y;

@@ -20,6 +20,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import org.eclipse.swt.internal.win32.version.*;
 import dev.equo.swt.Config;
 
 /**
@@ -45,6 +46,7 @@ public class MenuItem extends Item {
 
     // There is a weird behavior in the Windows API with menus in OWENERDRAW mode that the returned
     // value in wmMeasureChild is increased by a fixed value (in points) when wmDrawChild is called
+    // Workaround for: selection indicator is missing for menu item with image on Win11 (#501)
     /**
      * Constructs a new instance of this class given its parent
      * (which must be a <code>Menu</code>) and a style value

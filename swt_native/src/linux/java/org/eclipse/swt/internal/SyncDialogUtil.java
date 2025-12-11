@@ -18,6 +18,7 @@ package org.eclipse.swt.internal;
 import java.lang.reflect.*;
 import java.util.function.*;
 import org.eclipse.swt.internal.gtk.*;
+import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.widgets.*;
 
 /**
@@ -52,10 +53,10 @@ public class SyncDialogUtil {
      * therefore essential that callers use the address of the {@link Callback}
      * as address for the {@code AsyncReadyCallback} object.
      */
-    static public long run(Display display, Consumer<Long> asyncOpen, Function<Long, Long> asyncFinish) {
+    static public long run(Display display, AsyncReadyCallback callback) {
         initializeResponseCallback();
-        dialogAsyncFinish = asyncFinish;
-        asyncOpen.accept(dialogResponseCallback.getAddress());
+        dialogAsyncFinish = callback::await;
+        callback.async(dialogResponseCallback.getAddress());
         while (!display.isDisposed()) {
             if (dialogAsyncValue != null) {
                 break;
@@ -77,7 +78,11 @@ public class SyncDialogUtil {
         if (isNativeDialog) {
             GTK.gtk_native_dialog_show(handle);
         } else {
-            GTK.gtk_widget_show(handle);
+            if (GTK.GTK4) {
+                GTK.gtk_widget_set_visible(handle, true);
+            } else {
+                GTK3.gtk_widget_show(handle);
+            }
         }
         while (!display.isDisposed()) {
             boolean eventsDispatched = OS.g_main_context_iteration(0, false);

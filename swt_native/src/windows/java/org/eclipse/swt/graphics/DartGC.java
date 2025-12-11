@@ -15,6 +15,9 @@
  */
 package org.eclipse.swt.graphics;
 
+import java.util.*;
+import java.util.List;
+import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
@@ -67,6 +70,10 @@ public final class DartGC extends DartResource implements IGC {
     Drawable drawable;
 
     GCData data;
+
+    private final GCData originalData = new GCData();
+
+    private final List<Operation> operations = new ArrayList<>();
 
     static final int FOREGROUND = 1 << 0;
 
@@ -179,6 +186,7 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         GCData data = new GCData();
         data.style = checkStyle(style);
+        ((SwtGCData) data.getImpl()).copyTo(originalData);
         long hDC = drawable.internal_new_GC(data);
         Device device = data.device;
         if (device == null)
@@ -194,6 +202,22 @@ public final class DartGC extends DartResource implements IGC {
         if ((style & SWT.LEFT_TO_RIGHT) != 0)
             style &= ~SWT.RIGHT_TO_LEFT;
         return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+    }
+
+    private void validateGCState() {
+        if (drawable == null) {
+            return;
+        }
+        try {
+            GCData newData = new GCData();
+            long newHdc = drawable.internal_new_GC(newData);
+            if (data.nativeZoom != newData.nativeZoom) {
+                System.err.println("***WARNING: Zoom of the underlying Drawable of the GC has changed. This indicates a " + "long running GC that should be recreated.");
+            }
+            drawable.internal_dispose_GC(newHdc, newData);
+        } catch (Exception e) {
+            // ignore if recreation fails
+        }
     }
 
     void checkGC(int mask) {
@@ -406,18 +430,59 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void copyArea(Image image, int x, int y) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        copyAreaInPixels(image, x, y);
-    }
-
-    void copyAreaInPixels(Image image, int x, int y) {
-        VGCCopyAreaImage drawOp = new VGCCopyAreaImage();
+        VGCCopyAreaImageintint drawOp = new VGCCopyAreaImageintint();
         drawOp.image = ImageUtils.copyImage(display, image);
         drawOp.x = x;
         drawOp.y = y;
-        FlutterBridge.send(this, "copyAreaImage", drawOp);
+        FlutterBridge.send(this, "copyAreaImageintint", drawOp);
+    }
+
+    private abstract class ImageOperation extends Operation {
+
+        private Image image;
+
+        ImageOperation(Image image) {
+            setImage(image);
+            ((DartImage) image.getImpl()).addOnDisposeListener(this::setCopyOfImage);
+        }
+
+        private void setImage(Image image) {
+            this.image = image;
+        }
+
+        private void setCopyOfImage(Image image) {
+            if (!DartGC.this.getApi().isDisposed()) {
+                Image copiedImage = new Image(image.getImpl()._device(), image, SWT.IMAGE_COPY);
+                setImage(copiedImage);
+                registerForDisposal(copiedImage);
+            }
+        }
+
+        protected Image getImage() {
+            return image;
+        }
+    }
+
+    private class CopyAreaToImageOperation extends ImageOperation {
+
+        private final int x;
+
+        private final int y;
+
+        CopyAreaToImageOperation(Image image, int x, int y) {
+            super(image);
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void copyAreaInPixels(Image image, int x, int y) {
+        if (image.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
     }
 
     /**
@@ -436,7 +501,14 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void copyArea(int srcX, int srcY, int width, int height, int destX, int destY) {
-        copyArea(srcX, srcY, width, height, destX, destY, true);
+        VGCCopyAreaintintintintintint drawOp = new VGCCopyAreaintintintintintint();
+        drawOp.srcX = srcX;
+        drawOp.srcY = srcY;
+        drawOp.width = width;
+        drawOp.height = height;
+        drawOp.destX = destX;
+        drawOp.destY = destY;
+        FlutterBridge.send(this, "copyAreaintintintintintint", drawOp);
     }
 
     /**
@@ -458,18 +530,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void copyArea(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
-        int deviceZoom = getZoom();
-        srcX = DPIUtil.scaleUp(drawable, srcX, deviceZoom);
-        srcY = DPIUtil.scaleUp(drawable, srcY, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        destX = DPIUtil.scaleUp(drawable, destX, deviceZoom);
-        destY = DPIUtil.scaleUp(drawable, destY, deviceZoom);
-        copyAreaInPixels(srcX, srcY, width, height, destX, destY, paint);
-    }
-
-    void copyAreaInPixels(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
-        VGCCopyArea drawOp = new VGCCopyArea();
+        VGCCopyAreaintintintintintintboolean drawOp = new VGCCopyAreaintintintintintintboolean();
         drawOp.srcX = srcX;
         drawOp.srcY = srcY;
         drawOp.width = width;
@@ -477,7 +538,34 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.destX = destX;
         drawOp.destY = destY;
         drawOp.paint = paint;
-        FlutterBridge.send(this, "copyArea", drawOp);
+        FlutterBridge.send(this, "copyAreaintintintintintintboolean", drawOp);
+    }
+
+    private class CopyAreaOperation extends Operation {
+
+        private final Rectangle source;
+
+        private final Rectangle destination;
+
+        private final boolean paint;
+
+        CopyAreaOperation(Rectangle source, Rectangle destination, boolean paint) {
+            this.source = source;
+            this.destination = destination;
+            this.paint = paint;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void copyAreaInPixels(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
+        checkNonDisposed();
+        long hwnd = data.hwnd;
+        if (hwnd == 0) {
+        } else {
+        }
     }
 
     /**
@@ -578,23 +666,77 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        drawArcInPixels(x, y, width, height, startAngle, arcAngle);
-    }
-
-    void drawArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        VGCDrawArc drawOp = new VGCDrawArc();
+        VGCDrawArcintintintintintint drawOp = new VGCDrawArcintintintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.startAngle = startAngle;
         drawOp.arcAngle = arcAngle;
-        FlutterBridge.send(this, "drawArc", drawOp);
+        FlutterBridge.send(this, "drawArcintintintintintint", drawOp);
+    }
+
+    private class DrawArcOperation extends Operation {
+
+        private final Rectangle rectangle;
+
+        private final int startAngle;
+
+        private final int arcAngle;
+
+        DrawArcOperation(Rectangle rectangle, int startAngle, int arcAngle) {
+            this.rectangle = rectangle;
+            this.startAngle = startAngle;
+            this.arcAngle = arcAngle;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void drawArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
+        checkGC(DRAW);
+        if (width < 0) {
+            x = x + width;
+            width = -width;
+        }
+        if (height < 0) {
+            y = y + height;
+            height = -height;
+        }
+        if (width == 0 || height == 0 || arcAngle == 0)
+            return;
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            if (width == height) {
+            } else {
+            }
+            return;
+        }
+        if ((data.style & SWT.MIRRORED) != 0) {
+            if (data.lineWidth != 0 && data.lineWidth % 2 == 0)
+                x--;
+        }
+        int x1, y1, x2, y2, tmp;
+        boolean isNegative;
+        if (arcAngle >= 360 || arcAngle <= -360) {
+            x1 = x2 = x + width;
+            y1 = y2 = y + height / 2;
+        } else {
+            isNegative = arcAngle < 0;
+            arcAngle = arcAngle + startAngle;
+            if (isNegative) {
+                // swap angles
+                tmp = startAngle;
+                startAngle = arcAngle;
+                arcAngle = tmp;
+            }
+            x1 = cos(startAngle, width) + x + width / 2;
+            y1 = -1 * sin(startAngle, height) + y + height / 2;
+            x2 = cos(arcAngle, width) + x + width / 2;
+            y2 = -1 * sin(arcAngle, height) + y + height / 2;
+        }
     }
 
     /**
@@ -615,21 +757,43 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void drawFocus(int x, int y, int width, int height) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        drawFocusInPixels(x, y, width, height);
-    }
-
-    void drawFocusInPixels(int x, int y, int width, int height) {
-        VGCDrawFocus drawOp = new VGCDrawFocus();
+        VGCDrawFocusintintintint drawOp = new VGCDrawFocusintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "drawFocus", drawOp);
+        FlutterBridge.send(this, "drawFocusintintintint", drawOp);
+    }
+
+    private class DrawFocusOperation extends Operation {
+
+        private final Rectangle rectangle;
+
+        DrawFocusOperation(Rectangle rectangle) {
+            this.rectangle = rectangle;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void drawFocusInPixels(int x, int y, int width, int height) {
+        data.focusDrawn = true;
+        int state = 0;
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            long clipRgn = 0;
+            float[] lpXform = null;
+            if (lpXform != null) {
+            }
+            if (clipRgn != 0) {
+            }
+        }
+        if (gdipGraphics != 0) {
+        } else {
+            data.state &= ~(BACKGROUND_TEXT | FOREGROUND_TEXT);
+        }
     }
 
     /**
@@ -652,20 +816,31 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawImage(Image image, int x, int y) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        drawImageInPixels(image, x, y);
+        VGCDrawImageImageintint drawOp = new VGCDrawImageImageintint();
+        drawOp.image = ImageUtils.copyImage(display, image);
+        drawOp.x = x;
+        drawOp.y = y;
+        FlutterBridge.send(this, "drawImageImageintint", drawOp);
     }
 
-    void drawImageInPixels(Image image, int x, int y) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (image == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (image.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        drawImage(image, 0, 0, -1, -1, x, y, -1, -1, true);
+    private class DrawImageOperation extends ImageOperation {
+
+        private final Point location;
+
+        DrawImageOperation(Image image, Point location) {
+            super(image);
+            this.location = location;
+        }
+
+        @Override
+        void apply() {
+        }
+
+        private void drawImageInPixels(Image image, Point location) {
+            if (image.isDisposed())
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            drawImage(image, 0, 0, -1, -1, location.x, location.y, -1, -1, true, getZoom());
+        }
     }
 
     /**
@@ -701,43 +876,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (srcWidth == 0 || srcHeight == 0 || destWidth == 0 || destHeight == 0)
-            return;
-        if (srcX < 0 || srcY < 0 || srcWidth < 0 || srcHeight < 0 || destWidth < 0 || destHeight < 0) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        if (image == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (image.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        int deviceZoom = getZoom();
-        Rectangle src = DPIUtil.scaleUp(drawable, new Rectangle(srcX, srcY, srcWidth, srcHeight), deviceZoom);
-        Rectangle dest = DPIUtil.scaleUp(drawable, new Rectangle(destX, destY, destWidth, destHeight), deviceZoom);
-        if (deviceZoom != 100) {
-            /*
-		 * This is a HACK! Due to rounding errors at fractional scale factors,
-		 * the coordinates may be slightly off. The workaround is to restrict
-		 * coordinates to the allowed bounds.
-		 */
-            Rectangle b = ((DartImage) image.getImpl()).getBounds(deviceZoom);
-            int errX = src.x + src.width - b.width;
-            int errY = src.y + src.height - b.height;
-            if (errX != 0 || errY != 0) {
-                if (errX <= deviceZoom / 100 && errY <= deviceZoom / 100) {
-                    src.intersect(b);
-                } else {
-                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-                }
-            }
-        }
-        drawImage(image, src.x, src.y, src.width, src.height, dest.x, dest.y, dest.width, dest.height, false);
-    }
-
-    void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
-        VGCDrawImage drawOp = new VGCDrawImage();
-        drawOp.srcImage = ImageUtils.copyImage(display, srcImage);
+        VGCDrawImageImageintintintintintintintint drawOp = new VGCDrawImageImageintintintintintintintint();
+        drawOp.image = ImageUtils.copyImage(display, image);
         drawOp.srcX = srcX;
         drawOp.srcY = srcY;
         drawOp.srcWidth = srcWidth;
@@ -746,16 +886,116 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.destY = destY;
         drawOp.destWidth = destWidth;
         drawOp.destHeight = destHeight;
-        drawOp.simple = simple;
-        FlutterBridge.send(this, "drawImage", drawOp);
+        FlutterBridge.send(this, "drawImageImageintintintintintintintint", drawOp);
     }
 
-    void drawIcon(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+    void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+        storeAndApplyOperationForExistingHandle(new DrawImageToImageOperation(srcImage, new Rectangle(srcX, srcY, srcWidth, srcHeight), new Rectangle(destX, destY, destWidth, destHeight), simple));
+    }
+
+    private class DrawScalingImageToImageOperation extends ImageOperation {
+
+        private final Rectangle source;
+
+        private final Rectangle destination;
+
+        DrawScalingImageToImageOperation(Image image, Rectangle source, Rectangle destination) {
+            super(image);
+            this.source = source;
+            this.destination = destination;
+        }
+
+        @Override
+        void apply() {
+            int gcZoom = getZoom();
+            int srcImageZoom = calculateZoomForImage(gcZoom, source.width, source.height, destination.width, destination.height);
+            drawImage(getImage(), source.x, source.y, source.width, source.height, destination.x, destination.y, destination.width, destination.height, gcZoom, srcImageZoom);
+        }
+
+        private Collection<Integer> getAllCurrentMonitorZooms() {
+            if (device instanceof Display display) {
+                return Arrays.stream(display.getMonitors()).map(Monitor::getZoom).collect(Collectors.toSet());
+            }
+            return Collections.emptySet();
+        }
+
+        private int calculateZoomForImage(int gcZoom, int srcWidth, int srcHeight, int destWidth, int destHeight) {
+            if (srcWidth == 1 && srcHeight == 1) {
+                // One pixel images can use the GC zoom
+                return gcZoom;
+            }
+            if (destWidth == srcWidth && destHeight == srcHeight) {
+                // unscaled images can use the GC zoom
+                return gcZoom;
+            }
+            float imageScaleFactor = 1f * destWidth / srcWidth;
+            int imageZoom = Math.round(gcZoom * imageScaleFactor);
+            if (getAllCurrentMonitorZooms().contains(imageZoom)) {
+                return imageZoom;
+            }
+            if (imageZoom > 150) {
+                return 200;
+            }
+            return 100;
+        }
+    }
+
+    private void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, int imageZoom, int scaledImageZoom) {
+        if (scaledImageZoom != 100) {
+        }
+    }
+
+    private class DrawImageToImageOperation extends ImageOperation {
+
+        private final Rectangle source;
+
+        private final Rectangle destination;
+
+        private final boolean simple;
+
+        DrawImageToImageOperation(Image image, Rectangle source, Rectangle destination, boolean simple) {
+            super(image);
+            this.source = source;
+            this.destination = destination;
+            this.simple = simple;
+        }
+
+        @Override
+        void apply() {
+            drawImage(getImage(), source.x, source.y, source.width, source.height, destination.x, destination.y, destination.width, destination.height, simple, getZoom());
+        }
+    }
+
+    private void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imageZoom) {
+        if (data.gdipGraphics != 0) {
+            if (simple) {
+            } else {
+            }
+            if (data.alpha != 0xFF) {
+            }
+            if ((data.style & SWT.MIRRORED) != 0) {
+            }
+            if ((data.style & SWT.MIRRORED) != 0) {
+            }
+            return;
+        }
+        long imageHandle = ((DartImage) srcImage.getImpl()).getHandle(imageZoom, data.nativeZoom);
+        switch(srcImage.type) {
+            case SWT.BITMAP:
+                drawBitmap(srcImage, imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                break;
+            case SWT.ICON:
+                drawIcon(imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                break;
+        }
+    }
+
+    private void drawIcon(long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
         if (simple) {
         }
     }
 
-    void drawBitmap(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+    private void drawBitmap(Image srcImage, long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
         if (simple) {
         } else {
         }
@@ -773,7 +1013,7 @@ public final class DartGC extends DartResource implements IGC {
         }
     }
 
-    void drawBitmapAlpha(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+    private void drawBitmapAlpha(long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
         boolean alphaBlendSupport = true;
         if (alphaBlendSupport) {
             return;
@@ -810,7 +1050,7 @@ public final class DartGC extends DartResource implements IGC {
         }
     }
 
-    void drawBitmapMask(Image srcImage, long srcColor, long srcMask, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imgWidth, int imgHeight, boolean offscreen) {
+    private void drawBitmapMask(long srcColor, long srcMask, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imgWidth, int imgHeight, boolean offscreen) {
         int srcColorY = srcY;
         if (srcColor == 0) {
             srcColor = srcMask;
@@ -832,7 +1072,7 @@ public final class DartGC extends DartResource implements IGC {
         }
     }
 
-    void drawBitmapColor(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+    private void drawBitmapColor(long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
         if (!simple && (srcWidth != destWidth || srcHeight != destHeight)) {
         } else {
         }
@@ -852,21 +1092,44 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawLine(int x1, int y1, int x2, int y2) {
-        int deviceZoom = getZoom();
-        x1 = DPIUtil.scaleUp(drawable, x1, deviceZoom);
-        x2 = DPIUtil.scaleUp(drawable, x2, deviceZoom);
-        y1 = DPIUtil.scaleUp(drawable, y1, deviceZoom);
-        y2 = DPIUtil.scaleUp(drawable, y2, deviceZoom);
-        drawLineInPixels(x1, y1, x2, y2);
-    }
-
-    void drawLineInPixels(int x1, int y1, int x2, int y2) {
-        VGCDrawLine drawOp = new VGCDrawLine();
+        VGCDrawLineintintintint drawOp = new VGCDrawLineintintintint();
         drawOp.x1 = x1;
         drawOp.y1 = y1;
         drawOp.x2 = x2;
         drawOp.y2 = y2;
-        FlutterBridge.send(this, "drawLine", drawOp);
+        FlutterBridge.send(this, "drawLineintintintint", drawOp);
+    }
+
+    private class DrawLineOperation extends Operation {
+
+        private final Point start;
+
+        private final Point end;
+
+        DrawLineOperation(int x1, int y1, int x2, int y2) {
+            this.start = new Point(x1, y1);
+            this.end = new Point(x2, y2);
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void drawLineInPixels(int x1, int y1, int x2, int y2) {
+        checkGC(DRAW);
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            return;
+        }
+        if ((data.style & SWT.MIRRORED) != 0) {
+            if (data.lineWidth != 0 && data.lineWidth % 2 == 0) {
+                x1--;
+                x2--;
+            }
+        }
+        if (data.lineWidth <= 1) {
+        }
     }
 
     /**
@@ -891,21 +1154,37 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawOval(int x, int y, int width, int height) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        drawOvalInPixels(x, y, width, height);
-    }
-
-    void drawOvalInPixels(int x, int y, int width, int height) {
-        VGCDrawOval drawOp = new VGCDrawOval();
+        VGCDrawOvalintintintint drawOp = new VGCDrawOvalintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "drawOval", drawOp);
+        FlutterBridge.send(this, "drawOvalintintintint", drawOp);
+    }
+
+    private class DrawOvalOperation extends Operation {
+
+        private final Rectangle bounds;
+
+        DrawOvalOperation(Rectangle bounds) {
+            this.bounds = bounds;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void drawOvalInPixels(int x, int y, int width, int height) {
+        checkGC(DRAW);
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            return;
+        }
+        if ((data.style & SWT.MIRRORED) != 0) {
+            if (data.lineWidth != 0 && data.lineWidth % 2 == 0)
+                x--;
+        }
     }
 
     /**
@@ -932,14 +1211,34 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void drawPath(Path path) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (path == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        long pathHandle = ((SwtPath) path.getImpl()).getHandle(getZoom());
-        if (pathHandle == 0)
+        if (path.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        checkGC(DRAW);
+        storeAndApplyOperationForExistingHandle(new DrawPathOperation(path));
+    }
+
+    private class DrawPathOperation extends Operation {
+
+        private final PathData pathData;
+
+        DrawPathOperation(Path path) {
+            this.pathData = path.getPathData();
+        }
+
+        @Override
+        void apply() {
+            Path path = new Path(device, pathData);
+            try {
+                long pathHandle = ((SwtPath) path.getImpl()).getHandle(getZoom());
+                if (pathHandle == 0)
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                checkGC(DRAW);
+            } finally {
+                path.dispose();
+            }
+        }
     }
 
     /**
@@ -960,17 +1259,30 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.0
      */
     public void drawPoint(int x, int y) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        drawPointInPixels(x, y);
-    }
-
-    void drawPointInPixels(int x, int y) {
-        VGCDrawPoint drawOp = new VGCDrawPoint();
+        VGCDrawPointintint drawOp = new VGCDrawPointintint();
         drawOp.x = x;
         drawOp.y = y;
-        FlutterBridge.send(this, "drawPoint", drawOp);
+        FlutterBridge.send(this, "drawPointintint", drawOp);
+    }
+
+    private class DrawPointOperation extends Operation {
+
+        private final Point location;
+
+        DrawPointOperation(int x, int y) {
+            this.location = new Point(x, y);
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void drawPointInPixels(int x, int y) {
+        if (data.gdipGraphics != 0) {
+            checkGC(DRAW);
+            return;
+        }
     }
 
     /**
@@ -991,15 +1303,44 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawPolygon(int[] pointArray) {
-        if (pointArray == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        drawPolygonInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
+        VGCDrawPolygonint drawOp = new VGCDrawPolygonint();
+        drawOp.pointArray = pointArray;
+        FlutterBridge.send(this, "drawPolygonint", drawOp);
     }
 
-    void drawPolygonInPixels(int[] pointArray) {
-        VGCDrawPolygon drawOp = new VGCDrawPolygon();
-        drawOp.pointArray = pointArray;
-        FlutterBridge.send(this, "drawPolygon", drawOp);
+    private class DrawPolygonOperation extends Operation {
+
+        private final int[] pointArray;
+
+        DrawPolygonOperation(int[] pointArray) {
+            this.pointArray = pointArray;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void drawPolygonInPixels(int[] pointArray) {
+        checkGC(DRAW);
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            return;
+        }
+        if ((data.style & SWT.MIRRORED) != 0) {
+            if (data.lineWidth != 0 && data.lineWidth % 2 == 0) {
+                for (int i = 0; i < pointArray.length; i += 2) {
+                    pointArray[i]--;
+                }
+            }
+        }
+        if ((data.style & SWT.MIRRORED) != 0) {
+            if (data.lineWidth != 0 && data.lineWidth % 2 == 0) {
+                for (int i = 0; i < pointArray.length; i += 2) {
+                    pointArray[i]++;
+                }
+            }
+        }
     }
 
     /**
@@ -1020,13 +1361,49 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawPolyline(int[] pointArray) {
-        drawPolylineInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
+        VGCDrawPolylineint drawOp = new VGCDrawPolylineint();
+        drawOp.pointArray = pointArray;
+        FlutterBridge.send(this, "drawPolylineint", drawOp);
     }
 
-    void drawPolylineInPixels(int[] pointArray) {
-        VGCDrawPolyline drawOp = new VGCDrawPolyline();
-        drawOp.pointArray = pointArray;
-        FlutterBridge.send(this, "drawPolyline", drawOp);
+    private class DrawPolylineOperation extends Operation {
+
+        private final int[] pointArray;
+
+        DrawPolylineOperation(int[] pointArray) {
+            this.pointArray = pointArray;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void drawPolylineInPixels(int[] pointArray) {
+        checkGC(DRAW);
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            return;
+        }
+        if ((data.style & SWT.MIRRORED) != 0) {
+            if (data.lineWidth != 0 && data.lineWidth % 2 == 0) {
+                for (int i = 0; i < pointArray.length; i += 2) {
+                    pointArray[i]--;
+                }
+            }
+        }
+        int length = pointArray.length;
+        if (length >= 2) {
+            if (data.lineWidth <= 1) {
+            }
+        }
+        if ((data.style & SWT.MIRRORED) != 0) {
+            if (data.lineWidth != 0 && data.lineWidth % 2 == 0) {
+                for (int i = 0; i < pointArray.length; i += 2) {
+                    pointArray[i]++;
+                }
+            }
+        }
     }
 
     /**
@@ -1045,21 +1422,52 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawRectangle(int x, int y, int width, int height) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        drawRectangleInPixels(x, y, width, height);
-    }
-
-    void drawRectangleInPixels(int x, int y, int width, int height) {
-        VGCDrawRectangle drawOp = new VGCDrawRectangle();
+        VGCDrawRectangleintintintint drawOp = new VGCDrawRectangleintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "drawRectangle", drawOp);
+        FlutterBridge.send(this, "drawRectangleintintintint", drawOp);
+    }
+
+    private class DrawRectangleOperation extends Operation {
+
+        private final Rectangle rectangle;
+
+        DrawRectangleOperation(Rectangle rectangle) {
+            this.rectangle = rectangle;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void drawRectangleInPixels(int x, int y, int width, int height) {
+        checkGC(DRAW);
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            if (width < 0) {
+                x = x + width;
+                width = -width;
+            }
+            if (height < 0) {
+                y = y + height;
+                height = -height;
+            }
+            return;
+        }
+        if ((data.style & SWT.MIRRORED) != 0) {
+            /*
+		* Note that Rectangle() subtracts one pixel in MIRRORED mode when
+		* the pen was created with CreatePen() and its width is 0 or 1.
+		*/
+            if (data.lineWidth > 1) {
+                if ((data.lineWidth % 2) == 1)
+                    x++;
+            } else {
+            }
+        }
     }
 
     /**
@@ -1079,10 +1487,9 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawRectangle(Rectangle rect) {
-        if (rect == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        rect = DPIUtil.scaleUp(drawable, rect, getZoom());
-        drawRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
+        VGCDrawRectangleRectangle drawOp = new VGCDrawRectangleRectangle();
+        drawOp.rect = rect;
+        FlutterBridge.send(this, "drawRectangleRectangle", drawOp);
     }
 
     /**
@@ -1107,25 +1514,44 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        arcWidth = DPIUtil.scaleUp(drawable, arcWidth, deviceZoom);
-        arcHeight = DPIUtil.scaleUp(drawable, arcHeight, deviceZoom);
-        drawRoundRectangleInPixels(x, y, width, height, arcWidth, arcHeight);
-    }
-
-    void drawRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        VGCDrawRoundRectangle drawOp = new VGCDrawRoundRectangle();
+        VGCDrawRoundRectangleintintintintintint drawOp = new VGCDrawRoundRectangleintintintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.arcWidth = arcWidth;
         drawOp.arcHeight = arcHeight;
-        FlutterBridge.send(this, "drawRoundRectangle", drawOp);
+        FlutterBridge.send(this, "drawRoundRectangleintintintintintint", drawOp);
+    }
+
+    private class DrawRoundRectangleOperation extends Operation {
+
+        private final Rectangle rectangle;
+
+        private final int arcWidth;
+
+        private final int arcHeight;
+
+        DrawRoundRectangleOperation(Rectangle rectangle, int arcWidth, int arcHeight) {
+            this.rectangle = rectangle;
+            this.arcWidth = arcWidth;
+            this.arcHeight = arcHeight;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void drawRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+        checkGC(DRAW);
+        if (data.gdipGraphics != 0) {
+            return;
+        }
+        if ((data.style & SWT.MIRRORED) != 0) {
+            if (data.lineWidth != 0 && data.lineWidth % 2 == 0)
+                x--;
+        }
     }
 
     /**
@@ -1151,10 +1577,11 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawString(String string, int x, int y) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        drawStringInPixels(string, x, y, false);
+        VGCDrawStringStringintint drawOp = new VGCDrawStringStringintint();
+        drawOp.string = string;
+        drawOp.x = x;
+        drawOp.y = y;
+        FlutterBridge.send(this, "drawStringStringintint", drawOp);
     }
 
     /**
@@ -1185,17 +1612,45 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawString(String string, int x, int y, boolean isTransparent) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        drawStringInPixels(string, x, y, isTransparent);
+        VGCDrawStringStringintintboolean drawOp = new VGCDrawStringStringintintboolean();
+        drawOp.string = string;
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.isTransparent = isTransparent;
+        FlutterBridge.send(this, "drawStringStringintintboolean", drawOp);
     }
 
-    void drawStringInPixels(String string, int x, int y, boolean isTransparent) {
-        int flags = SWT.DRAW_DELIMITER | SWT.DRAW_TAB;
-        if (isTransparent)
-            flags |= SWT.DRAW_TRANSPARENT;
-        drawTextInPixels(string, x, y, flags);
+    private class DrawStringOperation extends Operation {
+
+        private final String string;
+
+        private final Point location;
+
+        private final boolean isTransparent;
+
+        DrawStringOperation(String string, Point location, boolean isTransparent) {
+            this.string = string;
+            this.location = location;
+            this.isTransparent = isTransparent;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void drawStringInPixels(String string, int x, int y, boolean isTransparent) {
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            checkGC(FONT | FOREGROUND | (isTransparent ? 0 : BACKGROUND));
+            return;
+        }
+        checkGC(FONT | FOREGROUND_TEXT | BACKGROUND_TEXT);
+        if ((data.style & SWT.MIRRORED) != 0) {
+            if (!isTransparent) {
+            }
+            x--;
+        }
     }
 
     /**
@@ -1221,14 +1676,11 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        drawTextInPixels(string, x, y);
-    }
-
-    void drawTextInPixels(String string, int x, int y) {
-        drawTextInPixels(string, x, y, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
+        VGCDrawTextStringintint drawOp = new VGCDrawTextStringintint();
+        drawOp.string = string;
+        drawOp.x = x;
+        drawOp.y = y;
+        FlutterBridge.send(this, "drawTextStringintint", drawOp);
     }
 
     /**
@@ -1256,17 +1708,12 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y, boolean isTransparent) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        drawTextInPixels(string, x, y, isTransparent);
-    }
-
-    void drawTextInPixels(String string, int x, int y, boolean isTransparent) {
-        int flags = SWT.DRAW_DELIMITER | SWT.DRAW_TAB;
-        if (isTransparent)
-            flags |= SWT.DRAW_TRANSPARENT;
-        drawTextInPixels(string, x, y, flags);
+        VGCDrawTextStringintintboolean drawOp = new VGCDrawTextStringintintboolean();
+        drawOp.string = string;
+        drawOp.x = x;
+        drawOp.y = y;
+        drawOp.isTransparent = isTransparent;
+        FlutterBridge.send(this, "drawTextStringintintboolean", drawOp);
     }
 
     /**
@@ -1309,19 +1756,40 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y, int flags) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        drawTextInPixels(string, x, y, flags);
-    }
-
-    void drawTextInPixels(String string, int x, int y, int flags) {
-        VGCDrawText drawOp = new VGCDrawText();
+        VGCDrawTextStringintintint drawOp = new VGCDrawTextStringintintint();
         drawOp.string = string;
         drawOp.x = x;
         drawOp.y = y;
         drawOp.flags = flags;
-        FlutterBridge.send(this, "drawText", drawOp);
+        FlutterBridge.send(this, "drawTextStringintintint", drawOp);
+    }
+
+    private class DrawTextOperation extends Operation {
+
+        private final String string;
+
+        private final Point location;
+
+        private final int flags;
+
+        DrawTextOperation(String string, Point location, int flags) {
+            this.string = string;
+            this.location = location;
+            this.flags = flags;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void drawTextInPixels(String string, int x, int y, int flags) {
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            checkGC(FONT | FOREGROUND | ((flags & SWT.DRAW_TRANSPARENT) != 0 ? 0 : BACKGROUND));
+            return;
+        }
+        checkGC(FONT | FOREGROUND_TEXT | BACKGROUND_TEXT);
     }
 
     /**
@@ -1372,23 +1840,76 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawArc
      */
     public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        fillArcInPixels(x, y, width, height, startAngle, arcAngle);
-    }
-
-    void fillArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        VGCFillArc drawOp = new VGCFillArc();
+        VGCFillArcintintintintintint drawOp = new VGCFillArcintintintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.startAngle = startAngle;
         drawOp.arcAngle = arcAngle;
-        FlutterBridge.send(this, "fillArc", drawOp);
+        FlutterBridge.send(this, "fillArcintintintintintint", drawOp);
+    }
+
+    private class FillArcOperation extends Operation {
+
+        private final Rectangle bounds;
+
+        private final int startAngle;
+
+        private final int arcAngle;
+
+        FillArcOperation(Rectangle bounds, int startAngle, int arcAngle) {
+            this.bounds = bounds;
+            this.startAngle = startAngle;
+            this.arcAngle = arcAngle;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void fillArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
+        checkNonDisposed();
+        checkGC(FILL);
+        if (width < 0) {
+            x = x + width;
+            width = -width;
+        }
+        if (height < 0) {
+            y = y + height;
+            height = -height;
+        }
+        if (width == 0 || height == 0 || arcAngle == 0)
+            return;
+        long gdipGraphics = data.gdipGraphics;
+        if (gdipGraphics != 0) {
+            if (width == height) {
+            } else {
+            }
+            return;
+        }
+        if ((data.style & SWT.MIRRORED) != 0)
+            x--;
+        int x1, y1, x2, y2, tmp;
+        boolean isNegative;
+        if (arcAngle >= 360 || arcAngle <= -360) {
+            x1 = x2 = x + width;
+            y1 = y2 = y + height / 2;
+        } else {
+            isNegative = arcAngle < 0;
+            arcAngle = arcAngle + startAngle;
+            if (isNegative) {
+                // swap angles
+                tmp = startAngle;
+                startAngle = arcAngle;
+                arcAngle = tmp;
+            }
+            x1 = cos(startAngle, width) + x + width / 2;
+            y1 = -1 * sin(startAngle, height) + y + height / 2;
+            x2 = cos(arcAngle, width) + x + width / 2;
+            y2 = -1 * sin(arcAngle, height) + y + height / 2;
+        }
     }
 
     /**
@@ -1412,22 +1933,65 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillGradientRectangle(int x, int y, int width, int height, boolean vertical) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        fillGradientRectangleInPixels(x, y, width, height, vertical);
-    }
-
-    void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean vertical) {
-        VGCFillGradientRectangle drawOp = new VGCFillGradientRectangle();
+        VGCFillGradientRectangleintintintintboolean drawOp = new VGCFillGradientRectangleintintintintboolean();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.vertical = vertical;
-        FlutterBridge.send(this, "fillGradientRectangle", drawOp);
+        FlutterBridge.send(this, "fillGradientRectangleintintintintboolean", drawOp);
+    }
+
+    private class FillGradientRectangleOperation extends FillRectangleOperation {
+
+        private final boolean vertical;
+
+        FillGradientRectangleOperation(Rectangle rectangle, boolean vertical) {
+            super(rectangle);
+            this.vertical = vertical;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean vertical, int zoom) {
+        if (width == 0 || height == 0)
+            return;
+        RGB backgroundRGB, foregroundRGB;
+        backgroundRGB = getBackground().getRGB();
+        foregroundRGB = getForeground().getRGB();
+        RGB fromRGB, toRGB;
+        fromRGB = foregroundRGB;
+        toRGB = backgroundRGB;
+        boolean swapColors = false;
+        if (width < 0) {
+            x += width;
+            width = -width;
+            if (!vertical)
+                swapColors = true;
+        }
+        if (height < 0) {
+            y += height;
+            height = -height;
+            if (vertical)
+                swapColors = true;
+        }
+        if (swapColors) {
+            fromRGB = backgroundRGB;
+            toRGB = foregroundRGB;
+        }
+        if (fromRGB.equals(toRGB)) {
+            fillRectangleInPixels(x, y, width, height);
+            return;
+        }
+        if (data.gdipGraphics != 0) {
+            if (vertical) {
+            } else {
+            }
+            return;
+        }
     }
 
     /**
@@ -1447,21 +2011,35 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawOval
      */
     public void fillOval(int x, int y, int width, int height) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        fillOvalInPixels(x, y, width, height);
-    }
-
-    void fillOvalInPixels(int x, int y, int width, int height) {
-        VGCFillOval drawOp = new VGCFillOval();
+        VGCFillOvalintintintint drawOp = new VGCFillOvalintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "fillOval", drawOp);
+        FlutterBridge.send(this, "fillOvalintintintint", drawOp);
+    }
+
+    private class FillOvalOperation extends Operation {
+
+        private final Rectangle bounds;
+
+        FillOvalOperation(Rectangle bounds) {
+            this.bounds = bounds;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void fillOvalInPixels(int x, int y, int width, int height) {
+        checkNonDisposed();
+        checkGC(FILL);
+        if (data.gdipGraphics != 0) {
+            return;
+        }
+        if ((data.style & SWT.MIRRORED) != 0)
+            x--;
     }
 
     /**
@@ -1488,14 +2066,34 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void fillPath(Path path) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (path == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        final long pathHandle = ((SwtPath) path.getImpl()).getHandle(getZoom());
-        if (pathHandle == 0)
+        if (path.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        checkGC(FILL);
+        storeAndApplyOperationForExistingHandle(new FillPathOperation(path));
+    }
+
+    private class FillPathOperation extends Operation {
+
+        private final PathData pathData;
+
+        FillPathOperation(Path path) {
+            this.pathData = path.getPathData();
+        }
+
+        @Override
+        void apply() {
+            Path path = new Path(device, pathData);
+            try {
+                long pathHandle = ((SwtPath) path.getImpl()).getHandle(getZoom());
+                if (pathHandle == 0)
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                checkGC(FILL);
+            } finally {
+                path.dispose();
+            }
+        }
     }
 
     /**
@@ -1518,15 +2116,40 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawPolygon
      */
     public void fillPolygon(int[] pointArray) {
-        if (pointArray == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        fillPolygonInPixels(DPIUtil.scaleUp(drawable, pointArray, getZoom()));
+        VGCFillPolygonint drawOp = new VGCFillPolygonint();
+        drawOp.pointArray = pointArray;
+        FlutterBridge.send(this, "fillPolygonint", drawOp);
     }
 
-    void fillPolygonInPixels(int[] pointArray) {
-        VGCFillPolygon drawOp = new VGCFillPolygon();
-        drawOp.pointArray = pointArray;
-        FlutterBridge.send(this, "fillPolygon", drawOp);
+    private class FillPolygonOperation extends Operation {
+
+        private final int[] pointArray;
+
+        FillPolygonOperation(int[] pointArray) {
+            this.pointArray = pointArray;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void fillPolygonInPixels(int[] pointArray) {
+        checkNonDisposed();
+        checkGC(FILL);
+        if (data.gdipGraphics != 0) {
+            return;
+        }
+        if ((data.style & SWT.MIRRORED) != 0) {
+            for (int i = 0; i < pointArray.length; i += 2) {
+                pointArray[i]--;
+            }
+        }
+        if ((data.style & SWT.MIRRORED) != 0) {
+            for (int i = 0; i < pointArray.length; i += 2) {
+                pointArray[i]++;
+            }
+        }
     }
 
     /**
@@ -1545,21 +2168,41 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(int x, int y, int width, int height) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        fillRectangleInPixels(x, y, width, height);
-    }
-
-    void fillRectangleInPixels(int x, int y, int width, int height) {
-        VGCFillRectangle drawOp = new VGCFillRectangle();
+        VGCFillRectangleintintintint drawOp = new VGCFillRectangleintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "fillRectangle", drawOp);
+        FlutterBridge.send(this, "fillRectangleintintintint", drawOp);
+    }
+
+    private class FillRectangleOperation extends Operation {
+
+        protected final Rectangle rectangle;
+
+        FillRectangleOperation(Rectangle rectangle) {
+            this.rectangle = rectangle;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    void fillRectangleInPixels(int x, int y, int width, int height) {
+        checkNonDisposed();
+        checkGC(FILL);
+        if (data.gdipGraphics != 0) {
+            if (width < 0) {
+                x = x + width;
+                width = -width;
+            }
+            if (height < 0) {
+                y = y + height;
+                height = -height;
+            }
+            return;
+        }
     }
 
     /**
@@ -1578,10 +2221,9 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRectangle(int, int, int, int)
      */
     public void fillRectangle(Rectangle rect) {
-        if (rect == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        rect = DPIUtil.scaleUp(drawable, rect, getZoom());
-        fillRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
+        VGCFillRectangleRectangle drawOp = new VGCFillRectangleRectangle();
+        drawOp.rect = rect;
+        FlutterBridge.send(this, "fillRectangleRectangle", drawOp);
     }
 
     /**
@@ -1602,28 +2244,46 @@ public final class DartGC extends DartResource implements IGC {
      * @see #drawRoundRectangle
      */
     public void fillRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        arcWidth = DPIUtil.scaleUp(drawable, arcWidth, deviceZoom);
-        arcHeight = DPIUtil.scaleUp(drawable, arcHeight, deviceZoom);
-        fillRoundRectangleInPixels(x, y, width, height, arcWidth, arcHeight);
-    }
-
-    void fillRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        VGCFillRoundRectangle drawOp = new VGCFillRoundRectangle();
+        VGCFillRoundRectangleintintintintintint drawOp = new VGCFillRoundRectangleintintintintintint();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.arcWidth = arcWidth;
         drawOp.arcHeight = arcHeight;
-        FlutterBridge.send(this, "fillRoundRectangle", drawOp);
+        FlutterBridge.send(this, "fillRoundRectangleintintintintintint", drawOp);
     }
 
-    void flush() {
+    private class FillRoundRectangleOperation extends Operation {
+
+        private final Rectangle rectangle;
+
+        private final int arcWidth;
+
+        private final int arcHeight;
+
+        FillRoundRectangleOperation(Rectangle rectangle, int arcWidth, int arcHeight) {
+            this.rectangle = rectangle;
+            this.arcWidth = arcWidth;
+            this.arcHeight = arcHeight;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void fillRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+        checkNonDisposed();
+        checkGC(FILL);
+        if (data.gdipGraphics != 0) {
+            return;
+        }
+        if ((data.style & SWT.MIRRORED) != 0)
+            x--;
+    }
+
+    private void flush() {
         if (data.gdipGraphics != 0) {
         }
     }
@@ -1644,8 +2304,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public int getAdvanceWidth(char ch) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         checkGC(FONT);
         int[] width = new int[1];
         return width[0];
@@ -1677,8 +2336,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public boolean getAdvanced() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.gdipGraphics != 0;
     }
 
@@ -1695,8 +2353,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getAlpha() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.alpha;
     }
 
@@ -1717,8 +2374,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getAntialias() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (data.gdipGraphics == 0)
             return SWT.DEFAULT;
         return SWT.DEFAULT;
@@ -1734,8 +2390,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Color getBackground() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return this.background;
     }
 
@@ -1754,8 +2409,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public Pattern getBackgroundPattern() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.backgroundPattern;
     }
 
@@ -1776,8 +2430,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public int getCharWidth(char ch) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         checkGC(FONT);
         return 0;
     }
@@ -1795,12 +2448,11 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Rectangle getClipping() {
-        return DPIUtil.scaleDown(drawable, getClippingInPixels(), getZoom());
+        return this.clipping;
     }
 
     Rectangle getClippingInPixels() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
         }
@@ -1822,16 +2474,50 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void getClipping(Region region) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (region == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        storeAndApplyOperationForExistingHandle(new GetClippingOperation(region));
+    }
+
+    private class GetClippingOperation extends Operation {
+
+        private final Map<Integer, Long> zoomToRegionHandle = new HashMap<>();
+
+        public GetClippingOperation(Region region) {
+            ((SwtRegion) region.getImpl()).set(zoom -> {
+                if (!zoomToRegionHandle.containsKey(zoom)) {
+                    System.err.println("No clipping handle for zoom " + zoom + " has been created on this GC");
+                    return zoomToRegionHandle.values().iterator().next();
+                }
+                return zoomToRegionHandle.get(zoom);
+            }, getZoom());
+        }
+
+        // Whenever the GC handle is recalculated for a new zoom, we compute and store the clipping
+        // at the times when getClipping(Region) was originally called, such that the region to which
+        // that clipping is set can retrieve it from the storage when required.
+        @Override
+        void apply() {
+            zoomToRegionHandle.computeIfAbsent(getZoom(), __ -> getClippingRegion());
+        }
+
+        @Override
+        void disposeAll() {
+            super.disposeAll();
+        }
+    }
+
+    /**
+     * @return a region handle with the current clipping region of this GC
+     */
+    private long getClippingRegion() {
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
-            return;
         }
+        return 0;
     }
 
     long getFgBrush() {
@@ -1851,8 +2537,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getFillRule() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return this.fillRule;
     }
 
@@ -1867,8 +2552,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Font getFont() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.font;
     }
 
@@ -1897,8 +2581,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Color getForeground() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return this.foreground;
     }
 
@@ -1917,8 +2600,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public Pattern getForegroundPattern() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.foregroundPattern;
     }
 
@@ -1945,8 +2627,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.2
      */
     public GCData getGCData() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data;
     }
 
@@ -1964,8 +2645,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getInterpolation() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (data.gdipGraphics == 0)
             return SWT.DEFAULT;
         return SWT.DEFAULT;
@@ -1984,17 +2664,13 @@ public final class DartGC extends DartResource implements IGC {
      */
     public LineAttributes getLineAttributes() {
         LineAttributes attributes = getLineAttributesInPixels();
-        int deviceZoom = getZoom();
-        attributes.width = DPIUtil.scaleDown(drawable, attributes.width, deviceZoom);
         if (attributes.dash != null) {
-            attributes.dash = DPIUtil.scaleDown(drawable, attributes.dash, deviceZoom);
         }
         return attributes;
     }
 
     LineAttributes getLineAttributesInPixels() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         float[] dashes = null;
         if (data.lineDashes != null) {
             dashes = new float[data.lineDashes.length];
@@ -2017,8 +2693,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getLineCap() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.lineCap;
     }
 
@@ -2035,14 +2710,11 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int[] getLineDash() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (data.lineDashes == null)
             return null;
         int[] lineDashes = new int[data.lineDashes.length];
-        int deviceZoom = getZoom();
         for (int i = 0; i < lineDashes.length; i++) {
-            lineDashes[i] = DPIUtil.scaleDown(drawable, (int) data.lineDashes[i], deviceZoom);
         }
         return lineDashes;
     }
@@ -2061,8 +2733,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getLineJoin() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.lineJoin;
     }
 
@@ -2079,8 +2750,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public int getLineStyle() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.lineStyle;
     }
 
@@ -2097,12 +2767,11 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public int getLineWidth() {
-        return DPIUtil.scaleDown(drawable, getLineWidthInPixels(), getZoom());
+        return this.lineWidth;
     }
 
     int getLineWidthInPixels() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return (int) data.lineWidth;
     }
 
@@ -2125,8 +2794,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 2.1.2
      */
     public int getStyle() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return data.style;
     }
 
@@ -2147,8 +2815,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getTextAntialias() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (data.gdipGraphics == 0)
             return SWT.DEFAULT;
         return SWT.DEFAULT;
@@ -2173,8 +2840,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void getTransform(Transform transform) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (transform == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (transform.isDisposed())
@@ -2201,18 +2867,17 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public boolean getXORMode() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         return this.XORMode;
     }
 
-    long identity() {
+    private long identity() {
         if ((data.style & SWT.MIRRORED) != 0) {
         }
         return 0;
     }
 
-    void init(Drawable drawable, GCData data, long hDC) {
+    private void init(Drawable drawable, GCData data, long hDC) {
         if (this.background == null) {
             Color white = new Color(255, 255, 255);
             data.background = white.handle;
@@ -2236,16 +2901,15 @@ public final class DartGC extends DartResource implements IGC {
         } else {
         }
         data.state &= ~(NULL_BRUSH | NULL_PEN);
-        Font font = data.font;
-        if (font != null) {
+        if (data.nativeZoom == 0) {
+            data.nativeZoom = extractZoom(hDC);
+        }
+        if (data.font != null) {
             data.state &= ~FONT;
         } else {
         }
         if (data.font == null)
             this.font = data.font = Display.getCurrent().getSystemFont();
-        if (data.nativeZoom == 0) {
-            data.nativeZoom = extractZoom(hDC);
-        }
         Image image = data.image;
         if (image != null) {
             if (image.getImpl() instanceof DartImage) {
@@ -2314,12 +2978,17 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public boolean isClipped() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
         }
         return false;
+    }
+
+    private void checkNonDisposed() {
+        if (isDisposed()) {
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        }
     }
 
     /**
@@ -2337,7 +3006,7 @@ public final class DartGC extends DartResource implements IGC {
         return getApi().handle == 0;
     }
 
-    float measureSpace(long font, long format) {
+    private float measureSpace(long font, long format) {
         return 0;
     }
 
@@ -2385,20 +3054,33 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setAdvanced(boolean advanced) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (advanced && data.gdipGraphics != 0)
-            return;
-        if (advanced) {
-        } else {
-            data.alpha = 0xFF;
-            data.backgroundPattern = data.foregroundPattern = null;
-            data.state = 0;
-            setClipping(0);
-            if ((data.style & SWT.MIRRORED) != 0) {
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetAdvancedOperation(advanced));
+        this.advanced = advanced;
+    }
+
+    private class SetAdvancedOperation extends Operation {
+
+        private final boolean advanced;
+
+        SetAdvancedOperation(boolean advanced) {
+            this.advanced = advanced;
+        }
+
+        @Override
+        void apply() {
+            if (advanced && data.gdipGraphics != 0)
+                return;
+            if (advanced) {
+            } else {
+                data.alpha = 0xFF;
+                data.backgroundPattern = data.foregroundPattern = null;
+                data.state = 0;
+                setClipping(0);
+                if ((data.style & SWT.MIRRORED) != 0) {
+                }
             }
         }
-        this.advanced = advanced;
     }
 
     /**
@@ -2431,21 +3113,34 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setAntialias(int antialias) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT)
-            return;
-        switch(antialias) {
-            case SWT.DEFAULT:
-                break;
-            case SWT.OFF:
-                break;
-            case SWT.ON:
-                break;
-            default:
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetAntialiasOperation(antialias));
         this.antialias = antialias;
+    }
+
+    private class SetAntialiasOperation extends Operation {
+
+        private final int antialias;
+
+        SetAntialiasOperation(int antialias) {
+            this.antialias = antialias;
+        }
+
+        @Override
+        void apply() {
+            if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT)
+                return;
+            switch(antialias) {
+                case SWT.DEFAULT:
+                    break;
+                case SWT.OFF:
+                    break;
+                case SWT.ON:
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+        }
     }
 
     /**
@@ -2470,19 +3165,32 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setAlpha(int alpha) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (data.gdipGraphics == 0 && (alpha & 0xFF) == 0xFF)
-            return;
-        data.alpha = alpha & 0xFF;
-        data.state &= ~(BACKGROUND | FOREGROUND);
-        if (data.gdipFgPatternBrushAlpha != 0) {
-            data.gdipFgPatternBrushAlpha = 0;
-        }
-        if (data.gdipBgPatternBrushAlpha != 0) {
-            data.gdipBgPatternBrushAlpha = 0;
-        }
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetAlphaOperation(alpha));
         this.alpha = alpha;
+    }
+
+    private class SetAlphaOperation extends Operation {
+
+        private final int alpha;
+
+        SetAlphaOperation(int alpha) {
+            this.alpha = alpha;
+        }
+
+        @Override
+        void apply() {
+            if (data.gdipGraphics == 0 && (alpha & 0xFF) == 0xFF)
+                return;
+            data.alpha = alpha & 0xFF;
+            data.state &= ~(BACKGROUND | FOREGROUND);
+            if (data.gdipFgPatternBrushAlpha != 0) {
+                data.gdipFgPatternBrushAlpha = 0;
+            }
+            if (data.gdipBgPatternBrushAlpha != 0) {
+                data.gdipBgPatternBrushAlpha = 0;
+            }
+        }
     }
 
     /**
@@ -2502,18 +3210,33 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setBackground(Color color) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         this.background = color;
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (data.backgroundPattern == null && data.background == color.handle)
-            return;
-        data.backgroundPattern = null;
-        data.background = color.handle;
-        data.state &= ~(BACKGROUND | BACKGROUND_TEXT);
+        storeAndApplyOperationForExistingHandle(new SetBackgroundOperation(color));
+    }
+
+    private class SetBackgroundOperation extends Operation {
+
+        private final Color color;
+
+        SetBackgroundOperation(Color color) {
+            RGB rgb = color.getRGB();
+            this.color = new Color(color.getDevice(), rgb);
+            registerForDisposal(this.color);
+        }
+
+        @Override
+        void apply() {
+            if (data.backgroundPattern == null && data.background == color.handle)
+                return;
+            data.backgroundPattern = null;
+            data.background = color.handle;
+            data.state &= ~(BACKGROUND | BACKGROUND_TEXT);
+        }
     }
 
     /**
@@ -2542,25 +3265,56 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setBackgroundPattern(Pattern pattern) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (pattern != null && pattern.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (data.gdipGraphics == 0 && pattern == null)
-            return;
-        if (data.backgroundPattern == pattern)
-            return;
-        data.backgroundPattern = pattern;
-        data.state &= ~BACKGROUND;
-        if (data.gdipBgPatternBrushAlpha != 0) {
-            data.gdipBgPatternBrushAlpha = 0;
-        }
+        storeAndApplyOperationForExistingHandle(new SetBackgroundPatternOperation(pattern));
         this.backgroundPattern = pattern;
     }
 
-    void setClipping(long clipRgn) {
-        dirty();
-        long hRgn = clipRgn;
+    private class SetBackgroundPatternOperation extends Operation {
+
+        private final Pattern pattern;
+
+        SetBackgroundPatternOperation(Pattern pattern) {
+            this.pattern = pattern == null ? null : ((SwtPattern) pattern.getImpl()).copy();
+            registerForDisposal(this.pattern);
+        }
+
+        @Override
+        void apply() {
+            if (data.gdipGraphics == 0 && pattern == null)
+                return;
+            if (data.backgroundPattern == pattern)
+                return;
+            data.backgroundPattern = pattern;
+            data.state &= ~BACKGROUND;
+            if (data.gdipBgPatternBrushAlpha != 0) {
+                data.gdipBgPatternBrushAlpha = 0;
+            }
+        }
+    }
+
+    private void setClipping(long clipRgn) {
+        checkNonDisposed();
+        setClippingRegion(clipRgn);
+    }
+
+    private class SetClippingRegionOperation extends Operation {
+
+        private final Region clipRgn;
+
+        SetClippingRegionOperation(Region clipRgn) {
+            this.clipRgn = clipRgn != null ? ((SwtRegion) clipRgn.getImpl()).copy() : null;
+            registerForDisposal(this.clipRgn);
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void setClippingRegion(long hRgn) {
         long gdipGraphics = data.gdipGraphics;
         if (gdipGraphics != 0) {
             if (hRgn != 0) {
@@ -2572,7 +3326,6 @@ public final class DartGC extends DartResource implements IGC {
             if (hRgn != 0) {
             }
         }
-        this.clipping = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
     }
 
     /**
@@ -2590,19 +3343,27 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setClipping(int x, int y, int width, int height) {
-        int deviceZoom = getZoom();
-        x = DPIUtil.scaleUp(drawable, x, deviceZoom);
-        y = DPIUtil.scaleUp(drawable, y, deviceZoom);
-        width = DPIUtil.scaleUp(drawable, width, deviceZoom);
-        height = DPIUtil.scaleUp(drawable, height, deviceZoom);
-        setClippingInPixels(x, y, width, height);
+        dirty();
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetClippingOperation(new Rectangle(x, y, width, height)));
+        this.clipping = new Rectangle(x, y, width, height);
     }
 
-    void setClippingInPixels(int x, int y, int width, int height) {
-        dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        this.clipping = new Rectangle(x, y, width, height);
+    private class SetClippingOperation extends Operation {
+
+        private final Rectangle rectangle;
+
+        SetClippingOperation(Rectangle rectangle) {
+            this.rectangle = rectangle;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void setClippingInPixels(int x, int y, int width, int height) {
+        checkNonDisposed();
     }
 
     /**
@@ -2632,12 +3393,29 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setClipping(Path path) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        dirty();
+        checkNonDisposed();
         if (path != null && path.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        setClipping(0);
-        if (path != null) {
+        storeAndApplyOperationForExistingHandle(new SetClippingPathOperation(path));
+        this.clipping = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
+    }
+
+    private class SetClippingPathOperation extends Operation {
+
+        private final PathData pathData;
+
+        SetClippingPathOperation(Path path) {
+            this.pathData = path == null ? null : path.getPathData();
+        }
+
+        @Override
+        void apply() {
+            setClipping(0);
+            if (pathData != null) {
+                Path path = new Path(device, pathData);
+                path.dispose();
+            }
         }
     }
 
@@ -2655,14 +3433,14 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setClipping(Rectangle rect) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        dirty();
+        checkNonDisposed();
         if (rect == null) {
-            setClipping(0);
+            storeAndApplyOperationForExistingHandle(new SetClippingRegionOperation(null));
         } else {
-            rect = DPIUtil.scaleUp(drawable, rect, getZoom());
-            setClippingInPixels(rect.x, rect.y, rect.width, rect.height);
+            storeAndApplyOperationForExistingHandle(new SetClippingOperation(rect));
         }
+        this.clipping = rect;
     }
 
     /**
@@ -2682,10 +3460,12 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setClipping(Region region) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        dirty();
+        checkNonDisposed();
         if (region != null && region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        storeAndApplyOperationForExistingHandle(new SetClippingRegionOperation(region));
+        this.clipping = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
     }
 
     /**
@@ -2706,17 +3486,30 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setFillRule(int rule) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        switch(rule) {
-            case SWT.FILL_WINDING:
-                break;
-            case SWT.FILL_EVEN_ODD:
-                break;
-            default:
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetFillRuleOperation(rule));
         this.fillRule = rule;
+    }
+
+    private class SetFillRuleOperation extends Operation {
+
+        private final int rule;
+
+        SetFillRuleOperation(int rule) {
+            this.rule = rule;
+        }
+
+        @Override
+        void apply() {
+            switch(rule) {
+                case SWT.FILL_WINDING:
+                    break;
+                case SWT.FILL_EVEN_ODD:
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+        }
     }
 
     /**
@@ -2736,12 +3529,22 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setFont(Font font) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (font != null && font.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        data.state &= ~FONT;
+        storeAndApplyOperationForExistingHandle(new SetFontOperation(font));
         this.font = font;
+    }
+
+    private class SetFontOperation extends Operation {
+
+        SetFontOperation(Font font) {
+        }
+
+        @Override
+        void apply() {
+            data.state &= ~FONT;
+        }
     }
 
     /**
@@ -2760,18 +3563,33 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setForeground(Color color) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         this.foreground = color;
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (data.foregroundPattern == null && color.handle == data.foreground)
-            return;
-        data.foregroundPattern = null;
-        data.foreground = color.handle;
-        data.state &= ~(FOREGROUND | FOREGROUND_TEXT);
+        storeAndApplyOperationForExistingHandle(new SetForegroundOperation(color));
+    }
+
+    private class SetForegroundOperation extends Operation {
+
+        private final Color color;
+
+        SetForegroundOperation(Color color) {
+            RGB rgb = color.getRGB();
+            this.color = new Color(color.getDevice(), rgb);
+            registerForDisposal(this.color);
+        }
+
+        @Override
+        void apply() {
+            if (data.foregroundPattern == null && color.handle == data.foreground)
+                return;
+            data.foregroundPattern = null;
+            data.foreground = color.handle;
+            data.state &= ~(FOREGROUND | FOREGROUND_TEXT);
+        }
     }
 
     /**
@@ -2799,20 +3617,34 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setForegroundPattern(Pattern pattern) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (pattern != null && pattern.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (data.gdipGraphics == 0 && pattern == null)
-            return;
-        if (data.foregroundPattern == pattern)
-            return;
-        data.foregroundPattern = pattern;
-        data.state &= ~FOREGROUND;
-        if (data.gdipFgPatternBrushAlpha != 0) {
-            data.gdipFgPatternBrushAlpha = 0;
-        }
+        storeAndApplyOperationForExistingHandle(new SetForegroundPatternOperation(pattern));
         this.foregroundPattern = pattern;
+    }
+
+    private class SetForegroundPatternOperation extends Operation {
+
+        private final Pattern pattern;
+
+        SetForegroundPatternOperation(Pattern pattern) {
+            this.pattern = pattern == null ? null : ((SwtPattern) pattern.getImpl()).copy();
+            registerForDisposal(this.pattern);
+        }
+
+        @Override
+        void apply() {
+            if (data.gdipGraphics == 0 && pattern == null)
+                return;
+            if (data.foregroundPattern == pattern)
+                return;
+            data.foregroundPattern = pattern;
+            data.state &= ~FOREGROUND;
+            if (data.gdipFgPatternBrushAlpha != 0) {
+                data.gdipFgPatternBrushAlpha = 0;
+            }
+        }
     }
 
     /**
@@ -2843,23 +3675,36 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setInterpolation(int interpolation) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (data.gdipGraphics == 0 && interpolation == SWT.DEFAULT)
-            return;
-        switch(interpolation) {
-            case SWT.DEFAULT:
-                break;
-            case SWT.NONE:
-                break;
-            case SWT.LOW:
-                break;
-            case SWT.HIGH:
-                break;
-            default:
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetInterpolationOperation(interpolation));
         this.interpolation = interpolation;
+    }
+
+    private class SetInterpolationOperation extends Operation {
+
+        private final int interpolation;
+
+        SetInterpolationOperation(int interpolation) {
+            this.interpolation = interpolation;
+        }
+
+        @Override
+        void apply() {
+            if (data.gdipGraphics == 0 && interpolation == SWT.DEFAULT)
+                return;
+            switch(interpolation) {
+                case SWT.DEFAULT:
+                    break;
+                case SWT.NONE:
+                    break;
+                case SWT.LOW:
+                    break;
+                case SWT.HIGH:
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+        }
     }
 
     /**
@@ -2887,16 +3732,30 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.3
      */
     public void setLineAttributes(LineAttributes attributes) {
+        dirty();
         if (attributes == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        attributes.width = DPIUtil.scaleUp(drawable, attributes.width, getZoom());
-        setLineAttributesInPixels(attributes);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetLineAttributesOperation(attributes));
+        this.lineAttributes = attributes;
     }
 
-    void setLineAttributesInPixels(LineAttributes attributes) {
-        dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class SetLineAttributesOperation extends Operation {
+
+        private final LineAttributes attributes;
+
+        SetLineAttributesOperation(LineAttributes attributes) {
+            this.attributes = new LineAttributes(attributes.width, attributes.cap, attributes.join, attributes.style, attributes.dash, attributes.dashOffset, attributes.miterLimit);
+        }
+
+        @Override
+        void apply() {
+            setLineAttributesInPixels(attributes);
+        }
+    }
+
+    private void setLineAttributesInPixels(LineAttributes attributes) {
+        checkNonDisposed();
         int mask = 0;
         float lineWidth = attributes.width;
         if (lineWidth != data.lineWidth) {
@@ -2957,9 +3816,7 @@ public final class DartGC extends DartResource implements IGC {
             }
             if (changed) {
                 float[] newDashes = new float[dashes.length];
-                int deviceZoom = getZoom();
                 for (int i = 0; i < newDashes.length; i++) {
-                    newDashes[i] = DPIUtil.scaleUp(drawable, dashes[i], deviceZoom);
                 }
                 dashes = newDashes;
                 mask |= LINE_STYLE;
@@ -2991,7 +3848,6 @@ public final class DartGC extends DartResource implements IGC {
         data.lineDashesOffset = dashOffset;
         data.lineMiterLimit = miterLimit;
         data.state &= ~mask;
-        this.lineAttributes = attributes;
     }
 
     /**
@@ -3012,21 +3868,34 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineCap(int cap) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (data.lineCap == cap)
-            return;
-        switch(cap) {
-            case SWT.CAP_ROUND:
-            case SWT.CAP_FLAT:
-            case SWT.CAP_SQUARE:
-                break;
-            default:
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        data.lineCap = cap;
-        data.state &= ~LINE_CAP;
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetLineCapOperation(cap));
         this.lineCap = cap;
+    }
+
+    private class SetLineCapOperation extends Operation {
+
+        private final int cap;
+
+        SetLineCapOperation(int cap) {
+            this.cap = cap;
+        }
+
+        @Override
+        void apply() {
+            if (data.lineCap == cap)
+                return;
+            switch(cap) {
+                case SWT.CAP_ROUND:
+                case SWT.CAP_FLAT:
+                case SWT.CAP_SQUARE:
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+            data.lineCap = cap;
+            data.state &= ~LINE_CAP;
+        }
     }
 
     /**
@@ -3048,33 +3917,44 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineDash(int[] dashes) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        float[] lineDashes = data.lineDashes;
-        if (dashes != null && dashes.length > 0) {
-            boolean changed = data.lineStyle != SWT.LINE_CUSTOM || lineDashes == null || lineDashes.length != dashes.length;
-            float[] newDashes = new float[dashes.length];
-            int deviceZoom = getZoom();
-            for (int i = 0; i < dashes.length; i++) {
-                if (dashes[i] <= 0)
-                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-                newDashes[i] = DPIUtil.scaleUp(drawable, (float) dashes[i], deviceZoom);
-                if (!changed && lineDashes[i] != newDashes[i])
-                    changed = true;
-            }
-            if (!changed)
-                return;
-            data.lineDashes = newDashes;
-            data.lineStyle = SWT.LINE_CUSTOM;
-        } else {
-            if (data.lineStyle == SWT.LINE_SOLID && (lineDashes == null || lineDashes.length == 0))
-                return;
-            data.lineDashes = null;
-            data.lineStyle = SWT.LINE_SOLID;
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetLineDashOperation(dashes));
+        this.lineDash = dashes;
+        this.lineDash = dashes;
+    }
+
+    private class SetLineDashOperation extends Operation {
+
+        private final int[] dashes;
+
+        SetLineDashOperation(int[] dashes) {
+            this.dashes = dashes == null ? null : Arrays.copyOf(dashes, dashes.length);
         }
-        data.state &= ~LINE_STYLE;
-        this.lineDash = dashes;
-        this.lineDash = dashes;
+
+        @Override
+        void apply() {
+            float[] lineDashes = data.lineDashes;
+            if (dashes != null && dashes.length > 0) {
+                boolean changed = data.lineStyle != SWT.LINE_CUSTOM || lineDashes == null || lineDashes.length != dashes.length;
+                float[] newDashes = new float[dashes.length];
+                for (int i = 0; i < dashes.length; i++) {
+                    if (dashes[i] <= 0)
+                        SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+                    if (!changed && lineDashes[i] != newDashes[i])
+                        changed = true;
+                }
+                if (!changed)
+                    return;
+                data.lineDashes = newDashes;
+                data.lineStyle = SWT.LINE_CUSTOM;
+            } else {
+                if (data.lineStyle == SWT.LINE_SOLID && (lineDashes == null || lineDashes.length == 0))
+                    return;
+                data.lineDashes = null;
+                data.lineStyle = SWT.LINE_SOLID;
+            }
+            data.state &= ~LINE_STYLE;
+        }
     }
 
     /**
@@ -3095,21 +3975,34 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineJoin(int join) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (data.lineJoin == join)
-            return;
-        switch(join) {
-            case SWT.JOIN_MITER:
-            case SWT.JOIN_ROUND:
-            case SWT.JOIN_BEVEL:
-                break;
-            default:
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        data.lineJoin = join;
-        data.state &= ~LINE_JOIN;
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetLineJoinOperation(join));
         this.lineJoin = join;
+    }
+
+    private class SetLineJoinOperation extends Operation {
+
+        private final int join;
+
+        SetLineJoinOperation(int join) {
+            this.join = join;
+        }
+
+        @Override
+        void apply() {
+            if (data.lineJoin == join)
+                return;
+            switch(join) {
+                case SWT.JOIN_MITER:
+                case SWT.JOIN_ROUND:
+                case SWT.JOIN_BEVEL:
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+            data.lineJoin = join;
+            data.state &= ~LINE_JOIN;
+        }
     }
 
     /**
@@ -3129,27 +4022,41 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineStyle(int lineStyle) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (data.lineStyle == lineStyle)
-            return;
-        switch(lineStyle) {
-            case SWT.LINE_SOLID:
-            case SWT.LINE_DASH:
-            case SWT.LINE_DOT:
-            case SWT.LINE_DASHDOT:
-            case SWT.LINE_DASHDOTDOT:
-                break;
-            case SWT.LINE_CUSTOM:
-                if (data.lineDashes == null)
-                    lineStyle = SWT.LINE_SOLID;
-                break;
-            default:
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        data.lineStyle = lineStyle;
-        data.state &= ~LINE_STYLE;
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetLineStyleOperation(lineStyle));
         this.lineStyle = lineStyle;
+    }
+
+    private class SetLineStyleOperation extends Operation {
+
+        private final int lineStyle;
+
+        SetLineStyleOperation(int lineStyle) {
+            this.lineStyle = lineStyle;
+        }
+
+        @Override
+        void apply() {
+            if (data.lineStyle == lineStyle)
+                return;
+            int newLineStyle = this.lineStyle;
+            switch(newLineStyle) {
+                case SWT.LINE_SOLID:
+                case SWT.LINE_DASH:
+                case SWT.LINE_DOT:
+                case SWT.LINE_DASHDOT:
+                case SWT.LINE_DASHDOTDOT:
+                    break;
+                case SWT.LINE_CUSTOM:
+                    if (data.lineDashes == null)
+                        newLineStyle = SWT.LINE_SOLID;
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+            data.lineStyle = newLineStyle;
+            data.state &= ~LINE_STYLE;
+        }
     }
 
     /**
@@ -3173,19 +4080,30 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setLineWidth(int lineWidth) {
-        lineWidth = DPIUtil.scaleUp(drawable, lineWidth, getZoom());
-        setLineWidthInPixels(lineWidth);
+        dirty();
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetLineWidthOperation(lineWidth));
+        this.lineWidth = lineWidth;
     }
 
-    void setLineWidthInPixels(int lineWidth) {
-        dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+    private class SetLineWidthOperation extends Operation {
+
+        private final int width;
+
+        SetLineWidthOperation(int width) {
+            this.width = width;
+        }
+
+        @Override
+        void apply() {
+        }
+    }
+
+    private void setLineWidthInPixels(int lineWidth) {
         if (data.lineWidth == lineWidth)
             return;
         data.lineWidth = lineWidth;
         data.state &= ~(LINE_WIDTH | DRAW_OFFSET);
-        this.lineWidth = lineWidth;
     }
 
     /**
@@ -3204,9 +4122,22 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setXORMode(boolean xor) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetXORModeOperation(xor));
         this.XORMode = xor;
+    }
+
+    private class SetXORModeOperation extends Operation {
+
+        private final boolean xor;
+
+        SetXORModeOperation(boolean xor) {
+            this.xor = xor;
+        }
+
+        @Override
+        void apply() {
+        }
     }
 
     /**
@@ -3239,21 +4170,34 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setTextAntialias(int antialias) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT)
-            return;
-        switch(antialias) {
-            case SWT.DEFAULT:
-                break;
-            case SWT.OFF:
-                break;
-            case SWT.ON:
-                break;
-            default:
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
+        checkNonDisposed();
+        storeAndApplyOperationForExistingHandle(new SetTextAntialiasOperation(antialias));
         this.textAntialias = antialias;
+    }
+
+    private class SetTextAntialiasOperation extends Operation {
+
+        private final int antialias;
+
+        SetTextAntialiasOperation(int antialias) {
+            this.antialias = antialias;
+        }
+
+        @Override
+        void apply() {
+            if (data.gdipGraphics == 0 && antialias == SWT.DEFAULT)
+                return;
+            switch(antialias) {
+                case SWT.DEFAULT:
+                    break;
+                case SWT.OFF:
+                    break;
+                case SWT.ON:
+                    break;
+                default:
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
+        }
     }
 
     /**
@@ -3284,16 +4228,36 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setTransform(Transform transform) {
         dirty();
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (transform != null && transform.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (data.gdipGraphics == 0 && transform == null)
-            return;
-        if (transform != null) {
-        }
-        data.state &= ~DRAW_OFFSET;
+        storeAndApplyOperationForExistingHandle(new SetTransformOperation(transform));
         this.transform = transform;
+    }
+
+    private class SetTransformOperation extends Operation {
+
+        private final Transform transform;
+
+        SetTransformOperation(Transform transform) {
+            if (transform != null) {
+                float[] elements = new float[6];
+                transform.getElements(elements);
+                this.transform = new Transform(device, elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]);
+                registerForDisposal(this.transform);
+            } else {
+                this.transform = null;
+            }
+        }
+
+        @Override
+        void apply() {
+            if (data.gdipGraphics == 0 && transform == null)
+                return;
+            if (transform != null) {
+            }
+            data.state &= ~DRAW_OFFSET;
+        }
     }
 
     /**
@@ -3318,12 +4282,11 @@ public final class DartGC extends DartResource implements IGC {
     public Point stringExtent(String string) {
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return DPIUtil.scaleDown(drawable, stringExtentInPixels(string), getZoom());
+        return null;
     }
 
     Point stringExtentInPixels(String string) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         checkGC(FONT);
         int length = string.length();
         long gdipGraphics = data.gdipGraphics;
@@ -3357,7 +4320,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Point textExtent(String string) {
-        return DPIUtil.scaleDown(drawable, textExtentInPixels(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB), getZoom());
+        return null;
     }
 
     /**
@@ -3392,12 +4355,11 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Point textExtent(String string, int flags) {
-        return DPIUtil.scaleDown(drawable, textExtentInPixels(string, flags), getZoom());
+        return null;
     }
 
     Point textExtentInPixels(String string, int flags) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        checkNonDisposed();
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         checkGC(FONT);
@@ -3409,6 +4371,15 @@ public final class DartGC extends DartResource implements IGC {
         if (string.length() == 0) {
         }
         return null;
+    }
+
+    void refreshFor(Drawable drawable) {
+        if (drawable == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        destroy();
+        GCData newData = new GCData();
+        ((SwtGCData) originalData.getImpl()).copyTo(newData);
+        createGcHandle(drawable, newData);
     }
 
     /**
@@ -3450,8 +4421,56 @@ public final class DartGC extends DartResource implements IGC {
         return (int) (Math.sin(angle * (Math.PI / 180)) * length);
     }
 
-    private int getZoom() {
+    public int getZoom() {
         return DPIUtil.getZoomForAutoscaleProperty(data.nativeZoom);
+    }
+
+    private void storeAndApplyOperationForExistingHandle(Operation operation) {
+        operations.add(operation);
+        operation.apply();
+    }
+
+    private void createGcHandle(Drawable drawable, GCData newData) {
+        long newHandle = drawable.internal_new_GC(newData);
+        if (newHandle == 0)
+            SWT.error(SWT.ERROR_NO_HANDLES);
+        init(drawable, newData, newHandle);
+        for (Operation operation : operations) {
+            operation.apply();
+        }
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        disposeOperations();
+    }
+
+    private void disposeOperations() {
+        for (Operation op : operations) {
+            op.disposeAll();
+        }
+        operations.clear();
+    }
+
+    private abstract class Operation {
+
+        private final List<Resource> disposables = new ArrayList<>();
+
+        abstract void apply();
+
+        protected void registerForDisposal(Resource resource) {
+            if (resource != null) {
+                disposables.add(resource);
+            }
+        }
+
+        void disposeAll() {
+            for (Resource r : disposables) {
+                r.dispose();
+            }
+            disposables.clear();
+        }
     }
 
     boolean XORMode;

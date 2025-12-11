@@ -16,6 +16,7 @@
 package org.eclipse.swt.dnd;
 
 import org.eclipse.swt.*;
+import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.ole.win32.*;
 import org.eclipse.swt.internal.win32.*;
@@ -256,20 +257,24 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
 
             @Override
             public long method3(long[] args) {
-                if (args.length == 5) {
-                    return DragEnter(args[0], (int) args[1], (int) args[2], (int) args[3], args[4]);
-                } else {
-                    return DragEnter_64(args[0], (int) args[1], args[2], args[3]);
-                }
+                return Win32DPIUtils.runWithProperDPIAwareness(getDisplay(), () -> {
+                    if (args.length == 5) {
+                        return DragEnter(args[0], (int) args[1], (int) args[2], (int) args[3], args[4]);
+                    } else {
+                        return DragEnter_64(args[0], (int) args[1], args[2], args[3]);
+                    }
+                });
             }
 
             @Override
             public long method4(long[] args) {
-                if (args.length == 4) {
-                    return DragOver((int) args[0], (int) args[1], (int) args[2], args[3]);
-                } else {
-                    return DragOver_64((int) args[0], args[1], args[2]);
-                }
+                return Win32DPIUtils.runWithProperDPIAwareness(getDisplay(), () -> {
+                    if (args.length == 4) {
+                        return DragOver((int) args[0], (int) args[1], (int) args[2], args[3]);
+                    } else {
+                        return DragOver_64((int) args[0], args[1], args[2]);
+                    }
+                });
             }
 
             @Override
@@ -279,11 +284,13 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
 
             @Override
             public long method6(long[] args) {
-                if (args.length == 5) {
-                    return Drop(args[0], (int) args[1], (int) args[2], (int) args[3], args[4]);
-                } else {
-                    return Drop_64(args[0], (int) args[1], args[2], args[3]);
-                }
+                return Win32DPIUtils.runWithProperDPIAwareness(getDisplay(), () -> {
+                    if (args.length == 5) {
+                        return Drop(args[0], (int) args[1], (int) args[2], (int) args[3], args[4]);
+                    } else {
+                        return Drop_64(args[0], (int) args[1], args[2], args[3]);
+                    }
+                });
             }
         };
     }
@@ -301,18 +308,14 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
     }
 
     int DragEnter(long pDataObject, int grfKeyState, int pt_x, int pt_y, long pdwEffect) {
-        int zoom = DPIUtil.getZoomForAutoscaleProperty(getApi().nativeZoom);
-        // To Points
-        pt_x = DPIUtil.scaleDown(pt_x, zoom);
-        // To Points
-        pt_y = DPIUtil.scaleDown(pt_y, zoom);
+        Point location = convertPixelToPoint(pt_x, pt_y);
         selectedDataType = null;
         selectedOperation = DND.DROP_NONE;
         if (iDataObject != null)
             iDataObject.Release();
         iDataObject = null;
         DNDEvent event = new DNDEvent();
-        if (!setEventData(event, pDataObject, grfKeyState, pt_x, pt_y, pdwEffect)) {
+        if (!setEventData(event, pDataObject, grfKeyState, location.x, location.y, pdwEffect)) {
             OS.MoveMemory(pdwEffect, new int[] { COM.DROPEFFECT_NONE }, 4);
             return COM.S_FALSE;
         }
@@ -364,16 +367,12 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
     }
 
     int DragOver(int grfKeyState, int pt_x, int pt_y, long pdwEffect) {
-        int zoom = DPIUtil.getZoomForAutoscaleProperty(getApi().nativeZoom);
-        // To Points
-        pt_x = DPIUtil.scaleDown(pt_x, zoom);
-        // To Points
-        pt_y = DPIUtil.scaleDown(pt_y, zoom);
+        Point location = convertPixelToPoint(pt_x, pt_y);
         if (iDataObject == null)
             return COM.S_FALSE;
         int oldKeyOperation = keyOperation;
         DNDEvent event = new DNDEvent();
-        if (!setEventData(event, iDataObject.getAddress(), grfKeyState, pt_x, pt_y, pdwEffect)) {
+        if (!setEventData(event, iDataObject.getAddress(), grfKeyState, location.x, location.y, pdwEffect)) {
             keyOperation = -1;
             OS.MoveMemory(pdwEffect, new int[] { COM.DROPEFFECT_NONE }, 4);
             return COM.S_FALSE;
@@ -415,24 +414,38 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
         return Drop(pDataObject, grfKeyState, point.x, point.y, pdwEffect);
     }
 
+    private Point convertPixelToPoint(int xInPixels, int yInPixels) {
+        if (this.control == null) {
+            // If there is no control for context, the behavior remains as before
+            int zoom = DPIUtil.getZoomForAutoscaleProperty(this.getApi().nativeZoom);
+            return Win32DPIUtils.pixelToPoint(new Point(xInPixels, yInPixels), zoom);
+        }
+        int zoom = DPIUtil.getZoomForAutoscaleProperty(this.control.nativeZoom);
+        // There is no API to convert absolute values in pixels to display relative
+        // points. Therefor, the display relative pixel values are converted to control
+        // relative pixel values via Windows API. These values can be scaled down to points
+        POINT pt = new POINT();
+        pt.x = xInPixels;
+        pt.y = yInPixels;
+        OS.ScreenToClient(this.control.handle, pt);
+        Point p = Win32DPIUtils.pixelToPoint(new Point(pt.x, pt.y), zoom);
+        return this.control.toDisplay(p);
+    }
+
     int Drop(long pDataObject, int grfKeyState, int pt_x, int pt_y, long pdwEffect) {
         try {
-            int zoom = DPIUtil.getZoomForAutoscaleProperty(getApi().nativeZoom);
-            // To Points
-            pt_x = DPIUtil.scaleDown(pt_x, zoom);
-            // To Points
-            pt_y = DPIUtil.scaleDown(pt_y, zoom);
+            Point location = convertPixelToPoint(pt_x, pt_y);
             DNDEvent event = new DNDEvent();
             event.widget = this.getApi();
             event.time = OS.GetMessageTime();
             if (dropEffect != null) {
-                event.item = dropEffect.getItem(pt_x, pt_y);
+                event.item = dropEffect.getItem(location.x, location.y);
             }
             event.detail = DND.DROP_NONE;
             notifyListeners(DND.DragLeave, event);
             refresh();
             event = new DNDEvent();
-            if (!setEventData(event, pDataObject, grfKeyState, pt_x, pt_y, pdwEffect)) {
+            if (!setEventData(event, pDataObject, grfKeyState, location.x, location.y, pdwEffect)) {
                 keyOperation = -1;
                 OS.MoveMemory(pdwEffect, new int[] { COM.DROPEFFECT_NONE }, 4);
                 return COM.S_FALSE;

@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2022 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -15,14 +15,17 @@
  */
 package org.eclipse.swt.graphics;
 
+import static org.eclipse.swt.internal.image.ImageColorTransformer.DEFAULT_DISABLED_IMAGE_TRANSFORMER;
 import java.io.*;
 import java.util.*;
+import java.util.Map.*;
+import java.util.function.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.DPIUtil.*;
 import org.eclipse.swt.internal.gdip.*;
+import org.eclipse.swt.internal.image.*;
 import org.eclipse.swt.internal.win32.*;
-import org.eclipse.swt.widgets.*;
 import dev.equo.swt.Config;
 
 /**
@@ -91,26 +94,9 @@ public final class Image extends Resource implements Drawable {
      */
     public int type;
 
-    /**
-     * the handle to the OS image resource
-     * (Warning: This field is platform dependent)
-     * <p>
-     * <b>IMPORTANT:</b> This field is <em>not</em> part of the SWT
-     * public API. It is marked public only so that it can be shared
-     * within the packages provided by SWT. It is not available on all
-     * platforms and should never be accessed from application code.
-     * </p>
-     *
-     * @noreference This field is not intended to be referenced by clients.
-     */
-    public long handle;
-
-    /**
-     * Prevents uninitialized instances from being created outside the package.
-     */
-    Image(Device device) {
+    Image(Device device, int type, long handle, int nativeZoom) {
         this((IImage) null);
-        setImpl(Config.isEquo(Image.class) ? new DartImage(device, this) : new SwtImage(device, this));
+        setImpl(Config.isEquo(Image.class) ? new DartImage(device, type, handle, nativeZoom, this) : new SwtImage(device, type, handle, nativeZoom, this));
     }
 
     /**
@@ -231,7 +217,10 @@ public final class Image extends Resource implements Drawable {
      * </ul>
      *
      * @see #dispose()
+     *
+     * @deprecated use {@link Image#Image(Device, int, int)} instead
      */
+    @Deprecated(since = "2025-06", forRemoval = true)
     public Image(Device device, Rectangle bounds) {
         this((IImage) null);
         setImpl(Config.isEquo(Image.class) ? new DartImage(device, bounds, this) : new SwtImage(device, bounds, this));
@@ -263,6 +252,11 @@ public final class Image extends Resource implements Drawable {
     public Image(Device device, ImageData data) {
         this((IImage) null);
         setImpl(Config.isEquo(Image.class) ? new DartImage(device, data, this) : new SwtImage(device, data, this));
+    }
+
+    Image(Device device, ImageData data, int zoom) {
+        this((IImage) null);
+        setImpl(Config.isEquo(Image.class) ? new DartImage(device, data, zoom, this) : new SwtImage(device, data, zoom, this));
     }
 
     /**
@@ -464,6 +458,52 @@ public final class Image extends Resource implements Drawable {
     }
 
     /**
+     * The provided ImageGcDrawer will be called on demand whenever a new variant of the
+     * Image for an additional zoom is required. Depending on the OS-specific implementation
+     * these calls will be done during the instantiation or later when a new variant is
+     * requested.
+     *
+     * @param device the device on which to create the image
+     * @param imageGcDrawer the ImageGcDrawer object to be called when a new image variant
+     * for another zoom is required.
+     * @param width the width of the new image in points
+     * @param height the height of the new image in points
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if device is null and there is no current device</li>
+     *    <li>ERROR_NULL_ARGUMENT - if the ImageGcDrawer is null</li>
+     * </ul>
+     * @since 3.129
+     */
+    public Image(Device device, ImageGcDrawer imageGcDrawer, int width, int height) {
+        this((IImage) null);
+        setImpl(Config.isEquo(Image.class) ? new DartImage(device, imageGcDrawer, width, height, this) : new SwtImage(device, imageGcDrawer, width, height, this));
+    }
+
+    /**
+     * <b>IMPORTANT:</b> This method is not part of the public
+     * API for Image. It is marked public only so that it
+     * can be shared within the packages provided by SWT.
+     *
+     * Draws a scaled image using the GC for a given imageData.
+     *
+     * @param gc the GC to draw on the resulting image
+     * @param imageData the imageData which is used to draw the scaled Image
+     * @param width the width of the original image
+     * @param height the height of the original image
+     * @param scaleFactor the factor with which the image is supposed to be scaled
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     */
+    public static void drawScaled(GC gc, ImageData imageData, int width, int height, float scaleFactor) {
+        SwtImage.drawScaled(gc, imageData, width, height, scaleFactor);
+    }
+
+    public void dispose() {
+        getImpl().dispose();
+    }
+
+    /**
      * Compares the argument to the receiver, and returns true
      * if they represent the <em>same</em> object using a class
      * specific comparison.
@@ -530,7 +570,7 @@ public final class Image extends Resource implements Drawable {
      * @deprecated This API doesn't serve the purpose in an environment having
      *             multiple monitors with different DPIs, hence deprecated.
      */
-    @Deprecated
+    @Deprecated(since = "2025-09", forRemoval = true)
     public Rectangle getBoundsInPixels() {
         return getImpl().getBoundsInPixels();
     }
@@ -606,7 +646,7 @@ public final class Image extends Resource implements Drawable {
      *             multiple monitors with different DPIs, hence deprecated. Use
      *             {@link #getImageData(int)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2025-09", forRemoval = true)
     public ImageData getImageDataAtCurrentZoom() {
         return getImpl().getImageDataAtCurrentZoom();
     }

@@ -5,10 +5,6 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Button;
 import org.junit.jupiter.api.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ConfigTest {

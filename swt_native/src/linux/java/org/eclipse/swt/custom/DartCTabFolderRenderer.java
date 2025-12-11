@@ -143,7 +143,9 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
     //$NON-NLS-1$
     private static final String CHEVRON_ELLIPSIS = "99+";
 
-    private static final int CHEVRON_FONT_HEIGHT = 10;
+    private static final float CHEVRON_FONT_SIZE_FACTOR = 0.7f;
+
+    private static final int CHEVRON_BOTTOM_INDENT = 4;
 
     //Part constants
     /**
@@ -904,7 +906,7 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
         Display display = getApi().parent.getDisplay();
         Font font = getChevronFont(display);
         int fontHeight = font.getFontData()[0].getHeight();
-        int indent = Math.max(2, (chevronRect.height - fontHeight - 4) / 2);
+        int indent = Math.max(2, (chevronRect.height - fontHeight - CHEVRON_BOTTOM_INDENT) / 2);
         int x = chevronRect.x + 2;
         int y = chevronRect.y + indent;
         int count = ((DartCTabFolder) getApi().parent.getImpl()).getChevronCount();
@@ -1642,9 +1644,8 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
 
     private Font getChevronFont(Display display) {
         if (chevronFont == null) {
-            Point dpi = display.getDPI();
-            int fontHeight = 72 * CHEVRON_FONT_HEIGHT / dpi.y;
             FontData fd = getApi().parent.getFont().getFontData()[0];
+            int fontHeight = (int) (fd.height * CHEVRON_FONT_SIZE_FACTOR);
             fd.setHeight(fontHeight);
             chevronFont = new Font(display, fd);
         }

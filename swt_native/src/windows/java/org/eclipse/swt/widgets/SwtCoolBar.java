@@ -427,7 +427,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         }
         if ((getApi().style & SWT.FLAT) == 0) {
             if (!isLastItemOfRow(index)) {
-                margin += DPIUtil.scaleUp(SEPARATOR_WIDTH, getZoom());
+                margin += Win32DPIUtils.pointToPixel(SEPARATOR_WIDTH, getZoom());
             }
         }
         return margin;
@@ -567,7 +567,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         Point[] sizes = getItemSizesInPixels();
         if (sizes != null) {
             for (int i = 0; i < sizes.length; i++) {
-                sizes[i] = DPIUtil.scaleDown(sizes[i], getZoom());
+                sizes[i] = Win32DPIUtils.pixelToPoint(sizes[i], getZoom());
             }
         }
         return sizes;
@@ -839,7 +839,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             error(SWT.ERROR_NULL_ARGUMENT);
         Point[] sizesInPoints = new Point[sizes.length];
         for (int i = 0; i < sizes.length; i++) {
-            sizesInPoints[i] = DPIUtil.scaleUp(sizes[i], getZoom());
+            sizesInPoints[i] = Win32DPIUtils.pointToPixel(sizes[i], getZoom());
         }
         setItemLayoutInPixels(itemOrder, wrapIndices, sizesInPoints);
     }
@@ -1218,9 +1218,9 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
                         event.detail = SWT.ARROW;
                         int zoom = getZoom();
                         if ((getApi().style & SWT.VERTICAL) != 0) {
-                            event.setLocation(DPIUtil.scaleDown(lpnm.right, zoom), DPIUtil.scaleDown(lpnm.top, zoom));
+                            event.setLocation(DPIUtil.pixelToPoint(lpnm.right, zoom), DPIUtil.pixelToPoint(lpnm.top, zoom));
                         } else {
-                            event.setLocation(DPIUtil.scaleDown(lpnm.left, zoom), DPIUtil.scaleDown(lpnm.bottom, zoom));
+                            event.setLocation(DPIUtil.pixelToPoint(lpnm.left, zoom), DPIUtil.pixelToPoint(lpnm.bottom, zoom));
                         }
                         ((SwtWidget) item.getImpl()).sendSelectionEvent(SWT.Selection, event, false);
                     }

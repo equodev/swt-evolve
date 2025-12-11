@@ -409,17 +409,14 @@ public class SwtButton extends SwtControl implements IButton {
             labelHandle = GTK.gtk_label_new_with_mnemonic(null);
             if (labelHandle == 0)
                 error(SWT.ERROR_NO_HANDLES);
+            imageHandle = GTK.gtk_image_new();
+            if (imageHandle == 0)
+                error(SWT.ERROR_NO_HANDLES);
             if (GTK.GTK4) {
-                imageHandle = GTK4.gtk_picture_new();
-                if (imageHandle == 0)
-                    error(SWT.ERROR_NO_HANDLES);
                 GTK.gtk_widget_set_parent(boxHandle, getApi().handle);
                 GTK4.gtk_box_append(boxHandle, imageHandle);
                 GTK4.gtk_box_append(boxHandle, labelHandle);
             } else {
-                imageHandle = GTK.gtk_image_new();
-                if (imageHandle == 0)
-                    error(SWT.ERROR_NO_HANDLES);
                 GTK3.gtk_container_add(getApi().handle, boxHandle);
                 GTK3.gtk_container_add(boxHandle, imageHandle);
                 GTK3.gtk_container_add(boxHandle, labelHandle);
@@ -1218,13 +1215,13 @@ public class SwtButton extends SwtControl implements IButton {
                 long pixbuf = ImageList.createPixbuf(image);
                 long texture = GDK.gdk_texture_new_for_pixbuf(pixbuf);
                 OS.g_object_unref(pixbuf);
-                GTK4.gtk_picture_set_paintable(imageHandle, texture);
+                GTK4.gtk_image_set_from_paintable(imageHandle, texture);
             } else {
                 GTK3.gtk_image_set_from_surface(imageHandle, image.surface);
             }
         } else {
             if (GTK.GTK4) {
-                GTK4.gtk_picture_set_paintable(imageHandle, 0);
+                GTK4.gtk_image_set_from_paintable(imageHandle, 0);
             } else {
                 GTK3.gtk_image_set_from_surface(imageHandle, 0);
             }
@@ -1354,19 +1351,19 @@ public class SwtButton extends SwtControl implements IButton {
 
     private void updateWidgetsVisibility() {
         if (text.length() == 0 && image == null) {
-            GTK.gtk_widget_hide(boxHandle);
-            GTK.gtk_widget_hide(labelHandle);
-            GTK.gtk_widget_hide(imageHandle);
+            gtk_widget_hide(boxHandle);
+            gtk_widget_hide(labelHandle);
+            gtk_widget_hide(imageHandle);
         } else {
-            GTK.gtk_widget_show(boxHandle);
+            gtk_widget_show(boxHandle);
             if (text.length() == 0)
-                GTK.gtk_widget_hide(labelHandle);
+                gtk_widget_hide(labelHandle);
             else
-                GTK.gtk_widget_show(labelHandle);
+                gtk_widget_show(labelHandle);
             if (image == null)
-                GTK.gtk_widget_hide(imageHandle);
+                gtk_widget_hide(imageHandle);
             else
-                GTK.gtk_widget_show(imageHandle);
+                gtk_widget_show(imageHandle);
         }
     }
 
@@ -1374,11 +1371,11 @@ public class SwtButton extends SwtControl implements IButton {
     void showWidget() {
         super.showWidget();
         if (boxHandle != 0 && ((text != null && text.length() != 0) || image != null))
-            GTK.gtk_widget_show(boxHandle);
+            gtk_widget_show(boxHandle);
         if (labelHandle != 0 && text != null && text.length() != 0)
-            GTK.gtk_widget_show(labelHandle);
+            gtk_widget_show(labelHandle);
         if (arrowHandle != 0)
-            GTK.gtk_widget_show(arrowHandle);
+            gtk_widget_show(arrowHandle);
     }
 
     @Override

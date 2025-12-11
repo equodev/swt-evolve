@@ -326,7 +326,7 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
             GTK3.gtk_widget_set_has_window(fixedHandle, true);
             GTK3.gtk_container_add(fixedHandle, getApi().handle);
         }
-        GTK.gtk_editable_set_editable(GTK.GTK4 ? entryHandle : getApi().handle, (getApi().style & SWT.READ_ONLY) == 0);
+        GTK.gtk_editable_set_editable(getApi().handle, (getApi().style & SWT.READ_ONLY) == 0);
         GTK.gtk_spin_button_set_wrap(getApi().handle, (getApi().style & SWT.WRAP) != 0);
         imContext = OS.imContextLast();
         // In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
@@ -580,7 +580,12 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
      */
     public int getTextLimit() {
         checkWidget();
-        int limit = GTK.gtk_entry_get_max_length(GTK.GTK4 ? entryHandle : getApi().handle);
+        int limit;
+        if (GTK.GTK4) {
+            limit = GTK4.gtk_editable_get_max_width_chars(getApi().handle);
+        } else {
+            limit = GTK.gtk_entry_get_max_length(getApi().handle);
+        }
         return limit == 0 ? Spinner.LIMIT : limit;
     }
 
@@ -1172,7 +1177,11 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
         checkWidget();
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
-        GTK.gtk_entry_set_max_length(GTK.GTK4 ? entryHandle : getApi().handle, limit);
+        if (GTK.GTK4) {
+            GTK4.gtk_editable_set_max_width_chars(getApi().handle, limit);
+        } else {
+            GTK.gtk_entry_set_max_length(getApi().handle, limit);
+        }
     }
 
     /**

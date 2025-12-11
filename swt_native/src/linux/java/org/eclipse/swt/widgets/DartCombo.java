@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2020 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -634,11 +634,6 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public Point getCaretLocation() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getCaretLocationInPixels());
-    }
-
-    Point getCaretLocationInPixels() {
-        checkWidget();
         if ((getApi().style & SWT.READ_ONLY) != 0) {
             return new Point(0, 0);
         }
@@ -887,11 +882,6 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public int getTextHeight() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getTextHeightInPixels());
-    }
-
-    int getTextHeightInPixels() {
-        checkWidget();
         return 0;
     }
 
@@ -1052,6 +1042,8 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void paste() {
         checkWidget();
+        if (entryHandle != 0) {
+        }
     }
 
     @Override
@@ -1335,7 +1327,7 @@ public class DartCombo extends DartComposite implements ICombo {
     int setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
         int newHeight = height;
         if (resize)
-            newHeight = Math.max(getTextHeightInPixels(), height);
+            newHeight = Math.max(getTextHeight(), height);
         return super.setBounds(x, y, width, newHeight, move, resize);
     }
 

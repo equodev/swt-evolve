@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -27,7 +27,7 @@ import dev.equo.swt.*;
  * when a string is selected.  A list may be single or multi select.
  * <dl>
  * <dt><b>Styles:</b></dt>
- * <dd>SINGLE, MULTI</dd>
+ * <dd>SINGLE, MULTI, NO_SEARCH</dd>
  * <dt><b>Events:</b></dt>
  * <dd>Selection, DefaultSelection</dd>
  * </dl>
@@ -355,11 +355,6 @@ public class DartList extends DartScrollable implements IList {
      * </ul>
      */
     public int getItemHeight() {
-        checkWidget();
-        return DPIUtil.autoScaleDown(getItemHeightInPixels());
-    }
-
-    int getItemHeightInPixels() {
         checkWidget();
         final int BASE_ITEM_PADDING = 1;
         int[] h = new int[1];
@@ -766,6 +761,20 @@ public class DartList extends DartScrollable implements IList {
             return;
         eventTable.unhook(SWT.Selection, listener);
         eventTable.unhook(SWT.DefaultSelection, listener);
+    }
+
+    boolean searchEnabled() {
+        /* Disable searching when using NO_SEARCH */
+        if ((getApi().style & SWT.NO_SEARCH) != 0 || /*
+		* Bug in GTK. When a treeview is the child of an override shell,
+		* and if the user has ever invokes the interactive search field,
+		* and the treeview is disposed on a focus out event, it segment
+		* faults. The fix is to disable the search field in an override
+		* shell.
+		*/
+        (getShell().style & SWT.ON_TOP) != 0)
+            return false;
+        return true;
     }
 
     /**

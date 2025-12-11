@@ -55,7 +55,7 @@ import org.eclipse.swt.internal.*;
 /**
  * This class contains native functions for various libraries.
  *
- * Any dynamic functions must be manually linked to their corresponding library. See os_cutom.h  #define FUNC_LIB_* LIB_*
+ * Any dynamic functions must be manually linked to their corresponding library. See os_custom.h  #define FUNC_LIB_* LIB_*
  */
 public class OS extends C {
 
@@ -524,6 +524,8 @@ public class OS extends C {
     public static final byte[] month_changed = ascii("month-changed");
 
     public static final byte[] next_month = ascii("next-month");
+
+    public static final byte[] notify_gtk_theme = ascii("notify::gtk-theme-name");
 
     public static final byte[] prev_month = ascii("prev-month");
 
@@ -1071,7 +1073,6 @@ public class OS extends C {
 
     /**
      * @param object_class cast=(GObjectClass *)
-     * @paramOFF constructor cast=(GObject* (*) (GType, guint, GObjectConstructParam *))
      */
     public static final native void G_OBJECT_CLASS_SET_CONSTRUCTOR(long object_class, long constructor);
 
@@ -2053,6 +2054,14 @@ public class OS extends C {
      * @param variable cast=(const gchar *),flags=no_out
      */
     public static final native void g_unsetenv(byte[] variable);
+
+    /**
+     * @method flags=dynamic
+     * @param uri_string cast=(const gchar *)
+     * @param flags
+     * @param error cast=(GError **)
+     */
+    public static final native long g_uri_parse(byte[] uri_string, long flags, long[] error);
 
     /**
      * @method flags=const

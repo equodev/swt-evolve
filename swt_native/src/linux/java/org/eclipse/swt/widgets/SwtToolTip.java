@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -249,7 +249,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
         }
         GTK.gtk_widget_realize(getApi().handle);
         Region region = new Region(display);
-        region.add(DPIUtil.autoScaleDown(polyline));
+        region.add(polyline);
         GTK3.gtk_widget_shape_combine_region(getApi().handle, region.handle);
         region.dispose();
     }
@@ -686,11 +686,6 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
      */
     public void setLocation(int x, int y) {
         checkWidget();
-        setLocation(new Point(x, y));
-    }
-
-    void setLocationInPixels(int x, int y) {
-        checkWidget();
         this.x = x;
         this.y = y;
         if ((getApi().style & SWT.BALLOON) != 0) {
@@ -723,14 +718,9 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
      */
     public void setLocation(Point location) {
         checkWidget();
-        setLocationInPixels(DPIUtil.autoScaleUp(location));
-    }
-
-    void setLocationInPixels(Point location) {
-        checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        setLocationInPixels(location.x, location.y);
+        setLocation(location.x, location.y);
     }
 
     /**
@@ -833,7 +823,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
         if (visible) {
             if ((getApi().style & SWT.BALLOON) != 0) {
                 configure();
-                GTK.gtk_widget_show(getApi().handle);
+                gtk_widget_show(getApi().handle);
             } else {
                 long vboxHandle = ((SwtDecorations) parent.getImpl()).vboxHandle;
                 StringBuilder string = new StringBuilder(text);
@@ -852,7 +842,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
             }
         } else {
             if ((getApi().style & SWT.BALLOON) != 0) {
-                GTK.gtk_widget_hide(getApi().handle);
+                gtk_widget_hide(getApi().handle);
             } else {
                 long vboxHandle = ((SwtDecorations) parent.getImpl()).vboxHandle;
                 byte[] buffer = Converter.wcsToMbcs("", true);
@@ -864,7 +854,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
     @Override
     long timerProc(long widget) {
         if ((getApi().style & SWT.BALLOON) != 0) {
-            GTK.gtk_widget_hide(getApi().handle);
+            gtk_widget_hide(getApi().handle);
         }
         return 0;
     }

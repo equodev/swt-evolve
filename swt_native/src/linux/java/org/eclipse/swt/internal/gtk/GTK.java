@@ -340,7 +340,7 @@ public class GTK extends OS {
 
     /**
      * Named icons.
-     * See https://docs.google.com/spreadsheet/pub?key=0AsPAM3pPwxagdGF4THNMMUpjUW5xMXZfdUNzMXhEa2c&output=html
+     * See https://docs.google.com/spreadsheet/pub?key=0AsPAM3pPwxagdGF4THNMMUpjUW5xMXZfdUNzMXhEa2c&amp;output=html
      * See http://standards.freedesktop.org/icon-naming-spec/icon-naming-spec-latest.html#names
      * Icon preview tool: gtk3-icon-browser
      * Snippets often demonstrate usage of these. E.x 309, 258.
@@ -750,6 +750,7 @@ public class GTK extends OS {
 
     /* GtkColorChooser Interface */
     /**
+     * @method flags=ignore_deprecations
      * @param chooser cast=(GtkColorChooser *)
      * @param orientation cast=(GtkOrientation)
      * @param colors_per_line cast=(gint)
@@ -759,29 +760,34 @@ public class GTK extends OS {
     public static final native void gtk_color_chooser_add_palette(long chooser, int orientation, int colors_per_line, int n_colors, long colors);
 
     /**
+     * @method flags=ignore_deprecations
      * @param chooser cast=(GtkColorChooser *)
      * @param use_alpha cast=(gboolean)
      */
     public static final native void gtk_color_chooser_set_use_alpha(long chooser, boolean use_alpha);
 
     /**
+     * @method flags=ignore_deprecations
      * @param chooser cast=(GtkColorChooser *)
      */
     public static final native boolean gtk_color_chooser_get_use_alpha(long chooser);
 
     /**
+     * @method flags=ignore_deprecations
      * @param chooser cast=(GtkColorChooser *)
      * @param color cast=(GdkRGBA *)
      */
     public static final native void gtk_color_chooser_set_rgba(long chooser, GdkRGBA color);
 
     /**
+     * @method flags=ignore_deprecations
      * @param chooser cast=(GtkColorChooser *)
      * @param color cast=(GdkRGBA *)
      */
     public static final native void gtk_color_chooser_get_rgba(long chooser, GdkRGBA color);
 
     /**
+     * @method flags=ignore_deprecations
      * @param title cast=(const gchar *)
      * @param parent cast=(GtkWindow *)
      */
@@ -1042,6 +1048,41 @@ public class GTK extends OS {
      */
     public static final native long gtk_expander_get_label_widget(long expander);
 
+    /* GtkFileChooser */
+    /**
+     * @method flags=ignore_deprecations
+     * @param chooser cast=(GtkFileChooser *)
+     * @param filter cast=(GtkFileFilter *)
+     */
+    public static final native void gtk_file_chooser_add_filter(long chooser, long filter);
+
+    /**
+     * @method flags=ignore_deprecations
+     * @param chooser cast=(GtkFileChooser *)
+     */
+    public static final native long gtk_file_chooser_get_filter(long chooser);
+
+    /**
+     * @method flags=ignore_deprecations
+     * @param chooser cast=(GtkFileChooser *)
+     * @param name cast=(const gchar *)
+     */
+    public static final native void gtk_file_chooser_set_current_name(long chooser, byte[] name);
+
+    /**
+     * @method flags=ignore_deprecations
+     * @param chooser cast=(GtkFileChooser *)
+     * @param filter cast=(GtkFileFilter *)
+     */
+    public static final native void gtk_file_chooser_set_filter(long chooser, long filter);
+
+    /**
+     * @method flags=ignore_deprecations
+     * @param chooser cast=(GtkFileChooser *)
+     * @param select_multiple cast=(gboolean)
+     */
+    public static final native void gtk_file_chooser_set_select_multiple(long chooser, boolean select_multiple);
+
     /* GtkEventController */
     /**
      * @param controller cast=(GtkEventController *)
@@ -1065,6 +1106,16 @@ public class GTK extends OS {
      * @param gesture cast=(GtkGestureSingle *)
      */
     public static final native int gtk_gesture_single_get_current_button(long gesture);
+
+    /* GtkFileChooserNative */
+    /**
+     * @method flags=dynamic
+     * @param title cast=(const gchar *),flags=no_out
+     * @param parent cast=(GtkWindow *)
+     * @param accept_label cast=(const gchar *),flags=no_out
+     * @param cancel_label cast=(const gchar *),flags=no_out
+     */
+    public static final native long gtk_file_chooser_native_new(byte[] title, long parent, int action, byte[] accept_label, byte[] cancel_label);
 
     /* GtkFileFilter */
     public static final native long gtk_file_filter_new();
@@ -1137,6 +1188,7 @@ public class GTK extends OS {
 
     /* GtkFontChooserDialog */
     /**
+     * @method flags=ignore_deprecations
      * @param title cast=(const gchar *)
      * @param parent cast=(GtkWindow *)
      */
@@ -1144,11 +1196,13 @@ public class GTK extends OS {
 
     /* GtkFontChooser Interface */
     /**
+     * @method flags=ignore_deprecations
      * @param fontchooser cast=(GtkFontChooser *)
      */
     public static final native long gtk_font_chooser_get_font(long fontchooser);
 
     /**
+     * @method flags=ignore_deprecations
      * @param fsd cast=(GtkFontChooser *)
      * @param fontname cast=(const gchar *)
      */
@@ -3215,11 +3269,6 @@ public class GTK extends OS {
     /**
      * @param widget cast=(GtkWidget *)
      */
-    public static final native void gtk_widget_hide(long widget);
-
-    /**
-     * @param widget cast=(GtkWidget *)
-     */
     public static final native boolean gtk_widget_is_focus(long widget);
 
     /**
@@ -3297,11 +3346,6 @@ public class GTK extends OS {
      * @param height cast=(gint)
      */
     public static final native void gtk_widget_set_size_request(long widget, int width, int height);
-
-    /**
-     * @param widget cast=(GtkWidget *)
-     */
-    public static final native void gtk_widget_show(long widget);
 
     /**
      * @param widget cast=(GtkWidget *)

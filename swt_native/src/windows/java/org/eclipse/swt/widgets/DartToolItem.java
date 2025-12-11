@@ -224,11 +224,11 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return DPIUtil.scaleDown(getBoundsInPixels(), getZoom());
+        return Sizes.getBounds(this);
     }
 
     Rectangle getBoundsInPixels() {
-        return new Rectangle(0, 0, 0, 0);
+        return null;
     }
 
     /**
@@ -428,7 +428,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public int getWidth() {
         checkWidget();
-        return DPIUtil.scaleDown(getWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getWidthInPixels(), getZoom());
     }
 
     int getWidthInPixels() {
@@ -976,7 +976,6 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setWidth(int width) {
         checkWidget();
-        setWidthInPixels(DPIUtil.scaleUp(width, getZoom()));
     }
 
     void setWidthInPixels(int width) {

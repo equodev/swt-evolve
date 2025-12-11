@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -205,11 +205,6 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      */
     public int getHeaderHeight() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getHeaderHeightInPixels());
-    }
-
-    int getHeaderHeightInPixels() {
-        checkWidget();
         return 0;
     }
 
@@ -225,7 +220,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      */
     public int getHeight() {
         checkWidget();
-        return DPIUtil.autoScaleDown(height);
+        return height;
     }
 
     /**
@@ -323,7 +318,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
         if (control != null) {
             //454940 ExpandBar DND fix.
             //Reparenting on the GTK side.
-            //Proper hierachy on gtk side is required for DND to function properly.
+            //Proper hierarchy on gtk side is required for DND to function properly.
             //As ExpandItem's child can be created before the ExpandItem, our only
             //option is to reparent the child upon the setControl(..) call.
         }
@@ -372,11 +367,6 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      * </ul>
      */
     public void setHeight(int height) {
-        checkWidget();
-        setHeightInPixels(DPIUtil.autoScaleUp(height));
-    }
-
-    void setHeightInPixels(int height) {
         dirty();
         checkWidget();
         if (height < 0)

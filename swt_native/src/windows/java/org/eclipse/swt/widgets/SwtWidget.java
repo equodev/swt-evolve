@@ -53,6 +53,8 @@ import org.eclipse.swt.internal.win32.*;
  */
 public abstract class SwtWidget implements IWidget {
 
+    boolean autoScaleDisabled = false;
+
     Display display;
 
     EventTable eventTable;
@@ -135,6 +137,10 @@ public abstract class SwtWidget implements IWidget {
     /* Bidi flag and for auto text direction */
     static final int AUTO_TEXT_DIRECTION = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
 
+    private static final String DATA_AUTOSCALE_DISABLED = "AUTOSCALE_DISABLED";
+
+    private static final String DATA_NATIVE_ZOOM = "NATIVE_ZOOM";
+
     /* Initialize the Common Controls DLL */
     static {
         INITCOMMONCONTROLSEX icce = new INITCOMMONCONTROLSEX();
@@ -187,9 +193,11 @@ public abstract class SwtWidget implements IWidget {
         checkParent(parent);
         this.getApi().style = style;
         this.getApi().nativeZoom = parent != null ? parent.nativeZoom : DPIUtil.getNativeDeviceZoom();
+        this.autoScaleDisabled = parent.getImpl()._autoScaleDisabled();
         display = parent.getImpl()._display();
         reskinWidget();
         notifyCreationTracker();
+        this.setData(DATA_NATIVE_ZOOM, this.getApi().nativeZoom);
     }
 
     void _addListener(int eventType, Listener listener) {
@@ -264,6 +272,7 @@ public abstract class SwtWidget implements IWidget {
         if (listener == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
+        @SuppressWarnings("removal")
         TypedListener typedListener = new TypedListener(listener);
         for (int eventType : eventTypes) {
             _addListener(eventType, typedListener);
@@ -700,6 +709,7 @@ public abstract class SwtWidget implements IWidget {
      *
      * @since 3.126
      */
+    @SuppressWarnings("removal")
     public <L extends EventListener> Stream<L> getTypedListeners(int eventType, Class<L> listenerType) {
         return //
         Arrays.stream(getListeners(eventType)).filter(TypedListener.class::isInstance).map(l -> ((TypedListener) l).eventListener).filter(listenerType::isInstance).map(listenerType::cast);
@@ -1074,8 +1084,41 @@ public abstract class SwtWidget implements IWidget {
      *
      * @noreference This method is not intended to be referenced by clients.
      * @nooverride This method is not intended to be re-implemented or extended by clients.
+     * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
+    @Deprecated(forRemoval = true, since = "2025-03")
     public void removeListener(int eventType, SWTEventListener listener) {
+        removeTypedListener(eventType, listener);
+    }
+
+    /**
+     * Removes the listener from the collection of listeners who will
+     * be notified when an event of the given type occurs.
+     * <p>
+     * <b>IMPORTANT:</b> This method is <em>not</em> part of the SWT
+     * public API. It is marked public only so that it can be shared
+     * within the packages provided by SWT. It should never be
+     * referenced from application code.
+     * </p>
+     *
+     * @param eventType the type of event to listen for
+     * @param listener the listener which should no longer be notified
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see Listener
+     * @see #addListener
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     * @nooverride This method is not intended to be re-implemented or extended by clients.
+     */
+    public void removeListener(int eventType, EventListener listener) {
         removeTypedListener(eventType, listener);
     }
 
@@ -1190,7 +1233,7 @@ public abstract class SwtWidget implements IWidget {
         Event event = new Event();
         event.button = button;
         int zoom = getZoom();
-        event.setLocation(DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom));
+        event.setLocation(DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(y, zoom));
         setInputState(event, SWT.DragDetect);
         postEvent(SWT.DragDetect, event);
         if (isDisposed())
@@ -1202,7 +1245,7 @@ public abstract class SwtWidget implements IWidget {
         Event event = new Event();
         event.button = button;
         int zoom = getZoom();
-        event.setLocation(DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom));
+        event.setLocation(DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(y, zoom));
         event.stateMask = stateMask;
         postEvent(SWT.DragDetect, event);
         if (isDisposed())
@@ -1285,7 +1328,7 @@ public abstract class SwtWidget implements IWidget {
         event.detail = detail;
         event.count = count;
         int zoom = getZoom();
-        event.setLocation(DPIUtil.scaleDown(OS.GET_X_LPARAM(lParam), zoom), DPIUtil.scaleDown(OS.GET_Y_LPARAM(lParam), zoom));
+        event.setLocation(DPIUtil.pixelToPoint(OS.GET_X_LPARAM(lParam), zoom), DPIUtil.pixelToPoint(OS.GET_Y_LPARAM(lParam), zoom));
         setInputState(event, type);
         mapEvent(hwnd, event);
         if (send) {
@@ -1473,6 +1516,9 @@ public abstract class SwtWidget implements IWidget {
         }
         if (key.equals(SWT.SKIN_CLASS) || key.equals(SWT.SKIN_ID))
             this.reskin(SWT.ALL);
+        if (DATA_AUTOSCALE_DISABLED.equals(key)) {
+            autoScaleDisabled = Boolean.parseBoolean(value.toString());
+        }
     }
 
     public boolean sendFocusEvent(int type) {
@@ -1727,7 +1773,7 @@ public abstract class SwtWidget implements IWidget {
 
     boolean showMenu(int x, int y, int detail) {
         Event event = new Event();
-        Point mappedLocation = ((SwtDisplay) getDisplay().getImpl()).translateLocationInPointInDisplayCoordinateSystem(x, y);
+        Point mappedLocation = ((SwtDisplay) getDisplay().getImpl()).translateFromDisplayCoordinates(new Point(x, y), getZoom());
         event.setLocation(mappedLocation.x, mappedLocation.y);
         event.detail = detail;
         if (event.detail == SWT.MENU_KEYBOARD) {
@@ -1742,7 +1788,7 @@ public abstract class SwtWidget implements IWidget {
         Menu menu = getMenu();
         if (menu != null && !menu.isDisposed()) {
             // In Pixels
-            Point locInPixels = DPIUtil.scaleUp(event.getLocation(), getZoom());
+            Point locInPixels = Win32DPIUtils.pointToPixel(event.getLocation(), getZoom());
             if (x != locInPixels.x || y != locInPixels.y) {
                 menu.setLocation(event.getLocation());
             }
@@ -2398,7 +2444,7 @@ public abstract class SwtWidget implements IWidget {
                 OS.SetMetaRgn(hDC);
                 Event event = new Event();
                 event.gc = gc;
-                event.setBounds(DPIUtil.scaleDown(new Rectangle(rect.left, rect.top, width, height), getZoom()));
+                event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(rect.left, rect.top, width, height), getZoom()));
                 sendEvent(SWT.Paint, event);
                 // widget could be disposed at this point
                 event.gc = null;
@@ -2736,26 +2782,42 @@ public abstract class SwtWidget implements IWidget {
     }
 
     GC createNewGC(long hDC, GCData data) {
-        data.nativeZoom = getApi().nativeZoom;
+        data.nativeZoom = getNativeZoom();
+        if (autoScaleDisabled && data.font != null) {
+            data.font = SWTFontProvider.getFont(display, data.font.getFontData()[0], 100);
+        }
         return SwtGC.win32_new(hDC, data);
     }
 
+    int getNativeZoom() {
+        if (autoScaleDisabled) {
+            return 100;
+        }
+        return getApi().nativeZoom;
+    }
+
     public int getZoom() {
+        if (autoScaleDisabled) {
+            return 100;
+        }
         return DPIUtil.getZoomForAutoscaleProperty(getApi().nativeZoom);
     }
 
     private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
         widget.nativeZoom = newZoom;
+        widget.setData(DATA_NATIVE_ZOOM, newZoom);
     }
 
     int getSystemMetrics(int nIndex) {
-        /*
-	 * DPI dependent metrics were introduced after 2016 version of windows 10
-	 */
-        if (OS.WIN32_BUILD >= OS.WIN32_BUILD_WIN10_1607) {
-            return OS.GetSystemMetricsForDpi(nIndex, DPIUtil.mapZoomToDPI(getApi().nativeZoom));
-        }
-        return OS.GetSystemMetrics(nIndex);
+        return OS.GetSystemMetricsForDpi(nIndex, DPIUtil.mapZoomToDPI(getApi().nativeZoom));
+    }
+
+    boolean adjustWindowRectEx(RECT lpRect, int dwStyle, boolean bMenu, int dwExStyle) {
+        return OS.AdjustWindowRectExForDpi(lpRect, dwStyle, bMenu, dwExStyle, DPIUtil.mapZoomToDPI(getApi().nativeZoom));
+    }
+
+    public boolean _autoScaleDisabled() {
+        return autoScaleDisabled;
     }
 
     public Display _display() {

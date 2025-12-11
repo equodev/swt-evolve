@@ -134,6 +134,22 @@ public final class FontData {
     }
 
     /**
+     * Constructs a deep copy of the given font data object.
+     *
+     * @param fontData the FontData object to copy
+     *
+     * @exception IllegalArgumentException
+     * <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the argument is null</li>
+     * </ul>
+     * @since 3.131
+     */
+    public FontData(FontData fontData) {
+        this((IFontData) null);
+        setImpl(Config.isEquo(FontData.class) ? new DartFontData(fontData, this) : new SwtFontData(fontData, this));
+    }
+
+    /**
      * Constructs a new font data given a font name,
      * the height of the desired font in points,
      * and a font style.

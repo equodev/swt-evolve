@@ -206,7 +206,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onDrawArc(VGCDrawArc opArgs) {
+  void onDrawArcintintintintintint(VGCDrawArcintintintintintint opArgs) {
     _addArcShape(
       x: opArgs.x ?? 0,
       y: opArgs.y ?? 0,
@@ -219,7 +219,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onDrawFocus(VGCDrawFocus opArgs) {
+  void onDrawFocusintintintint(VGCDrawFocusintintintint opArgs) {
     final rect =
         _getRectFromArgs(opArgs.x, opArgs.y, opArgs.width, opArgs.height);
 
@@ -228,7 +228,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onDrawLine(VGCDrawLine opArgs) {
+  void onDrawLineintintintint(VGCDrawLineintintintint opArgs) {
     final x1 = opArgs.x1?.toDouble() ?? 0.0;
     final y1 = opArgs.y1?.toDouble() ?? 0.0;
     final x2 = opArgs.x2?.toDouble() ?? 0.0;
@@ -241,7 +241,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onDrawOval(VGCDrawOval opArgs) {
+  void onDrawOvalintintintint(VGCDrawOvalintintintint opArgs) {
     _addOvalShape(
       x: opArgs.x ?? 0,
       y: opArgs.y ?? 0,
@@ -252,7 +252,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onDrawPoint(VGCDrawPoint opArgs) {
+  void onDrawPointintint(VGCDrawPointintint opArgs) {
     final point = Offset(
       (opArgs.x ?? 0).toDouble(),
       (opArgs.y ?? 0).toDouble(),
@@ -263,7 +263,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onDrawPolygon(VGCDrawPolygon opArgs) {
+  void onDrawPolygonint(VGCDrawPolygonint opArgs) {
     _addPolygonShape(
       points: opArgs.pointArray ?? [],
       isFilled: false,
@@ -272,7 +272,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onDrawPolyline(VGCDrawPolyline opArgs) {
+  void onDrawPolylineint(VGCDrawPolylineint opArgs) {
     _addPolylineShape(
       points: opArgs.pointArray ?? [],
       isFilled: false,
@@ -281,7 +281,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onDrawRectangle(VGCDrawRectangle opArgs) {
+  void onDrawRectangleintintintint(VGCDrawRectangleintintintint opArgs) {
     _addRectShape(
       x: opArgs.x ?? 0,
       y: opArgs.y ?? 0,
@@ -292,7 +292,8 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onDrawRoundRectangle(VGCDrawRoundRectangle opArgs) {
+  void onDrawRoundRectangleintintintintintint(
+      VGCDrawRoundRectangleintintintintintint opArgs) {
     _addRoundRectShape(
       x: opArgs.x ?? 0,
       y: opArgs.y ?? 0,
@@ -304,18 +305,17 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     );
   }
 
-  @override
-  void onDrawText(VGCDrawText opArgs) {
-    final text = opArgs.string ?? '';
-    final x = (opArgs.x ?? 0).toDouble();
-    final y = (opArgs.y ?? 0).toDouble();
-    final flags = opArgs.flags ?? 0;
-
+  void _drawText({
+    required String text,
+    required double x,
+    required double y,
+    int flags = 0,
+    bool? isTransparent,
+  }) {
     final vFont = state.font;
-    FontUtils.printFontData(vFont, context: 'GC.drawText');
 
     final processedText = _processTextFlags(text, flags);
-    final isTransparent = (flags & SWT.DRAW_TRANSPARENT) != 0;
+    final transparent = isTransparent ?? (flags & SWT.DRAW_TRANSPARENT) != 0;
 
     final textStyle = FontUtils.textStyleFromVFont(
       vFont,
@@ -325,7 +325,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
     List<Shape> newShapes = [];
 
-    if (!isTransparent) {
+    if (!transparent) {
       final textPainter = TextPainter(
         text: TextSpan(text: processedText, style: textStyle),
         textDirection: TextDirection.ltr,
@@ -340,6 +340,27 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     setState(() => shapes = [...shapes, ...newShapes]);
   }
 
+  @override
+  void onDrawTextStringintintint(VGCDrawTextStringintintint opArgs) {
+    _drawText(
+      text: opArgs.string ?? '',
+      x: (opArgs.x ?? 0).toDouble(),
+      y: (opArgs.y ?? 0).toDouble(),
+      flags: opArgs.flags ?? 0,
+    );
+  }
+
+  @override
+  void onDrawStringStringintintboolean(
+      VGCDrawStringStringintintboolean opArgs) {
+    _drawText(
+      text: opArgs.string ?? '',
+      x: (opArgs.x ?? 0).toDouble(),
+      y: (opArgs.y ?? 0).toDouble(),
+      isTransparent: opArgs.isTransparent ?? false,
+    );
+  }
+
   String _processTextFlags(String text, int flags) {
     return text
         .replaceAll('\r\n', (flags & SWT.DRAW_DELIMITER) != 0 ? '\n' : ' ')
@@ -349,7 +370,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onFillArc(VGCFillArc opArgs) {
+  void onFillArcintintintintintint(VGCFillArcintintintintintint opArgs) {
     _addArcShape(
       x: opArgs.x ?? 0,
       y: opArgs.y ?? 0,
@@ -362,7 +383,8 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onFillGradientRectangle(VGCFillGradientRectangle opArgs) {
+  void onFillGradientRectangleintintintintboolean(
+      VGCFillGradientRectangleintintintintboolean opArgs) {
     final rect =
         _getRectFromArgs(opArgs.x, opArgs.y, opArgs.width, opArgs.height);
 
@@ -377,7 +399,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onFillOval(VGCFillOval opArgs) {
+  void onFillOvalintintintint(VGCFillOvalintintintint opArgs) {
     _addOvalShape(
       x: opArgs.x ?? 0,
       y: opArgs.y ?? 0,
@@ -388,7 +410,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onFillPolygon(VGCFillPolygon opArgs) {
+  void onFillPolygonint(VGCFillPolygonint opArgs) {
     _addPolygonShape(
       points: opArgs.pointArray ?? [],
       isFilled: true,
@@ -397,7 +419,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onFillRectangle(VGCFillRectangle opArgs) {
+  void onFillRectangleintintintint(VGCFillRectangleintintintint opArgs) {
     _addRectShape(
       x: opArgs.x ?? 0,
       y: opArgs.y ?? 0,
@@ -408,7 +430,8 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onFillRoundRectangle(VGCFillRoundRectangle opArgs) {
+  void onFillRoundRectangleintintintintintint(
+      VGCFillRoundRectangleintintintintintint opArgs) {
     _addRoundRectShape(
       x: opArgs.x ?? 0,
       y: opArgs.y ?? 0,
@@ -421,7 +444,8 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onCopyArea(VGCCopyArea opArgs) {
+  void onCopyAreaintintintintintintboolean(
+      VGCCopyAreaintintintintintintboolean opArgs) {
     final srcRect =
         _getRectFromArgs(opArgs.srcX, opArgs.srcY, opArgs.width, opArgs.height);
     final destOffset = Offset(
@@ -522,7 +546,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
-  void onCopyAreaImage(VGCCopyAreaImage opArgs) async {
+  void onCopyAreaImageintint(VGCCopyAreaImageintint opArgs) async {
     if (opArgs.image == null) return;
     final ui.Image gcImage = await _renderShapesToUiImage(shapes, bounds);
     final ui.Image? destImage =
@@ -538,17 +562,57 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     //todo image must be returned to java or replace the original java image with c
   }
 
-  @override
-  void onDrawImage(VGCDrawImage opArgs) {
+  void _drawImage({
+    required VImage? image,
+    int srcX = 0,
+    int srcY = 0,
+    int srcWidth = -1,
+    int srcHeight = -1,
+    required int destX,
+    required int destY,
+    int destWidth = -1,
+    int destHeight = -1,
+  }) {
     final capturedClipping = clipping;
-    if (opArgs.srcImage == null) return;
-    _processImageAsync(opArgs.srcImage!, opArgs, capturedClipping);
+    if (image == null) return;
+
+    final opArgs = VGCDrawImageImageintintintintintintintint(
+      srcX: srcX,
+      srcY: srcY,
+      srcWidth: srcWidth,
+      srcHeight: srcHeight,
+      destX: destX,
+      destY: destY,
+      destWidth: destWidth,
+      destHeight: destHeight,
+    );
+    opArgs.image = image;
+
+    _processImageImageAsync(image, opArgs, capturedClipping);
   }
 
-  void _processImageAsync(
-      VImage vImage, VGCDrawImage opArgs, Rect? capturedClipping) async {
+  @override
+  void onDrawImageImageintintintintintintintint(
+      VGCDrawImageImageintintintintintintintint opArgs) {
+    _drawImage(
+      image: opArgs.image,
+      srcX: opArgs.srcX,
+      srcY: opArgs.srcY,
+      srcWidth: opArgs.srcWidth,
+      srcHeight: opArgs.srcHeight,
+      destX: opArgs.destX,
+      destY: opArgs.destY,
+      destWidth: opArgs.destWidth,
+      destHeight: opArgs.destHeight,
+    );
+  }
+
+  void _processImageImageAsync(
+      VImage vImage,
+      VGCDrawImageImageintintintintintintintint opArgs,
+      Rect? capturedClipping) async {
     final imageShape =
-        await ImageShape.fromVImage(vImage, opArgs, capturedClipping);
+        await ImageShape.fromVImageDetailed(vImage, opArgs, capturedClipping);
     if (mounted) {
       setState(() => shapes = [...shapes, imageShape]);
     }
@@ -569,6 +633,58 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
     final picture = recorder.endRecording();
     return picture.toImage(size.width.toInt(), size.height.toInt());
+  }
+
+  @override
+  void onDrawImageImageintint(VGCDrawImageImageintint opArgs) {
+    _drawImage(
+      image: opArgs.image,
+      destX: opArgs.x,
+      destY: opArgs.y,
+    );
+  }
+
+  @override
+  void onDrawRectangleRectangle(VGCDrawRectangleRectangle opArgs) {
+    // TODO: implement onDrawRectangleRectangle
+  }
+
+  @override
+  void onDrawStringStringintint(VGCDrawStringStringintint opArgs) {
+    _drawText(
+      text: opArgs.string ?? '',
+      x: (opArgs.x ?? 0).toDouble(),
+      y: (opArgs.y ?? 0).toDouble(),
+    );
+  }
+
+  @override
+  void onDrawTextStringintint(VGCDrawTextStringintint opArgs) {
+    _drawText(
+      text: opArgs.string ?? '',
+      x: (opArgs.x ?? 0).toDouble(),
+      y: (opArgs.y ?? 0).toDouble(),
+    );
+  }
+
+  @override
+  void onDrawTextStringintintboolean(VGCDrawTextStringintintboolean opArgs) {
+    _drawText(
+      text: opArgs.string ?? '',
+      x: (opArgs.x ?? 0).toDouble(),
+      y: (opArgs.y ?? 0).toDouble(),
+      isTransparent: opArgs.isTransparent ?? false,
+    );
+  }
+
+  @override
+  void onFillRectangleRectangle(VGCFillRectangleRectangle opArgs) {
+    // TODO: implement onFillRectangleRectangle
+  }
+
+  @override
+  void onCopyAreaintintintintintint(VGCCopyAreaintintintintintint opArgs) {
+    // TODO: implement onCopyAreaintintintintintint
   }
 }
 
@@ -1137,8 +1253,8 @@ class ImageShape extends Shape {
     );
   }
 
-  static Future<ImageShape> fromVImage(
-      VImage vImage, VGCDrawImage opArgs, Rect? clipRect) async {
+  static Future<ImageShape> fromVImageDetailed(VImage vImage,
+      VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect) async {
     Object? replacement;
     if (vImage.filename != null && vImage.filename!.isNotEmpty) {
       replacement = await AssetsManager.loadReplacement(vImage.filename!);
@@ -1152,10 +1268,10 @@ class ImageShape extends Shape {
         (opArgs.destY ?? 0).toDouble(),
         (opArgs.destWidth == -1)
             ? pictureInfo.size.width
-            : opArgs.destWidth!.toDouble(),
+            : (opArgs.destWidth ?? 0).toDouble(),
         (opArgs.destHeight == -1)
             ? pictureInfo.size.height
-            : opArgs.destHeight!.toDouble(),
+            : (opArgs.destHeight ?? 0).toDouble(),
       );
       return ImageShape.svg(pictureInfo, destRect, clipRect: clipRect);
     }
@@ -1169,10 +1285,10 @@ class ImageShape extends Shape {
       (opArgs.destY ?? 0).toDouble(),
       (opArgs.destWidth == -1)
           ? uiImage.width.toDouble()
-          : opArgs.destWidth!.toDouble(),
+          : (opArgs.destWidth ?? 0).toDouble(),
       (opArgs.destHeight == -1)
           ? uiImage.height.toDouble()
-          : opArgs.destHeight!.toDouble(),
+          : (opArgs.destHeight ?? 0).toDouble(),
     );
 
     final srcRect = replacement != null
@@ -1183,10 +1299,10 @@ class ImageShape extends Shape {
             (opArgs.srcY ?? 0).toDouble(),
             (opArgs.srcWidth == -1)
                 ? uiImage.width.toDouble()
-                : opArgs.srcWidth!.toDouble(),
+                : (opArgs.srcWidth ?? 0).toDouble(),
             (opArgs.srcHeight == -1)
                 ? uiImage.height.toDouble()
-                : opArgs.srcHeight!.toDouble(),
+                : (opArgs.srcHeight ?? 0).toDouble(),
           );
 
     return ImageShape.raster(uiImage, srcRect, destRect, clipRect: clipRect);

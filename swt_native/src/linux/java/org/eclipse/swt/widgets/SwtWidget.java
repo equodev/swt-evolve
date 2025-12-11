@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2024 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -116,7 +116,7 @@ public abstract class SwtWidget implements IWidget {
     /* The preferred size of a child has changed */
     static final int LAYOUT_CHANGED = 1 << 18;
 
-    /* A layout was requested in this widget hierachy */
+    /* A layout was requested in this widget hierarchy */
     static final int LAYOUT_CHILD = 1 << 19;
 
     /* More global state flags */
@@ -488,6 +488,7 @@ public abstract class SwtWidget implements IWidget {
         if (listener == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
+        @SuppressWarnings("removal")
         TypedListener typedListener = new TypedListener(listener);
         for (int eventType : eventTypes) {
             _addListener(eventType, typedListener);
@@ -879,6 +880,7 @@ public abstract class SwtWidget implements IWidget {
      *
      * @since 3.126
      */
+    @SuppressWarnings("removal")
     public <L extends EventListener> Stream<L> getTypedListeners(int eventType, Class<L> listenerType) {
         return //
         Arrays.stream(getListeners(eventType)).filter(TypedListener.class::isInstance).map(l -> ((TypedListener) l).eventListener).filter(listenerType::isInstance).map(listenerType::cast);
@@ -952,7 +954,8 @@ public abstract class SwtWidget implements IWidget {
      * @param y the y coordinate, in widget allocation coordinates
      * @param event the GdkEvent captured
      */
-    void gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
+    int gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
+        return GTK4.GTK_EVENT_SEQUENCE_NONE;
     }
 
     /**
@@ -962,7 +965,8 @@ public abstract class SwtWidget implements IWidget {
      * @param y the y coordinate, in widget allocation coordinates
      * @param event the GdkEvent captured
      */
-    void gtk_gesture_release_event(long gesture, int n_press, double x, double y, long event) {
+    int gtk_gesture_release_event(long gesture, int n_press, double x, double y, long event) {
+        return GTK4.GTK_EVENT_SEQUENCE_NONE;
     }
 
     /**
@@ -1213,7 +1217,7 @@ public abstract class SwtWidget implements IWidget {
         return 0;
     }
 
-    long gtk_popup_menu(long widget) {
+    long gtk3_popup_menu(long widget) {
         return 0;
     }
 
@@ -1660,8 +1664,41 @@ public abstract class SwtWidget implements IWidget {
      *
      * @noreference This method is not intended to be referenced by clients.
      * @nooverride This method is not intended to be re-implemented or extended by clients.
+     * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
+    @Deprecated(forRemoval = true, since = "2025-03")
     public void removeListener(int eventType, SWTEventListener listener) {
+        removeTypedListener(eventType, listener);
+    }
+
+    /**
+     * Removes the listener from the collection of listeners who will
+     * be notified when an event of the given type occurs.
+     * <p>
+     * <b>IMPORTANT:</b> This method is <em>not</em> part of the SWT
+     * public API. It is marked public only so that it can be shared
+     * within the packages provided by SWT. It should never be
+     * referenced from application code.
+     * </p>
+     *
+     * @param eventType the type of event to listen for
+     * @param listener the listener which should no longer be notified
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see Listener
+     * @see #addListener
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     * @nooverride This method is not intended to be re-implemented or extended by clients.
+     */
+    public void removeListener(int eventType, EventListener listener) {
         removeTypedListener(eventType, listener);
     }
 
@@ -2685,14 +2722,17 @@ public abstract class SwtWidget implements IWidget {
 
     void gesturePressReleaseProc(long gesture, int n_press, double x, double y, long user_data) {
         long event = GTK4.gtk_event_controller_get_current_event(gesture);
+        long sequence = GTK4.gtk_gesture_get_last_updated_sequence(gesture);
+        int result = GTK4.GTK_EVENT_SEQUENCE_NONE;
         switch((int) user_data) {
             case GESTURE_PRESSED:
-                gtk_gesture_press_event(gesture, n_press, x, y, event);
+                result = gtk_gesture_press_event(gesture, n_press, x, y, event);
                 break;
             case GESTURE_RELEASED:
-                gtk_gesture_release_event(gesture, n_press, x, y, event);
+                result = gtk_gesture_release_event(gesture, n_press, x, y, event);
                 break;
         }
+        GTK4.gtk_gesture_set_sequence_state(gesture, sequence, result);
     }
 
     void leaveProc(long controller, long handle, long user_data) {
@@ -2750,7 +2790,7 @@ public abstract class SwtWidget implements IWidget {
             case OUTPUT:
                 return gtk_output(handle);
             case POPUP_MENU:
-                return gtk_popup_menu(handle);
+                return gtk3_popup_menu(handle);
             case PREEDIT_CHANGED:
                 return gtk_preedit_changed(handle);
             case REALIZE:
@@ -2974,6 +3014,20 @@ public abstract class SwtWidget implements IWidget {
         if (WidgetSpy.isEnabled) {
             WidgetSpy.getInstance().widgetDisposed(this.getApi());
         }
+    }
+
+    void gtk_widget_hide(long widget) {
+        if (GTK.GTK4)
+            GTK.gtk_widget_set_visible(widget, false);
+        else
+            GTK3.gtk_widget_hide(widget);
+    }
+
+    void gtk_widget_show(long widget) {
+        if (GTK.GTK4)
+            GTK.gtk_widget_set_visible(widget, true);
+        else
+            GTK3.gtk_widget_show(widget);
     }
 
     public Display _display() {

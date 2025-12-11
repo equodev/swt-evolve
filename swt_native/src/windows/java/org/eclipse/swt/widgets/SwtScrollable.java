@@ -124,11 +124,8 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
     public Rectangle computeTrim(int x, int y, int width, int height) {
         checkWidget();
         int zoom = getZoom();
-        x = DPIUtil.scaleUp(x, zoom);
-        y = DPIUtil.scaleUp(y, zoom);
-        width = DPIUtil.scaleUp(width, zoom);
-        height = DPIUtil.scaleUp(height, zoom);
-        return DPIUtil.scaleDown(computeTrimInPixels(x, y, width, height), zoom);
+        Rectangle rectangle = Win32DPIUtils.pointToPixel(new Rectangle(x, y, width, height), zoom);
+        return Win32DPIUtils.pixelToPoint(computeTrimInPixels(rectangle.x, rectangle.y, rectangle.width, rectangle.height), zoom);
     }
 
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
@@ -137,7 +134,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
         OS.SetRect(rect, x, y, x + width, y + height);
         int bits1 = OS.GetWindowLong(scrolledHandle, OS.GWL_STYLE);
         int bits2 = OS.GetWindowLong(scrolledHandle, OS.GWL_EXSTYLE);
-        OS.AdjustWindowRectEx(rect, bits1, false, bits2);
+        adjustWindowRectEx(rect, bits1, false, bits2);
         if (horizontalBar != null)
             rect.bottom += getSystemMetrics(OS.SM_CYHSCROLL);
         if (verticalBar != null)
@@ -224,7 +221,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
      */
     public Rectangle getClientArea() {
         checkWidget();
-        return DPIUtil.scaleDown(getClientAreaInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getClientAreaInPixels(), getZoom());
     }
 
     Rectangle getClientAreaInPixels() {

@@ -275,6 +275,12 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
             SWT.error(SWT.ERROR_NO_HANDLES);
     }
 
+    @Override
+    public int getDeviceZoom() {
+        // Printer directly renders on pixel basis, so the zoom must be fixed to 100
+        return 100;
+    }
+
     /**
      * Invokes platform specific functionality to allocate a new GC handle.
      * <p>
@@ -304,8 +310,9 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
                 data.style |= SWT.LEFT_TO_RIGHT;
             }
             data.device = this.getApi();
-            data.font = SwtFont.win32_new(this.getApi(), OS.GetCurrentObject(getApi().handle, OS.OBJ_FONT));
+            data.font = SwtFont.win32_new(this.getApi(), OS.GetCurrentObject(getApi().handle, OS.OBJ_FONT), getDeviceZoom());
             isGCCreated = true;
+            data.nativeZoom = getDeviceZoom();
         }
         return getApi().handle;
     }

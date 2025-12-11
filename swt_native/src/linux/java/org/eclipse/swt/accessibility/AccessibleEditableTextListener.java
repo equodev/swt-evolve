@@ -15,7 +15,7 @@
  */
 package org.eclipse.swt.accessibility;
 
-import org.eclipse.swt.internal.SWTEventListener;
+import java.util.*;
 
 /**
  * Classes which implement this interface provide methods
@@ -33,7 +33,7 @@ import org.eclipse.swt.internal.SWTEventListener;
  *
  * @since 3.7
  */
-public interface AccessibleEditableTextListener extends SWTEventListener {
+public interface AccessibleEditableTextListener extends EventListener {
 
     /**
      * Copies the substring beginning at the specified <code>start</code> offset

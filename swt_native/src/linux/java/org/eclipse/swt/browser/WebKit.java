@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2010, 2024 IBM Corporation and others.
+ *  Copyright (c) 2010, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 import org.eclipse.swt.*;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
@@ -100,6 +101,16 @@ class WebKit extends WebBrowser {
     URI tlsErrorUri;
 
     String tlsErrorType;
+
+    private final ControlListener browserMoveListener = ControlListener.controlMovedAdapter(this::browserShellMoved);
+
+    private Point searchShellLocation;
+
+    private Shell searchShell;
+
+    private String searchText;
+
+    boolean enableSearch;
 
     boolean firstLoad = true;
 
@@ -284,6 +295,11 @@ class WebKit extends WebBrowser {
      */
     static final boolean ignoreTls;
 
+    /**
+     * Flag that disables browser searching added on top of the WebKit browser.
+     */
+    static final boolean disableBrowserSearchGlobally;
+
     static {
         //$NON-NLS-1$
         Proc2 = new Callback(WebKit.class, "Proc", 2);
@@ -332,6 +348,7 @@ class WebKit extends WebBrowser {
             NativePendingCookies = null;
         }
         ignoreTls = "true".equals(System.getProperty("org.eclipse.swt.internal.webkitgtk.ignoretlserrors"));
+        disableBrowserSearchGlobally = "true".equals(System.getProperty("org.eclipse.swt.internal.webkitgtk.disableBrowserSearch"));
     }
 
     @Override
@@ -780,9 +797,18 @@ class WebKit extends WebBrowser {
         OS.g_signal_connect(webView, WebKitGTK.authenticate, Proc3.getAddress(), AUTHENTICATE);
         // (!) Note this one's a 'webContext' signal, not webview. See:
         // https://webkitgtk.org/reference/webkit2gtk/stable/WebKitWebContext.html#WebKitWebContext-download-started
-        OS.g_signal_connect(WebKitGTK.webkit_web_context_get_default(), WebKitGTK.download_started, Proc3.getAddress(), DOWNLOAD_STARTED);
-        GTK.gtk_widget_show(webView);
-        GTK.gtk_widget_show(browser.handle);
+        if (GTK.GTK4) {
+            OS.g_signal_connect(WebKitGTK.webkit_network_session_get_default(), WebKitGTK.download_started, Proc3.getAddress(), DOWNLOAD_STARTED);
+        } else {
+            OS.g_signal_connect(WebKitGTK.webkit_web_context_get_default(), WebKitGTK.download_started, Proc3.getAddress(), DOWNLOAD_STARTED);
+        }
+        if (GTK.GTK4) {
+            GTK.gtk_widget_set_visible(webView, true);
+            GTK.gtk_widget_set_visible(browser.handle, true);
+        } else {
+            GTK3.gtk_widget_show(webView);
+            GTK3.gtk_widget_show(browser.handle);
+        }
         // Webview 'title' property
         OS.g_signal_connect(webView, WebKitGTK.notify_title, Proc3.getAddress(), NOTIFY_TITLE);
         if (!GTK.GTK4) {
@@ -807,7 +833,9 @@ class WebKit extends WebBrowser {
         OS.g_object_set(settings, WebKitGTK.enable_developer_extras, 1, 0);
         //disable hardware acceleration due to  https://bugs.webkit.org/show_bug.cgi?id=239429#c11
         //even evolution ended up doing the same https://gitlab.gnome.org/GNOME/evolution/-/commit/eb62ccaa28bbbca7668913ce7d8056a6d75f9b05
-        OS.g_object_set(settings, WebKitGTK.hardware_acceleration_policy, 2, 0);
+        if (!GTK.GTK4) {
+            OS.g_object_set(settings, WebKitGTK.hardware_acceleration_policy, 2, 0);
+        }
         OS.g_object_set(settings, WebKitGTK.default_charset, utfBytes, 0);
         if (WebKitGTK.webkit_get_minor_version() >= 14) {
             OS.g_object_set(settings, WebKitGTK.allow_universal_access_from_file_urls, 1, 0);
@@ -843,12 +871,23 @@ class WebKit extends WebBrowser {
                         onResize(event);
                         break;
                     }
+                case SWT.KeyDown:
+                    {
+                        if (!disableBrowserSearchGlobally && enableSearch && event.keyCode == 'f' && (event.stateMask & SWT.CTRL) == SWT.CTRL) {
+                            openSearchDialog();
+                        }
+                        break;
+                    }
             }
         };
         browser.addListener(SWT.Dispose, listener);
         browser.addListener(SWT.FocusIn, listener);
         browser.addListener(SWT.KeyDown, listener);
         browser.addListener(SWT.Resize, listener);
+        browser.addDisposeListener(e -> closeSearchDialog());
+        browser.addControlListener(ControlListener.controlResizedAdapter(this::browserShellMoved));
+        browser.addControlListener(ControlListener.controlMovedAdapter(this::browserShellMoved));
+        browser.getShell().addControlListener(browserMoveListener);
         /*
 	* Bug in WebKitGTK.  MouseOver/MouseLeave events are not consistently sent from
 	* the DOM when the mouse enters and exits the browser control, see
@@ -895,6 +934,9 @@ class WebKit extends WebBrowser {
     //         false = blocks disposal. In Browser.java, user is told widget was not disposed.
     // See Snippet326.
     boolean close(boolean showPrompters) {
+        if (browser != null && !browser.isDisposed()) {
+            browser.getShell().removeControlListener(browserMoveListener);
+        }
         // don't execute any JavaScript if it's disabled or requested to get disabled
         // we need to check jsEnabledOnNextPage here because jsEnabled is updated asynchronously
         // and may not reflect the proper state (bug 571746 and bug 567881)
@@ -1020,7 +1062,7 @@ class WebKit extends WebBrowser {
 
             boolean callbackFinished = false;
 
-            // As note, if browser is disposed during excution, null is returned.
+            // As note, if browser is disposed during execution, null is returned.
             Object returnValue = null;
 
             /**
@@ -1229,10 +1271,23 @@ class WebKit extends WebBrowser {
             long context = WebKitGTK.webkit_web_context_get_default();
             long cookieManager = WebKitGTK.webkit_web_context_get_cookie_manager(context);
             byte[] bytes = Converter.wcsToMbcs(cookieUrl, true);
-            long uri = WebKitGTK.soup_uri_new(bytes);
-            if (uri == 0) {
-                System.err.println("SWT WebKit: SoupURI == 0 when setting cookie");
-                return false;
+            long uri;
+            if (WebKitGTK.soup_get_major_version() == 2) {
+                uri = WebKitGTK.soup_uri_new(bytes);
+                if (uri == 0) {
+                    System.err.println("SWT WebKit: SoupURI == 0 when setting cookie");
+                    return false;
+                }
+            } else {
+                long[] error = new long[1];
+                uri = OS.g_uri_parse(bytes, 0, error);
+                if (uri == 0) {
+                    long errorMessageC = OS.g_error_get_message(error[0]);
+                    String errorMessageStr = Converter.cCharPtrToJavaString(errorMessageC, false);
+                    OS.g_error_free(error[0]);
+                    System.err.format("SWT WebKit: Failed to parse cookie URI: %s%n", errorMessageStr);
+                    return false;
+                }
             }
             bytes = Converter.wcsToMbcs(cookieValue, true);
             long soupCookie = WebKitGTK.soup_cookie_parse(bytes, uri);
@@ -1902,7 +1957,7 @@ class WebKit extends WebBrowser {
     }
 
     void onResize(Event e) {
-        Rectangle rect = DPIUtil.autoScaleUp(browser.getClientArea());
+        Rectangle rect = browser.getClientArea();
         if (webView == 0)
             return;
         GTK.gtk_widget_set_size_request(webView, rect.width, rect.height);
@@ -2144,8 +2199,8 @@ class WebKit extends WebBrowser {
                             // Extract result meta data
                             // Get Media Type from Content-Type
                             String content_type = conn.getContentType();
-                            int paramaterSeparatorIndex = content_type.indexOf(';');
-                            mime_type = paramaterSeparatorIndex > 0 ? content_type.substring(0, paramaterSeparatorIndex) : content_type;
+                            int parameterSeparatorIndex = content_type.indexOf(';');
+                            mime_type = parameterSeparatorIndex > 0 ? content_type.substring(0, parameterSeparatorIndex) : content_type;
                             // Get Encoding if defined
                             if (content_type.indexOf(';') > 0) {
                                 String[] attrs = content_type.split(";");
@@ -2241,7 +2296,7 @@ class WebKit extends WebBrowser {
             // Permit evaluate()/execute() to execute scripts in listener, but do not provide return value.
             fireOpenWindowListeners.run();
         } catch (Exception e) {
-            // rethrow execption if thrown, but decrement counter first.
+            // rethrow exception if thrown, but decrement counter first.
             throw e;
         } finally {
             parentBrowser = null;
@@ -2727,6 +2782,111 @@ class WebKit extends WebBrowser {
         }
         long settings = WebKitGTK.webkit_web_view_get_settings(webView);
         OS.g_object_set(settings, property, value, 0);
+    }
+
+    private void browserShellMoved(ControlEvent e) {
+        closeSearchDialog();
+        searchShellLocation = null;
+    }
+
+    private void closeSearchDialog() {
+        if (searchShell != null && !searchShell.isDisposed()) {
+            searchShellLocation = searchShell.getLocation();
+            searchShell.close();
+            if (searchText != null && webView != 0) {
+                long findController = WebKitGTK.webkit_web_view_get_find_controller(webView);
+                WebKitGTK.webkit_find_controller_search_finish(findController);
+            }
+            searchText = null;
+        }
+    }
+
+    private void openSearchDialog() {
+        if (webView == 0 || (searchShell != null && !searchShell.isDisposed())) {
+            return;
+        }
+        Shell browserShell = browser.getShell();
+        Shell shell = new Shell(browserShell, SWT.TOOL | SWT.MODELESS);
+        Rectangle browserArea = browser.getClientArea();
+        int height = 45;
+        Point location;
+        if (searchShellLocation != null) {
+            location = searchShellLocation;
+        } else {
+            location = browser.toDisplay(0, 0);
+            location.y += Math.max(0, browserArea.height - height);
+        }
+        shell.setLocation(location);
+        shell.setSize(250, height);
+        GridLayout l = new GridLayout();
+        l.marginWidth = 8;
+        l.marginHeight = 8;
+        l.numColumns = 4;
+        shell.setLayout(l);
+        Text text = new Text(shell, SWT.BORDER);
+        text.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+        Cursor defaultCursor = SwtDisplay.getCurrent().getSystemCursor(SWT.CURSOR_ARROW);
+        Button next = new Button(shell, SWT.FLAT | SWT.ARROW | SWT.DOWN);
+        next.setCursor(defaultCursor);
+        Button previous = new Button(shell, SWT.FLAT | SWT.ARROW | SWT.UP);
+        previous.setCursor(defaultCursor);
+        shell.setCursor(SwtDisplay.getCurrent().getSystemCursor(SWT.CURSOR_SIZEALL));
+        boolean[] mouseDown = new boolean[1];
+        int[] xPos = new int[1];
+        int[] yPos = new int[1];
+        shell.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseUp(MouseEvent arg0) {
+                mouseDown[0] = false;
+            }
+
+            @Override
+            public void mouseDown(MouseEvent e) {
+                mouseDown[0] = true;
+                xPos[0] = e.x;
+                yPos[0] = e.y;
+            }
+        });
+        shell.addMouseMoveListener(e -> {
+            if (mouseDown[0]) {
+                shell.setLocation(shell.getLocation().x + (e.x - xPos[0]), shell.getLocation().y + (e.y - yPos[0]));
+            }
+        });
+        long findController = WebKitGTK.webkit_web_view_get_find_controller(webView);
+        Runnable searchNext = () -> search(findController, text::getText, WebKitGTK::webkit_find_controller_search_next);
+        Runnable searchPrevious = () -> search(findController, text::getText, WebKitGTK::webkit_find_controller_search_previous);
+        next.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> searchNext.run()));
+        previous.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> searchPrevious.run()));
+        text.addKeyListener(KeyListener.keyPressedAdapter(e -> {
+            if (e.keyCode == SWT.CR || e.keyCode == SWT.KEYPAD_CR) {
+                searchNext.run();
+            }
+        }));
+        shell.addDisposeListener(e -> {
+            searchShellLocation = searchShell.getLocation();
+            WebKitGTK.webkit_find_controller_search_finish(findController);
+            searchShell = null;
+        });
+        shell.open();
+        searchShell = shell;
+    }
+
+    private void search(long findController, Supplier<String> currentText, Consumer<Long> incrementSearch) {
+        // TODO: how to set no max count here?
+        int maxMatchesCount = WebKitGTK.G_MAXUINT;
+        int searchOptions = WebKitGTK.WEBKIT_FIND_OPTIONS_WRAP_AROUND;
+        String text = currentText.get();
+        if (!text.equals(searchText)) {
+            if (searchText != null) {
+                WebKitGTK.webkit_find_controller_search_finish(findController);
+            }
+            searchText = text;
+            byte[] textToSearch = Converter.wcsToMbcs(searchText, true);
+            WebKitGTK.webkit_find_controller_search(findController, textToSearch, searchOptions, maxMatchesCount);
+        } else {
+            incrementSearch.accept(Long.valueOf(findController));
+        }
     }
 
     static Object convertToJava(long ctx, long value) {

@@ -32,6 +32,24 @@ import org.eclipse.swt.internal.win32.*;
  */
 public final class SwtGCData implements IGCData {
 
+    int imageZoom;
+
+    void copyTo(GCData originalData) {
+        originalData.device = getApi().device;
+        originalData.style = getApi().style;
+        originalData.foreground = getApi().foreground;
+        originalData.background = getApi().background;
+        originalData.font = getApi().font;
+        originalData.nativeZoom = getApi().nativeZoom;
+        originalData.image = getApi().image;
+        ((SwtGCData) originalData.getImpl()).imageZoom = imageZoom;
+        originalData.ps = getApi().ps;
+        originalData.layout = getApi().layout;
+        originalData.hwnd = getApi().hwnd;
+        originalData.uiState = getApi().uiState;
+        originalData.focusDrawn = getApi().focusDrawn;
+    }
+
     public GCData getApi() {
         if (api == null)
             api = GCData.createApi(this);

@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2020 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -231,7 +231,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         if (layout != null) {
             if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
                 changed |= (getApi().state & LAYOUT_CHANGED) != 0;
-                size = DPIUtil.autoScaleUp(layout.computeSize(this.getApi(), DPIUtil.autoScaleDown(wHint), DPIUtil.autoScaleDown(hHint), changed));
+                size = layout.computeSize(this.getApi(), wHint, hHint, changed);
                 getApi().state &= ~LAYOUT_CHANGED;
             } else {
                 size = new Point(wHint, hHint);
@@ -247,7 +247,7 @@ public class DartComposite extends DartScrollable implements IComposite {
             size.x = wHint;
         if (hHint != SWT.DEFAULT)
             size.y = hHint;
-        Rectangle trim = DPIUtil.autoScaleUp(computeTrim(0, 0, DPIUtil.autoScaleDown(size.x), DPIUtil.autoScaleDown(size.y)));
+        Rectangle trim = computeTrim(0, 0, size.x, size.y);
         if (size.y == 64)
             trim.height = 32;
         return new Point(trim.width, trim.height);
@@ -297,8 +297,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         if (fixClipHandle == 0 || fixClipMap.isEmpty()) {
             return;
         } else {
-            Control[] children = _getChildren();
-            for (Control child : children) {
+            for (Control child : _getChildren()) {
                 if (fixClipMap.containsKey(child)) {
                     long[] childHandles = fixClipMap.get(child);
                     for (long widget : childHandles) {
@@ -357,14 +356,6 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
         checkWidget();
-        Rectangle rect = DPIUtil.autoScaleUp(new Rectangle(x, y, width, height));
-        offsetX = DPIUtil.autoScaleUp(offsetX);
-        offsetY = DPIUtil.autoScaleUp(offsetY);
-        drawBackgroundInPixels(gc, rect.x, rect.y, rect.width, rect.height, offsetX, offsetY);
-    }
-
-    void drawBackgroundInPixels(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
-        checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (gc.isDisposed())
@@ -384,7 +375,7 @@ public class DartComposite extends DartScrollable implements IComposite {
             } else {
             }
         } else {
-            gc.fillRectangle(DPIUtil.autoScaleDown(new Rectangle(x, y, width, height)));
+            gc.fillRectangle(new Rectangle(x, y, width, height));
         }
     }
 
@@ -404,9 +395,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         if (control == this.getApi())
             return new Menu[0];
         Menu[] result = super.findMenus(control);
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            Control child = children[i];
+        for (Control child : _getChildren()) {
             Menu[] menuList = child.getImpl().findMenus(control);
             if (menuList.length != 0) {
                 Menu[] newResult = new Menu[result.length + menuList.length];
@@ -421,17 +410,15 @@ public class DartComposite extends DartScrollable implements IComposite {
     @Override
     public void fixChildren(Shell newShell, Shell oldShell, Decorations newDecorations, Decorations oldDecorations, Menu[] menus) {
         super.fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            children[i].getImpl().fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
+        for (Control child : _getChildren()) {
+            child.getImpl().fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
         }
     }
 
     @Override
     void fixModal(long group, long modalGroup) {
-        Control[] controls = _getChildren();
-        for (int i = 0; i < controls.length; i++) {
-            ((DartControl) controls[i].getImpl()).fixModal(group, modalGroup);
+        for (Control control : _getChildren()) {
+            ((DartControl) control.getImpl()).fixModal(group, modalGroup);
         }
     }
 
@@ -440,9 +427,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         super.fixStyle();
         if (scrolledHandle == 0)
             fixStyle(getApi().handle);
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            children[i].getImpl().fixStyle();
+        for (Control child : _getChildren()) {
+            child.getImpl().fixStyle();
         }
     }
 
@@ -602,15 +588,15 @@ public class DartComposite extends DartScrollable implements IComposite {
         if (tabList == null) {
             int count = 0;
             Control[] list = _getChildren();
-            for (int i = 0; i < list.length; i++) {
-                if (list[i].getImpl().isTabGroup())
+            for (Control element : list) {
+                if (element.getImpl().isTabGroup())
                     count++;
             }
             tabList = new Control[count];
             int index = 0;
-            for (int i = 0; i < list.length; i++) {
-                if (list[i].getImpl().isTabGroup()) {
-                    tabList[index++] = list[i];
+            for (Control element : list) {
+                if (element.getImpl().isTabGroup()) {
+                    tabList[index++] = element;
                 }
             }
         }
@@ -966,9 +952,8 @@ public class DartComposite extends DartScrollable implements IComposite {
                 getApi().state |= LAYOUT_CHANGED;
         }
         if (all) {
-            Control[] children = _getChildren();
-            for (int i = 0; i < children.length; i++) {
-                children[i].getImpl().markLayout(changed, all);
+            for (Control child : _getChildren()) {
+                child.getImpl().markLayout(changed, all);
             }
         }
     }
@@ -992,9 +977,7 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     @Override
     void moveChildren(int oldWidth) {
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            Control child = children[i];
+        for (Control child : _getChildren()) {
             Control control = child.getImpl().findBackgroundControl();
             if (control != null && control.getImpl()._backgroundImage() != null) {
                 if (child.isVisible())
@@ -1004,15 +987,14 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     Point minimumSize(int wHint, int hHint, boolean changed) {
-        Control[] children = _getChildren();
         /*
 	 * Since getClientArea can be overridden by subclasses, we cannot
 	 * call getClientAreaInPixels directly.
 	 */
-        Rectangle clientArea = DPIUtil.autoScaleUp(getClientArea());
+        Rectangle clientArea = getClientArea();
         int width = 0, height = 0;
-        for (int i = 0; i < children.length; i++) {
-            Rectangle rect = DPIUtil.autoScaleUp(children[i].getBounds());
+        for (Control child : _getChildren()) {
+            Rectangle rect = child.getBounds();
             width = Math.max(width, rect.x - clientArea.x + rect.width);
             height = Math.max(height, rect.y - clientArea.y + rect.height);
         }
@@ -1029,7 +1011,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     void printWidget(GC gc, long drawable, int depth, int x, int y) {
         Region oldClip = new Region(gc.getDevice());
         Region newClip = new Region(gc.getDevice());
-        Point loc = DPIUtil.autoScaleDown(new Point(x, y));
+        Point loc = new Point(x, y);
         gc.getClipping(oldClip);
         Rectangle rect = getBounds();
         newClip.add(oldClip);
@@ -1040,7 +1022,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         Point pt = ((SwtDisplay) display.getImpl()).mapInPixels(this.getApi(), parent, clientRect.x, clientRect.y);
         clientRect.x = x + pt.x - rect.x;
         clientRect.y = y + pt.y - rect.y;
-        newClip.intersect(DPIUtil.autoScaleDown(clientRect));
+        newClip.intersect(clientRect);
         gc.setClipping(newClip);
         Control[] children = _getChildren();
         for (int i = children.length - 1; i >= 0; --i) {
@@ -1065,9 +1047,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     @Override
     void redrawChildren() {
         super.redrawChildren();
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            Control child = children[i];
+        for (Control child : _getChildren()) {
             if ((child.state & PARENT_BACKGROUND) != 0) {
                 ((DartControl) child.getImpl()).redrawWidget(0, 0, 0, 0, true, false, true);
                 ((DartControl) child.getImpl()).redrawChildren();
@@ -1119,9 +1099,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     @Override
     void reskinChildren(int flags) {
         super.reskinChildren(flags);
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            Control child = children[i];
+        for (Control child : _getChildren()) {
             if (child != null)
                 child.reskin(flags);
         }
@@ -1155,9 +1133,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         dirty();
         checkWidget();
         backgroundMode = mode;
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            children[i].getImpl().updateBackgroundMode();
+        for (Control child : _getChildren()) {
+            child.getImpl().updateBackgroundMode();
         }
     }
 
@@ -1174,9 +1151,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     @Override
     public boolean setFocus() {
         checkWidget();
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            Control child = children[i];
+        for (Control child : _getChildren()) {
             if (child.getVisible() && child.setFocus())
                 return true;
         }
@@ -1242,9 +1217,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         if (!create) {
             int flags = SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT;
             int orientation = getApi().style & flags;
-            Control[] children = _getChildren();
-            for (int i = 0; i < children.length; i++) {
-                children[i].setOrientation(orientation);
+            for (Control child : _getChildren()) {
+                child.setOrientation(orientation);
             }
             if (((getApi().style & SWT.RIGHT_TO_LEFT) != 0) != ((getApi().style & SWT.MIRRORED) != 0)) {
                 moveChildren(-1);
@@ -1273,9 +1247,7 @@ public class DartComposite extends DartScrollable implements IComposite {
             takeFocus = true;
         if (takeFocus && setTabItemFocus(next))
             return true;
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            Control child = children[i];
+        for (Control child : _getChildren()) {
             /*
 		 * It is unlikely but possible that a child is disposed at this point, for more
 		 * details refer bug 381668.
@@ -1349,9 +1321,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         if (super.translateMnemonic(event, control))
             return true;
         if (control != null) {
-            Control[] children = _getChildren();
-            for (int i = 0; i < children.length; i++) {
-                Control child = children[i];
+            for (Control child : _getChildren()) {
                 if (child.getImpl().translateMnemonic(event, control))
                     return true;
             }
@@ -1380,9 +1350,8 @@ public class DartComposite extends DartScrollable implements IComposite {
     @Override
     public void updateBackgroundMode() {
         super.updateBackgroundMode();
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            children[i].getImpl().updateBackgroundMode();
+        for (Control child : _getChildren()) {
+            child.getImpl().updateBackgroundMode();
         }
     }
 
@@ -1401,9 +1370,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         }
         if (all) {
             getApi().state &= ~LAYOUT_CHILD;
-            Control[] children = _getChildren();
-            for (int i = 0; i < children.length; i++) {
-                children[i].getImpl().updateLayout(all);
+            for (Control child : _getChildren()) {
+                child.getImpl().updateLayout(all);
             }
         }
     }

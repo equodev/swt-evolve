@@ -22,7 +22,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
-import org.eclipse.swt.widgets.*;
 
 /**
  * Instances of this class represent programs and
@@ -406,22 +405,11 @@ public final class SwtProgram implements IProgram {
      * @since 3.125
      */
     public ImageData getImageData(int zoom) {
-        // Windows API returns image data according to primary monitor zoom factor
-        // rather than at original scaling
-        int nativeZoomFactor = 100 * SwtDisplay.getCurrent().getPrimaryMonitor().getZoom() / DPIUtil.getDeviceZoom();
-        int imageZoomFactor = 100 * zoom / nativeZoomFactor;
-        if (extension != null) {
-            SHFILEINFO shfi = new SHFILEINFO();
-            int flags = OS.SHGFI_ICON | OS.SHGFI_SMALLICON | OS.SHGFI_USEFILEATTRIBUTES;
-            TCHAR pszPath = new TCHAR(0, extension, true);
-            OS.SHGetFileInfo(pszPath.chars, OS.FILE_ATTRIBUTE_NORMAL, shfi, SHFILEINFO.sizeof, flags);
-            if (shfi.hIcon != 0) {
-                Image image = SwtImage.win32_new(null, SWT.ICON, shfi.hIcon);
-                ImageData imageData = image.getImageData(imageZoomFactor);
-                image.dispose();
-                return imageData;
-            }
-        }
+        ImageData imageData = getImageDataUsingIconFilePath(zoom);
+        return (imageData != null) ? imageData : getImageDataUsingExtension(zoom);
+    }
+
+    private ImageData getImageDataUsingIconFilePath(int zoom) {
         int nIconIndex = 0;
         String fileName = iconName;
         int index = iconName.indexOf(',');
@@ -440,14 +428,49 @@ public final class SwtProgram implements IProgram {
             }
         }
         TCHAR lpszFile = new TCHAR(0, fileName, true);
-        long[] phiconSmall = new long[1], phiconLarge = null;
-        OS.ExtractIconEx(lpszFile, nIconIndex, phiconLarge, phiconSmall, 1);
-        if (phiconSmall[0] == 0)
+        long[] hIcon = new long[1];
+        int size = OS.GetSystemMetricsForDpi(OS.SM_CXSMICON, DPIUtil.mapZoomToDPI(zoom));
+        OS.SHDefExtractIcon(lpszFile, nIconIndex, 0, hIcon, null, size);
+        if (hIcon[0] == 0) {
             return null;
-        Image image = SwtImage.win32_new(null, SWT.ICON, phiconSmall[0]);
-        ImageData imageData = image.getImageData(imageZoomFactor);
+        }
+        Image image = SwtImage.win32_new(null, SWT.ICON, hIcon[0], zoom);
+        ImageData imageData = image.getImageData(zoom);
         image.dispose();
         return imageData;
+    }
+
+    private ImageData getImageDataUsingExtension(int zoom) {
+        if (extension != null) {
+            // OS.SHGetFileInfo is System DPI-aware, hence it retrieves the icon with zoom
+            // of primary monitor at the application startup
+            int initialNativeZoom = getPrimaryMonitorZoomAtStartup();
+            SHFILEINFO shfi = new SHFILEINFO();
+            int flags = OS.SHGFI_ICON | OS.SHGFI_USEFILEATTRIBUTES;
+            boolean useLargeIcon = 100 * zoom / initialNativeZoom >= 200;
+            if (useLargeIcon) {
+                flags |= OS.SHGFI_LARGEICON;
+                initialNativeZoom *= 2;
+            } else {
+                flags |= OS.SHGFI_SMALLICON;
+            }
+            TCHAR pszPath = new TCHAR(0, extension, true);
+            OS.SHGetFileInfo(pszPath.chars, OS.FILE_ATTRIBUTE_NORMAL, shfi, SHFILEINFO.sizeof, flags);
+            if (shfi.hIcon != 0) {
+                Image image = SwtImage.win32_new(null, SWT.ICON, shfi.hIcon, initialNativeZoom);
+                ImageData imageData = image.getImageData(zoom);
+                image.dispose();
+                return imageData;
+            }
+        }
+        return null;
+    }
+
+    private int getPrimaryMonitorZoomAtStartup() {
+        long hDC = OS.GetDC(0);
+        int dpi = OS.GetDeviceCaps(hDC, OS.LOGPIXELSX);
+        OS.ReleaseDC(0, hDC);
+        return DPIUtil.mapDPIToZoom(dpi);
     }
 
     /**

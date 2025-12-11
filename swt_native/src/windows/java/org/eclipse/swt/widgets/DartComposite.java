@@ -193,36 +193,15 @@ public class DartComposite extends DartScrollable implements IComposite {
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
         ((SwtDisplay) display.getImpl()).runSkin();
-        Point size;
         if (layout != null) {
             if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
                 changed |= (getApi().state & LAYOUT_CHANGED) != 0;
                 getApi().state &= ~LAYOUT_CHANGED;
-                int zoom = getZoom();
-                size = DPIUtil.scaleUp(layout.computeSize(this.getApi(), DPIUtil.scaleDown(wHint, zoom), DPIUtil.scaleDown(hHint, zoom), changed), zoom);
             } else {
-                size = new Point(wHint, hHint);
             }
         } else {
-            size = minimumSize(wHint, hHint, changed);
-            if (size.x == 0)
-                size.x = DEFAULT_WIDTH;
-            if (size.y == 0)
-                size.y = DEFAULT_HEIGHT;
         }
-        if (wHint != SWT.DEFAULT)
-            size.x = wHint;
-        if (hHint != SWT.DEFAULT)
-            size.y = hHint;
-        /*
-	 * Since computeTrim can be overridden by subclasses, we cannot
-	 * call computeTrimInPixels directly.
-	 */
-        int zoom = getZoom();
-        Rectangle trim = DPIUtil.scaleUp(computeTrim(0, 0, DPIUtil.scaleDown(size.x, zoom), DPIUtil.scaleDown(size.y, zoom)), zoom);
-        if (size.y == 64)
-            trim.height = 32;
-        return new Point(trim.width, trim.height);
+        return null;
     }
 
     /**
@@ -306,14 +285,6 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
         checkWidget();
-        int zoom = getZoom();
-        x = DPIUtil.scaleUp(x, zoom);
-        y = DPIUtil.scaleUp(y, zoom);
-        width = DPIUtil.scaleUp(width, zoom);
-        height = DPIUtil.scaleUp(height, zoom);
-        offsetX = DPIUtil.scaleUp(offsetX, zoom);
-        offsetY = DPIUtil.scaleUp(offsetY, zoom);
-        drawBackgroundInPixels(gc, x, y, width, height, offsetX, offsetY);
     }
 
     void drawBackgroundInPixels(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
@@ -834,20 +805,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     Point minimumSize(int wHint, int hHint, boolean changed) {
-        /*
-                     * Since getClientArea can be overridden by subclasses, we cannot
-                     * call getClientAreaInPixels directly.
-                     */
-        int zoom = getZoom();
-        Rectangle clientArea = DPIUtil.scaleUp(getClientArea(), zoom);
         int width = 0, height = 0;
-        Control[] children = _getChildren();
-        for (int i = 0; i < children.length; i++) {
-            Control element = children[i];
-            Rectangle rect = DPIUtil.scaleUp(element.getBounds(), zoom);
-            width = Math.max(width, rect.x - clientArea.x + rect.width);
-            height = Math.max(height, rect.y - clientArea.y + rect.height);
-        }
         return new Point(width, height);
     }
 

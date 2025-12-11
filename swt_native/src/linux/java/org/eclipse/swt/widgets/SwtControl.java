@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -220,11 +220,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 cairo_rectangle_int_t regionRect = new cairo_rectangle_int_t();
                 int[] fetchedHeight = new int[1];
                 int[] fetchedWidth = new int[1];
-                if (GTK.GTK4) {
-                    gdk_surface_get_size(gdkResource, fetchedWidth, fetchedHeight);
-                } else {
-                    gdk_window_get_size(gdkResource, fetchedWidth, fetchedHeight);
-                }
+                gdk_surface_get_size(gdkResource, fetchedWidth, fetchedHeight);
                 regionRect.x = 0;
                 regionRect.y = 0;
                 regionRect.width = fetchedWidth[0];
@@ -882,9 +878,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             wHint = 0;
         if (hHint != SWT.DEFAULT && hHint < 0)
             hHint = 0;
-        wHint = DPIUtil.autoScaleUp(wHint);
-        hHint = DPIUtil.autoScaleUp(hHint);
-        return DPIUtil.autoScaleDown(computeSizeInPixels(wHint, hHint, changed));
+        return computeSizeInPixels(wHint, hHint, changed);
     }
 
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
@@ -907,14 +901,14 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             int[] natural_size = new int[1];
             if (wHint == SWT.DEFAULT) {
                 if (GTK.GTK4) {
-                    GTK4.gtk_widget_measure(h, GTK.GTK_ORIENTATION_HORIZONTAL, height, null, natural_size, null, null);
+                    GTK4.gtk_widget_measure(h, GTK.GTK_ORIENTATION_HORIZONTAL, height > 0 ? height : -1, null, natural_size, null, null);
                 } else {
                     GTK3.gtk_widget_get_preferred_width_for_height(h, height, null, natural_size);
                 }
                 width = natural_size[0];
             } else {
                 if (GTK.GTK4) {
-                    GTK4.gtk_widget_measure(h, GTK.GTK_ORIENTATION_VERTICAL, width, null, natural_size, null, null);
+                    GTK4.gtk_widget_measure(h, GTK.GTK_ORIENTATION_VERTICAL, width > 0 ? width : -1, null, natural_size, null, null);
                 } else {
                     GTK3.gtk_widget_get_preferred_height_for_width(h, width, null, natural_size);
                 }
@@ -985,7 +979,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public Rectangle getBounds() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getBoundsInPixels());
+        return getBoundsInPixels();
     }
 
     Rectangle getBoundsInPixels() {
@@ -1029,7 +1023,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         checkWidget();
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        rect = DPIUtil.autoScaleUp(rect);
         setBounds(rect.x, rect.y, Math.max(0, rect.width), Math.max(0, rect.height), true, true);
     }
 
@@ -1070,7 +1063,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public void setBounds(int x, int y, int width, int height) {
         checkWidget();
-        Rectangle rect = DPIUtil.autoScaleUp(new Rectangle(x, y, width, height));
+        Rectangle rect = new Rectangle(x, y, width, height);
         setBounds(rect.x, rect.y, Math.max(0, rect.width), Math.max(0, rect.height), true, true);
     }
 
@@ -1203,10 +1196,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 		 */
             if (!GTK.gtk_widget_get_visible(topHandle)) {
                 Control focusControl = display.getFocusControl();
-                GTK.gtk_widget_show(topHandle);
+                gtk_widget_show(topHandle);
                 gtk_widget_get_preferred_size(topHandle, requisition);
                 gtk_widget_size_allocate(topHandle, allocation, -1);
-                GTK.gtk_widget_hide(topHandle);
+                gtk_widget_hide(topHandle);
                 /* Bug 540002: Showing and hiding widget causes original focused control to loose focus,
 			 * Reset focus to original focused control after dealing with allocation.
 			 */
@@ -1237,7 +1230,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                         GDK.gdk_window_hide(enableWindow);
                     }
                 }
-                GTK.gtk_widget_hide(topHandle);
+                gtk_widget_hide(topHandle);
             } else {
                 if ((getApi().state & HIDDEN) == 0) {
                     if (!GTK.GTK4) {
@@ -1245,7 +1238,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                             GDK.gdk_window_show_unraised(enableWindow);
                         }
                     }
-                    GTK.gtk_widget_show(topHandle);
+                    gtk_widget_show(topHandle);
                 }
             }
             if ((getApi().style & SWT.MIRRORED) != 0)
@@ -1270,10 +1263,15 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     /**
-     * Returns a point describing the receiver's location relative
-     * to its parent in points (or its display if its parent is null), unless
-     * the receiver is a shell. In this case, the point is
-     * relative to the display.
+     * Returns a point describing the receiver's location relative to its parent in
+     * points (or its display if its parent is null), unless the receiver is a
+     * shell. In this case, the point is usually relative to the display.
+     * <p>
+     * <b>Warning:</b> When executing this operation on a shell, it may not yield a
+     * value with the expected meaning on some platforms. For example, executing
+     * this operation on a shell when the environment uses the Wayland protocol, the
+     * result is <b>not</b> a coordinate relative to the display. It will not change
+     * when moving the shell.
      *
      * @return the receiver's location
      *
@@ -1284,7 +1282,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public Point getLocation() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getLocationInPixels());
+        return getLocationInPixels();
     }
 
     Point getLocationInPixels() {
@@ -1302,11 +1300,14 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     /**
-     * Sets the receiver's location to the point specified by
-     * the arguments which are relative to the receiver's
-     * parent (or its display if its parent is null), unless
-     * the receiver is a shell. In this case, the point is
-     * relative to the display.
+     * Sets the receiver's location to the point specified by the argument which
+     * is relative to the receiver's parent (or its display if its parent is null),
+     * unless the receiver is a shell. In this case, the point is relative to the
+     * display.
+     * <p>
+     * <b>Warning:</b> When executing this operation on a shell, it may not have the
+     * intended effect on some platforms. For example, executing this operation on a
+     * shell when the environment uses the Wayland protocol, nothing will happen.
      *
      * @param location the new location for the receiver
      *
@@ -1319,7 +1320,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        location = DPIUtil.autoScaleUp(location);
         setBounds(location.x, location.y, 0, 0, true, false);
     }
 
@@ -1331,11 +1331,14 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     /**
-     * Sets the receiver's location to the point specified by
-     * the arguments which are relative to the receiver's
-     * parent (or its display if its parent is null), unless
-     * the receiver is a shell. In this case, the point is
-     * relative to the display.
+     * Sets the receiver's location to the point specified by the arguments which
+     * are relative to the receiver's parent (or its display if its parent is null),
+     * unless the receiver is a shell. In this case, the point is relative to the
+     * display.
+     * <p>
+     * <b>Warning:</b> When executing this operation on a shell, it may not have the
+     * intended effect on some platforms. For example, executing this operation on a
+     * shell when the environment uses the Wayland protocol, nothing will happen.
      *
      * @param x the new x coordinate for the receiver
      * @param y the new y coordinate for the receiver
@@ -1347,7 +1350,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public void setLocation(int x, int y) {
         checkWidget();
-        Point loc = DPIUtil.autoScaleUp(new Point(x, y));
+        Point loc = new Point(x, y);
         setBounds(loc.x, loc.y, 0, 0, true, false);
     }
 
@@ -1371,7 +1374,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public Point getSize() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getSizeInPixels());
+        return getSizeInPixels();
     }
 
     public Point getSizeInPixels() {
@@ -1411,7 +1414,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = DPIUtil.autoScaleUp(size);
         setBounds(0, 0, Math.max(0, size.x), Math.max(0, size.y), false, true);
     }
 
@@ -1447,6 +1449,11 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         this.region = region;
         long topHandle = topHandle();
         if (OS.G_OBJECT_TYPE(topHandle) == GTK.GTK_TYPE_WINDOW()) {
+            if (GTK.GTK4) {
+                //TODO gtk_widget_shape_combine_region is removed and one has to hook at the rendering layer as per
+                // https://gitlab.gnome.org/GNOME/gtk/-/commit/0ce19eed083c79c5fb4091db3ecaf528346e610f
+                return;
+            }
             GTK3.gtk_widget_shape_combine_region(topHandle, shape_region);
             /*
 		 * Bug in GTK: on Wayland, pixels in window outside shape_region
@@ -1530,7 +1537,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public void setSize(int width, int height) {
         checkWidget();
-        Point size = DPIUtil.autoScaleUp(new Point(width, height));
+        Point size = new Point(width, height);
         setBounds(0, 0, Math.max(0, size.x), Math.max(0, size.y), false, true);
     }
 
@@ -1717,10 +1724,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             long window = eventWindow();
             GDK.gdk_window_get_origin(window, origin_x, origin_y);
         }
-        x -= DPIUtil.autoScaleDown(origin_x[0]);
-        y -= DPIUtil.autoScaleDown(origin_y[0]);
+        x -= origin_x[0];
+        y -= origin_y[0];
         if ((getApi().style & SWT.MIRRORED) != 0)
-            x = DPIUtil.autoScaleDown(getClientWidth()) - x;
+            x = getClientWidth() - x;
         return new Point(x, y);
     }
 
@@ -1783,9 +1790,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             GDK.gdk_window_get_origin(window, origin_x, origin_y);
         }
         if ((getApi().style & SWT.MIRRORED) != 0)
-            x = DPIUtil.autoScaleDown(getClientWidth()) - x;
-        x += DPIUtil.autoScaleDown(origin_x[0]);
-        y += DPIUtil.autoScaleDown(origin_y[0]);
+            x = getClientWidth() - x;
+        x += origin_x[0];
+        y += origin_y[0];
         return new Point(x, y);
     }
 
@@ -1832,13 +1839,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         return toDisplay(point.x, point.y);
-    }
-
-    Point toDisplayInPixels(Point point) {
-        checkWidget();
-        if (point == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
-        return toDisplayInPixels(point.x, point.y);
     }
 
     /**
@@ -2781,7 +2781,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             //Note, input params x/y are relative, the two points below are absolute coords.
             Point startPos = null;
             Point currPos = null;
-            startPos = ((SwtDisplay) display.getImpl()).getCursorLocationInPixels();
+            startPos = display.getCursorLocation();
             while (!quit) {
                 long eventPtr = 0;
                 /*
@@ -2796,7 +2796,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                     if (eventPtr != 0) {
                         break;
                     } else {
-                        currPos = ((SwtDisplay) display.getImpl()).getCursorLocationInPixels();
+                        currPos = display.getCursorLocation();
                         dragging = GTK3.gtk_drag_check_threshold(getApi().handle, startPos.x, startPos.y, currPos.x, currPos.y);
                         if (dragging)
                             break;
@@ -3113,7 +3113,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      * </ul>
      */
     public int getBorderWidth() {
-        return DPIUtil.autoScaleDown(getBorderWidthInPixels());
+        return getBorderWidthInPixels();
     }
 
     int getBorderWidthInPixels() {
@@ -3512,26 +3512,41 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      * Handling multi-press event on GTK4
      */
     @Override
-    void gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
+    int gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
         mouseDown = true;
         int eventButton = GDK.gdk_button_event_get_button(event);
         int eventTime = GDK.gdk_event_get_time(event);
         int eventState = GDK.gdk_event_get_modifier_state(event);
+        int result = GTK4.GTK_EVENT_SEQUENCE_NONE;
         ((SwtDisplay) display.getImpl()).clickCount = n_press;
         if (n_press == 1) {
-            sendMouseEvent(SWT.MouseDown, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
-            if ((getApi().state & MENU) == 0) {
-                if (eventButton == 3) {
-                    showMenu((int) x, (int) y);
+            boolean cancelled = sendMouseEvent(SWT.MouseDown, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
+            if (!cancelled) {
+                result = GTK4.GTK_EVENT_SEQUENCE_CLAIMED;
+            }
+            if (eventButton == 3) {
+                if ((getApi().state & MENU) != 0 || menu != null) {
+                    if (showMenu((int) x, (int) y)) {
+                        result = GTK4.GTK_EVENT_SEQUENCE_CLAIMED;
+                    }
                 }
             }
-        } else if (n_press == 2) {
-            sendMouseEvent(SWT.MouseDoubleClick, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
+        } else if (n_press >= 2) {
+            boolean cancelled = sendMouseEvent(SWT.MouseDoubleClick, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
+            //Issue 344, DoubleClick event currently unsupported below sendMouseEvent(). Until DoubleClickSupport is
+            //added this will catch failed events and try MouseDown instead.
+            if (cancelled) {
+                cancelled = sendMouseEvent(SWT.MouseDown, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
+            }
+            if (!cancelled) {
+                result = GTK4.GTK_EVENT_SEQUENCE_CLAIMED;
+            }
         }
+        return result;
     }
 
     @Override
-    void gtk_gesture_release_event(long gesture, int n_press, double x, double y, long event) {
+    int gtk_gesture_release_event(long gesture, int n_press, double x, double y, long event) {
         mouseDown = false;
         double[] eventX = new double[1];
         double[] eventY = new double[1];
@@ -3542,8 +3557,13 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         lastInput.x = (int) eventX[0];
         lastInput.y = (int) eventY[0];
         if (containedInRegion(lastInput.x, lastInput.y))
-            return;
-        sendMouseEvent(SWT.MouseUp, eventButton, ((SwtDisplay) display.getImpl()).clickCount, 0, false, eventTime, 0, 0, false, eventState);
+            return GTK4.GTK_EVENT_SEQUENCE_NONE;
+        boolean cancelled = sendMouseEvent(SWT.MouseUp, eventButton, ((SwtDisplay) display.getImpl()).clickCount, 0, false, eventTime, x, y, false, eventState);
+        int result = GTK4.GTK_EVENT_SEQUENCE_NONE;
+        if (!cancelled) {
+            result = GTK4.GTK_EVENT_SEQUENCE_CLAIMED;
+        }
+        return result;
     }
 
     @Override
@@ -3630,8 +3650,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             // See comment in #dragDetect()
             if (OS.isX11()) {
                 if (dragging) {
-                    Point scaledEvent = DPIUtil.autoScaleDown(new Point((int) eventX[0], (int) eventY[0]));
-                    sendDragEvent(eventButton[0], eventState[0], scaledEvent.x, scaledEvent.y, false);
+                    sendDragEvent(eventButton[0], eventState[0], (int) eventX[0], (int) eventY[0], false);
                     if (isDisposed())
                         return 1;
                 }
@@ -3705,7 +3724,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             char[] chars = fixMnemonic(toolTipText, false, true);
             buffer = Converter.wcsToMbcs(chars, true);
         }
-        long toolHandle = getShell().handle;
+        long toolHandle = getApi().handle;
         GTK.gtk_widget_set_tooltip_text(toolHandle, buffer);
         if (((SwtDisplay) display.getImpl()).currentControl == this.getApi())
             return;
@@ -3814,10 +3833,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 {
                     if (!isFocusHandle(widget))
                         break;
-                    boolean[] focusIn = new boolean[1];
                     GdkEventFocus gdkEventFocus = new GdkEventFocus();
                     GTK3.memmove(gdkEventFocus, gdkEvent, GdkEventFocus.sizeof);
-                    focusIn[0] = gdkEventFocus.in != 0;
+                    boolean focusIn = gdkEventFocus.in != 0;
                     /*
 			 * Feature in GTK. The GTK combo box popup under some window managers
 			 * is implemented as a GTK_MENU.  When it pops up, it causes the combo
@@ -3828,7 +3846,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 			 * NOTE: This code runs for all menus.
 			 */
                     Display display = this.display;
-                    if (focusIn[0]) {
+                    if (focusIn) {
                         if (((SwtDisplay) display.getImpl()).ignoreFocus) {
                             ((SwtDisplay) display.getImpl()).ignoreFocus = false;
                             break;
@@ -3843,7 +3861,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                             }
                         }
                     }
-                    sendFocusEvent(focusIn[0] ? SWT.FocusIn : SWT.FocusOut);
+                    sendFocusEvent(focusIn ? SWT.FocusIn : SWT.FocusOut);
                     break;
                 }
         }
@@ -3957,9 +3975,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             return 0;
         Event event = new Event();
         event.count = 1;
-        Rectangle eventBounds = DPIUtil.autoScaleDown(new Rectangle(rect.x, rect.y, rect.width, rect.height));
+        Rectangle eventBounds = new Rectangle(rect.x, rect.y, rect.width, rect.height);
         if ((getApi().style & SWT.MIRRORED) != 0)
-            eventBounds.x = DPIUtil.autoScaleDown(getClientWidth()) - eventBounds.width - eventBounds.x;
+            eventBounds.x = getClientWidth() - eventBounds.width - eventBounds.x;
         event.setBounds(eventBounds);
         GCData data = new GCData();
         /*
@@ -4136,6 +4154,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         ((SwtDisplay) display.getImpl()).removeMouseHoverTimeout(getApi().handle);
         if (sendLeaveNotify() || display.getCursorControl() == null) {
             sendMouseEvent(SWT.MouseExit, 0, 0, 0, 0, false, 0);
+            ((SwtDisplay) display.getImpl()).currentControl = null;
         }
     }
 
@@ -4250,7 +4269,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 int eventType = GDK.gdk_event_get_event_type(event);
                 if (eventType == GDK.GDK_3BUTTON_PRESS)
                     return 0;
-                Point scaledEvent = DPIUtil.autoScaleDown(new Point((int) eventX[0], (int) eventY[0]));
+                Point scaledEvent = new Point((int) eventX[0], (int) eventY[0]);
                 int[] eventButton = new int[1];
                 int[] eventState = new int[1];
                 if (GTK.GTK4) {
@@ -4311,19 +4330,11 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
-    long gtk_popup_menu(long widget) {
+    long gtk3_popup_menu(long widget) {
         if (!hasFocus())
             return 0;
         int[] x = new int[1], y = new int[1];
-        if (GTK.GTK4) {
-            /*
-		 * TODO: calling gdk_window_get_device_position() with a 0
-		 * for the GdkWindow uses gdk_get_default_root_window(),
-		 * which doesn't exist on GTK4.
-		 */
-        } else {
-            ((SwtDisplay) display.getImpl()).getWindowPointerPosition(0, x, y, null);
-        }
+        ((SwtDisplay) display.getImpl()).getWindowPointerPosition(0, x, y, null);
         return showMenu(x[0], y[0], SWT.MENU_KEYBOARD) ? 1 : 0;
     }
 
@@ -4775,12 +4786,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public void redraw(int x, int y, int width, int height, boolean all) {
         checkWidget();
-        Rectangle rect = DPIUtil.autoScaleUp(new Rectangle(x, y, width, height));
-        redrawInPixels(rect.x, rect.y, rect.width, rect.height, all);
-    }
-
-    void redrawInPixels(int x, int y, int width, int height, boolean all) {
-        checkWidget();
         if (!GTK.gtk_widget_get_visible(topHandle()))
             return;
         if ((getApi().style & SWT.MIRRORED) != 0)
@@ -4925,7 +4930,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 if (GTK.GTK_IS_WINDOW(currHandle)) {
                     GTK4.gtk_window_destroy(currHandle);
                 } else {
-                    OS.swt_fixed_remove(parent.getImpl().parentingHandle(), fixedHandle);
+                    if (fixedHandle != 0) {
+                        OS.swt_fixed_remove(parent.getImpl().parentingHandle(), fixedHandle);
+                    }
                 }
             }
             releaseHandle();
@@ -4968,7 +4975,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Rectangle eventRect = new Rectangle(x, y, 0, 0);
         event.setBounds(eventRect);
         if ((getApi().style & SWT.MIRRORED) != 0)
-            event.x = DPIUtil.autoScaleDown(getClientWidth()) - event.x;
+            event.x = getClientWidth() - event.x;
         if (isStateMask) {
             event.stateMask = stateMask;
         } else {
@@ -5153,7 +5160,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (is_hint) {
             // coordinates are already window-relative, see #gtk_motion_notify_event(..) and bug 94502
             Rectangle eventRect = new Rectangle((int) x, (int) y, 0, 0);
-            event.setBounds(DPIUtil.autoScaleDown(eventRect));
+            event.setBounds(eventRect);
         } else {
             int[] origin_x = new int[1], origin_y = new int[1];
             Rectangle eventRect;
@@ -5162,16 +5169,16 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 //			GDK.gdk_surface_get_origin (surface, origin_x, origin_y);
                 //			eventRect = new Rectangle ((int)x - origin_x [0], (int)y - origin_y [0], 0, 0);
                 eventRect = new Rectangle((int) x, (int) y, 0, 0);
-                event.setBounds(DPIUtil.autoScaleDown(eventRect));
+                event.setBounds(eventRect);
             } else {
                 long window = eventWindow();
                 GDK.gdk_window_get_origin(window, origin_x, origin_y);
                 eventRect = new Rectangle((int) x - origin_x[0], (int) y - origin_y[0], 0, 0);
-                event.setBounds(DPIUtil.autoScaleDown(eventRect));
+                event.setBounds(eventRect);
             }
         }
         if ((getApi().style & SWT.MIRRORED) != 0)
-            event.x = DPIUtil.autoScaleDown(getClientWidth()) - event.x;
+            event.x = getClientWidth() - event.x;
         setInputState(event, state);
         /**
          * Bug 510446:
@@ -5281,6 +5288,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      * <p>
      * Note: This operation is a hint and may be overridden by the platform.
      * </p>
+     * <p>
+     * Note: The background color can be overridden by setting a background image.
+     * </p>
      * @param color the new color (or null)
      *
      * @exception IllegalArgumentException <ul>
@@ -5386,6 +5396,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      * <p>
      * Note: This operation is a hint and may be overridden by the platform.
      * For example, on Windows the background of a Button cannot be changed.
+     * </p>
+     * <p>
+     * Note: Setting a background image overrides a set background color.
      * </p>
      * @param image the new image (or null)
      *
@@ -5973,6 +5986,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             return true;
         if (!isReparentable())
             return false;
+        // preserve focus when re-parenting
+        Control focusControlBeforeReparent = display.getFocusControl();
         GTK.gtk_widget_realize(parent.handle);
         long topHandle = topHandle();
         GtkAllocation allocation = new GtkAllocation();
@@ -6020,6 +6035,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         this.parent = parent;
         setZOrder(null, false, true);
         reskin(SWT.ALL);
+        // restore focus to the last Control that had it, if focus is now gone
+        if (focusControlBeforeReparent != null && !focusControlBeforeReparent.isDisposed() && display.getFocusControl() == null) {
+            focusControlBeforeReparent.setFocus();
+        }
         return true;
     }
 
@@ -6243,7 +6262,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                     if (enableWindow != 0)
                         GDK.gdk_window_show_unraised(enableWindow);
                 }
-                GTK.gtk_widget_show(topHandle);
+                gtk_widget_show(topHandle);
             }
         } else {
             /*
@@ -6269,7 +6288,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                     return;
                 GTK.gtk_widget_set_can_focus(topHandle, true);
             }
-            GTK.gtk_widget_hide(topHandle);
+            gtk_widget_hide(topHandle);
             if (isDisposed())
                 return;
             if (!GTK.GTK4) {
@@ -6416,7 +6435,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     boolean showMenu(int x, int y, int detail) {
         Event event = new Event();
         Rectangle eventRect = new Rectangle(x, y, 0, 0);
-        event.setBounds(DPIUtil.autoScaleDown(eventRect));
+        event.setBounds(eventRect);
         event.detail = detail;
         sendEvent(SWT.MenuDetect, event);
         //widget could be disposed at this point
@@ -6433,13 +6452,13 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                     GTK.gtk_widget_set_parent(menu.handle, this.getApi().handle);
                     if (temp != 0)
                         OS.g_object_unref(temp);
-                    ((SwtMenu) menu.getImpl()).setLocationInPixels(x, y);
+                    menu.setLocation(x, y);
                     menu.setVisible(true);
                     return true;
                 } else {
-                    Rectangle rect = DPIUtil.autoScaleUp(event.getBounds());
+                    Rectangle rect = event.getBounds();
                     if (rect.x != x || rect.y != y) {
-                        ((SwtMenu) menu.getImpl()).setLocationInPixels(rect.x, rect.y);
+                        menu.setLocation(rect.x, rect.y);
                     }
                     menu.setVisible(true);
                     return true;
@@ -6463,10 +6482,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             GTK3.gtk_container_add(parentHandle, topHandle);
         }
         if (getApi().handle != 0 && getApi().handle != topHandle)
-            GTK.gtk_widget_show(getApi().handle);
+            gtk_widget_show(getApi().handle);
         if ((getApi().state & (ZERO_WIDTH | ZERO_HEIGHT)) == 0) {
             if (fixedHandle != 0)
-                GTK.gtk_widget_show(fixedHandle);
+                gtk_widget_show(fixedHandle);
         }
         if (fixedHandle != 0)
             fixStyle(fixedHandle);

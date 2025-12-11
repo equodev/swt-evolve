@@ -120,13 +120,11 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return DPIUtil.scaleDown(getBoundsInPixels(), getZoom());
+        return new Rectangle(x, x, x, x);
     }
 
     Rectangle getBoundsInPixels() {
         if (image != null) {
-            Rectangle rect = image.getBoundsInPixels();
-            return new Rectangle(getXInPixels(), getYInPixels(), rect.width, rect.height);
         }
         if (width == 0) {
         }
@@ -205,14 +203,14 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public Point getSize() {
+        dirty();
         checkWidget();
-        return DPIUtil.scaleDown(getSizeInPixels(), getZoom());
+        setBounds(x, y, width, height);
+        return new Point(width, height);
     }
 
     public Point getSizeInPixels() {
         if (image != null) {
-            Rectangle rect = image.getBoundsInPixels();
-            return new Point(rect.width, rect.height);
         }
         if (width == 0) {
         }
@@ -220,19 +218,19 @@ public class DartCaret extends DartWidget implements ICaret {
     }
 
     private int getWidthInPixels() {
-        return DPIUtil.scaleUp(width, getZoom());
+        return 0;
     }
 
     private int getHeightInPixels() {
-        return DPIUtil.scaleUp(height, getZoom());
+        return 0;
     }
 
     private int getXInPixels() {
-        return DPIUtil.scaleUp(x, getZoom());
+        return 0;
     }
 
     private int getYInPixels() {
-        return DPIUtil.scaleUp(y, getZoom());
+        return 0;
     }
 
     /**
@@ -426,8 +424,7 @@ public class DartCaret extends DartWidget implements ICaret {
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        Shell shell = parent.getShell();
-        this.font = font == null ? null : DartFont.win32_new(font, shell.nativeZoom);
+        this.font = font == null ? null : DartFont.win32_new(font, getNativeZoom());
         if (hasFocus())
             setIMEFont();
     }
@@ -460,8 +457,6 @@ public class DartCaret extends DartWidget implements ICaret {
 
     void setIMEFont() {
         long hFont = 0;
-        if (font != null)
-            hFont = font.handle;
         if (hFont == 0)
             hFont = defaultFont();
     }

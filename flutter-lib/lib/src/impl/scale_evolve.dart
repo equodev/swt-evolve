@@ -17,9 +17,8 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
     state.increment ??= 1;
     state.pageIncrement ??= 10;
 
-    final currentValue = state.selection!
-        .clamp(state.minimum!, state.maximum!)
-        .toDouble();
+    final currentValue =
+        state.selection!.clamp(state.minimum!, state.maximum!).toDouble();
 
     final width = state.bounds?.width.toDouble() ?? 200.0;
     final height = state.bounds?.height.toDouble() ?? 40.0;
@@ -90,9 +89,7 @@ class _SimpleScaleState extends State<_SimpleScale> {
 
     final tickInterval = (widget.max - widget.min) / 10;
     final ticks = List<double>.generate(
-      11,
-      (index) => widget.min + (index * tickInterval)
-    );
+        11, (index) => widget.min + (index * tickInterval));
 
     final scale = Stack(
       children: [
@@ -121,18 +118,22 @@ class _SimpleScaleState extends State<_SimpleScale> {
             value: displayValue.clamp(widget.min, widget.max),
             min: widget.min,
             max: widget.max,
-            onChanged: widget.enabled ? (value) {
-              setState(() {
-                _localValue = value;
-              });
-              widget.onChanged(value);
-            } : null,
-            onChangeEnd: widget.enabled ? (value) {
-              setState(() {
-                _localValue = null;
-              });
-              widget.onChangeEnd(value);
-            } : null,
+            onChanged: widget.enabled
+                ? (value) {
+                    setState(() {
+                      _localValue = value;
+                    });
+                    widget.onChanged(value);
+                  }
+                : null,
+            onChangeEnd: widget.enabled
+                ? (value) {
+                    setState(() {
+                      _localValue = null;
+                    });
+                    widget.onChangeEnd(value);
+                  }
+                : null,
           ),
         ),
       ],
@@ -189,7 +190,8 @@ class _TickMarkPainter extends CustomPainter {
     for (var tickValue in ticks) {
       final position = (tickValue - min) / (max - min);
 
-      final x = horizontalPadding + (position * (size.width - 2 * horizontalPadding));
+      final x =
+          horizontalPadding + (position * (size.width - 2 * horizontalPadding));
 
       canvas.drawLine(
         Offset(x, verticalCenter - 8),

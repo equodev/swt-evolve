@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -603,9 +603,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             wHint = 0;
         if (hHint != SWT.DEFAULT && hHint < 0)
             hHint = 0;
-        wHint = DPIUtil.autoScaleUp(wHint);
-        hHint = DPIUtil.autoScaleUp(hHint);
-        return DPIUtil.autoScaleDown(computeSizeInPixels(wHint, hHint, changed));
+        return computeSizeInPixels(wHint, hHint, changed);
     }
 
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
@@ -693,7 +691,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Rectangle getBounds() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getBoundsInPixels());
+        return getBoundsInPixels();
     }
 
     Rectangle getBoundsInPixels() {
@@ -728,7 +726,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        rect = DPIUtil.autoScaleUp(rect);
         setBounds(rect.x, rect.y, Math.max(0, rect.width), Math.max(0, rect.height), true, true);
     }
 
@@ -769,7 +766,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBounds(int x, int y, int width, int height) {
         checkWidget();
-        Rectangle rect = DPIUtil.autoScaleUp(new Rectangle(x, y, width, height));
+        Rectangle rect = new Rectangle(x, y, width, height);
         setBounds(rect.x, rect.y, Math.max(0, rect.width), Math.max(0, rect.height), true, true);
     }
 
@@ -857,20 +854,21 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             sendEvent(SWT.Resize);
             result |= RESIZED;
         }
-        int finalX = move ? x : this.bounds.x;
-        int finalY = move ? y : this.bounds.y;
-        int finalWidth = resize ? width : this.bounds.width;
-        int finalHeight = resize ? height : this.bounds.height;
-        this.bounds = new Rectangle(finalX, finalY, finalWidth, finalHeight);
+        this.bounds = new Rectangle(x, y, width, height);
         getBridge().setBounds(this, bounds);
         return result;
     }
 
     /**
-     * Returns a point describing the receiver's location relative
-     * to its parent in points (or its display if its parent is null), unless
-     * the receiver is a shell. In this case, the point is
-     * relative to the display.
+     * Returns a point describing the receiver's location relative to its parent in
+     * points (or its display if its parent is null), unless the receiver is a
+     * shell. In this case, the point is usually relative to the display.
+     * <p>
+     * <b>Warning:</b> When executing this operation on a shell, it may not yield a
+     * value with the expected meaning on some platforms. For example, executing
+     * this operation on a shell when the environment uses the Wayland protocol, the
+     * result is <b>not</b> a coordinate relative to the display. It will not change
+     * when moving the shell.
      *
      * @return the receiver's location
      *
@@ -881,7 +879,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point getLocation() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getLocationInPixels());
+        return getLocationInPixels();
     }
 
     Point getLocationInPixels() {
@@ -892,11 +890,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     /**
-     * Sets the receiver's location to the point specified by
-     * the arguments which are relative to the receiver's
-     * parent (or its display if its parent is null), unless
-     * the receiver is a shell. In this case, the point is
-     * relative to the display.
+     * Sets the receiver's location to the point specified by the argument which
+     * is relative to the receiver's parent (or its display if its parent is null),
+     * unless the receiver is a shell. In this case, the point is relative to the
+     * display.
+     * <p>
+     * <b>Warning:</b> When executing this operation on a shell, it may not have the
+     * intended effect on some platforms. For example, executing this operation on a
+     * shell when the environment uses the Wayland protocol, nothing will happen.
      *
      * @param location the new location for the receiver
      *
@@ -910,7 +911,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        location = DPIUtil.autoScaleUp(location);
         setBounds(location.x, location.y, 0, 0, true, false);
     }
 
@@ -922,11 +922,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     /**
-     * Sets the receiver's location to the point specified by
-     * the arguments which are relative to the receiver's
-     * parent (or its display if its parent is null), unless
-     * the receiver is a shell. In this case, the point is
-     * relative to the display.
+     * Sets the receiver's location to the point specified by the arguments which
+     * are relative to the receiver's parent (or its display if its parent is null),
+     * unless the receiver is a shell. In this case, the point is relative to the
+     * display.
+     * <p>
+     * <b>Warning:</b> When executing this operation on a shell, it may not have the
+     * intended effect on some platforms. For example, executing this operation on a
+     * shell when the environment uses the Wayland protocol, nothing will happen.
      *
      * @param x the new x coordinate for the receiver
      * @param y the new y coordinate for the receiver
@@ -939,7 +942,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setLocation(int x, int y) {
         dirty();
         checkWidget();
-        Point loc = DPIUtil.autoScaleUp(new Point(x, y));
+        Point loc = new Point(x, y);
         setBounds(loc.x, loc.y, 0, 0, true, false);
     }
 
@@ -963,7 +966,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point getSize() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getSizeInPixels());
+        return getSizeInPixels();
     }
 
     public Point getSizeInPixels() {
@@ -999,7 +1002,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = DPIUtil.autoScaleUp(size);
         setBounds(0, 0, Math.max(0, size.x), Math.max(0, size.y), false, true);
     }
 
@@ -1072,7 +1074,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setSize(int width, int height) {
         dirty();
         checkWidget();
-        Point size = DPIUtil.autoScaleUp(new Point(width, height));
+        Point size = new Point(width, height);
         setBounds(0, 0, Math.max(0, size.x), Math.max(0, size.y), false, true);
     }
 
@@ -1251,10 +1253,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public Point toControl(int x, int y) {
         checkWidget();
         int[] origin_x = new int[1], origin_y = new int[1];
-        x -= DPIUtil.autoScaleDown(origin_x[0]);
-        y -= DPIUtil.autoScaleDown(origin_y[0]);
+        x -= origin_x[0];
+        y -= origin_y[0];
         if ((getApi().style & SWT.MIRRORED) != 0)
-            x = DPIUtil.autoScaleDown(getClientWidth()) - x;
+            x = getClientWidth() - x;
         return new Point(x, y);
     }
 
@@ -1309,9 +1311,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         int[] origin_x = new int[1], origin_y = new int[1];
         if ((getApi().style & SWT.MIRRORED) != 0)
-            x = DPIUtil.autoScaleDown(getClientWidth()) - x;
-        x += DPIUtil.autoScaleDown(origin_x[0]);
-        y += DPIUtil.autoScaleDown(origin_y[0]);
+            x = getClientWidth() - x;
+        x += origin_x[0];
+        y += origin_y[0];
         return new Point(x, y);
     }
 
@@ -1350,13 +1352,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         return toDisplay(point.x, point.y);
-    }
-
-    Point toDisplayInPixels(Point point) {
-        checkWidget();
-        if (point == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
-        return toDisplayInPixels(point.x, point.y);
     }
 
     /**
@@ -2383,7 +2378,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public int getBorderWidth() {
-        return DPIUtil.autoScaleDown(getBorderWidthInPixels());
+        return getBorderWidthInPixels();
     }
 
     int getBorderWidthInPixels() {
@@ -2994,12 +2989,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void redraw(int x, int y, int width, int height, boolean all) {
         checkWidget();
-        Rectangle rect = DPIUtil.autoScaleUp(new Rectangle(x, y, width, height));
-        redrawInPixels(rect.x, rect.y, rect.width, rect.height, all);
-    }
-
-    void redrawInPixels(int x, int y, int width, int height, boolean all) {
-        checkWidget();
         if ((getApi().style & SWT.MIRRORED) != 0)
             x = getClientWidth() - width - x;
         redrawWidget(x, y, width, height, false, all, false);
@@ -3117,7 +3106,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Rectangle eventRect = new Rectangle(x, y, 0, 0);
         event.setBounds(eventRect);
         if ((getApi().style & SWT.MIRRORED) != 0)
-            event.x = DPIUtil.autoScaleDown(getClientWidth()) - event.x;
+            event.x = getClientWidth() - event.x;
         if (isStateMask) {
             event.stateMask = stateMask;
         } else {
@@ -3269,11 +3258,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (is_hint) {
             // coordinates are already window-relative, see #gtk_motion_notify_event(..) and bug 94502
             Rectangle eventRect = new Rectangle((int) x, (int) y, 0, 0);
-            event.setBounds(DPIUtil.autoScaleDown(eventRect));
+            event.setBounds(eventRect);
         } else {
         }
         if ((getApi().style & SWT.MIRRORED) != 0)
-            event.x = DPIUtil.autoScaleDown(getClientWidth()) - event.x;
+            event.x = getClientWidth() - event.x;
         setInputState(event, state);
         /**
          * Bug 510446:
@@ -3328,6 +3317,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * <p>
      * Note: This operation is a hint and may be overridden by the platform.
      * </p>
+     * <p>
+     * Note: The background color can be overridden by setting a background image.
+     * </p>
      * @param color the new color (or null)
      *
      * @exception IllegalArgumentException <ul>
@@ -3377,6 +3369,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * <p>
      * Note: This operation is a hint and may be overridden by the platform.
      * For example, on Windows the background of a Button cannot be changed.
+     * </p>
+     * <p>
+     * Note: Setting a background image overrides a set background color.
      * </p>
      * @param image the new image (or null)
      *
@@ -3802,6 +3797,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return true;
         if (!isReparentable())
             return false;
+        // preserve focus when re-parenting
+        Control focusControlBeforeReparent = display.getFocusControl();
         if ((this.parent.style & SWT.MIRRORED) != 0) {
         }
         if ((parent.style & SWT.MIRRORED) != 0) {
@@ -3816,6 +3813,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         ControlUtils.reparent(this, parent);
         setZOrder(null, false, true);
         reskin(SWT.ALL);
+        // restore focus to the last Control that had it, if focus is now gone
+        if (focusControlBeforeReparent != null && !focusControlBeforeReparent.isDisposed() && display.getFocusControl() == null) {
+            focusControlBeforeReparent.setFocus();
+        }
         return true;
     }
 
@@ -4134,7 +4135,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     boolean showMenu(int x, int y, int detail) {
         Event event = new Event();
         Rectangle eventRect = new Rectangle(x, y, 0, 0);
-        event.setBounds(DPIUtil.autoScaleDown(eventRect));
+        event.setBounds(eventRect);
         event.detail = detail;
         sendEvent(SWT.MenuDetect, event);
         //widget could be disposed at this point
@@ -4143,9 +4144,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (event.doit) {
             if (menu != null && !menu.isDisposed()) {
                 {
-                    Rectangle rect = DPIUtil.autoScaleUp(event.getBounds());
+                    Rectangle rect = event.getBounds();
                     if (rect.x != x || rect.y != y) {
-                        ((DartMenu) menu.getImpl()).setLocationInPixels(rect.x, rect.y);
+                        menu.setLocation(rect.x, rect.y);
                     }
                     menu.setVisible(true);
                     return true;

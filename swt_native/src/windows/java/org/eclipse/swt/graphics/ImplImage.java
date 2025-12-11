@@ -2,8 +2,9 @@ package org.eclipse.swt.graphics;
 
 import java.io.*;
 import java.util.*;
+import java.util.Map.*;
+import java.util.function.*;
 import org.eclipse.swt.*;
-import org.eclipse.swt.widgets.*;
 
 public interface ImplImage extends ImplResource {
 
@@ -12,8 +13,4 @@ public interface ImplImage extends ImplResource {
     int _transparentColor();
 
     GC _memGC();
-
-    int _width();
-
-    int _height();
 }

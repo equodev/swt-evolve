@@ -951,68 +951,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     }
 
     private MaskKeysym getMaskKeysym() {
-        if (text == null)
-            return null;
-        MaskKeysym maskKeysym = new MaskKeysym();
-        int accelIndex = text.indexOf('\t');
-        if (accelIndex == -1)
-            return null;
-        int start = accelIndex + 1;
-        int plusIndex = text.indexOf('+', start);
-        while (plusIndex != -1) {
-            start = plusIndex + 1;
-            plusIndex = text.indexOf('+', start);
-        }
-        if ("Enter".equals(text.substring(start))) {
-        }
-        switch(text.length() - start) {
-            case 1:
-                maskKeysym.keysym = text.charAt(start);
-                break;
-            case 2:
-                if (text.charAt(start) == 'F') {
-                    switch(text.charAt(start + 1)) {
-                        case '1':
-                            break;
-                        case '2':
-                            break;
-                        case '3':
-                            break;
-                        case '4':
-                            break;
-                        case '5':
-                            break;
-                        case '6':
-                            break;
-                        case '7':
-                            break;
-                        case '8':
-                            break;
-                        case '9':
-                            break;
-                    }
-                }
-                break;
-            case 3:
-                if (text.charAt(start) == 'F' && text.charAt(start + 1) == '1') {
-                    switch(text.charAt(start + 2)) {
-                        case '0':
-                            break;
-                        case '1':
-                            break;
-                        case '2':
-                            break;
-                        case '3':
-                            break;
-                        case '4':
-                            break;
-                        case '5':
-                            break;
-                    }
-                }
-                break;
-        }
-        return maskKeysym;
+        return null;
     }
 
     boolean updateAcceleratorText(boolean show) {

@@ -90,7 +90,7 @@ public abstract class DartWidget implements IWidget {
     /* The preferred size of a child has changed */
     static final int LAYOUT_CHANGED = 1 << 13;
 
-    /* A layout was requested in this widget hierachy */
+    /* A layout was requested in this widget hierarchy */
     static final int LAYOUT_CHILD = 1 << 14;
 
     /* More global state flags */
@@ -290,6 +290,7 @@ public abstract class DartWidget implements IWidget {
         if (listener == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
+        @SuppressWarnings("removal")
         TypedListener typedListener = new TypedListener(listener);
         for (int eventType : eventTypes) {
             _addListener(eventType, typedListener);
@@ -670,6 +671,7 @@ public abstract class DartWidget implements IWidget {
      *
      * @since 3.126
      */
+    @SuppressWarnings("removal")
     public <L extends EventListener> Stream<L> getTypedListeners(int eventType, Class<L> listenerType) {
         return //
         Arrays.stream(getListeners(eventType)).filter(TypedListener.class::isInstance).map(l -> ((TypedListener) l).eventListener).filter(listenerType::isInstance).map(listenerType::cast);
@@ -933,8 +935,41 @@ public abstract class DartWidget implements IWidget {
      *
      * @noreference This method is not intended to be referenced by clients.
      * @nooverride This method is not intended to be re-implemented or extended by clients.
+     * @deprecated Use {@link #removeListener(int, EventListener)}.
      */
+    @Deprecated(forRemoval = true, since = "2025-03")
     public void removeListener(int eventType, SWTEventListener listener) {
+        removeTypedListener(eventType, listener);
+    }
+
+    /**
+     * Removes the listener from the collection of listeners who will
+     * be notified when an event of the given type occurs.
+     * <p>
+     * <b>IMPORTANT:</b> This method is <em>not</em> part of the SWT
+     * public API. It is marked public only so that it can be shared
+     * within the packages provided by SWT. It should never be
+     * referenced from application code.
+     * </p>
+     *
+     * @param eventType the type of event to listen for
+     * @param listener the listener which should no longer be notified
+     *
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
+     * </ul>
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see Listener
+     * @see #addListener
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     * @nooverride This method is not intended to be re-implemented or extended by clients.
+     */
+    public void removeListener(int eventType, EventListener listener) {
         removeTypedListener(eventType, listener);
     }
 

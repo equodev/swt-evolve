@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2018 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -103,11 +103,32 @@ public abstract class SwtDevice implements Drawable, IDevice {
 	* Programmer's Reference as the colors in the default
 	* palette.
 	*/
-    Color COLOR_BLACK, COLOR_DARK_RED, COLOR_DARK_GREEN, COLOR_DARK_YELLOW, COLOR_DARK_BLUE;
+    static final Color COLOR_BLACK, COLOR_DARK_RED, COLOR_DARK_GREEN, COLOR_DARK_YELLOW, COLOR_DARK_BLUE;
 
-    Color COLOR_DARK_MAGENTA, COLOR_DARK_CYAN, COLOR_GRAY, COLOR_DARK_GRAY, COLOR_RED, COLOR_TRANSPARENT;
+    static final Color COLOR_DARK_MAGENTA, COLOR_DARK_CYAN, COLOR_GRAY, COLOR_DARK_GRAY, COLOR_RED, COLOR_TRANSPARENT;
 
-    Color COLOR_GREEN, COLOR_YELLOW, COLOR_BLUE, COLOR_MAGENTA, COLOR_CYAN, COLOR_WHITE;
+    static final Color COLOR_GREEN, COLOR_YELLOW, COLOR_BLUE, COLOR_MAGENTA, COLOR_CYAN, COLOR_WHITE;
+
+    static {
+        /* Create the standard colors */
+        COLOR_TRANSPARENT = new Color(0xFF, 0xFF, 0xFF, 0);
+        COLOR_BLACK = new Color(0, 0, 0);
+        COLOR_DARK_RED = new Color(0x80, 0, 0);
+        COLOR_DARK_GREEN = new Color(0, 0x80, 0);
+        COLOR_DARK_YELLOW = new Color(0x80, 0x80, 0);
+        COLOR_DARK_BLUE = new Color(0, 0, 0x80);
+        COLOR_DARK_MAGENTA = new Color(0x80, 0, 0x80);
+        COLOR_DARK_CYAN = new Color(0, 0x80, 0x80);
+        COLOR_GRAY = new Color(0xC0, 0xC0, 0xC0);
+        COLOR_DARK_GRAY = new Color(0x80, 0x80, 0x80);
+        COLOR_RED = new Color(0xFF, 0, 0);
+        COLOR_GREEN = new Color(0, 0xFF, 0);
+        COLOR_YELLOW = new Color(0xFF, 0xFF, 0);
+        COLOR_BLUE = new Color(0, 0, 0xFF);
+        COLOR_MAGENTA = new Color(0xFF, 0, 0xFF);
+        COLOR_CYAN = new Color(0, 0xFF, 0xFF);
+        COLOR_WHITE = new Color(0xFF, 0xFF, 0xFF);
+    }
 
     /* System Font */
     Font systemFont;
@@ -368,10 +389,6 @@ public abstract class SwtDevice implements Drawable, IDevice {
      */
     public Rectangle getBounds() {
         checkDevice();
-        return DPIUtil.autoScaleDown(getBoundsInPixels());
-    }
-
-    private Rectangle getBoundsInPixels() {
         return new Rectangle(0, 0, 0, 0);
     }
 
@@ -702,24 +719,6 @@ public abstract class SwtDevice implements Drawable, IDevice {
                 }
             }
         }
-        /* Create the standard colors */
-        COLOR_TRANSPARENT = new Color(0xFF, 0xFF, 0xFF, 0);
-        COLOR_BLACK = new Color(0, 0, 0);
-        COLOR_DARK_RED = new Color(0x80, 0, 0);
-        COLOR_DARK_GREEN = new Color(0, 0x80, 0);
-        COLOR_DARK_YELLOW = new Color(0x80, 0x80, 0);
-        COLOR_DARK_BLUE = new Color(0, 0, 0x80);
-        COLOR_DARK_MAGENTA = new Color(0x80, 0, 0x80);
-        COLOR_DARK_CYAN = new Color(0, 0x80, 0x80);
-        COLOR_GRAY = new Color(0xC0, 0xC0, 0xC0);
-        COLOR_DARK_GRAY = new Color(0x80, 0x80, 0x80);
-        COLOR_RED = new Color(0xFF, 0, 0);
-        COLOR_GREEN = new Color(0, 0xFF, 0);
-        COLOR_YELLOW = new Color(0xFF, 0xFF, 0);
-        COLOR_BLUE = new Color(0, 0, 0xFF);
-        COLOR_MAGENTA = new Color(0xFF, 0, 0xFF);
-        COLOR_CYAN = new Color(0, 0xFF, 0xFF);
-        COLOR_WHITE = new Color(0xFF, 0xFF, 0xFF);
         emptyTab = OS.pango_tab_array_new(1, false);
         if (emptyTab == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
@@ -734,7 +733,6 @@ public abstract class SwtDevice implements Drawable, IDevice {
         GTK.gtk_widget_realize(shellHandle);
         this.dpi = getDPI();
         DPIUtil.setDeviceZoom(getDeviceZoom());
-        DPIUtil.setUseCairoAutoScale(true);
         /* Initialize the system font slot */
         long[] defaultFontArray = new long[1];
         long defaultFont = 0;
@@ -822,6 +820,9 @@ public abstract class SwtDevice implements Drawable, IDevice {
             combinedCSS.append(load.apply("/org/eclipse/swt/internal/gtk/swt_theming_fixes_gtk_3_20.css", true));
             if (GTK.GTK_VERSION >= OS.VERSION(3, 24, 5)) {
                 combinedCSS.append(load.apply("/org/eclipse/swt/internal/gtk/swt_theming_fixes_gtk_3_24_5.css", true));
+            }
+            if (GTK.GTK4) {
+                combinedCSS.append(load.apply("/org/eclipse/swt/internal/gtk/swt_theming_fixes_gtk_4_0_0.css", true));
             }
         }
         // Load CSS from user-defined CSS file.
@@ -1010,7 +1011,6 @@ public abstract class SwtDevice implements Drawable, IDevice {
         if (systemFont != null)
             systemFont.dispose();
         systemFont = null;
-        COLOR_BLACK = COLOR_DARK_RED = COLOR_DARK_GREEN = COLOR_DARK_YELLOW = COLOR_DARK_BLUE = COLOR_DARK_MAGENTA = COLOR_DARK_CYAN = COLOR_GRAY = COLOR_DARK_GRAY = COLOR_RED = COLOR_GREEN = COLOR_YELLOW = COLOR_BLUE = COLOR_MAGENTA = COLOR_CYAN = COLOR_WHITE = null;
         if (emptyTab != 0)
             OS.pango_tab_array_free(emptyTab);
         emptyTab = 0;
@@ -1133,8 +1133,12 @@ public abstract class SwtDevice implements Drawable, IDevice {
         } else {
             monitor = GDK.gdk_display_get_monitor_at_point(display, 0, 0);
         }
-        int scale = GDK.gdk_monitor_get_scale_factor(monitor);
-        dpi = dpi * scale;
+        // GDK can return null monitor in some cases thus play safe
+        // See https://gitlab.gnome.org/GNOME/gtk/-/issues/5075 for details
+        if (monitor != 0) {
+            int scale = GDK.gdk_monitor_get_scale_factor(monitor);
+            dpi = dpi * scale;
+        }
         return DPIUtil.mapDPIToZoom(dpi);
     }
 

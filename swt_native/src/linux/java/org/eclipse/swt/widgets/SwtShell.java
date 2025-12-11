@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2021 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -630,7 +630,12 @@ public class SwtShell extends SwtDecorations implements IShell {
         }
         if ((xFocus || (getApi().style & SWT.ON_TOP) != 0)) {
             if (OS.isX11()) {
-                long gdkDisplay = GDK.gdk_window_get_display(gdkResource);
+                long gdkDisplay;
+                if (GTK.GTK4) {
+                    gdkDisplay = GDK.gdk_surface_get_display(gdkResource);
+                } else {
+                    gdkDisplay = GDK.gdk_window_get_display(gdkResource);
+                }
                 long xDisplay = GDK.gdk_x11_display_get_xdisplay(gdkDisplay);
                 long xWindow;
                 if (GTK.GTK4) {
@@ -684,7 +689,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         Rectangle parentRect = ((SwtDisplay) display.getImpl()).mapInPixels(parent, null, ((SwtComposite) parent.getImpl()).getClientAreaInPixels());
         int x = Math.max(parentRect.x, parentRect.x + (parentRect.width - rect.width) / 2);
         int y = Math.max(parentRect.y, parentRect.y + (parentRect.height - rect.height) / 2);
-        Rectangle monitorRect = DPIUtil.autoScaleUp(parent.getMonitor().getClientArea());
+        Rectangle monitorRect = parent.getMonitor().getClientArea();
         if (x + rect.width > monitorRect.x + monitorRect.width) {
             x = Math.max(monitorRect.x, monitorRect.x + monitorRect.width - rect.width);
         } else {
@@ -850,7 +855,9 @@ public class SwtShell extends SwtDecorations implements IShell {
                 gtk_container_set_border_width(shellHandle, 1);
             }
             if ((getApi().style & SWT.TOOL) != 0) {
-                GTK3.gtk_window_set_type_hint(shellHandle, GDK.GDK_WINDOW_TYPE_HINT_UTILITY);
+                if (!GTK.GTK4) {
+                    GTK3.gtk_window_set_type_hint(shellHandle, GDK.GDK_WINDOW_TYPE_HINT_UTILITY);
+                }
             }
             if ((getApi().style & SWT.NO_TRIM) != 0) {
                 GTK.gtk_window_set_decorated(shellHandle, false);
@@ -1332,11 +1339,6 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public Point getMinimumSize() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getMinimumSizeInPixels());
-    }
-
-    Point getMinimumSizeInPixels() {
-        checkWidget();
         int width = Math.max(1, geometry.getMinWidth() + trimWidth());
         int height = Math.max(1, geometry.getMinHeight() + trimHeight());
         return new Point(width, height);
@@ -1358,11 +1360,6 @@ public class SwtShell extends SwtDecorations implements IShell {
      * @since 3.116
      */
     public Point getMaximumSize() {
-        checkWidget();
-        return DPIUtil.autoScaleDown(getMaximumSizeInPixels());
-    }
-
-    Point getMaximumSizeInPixels() {
         checkWidget();
         int width = Math.min(Integer.MAX_VALUE, geometry.getMaxWidth() + trimWidth());
         int height = Math.min(Integer.MAX_VALUE, geometry.getMaxHeight() + trimHeight());
@@ -1897,9 +1894,11 @@ public class SwtShell extends SwtDecorations implements IShell {
                 long display = GDK.gdk_display_get_default();
                 long monitor = GDK.gdk_display_get_monitor_at_surface(display, paintSurface());
                 GDK.gdk_monitor_get_geometry(monitor, monitorSize);
-                long header = GTK4.gtk_widget_get_next_sibling(GTK4.gtk_widget_get_first_child(shellHandle));
+                long header = GTK4.gtk_window_get_titlebar(shellHandle);
                 int[] headerNaturalHeight = new int[1];
-                GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, 0, null, headerNaturalHeight, null, null);
+                if (header != 0) {
+                    GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, 0, null, headerNaturalHeight, null, null);
+                }
                 widthA[0] = monitorSize.width;
                 heightA[0] = monitorSize.height - headerNaturalHeight[0];
             }
@@ -2428,9 +2427,11 @@ public class SwtShell extends SwtDecorations implements IShell {
 				 * On GTK4, GtkWindow size includes the header bar. In order to keep window size allocation of the client area
 				 * consistent with previous versions of SWT, we need to include the header bar height in addition to the given height value.
 				 */
-                    long header = GTK4.gtk_widget_get_next_sibling(GTK4.gtk_widget_get_first_child(shellHandle));
+                    long header = GTK4.gtk_window_get_titlebar(shellHandle);
                     int[] headerNaturalHeight = new int[1];
-                    GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, 0, null, headerNaturalHeight, null, null);
+                    if (header != 0) {
+                        GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, 0, null, headerNaturalHeight, null, null);
+                    }
                     GTK.gtk_window_set_default_size(shellHandle, width, height + headerNaturalHeight[0]);
                 } else {
                     GTK3.gtk_window_resize(shellHandle, width, height);
@@ -2584,7 +2585,9 @@ public class SwtShell extends SwtDecorations implements IShell {
                 long display = GDK.gdk_display_get_default();
                 if (display != 0) {
                     long monitor = GDK.gdk_display_get_monitor_at_surface(display, paintSurface());
-                    GDK.gdk_monitor_get_geometry(monitor, dest);
+                    if (monitor != 0) {
+                        GDK.gdk_monitor_get_geometry(monitor, dest);
+                    }
                     width = (int) (dest.width * SHELL_TO_MONITOR_RATIO);
                     height = (int) (dest.height * SHELL_TO_MONITOR_RATIO);
                 }
@@ -2593,9 +2596,11 @@ public class SwtShell extends SwtDecorations implements IShell {
 				 * On GTK4, GtkWindow size includes the header bar. In order to keep window size allocation of the client area
 				 * consistent with previous versions of SWT, we need to include the header bar height in addition to the given height value.
 				 */
-                    long header = GTK4.gtk_widget_get_next_sibling(GTK4.gtk_widget_get_first_child(shellHandle));
+                    long header = GTK4.gtk_window_get_titlebar(shellHandle);
                     int[] headerNaturalHeight = new int[1];
-                    GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, 0, null, headerNaturalHeight, null, null);
+                    if (header != 0) {
+                        GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, -1, null, headerNaturalHeight, null, null);
+                    }
                     GTK.gtk_window_set_default_size(shellHandle, width, height + headerNaturalHeight[0]);
                 }
             } else {
@@ -2644,7 +2649,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         }
         if (menuBar != null) {
             long menuHandle = menuBar.handle;
-            GTK.gtk_widget_hide(menuHandle);
+            gtk_widget_hide(menuHandle);
             if (!GTK.GTK4) {
                 destroyAccelGroup();
             }
@@ -2652,7 +2657,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         menuBar = menu;
         if (menuBar != null) {
             long menuHandle = menu.handle;
-            GTK.gtk_widget_show(menuHandle);
+            gtk_widget_show(menuHandle);
             if (!GTK.GTK4) {
                 createAccelGroup();
                 ((SwtMenu) menuBar.getImpl()).addAccelerators(accelGroup);
@@ -2672,7 +2677,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             return;
         super.setMinimized(minimized);
         if (!GTK.gtk_widget_get_visible(shellHandle)) {
-            GTK.gtk_widget_show(shellHandle);
+            gtk_widget_show(shellHandle);
         }
         if (minimized) {
             if (GTK.GTK4) {
@@ -2707,11 +2712,6 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public void setMinimumSize(int width, int height) {
         checkWidget();
-        setMinimumSize(new Point(width, height));
-    }
-
-    void setMinimumSizeInPixels(int width, int height) {
-        checkWidget();
         geometry.setMinWidth(Math.max(width, trimWidth()) - trimWidth());
         geometry.setMinHeight(Math.max(height, trimHeight()) - trimHeight());
         if (GTK.GTK4) {
@@ -2744,14 +2744,9 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public void setMinimumSize(Point size) {
         checkWidget();
-        setMinimumSizeInPixels(DPIUtil.autoScaleUp(size));
-    }
-
-    void setMinimumSizeInPixels(Point size) {
-        checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        setMinimumSizeInPixels(size.x, size.y);
+        setMinimumSize(size.x, size.y);
     }
 
     /**
@@ -2776,7 +2771,13 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public void setMaximumSize(int width, int height) {
         checkWidget();
-        setMaximumSize(new Point(width, height));
+        geometry.setMaxWidth(Math.max(width, trimWidth()) - trimWidth());
+        geometry.setMaxHeight(Math.max(height, trimHeight()) - trimHeight());
+        int hint = GDK.GDK_HINT_MAX_SIZE;
+        if (geometry.getMinWidth() > 0 || geometry.getMinHeight() > 0) {
+            hint = hint | GDK.GDK_HINT_MIN_SIZE;
+        }
+        GTK3.gtk_window_set_geometry_hints(shellHandle, 0, (GdkGeometry) geometry, hint);
     }
 
     /**
@@ -2803,25 +2804,9 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public void setMaximumSize(Point size) {
         checkWidget();
-        setMaximumSizeInPixels(DPIUtil.autoScaleUp(size));
-    }
-
-    void setMaximumSizeInPixels(Point size) {
-        checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        setMaximumSizeInPixels(size.x, size.y);
-    }
-
-    void setMaximumSizeInPixels(int width, int height) {
-        checkWidget();
-        geometry.setMaxWidth(Math.max(width, trimWidth()) - trimWidth());
-        geometry.setMaxHeight(Math.max(height, trimHeight()) - trimHeight());
-        int hint = GDK.GDK_HINT_MAX_SIZE;
-        if (geometry.getMinWidth() > 0 || geometry.getMinHeight() > 0) {
-            hint = hint | GDK.GDK_HINT_MIN_SIZE;
-        }
-        GTK3.gtk_window_set_geometry_hints(shellHandle, 0, (GdkGeometry) geometry, hint);
+        setMaximumSize(size.x, size.y);
     }
 
     /**
@@ -2907,7 +2892,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         int[] nRects = new int[1];
         long[] rects = new long[1];
         gdk_region_get_rectangles(rgn, rects, nRects);
-        Rectangle bounds = DPIUtil.autoScaleUp(region.getBounds());
+        Rectangle bounds = region.getBounds();
         cairo_rectangle_int_t rect = new cairo_rectangle_int_t();
         for (int i = 0; i < nRects[0]; i++) {
             Cairo.memmove(rect, rects[0] + (i * GdkRectangle.sizeof), GdkRectangle.sizeof);
@@ -3009,13 +2994,13 @@ public class SwtShell extends SwtDecorations implements IShell {
                 int[] init_width = new int[1], init_height = new int[1];
                 GTK3.gtk_window_get_size(shellHandle, init_width, init_height);
                 GTK3.gtk_window_resize(shellHandle, 1, 1);
-                GTK.gtk_widget_show(shellHandle);
+                gtk_widget_show(shellHandle);
                 GTK3.gtk_window_resize(shellHandle, init_width[0], init_height[0]);
                 resizeBounds(init_width[0], init_height[0], false);
                 oldWidth = init_width[0];
                 oldHeight = init_height[0];
             } else {
-                GTK.gtk_widget_show(shellHandle);
+                gtk_widget_show(shellHandle);
             }
             /**
              *  Feature in GTK: This handles grabbing the keyboard focus from a SWT.ON_TOP window
@@ -3084,7 +3069,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         } else {
             fixActiveShell();
             checkAndUngrabFocus();
-            GTK.gtk_widget_hide(shellHandle);
+            gtk_widget_hide(shellHandle);
             sendEvent(SWT.Hide);
         }
     }
@@ -3142,11 +3127,11 @@ public class SwtShell extends SwtDecorations implements IShell {
             GTK3.gtk_container_add(shellHandle, vboxHandle);
         }
         if (scrolledHandle != 0)
-            GTK.gtk_widget_show(scrolledHandle);
+            gtk_widget_show(scrolledHandle);
         if (getApi().handle != 0)
-            GTK.gtk_widget_show(getApi().handle);
+            gtk_widget_show(getApi().handle);
         if (vboxHandle != 0)
-            GTK.gtk_widget_show(vboxHandle);
+            gtk_widget_show(vboxHandle);
     }
 
     @Override
@@ -3182,7 +3167,7 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     @Override
     long sizeRequestProc(long handle, long arg0, long user_data) {
-        GTK.gtk_widget_hide(handle);
+        gtk_widget_hide(handle);
         return 0;
     }
 
@@ -3332,12 +3317,12 @@ public class SwtShell extends SwtDecorations implements IShell {
                 if (minimized) {
                     if (shells[i].isVisible()) {
                         ((SwtShell) shells[i].getImpl()).showWithParent = true;
-                        GTK.gtk_widget_hide(((SwtShell) shells[i].getImpl()).shellHandle);
+                        gtk_widget_hide(((SwtShell) shells[i].getImpl()).shellHandle);
                     }
                 } else {
                     if (((SwtShell) shells[i].getImpl()).showWithParent) {
                         ((SwtShell) shells[i].getImpl()).showWithParent = false;
-                        GTK.gtk_widget_show(((SwtShell) shells[i].getImpl()).shellHandle);
+                        gtk_widget_show(((SwtShell) shells[i].getImpl()).shellHandle);
                     }
                 }
             }
@@ -3351,14 +3336,14 @@ public class SwtShell extends SwtDecorations implements IShell {
         if (shellHandle != 0 && !(disposed instanceof Shell)) {
             SWT.error(SWT.ERROR_INVALID_RETURN_VALUE, null, ". Wrong widgetTable entry: " + disposed + " removed for shell: " + this.getApi() + ((SwtDisplay) display.getImpl()).dumpWidgetTableInfo());
         }
-        if (SwtDisplay.strictChecks) {
+        StrictChecks.runIfStrictChecksEnabled(() -> {
             Shell[] shells = display.getShells();
             for (Shell shell : shells) {
                 if (shell == this.getApi()) {
                     SWT.error(SWT.ERROR_INVALID_RETURN_VALUE, null, ". Disposed shell still in the widgetTable: " + this.getApi() + ((SwtDisplay) display.getImpl()).dumpWidgetTableInfo());
                 }
             }
-        }
+        });
     }
 
     boolean requiresUngrab() {
@@ -3420,7 +3405,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         if (popupChild != null && ((SwtShell) popupChild.getImpl()).shellHandle != 0 && !popupChild.isDisposed()) {
             popupChild.dispose();
         }
-        GTK.gtk_widget_hide(shellHandle);
+        gtk_widget_hide(shellHandle);
         super.dispose();
     }
 

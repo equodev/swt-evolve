@@ -30,9 +30,6 @@ import dev.equo.swt.Config;
  */
 class StyledTextRenderer {
 
-    private record LineDrawInfo(int index, TextLayout layout, String text, int offset, int height) {
-    }
-
     StyledTextRenderer(Device device, StyledText styledText) {
         this((IStyledTextRenderer) null);
         setImpl(Config.isEquo(StyledTextRenderer.class) ? new DartStyledTextRenderer(device, styledText, this) : new SwtStyledTextRenderer(device, styledText, this));

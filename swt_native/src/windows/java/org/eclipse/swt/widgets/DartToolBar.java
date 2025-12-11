@@ -350,7 +350,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return getItemInPixels(DPIUtil.scaleUp(point, getZoom()));
+        return null;
     }
 
     ToolItem getItemInPixels(Point point) {

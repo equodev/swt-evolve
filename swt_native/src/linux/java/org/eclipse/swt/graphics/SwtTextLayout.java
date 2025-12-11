@@ -123,22 +123,22 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             }
             FontMetrics result = new FontMetrics();
             if (result.getImpl() instanceof DartFontMetrics) {
-                ((DartFontMetrics) result.getImpl()).ascentInPoints = DPIUtil.autoScaleDown(device, lineMetricsInPixels.getImpl()._ascentInPoints());
+                ((DartFontMetrics) result.getImpl()).ascentInPoints = lineMetricsInPixels.getImpl()._ascentInPoints();
             }
             if (result.getImpl() instanceof SwtFontMetrics) {
-                ((SwtFontMetrics) result.getImpl()).ascentInPoints = DPIUtil.autoScaleDown(device, lineMetricsInPixels.getImpl()._ascentInPoints());
+                ((SwtFontMetrics) result.getImpl()).ascentInPoints = lineMetricsInPixels.getImpl()._ascentInPoints();
             }
             if (result.getImpl() instanceof DartFontMetrics) {
-                ((DartFontMetrics) result.getImpl()).descentInPoints = DPIUtil.autoScaleDown(device, lineMetricsInPixels.getImpl()._descentInPoints());
+                ((DartFontMetrics) result.getImpl()).descentInPoints = lineMetricsInPixels.getImpl()._descentInPoints();
             }
             if (result.getImpl() instanceof SwtFontMetrics) {
-                ((SwtFontMetrics) result.getImpl()).descentInPoints = DPIUtil.autoScaleDown(device, lineMetricsInPixels.getImpl()._descentInPoints());
+                ((SwtFontMetrics) result.getImpl()).descentInPoints = lineMetricsInPixels.getImpl()._descentInPoints();
             }
             if (result.getImpl() instanceof DartFontMetrics) {
-                ((DartFontMetrics) result.getImpl()).averageCharWidthInPoints = DPIUtil.autoScaleDown(device, lineMetricsInPixels.getImpl()._averageCharWidthInPoints());
+                ((DartFontMetrics) result.getImpl()).averageCharWidthInPoints = lineMetricsInPixels.getImpl()._averageCharWidthInPoints();
             }
             if (result.getImpl() instanceof SwtFontMetrics) {
-                ((SwtFontMetrics) result.getImpl()).averageCharWidthInPoints = DPIUtil.autoScaleDown(device, lineMetricsInPixels.getImpl()._averageCharWidthInPoints());
+                ((SwtFontMetrics) result.getImpl()).averageCharWidthInPoints = lineMetricsInPixels.getImpl()._averageCharWidthInPoints();
             }
             return result;
         }
@@ -150,22 +150,22 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             }
             FontMetrics result = new FontMetrics();
             if (result.getImpl() instanceof DartFontMetrics) {
-                ((DartFontMetrics) result.getImpl()).ascentInPoints = DPIUtil.autoScaleUp(device, metrics.getImpl()._ascentInPoints());
+                ((DartFontMetrics) result.getImpl()).ascentInPoints = metrics.getImpl()._ascentInPoints();
             }
             if (result.getImpl() instanceof SwtFontMetrics) {
-                ((SwtFontMetrics) result.getImpl()).ascentInPoints = DPIUtil.autoScaleUp(device, metrics.getImpl()._ascentInPoints());
+                ((SwtFontMetrics) result.getImpl()).ascentInPoints = metrics.getImpl()._ascentInPoints();
             }
             if (result.getImpl() instanceof DartFontMetrics) {
-                ((DartFontMetrics) result.getImpl()).descentInPoints = DPIUtil.autoScaleUp(device, metrics.getImpl()._descentInPoints());
+                ((DartFontMetrics) result.getImpl()).descentInPoints = metrics.getImpl()._descentInPoints();
             }
             if (result.getImpl() instanceof SwtFontMetrics) {
-                ((SwtFontMetrics) result.getImpl()).descentInPoints = DPIUtil.autoScaleUp(device, metrics.getImpl()._descentInPoints());
+                ((SwtFontMetrics) result.getImpl()).descentInPoints = metrics.getImpl()._descentInPoints();
             }
             if (result.getImpl() instanceof DartFontMetrics) {
-                ((DartFontMetrics) result.getImpl()).averageCharWidthInPoints = DPIUtil.autoScaleUp(device, metrics.getImpl()._averageCharWidthInPoints());
+                ((DartFontMetrics) result.getImpl()).averageCharWidthInPoints = metrics.getImpl()._averageCharWidthInPoints();
             }
             if (result.getImpl() instanceof SwtFontMetrics) {
-                ((SwtFontMetrics) result.getImpl()).averageCharWidthInPoints = DPIUtil.autoScaleUp(device, metrics.getImpl()._averageCharWidthInPoints());
+                ((SwtFontMetrics) result.getImpl()).averageCharWidthInPoints = metrics.getImpl()._averageCharWidthInPoints();
             }
             lineMetricsInPixels = result;
         }
@@ -332,8 +332,8 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         if (useMinAscentDescent && segementsLength > 0) {
             PangoRectangle rect = new PangoRectangle();
             if (ascentInPoints != -1)
-                rect.y = -(DPIUtil.autoScaleUp(getDevice(), ascentInPoints) * OS.PANGO_SCALE);
-            rect.height = DPIUtil.autoScaleUp(getDevice(), (Math.max(0, ascentInPoints) + Math.max(0, descentInPoints))) * OS.PANGO_SCALE;
+                rect.y = -(ascentInPoints * OS.PANGO_SCALE);
+            rect.height = (Math.max(0, ascentInPoints) + Math.max(0, descentInPoints)) * OS.PANGO_SCALE;
             int lineCount = OS.pango_layout_get_line_count(layout);
             chars = new char[segementsLength + lineCount * 2];
             lineOffsets = new int[lineCount];
@@ -516,9 +516,9 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             GlyphMetrics metrics = style.metrics;
             if (metrics != null) {
                 PangoRectangle rect = new PangoRectangle();
-                rect.y = -(DPIUtil.autoScaleUp(getDevice(), metrics.ascent) * OS.PANGO_SCALE);
-                rect.height = DPIUtil.autoScaleUp(getDevice(), (metrics.ascent + metrics.descent)) * OS.PANGO_SCALE;
-                rect.width = DPIUtil.autoScaleUp(getDevice(), metrics.width) * OS.PANGO_SCALE;
+                rect.y = -(metrics.ascent * OS.PANGO_SCALE);
+                rect.height = (metrics.ascent + metrics.descent) * OS.PANGO_SCALE;
+                rect.width = metrics.width * OS.PANGO_SCALE;
                 long attr = OS.pango_attr_shape_new(rect, rect);
                 OS.memmove(attribute, attr, PangoAttribute.sizeof);
                 attribute.start_index = byteStart;
@@ -529,7 +529,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             }
             int rise = style.rise;
             if (rise != 0) {
-                long attr = OS.pango_attr_rise_new(DPIUtil.autoScaleUp(getDevice(), rise) * OS.PANGO_SCALE);
+                long attr = OS.pango_attr_rise_new(rise * OS.PANGO_SCALE);
                 OS.memmove(attribute, attr, PangoAttribute.sizeof);
                 attribute.start_index = byteStart;
                 attribute.end_index = byteEnd;
@@ -598,8 +598,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      * </ul>
      */
     public void draw(GC gc, int x, int y) {
-        x = DPIUtil.autoScaleUp(getDevice(), x);
-        y = DPIUtil.autoScaleUp(getDevice(), y);
         drawInPixels(gc, x, y);
     }
 
@@ -628,8 +626,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground) {
         checkLayout();
-        x = DPIUtil.autoScaleUp(getDevice(), x);
-        y = DPIUtil.autoScaleUp(getDevice(), y);
         drawInPixels(gc, x, y, selectionStart, selectionEnd, selectionForeground, selectionBackground);
     }
 
@@ -666,8 +662,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground, int flags) {
         checkLayout();
-        x = DPIUtil.autoScaleUp(getDevice(), x);
-        y = DPIUtil.autoScaleUp(getDevice(), y);
         drawInPixels(gc, x, y, selectionStart, selectionEnd, selectionForeground, selectionBackground, flags);
     }
 
@@ -735,7 +729,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                     int lineY = y + OS.PANGO_PIXELS(rect.y);
                     int height = OS.PANGO_PIXELS(rect.height);
                     if (ascentInPoints != -1 && descentInPoints != -1) {
-                        height = Math.max(height, DPIUtil.autoScaleUp(getDevice(), ascentInPoints + descentInPoints));
+                        height = Math.max(height, ascentInPoints + descentInPoints);
                     }
                     height += getSpacingInPixels();
                     int width = (flags & SWT.FULL_SELECTION) != 0 ? 0x7fff : height / 3;
@@ -983,7 +977,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public Rectangle getBounds() {
         int spacingInPixels = getSpacingInPixels();
-        return DPIUtil.autoScaleDown(getDevice(), getBoundsInPixels(spacingInPixels));
+        return getBoundsInPixels(spacingInPixels);
     }
 
     Rectangle getBoundsInPixels(int spacingInPixels) {
@@ -996,7 +990,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         int width = OS.PANGO_PIXELS(w[0]);
         int height = OS.PANGO_PIXELS(h[0]);
         if (ascentInPoints != -1 && descentInPoints != -1) {
-            height = Math.max(height, DPIUtil.autoScaleUp(getDevice(), ascentInPoints + descentInPoints));
+            height = Math.max(height, ascentInPoints + descentInPoints);
         }
         height += spacingInPixels;
         return new Rectangle(0, 0, width, height + getScaledVerticalIndent());
@@ -1018,7 +1012,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public Rectangle getBounds(int start, int end) {
         checkLayout();
-        return DPIUtil.autoScaleDown(getDevice(), getBoundsInPixels(start, end));
+        return getBoundsInPixels(start, end);
     }
 
     Rectangle getBoundsInPixels(int start, int end) {
@@ -1128,7 +1122,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public int getIndent() {
         checkLayout();
-        return DPIUtil.autoScaleDown(getDevice(), getIndentInPixels());
+        return getIndentInPixels();
     }
 
     int getIndentInPixels() {
@@ -1212,7 +1206,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public Rectangle getLineBounds(int lineIndex) {
         checkLayout();
-        return DPIUtil.autoScaleDown(getDevice(), getLineBoundsInPixels(lineIndex));
+        return getLineBoundsInPixels(lineIndex);
     }
 
     Rectangle getLineBoundsInPixels(int lineIndex) {
@@ -1239,7 +1233,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         int width = OS.PANGO_PIXELS(rect.width);
         int height = OS.PANGO_PIXELS(rect.height);
         if (ascentInPoints != -1 && descentInPoints != -1) {
-            height = Math.max(height, DPIUtil.autoScaleUp(getDevice(), ascentInPoints + descentInPoints));
+            height = Math.max(height, ascentInPoints + descentInPoints);
         }
         x += Math.min(indent, wrapIndent);
         return new Rectangle(x, y, width, height);
@@ -1331,14 +1325,14 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             long metrics = OS.pango_context_get_metrics(context, font, lang);
             int ascent = OS.pango_font_metrics_get_ascent(metrics);
             int descent = OS.pango_font_metrics_get_descent(metrics);
-            ascentInPoints = DPIUtil.autoScaleDown(getDevice(), OS.PANGO_PIXELS(ascent));
-            heightInPoints = DPIUtil.autoScaleDown(getDevice(), OS.PANGO_PIXELS(ascent + descent));
+            ascentInPoints = OS.PANGO_PIXELS(ascent);
+            heightInPoints = OS.PANGO_PIXELS(ascent + descent);
             OS.pango_font_metrics_unref(metrics);
         } else {
             PangoRectangle rect = new PangoRectangle();
             metricsAdapter.pango_layout_line_get_extents(OS.pango_layout_get_line(layout, lineIndex), null, rect);
-            ascentInPoints = DPIUtil.autoScaleDown(getDevice(), OS.PANGO_PIXELS(-rect.y));
-            heightInPoints = DPIUtil.autoScaleDown(getDevice(), OS.PANGO_PIXELS(rect.height));
+            ascentInPoints = OS.PANGO_PIXELS(-rect.y);
+            heightInPoints = OS.PANGO_PIXELS(rect.height);
         }
         heightInPoints = Math.max(this.ascentInPoints + this.descentInPoints, heightInPoints);
         ascentInPoints = Math.max(this.ascentInPoints, ascentInPoints);
@@ -1411,7 +1405,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public Point getLocation(int offset, boolean trailing) {
         checkLayout();
-        return DPIUtil.autoScaleDown(getDevice(), getLocationInPixels(offset, trailing));
+        return getLocationInPixels(offset, trailing);
     }
 
     Point getLocationInPixels(int offset, boolean trailing) {
@@ -1564,7 +1558,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public int getOffset(Point point, int[] trailing) {
         checkLayout();
-        return getOffsetInPixels(DPIUtil.autoScaleUp(getDevice(), point), trailing);
+        return getOffsetInPixels(point, trailing);
     }
 
     int getOffsetInPixels(Point point, int[] trailing) {
@@ -1798,7 +1792,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public int getSpacing() {
         checkLayout();
-        return DPIUtil.autoScaleDown(getDevice(), getSpacingInPixels());
+        return getSpacingInPixels();
     }
 
     int getSpacingInPixels() {
@@ -1830,7 +1824,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         if (verticalIndentInPoints == 0) {
             return verticalIndentInPoints;
         }
-        return DPIUtil.autoScaleUp(getDevice(), verticalIndentInPoints);
+        return verticalIndentInPoints;
     }
 
     /**
@@ -1901,7 +1895,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public int[] getTabs() {
         checkLayout();
-        return DPIUtil.autoScaleDown(getDevice(), getTabsInPixels());
+        return getTabsInPixels();
     }
 
     int[] getTabsInPixels() {
@@ -1948,7 +1942,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public int getWidth() {
         checkLayout();
-        return DPIUtil.autoScaleDown(getDevice(), getWidthInPixels());
+        return getWidthInPixels();
     }
 
     int getWidthInPixels() {
@@ -1968,7 +1962,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public int getWrapIndent() {
         checkLayout();
-        return DPIUtil.autoScaleDown(getDevice(), getWrapIndentInPixels());
+        return getWrapIndentInPixels();
     }
 
     int getWrapIndentInPixels() {
@@ -2167,7 +2161,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public void setIndent(int indent) {
         checkLayout();
-        setIndentInPixels(DPIUtil.autoScaleUp(getDevice(), indent));
+        setIndentInPixels(indent);
     }
 
     void setIndentInPixels(int indent) {
@@ -2247,7 +2241,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         checkLayout();
         if (spacing < 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        setSpacingInPixels(DPIUtil.autoScaleUp(getDevice(), spacing));
+        setSpacingInPixels(spacing);
     }
 
     void setSpacingInPixels(int spacing) {
@@ -2484,7 +2478,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         checkLayout();
         if (this.tabs == null && tabs == null)
             return;
-        setTabsInPixels(DPIUtil.autoScaleUp(getDevice(), tabs));
+        setTabsInPixels(tabs);
     }
 
     void setTabsInPixels(int[] tabs) {
@@ -2584,7 +2578,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         checkLayout();
         if (width < -1 || width == 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        setWidthInPixels(DPIUtil.autoScaleUp(getDevice(), width));
+        setWidthInPixels(width);
     }
 
     void setWidthInPixels(int width) {
@@ -2624,7 +2618,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         checkLayout();
         if (wrapIndent < 0)
             return;
-        setWrapIndentInPixels(DPIUtil.autoScaleUp(getDevice(), wrapIndent));
+        setWrapIndentInPixels(wrapIndent);
     }
 
     void setWrapIndentInPixels(int wrapIndent) {

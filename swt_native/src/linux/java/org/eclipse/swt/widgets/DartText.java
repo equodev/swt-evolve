@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2021 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -613,11 +613,6 @@ public class DartText extends DartScrollable implements IText {
      */
     public Point getCaretLocation() {
         checkWidget();
-        return DPIUtil.autoScaleDown(getCaretLocationInPixels());
-    }
-
-    Point getCaretLocationInPixels() {
-        checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0) {
         } else {
             int[] x = new int[1];
@@ -1072,11 +1067,6 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public int getTopPixel() {
-        checkWidget();
-        return DPIUtil.autoScaleDown(getTopPixelInPixels());
-    }
-
-    int getTopPixelInPixels() {
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0)
             return 0;

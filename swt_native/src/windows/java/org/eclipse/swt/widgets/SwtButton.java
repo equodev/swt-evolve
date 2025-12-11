@@ -21,6 +21,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import org.eclipse.swt.internal.win32.version.*;
 
 /**
  * Instances of this class represent a selectable user interface object that
@@ -326,7 +327,7 @@ public class SwtButton extends SwtControl implements IButton {
             return MARGIN;
         int margin = 0;
         if (image != null && text.length() != 0) {
-            Rectangle bounds = DPIUtil.scaleBounds(image.getBounds(), this.getZoom(), 100);
+            Rectangle bounds = Win32DPIUtils.scaleBounds(image.getBounds(), this.getZoom(), 100);
             margin += bounds.width + MARGIN * 2;
             long oldFont = 0;
             long hDC = OS.GetDC(getApi().handle);
@@ -389,14 +390,14 @@ public class SwtButton extends SwtControl implements IButton {
                 boolean hasImage = image != null, hasText = true;
                 if (hasImage) {
                     if (image != null) {
-                        Rectangle rect = DPIUtil.scaleBounds(image.getBounds(), this.getZoom(), 100);
+                        Rectangle rect = Win32DPIUtils.scaleBounds(image.getBounds(), this.getZoom(), 100);
                         width = rect.width;
                         if (hasText && text.length() != 0) {
-                            width += DPIUtil.scaleUp(MARGIN * 2, getZoom());
+                            width += Win32DPIUtils.pointToPixel(MARGIN * 2, getZoom());
                             ;
                         }
                         height = rect.height;
-                        extra = DPIUtil.scaleUp(MARGIN * 2, getZoom());
+                        extra = Win32DPIUtils.pointToPixel(MARGIN * 2, getZoom());
                         ;
                     }
                 }
@@ -412,7 +413,7 @@ public class SwtButton extends SwtControl implements IButton {
                     if (length == 0) {
                         height = Math.max(height, lptm.tmHeight);
                     } else {
-                        extra = Math.max(DPIUtil.scaleUp(MARGIN * 2, getZoom()), lptm.tmAveCharWidth);
+                        extra = Math.max(Win32DPIUtils.pointToPixel(MARGIN * 2, getZoom()), lptm.tmAveCharWidth);
                         char[] buffer = text.toCharArray();
                         RECT rect = new RECT();
                         int flags = OS.DT_CALCRECT | OS.DT_SINGLELINE;
@@ -1413,7 +1414,7 @@ public class SwtButton extends SwtControl implements IButton {
             OS.GetThemePartSize(((SwtDisplay) display.getImpl()).hButtonTheme(getApi().nativeZoom), hdc, OS.BP_CHECKBOX, OS.CBS_UNCHECKEDNORMAL, null, OS.TS_TRUE, size);
             result += size.cx;
         } else {
-            result += DPIUtil.scaleUp(13, getApi().nativeZoom);
+            result += Win32DPIUtils.pointToPixel(13, getApi().nativeZoom);
         }
         // Windows uses half width of '0' as checkbox-to-text distance.
         OS.GetTextExtentPoint32(hdc, STRING_WITH_ZERO_CHAR, 1, size);
@@ -1445,7 +1446,7 @@ public class SwtButton extends SwtControl implements IButton {
                                 long brush = OS.CreateSolidBrush(pixel);
                                 int inset = 2;
                                 int radius = 3;
-                                if (useDarkModeExplorerTheme && (OS.WIN32_BUILD >= OS.WIN32_BUILD_WIN11_21H2)) {
+                                if (useDarkModeExplorerTheme && OsVersion.IS_WIN11_21H2) {
                                     // On Win11, Light theme and Dark theme images have different sizes
                                     inset = 1;
                                     radius = 4;
@@ -1454,7 +1455,7 @@ public class SwtButton extends SwtControl implements IButton {
                                 int t = nmcd.top + inset;
                                 int r = nmcd.right - inset;
                                 int b = nmcd.bottom - inset;
-                                if (OS.WIN32_BUILD >= OS.WIN32_BUILD_WIN11_21H2) {
+                                if (OsVersion.IS_WIN11_21H2) {
                                     // 'RoundRect' has left/top pixel reserved for border
                                     l += 1;
                                     t += 1;
@@ -1480,14 +1481,14 @@ public class SwtButton extends SwtControl implements IButton {
                                     data.device = display;
                                     GC gc = createNewGC(nmcd.hdc, data);
                                     int margin = computeLeftMargin();
-                                    Rectangle imageBounds = DPIUtil.scaleBounds(image.getBounds(), this.getZoom(), 100);
+                                    Rectangle imageBounds = Win32DPIUtils.scaleBounds(image.getBounds(), this.getZoom(), 100);
                                     int imageWidth = imageBounds.width;
                                     // for SWT.RIGHT_TO_LEFT right and left are inverted
                                     left += (imageWidth + (isRadioOrCheck() ? 2 * MARGIN : MARGIN));
                                     int x = margin + (isRadioOrCheck() ? radioOrCheckTextPadding : 3);
                                     int y = Math.max(0, (nmcd.bottom - imageBounds.height) / 2);
                                     int zoom = getZoom();
-                                    gc.drawImage(image, DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(y, zoom));
+                                    gc.drawImage(image, DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(y, zoom));
                                     gc.dispose();
                                 }
                                 left += isRadioOrCheck() ? radioOrCheckTextPadding : 0;
@@ -1573,7 +1574,7 @@ public class SwtButton extends SwtControl implements IButton {
 	 * The workaround is to use hot image in place of default.
 	 */
         boolean hot = false;
-        if (OS.WIN32_BUILD >= OS.WIN32_BUILD_WIN11_21H2) {
+        if (OsVersion.IS_WIN11_21H2) {
             if (!pressed && enabled) {
                 hot = true;
             }

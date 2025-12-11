@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2012 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -15,11 +15,12 @@
  */
 package org.eclipse.swt.internal.image;
 
+import java.io.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import java.io.*;
+import org.eclipse.swt.internal.image.FileFormat.*;
 
-public final class GIFFileFormat extends FileFormat {
+public final class GIFFileFormat extends StaticImageFileFormat {
 
     String signature;
 
@@ -66,15 +67,11 @@ public final class GIFFileFormat extends FileFormat {
     }
 
     @Override
-    boolean isFileFormat(LEDataInputStream stream) {
-        try {
-            byte[] signature = new byte[3];
-            stream.read(signature);
-            stream.unread(signature);
-            return signature[0] == 'G' && signature[1] == 'I' && signature[2] == 'F';
-        } catch (Exception e) {
-            return false;
-        }
+    boolean isFileFormat(LEDataInputStream stream) throws IOException {
+        byte[] signature = new byte[3];
+        stream.read(signature);
+        stream.unread(signature);
+        return signature[0] == 'G' && signature[1] == 'I' && signature[2] == 'F';
     }
 
     /**

@@ -13,6 +13,4 @@ public interface ImplScrollBar extends ImplWidget {
     int _detail();
 
     boolean _dragSent();
-
-    Point getSizeInPixels();
 }

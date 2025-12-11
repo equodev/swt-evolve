@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2021 IBM Corporation and others. All rights reserved.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others. All rights reserved.
  *  The contents of this file are made available under the terms
  *  of the GNU Lesser General Public License (LGPL) Version 2.1 that
  *  accompanies this distribution (lgpl-v21.txt).  The LGPL is also
@@ -114,6 +114,10 @@ public class WebKitGTK extends C {
     public static final int WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START = 0;
 
     public static final int WEBKIT_USER_CONTENT_INJECT_TOP_FRAME = 1;
+
+    public static final int G_MAXUINT = 65535;
+
+    public static final int WEBKIT_FIND_OPTIONS_WRAP_AROUND = 1 << 4;
 
     /**
      * Signals
@@ -317,6 +321,11 @@ public class WebKitGTK extends C {
      * @method flags=dynamic
      */
     public static final native long soup_uri_new(byte[] uri_string);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native int soup_get_major_version();
 
     /* --------------------- start WebKitGTK natives --------------------- */
     /**
@@ -523,6 +532,11 @@ public class WebKitGTK extends C {
      * @method flags=dynamic
      */
     public static final native long webkit_web_context_get_default();
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native long webkit_network_session_get_default();
 
     /**
      * @method flags=dynamic
@@ -779,6 +793,32 @@ public class WebKitGTK extends C {
      * @method flags=dynamic
      */
     public static final native void webkit_user_script_unref(long user_script);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native long webkit_web_view_get_find_controller(long webView);
+
+    /**
+     * @method flags=dynamic
+     */
+    /* 			    void webkit_find_controller_search (WebKitFindController *find_controller, const gchar *search_text, guint32 find_options, guint max_match_count); **/
+    public static final native void webkit_find_controller_search(long findController, byte[] textToSearch, int options, int max_match_count);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native long webkit_find_controller_search_next(long findController);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native long webkit_find_controller_search_previous(long findController);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native long webkit_find_controller_search_finish(long findController);
 
     /* --------------------- start SWT natives --------------------- */
     public static final native int GdkRectangle_sizeof();

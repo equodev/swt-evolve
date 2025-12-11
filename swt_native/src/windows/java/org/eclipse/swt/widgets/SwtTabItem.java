@@ -198,7 +198,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return DPIUtil.scaleDown(getBoundsInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), getZoom());
     }
 
     Rectangle getBoundsInPixels() {

@@ -50,5 +50,3 @@ Color getShellBackground() {
 Color getAccentColor() {
   return getCurrentTheme() ? const Color(0xFF9D7FF5) : const Color(0xFF7E57C2);
 }
-
-

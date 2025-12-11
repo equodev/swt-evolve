@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
@@ -174,11 +173,11 @@ public class SwtSash extends SwtControl implements ISash {
     }
 
     @Override
-    void gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
-        super.gtk_gesture_press_event(gesture, n_press, x, y, event);
+    int gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
+        int result = super.gtk_gesture_press_event(gesture, n_press, x, y, event);
         int eventButton = GDK.gdk_button_event_get_button(event);
         if (eventButton != 1 || n_press != 1)
-            return;
+            return result;
         startX = (int) x;
         startY = (int) y;
         GtkAllocation allocation = new GtkAllocation();
@@ -192,27 +191,29 @@ public class SwtSash extends SwtControl implements ISash {
         Event jEvent = new Event();
         jEvent.time = GDK.gdk_event_get_time(event);
         Rectangle eventRect = new Rectangle(lastX, lastY, width, height);
-        jEvent.setBounds(DPIUtil.autoScaleDown(eventRect));
+        jEvent.setBounds(eventRect);
         if ((getApi().style & SWT.SMOOTH) == 0) {
             jEvent.detail = SWT.DRAG;
         }
         if ((parent.style & SWT.MIRRORED) != 0)
-            jEvent.x = DPIUtil.autoScaleDown(((SwtControl) parent.getImpl()).getClientWidth() - width) - jEvent.x;
+            jEvent.x = ((SwtControl) parent.getImpl()).getClientWidth() - width - jEvent.x;
         sendSelectionEvent(SWT.Selection, jEvent, true);
         if (isDisposed())
-            return;
+            return result;
         if (jEvent.doit) {
             dragging = true;
         }
+        return result;
     }
 
     @Override
-    void gtk_gesture_release_event(long gesture, int n_press, double x, double y, long event) {
-        super.gtk_gesture_release_event(gesture, n_press, x, y, event);
+    int gtk_gesture_release_event(long gesture, int n_press, double x, double y, long event) {
+        int result = super.gtk_gesture_release_event(gesture, n_press, x, y, event);
         int eventButton = GDK.gdk_button_event_get_button(event);
         if (eventButton != 1 || !dragging)
-            return;
+            return result;
         dragging = false;
+        return result;
     }
 
     @Override
@@ -240,16 +241,16 @@ public class SwtSash extends SwtControl implements ISash {
         Event jEvent = new Event();
         jEvent.time = GDK.gdk_event_get_time(event);
         Rectangle eventRect = new Rectangle(newX, newY, width, height);
-        jEvent.setBounds(DPIUtil.autoScaleDown(eventRect));
+        jEvent.setBounds(eventRect);
         if ((getApi().style & SWT.SMOOTH) == 0) {
             jEvent.detail = SWT.DRAG;
         }
         if ((parent.style & SWT.MIRRORED) != 0)
-            jEvent.x = DPIUtil.autoScaleDown(((SwtControl) parent.getImpl()).getClientWidth() - width) - jEvent.x;
+            jEvent.x = ((SwtControl) parent.getImpl()).getClientWidth() - width - jEvent.x;
         sendSelectionEvent(SWT.Selection, jEvent, true);
         if (isDisposed())
             return;
-        Rectangle rect = DPIUtil.autoScaleUp(jEvent.getBounds());
+        Rectangle rect = jEvent.getBounds();
         if (jEvent.doit) {
             lastX = rect.x;
             lastY = rect.y;
@@ -308,14 +309,14 @@ public class SwtSash extends SwtControl implements ISash {
                 Event jEvent = new Event();
                 jEvent.time = GDK.gdk_event_get_time(event);
                 Rectangle eventRect = new Rectangle(newX, newY, width, height);
-                jEvent.setBounds(DPIUtil.autoScaleDown(eventRect));
+                jEvent.setBounds(eventRect);
                 if ((parent.style & SWT.MIRRORED) != 0)
-                    jEvent.x = DPIUtil.autoScaleDown(((SwtControl) parent.getImpl()).getClientWidth() - width) - jEvent.x;
+                    jEvent.x = ((SwtControl) parent.getImpl()).getClientWidth() - width - jEvent.x;
                 sendSelectionEvent(SWT.Selection, jEvent, true);
                 if (isDisposed())
                     break;
                 if (jEvent.doit) {
-                    Rectangle rect = DPIUtil.autoScaleUp(jEvent.getBounds());
+                    Rectangle rect = jEvent.getBounds();
                     lastX = rect.x;
                     lastY = rect.y;
                     if ((parent.style & SWT.MIRRORED) != 0)
@@ -362,18 +363,18 @@ public class SwtSash extends SwtControl implements ISash {
         Event jEvent = new Event();
         jEvent.time = GDK.gdk_event_get_time(event);
         Rectangle eventRect = new Rectangle(lastX, lastY, width, height);
-        jEvent.setBounds(DPIUtil.autoScaleDown(eventRect));
+        jEvent.setBounds(eventRect);
         if ((getApi().style & SWT.SMOOTH) == 0) {
             jEvent.detail = SWT.DRAG;
         }
         if ((parent.style & SWT.MIRRORED) != 0)
-            jEvent.x = DPIUtil.autoScaleDown(((SwtControl) parent.getImpl()).getClientWidth() - width) - jEvent.x;
+            jEvent.x = ((SwtControl) parent.getImpl()).getClientWidth() - width - jEvent.x;
         sendSelectionEvent(SWT.Selection, jEvent, true);
         if (isDisposed())
             return 0;
         if (jEvent.doit) {
             dragging = true;
-            Rectangle rect = DPIUtil.autoScaleUp(jEvent.getBounds());
+            Rectangle rect = jEvent.getBounds();
             lastX = rect.x;
             lastY = rect.y;
             if ((parent.style & SWT.MIRRORED) != 0)
@@ -404,15 +405,15 @@ public class SwtSash extends SwtControl implements ISash {
         Event jEvent = new Event();
         jEvent.time = GDK.gdk_event_get_time(event);
         Rectangle eventRect = new Rectangle(lastX, lastY, width, height);
-        jEvent.setBounds(DPIUtil.autoScaleDown(eventRect));
+        jEvent.setBounds(eventRect);
         if ((parent.style & SWT.MIRRORED) != 0)
-            jEvent.x = DPIUtil.autoScaleDown(((SwtControl) parent.getImpl()).getClientWidth() - width) - jEvent.x;
+            jEvent.x = ((SwtControl) parent.getImpl()).getClientWidth() - width - jEvent.x;
         sendSelectionEvent(SWT.Selection, jEvent, true);
         if (isDisposed())
             return result;
         if (jEvent.doit) {
             if ((getApi().style & SWT.SMOOTH) != 0) {
-                Rectangle rect = DPIUtil.autoScaleUp(jEvent.getBounds());
+                Rectangle rect = jEvent.getBounds();
                 setBoundsInPixels(rect.x, rect.y, width, height);
                 // widget could be disposed at this point
             }
@@ -498,16 +499,16 @@ public class SwtSash extends SwtControl implements ISash {
                 Event event = new Event();
                 event.time = GDK.gdk_event_get_time(eventPtr);
                 Rectangle eventRect = new Rectangle(newX, newY, width, height);
-                event.setBounds(DPIUtil.autoScaleDown(eventRect));
+                event.setBounds(eventRect);
                 if ((parent.style & SWT.MIRRORED) != 0)
-                    event.x = DPIUtil.autoScaleDown(((SwtControl) parent.getImpl()).getClientWidth() - width) - event.x;
+                    event.x = ((SwtControl) parent.getImpl()).getClientWidth() - width - event.x;
                 sendSelectionEvent(SWT.Selection, event, true);
                 if (ptrGrabResult == GDK.GDK_GRAB_SUCCESS)
                     gdk_pointer_ungrab(gdkResource, GDK.GDK_CURRENT_TIME);
                 if (isDisposed())
                     break;
                 if (event.doit) {
-                    Rectangle rect = DPIUtil.autoScaleUp(event.getBounds());
+                    Rectangle rect = event.getBounds();
                     lastX = rect.x;
                     lastY = rect.y;
                     if ((parent.style & SWT.MIRRORED) != 0)
@@ -582,16 +583,16 @@ public class SwtSash extends SwtControl implements ISash {
         Event event = new Event();
         event.time = GDK.gdk_event_get_time(eventPtr);
         Rectangle eventRect = new Rectangle(newX, newY, width, height);
-        event.setBounds(DPIUtil.autoScaleDown(eventRect));
+        event.setBounds(eventRect);
         if ((getApi().style & SWT.SMOOTH) == 0) {
             event.detail = SWT.DRAG;
         }
         if ((parent.style & SWT.MIRRORED) != 0)
-            event.x = DPIUtil.autoScaleDown(((SwtControl) parent.getImpl()).getClientWidth() - width) - event.x;
+            event.x = ((SwtControl) parent.getImpl()).getClientWidth() - width - event.x;
         sendSelectionEvent(SWT.Selection, event, true);
         if (isDisposed())
             return 0;
-        Rectangle rect = DPIUtil.autoScaleUp(event.getBounds());
+        Rectangle rect = event.getBounds();
         if (event.doit) {
             lastX = rect.x;
             lastY = rect.y;
