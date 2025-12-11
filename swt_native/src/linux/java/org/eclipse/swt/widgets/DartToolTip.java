@@ -460,19 +460,15 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setLocation(Point location) {
-        dirty();
         checkWidget();
         setLocationInPixels(DPIUtil.autoScaleUp(location));
-        this.location = location;
     }
 
     void setLocationInPixels(Point location) {
-        dirty();
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setLocationInPixels(location.x, location.y);
-        this.location = location;
     }
 
     /**

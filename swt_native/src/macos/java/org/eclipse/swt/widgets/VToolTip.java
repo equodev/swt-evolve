@@ -24,6 +24,14 @@ public class VToolTip extends VWidget {
         ((DartToolTip) impl).autohide = value;
     }
 
+    public Point getLocation() {
+        return ((DartToolTip) impl).location;
+    }
+
+    public void setLocation(Point value) {
+        ((DartToolTip) impl).location = value;
+    }
+
     public String getMessage() {
         return ((DartToolTip) impl).getMessage();
     }

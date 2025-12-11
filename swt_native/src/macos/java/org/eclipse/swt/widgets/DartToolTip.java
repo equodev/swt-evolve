@@ -481,6 +481,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setLocation(int x, int y) {
+        dirty();
         checkWidget();
         if (this.x == x && this.y == y)
             return;
@@ -488,6 +489,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
         this.y = y;
         if (tip.getVisible())
             configure();
+        this.location = new Point(x, y);
     }
 
     /**
@@ -625,6 +627,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
         this.visible = visible;
     }
 
+    Point location;
+
     String message;
 
     String text = "";
@@ -689,6 +693,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
 
     public Runnable _runnable() {
         return runnable;
+    }
+
+    public Point _location() {
+        return location;
     }
 
     public String _message() {

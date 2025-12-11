@@ -342,9 +342,11 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setLocation(int x, int y) {
+        dirty();
         checkWidget();
         int zoom = getZoom();
         setLocationInPixels(DPIUtil.scaleUp(x, zoom), DPIUtil.scaleUp(y, zoom));
+        this.location = new Point(x, y);
     }
 
     void setLocationInPixels(int x, int y) {
@@ -476,6 +478,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
         }
     }
 
+    Point location;
+
     public Shell _parent() {
         return parent;
     }
@@ -514,6 +518,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
 
     public boolean _visible() {
         return visible;
+    }
+
+    public Point _location() {
+        return location;
     }
 
     public FlutterBridge getBridge() {
