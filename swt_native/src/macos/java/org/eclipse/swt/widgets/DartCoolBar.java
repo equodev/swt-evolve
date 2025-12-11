@@ -951,6 +951,10 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
             }
             y += rowHeight;
         }
+        FlutterBridge bridge = getBridge();
+        if (bridge != null) {
+            bridge.update();
+        }
         return y;
     }
 
