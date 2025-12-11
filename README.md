@@ -94,6 +94,15 @@ Here is the current status of major widgets:
 | `Link`            | ✔️ Implemented |                                                                     |
 | `Combo`           | ⚠️ Partially Implemented | SWT.READ_ONLY Combo implemented for Windows and Linux, SWT.SIMPLE and SWT.DROP_DOWN to add. |
 | `ExpandBar`       | ⚠️ Implemented for Windows |  |
+| `Scale`           |  ✔️ Implemented  |  |
+| `Spinner`         |  ✔️ Implemented  |  |
+| `Slider`          |  ✔️ Implemented  |  |
+| `ProgressBar`     |  ✔️ Implemented  |  |
+| `Menu`            |  ⚠️ Partially Implemented  | SWT.BAR Menu to add  |
+| `CCombo`          |  ✔️ Implemented  |  |
+| `SashForm`        |  ✔️ Implemented  |  |
+| `CoolBar`         |  ⚠️ Implemented for Windows  |  |
+| `ToolTip`         |  ⚠️ Implemented for Windows | ToolTip text for Controls implemented, ToolTip Widget to add  |
 ---
 
 ## 🗺️ Roadmap

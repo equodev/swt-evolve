@@ -191,17 +191,9 @@ public class DartCoolItem extends DartItem implements ICoolItem {
  * Find the trim size of the Toolbar widget in the current platform.
  */
     void calculateChevronTrim() {
-        ToolBar tb = new ToolBar(parent, SWT.FLAT);
-        ToolItem ti = new ToolItem(tb, SWT.PUSH);
-        Image image = new Image(display, 1, 1);
-        ti.setImage(image);
-        Point size = tb.computeSize(SWT.DEFAULT, SWT.DEFAULT);
-        size = ((DartCoolBar) parent.getImpl()).fixPoint(size.x, size.y);
-        CHEVRON_HORIZONTAL_TRIM = size.x - 1;
-        CHEVRON_VERTICAL_TRIM = size.y - 1;
-        tb.dispose();
-        ti.dispose();
-        image.dispose();
+        // These values represent the typical padding for toolbar buttons on macOS
+        CHEVRON_HORIZONTAL_TRIM = 6;
+        CHEVRON_VERTICAL_TRIM = 4;
     }
 
     /**
@@ -537,7 +529,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
         Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);
         minimumWidth = point.x;
         minimumHeight = point.y;
-        this._minimumSize = new Point(_minimumSize.x, _minimumSize.y);
+        this._minimumSize = new Point(minimumWidth, minimumHeight);
     }
 
     /**
@@ -581,7 +573,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
         Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);
         preferredWidth = Math.max(point.x, MINIMUM_WIDTH);
         preferredHeight = point.y;
-        this._preferredSize = new Point(_preferredSize.x, _preferredSize.y);
+        this._preferredSize = new Point(preferredWidth, preferredHeight);
     }
 
     /**
