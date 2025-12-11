@@ -13,7 +13,7 @@ import java.util.*;
 
 public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     private final DartWidget forWidget;
-    protected long context;
+    protected long context; 
 
     static {
         FlutterLibraryLoader.initialize();
@@ -100,7 +100,8 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     @Override
     public void setBounds(DartControl dartControl, Rectangle bounds) {
         if (dartControl.bridge != null && forWidget == dartControl) {
-            System.out.println("SET BOUNDS: " + dartControl + " " + bounds);
+            System.out.println("SET BOUNDS: " + dartControl + " Rectangle {" + bounds.x + ", " + bounds.y + ", " + bounds.width + ", " + bounds.height + "}");
+
             if (dartControl instanceof DartCTabFolder) {
                 SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
                         0, 0, bounds.width, 28);
@@ -108,6 +109,7 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
                 SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
                         bounds.x, bounds.y, bounds.width, bounds.height);
             }
+
 //            dartControl.resized();
 //            dartControl.sendEvent(SWT.Resize);
             if (dartControl instanceof DartComposite c && c.layout != null) {

@@ -510,6 +510,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                     return this.getApi();
             }
         }
+        if (parent instanceof Decorations) {
+            return parent;
+        }
         return ((DartControl) parent.getImpl()).computeTabRoot();
     }
 
@@ -854,7 +857,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             sendEvent(SWT.Resize);
             result |= RESIZED;
         }
-        this.bounds = new Rectangle(x, y, width, height);
+        int finalX = move ? x : this.bounds.x;
+        int finalY = move ? y : this.bounds.y;
+        int finalWidth = resize ? width : this.bounds.width;
+        int finalHeight = resize ? height : this.bounds.height;
+        this.bounds = new Rectangle(finalX, finalY, finalWidth, finalHeight);
         getBridge().setBounds(this, bounds);
         return result;
     }

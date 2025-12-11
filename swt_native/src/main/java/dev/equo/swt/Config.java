@@ -23,7 +23,7 @@ public class Config {
     static {
         try {
             equoEnabled = Map.ofEntries(
-                    //entry(Button.class, Impl.equo),
+                    entry(Button.class, Impl.equo),
                     //entry(Label.class, Impl.equo),
                     entry(CTabFolder.class, Impl.equo),
                     entry(CTabItem.class, Impl.equo),

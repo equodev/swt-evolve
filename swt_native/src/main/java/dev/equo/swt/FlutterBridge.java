@@ -250,6 +250,9 @@ public abstract class FlutterBridge {
     public void setCursor(DartControl control, long cursor) {
     }
 
+    public void reparent(DartControl dartControl, Composite parent) {
+    }
+
     public static long id(Object w) {
         if (w instanceof DartWidget)
             return ((DartWidget) w).getApi().hashCode();

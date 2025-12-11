@@ -624,6 +624,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                     return this.getApi();
             }
         }
+        if (parent instanceof Decorations) {
+            return parent;
+        }
         return ((DartControl) parent.getImpl()).computeTabRoot();
     }
 
