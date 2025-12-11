@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../gen/point.dart';
 import '../gen/widget.dart';
 import '../impl/tooltip_evolve.dart';
 import 'event.dart';
@@ -31,6 +32,7 @@ class VToolTip extends VWidget {
   }
 
   bool? autoHide;
+  VPoint? location;
   String? message;
   String? text;
   bool? visible;

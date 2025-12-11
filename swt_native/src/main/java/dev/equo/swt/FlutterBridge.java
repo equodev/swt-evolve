@@ -64,7 +64,7 @@ public abstract class FlutterBridge {
                         });
 
                     }
-                    if (!isNew(widget)) { // send with the parent
+                    if (!isNew(widget) || widget instanceof DartToolTip) { // send with the parent
                         synchronized (dirty) { // undirty if it was dirtied while waiting foe clientReady
                             dirty.remove(widget);
                         }

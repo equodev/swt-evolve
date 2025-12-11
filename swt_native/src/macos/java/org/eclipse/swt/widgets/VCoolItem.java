@@ -35,28 +35,12 @@ public class VCoolItem extends VItem {
         ((DartCoolItem) impl).setMinimumSize(value);
     }
 
-    public int getMinimumWidth() {
-        return ((DartCoolItem) impl).minimumWidth;
-    }
-
-    public void setMinimumWidth(int value) {
-        ((DartCoolItem) impl).minimumWidth = value;
-    }
-
     public Point getPreferredSize() {
         return ((DartCoolItem) impl).getPreferredSize();
     }
 
     public void setPreferredSize(Point value) {
         ((DartCoolItem) impl).setPreferredSize(value);
-    }
-
-    public int getPreferredWidth() {
-        return ((DartCoolItem) impl).preferredWidth;
-    }
-
-    public void setPreferredWidth(int value) {
-        ((DartCoolItem) impl).preferredWidth = value;
     }
 
     @JsonConverter(target = CoolItem.class)
