@@ -180,33 +180,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        int height = 0, width = 0;
-        if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
-            if (itemCount > 0) {
-                height += spacing;
-                GC gc = new GC(this.getApi());
-                for (int i = 0; i < itemCount; i++) {
-                    ExpandItem item = items[i];
-                    height += item.getHeaderHeight();
-                    if (((DartExpandItem) item.getImpl()).expanded)
-                        height += ((DartExpandItem) item.getImpl()).height;
-                    height += spacing;
-                    width = Math.max(width, ((DartExpandItem) item.getImpl()).getPreferredWidth(gc));
-                }
-                gc.dispose();
-            }
-        }
-        if (width == 0)
-            width = DEFAULT_WIDTH;
-        if (height == 0)
-            height = DEFAULT_HEIGHT;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
-        Rectangle trim = computeTrim(0, 0, width, height);
-        return new Point(trim.width, trim.height);
+        return Sizes.compute(this);
     }
 
     void createItem(ExpandItem item, int style, int index) {
