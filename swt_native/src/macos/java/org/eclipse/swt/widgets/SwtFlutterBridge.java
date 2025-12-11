@@ -60,4 +60,17 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
         control.jniRef = 0;
         control.getApi().view = null;
     }
+
+    @Override
+    public void reparent(DartControl dartControl, Composite parent) {
+        NSView topView = dartControl.getApi().view;
+        if (topView != null) {
+            topView.retain();
+            topView.removeFromSuperview();
+            if (!(parent.getImpl() instanceof DartComposite) && parent.getImpl() instanceof SwtControl) {
+                ((SwtControl) parent.getImpl()).contentView().addSubview(topView, OS.NSWindowBelow, null);
+            }
+            topView.release();
+        }
+    }
 }

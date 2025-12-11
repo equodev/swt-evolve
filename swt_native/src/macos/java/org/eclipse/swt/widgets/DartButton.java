@@ -190,11 +190,6 @@ public class DartButton extends DartControl implements IButton {
     }
 
     @Override
-    Font defaultFont() {
-        return null;
-    }
-
-    @Override
     void deregister() {
         super.deregister();
     }

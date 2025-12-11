@@ -271,7 +271,14 @@ public class FlutterLibraryLoader {
     }
 
     private static File findFlutterBuildDirectory() {
-        String[] possiblePaths = {"flutter-lib/build", "../flutter-lib/build", "../../flutter-lib/build"};
+        String[] possiblePaths = {
+                "flutter-lib/build",
+                "../flutter-lib/build",
+                "../../flutter-lib/build",
+                "swt-evolve/flutter-lib/build",
+                "../swt-evolve/flutter-lib/build",
+                "../../swt-evolve/flutter-lib/build"
+        };
         for (String path : possiblePaths) {
             File buildDir = new File(path);
             if (buildDir.exists() && buildDir.isDirectory()) {
