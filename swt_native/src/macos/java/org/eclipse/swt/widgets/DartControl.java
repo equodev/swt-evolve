@@ -2592,7 +2592,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else if (resize) {
         }
         ((SwtDisplay) display.getImpl()).ignoreFocusControl = oldIgnoreFocusControl;
-        this.bounds = new Rectangle(x, y, width, height);
+        int finalX = move ? x : this.bounds.x;
+        int finalY = move ? y : this.bounds.y;
+        int finalWidth = resize ? width : this.bounds.width;
+        int finalHeight = resize ? height : this.bounds.height;
+        this.bounds = new Rectangle(finalX, finalY, finalWidth, finalHeight);
         getBridge().setBounds(this, bounds);
     }
 
@@ -2985,6 +2989,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             Menu[] menus = oldShell.getImpl().findMenus(this.getApi());
             fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
         }
+        getBridge().reparent(this, parent);
         ControlUtils.reparent(this, parent);
         reskin(SWT.ALL);
         return true;
