@@ -49,7 +49,7 @@ public class Config {
                     //entry(Canvas.class, Impl.equo),
                     //entry(FontMetrics.class, Impl.equo),
                     //entry(Font.class, Impl.equo),
-                    //entry(FontData.class, Impl.equo),
+                    //entry(FontData.class, Impl.equo)
                     //entry(ScrolledComposite.class, Impl.equo)
             );
         } catch (Exception e) {

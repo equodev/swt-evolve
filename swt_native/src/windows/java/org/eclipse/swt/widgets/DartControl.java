@@ -3948,6 +3948,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             Menu[] menus = oldShell.getImpl().findMenus(this.getApi());
             fixChildren(newShell, oldShell, newDecorations, oldDecorations, menus);
         }
+        getBridge().reparent(this, parent);
         ControlUtils.reparent(this, parent);
         // If parent changed, zoom level might need to be adjusted
         if (parent.nativeZoom != getApi().nativeZoom) {

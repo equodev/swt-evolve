@@ -16,6 +16,7 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -214,7 +215,7 @@ public final class DartFont extends DartResource implements IFont {
      */
     @Override
     public int hashCode() {
-        return 0;
+        return Objects.hash(fontData[0].name, fontData[0].height, fontData[0].style);
     }
 
     void init(String name, float height, int style, String nsName) {
@@ -237,7 +238,7 @@ public final class DartFont extends DartResource implements IFont {
      */
     @Override
     public boolean isDisposed() {
-        return false;
+        return device == null;
     }
 
     /**
@@ -250,7 +251,8 @@ public final class DartFont extends DartResource implements IFont {
     public String toString() {
         if (isDisposed())
             return "Font {*DISPOSED*}";
-        return null;
+        FontData fd = fontData[0];
+        return "Font {" + fd.name + ", " + (int) fd.height + ", " + fd.style + "}";
     }
 
     FontData[] fontData = new FontData[1];
