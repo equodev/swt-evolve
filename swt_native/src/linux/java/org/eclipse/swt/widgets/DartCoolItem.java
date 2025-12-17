@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -499,8 +500,10 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      * </ul>
      */
     public void setControl(Control control) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.control, control)) {
+            dirty();
+        }
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -533,11 +536,12 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setMinimumSize(int width, int height) {
         dirty();
+        Point newValue = new Point(_minimumSize.x, _minimumSize.y);
         checkWidget();
         Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);
         minimumWidth = point.x;
+        this._minimumSize = newValue;
         minimumHeight = point.y;
-        this._minimumSize = new Point(_minimumSize.x, _minimumSize.y);
     }
 
     /**
@@ -576,12 +580,13 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setPreferredSize(int width, int height) {
         dirty();
+        Point newValue = new Point(_preferredSize.x, _preferredSize.y);
         checkWidget();
         ideal = true;
         Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);
         preferredWidth = Math.max(point.x, MINIMUM_WIDTH);
+        this._preferredSize = newValue;
         preferredHeight = point.y;
-        this._preferredSize = new Point(_preferredSize.x, _preferredSize.y);
     }
 
     /**

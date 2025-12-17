@@ -20,6 +20,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -689,8 +690,10 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * </ul>
      */
     public void setAlignment(int align) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.align, align)) {
+            dirty();
+        }
         if (align != SWT.LEFT && align != SWT.RIGHT && align != SWT.CENTER) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -783,6 +786,9 @@ public class DartCLabel extends DartCanvas implements ICLabel {
     public void setBackground(Color[] colors, int[] percents, boolean vertical) {
         dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.gradientColors, colors)) {
+            dirty();
+        }
         if (colors != null) {
             if (percents == null || percents.length != colors.length - 1) {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -851,8 +857,10 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * </ul>
      */
     public void setBackground(Image image) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.backgroundImage, image)) {
+            dirty();
+        }
         if (image == backgroundImage)
             return;
         if (image != null) {
@@ -876,8 +884,10 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * @since 3.6
      */
     public void setBottomMargin(int bottomMargin) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.bottomMargin, bottomMargin)) {
+            dirty();
+        }
         if (this.bottomMargin == bottomMargin || bottomMargin < 0)
             return;
         this.bottomMargin = bottomMargin;
@@ -903,8 +913,10 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * </ul>
      */
     public void setImage(Image image) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.image, image)) {
+            dirty();
+        }
         if (image != this.image) {
             this.image = image;
             redraw();
@@ -924,8 +936,10 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * @since 3.6
      */
     public void setLeftMargin(int leftMargin) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.leftMargin, leftMargin)) {
+            dirty();
+        }
         if (this.leftMargin == leftMargin || leftMargin < 0)
             return;
         this.leftMargin = leftMargin;
@@ -947,8 +961,19 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * @since 3.6
      */
     public void setMargins(int leftMargin, int topMargin, int rightMargin, int bottomMargin) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.topMargin, topMargin)) {
+            dirty();
+        }
+        if (!java.util.Objects.equals(this.rightMargin, rightMargin)) {
+            dirty();
+        }
+        if (!java.util.Objects.equals(this.leftMargin, leftMargin)) {
+            dirty();
+        }
+        if (!java.util.Objects.equals(this.bottomMargin, bottomMargin)) {
+            dirty();
+        }
         this.leftMargin = Math.max(0, leftMargin);
         this.topMargin = Math.max(0, topMargin);
         this.rightMargin = Math.max(0, rightMargin);
@@ -969,8 +994,10 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * @since 3.6
      */
     public void setRightMargin(int rightMargin) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.rightMargin, rightMargin)) {
+            dirty();
+        }
         if (this.rightMargin == rightMargin || rightMargin < 0)
             return;
         this.rightMargin = rightMargin;
@@ -1002,8 +1029,10 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * </ul>
      */
     public void setText(String text) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.text, text)) {
+            dirty();
+        }
         //$NON-NLS-1$
         if (text == null)
             text = "";
@@ -1033,8 +1062,10 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * @since 3.6
      */
     public void setTopMargin(int topMargin) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.topMargin, topMargin)) {
+            dirty();
+        }
         if (this.topMargin == topMargin || topMargin < 0)
             return;
         this.topMargin = topMargin;

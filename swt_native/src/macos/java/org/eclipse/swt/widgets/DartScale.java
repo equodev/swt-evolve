@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -266,8 +267,10 @@ public class DartScale extends DartControl implements IScale {
      * </ul>
      */
     public void setIncrement(int increment) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.increment, increment)) {
+            dirty();
+        }
         if (increment < 1)
             return;
         this.increment = increment;
@@ -287,9 +290,12 @@ public class DartScale extends DartControl implements IScale {
      * </ul>
      */
     public void setMaximum(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.maximum, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.maximum = value;
+        this.maximum = newValue;
     }
 
     /**
@@ -306,9 +312,12 @@ public class DartScale extends DartControl implements IScale {
      * </ul>
      */
     public void setMinimum(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.minimum, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.minimum = value;
+        this.minimum = newValue;
     }
 
     /**
@@ -325,8 +334,10 @@ public class DartScale extends DartControl implements IScale {
      * </ul>
      */
     public void setPageIncrement(int pageIncrement) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.pageIncrement, pageIncrement)) {
+            dirty();
+        }
         if (pageIncrement < 1)
             return;
         this.pageIncrement = pageIncrement;
@@ -344,9 +355,12 @@ public class DartScale extends DartControl implements IScale {
      * </ul>
      */
     public void setSelection(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.selection = value;
+        this.selection = newValue;
     }
 
     int maximum;

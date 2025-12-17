@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -784,7 +785,10 @@ public class DartList extends DartScrollable implements IList {
     }
 
     void select(int[] indices, boolean scroll) {
-        dirty();
+        int[] newValue = indices;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         int i = 0;
         while (i < indices.length) {
             int index = indices[i];
@@ -793,9 +797,9 @@ public class DartList extends DartScrollable implements IList {
             }
             i++;
         }
+        this.selection = newValue;
         if (scroll)
             showSelection();
-        this.selection = indices;
     }
 
     /**
@@ -817,6 +821,7 @@ public class DartList extends DartScrollable implements IList {
 
     void select(int index, boolean scroll) {
         dirty();
+        int[] newValue = new int[] { index };
         if (index < 0)
             return;
         if (scroll) {
@@ -833,7 +838,7 @@ public class DartList extends DartScrollable implements IList {
             if (focusIndex != -1) {
             }
         }
-        this.selection = new int[] { index };
+        this.selection = newValue;
     }
 
     /**
@@ -872,6 +877,7 @@ public class DartList extends DartScrollable implements IList {
 
     void select(int start, int end, boolean scroll) {
         dirty();
+        int[] newValue = new int[] { start };
         /*
 	* Note that when start = end, LB_SELITEMRANGEEX
 	* deselects the item.
@@ -880,9 +886,9 @@ public class DartList extends DartScrollable implements IList {
             select(start, scroll);
             return;
         }
+        this.selection = newValue;
         if (scroll)
             showSelection();
-        this.selection = new int[] { start };
     }
 
     /**
@@ -958,6 +964,7 @@ public class DartList extends DartScrollable implements IList {
      */
     public void setItems(String... items) {
         dirty();
+        String[] newValue = items;
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -976,9 +983,9 @@ public class DartList extends DartScrollable implements IList {
         }
         if ((getApi().style & SWT.H_SCROLL) != 0) {
         }
+        this.items = newValue;
         if (index < items.length)
             error(SWT.ERROR_ITEM_NOT_ADDED);
-        this.items = items;
     }
 
     /**
@@ -1168,9 +1175,12 @@ public class DartList extends DartScrollable implements IList {
      * </ul>
      */
     public void setTopIndex(int index) {
-        dirty();
+        int newValue = index;
+        if (!java.util.Objects.equals(this.topIndex, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.topIndex = index;
+        this.topIndex = newValue;
     }
 
     /**

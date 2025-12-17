@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -419,8 +420,10 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setFont(Font font) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.font, font)) {
+            dirty();
+        }
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -445,8 +448,10 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setImage(Image image) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.image, image)) {
+            dirty();
+        }
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -573,8 +578,10 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.isVisible, visible)) {
+            dirty();
+        }
         if (visible == isVisible)
             return;
         isVisible = visible;

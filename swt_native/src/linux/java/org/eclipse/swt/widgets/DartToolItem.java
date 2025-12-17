@@ -634,8 +634,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setBackground(Color color) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.background, color)) {
+            dirty();
+        }
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -662,8 +664,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setControl(Control control) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.control, control)) {
+            dirty();
+        }
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -703,8 +707,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setDisabledImage(Image image) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.disabledImage, image)) {
+            dirty();
+        }
         if (this.disabledImage == image)
             return;
         if ((getApi().style & SWT.SEPARATOR) != 0)
@@ -735,8 +741,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.enabled, enabled)) {
+            dirty();
+        }
         if (this.enabled == enabled)
             return;
         this.enabled = enabled;
@@ -787,8 +795,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setForeground(Color color) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.foreground, color)) {
+            dirty();
+        }
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -817,8 +827,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setHotImage(Image image) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.hotImage, image)) {
+            dirty();
+        }
         if (this.hotImage == image)
             return;
         if ((getApi().style & SWT.SEPARATOR) != 0)
@@ -899,11 +911,14 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setSelection(boolean selected) {
-        dirty();
+        boolean newValue = selected;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
-        this.selection = selected;
+        this.selection = newValue;
     }
 
     @Override
@@ -992,8 +1007,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setToolTipText(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.toolTipText, string)) {
+            dirty();
+        }
         if (toolTipText == string || (toolTipText != null && toolTipText.equals(string)))
             return;
         if (((DartControl) parent.getImpl()).toolTipText == null) {
@@ -1026,15 +1043,18 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setWidth(int width) {
-        dirty();
+        int newValue = width;
+        if (!java.util.Objects.equals(this.width, newValue)) {
+            dirty();
+        }
         checkWidget();
         if ((getApi().style & SWT.SEPARATOR) == 0)
             return;
         if (width < 0)
             return;
         resizeHandle(width, (parent.style & SWT.VERTICAL) != 0 ? 6 : 15);
+        this.width = newValue;
         ((DartToolBar) parent.getImpl()).relayout();
-        this.width = width;
     }
 
     void showWidget(int index) {

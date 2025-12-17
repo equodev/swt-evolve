@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -266,8 +267,10 @@ public class DartTabItem extends DartItem implements ITabItem {
      * </ul>
      */
     public void setControl(Control control) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.control, control)) {
+            dirty();
+        }
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -408,8 +411,10 @@ public class DartTabItem extends DartItem implements ITabItem {
      * </ul>
      */
     public void setToolTipText(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.toolTipText, string)) {
+            dirty();
+        }
         toolTipText = string;
     }
 

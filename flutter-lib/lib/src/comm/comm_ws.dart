@@ -14,7 +14,7 @@ class EquoCommService {
     void callback(dynamic payload) {
       // print("comm ws on callback: ${payload ?? 'null'}");
       onSuccess(payload);
-      print("comm ws on callback after onSuccess");
+      // print("comm ws on callback after onSuccess");
     }
 
     impl.on(userEventActionId, callback);
@@ -32,7 +32,7 @@ class EquoCommService {
       var widgetValue = mapWidgetValue(map);
       // print("comm ws on callback after map: $widgetValue");
       onSuccess(widgetValue as V);
-      print("comm ws on callback after onSucess");
+      // print("comm ws on callback after onSucess");
     }
 
     impl.on(userEventActionId, callback);
@@ -196,7 +196,7 @@ class EquoComm {
     }
     final json = jsonDecode(event);
     if (json['error'] != null) {
-      print(json['error']);
+      // print(json['error']);
       return null;
     }
     return SDKMessage(

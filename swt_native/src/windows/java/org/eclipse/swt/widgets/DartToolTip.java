@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -318,8 +319,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * @see #setVisible
      */
     public void setAutoHide(boolean autoHide) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.autoHide, autoHide)) {
+            dirty();
+        }
         this.autoHide = autoHide;
         //TODO - update when visible
     }
@@ -343,8 +346,9 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public void setLocation(int x, int y) {
         dirty();
+        Point newValue = new Point(x, y);
         checkWidget();
-        this.location = new Point(x, y);
+        this.location = newValue;
     }
 
     void setLocationInPixels(int x, int y) {
@@ -397,8 +401,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setMessage(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.message, string)) {
+            dirty();
+        }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         message = string;
@@ -420,8 +426,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setText(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.text, string)) {
+            dirty();
+        }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         text = string;
@@ -446,8 +454,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.visible, visible)) {
+            dirty();
+        }
         if (visible == getVisible())
             return;
         if (item == null) {

@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -978,15 +979,18 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @since 2.0
      */
     public void setBackground(Color color) {
-        dirty();
+        Color newValue = color;
+        if (!java.util.Objects.equals(this.background, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (_getBackground().equals(color))
             return;
+        this.background = newValue;
         cached = true;
-        this.background = color;
     }
 
     /**
@@ -1051,8 +1055,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * </ul>
      */
     public void setChecked(boolean checked) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.cached, checked)) {
+            dirty();
+        }
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (_getChecked() == checked)
@@ -1071,8 +1077,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * </ul>
      */
     public void setExpanded(boolean expanded) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.isExpanded, expanded)) {
+            dirty();
+        }
         isExpanded = expanded;
     }
 
@@ -1094,8 +1102,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @since 3.0
      */
     public void setFont(Font font) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.font, font)) {
+            dirty();
+        }
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -1187,15 +1197,18 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @since 2.0
      */
     public void setForeground(Color color) {
-        dirty();
+        Color newValue = color;
+        if (!java.util.Objects.equals(this.foreground, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (_getForeground().equals(color))
             return;
+        this.foreground = newValue;
         cached = true;
-        this.foreground = color;
     }
 
     /**
@@ -1261,8 +1274,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * </ul>
      */
     public void setGrayed(boolean grayed) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.grayed, grayed)) {
+            dirty();
+        }
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (this.grayed == grayed)

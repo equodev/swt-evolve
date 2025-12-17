@@ -20,6 +20,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -1458,12 +1459,15 @@ public class DartCombo extends DartComposite implements ICombo {
      * @since 3.4
      */
     public void setListVisible(boolean visible) {
-        dirty();
+        boolean newValue = visible;
+        if (!java.util.Objects.equals(this.listVisible, newValue)) {
+            dirty();
+        }
         checkWidget();
+        this.listVisible = newValue;
         if (visible) {
         } else {
         }
-        this.listVisible = visible;
     }
 
     @Override
@@ -1512,15 +1516,18 @@ public class DartCombo extends DartComposite implements ICombo {
      * </ul>
      */
     public void setSelection(Point selection) {
-        dirty();
+        Point newValue = selection;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (selection == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if ((getApi().style & SWT.READ_ONLY) != 0)
             return;
+        this.selection = newValue;
         if (entryHandle != 0) {
         }
-        this.selection = selection;
     }
 
     /**
@@ -1552,7 +1559,10 @@ public class DartCombo extends DartComposite implements ICombo {
      * </ul>
      */
     public void setText(String string) {
-        dirty();
+        String newValue = string;
+        if (!java.util.Objects.equals(this.text, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1572,8 +1582,8 @@ public class DartCombo extends DartComposite implements ICombo {
             if (string == null)
                 return;
         }
+        this.text = newValue;
         sendEvent(SWT.Modify);
-        this.text = string;
     }
 
     /**
@@ -1597,11 +1607,14 @@ public class DartCombo extends DartComposite implements ICombo {
      * @see #LIMIT
      */
     public void setTextLimit(int limit) {
-        dirty();
+        int newValue = limit;
+        if (!java.util.Objects.equals(this.textLimit, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
-        this.textLimit = limit;
+        this.textLimit = newValue;
     }
 
     @Override
@@ -1630,8 +1643,10 @@ public class DartCombo extends DartComposite implements ICombo {
      * @since 3.0
      */
     public void setVisibleItemCount(int count) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.visibleCount, count)) {
+            dirty();
+        }
         if (count < 0)
             return;
         visibleCount = count;

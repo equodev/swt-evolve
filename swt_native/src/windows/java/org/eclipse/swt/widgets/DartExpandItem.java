@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -340,8 +341,10 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      * </ul>
      */
     public void setExpanded(boolean expanded) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.expanded, expanded)) {
+            dirty();
+        }
         this.expanded = expanded;
         ((DartExpandBar) parent.getImpl()).showItem(this.getApi());
     }
@@ -362,9 +365,11 @@ public class DartExpandItem extends DartItem implements IExpandItem {
     }
 
     void setHeightInPixels(int height) {
-        dirty();
         if (height < 0)
             return;
+        if (!java.util.Objects.equals(this.height, height)) {
+            dirty();
+        }
         setBoundsInPixels(0, 0, width, height, false, true);
         if (expanded)
             ((DartExpandBar) parent.getImpl()).layoutItems(parent.indexOf(this.getApi()) + 1, true);

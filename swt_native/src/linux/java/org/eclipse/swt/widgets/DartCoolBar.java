@@ -17,6 +17,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -1024,7 +1025,10 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
     }
 
     void setItemOrder(int[] itemOrder) {
-        dirty();
+        int[] newValue = itemOrder;
+        if (!java.util.Objects.equals(this.itemOrder, newValue)) {
+            dirty();
+        }
         if (itemOrder == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int count = originalItems.length;
@@ -1045,8 +1049,8 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
             row[i] = originalItems[itemOrder[i]];
         }
         items = new CoolItem[1][count];
+        this.itemOrder = newValue;
         items[0] = row;
-        this.itemOrder = itemOrder;
     }
 
     /**
@@ -1072,16 +1076,19 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
     }
 
     void setItemSizes(Point[] sizes) {
-        dirty();
+        Point[] newValue = sizes;
+        if (!java.util.Objects.equals(this.itemSizes, newValue)) {
+            dirty();
+        }
         if (sizes == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         CoolItem[] items = getItems();
         if (sizes.length != items.length)
             error(SWT.ERROR_INVALID_ARGUMENT);
+        this.itemSizes = newValue;
         for (int i = 0; i < items.length; i++) {
             items[i].setSize(sizes[i]);
         }
-        this.itemSizes = sizes;
     }
 
     /**
@@ -1154,8 +1161,10 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
      * @since 2.0
      */
     public void setLocked(boolean locked) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.isLocked, locked)) {
+            dirty();
+        }
         if (isLocked != locked) {
             redraw();
         }
@@ -1178,7 +1187,10 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
      * </ul>
      */
     public void setWrapIndices(int[] indices) {
-        dirty();
+        int[] newValue = indices;
+        if (!java.util.Objects.equals(this.wrapIndices, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (indices == null)
             indices = new int[0];
@@ -1202,8 +1214,8 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
                 }
             }
         }
+        this.wrapIndices = newValue;
         relayout();
-        this.wrapIndices = indices;
     }
 
     @Override

@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -177,8 +178,10 @@ public abstract class DartItem extends DartWidget implements IItem {
      * </ul>
      */
     public void setImage(Image image) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.image, image)) {
+            dirty();
+        }
         if (this.image == image)
             return;
         if (image != null && image.isDisposed())
@@ -203,8 +206,10 @@ public abstract class DartItem extends DartWidget implements IItem {
      * </ul>
      */
     public void setText(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.text, string)) {
+            dirty();
+        }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         text = string;

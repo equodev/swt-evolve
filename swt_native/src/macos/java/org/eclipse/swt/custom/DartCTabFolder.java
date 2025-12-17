@@ -21,6 +21,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.widgets.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -2539,6 +2540,9 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     public void setBackground(Color[] colors, int[] percents, boolean vertical) {
         dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.gradientColors, colors)) {
+            dirty();
+        }
         if (colors != null) {
             if (percents == null || percents.length != colors.length - 1) {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -2621,8 +2625,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setBorderVisible(boolean show) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.borderVisible, show)) {
+            dirty();
+        }
         if (borderVisible == show)
             return;
         this.borderVisible = show;
@@ -3193,8 +3199,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMaximized(boolean maximize) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.maximized, maximize)) {
+            dirty();
+        }
         if (this.maximized == maximize)
             return;
         if (maximize && this.minimized)
@@ -3239,8 +3247,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMinimized(boolean minimize) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.minimized, minimize)) {
+            dirty();
+        }
         if (this.minimized == minimize)
             return;
         if (minimize && this.maximized)
@@ -3271,8 +3281,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMinimumCharacters(int count) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.minChars, count)) {
+            dirty();
+        }
         if (count < 0)
             SWT.error(SWT.ERROR_INVALID_RANGE);
         if (minChars == count)
@@ -3308,8 +3320,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.1
      */
     public void setMRUVisible(boolean show) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.mru, show)) {
+            dirty();
+        }
         if (mru == show)
             return;
         mru = show;
@@ -3390,8 +3404,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setSelection(int index) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.selectedIndex, index)) {
+            dirty();
+        }
         if (index < 0 || index >= items.length)
             return;
         CTabItem selection = items[index];
@@ -3454,9 +3470,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setSelectionBackground(Color color) {
-        dirty();
         if (inDispose)
             return;
+        if (!java.util.Objects.equals(this.selectionBackground, color)) {
+            dirty();
+        }
         checkWidget();
         setSelectionHighlightGradientColor(null);
         if (selectionBackground == color)
@@ -3531,6 +3549,9 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     public void setSelectionBackground(Color[] colors, int[] percents, boolean vertical) {
         dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.selectionGradientColors, colors)) {
+            dirty();
+        }
         int colorsLength;
         //null == no highlight
         Color highlightBeginColor = null;
@@ -3639,8 +3660,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setSelectionBackground(Image image) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.selectionBgImage, image)) {
+            dirty();
+        }
         setSelectionHighlightGradientColor(null);
         if (image == selectionBgImage)
             return;
@@ -3668,8 +3691,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setSelectionForeground(Color color) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.selectionForeground, color)) {
+            dirty();
+        }
         if (selectionForeground == color)
             return;
         if (color == null)
@@ -3693,8 +3718,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.121
      */
     public void setSelectionBarThickness(int thickness) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.selectionHighlightBarThickness, thickness)) {
+            dirty();
+        }
         if (thickness < 0) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -3714,8 +3741,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setSimple(boolean simple) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.simple, simple)) {
+            dirty();
+        }
         if (this.simple != simple) {
             this.simple = simple;
             updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
@@ -3735,8 +3764,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setSingle(boolean single) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.single, single)) {
+            dirty();
+        }
         if (this.single != single) {
             this.single = single;
             if (!single) {
@@ -3769,8 +3800,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setTabHeight(int height) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.fixedTabHeight, height)) {
+            dirty();
+        }
         if (height < -1) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -3793,16 +3826,19 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setTabPosition(int position) {
-        dirty();
+        int newValue = position;
+        if (!java.util.Objects.equals(this.tabPosition, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (position != SWT.TOP && position != SWT.BOTTOM) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        this.tabPosition = newValue;
         if (onBottom != (position == SWT.BOTTOM)) {
             onBottom = position == SWT.BOTTOM;
             updateFolder(REDRAW);
         }
-        this.tabPosition = position;
     }
 
     /**
@@ -3854,6 +3890,9 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     public void setTopRight(Control control, int alignment) {
         dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.topRight, control)) {
+            dirty();
+        }
         if (alignment != SWT.RIGHT && alignment != SWT.FILL && alignment != (SWT.RIGHT | SWT.WRAP)) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -3886,8 +3925,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setUnselectedCloseVisible(boolean visible) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.showUnselectedClose, visible)) {
+            dirty();
+        }
         if (showUnselectedClose == visible)
             return;
         // display close button when mouse hovers
@@ -3908,8 +3949,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setUnselectedImageVisible(boolean visible) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.showUnselectedImage, visible)) {
+            dirty();
+        }
         if (showUnselectedImage == visible)
             return;
         // display image on unselected items
@@ -3930,8 +3973,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.125
      */
     public void setSelectedImageVisible(boolean visible) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.showSelectedImage, visible)) {
+            dirty();
+        }
         if (showSelectedImage == visible)
             return;
         // display image on selected items
@@ -4369,8 +4414,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.106
      */
     public void setHighlightEnabled(boolean enabled) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.highlightEnabled, enabled)) {
+            dirty();
+        }
         if (highlightEnabled == enabled) {
             return;
         }

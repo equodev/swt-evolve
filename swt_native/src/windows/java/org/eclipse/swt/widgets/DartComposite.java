@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -104,7 +105,15 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     public Control[] _getChildren() {
-        return (children != null) ? java.util.Arrays.copyOf(children, children.length) : new Control[0];
+        if (children == null)
+            return new Control[0];
+        java.util.ArrayList<Control> validChildren = new java.util.ArrayList<Control>();
+        for (int i = 0; i < children.length; i++) {
+            if (children[i] != null && !children[i].isDisposed()) {
+                validChildren.add(children[i]);
+            }
+        }
+        return validChildren.toArray(new Control[validChildren.size()]);
     }
 
     public Control[] _getTabList() {
@@ -906,8 +915,10 @@ public class DartComposite extends DartScrollable implements IComposite {
      * @since 3.2
      */
     public void setBackgroundMode(int mode) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.backgroundMode, mode)) {
+            dirty();
+        }
         backgroundMode = mode;
         for (Control element : _getChildren()) {
             element.getImpl().updateBackgroundMode();
@@ -989,8 +1000,12 @@ public class DartComposite extends DartScrollable implements IComposite {
      * @since 3.1
      */
     public void setLayoutDeferred(boolean defer) {
-        dirty();
+        boolean newValue = defer;
+        if (!java.util.Objects.equals(this.layoutDeferred, newValue)) {
+            dirty();
+        }
         checkWidget();
+        this.layoutDeferred = newValue;
         if (!defer) {
             if (--layoutCount == 0) {
                 if ((getApi().state & LAYOUT_CHILD) != 0 || (getApi().state & LAYOUT_NEEDED) != 0) {
@@ -1000,7 +1015,6 @@ public class DartComposite extends DartScrollable implements IComposite {
         } else {
             layoutCount++;
         }
-        this.layoutDeferred = defer;
     }
 
     /**
@@ -1019,8 +1033,10 @@ public class DartComposite extends DartScrollable implements IComposite {
      * </ul>
      */
     public void setTabList(Control[] tabList) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.tabList, tabList)) {
+            dirty();
+        }
         if (tabList != null) {
             for (Control control : tabList) {
                 if (control == null)

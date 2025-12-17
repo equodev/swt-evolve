@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -318,11 +319,14 @@ public class DartSlider extends DartControl implements ISlider {
      * </ul>
      */
     public void setIncrement(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.increment, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (value < 1)
             return;
-        this.increment = value;
+        this.increment = newValue;
     }
 
     /**
@@ -339,9 +343,12 @@ public class DartSlider extends DartControl implements ISlider {
      * </ul>
      */
     public void setMaximum(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.maximum, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.maximum = value;
+        this.maximum = newValue;
     }
 
     /**
@@ -358,11 +365,14 @@ public class DartSlider extends DartControl implements ISlider {
      * </ul>
      */
     public void setMinimum(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.minimum, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (value < 0)
             return;
-        this.minimum = value;
+        this.minimum = newValue;
     }
 
     @Override
@@ -388,11 +398,14 @@ public class DartSlider extends DartControl implements ISlider {
      * </ul>
      */
     public void setPageIncrement(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.pageIncrement, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (value < 1)
             return;
-        this.pageIncrement = value;
+        this.pageIncrement = newValue;
     }
 
     /**
@@ -408,9 +421,12 @@ public class DartSlider extends DartControl implements ISlider {
      * </ul>
      */
     public void setSelection(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.selection = value;
+        this.selection = newValue;
     }
 
     /**
@@ -431,11 +447,14 @@ public class DartSlider extends DartControl implements ISlider {
      * </ul>
      */
     public void setThumb(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.thumb, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (value < 1)
             return;
-        this.thumb = value;
+        this.thumb = newValue;
     }
 
     /**

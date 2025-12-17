@@ -177,9 +177,9 @@ public final class DartFont extends DartResource implements IFont {
     public boolean equals(Object object) {
         if (object == this.getApi())
             return true;
-        if (!(object instanceof Font font))
+        if (!(object instanceof Font))
             return false;
-        return false;
+        return java.util.Arrays.equals(this.fontData, ((Font) object).getFontData());
     }
 
     /**

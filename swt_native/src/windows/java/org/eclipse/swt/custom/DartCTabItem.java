@@ -18,6 +18,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -353,8 +354,10 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      * </ul>
      */
     public void setControl(Control control) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.control, control)) {
+            dirty();
+        }
         if (control != null) {
             if (control.isDisposed())
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -398,8 +401,10 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     @Deprecated
     public void setDisabledImage(Image image) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.disabledImage, image)) {
+            dirty();
+        }
         if (image != null && image.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -428,8 +433,10 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      * @since 3.0
      */
     public void setFont(Font font) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.font, font)) {
+            dirty();
+        }
         if (font != null && font.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -458,8 +465,10 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      * @since 3.114
      */
     public void setForeground(Color color) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.foreground, color)) {
+            dirty();
+        }
         if (color != null) {
             if (color.isDisposed())
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -487,8 +496,10 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      * @since 3.114
      */
     public void setSelectionForeground(Color color) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.selectionForeground, color)) {
+            dirty();
+        }
         if (color != null) {
             if (color.isDisposed())
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -530,8 +541,10 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      * @since 3.4
      */
     public void setShowClose(boolean close) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.showClose, close)) {
+            dirty();
+        }
         if (showClose == close)
             return;
         showClose = close;
@@ -584,8 +597,10 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      * </ul>
      */
     public void setToolTipText(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.toolTipText, string)) {
+            dirty();
+        }
         toolTipText = string;
     }
 

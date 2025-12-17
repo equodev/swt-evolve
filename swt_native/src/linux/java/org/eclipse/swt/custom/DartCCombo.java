@@ -22,6 +22,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -1754,10 +1755,13 @@ public class DartCCombo extends DartComposite implements ICCombo {
      * @since 3.0
      */
     public void setEditable(boolean editable) {
-        dirty();
+        boolean newValue = editable;
+        if (!java.util.Objects.equals(this.editable, newValue)) {
+            dirty();
+        }
         checkWidget();
+        this.editable = newValue;
         text.setEditable(editable);
-        this.editable = editable;
     }
 
     @Override
@@ -1902,10 +1906,13 @@ public class DartCCombo extends DartComposite implements ICCombo {
      * @since 3.4
      */
     public void setListVisible(boolean visible) {
-        dirty();
+        boolean newValue = visible;
+        if (!java.util.Objects.equals(this.listVisible, newValue)) {
+            dirty();
+        }
         checkWidget();
+        this.listVisible = newValue;
         dropDown(visible);
-        this.listVisible = visible;
     }
 
     @Override
@@ -2000,10 +2007,13 @@ public class DartCCombo extends DartComposite implements ICCombo {
      * </ul>
      */
     public void setTextLimit(int limit) {
-        dirty();
+        int newValue = limit;
+        if (!java.util.Objects.equals(this.textLimit, newValue)) {
+            dirty();
+        }
         checkWidget();
+        this.textLimit = newValue;
         text.setTextLimit(limit);
-        this.textLimit = limit;
     }
 
     @Override
@@ -2046,8 +2056,10 @@ public class DartCCombo extends DartComposite implements ICCombo {
      * @since 3.0
      */
     public void setVisibleItemCount(int count) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.visibleItemCount, count)) {
+            dirty();
+        }
         if (count < 0)
             return;
         visibleItemCount = count;

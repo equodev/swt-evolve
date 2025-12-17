@@ -17,6 +17,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -669,8 +670,10 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 2.0
      */
     public void setBackground(Color color) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.background, color)) {
+            dirty();
+        }
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -737,8 +740,10 @@ public class DartTableItem extends DartItem implements ITableItem {
      * </ul>
      */
     public void setChecked(boolean checked) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.checked, checked)) {
+            dirty();
+        }
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (this.checked == checked)
@@ -766,8 +771,10 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 3.0
      */
     public void setFont(Font font) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.font, font)) {
+            dirty();
+        }
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -844,8 +851,10 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 2.0
      */
     public void setForeground(Color color) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.foreground, color)) {
+            dirty();
+        }
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -912,8 +921,10 @@ public class DartTableItem extends DartItem implements ITableItem {
      * </ul>
      */
     public void setGrayed(boolean grayed) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.grayed, grayed)) {
+            dirty();
+        }
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (this.grayed == grayed)
@@ -1015,12 +1026,15 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     @Deprecated
     public void setImageIndent(int indent) {
-        dirty();
+        int newValue = indent;
+        if (!java.util.Objects.equals(this.imageIndent, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (indent < 0)
             return;
+        this.imageIndent = newValue;
         cached = true;
-        this.imageIndent = indent;
         /* Image indent is not supported on the Macintosh */
     }
 

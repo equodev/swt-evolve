@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -532,10 +533,14 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
      * </ul>
      */
     public void setSelection(TabItem[] items) {
-        dirty();
+        TabItem[] newValue = items;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        this.selection = newValue;
         if (items.length == 0) {
             setSelection(-1, false, false);
         } else {
@@ -545,7 +550,6 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
                     setSelection(index, false, false);
             }
         }
-        this.selection = items;
     }
 
     /**

@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -258,8 +259,10 @@ public class DartCanvas extends DartComposite implements ICanvas {
      * </ul>
      */
     public void setCaret(Caret caret) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.caret, caret)) {
+            dirty();
+        }
         Caret newCaret = caret;
         Caret oldCaret = this.caret;
         this.caret = newCaret;
@@ -299,8 +302,10 @@ public class DartCanvas extends DartComposite implements ICanvas {
      * @since 3.4
      */
     public void setIME(IME ime) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.ime, ime)) {
+            dirty();
+        }
         if (ime != null && ime.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         this.ime = ime;

@@ -18,6 +18,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -406,8 +407,10 @@ public class DartSashForm extends DartComposite implements ISashForm {
      * </ul>
      */
     public void setMaximizedControl(Control control) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.maxControl, control)) {
+            dirty();
+        }
         if (control == null) {
             if (maxControl != null) {
                 this.maxControl = null;
@@ -439,8 +442,10 @@ public class DartSashForm extends DartComposite implements ISashForm {
      * @since 3.4
      */
     public void setSashWidth(int width) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.getApi().SASH_WIDTH, width)) {
+            dirty();
+        }
         if (getApi().SASH_WIDTH == width)
             return;
         getApi().SASH_WIDTH = width;
@@ -473,6 +478,7 @@ public class DartSashForm extends DartComposite implements ISashForm {
      */
     public void setWeights(int... weights) {
         dirty();
+        int[] newValue = weights;
         checkWidget();
         Control[] cArray = getControls(false);
         if (weights == null || weights.length != cArray.length) {
@@ -496,8 +502,8 @@ public class DartSashForm extends DartComposite implements ISashForm {
             }
             ((SashFormData) data).weight = (((long) weights[i] << 16) + total - 1) / total;
         }
+        this.weights = newValue;
         layout(false);
-        this.weights = weights;
     }
 
     int[] weights = new int[0];

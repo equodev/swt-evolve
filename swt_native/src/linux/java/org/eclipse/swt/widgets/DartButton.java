@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -574,8 +575,10 @@ public class DartButton extends DartControl implements IButton {
      * @since 3.4
      */
     public void setGrayed(boolean grayed) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.grayed, grayed)) {
+            dirty();
+        }
         if ((getApi().style & SWT.CHECK) == 0)
             return;
         this.grayed = grayed;
@@ -598,8 +601,10 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setImage(Image image) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.image, image)) {
+            dirty();
+        }
         if ((getApi().style & SWT.ARROW) != 0)
             return;
         disposeDefaultDisabledImage();
@@ -651,7 +656,10 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setSelection(boolean selected) {
-        dirty();
+        boolean newValue = selected;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
             return;
@@ -659,7 +667,7 @@ public class DartButton extends DartControl implements IButton {
         }
         if ((getApi().style & SWT.RADIO) != 0) {
         }
-        this.selection = selected;
+        this.selection = newValue;
     }
 
     /**
@@ -697,8 +705,10 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setText(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.text, string)) {
+            dirty();
+        }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if ((getApi().style & SWT.ARROW) != 0)

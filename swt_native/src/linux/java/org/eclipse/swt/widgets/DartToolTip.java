@@ -20,6 +20,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -399,8 +400,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * @see #setVisible
      */
     public void setAutoHide(boolean autoHide) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.autohide, autoHide)) {
+            dirty();
+        }
         this.autohide = autoHide;
         //TODO - update when visible
     }
@@ -424,12 +427,13 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public void setLocation(int x, int y) {
         dirty();
+        Point newValue = new Point(x, y);
         checkWidget();
         this.x = x;
         this.y = y;
+        this.location = newValue;
         if ((getApi().style & SWT.BALLOON) != 0) {
         }
-        this.location = new Point(x, y);
     }
 
     /**
@@ -475,8 +479,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setMessage(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.message, string)) {
+            dirty();
+        }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         message = string;
@@ -501,8 +507,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setText(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.text, string)) {
+            dirty();
+        }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         text = string;
@@ -530,9 +538,13 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        dirty();
+        boolean newValue = visible;
+        if (!java.util.Objects.equals(this.visible, newValue)) {
+            dirty();
+        }
         checkWidget();
         timerId = 0;
+        this.visible = newValue;
         if (visible) {
             if ((getApi().style & SWT.BALLOON) != 0) {
                 configure();
@@ -549,7 +561,6 @@ public class DartToolTip extends DartWidget implements IToolTip {
             } else {
             }
         }
-        this.visible = visible;
     }
 
     @Override

@@ -20,6 +20,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -542,8 +543,10 @@ public class DartLink extends DartControl implements ILink {
      * @since 3.105
      */
     public void setLinkForeground(Color color) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.linkColor, color)) {
+            dirty();
+        }
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -604,8 +607,10 @@ public class DartLink extends DartControl implements ILink {
      * </ul>
      */
     public void setText(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.text, string)) {
+            dirty();
+        }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (string.equals(text))
@@ -638,11 +643,6 @@ public class DartLink extends DartControl implements ILink {
     }
 
     void styleLinkParts() {
-        boolean enabled = (getApi().state & DISABLED) == 0;
-        TextStyle linkStyle = new TextStyle(null, enabled ? getLinkForeground() : disabledColor, null);
-        linkStyle.underline = true;
-        for (int i = 0; i < offsets.length; i++) {
-        }
     }
 
     @Override

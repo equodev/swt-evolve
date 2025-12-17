@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -449,9 +450,11 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
     }
 
     void setSpacingInPixels(int spacing) {
-        dirty();
         if (spacing < 0)
             return;
+        if (!java.util.Objects.equals(this.spacing, spacing)) {
+            dirty();
+        }
         if (spacing == this.spacing)
             return;
         this.spacing = spacing;
