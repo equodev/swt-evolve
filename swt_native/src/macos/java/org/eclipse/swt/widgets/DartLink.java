@@ -21,6 +21,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.widgets.Display.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -470,7 +471,10 @@ public class DartLink extends DartControl implements ILink {
      * @since 3.105
      */
     public void setLinkForeground(Color color) {
-        dirty();
+        Color newValue = color;
+        if (!java.util.Objects.equals(this._linkForeground, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (color != null) {
             if (color.isDisposed())
@@ -483,7 +487,7 @@ public class DartLink extends DartControl implements ILink {
         if (getEnabled()) {
             setLinkColor(true);
         }
-        this._linkForeground = color;
+        this._linkForeground = newValue;
     }
 
     @Override
@@ -529,8 +533,10 @@ public class DartLink extends DartControl implements ILink {
      * </ul>
      */
     public void setText(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.text, string)) {
+            dirty();
+        }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (string.equals(text))

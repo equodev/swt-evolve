@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -299,8 +300,10 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      * </ul>
      */
     public void setControl(Control control) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.control, control)) {
+            dirty();
+        }
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -381,6 +384,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
 
     void setPreferredSizeInPixels(int width, int height) {
         dirty();
+        Point newValue = new Point(preferredSize.x, preferredSize.y);
         int index = parent.indexOf(this.getApi());
         if (index == -1)
             return;
@@ -395,7 +399,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
             cxIdeal = Math.max(0, width - ((DartCoolBar) parent.getImpl()).getMargin(index));
             cyMaxChild = height;
         }
-        this.preferredSize = new Point(cxIdeal, cyMaxChild);
+        this.preferredSize = newValue;
     }
 
     /**
@@ -567,6 +571,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
 
     void setMinimumSizeInPixels(int width, int height) {
         dirty();
+        Point newValue = new Point(minimumSize.x, minimumSize.y);
         int index = parent.indexOf(this.getApi());
         if (index == -1)
             return;
@@ -581,7 +586,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
             cxMinChild = width;
             cyMinChild = height;
         }
-        this.minimumSize = new Point(cxMinChild, cyMinChild);
+        this.minimumSize = newValue;
     }
 
     /**

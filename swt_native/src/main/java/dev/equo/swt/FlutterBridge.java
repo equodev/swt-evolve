@@ -42,13 +42,50 @@ public abstract class FlutterBridge {
     protected FlutterBridge() {
     }
 
+    static Set<Object> filterWidgetsWithDirtyAncestors(Set<Object> dirtySet) {
+        Set<Object> filtered = new HashSet<>();
+
+        for (Object widget : dirtySet) {
+            if (!hasAncestorInSet(widget, dirtySet)) {
+                filtered.add(widget);
+            }
+        }
+
+        return filtered;
+    }
+
+    static boolean hasAncestorInSet(Object widget, Set<Object> dirtySet) {
+        Object parent = getParent(widget);
+
+        while (parent != null) {
+            if (dirtySet.contains(parent)) {
+                return true;
+            }
+            parent = getParent(parent);
+        }
+
+        return false;
+    }
+
+    static Object getParent(Object obj) {
+        if (obj instanceof DartControl && !((DartControl) obj).isDisposed()) {
+            Composite parent = ((DartControl) obj).getParent();
+            return (parent != null && parent.getImpl() instanceof DartWidget) ? parent.getImpl() : null;
+        } else {
+            return null;
+        }
+    }
+
     public static CompletableFuture<Void> update() {
         if (dirty.isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }
-        
+
         List<CompletableFuture<Void>> futures = new ArrayList<>();
-        for (Object widget : new HashSet<>(dirty)) {
+
+        Set<Object> filteredDirty = filterWidgetsWithDirtyAncestors(new HashSet<>(dirty));
+
+        for (Object widget : filteredDirty) {
             if (isDisposed(widget)) break;
             CompletableFuture<Void> future = getBridge(widget).clientReady.thenRun(() -> {
                 try {
@@ -203,6 +240,19 @@ public abstract class FlutterBridge {
             return;
         synchronized (dirty) {
             dirty.add(widget);
+        }
+    }
+
+    // Package-private methods for testing
+    static void clearDirty() {
+        synchronized (dirty) {
+            dirty.clear();
+        }
+    }
+
+    static boolean isDirty(Object widget) {
+        synchronized (dirty) {
+            return dirty.contains(widget);
         }
     }
 

@@ -477,9 +477,10 @@ public final class DartFontData implements IFontData {
      * @see #getName
      */
     public void setName(String name) {
+        String newValue = name;
         if (name == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.name = name;
+        this.name = newValue;
     }
 
     /**
@@ -493,13 +494,14 @@ public final class DartFontData implements IFontData {
      * @see #getStyle
      */
     public void setStyle(int style) {
+        int newValue = style;
         if ((style & SWT.BOLD) == SWT.BOLD) {
         } else {
         }
+        this.style = newValue;
         if ((style & SWT.ITALIC) == SWT.ITALIC) {
         } else {
         }
-        this.style = style;
     }
 
     /**

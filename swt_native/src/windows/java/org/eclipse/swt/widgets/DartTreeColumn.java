@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -496,8 +497,10 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      * @since 3.2
      */
     public void setMoveable(boolean moveable) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.moveable, moveable)) {
+            dirty();
+        }
         this.moveable = moveable;
     }
 
@@ -514,8 +517,10 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      * </ul>
      */
     public void setResizable(boolean resizable) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.resizable, resizable)) {
+            dirty();
+        }
         this.resizable = resizable;
     }
 
@@ -564,8 +569,10 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      * @since 3.2
      */
     public void setToolTipText(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.toolTipText, string)) {
+            dirty();
+        }
         toolTipText = string;
     }
 
@@ -584,15 +591,18 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
     }
 
     void setWidthInPixels(int width) {
-        dirty();
+        int newValue = width;
+        if (!java.util.Objects.equals(this.width, newValue)) {
+            dirty();
+        }
         if (width < 0)
             return;
         int index = parent.indexOf(this.getApi());
         if (index == -1)
             return;
         ((DartControl) parent.getImpl()).forceResize();
+        this.width = newValue;
         ((DartTree) parent.getImpl()).setScrollWidth();
-        this.width = width;
     }
 
     void updateToolTip(int index) {

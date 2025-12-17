@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -998,7 +999,10 @@ public class DartMenu extends DartWidget implements IMenu {
      * </ul>
      */
     public void setDefaultItem(MenuItem item) {
-        dirty();
+        MenuItem newValue = item;
+        if (!java.util.Objects.equals(this.defaultItem, newValue)) {
+            dirty();
+        }
         checkWidget();
         int newID = -1;
         if (item != null) {
@@ -1008,8 +1012,8 @@ public class DartMenu extends DartWidget implements IMenu {
                 return;
             newID = ((DartMenuItem) item.getImpl()).id;
         }
+        this.defaultItem = newValue;
         redraw();
-        this.defaultItem = item;
     }
 
     /**
@@ -1026,12 +1030,15 @@ public class DartMenu extends DartWidget implements IMenu {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        dirty();
+        boolean newValue = enabled;
+        if (!java.util.Objects.equals(this.enabled, newValue)) {
+            dirty();
+        }
         checkWidget();
         getApi().state &= ~DISABLED;
+        this.enabled = newValue;
         if (!enabled)
             getApi().state |= DISABLED;
-        this.enabled = enabled;
     }
 
     /**
@@ -1093,13 +1100,16 @@ public class DartMenu extends DartWidget implements IMenu {
      * @since 2.1
      */
     public void setLocation(Point location) {
-        dirty();
+        Point newValue = location;
+        if (!java.util.Objects.equals(this.location, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         Point locationInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(location, getZoom());
+        this.location = newValue;
         setLocationInPixels(locationInPixels.x, locationInPixels.y);
-        this.location = location;
     }
 
     /**
@@ -1152,17 +1162,20 @@ public class DartMenu extends DartWidget implements IMenu {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        dirty();
+        boolean newValue = visible;
+        if (!java.util.Objects.equals(this.visible, newValue)) {
+            dirty();
+        }
         checkWidget();
         if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
             return;
+        this.visible = newValue;
         if (visible) {
             ((SwtDisplay) display.getImpl()).addPopup(this.getApi());
         } else {
             ((SwtDisplay) display.getImpl()).removePopup(this.getApi());
             _setVisible(false);
         }
-        this.visible = visible;
     }
 
     void update() {

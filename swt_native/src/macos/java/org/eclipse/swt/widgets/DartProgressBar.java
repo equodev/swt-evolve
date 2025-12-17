@@ -17,6 +17,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -183,9 +184,12 @@ public class DartProgressBar extends DartControl implements IProgressBar {
      * </ul>
      */
     public void setMaximum(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.maximum, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.maximum = value;
+        this.maximum = newValue;
     }
 
     /**
@@ -202,9 +206,12 @@ public class DartProgressBar extends DartControl implements IProgressBar {
      * </ul>
      */
     public void setMinimum(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.minimum, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.minimum = value;
+        this.minimum = newValue;
     }
 
     /**
@@ -220,8 +227,12 @@ public class DartProgressBar extends DartControl implements IProgressBar {
      * </ul>
      */
     public void setSelection(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
+        this.selection = newValue;
         /*
 	* Feature in Cocoa.  The progress bar does
 	* not redraw right away when a value is
@@ -230,7 +241,6 @@ public class DartProgressBar extends DartControl implements IProgressBar {
 	* outstanding redraws to be delivered.
 	*/
         update(false);
-        this.selection = value;
     }
 
     /**

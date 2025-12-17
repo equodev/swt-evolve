@@ -35,23 +35,23 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends WidgetValue>
   void initState() {
     super.initState();
     state = widget.value as V;
-    print("${state.swt} ${state.id} initState");
+    // print("${state.swt} ${state.id} initState");
     EquoCommService.on("${state.swt}/${state.id}", _onChange);
   }
 
   @override
   void didUpdateWidget(covariant T oldWidget) {
     super.didUpdateWidget(oldWidget);
-    print("${state.swt} ${state.id} didUpdateWidget");
+    // print("${state.swt} ${state.id} didUpdateWidget");
     state = widget.value as V;
     extraSetState();
   }
 
   void _onChange(V payload) {
-    print('On Widget Change, payload: $payload');
+    //print('On Widget Change, payload: $payload');
 
     _setValue(payload);
-    print("Widget new state: ${state}");
+    //print("Widget new state: ${state}");
   }
 
   void _setValue(V value) {

@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -277,11 +278,14 @@ public class DartScale extends DartControl implements IScale {
      * </ul>
      */
     public void setIncrement(int increment) {
-        dirty();
+        int newValue = increment;
+        if (!java.util.Objects.equals(this.increment, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (increment < 1)
             return;
-        this.increment = increment;
+        this.increment = newValue;
     }
 
     /**
@@ -298,9 +302,12 @@ public class DartScale extends DartControl implements IScale {
      * </ul>
      */
     public void setMaximum(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.maximum, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.maximum = value;
+        this.maximum = newValue;
     }
 
     /**
@@ -317,9 +324,12 @@ public class DartScale extends DartControl implements IScale {
      * </ul>
      */
     public void setMinimum(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.minimum, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.minimum = value;
+        this.minimum = newValue;
     }
 
     /**
@@ -336,11 +346,14 @@ public class DartScale extends DartControl implements IScale {
      * </ul>
      */
     public void setPageIncrement(int pageIncrement) {
-        dirty();
+        int newValue = pageIncrement;
+        if (!java.util.Objects.equals(this.pageIncrement, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (pageIncrement < 1)
             return;
-        this.pageIncrement = pageIncrement;
+        this.pageIncrement = newValue;
     }
 
     /**
@@ -355,9 +368,12 @@ public class DartScale extends DartControl implements IScale {
      * </ul>
      */
     public void setSelection(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.selection = value;
+        this.selection = newValue;
     }
 
     @Override

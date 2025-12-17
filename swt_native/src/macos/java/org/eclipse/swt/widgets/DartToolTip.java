@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -457,8 +458,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * @see #setVisible
      */
     public void setAutoHide(boolean autoHide) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.autohide, autoHide)) {
+            dirty();
+        }
         this.autohide = autoHide;
         //TODO - update when visible
     }
@@ -482,14 +485,15 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public void setLocation(int x, int y) {
         dirty();
+        Point newValue = new Point(x, y);
         checkWidget();
         if (this.x == x && this.y == y)
             return;
         this.x = x;
         this.y = y;
+        this.location = newValue;
         if (tip.getVisible())
             configure();
-        this.location = new Point(x, y);
     }
 
     /**
@@ -535,7 +539,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setMessage(String string) {
-        dirty();
+        String newValue = string;
+        if (!java.util.Objects.equals(this.message, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -547,9 +554,9 @@ public class DartToolTip extends DartWidget implements IToolTip {
             layoutMessage = new TextLayout(display);
             layoutMessage.setText(string);
         }
+        this.message = newValue;
         if (tip.getVisible())
             configure();
-        this.message = string;
     }
 
     /**
@@ -566,7 +573,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setText(String string) {
-        dirty();
+        String newValue = string;
+        if (!java.util.Objects.equals(this.text, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -586,9 +596,9 @@ public class DartToolTip extends DartWidget implements IToolTip {
             TextStyle style = new TextStyle(boldFont, null, null);
             layoutText.setStyle(style, 0, string.length());
         }
+        this.text = newValue;
         if (tip.getVisible())
             configure();
-        this.text = string;
     }
 
     /**
@@ -608,7 +618,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        dirty();
+        boolean newValue = visible;
+        if (!java.util.Objects.equals(this.visible, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (visible)
             configure();
@@ -617,6 +630,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
         if (runnable != null)
             display.timerExec(-1, runnable);
         runnable = null;
+        this.visible = newValue;
         if (autohide && visible) {
             runnable = () -> {
                 if (!isDisposed())
@@ -624,7 +638,6 @@ public class DartToolTip extends DartWidget implements IToolTip {
             };
             display.timerExec(DELAY, runnable);
         }
-        this.visible = visible;
     }
 
     Point location;

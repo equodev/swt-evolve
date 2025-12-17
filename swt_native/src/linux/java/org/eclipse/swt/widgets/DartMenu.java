@@ -852,9 +852,12 @@ public class DartMenu extends DartWidget implements IMenu {
      * </ul>
      */
     public void setDefaultItem(MenuItem item) {
-        dirty();
+        MenuItem newValue = item;
+        if (!java.util.Objects.equals(this.defaultItem, newValue)) {
+            dirty();
+        }
+        this.defaultItem = newValue;
         checkWidget();
-        this.defaultItem = item;
     }
 
     /**
@@ -871,9 +874,12 @@ public class DartMenu extends DartWidget implements IMenu {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        dirty();
+        boolean newValue = enabled;
+        if (!java.util.Objects.equals(this.enabled, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.enabled = enabled;
+        this.enabled = newValue;
     }
 
     /**
@@ -932,12 +938,15 @@ public class DartMenu extends DartWidget implements IMenu {
      * @since 2.1
      */
     public void setLocation(Point location) {
-        dirty();
+        Point newValue = location;
+        if (!java.util.Objects.equals(this.location, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        this.location = newValue;
         setLocation(location.x, location.y);
-        this.location = location;
     }
 
     /**
@@ -1030,17 +1039,20 @@ public class DartMenu extends DartWidget implements IMenu {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        dirty();
+        boolean newValue = visible;
+        if (!java.util.Objects.equals(this.visible, newValue)) {
+            dirty();
+        }
         checkWidget();
         if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
             return;
+        this.visible = newValue;
         if (visible) {
             ((SwtDisplay) display.getImpl()).addPopup(this.getApi());
         } else {
             ((SwtDisplay) display.getImpl()).removePopup(this.getApi());
             _setVisible(false);
         }
-        this.visible = visible;
     }
 
     MenuItem defaultItem;

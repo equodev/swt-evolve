@@ -17,6 +17,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -330,8 +331,10 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      * </ul>
      */
     public void setControl(Control control) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.control, control)) {
+            dirty();
+        }
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -357,8 +360,10 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      * </ul>
      */
     public void setExpanded(boolean expanded) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.expanded, expanded)) {
+            dirty();
+        }
         this.expanded = expanded;
         ((DartExpandBar) parent.getImpl()).showItem(this.getApi());
     }
@@ -394,8 +399,10 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      * </ul>
      */
     public void setHeight(int height) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.height, height)) {
+            dirty();
+        }
         if (height < 0)
             return;
         setBounds(0, 0, width, height, false, true);

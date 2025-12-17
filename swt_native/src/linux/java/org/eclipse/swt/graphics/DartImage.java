@@ -760,6 +760,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (!(object instanceof Image))
             return false;
         Image image = (Image) object;
+        if (!(image.getImpl() instanceof DartImage))
+            return false;
         if (device != image.getImpl()._device() || transparentPixel != image.getImpl()._transparentPixel())
             return false;
         if (imageDataProvider != null && ((DartImage) image.getImpl()).imageDataProvider != null) {
@@ -1210,15 +1212,16 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * </ul>
      */
     public void setBackground(Color color) {
+        Color newValue = color;
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        this.background = newValue;
         if (transparentPixel == -1)
             return;
-        this.background = color;
         //NOT DONE
     }
 

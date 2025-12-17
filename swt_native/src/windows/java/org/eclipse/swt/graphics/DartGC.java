@@ -3053,10 +3053,13 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setAdvanced(boolean advanced) {
-        dirty();
+        boolean newValue = advanced;
+        if (!java.util.Objects.equals(this.advanced, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
+        this.advanced = newValue;
         storeAndApplyOperationForExistingHandle(new SetAdvancedOperation(advanced));
-        this.advanced = advanced;
     }
 
     private class SetAdvancedOperation extends Operation {
@@ -3112,10 +3115,13 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setAntialias(int antialias) {
-        dirty();
+        int newValue = antialias;
+        if (!java.util.Objects.equals(this.antialias, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
+        this.antialias = newValue;
         storeAndApplyOperationForExistingHandle(new SetAntialiasOperation(antialias));
-        this.antialias = antialias;
     }
 
     private class SetAntialiasOperation extends Operation {
@@ -3164,10 +3170,13 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setAlpha(int alpha) {
-        dirty();
+        int newValue = alpha;
+        if (!java.util.Objects.equals(this.alpha, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
+        this.alpha = newValue;
         storeAndApplyOperationForExistingHandle(new SetAlphaOperation(alpha));
-        this.alpha = alpha;
     }
 
     private class SetAlphaOperation extends Operation {
@@ -3209,9 +3218,12 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setBackground(Color color) {
-        dirty();
+        Color newValue = color;
+        if (!java.util.Objects.equals(this.background, newValue)) {
+            dirty();
+        }
+        this.background = newValue;
         checkNonDisposed();
-        this.background = color;
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
@@ -3264,12 +3276,15 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setBackgroundPattern(Pattern pattern) {
-        dirty();
+        Pattern newValue = pattern;
+        if (!java.util.Objects.equals(this.backgroundPattern, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
         if (pattern != null && pattern.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        this.backgroundPattern = newValue;
         storeAndApplyOperationForExistingHandle(new SetBackgroundPatternOperation(pattern));
-        this.backgroundPattern = pattern;
     }
 
     private class SetBackgroundPatternOperation extends Operation {
@@ -3344,9 +3359,10 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setClipping(int x, int y, int width, int height) {
         dirty();
+        Rectangle newValue = new Rectangle(x, y, width, height);
         checkNonDisposed();
+        this.clipping = newValue;
         storeAndApplyOperationForExistingHandle(new SetClippingOperation(new Rectangle(x, y, width, height)));
-        this.clipping = new Rectangle(x, y, width, height);
     }
 
     private class SetClippingOperation extends Operation {
@@ -3394,11 +3410,12 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setClipping(Path path) {
         dirty();
+        Rectangle newValue = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
         checkNonDisposed();
         if (path != null && path.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        this.clipping = newValue;
         storeAndApplyOperationForExistingHandle(new SetClippingPathOperation(path));
-        this.clipping = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
     }
 
     private class SetClippingPathOperation extends Operation {
@@ -3433,14 +3450,17 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setClipping(Rectangle rect) {
-        dirty();
+        Rectangle newValue = rect;
+        if (!java.util.Objects.equals(this.clipping, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
+        this.clipping = newValue;
         if (rect == null) {
             storeAndApplyOperationForExistingHandle(new SetClippingRegionOperation(null));
         } else {
             storeAndApplyOperationForExistingHandle(new SetClippingOperation(rect));
         }
-        this.clipping = rect;
     }
 
     /**
@@ -3461,11 +3481,12 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setClipping(Region region) {
         dirty();
+        Rectangle newValue = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
         checkNonDisposed();
         if (region != null && region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        this.clipping = newValue;
         storeAndApplyOperationForExistingHandle(new SetClippingRegionOperation(region));
-        this.clipping = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
     }
 
     /**
@@ -3485,10 +3506,13 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setFillRule(int rule) {
-        dirty();
+        int newValue = rule;
+        if (!java.util.Objects.equals(this.fillRule, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
+        this.fillRule = newValue;
         storeAndApplyOperationForExistingHandle(new SetFillRuleOperation(rule));
-        this.fillRule = rule;
     }
 
     private class SetFillRuleOperation extends Operation {
@@ -3528,12 +3552,15 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setFont(Font font) {
-        dirty();
+        Font newValue = font;
+        if (!java.util.Objects.equals(this.font, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
         if (font != null && font.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        this.font = newValue;
         storeAndApplyOperationForExistingHandle(new SetFontOperation(font));
-        this.font = font;
     }
 
     private class SetFontOperation extends Operation {
@@ -3562,9 +3589,12 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setForeground(Color color) {
-        dirty();
+        Color newValue = color;
+        if (!java.util.Objects.equals(this.foreground, newValue)) {
+            dirty();
+        }
+        this.foreground = newValue;
         checkNonDisposed();
-        this.foreground = color;
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
@@ -3616,12 +3646,15 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setForegroundPattern(Pattern pattern) {
-        dirty();
+        Pattern newValue = pattern;
+        if (!java.util.Objects.equals(this.foregroundPattern, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
         if (pattern != null && pattern.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        this.foregroundPattern = newValue;
         storeAndApplyOperationForExistingHandle(new SetForegroundPatternOperation(pattern));
-        this.foregroundPattern = pattern;
     }
 
     private class SetForegroundPatternOperation extends Operation {
@@ -3674,10 +3707,13 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setInterpolation(int interpolation) {
-        dirty();
+        int newValue = interpolation;
+        if (!java.util.Objects.equals(this.interpolation, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
+        this.interpolation = newValue;
         storeAndApplyOperationForExistingHandle(new SetInterpolationOperation(interpolation));
-        this.interpolation = interpolation;
     }
 
     private class SetInterpolationOperation extends Operation {
@@ -3732,12 +3768,15 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.3
      */
     public void setLineAttributes(LineAttributes attributes) {
-        dirty();
+        LineAttributes newValue = attributes;
+        if (!java.util.Objects.equals(this.lineAttributes, newValue)) {
+            dirty();
+        }
         if (attributes == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         checkNonDisposed();
+        this.lineAttributes = newValue;
         storeAndApplyOperationForExistingHandle(new SetLineAttributesOperation(attributes));
-        this.lineAttributes = attributes;
     }
 
     private class SetLineAttributesOperation extends Operation {
@@ -3867,10 +3906,13 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setLineCap(int cap) {
-        dirty();
+        int newValue = cap;
+        if (!java.util.Objects.equals(this.lineCap, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
+        this.lineCap = newValue;
         storeAndApplyOperationForExistingHandle(new SetLineCapOperation(cap));
-        this.lineCap = cap;
     }
 
     private class SetLineCapOperation extends Operation {
@@ -3916,10 +3958,13 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setLineDash(int[] dashes) {
-        dirty();
+        int[] newValue = dashes;
+        if (!java.util.Objects.equals(this.lineDash, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
+        this.lineDash = newValue;
         storeAndApplyOperationForExistingHandle(new SetLineDashOperation(dashes));
-        this.lineDash = dashes;
         this.lineDash = dashes;
     }
 
@@ -3974,10 +4019,13 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setLineJoin(int join) {
-        dirty();
+        int newValue = join;
+        if (!java.util.Objects.equals(this.lineJoin, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
+        this.lineJoin = newValue;
         storeAndApplyOperationForExistingHandle(new SetLineJoinOperation(join));
-        this.lineJoin = join;
     }
 
     private class SetLineJoinOperation extends Operation {
@@ -4021,10 +4069,13 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setLineStyle(int lineStyle) {
-        dirty();
+        int newValue = lineStyle;
+        if (!java.util.Objects.equals(this.lineStyle, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
+        this.lineStyle = newValue;
         storeAndApplyOperationForExistingHandle(new SetLineStyleOperation(lineStyle));
-        this.lineStyle = lineStyle;
     }
 
     private class SetLineStyleOperation extends Operation {
@@ -4080,10 +4131,13 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setLineWidth(int lineWidth) {
-        dirty();
+        int newValue = lineWidth;
+        if (!java.util.Objects.equals(this.lineWidth, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
+        this.lineWidth = newValue;
         storeAndApplyOperationForExistingHandle(new SetLineWidthOperation(lineWidth));
-        this.lineWidth = lineWidth;
     }
 
     private class SetLineWidthOperation extends Operation {
@@ -4121,10 +4175,13 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setXORMode(boolean xor) {
-        dirty();
+        boolean newValue = xor;
+        if (!java.util.Objects.equals(this.XORMode, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
+        this.XORMode = newValue;
         storeAndApplyOperationForExistingHandle(new SetXORModeOperation(xor));
-        this.XORMode = xor;
     }
 
     private class SetXORModeOperation extends Operation {
@@ -4169,10 +4226,13 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setTextAntialias(int antialias) {
-        dirty();
+        int newValue = antialias;
+        if (!java.util.Objects.equals(this.textAntialias, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
+        this.textAntialias = newValue;
         storeAndApplyOperationForExistingHandle(new SetTextAntialiasOperation(antialias));
-        this.textAntialias = antialias;
     }
 
     private class SetTextAntialiasOperation extends Operation {
@@ -4227,12 +4287,15 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void setTransform(Transform transform) {
-        dirty();
+        Transform newValue = transform;
+        if (!java.util.Objects.equals(this.transform, newValue)) {
+            dirty();
+        }
         checkNonDisposed();
         if (transform != null && transform.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        this.transform = newValue;
         storeAndApplyOperationForExistingHandle(new SetTransformOperation(transform));
-        this.transform = transform;
     }
 
     private class SetTransformOperation extends Operation {

@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import org.eclipse.swt.internal.DPIUtil;
 import dev.equo.swt.*;
 
@@ -482,8 +483,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * </ul>
      */
     public void setIncrement(int value) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.increment, value)) {
+            dirty();
+        }
         if (value < 1)
             return;
         increment = value;
@@ -503,7 +506,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        dirty();
+        boolean newValue = enabled;
+        if (!java.util.Objects.equals(this.enabled, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (enabled) {
             if ((getApi().state & DISABLED) == 0)
@@ -514,8 +520,8 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
                 return;
             getApi().state |= DISABLED;
         }
+        this.enabled = newValue;
         enableWidget(enabled);
-        this.enabled = enabled;
     }
 
     void enableWidget(boolean enabled) {
@@ -537,8 +543,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * </ul>
      */
     public void setMaximum(int value) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.maximum, value)) {
+            dirty();
+        }
         if (value < 0)
             return;
         if (value <= minimum)
@@ -565,8 +573,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * </ul>
      */
     public void setMinimum(int value) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.minimum, value)) {
+            dirty();
+        }
         if (value < 0)
             return;
         if (value >= maximum)
@@ -593,8 +603,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * </ul>
      */
     public void setPageIncrement(int value) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.pageIncrement, value)) {
+            dirty();
+        }
         if (value < 1)
             return;
         pageIncrement = value;
@@ -613,10 +625,13 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * </ul>
      */
     public void setSelection(int selection) {
-        dirty();
+        int newValue = selection;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
+        this.selection = newValue;
         updateBar(selection, minimum, maximum, thumb);
-        this.selection = selection;
     }
 
     /**
@@ -637,8 +652,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * </ul>
      */
     public void setThumb(int value) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.thumb, value)) {
+            dirty();
+        }
         if (value < 1)
             return;
         value = Math.min(value, maximum - minimum);
@@ -668,8 +685,22 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * </ul>
      */
     public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.thumb, thumb)) {
+            dirty();
+        }
+        if (!java.util.Objects.equals(this.pageIncrement, pageIncrement)) {
+            dirty();
+        }
+        if (!java.util.Objects.equals(this.minimum, minimum)) {
+            dirty();
+        }
+        if (!java.util.Objects.equals(this.maximum, maximum)) {
+            dirty();
+        }
+        if (!java.util.Objects.equals(this.increment, increment)) {
+            dirty();
+        }
         if (minimum < 0)
             return;
         if (maximum < 0)
@@ -705,10 +736,13 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * </ul>
      */
     public void setVisible(boolean visible) {
-        dirty();
+        boolean newValue = visible;
+        if (!java.util.Objects.equals(this.visible, newValue)) {
+            dirty();
+        }
         checkWidget();
+        this.visible = newValue;
         ((DartScrollable) parent.getImpl()).setScrollBarVisible(this.getApi(), visible);
-        this.visible = visible;
     }
 
     void updateBar(int selection, int minimum, int maximum, int thumb) {

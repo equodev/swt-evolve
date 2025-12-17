@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -536,8 +537,10 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      * @since 3.1
      */
     public void setMoveable(boolean moveable) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.moveable, moveable)) {
+            dirty();
+        }
         this.moveable = moveable;
         ((DartTable) parent.getImpl()).updateMoveable();
     }
@@ -557,8 +560,10 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      * </ul>
      */
     public void setResizable(boolean resizable) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.resizable, resizable)) {
+            dirty();
+        }
         this.resizable = resizable;
     }
 
@@ -635,8 +640,10 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      * @since 3.2
      */
     public void setToolTipText(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.toolTipText, string)) {
+            dirty();
+        }
         toolTipText = string;
         long hwndHeaderToolTip = ((DartTable) parent.getImpl()).headerToolTipHandle;
         if (hwndHeaderToolTip == 0) {
@@ -660,13 +667,16 @@ public class DartTableColumn extends DartItem implements ITableColumn {
     }
 
     void setWidthInPixels(int width) {
-        dirty();
+        int newValue = width;
+        if (!java.util.Objects.equals(this.width, newValue)) {
+            dirty();
+        }
         if (width < 0)
             return;
         int index = parent.indexOf(this.getApi());
         if (index == -1)
             return;
-        this.width = width;
+        this.width = newValue;
     }
 
     void updateToolTip(int index) {

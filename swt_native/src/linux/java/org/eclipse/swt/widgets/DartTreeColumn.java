@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -513,9 +514,12 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      * @since 3.2
      */
     public void setMoveable(boolean moveable) {
-        dirty();
+        boolean newValue = moveable;
+        if (!java.util.Objects.equals(this.moveable, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.moveable = moveable;
+        this.moveable = newValue;
     }
 
     @Override
@@ -539,9 +543,12 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      * </ul>
      */
     public void setResizable(boolean resizable) {
-        dirty();
+        boolean newValue = resizable;
+        if (!java.util.Objects.equals(this.resizable, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.resizable = resizable;
+        this.resizable = newValue;
     }
 
     @Override
@@ -584,8 +591,10 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      * @since 3.2
      */
     public void setToolTipText(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.toolTipText, string)) {
+            dirty();
+        }
         toolTipText = string;
         setToolTipText(buttonHandle, string);
     }
@@ -601,8 +610,10 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      * </ul>
      */
     public void setWidth(int width) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.lastWidth, width)) {
+            dirty();
+        }
         if (width < 0)
             return;
         if (width == lastWidth)

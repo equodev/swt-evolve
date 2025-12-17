@@ -1459,6 +1459,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * </ul>
      */
     public void setBackground(Color color) {
+        Color newValue = color;
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (color == null)
@@ -1469,8 +1470,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             return;
         transparentColor = -1;
         backgroundColor = color.getRGB();
+        this.background = newValue;
         zoomLevelToImageHandle.values().forEach(imageHandle -> imageHandle.setBackground(backgroundColor));
-        this.background = color;
     }
 
     /**

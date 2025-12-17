@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -574,7 +575,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setBackground(Color color) {
-        dirty();
+        Color newValue = color;
+        if (!java.util.Objects.equals(this._background, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -584,8 +588,8 @@ public class DartToolItem extends DartItem implements IToolItem {
         if (pixel == background)
             return;
         background = pixel;
+        this._background = newValue;
         redraw();
-        this._background = color;
     }
 
     /**
@@ -604,8 +608,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setControl(Control control) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.control, control)) {
+            dirty();
+        }
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -658,7 +664,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        dirty();
+        boolean newValue = enabled;
+        if (!java.util.Objects.equals(this.enabled, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (enabled) {
             getApi().state &= ~DISABLED;
@@ -669,10 +678,10 @@ public class DartToolItem extends DartItem implements IToolItem {
             if (image != null)
                 updateImages(enabled && parent.getEnabled());
         }
+        this.enabled = newValue;
         if (!enabled && ((DartToolBar) parent.getImpl()).lastFocusId == id) {
             ((DartToolBar) parent.getImpl()).lastFocusId = -1;
         }
-        this.enabled = enabled;
     }
 
     /**
@@ -693,8 +702,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setDisabledImage(Image image) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.disabledImage, image)) {
+            dirty();
+        }
         if (this.disabledImage == image)
             return;
         if ((getApi().style & SWT.SEPARATOR) != 0)
@@ -726,7 +737,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setForeground(Color color) {
-        dirty();
+        Color newValue = color;
+        if (!java.util.Objects.equals(this._foreground, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -736,8 +750,8 @@ public class DartToolItem extends DartItem implements IToolItem {
         if (pixel == foreground)
             return;
         foreground = pixel;
+        this._foreground = newValue;
         redraw();
-        this._foreground = color;
     }
 
     /**
@@ -758,8 +772,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setHotImage(Image image) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.hotImage, image)) {
+            dirty();
+        }
         if (this.hotImage == image)
             return;
         if ((getApi().style & SWT.SEPARATOR) != 0)
@@ -821,13 +837,17 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setSelection(boolean selected) {
-        dirty();
+        boolean newValue = selected;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
         if (selected) {
         } else {
         }
+        this.selection = newValue;
         /*
 	* Bug in Windows.  When a tool item with the style
 	* BTNS_CHECK or BTNS_CHECKGROUP is selected and then
@@ -843,7 +863,6 @@ public class DartToolItem extends DartItem implements IToolItem {
                 updateImages(false);
             }
         }
-        this.selection = selected;
     }
 
     @Override
@@ -953,8 +972,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setToolTipText(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.toolTipText, string)) {
+            dirty();
+        }
         toolTipText = string;
     }
 
@@ -979,13 +1000,16 @@ public class DartToolItem extends DartItem implements IToolItem {
     }
 
     void setWidthInPixels(int width) {
-        dirty();
+        int newValue = width;
+        if (!java.util.Objects.equals(this.width, newValue)) {
+            dirty();
+        }
         if ((getApi().style & SWT.SEPARATOR) == 0)
             return;
         if (width < 0)
             return;
+        this.width = newValue;
         ((DartToolBar) parent.getImpl()).layoutItems();
-        this.width = width;
     }
 
     void updateImages(boolean enabled) {

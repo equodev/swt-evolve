@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -270,9 +271,12 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      * @since 3.126
      */
     public void setScrollbarsMode(int mode) {
-        dirty();
+        int newValue = mode;
+        if (!java.util.Objects.equals(this.scrollbarsMode, newValue)) {
+            dirty();
+        }
+        this.scrollbarsMode = newValue;
         checkWidget();
-        this.scrollbarsMode = mode;
     }
 
     /**

@@ -1286,8 +1286,10 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setDoubleClickEnabled(boolean doubleClick) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.doubleClick, doubleClick)) {
+            dirty();
+        }
         this.doubleClick = doubleClick;
     }
 
@@ -1313,13 +1315,16 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setEchoChar(char echo) {
-        dirty();
+        char newValue = echo;
+        if (!java.util.Objects.equals(this.echoChar, newValue)) {
+            dirty();
+        }
         checkWidget();
         if ((getApi().style & SWT.MULTI) != 0)
             return;
         allowPasswordChar = true;
         allowPasswordChar = false;
-        this.echoChar = echo;
+        this.echoChar = newValue;
     }
 
     /**
@@ -1333,12 +1338,15 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setEditable(boolean editable) {
-        dirty();
+        boolean newValue = editable;
+        if (!java.util.Objects.equals(this.editable, newValue)) {
+            dirty();
+        }
         checkWidget();
         getApi().style &= ~SWT.READ_ONLY;
         if (!editable)
             getApi().style |= SWT.READ_ONLY;
-        this.editable = editable;
+        this.editable = newValue;
     }
 
     @Override
@@ -1384,8 +1392,10 @@ public class DartText extends DartScrollable implements IText {
      * @since 3.3
      */
     public void setMessage(String message) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.message, message)) {
+            dirty();
+        }
         if (message == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         this.message = message;
@@ -1439,9 +1449,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setSelection(int start) {
         dirty();
+        Point newValue = new Point(start, start);
         checkWidget();
         start = translateOffset(start);
-        this.selection = new Point(start, start);
+        this.selection = newValue;
     }
 
     /**
@@ -1471,10 +1482,11 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setSelection(int start, int end) {
         dirty();
+        Point newValue = new Point(start, end);
         checkWidget();
         start = translateOffset(start);
         end = translateOffset(end);
-        this.selection = new Point(start, end);
+        this.selection = newValue;
     }
 
     @Override
@@ -1553,8 +1565,10 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setTabs(int tabs) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.tabs, tabs)) {
+            dirty();
+        }
         if (tabs < 0)
             return;
         setTabStops(this.tabs = tabs);
@@ -1582,7 +1596,10 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setText(String string) {
-        dirty();
+        String newValue = string;
+        if (!java.util.Objects.equals(this.text, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1596,7 +1613,7 @@ public class DartText extends DartScrollable implements IText {
             super.updateTextDirection(AUTO_TEXT_DIRECTION);
         }
         applySegments();
-        this.text = string;
+        this.text = newValue;
     }
 
     /**
@@ -1626,7 +1643,10 @@ public class DartText extends DartScrollable implements IText {
      * @since 3.7
      */
     public void setTextChars(char[] text) {
-        dirty();
+        char[] newValue = text;
+        if (!java.util.Objects.equals(this.textChars, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (text == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1638,7 +1658,7 @@ public class DartText extends DartScrollable implements IText {
             super.updateTextDirection(AUTO_TEXT_DIRECTION);
         }
         applySegments();
-        this.textChars = text;
+        this.textChars = newValue;
     }
 
     /**
@@ -1666,14 +1686,17 @@ public class DartText extends DartScrollable implements IText {
      * @see #LIMIT
      */
     public void setTextLimit(int limit) {
-        dirty();
+        int newValue = limit;
+        if (!java.util.Objects.equals(this.textLimit, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
+        this.textLimit = newValue;
         if (segments != null && limit > 0) {
         } else {
         }
-        this.textLimit = limit;
     }
 
     /**
@@ -1689,11 +1712,14 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setTopIndex(int index) {
-        dirty();
+        int newValue = index;
+        if (!java.util.Objects.equals(this.topIndex, newValue)) {
+            dirty();
+        }
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0)
             return;
-        this.topIndex = index;
+        this.topIndex = newValue;
     }
 
     /**

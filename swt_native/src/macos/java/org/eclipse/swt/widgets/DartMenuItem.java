@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -625,8 +626,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * </ul>
      */
     public void setAccelerator(int accelerator) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.accelerator, accelerator)) {
+            dirty();
+        }
         if (this.accelerator == accelerator)
             return;
         this.accelerator = accelerator;
@@ -651,14 +654,17 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        dirty();
+        boolean newValue = enabled;
+        if (!java.util.Objects.equals(this.enabled, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (enabled) {
             getApi().state &= ~DISABLED;
         } else {
             getApi().state |= DISABLED;
         }
-        this.enabled = enabled;
+        this.enabled = newValue;
     }
 
     /**
@@ -675,9 +681,12 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * @since 3.7
      */
     public void setID(int id) {
-        dirty();
+        int newValue = id;
+        if (!java.util.Objects.equals(this.ID, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.ID = id;
+        this.ID = newValue;
     }
 
     /**
@@ -733,8 +742,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * </ul>
      */
     public void setMenu(Menu menu) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.menu, menu)) {
+            dirty();
+        }
         /* Check to make sure the new menu is valid */
         if ((getApi().style & SWT.CASCADE) == 0) {
             error(SWT.ERROR_MENUITEM_NOT_CASCADE);
@@ -792,15 +803,14 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * </ul>
      */
     public void setSelection(boolean selected) {
-        dirty();
+        boolean newValue = selected;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
-        this.selection = selected;
-        Control ownerCtrl = ((DartMenu) parent.getImpl()).findOwnerControl();
-        if (ownerCtrl != null && ownerCtrl.getImpl() instanceof DartControl) {
-            ((DartControl) ownerCtrl.getImpl()).dirty();
-        }
+        this.selection = newValue;
     }
 
     /**
@@ -885,8 +895,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * @since 3.104
      */
     public void setToolTipText(String toolTip) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.toolTipText, toolTip)) {
+            dirty();
+        }
         if (toolTip == null && toolTipText != null) {
             toolTipText = null;
         }

@@ -19,6 +19,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -1158,8 +1159,10 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void select(int index) {
         dirty();
+        Point newValue = new Point(selection.x, selection.y);
         checkWidget();
         int count = getItemCount();
+        this.selection = newValue;
         if (0 <= index && index < count) {
             if (index == getSelectionIndex())
                 return;
@@ -1170,7 +1173,6 @@ public class DartCombo extends DartComposite implements ICombo {
             }
             ignoreSelection = false;
         }
-        this.selection = new Point(selection.x, selection.y);
     }
 
     @Override
@@ -1259,6 +1261,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void setItems(String... items) {
         dirty();
+        String[] newValue = items;
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1275,8 +1278,8 @@ public class DartCombo extends DartComposite implements ICombo {
             } else {
             }
         }
+        this.items = newValue;
         ignoreSelection = false;
-        this.items = items;
     }
 
     /**
@@ -1298,8 +1301,10 @@ public class DartCombo extends DartComposite implements ICombo {
      * @since 3.4
      */
     public void setListVisible(boolean visible) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.listVisible, visible)) {
+            dirty();
+        }
         if ((getApi().style & SWT.READ_ONLY) != 0) {
         } else {
         }
@@ -1345,13 +1350,16 @@ public class DartCombo extends DartComposite implements ICombo {
      * </ul>
      */
     public void setSelection(Point selection) {
-        dirty();
+        Point newValue = selection;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (selection == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        this.selection = newValue;
         if ((getApi().style & SWT.READ_ONLY) == 0) {
         }
-        this.selection = selection;
     }
 
     /**
@@ -1390,12 +1398,14 @@ public class DartCombo extends DartComposite implements ICombo {
     }
 
     void setText(String string, boolean notify) {
-        dirty();
         if (notify) {
             if (hooks(SWT.Verify) || filters(SWT.Verify)) {
                 if (string == null)
                     return;
             }
+        }
+        if (!java.util.Objects.equals(this.text, string)) {
+            dirty();
         }
         if ((getApi().style & SWT.READ_ONLY) != 0) {
             int index = indexOf(string);
@@ -1432,8 +1442,10 @@ public class DartCombo extends DartComposite implements ICombo {
      * @see #LIMIT
      */
     public void setTextLimit(int limit) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.textLimit, limit)) {
+            dirty();
+        }
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
         textLimit = limit;
@@ -1457,15 +1469,18 @@ public class DartCombo extends DartComposite implements ICombo {
      * @since 3.0
      */
     public void setVisibleItemCount(int count) {
-        dirty();
+        int newValue = count;
+        if (!java.util.Objects.equals(this.visibleItemCount, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (count < 0)
             return;
+        this.visibleItemCount = newValue;
         if ((getApi().style & SWT.READ_ONLY) != 0) {
             //TODO
         } else {
         }
-        this.visibleItemCount = count;
     }
 
     void updateItems() {

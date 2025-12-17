@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -592,11 +593,14 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * </ul>
      */
     public void setIncrement(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.increment, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (value < 1)
             return;
-        this.increment = value;
+        this.increment = newValue;
     }
 
     /**
@@ -654,11 +658,14 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * </ul>
      */
     public void setPageIncrement(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.pageIncrement, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (value < 1)
             return;
-        this.pageIncrement = value;
+        this.pageIncrement = newValue;
     }
 
     /**
@@ -675,9 +682,12 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * </ul>
      */
     public void setSelection(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.selection = value;
+        this.selection = newValue;
     }
 
     /**
@@ -703,11 +713,14 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * @since 3.4
      */
     public void setTextLimit(int limit) {
-        dirty();
+        int newValue = limit;
+        if (!java.util.Objects.equals(this.textLimit, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
-        this.textLimit = limit;
+        this.textLimit = newValue;
     }
 
     /**
@@ -731,7 +744,10 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * </ul>
      */
     public void setDigits(int value) {
-        dirty();
+        int newValue = value;
+        if (!java.util.Objects.equals(this.digits, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (value < 0)
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -739,7 +755,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
         {
             climbRate /= factor;
         }
-        this.digits = value;
+        this.digits = newValue;
     }
 
     /**

@@ -607,8 +607,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setBackground(Color color) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.background, color)) {
+            dirty();
+        }
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -634,8 +636,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setControl(Control control) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.control, control)) {
+            dirty();
+        }
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -670,7 +674,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        dirty();
+        boolean newValue = enabled;
+        if (!java.util.Objects.equals(this.enabled, newValue)) {
+            dirty();
+        }
         checkWidget();
         if ((getApi().state & DISABLED) == 0 && enabled)
             return;
@@ -679,8 +686,8 @@ public class DartToolItem extends DartItem implements IToolItem {
         } else {
             getApi().state |= DISABLED;
         }
+        this.enabled = newValue;
         enableWidget(enabled);
-        this.enabled = enabled;
     }
 
     /**
@@ -701,8 +708,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setDisabledImage(Image image) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.disabledImage, image)) {
+            dirty();
+        }
         if (this.disabledImage == image)
             return;
         if (image != null && image.isDisposed())
@@ -739,8 +748,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * @since 3.120
      */
     public void setForeground(Color color) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.foreground, color)) {
+            dirty();
+        }
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -769,8 +780,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setHotImage(Image image) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.hotImage, image)) {
+            dirty();
+        }
         if (this.hotImage == image)
             return;
         if (image != null && image.isDisposed())
@@ -821,8 +834,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setSelection(boolean selected) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.selection, selected)) {
+            dirty();
+        }
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
         this.selection = selected;
@@ -901,8 +916,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setToolTipText(String string) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.toolTipText, string)) {
+            dirty();
+        }
         if (string == null && toolTipText == null)
             return;
         if (string != null && string.equals(toolTipText))
@@ -942,8 +959,10 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setWidth(int width) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.width, width)) {
+            dirty();
+        }
         if ((getApi().style & SWT.SEPARATOR) == 0)
             return;
         if (width < SWT.SEPARATOR_FILL || this.width == width)

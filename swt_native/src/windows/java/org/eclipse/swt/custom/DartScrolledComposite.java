@@ -18,6 +18,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -438,6 +439,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      */
     public void setOrigin(int x, int y) {
         dirty();
+        Point newValue = new Point(x, y);
         checkWidget();
         if (content == null)
             return;
@@ -455,8 +457,8 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
         } else {
             y = 0;
         }
+        this.origin = newValue;
         content.setLocation(x, y);
-        this.origin = new Point(x, y);
     }
 
     /**
@@ -474,8 +476,10 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      * </ul>
      */
     public void setAlwaysShowScrollBars(boolean show) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.alwaysShowScroll, show)) {
+            dirty();
+        }
         if (show == alwaysShowScroll)
             return;
         alwaysShowScroll = show;
@@ -499,8 +503,10 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      * </ul>
      */
     public void setContent(Control content) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.content, content)) {
+            dirty();
+        }
         if (this.content != null && !this.content.isDisposed()) {
             this.content.removeListener(SWT.Resize, contentListener);
             this.content.setBounds(new Rectangle(-200, -200, 0, 0));
@@ -546,8 +552,10 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      * </ul>
      */
     public void setExpandHorizontal(boolean expand) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.expandHorizontal, expand)) {
+            dirty();
+        }
         if (expand == expandHorizontal)
             return;
         expandHorizontal = expand;
@@ -570,8 +578,10 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      * </ul>
      */
     public void setExpandVertical(boolean expand) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.expandVertical, expand)) {
+            dirty();
+        }
         if (expand == expandVertical)
             return;
         expandVertical = expand;
@@ -612,8 +622,10 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      * </ul>
      */
     public void setMinHeight(int height) {
-        dirty();
         setMinSize(minWidth, height);
+        if (!java.util.Objects.equals(this.minHeight, height)) {
+            dirty();
+        }
     }
 
     /**
@@ -650,8 +662,13 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      * </ul>
      */
     public void setMinSize(int width, int height) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.minWidth, width)) {
+            dirty();
+        }
+        if (!java.util.Objects.equals(this.minWidth, width)) {
+            dirty();
+        }
         if (width == minWidth && height == minHeight)
             return;
         minWidth = Math.max(0, width);
@@ -672,8 +689,10 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      * </ul>
      */
     public void setMinWidth(int width) {
-        dirty();
         setMinSize(width, minHeight);
+        if (!java.util.Objects.equals(this.minWidth, width)) {
+            dirty();
+        }
     }
 
     /**
@@ -693,8 +712,10 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      * @since 3.4
      */
     public void setShowFocusedControl(boolean show) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.showFocusedControl, show)) {
+            dirty();
+        }
         if (showFocusedControl == show)
             return;
         Display display = getDisplay();

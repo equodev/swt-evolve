@@ -17,6 +17,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -192,8 +193,10 @@ public class DartProgressBar extends DartControl implements IProgressBar {
      * </ul>
      */
     public void setMaximum(int value) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.maximum, value)) {
+            dirty();
+        }
         if (value <= minimum)
             return;
         maximum = value;
@@ -215,8 +218,10 @@ public class DartProgressBar extends DartControl implements IProgressBar {
      * </ul>
      */
     public void setMinimum(int value) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.minimum, value)) {
+            dirty();
+        }
         if (value < 0 || value >= maximum)
             return;
         minimum = value;
@@ -237,8 +242,10 @@ public class DartProgressBar extends DartControl implements IProgressBar {
      * </ul>
      */
     public void setSelection(int value) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.selection, value)) {
+            dirty();
+        }
         selection = Math.max(minimum, Math.min(maximum, value));
         updateBar();
     }

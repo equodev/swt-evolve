@@ -1816,15 +1816,16 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void select(TreeItem item) {
         dirty();
+        TreeItem[] newValue = new TreeItem[] { item };
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (item.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         boolean fixColumn = showFirstColumn();
+        this.selection = newValue;
         if (fixColumn)
             hideFirstColumn();
-        this.selection = new TreeItem[] { item };
     }
 
     /**
@@ -1889,7 +1890,10 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.2
      */
     public void setColumnOrder(int[] order) {
-        dirty();
+        int[] newValue = order;
+        if (!java.util.Objects.equals(this.columnOrder, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (order == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1910,11 +1914,11 @@ public class DartTree extends DartComposite implements ITree {
             seen[index] = true;
         }
         long baseColumn = 0;
+        this.columnOrder = newValue;
         for (int i = 0; i < order.length; i++) {
             long column = columns[order[i]].handle;
             baseColumn = column;
         }
-        this.columnOrder = order;
     }
 
     @Override
@@ -1948,8 +1952,10 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.106
      */
     public void setHeaderBackground(Color color) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.headerBackground, color)) {
+            dirty();
+        }
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1999,8 +2005,10 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.106
      */
     public void setHeaderForeground(Color color) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.headerForeground, color)) {
+            dirty();
+        }
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -2030,8 +2038,10 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.1
      */
     public void setHeaderVisible(boolean show) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.headerVisible, show)) {
+            dirty();
+        }
         this.headerHeight = this.getHeaderHeight();
         this.headerVisible = show;
     }
@@ -2056,9 +2066,12 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.1
      */
     public void setLinesVisible(boolean show) {
-        dirty();
+        boolean newValue = show;
+        if (!java.util.Objects.equals(this.linesVisible, newValue)) {
+            dirty();
+        }
         checkWidget();
-        this.linesVisible = show;
+        this.linesVisible = newValue;
     }
 
     void setModel(long newModel) {
@@ -2147,7 +2160,10 @@ public class DartTree extends DartComposite implements ITree {
      * @see Tree#deselectAll()
      */
     public void setSelection(TreeItem[] items) {
-        dirty();
+        TreeItem[] newValue = items;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -2169,9 +2185,9 @@ public class DartTree extends DartComposite implements ITree {
             }
             first = false;
         }
+        this.selection = newValue;
         if (fixColumn)
             hideFirstColumn();
-        this.selection = items;
     }
 
     /**
@@ -2192,8 +2208,10 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.2
      */
     public void setSortColumn(TreeColumn column) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.sortColumn, column)) {
+            dirty();
+        }
         if (column != null && column.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (sortColumn != null && !sortColumn.isDisposed()) {
@@ -2217,8 +2235,10 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.2
      */
     public void setSortDirection(int direction) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.sortDirection, direction)) {
+            dirty();
+        }
         if (direction != SWT.UP && direction != SWT.DOWN && direction != SWT.NONE)
             return;
         sortDirection = direction;
@@ -2250,7 +2270,9 @@ public class DartTree extends DartComposite implements ITree {
      * @since 2.1
      */
     public void setTopItem(TreeItem item) {
-        dirty();
+        if (!java.util.Objects.equals(this.topItem, item)) {
+            dirty();
+        }
         topItem = item;
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);

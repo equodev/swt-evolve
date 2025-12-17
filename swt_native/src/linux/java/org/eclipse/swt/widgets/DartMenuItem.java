@@ -20,6 +20,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.widgets.Menu.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -603,8 +604,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * </ul>
      */
     public void setAccelerator(int accelerator) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.accelerator, accelerator)) {
+            dirty();
+        }
         if (this.accelerator == accelerator)
             return;
         {
@@ -653,8 +656,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.enabled, enabled)) {
+            dirty();
+        }
         if (this.enabled == enabled)
             return;
         this.enabled = enabled;
@@ -686,8 +691,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * @since 3.7
      */
     public void setID(int id) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.userId, id)) {
+            dirty();
+        }
         if (id < 0)
             error(SWT.ERROR_INVALID_ARGUMENT);
         userId = id;
@@ -756,8 +763,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * </ul>
      */
     public void setMenu(Menu menu) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.menu, menu)) {
+            dirty();
+        }
         /* Check to make sure the new menu is valid */
         if ((getApi().style & SWT.CASCADE) == 0) {
             error(SWT.ERROR_MENUITEM_NOT_CASCADE);
@@ -815,15 +824,14 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * </ul>
      */
     public void setSelection(boolean selected) {
-        dirty();
+        boolean newValue = selected;
+        if (!java.util.Objects.equals(this.selection, newValue)) {
+            dirty();
+        }
         checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
             return;
-        this.selection = selected;
-        Control ownerCtrl = ((DartMenu) parent.getImpl()).findOwnerControl();
-        if (ownerCtrl != null && ownerCtrl.getImpl() instanceof DartControl) {
-            ((DartControl) ownerCtrl.getImpl()).dirty();
-        }
+        this.selection = newValue;
     }
 
     /**
@@ -911,8 +919,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * @since 3.104
      */
     public void setToolTipText(String toolTip) {
-        dirty();
         checkWidget();
+        if (!java.util.Objects.equals(this.toolTipText, toolTip)) {
+            dirty();
+        }
         if (toolTip != null && (toolTip.trim().length() == 0 || toolTip.equals(toolTipText)))
             return;
         toolTipText = toolTip;
