@@ -13,7 +13,9 @@ public class Config {
     public enum Impl {eclipse, equo, force_equo}
 
     static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.equo.name()));
-    static Impl toolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.toolbar", Impl.equo.name()));
+    static Impl mainToolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.maintoolbar", Impl.equo.name()));
+    static Impl sideBarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.sidebar", Impl.equo.name()));
+
 
     private static final String os = System.getProperty("os.name").toLowerCase();
     static final Map<Class<?>, Impl> equoEnabled;
@@ -203,6 +205,11 @@ public class Config {
         return id.equals("//Shell//-1//Composite//1") && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
     }
 
+    private static boolean isSideToolbarComposite(Class<?> clazz, Composite parent) {
+        String id = getId(clazz, parent);
+        return (id.equals("//Shell//-1//Composite//3") || id.equals("//Shell//-1//Composite//4")) && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
+    }
+
     private static boolean isCTabFolderBody(Class<?> clazz, Scrollable parent) {
         return clazz == Composite.class && parent.getClass() == CTabFolder.class;
     }
@@ -222,8 +229,10 @@ public class Config {
     }
 
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
-        if (toolbarImpl == Impl.equo && isMainToolbarComposite(Composite.class, parent))
+        if (!forceEclipse && mainToolbarImpl == Impl.equo && isMainToolbarComposite(Composite.class, parent))
             return new DartMainToolbar(parent, style, composite);
+        if (!forceEclipse && sideBarImpl == Impl.equo && isSideToolbarComposite(Composite.class, parent))
+            return new DartSideBar(parent, style, composite);
         if (Config.isEquo(Composite.class, parent))
             return new DartComposite(parent, style, composite);
         return new SwtComposite(parent, style, composite);

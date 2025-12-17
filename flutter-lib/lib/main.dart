@@ -76,8 +76,8 @@ Widget? customWidget(Map<String, dynamic> child) {
   var type = child['swt'];
   var id = child['id'];
   return switch (type) {
-    "MainToolbar" =>
-    ToolbarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
+    "MainToolbar" => ToolbarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
+    "SideBar" => SideBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
     _ => null
   };
 }
